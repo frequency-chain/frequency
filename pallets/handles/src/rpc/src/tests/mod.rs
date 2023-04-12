@@ -23,12 +23,12 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn get_next_suffixes(base_handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
+		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes = Vec::new();
-			for i in 0..suffix_request.count {
+			for i in 0..count {
 				suffixes.push(i);
 			}
-			PresumptiveSuffixesResponse { base_handle: suffix_request.base_handle,  suffixes }
+			PresumptiveSuffixesResponse { base_handle: base_handle.into(),  suffixes }
 		}
 
 		fn get_msa_for_handle(_display_handle: Handle) -> Option<MessageSourceId>{
@@ -72,7 +72,7 @@ async fn get_handle_with_success() {
 async fn get_next_suffixes_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = HandlesHandler::new(client);
-	let result = api.get_next_suffixes("base_handle".to_string(), 3);
+	let result = api.get_next_suffixes("base_handle".to_string(), Some(3));
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
