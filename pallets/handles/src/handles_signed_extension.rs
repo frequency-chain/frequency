@@ -12,7 +12,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
-	DispatchError,
+	DispatchError, ModuleError,
 };
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
 /// purpose of this is to ensure that the retire_handle extrinsic cannot be
@@ -72,12 +72,8 @@ impl<T: Config> HandlesValidate<T> for Pallet<T> {
 /// Map a module DispatchError to an InvalidTransaction::Custom error
 pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	InvalidTransaction::Custom(match err {
-		DispatchError::Module(module_err) =>
-			<u32 as Decode>::decode(&mut module_err.error.as_slice())
-				.unwrap_or_default()
-				.try_into()
-				.unwrap_or_default(),
-		_ => 255u8,
+		DispatchError::Module(ModuleError { error, .. }) => error[0],
+		_ => 0,
 	})
 }
 
