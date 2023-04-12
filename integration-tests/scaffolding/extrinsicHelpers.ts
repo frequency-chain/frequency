@@ -326,8 +326,13 @@ export class ExtrinsicHelper {
         return firstValueFrom(handle_response);
     }
 
-    public static getNextSuffixesForHandle(input_request: any): Promise<PresumptiveSuffixesResponse> {
-        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(input_request);
+    public static getMsaForHandle(handle: string): Promise<Option<MessageSourceId>> {
+        let msa_response = ExtrinsicHelper.api.rpc.handles.getMsaForHandle(handle);
+        return firstValueFrom(msa_response);
+    }
+
+    public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
+        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
         return firstValueFrom(suffixes);
     }
     

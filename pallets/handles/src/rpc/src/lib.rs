@@ -10,26 +10,29 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	handles::{HandleResponse, PresumptiveSuffixesRequest, PresumptiveSuffixesResponse},
+	handles::{
+		Handle, HandleResponse, PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT,
+		MAX_SUFFIXES_COUNT,
+	},
 	msa::MessageSourceId,
 };
 use jsonrpsee::{
 	core::{async_trait, Error as RpcError, RpcResult},
 	proc_macros::rpc,
 };
-
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 use std::sync::Arc;
+
 #[cfg(test)]
 mod tests;
 
 /// Frequency Handles Custom RPC API
 #[rpc(client, server)]
 pub trait HandlesApi<BlockHash> {
-	/// retrieve handle for a given msa
+	/// retrieve `HandleResponse` for a given `MessageSourceId`
 	#[method(name = "handles_getHandleForMsa")]
 	fn get_handle_for_msa(&self, msa_id: MessageSourceId) -> RpcResult<Option<HandleResponse>>;
 
@@ -37,8 +40,13 @@ pub trait HandlesApi<BlockHash> {
 	#[method(name = "handles_getNextSuffixes")]
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumptiveSuffixesRequest,
+		base_handle: String,
+		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse>;
+
+	/// retrieve `MessageSourceId` for a given handle
+	#[method(name = "handles_getMsaForHandle")]
+	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -80,11 +88,23 @@ where
 
 	fn get_next_suffixes(
 		&self,
-		handle_input: PresumptiveSuffixesRequest,
+		base_handle: String,
+		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let suffixes_result = api.get_next_suffixes(&at, handle_input);
+		let handle_input: Handle = base_handle.into_bytes().try_into().unwrap();
+		let max_count = MAX_SUFFIXES_COUNT;
+		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
+		let suffixes_result = api.get_next_suffixes(&at, handle_input, count);
 		map_rpc_result(suffixes_result)
+	}
+
+	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>> {
+		let api = self.client.runtime_api();
+		let at = BlockId::hash(self.client.info().best_hash);
+		let handle_vec: Handle = display_handle.into_bytes().try_into().unwrap();
+		let result = api.get_msa_for_handle(&at, handle_vec.into());
+		map_rpc_result(result)
 	}
 }

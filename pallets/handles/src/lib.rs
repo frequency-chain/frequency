@@ -308,16 +308,16 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Claims a handle for a delegator's MSA (Message Source Account) based on the provided payload.
+		/// Claims a handle for a caller's MSA (Message Source Account) based on the provided payload.
 		/// This function performs several validations before claiming the handle, including checking
-		/// the size of the base_handle, ensuring the provider and delegator have valid MSA keys,
+		/// the size of the base_handle, ensuring the caller have valid MSA keys,
 		/// verifying the payload signature, and finally calling the internal `do_claim_handle` function
 		/// to claim the handle.
 		///
 		/// # Arguments
 		///
-		/// * `origin` - The origin of the transaction or call.
-		/// * `delegator_key` - The account ID of the delegator.
+		/// * `origin` - The origin of the caller.
+		/// * `msa_owner_key` - The public key of the MSA owner.
 		/// * `proof` - The multi-signature proof for the payload.
 		/// * `payload` - The payload containing the information needed to claim the handle.
 		///
@@ -327,14 +327,8 @@ pub mod pallet {
 		/// validations fail:
 		///
 		/// * [`Error::InvalidHandleByteLength`] - The base_handle size exceeds the maximum allowed size.
-		/// * [`Error::InvalidMessageSourceAccount`] - The provider does not have a valid MSA key.
-		/// * [`Error::InvalidMessageSourceAccount`] - The delegator does not have a valid MSA key.
+		/// * [`Error::InvalidMessageSourceAccount`] - The caller does not have a valid  `MessageSourceId`.
 		/// * [`Error::InvalidSignature`] - The payload signature verification fails.
-		///
-		/// # Events
-		///
-		/// If the handle is claimed successfully, a `HandleClaimed` event will be emitted with the
-		/// `msa_id` of the delegator's MSA and the `handle` that was claimed.
 		///
 		/// # Events
 		/// * [`Event::HandleClaimed`]
@@ -344,7 +338,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
 		pub fn claim_handle(
 			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
+			msa_owner_key: T::AccountId,
 			proof: MultiSignature,
 			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> DispatchResult {
@@ -356,40 +350,34 @@ pub mod pallet {
 				Error::<T>::InvalidHandleByteLength
 			);
 
-			// Validation: The delegator must already have a MSA id
-			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+			// Validation: caller must already have a MSA id
+			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The signature is within the mortality window
 			Self::verify_signature_mortality(payload.expiration.into())?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &delegator_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
 
-			let full_handle = Self::do_claim_handle(delegator_msa_id, payload)?;
+			let full_handle = Self::do_claim_handle(msa_id, payload)?;
 
-			Self::deposit_event(Event::HandleClaimed {
-				msa_id: delegator_msa_id,
-				handle: full_handle.clone(),
-			});
+			Self::deposit_event(Event::HandleClaimed { msa_id, handle: full_handle.clone() });
 			Ok(())
 		}
 
-		/// Retire a handle for a given delegator.
+		/// Retire a handle for a given `Handle` owner.
 		///
 		/// # Arguments
 		///
 		/// * `origin` - The origin of the call.
-		/// * `delegator_key` - The account ID of the delegator.
-		/// * `proof` - The `MultiSignature` proof for the payload.
-		/// * `payload` - The payload containing the handle to retire.
 		///
 		/// # Errors
 		///
 		/// This function can return the following errors:
 		///
 		/// * `InvalidHandleByteLength` - If the length of the `payload.full_handle` exceeds the maximum allowed size.
-		/// * `InvalidMessageSourceAccount` - If the provider or the delegator does not have a valid MSA (Message Source Account) ID.
+		/// * `InvalidMessageSourceAccount` - If caller of this extrinsic does not have a valid MSA (Message Source Account) ID.
 		///
 		/// # Events
 		/// * [`Event::HandleRetired`]
@@ -397,18 +385,15 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight((T::WeightInfo::retire_handle(), DispatchClass::Normal, Pays::No))]
 		pub fn retire_handle(origin: OriginFor<T>) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
+			let msa_owner_key = ensure_signed(origin)?;
 
-			// Validation: The delegator must already have a MSA id
-			let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+			// Validation: The caller must already have a MSA id
+			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let full_handle = Self::do_retire_handle(delegator_msa_id)?;
+			let full_handle = Self::do_retire_handle(msa_id)?;
 
-			Self::deposit_event(Event::HandleRetired {
-				msa_id: delegator_msa_id,
-				handle: full_handle,
-			});
+			Self::deposit_event(Event::HandleRetired { msa_id, handle: full_handle });
 			Ok(())
 		}
 	}
@@ -448,15 +433,15 @@ pub mod pallet {
 		/// by the `count` parameter, which is of type `u16`.
 		///
 		/// # Arguments
-		/// * `input` - The `PresumptiveSuffixesRequest` containing the handle and the number of suffixes to generate.
+		///
+		/// * `handle` - The handle to generate the next available suffixes for.
+		/// * `count` - The number of suffixes to generate.
 		///
 		/// # Returns
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
-		pub fn get_next_suffixes(input: PresumptiveSuffixesRequest) -> PresumptiveSuffixesResponse {
-			let handle = input.base_handle;
-			let count = input.count;
+		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
@@ -487,6 +472,26 @@ pub mod pallet {
 			let response =
 				PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes };
 			response
+		}
+
+		/// Retrieve a `MessageSourceId` for a given handle.
+		///
+		/// # Arguments
+		///
+		/// * `display_handle` - The full display handle to retrieve the `MessageSourceId` for.
+		///
+		/// # Returns
+		///
+		/// * `Option<MessageSourceId>` - The `MessageSourceId` if the handle is valid.
+		///
+		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+			let full_handle_str = core::str::from_utf8(&display_handle).unwrap_or("");
+			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
+			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle.try_into().unwrap();
+			let msa = Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix);
+			msa
 		}
 
 		/// Creates a full display handle by combining a base handle string with a suffix generated
@@ -546,7 +551,7 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `delegator_msa_id` - The MSA (MessageSourceId) to claim the handle for.
+		/// * `msa_id` - The MSA (MessageSourceId) to claim the handle for.
 		/// * `payload` - The payload containing the base handle to claim.
 		///
 		/// # Returns
@@ -554,12 +559,12 @@ pub mod pallet {
 		/// * `Handle` - The full display handle.
 		///
 		pub fn do_claim_handle(
-			delegator_msa_id: MessageSourceId,
+			msa_id: MessageSourceId,
 			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
-				Self::get_display_name_for_msa_id(delegator_msa_id).is_none(),
+				Self::get_display_name_for_msa_id(msa_id).is_none(),
 				Error::<T>::MSAHandleAlreadyExists
 			);
 
@@ -609,7 +614,7 @@ pub mod pallet {
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
 				canonical_handle.clone(),
 				suffix,
-				delegator_msa_id,
+				msa_id,
 			);
 			// Store canonical handle to suffix sequence index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
@@ -627,10 +632,7 @@ pub mod pallet {
 			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
 			// Store the full display handle to MSA id
-			MSAIdToDisplayName::<T>::insert(
-				delegator_msa_id,
-				(full_handle.clone(), payload.expiration),
-			);
+			MSAIdToDisplayName::<T>::insert(msa_id, (full_handle.clone(), payload.expiration));
 
 			Ok(full_handle_vec)
 		}
@@ -639,16 +641,14 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `delegator_msa_id` - The MSA (MessageSourceId) to retire the handle for.
+		/// * `msa_id` - The MSA (MessageSourceId) to retire the handle for.
 		///
 		/// # Returns
 		///
 		/// * `DispatchResult` - Returns `Ok` if the handle was successfully retired.
-		pub fn do_retire_handle(
-			delegator_msa_id: MessageSourceId,
-		) -> Result<Vec<u8>, DispatchError> {
+		pub fn do_retire_handle(msa_id: MessageSourceId) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
-			let handle_from_state = Self::get_display_name_for_msa_id(delegator_msa_id)
+			let handle_from_state = Self::get_display_name_for_msa_id(msa_id)
 				.ok_or(Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
@@ -662,7 +662,7 @@ pub mod pallet {
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
 
 			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
-			MSAIdToDisplayName::<T>::remove(delegator_msa_id);
+			MSAIdToDisplayName::<T>::remove(msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
 
 			Ok(display_name_str.as_bytes().to_vec())

@@ -10,12 +10,26 @@ export default {
       ],
       type: "Option<HandleResponse>",
     },
+    getMsaForHandle: {
+      description: "Get msa_id for a given handle",
+      params: [
+        {
+          name: "display_handle",
+          type: "String",
+        },
+      ],
+      type: "Option<MessageSourceId>",
+    },
     getNextSuffixes: {
       description: "Get next suffixes for a given handle and count",
       params: [
         {
-          name: "handle_input",
-          type: "PresumptiveSuffixesRequest",
+          name: "base_handle",
+          type: "String",
+        },
+        {
+          name: "count",
+          type: "u16",
         },
       ],
       type: "PresumptiveSuffixesResponse",
@@ -27,10 +41,6 @@ export default {
       base_handle: "String",
       canonical_handle: "String",
       suffix: "u16",
-    },
-    PresumptiveSuffixesRequest: {
-      base_handle: "String",
-      count: "u16",
     },
     PresumptiveSuffixesResponse: {
       suffixes: "Vec<HandleSuffix>",
@@ -51,12 +61,26 @@ export default {
             ],
             type: "Option<HandleResponse>",
           },
+          get_msa_for_handle: {
+            description: "Get msa_id for a given handle",
+            params: [
+              {
+                name: "display_handle",
+                type: "Vec<u8>",
+              },
+            ],
+            type: "Option<MessageSourceId>",
+          },
           get_next_suffixes: {
             description: "Get next suffixes for a given handle and count",
             params: [
               {
-                name: "handle_input",
-                type: "PresumptiveSuffixesRequest",
+                name: "base_handle",
+                type: "Vec<u8>",
+              },
+              {
+                name: "count",
+                type: "u16",
               },
             ],
             type: "PresumptiveSuffixesResponse",

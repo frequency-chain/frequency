@@ -18,7 +18,10 @@ pub const HANDLE_BASE_CHARS_MAX: u32 = 20;
 pub const HANDLE_BASE_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 /// The maximum number of digits in a suffix
 pub const SUFFIX_MAX_DIGITS: usize = 5; // The max value of a HandleSuffix (u16) is 65535 which is 5 digits.
-
+/// The maximum count of suffixes allowed to be requested at once
+pub const MAX_SUFFIXES_COUNT: u16 = 100;
+/// The default count of suffixes to request if none is provided
+pub const DEFAULT_SUFFIX_COUNT: u16 = 1;
 /// A handle (base, canonical, or display)
 pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
 
@@ -62,17 +65,6 @@ pub struct HandleResponse {
 pub trait HandleProvider {
 	/// Validate a handle for a given `MessageSourceAccount`
 	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
-}
-
-/// Input request to retrieve the next suffixes for a given handle
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
-pub struct PresumptiveSuffixesRequest {
-	/// The base handle
-	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub base_handle: Vec<u8>,
-	/// The number of suffixes to retrieve
-	pub count: u16,
 }
 
 /// Output response for retrieving the next suffixes for a given handle
