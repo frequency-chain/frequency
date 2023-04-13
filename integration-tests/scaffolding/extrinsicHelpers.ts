@@ -12,6 +12,7 @@ import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
+import type { Call } from '@polkadot/types/interfaces/runtime';
 
 export type ReleaseSchedule = {
     start: number;
@@ -94,6 +95,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
 
     private event?: IsEvent<C, N>;
     private extrinsic: () => SubmittableExtrinsic<"rxjs", T>;
+    // private call: Call;
     private keys: KeyringPair;
     public api: ApiRx;
 
@@ -129,6 +131,11 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())
         ));
+    }
+
+    public getCall(): Call {
+        const call = ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
+        return call;
     }
 
     public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
@@ -335,7 +342,7 @@ export class ExtrinsicHelper {
         let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
         return firstValueFrom(suffixes);
     }
-    
+
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
     }
@@ -354,6 +361,10 @@ export class ExtrinsicHelper {
 
     public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
+    }
+
+    public static payWithCapacityBatchAll(keys: KeyringPair, calls: Vec<Call>): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
     public static async mine() {
