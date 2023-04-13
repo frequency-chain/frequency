@@ -1364,8 +1364,8 @@ impl_runtime_apis! {
 			Handles::get_next_suffixes(base_handle.into(), count)
 		}
 
-		fn get_msa_for_handle(full_handle: Handle) -> Option<MessageSourceId> {
-			Handles::get_msa_id_for_handle(full_handle)
+		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+			Handles::get_msa_id_for_handle(display_handle)
 		}
 	}
 

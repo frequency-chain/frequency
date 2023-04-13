@@ -17,14 +17,13 @@
 //! * Homoglyph detection
 //!
 //! ## Terminology
-//! - Handle
-//! - Suffix
 //!
-//! ## Glossary
-//! - **Handle:** A handle is a unique identifier for a user. Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_handle` and a unique numeric `suffix`.
+//! Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_handle` and a unique numeric `suffix`.
+//!
 //! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
+//! - **Display Handle:** A handle is a unique identifier for a user. Display handle is `base_handle`.`suffix`.
 //! - **Canonical Handle:** A canonical handle is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
-//! - **Delimiter:** Period character (".") is reserved on Frequency to form full handle as `canonical_handle`.`suffix`.
+//! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `canonical_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
 // Ensure we're `no_std` when compiling for WASM.
@@ -181,14 +180,14 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Deposited when a handle is claimed. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is claimed. [MSA id, display handle in UTF-8 bytes]
 		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes
 			handle: Vec<u8>,
 		},
-		/// Deposited when a handle is retired. [MSA id, full handle in UTF-8 bytes]
+		/// Deposited when a handle is retired. [MSA id, display handle in UTF-8 bytes]
 		HandleRetired {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
@@ -363,9 +362,9 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
 
-			let full_handle = Self::do_claim_handle(msa_id, payload)?;
+			let display_handle = Self::do_claim_handle(msa_id, payload)?;
 
-			Self::deposit_event(Event::HandleClaimed { msa_id, handle: full_handle.clone() });
+			Self::deposit_event(Event::HandleClaimed { msa_id, handle: display_handle.clone() });
 			Ok(())
 		}
 
@@ -379,7 +378,7 @@ pub mod pallet {
 		///
 		/// This function can return the following errors:
 		///
-		/// * `InvalidHandleByteLength` - If the length of the `payload.full_handle` exceeds the maximum allowed size.
+		/// * `InvalidHandleByteLength` - If the length of the `payload.display_handle` exceeds the maximum allowed size.
 		/// * `InvalidMessageSourceAccount` - If caller of this extrinsic does not have a valid MSA (Message Source Account) ID.
 		///
 		/// # Events
@@ -394,9 +393,9 @@ pub mod pallet {
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let full_handle = Self::do_retire_handle(msa_id)?;
+			let display_handle = Self::do_retire_handle(msa_id)?;
 
-			Self::deposit_event(Event::HandleRetired { msa_id, handle: full_handle });
+			Self::deposit_event(Event::HandleRetired { msa_id, handle: display_handle });
 			Ok(())
 		}
 	}
@@ -413,16 +412,16 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let full_handle = match Self::get_display_name_for_msa_id(msa_id) {
+			let display_handle = match Self::get_display_name_for_msa_id(msa_id) {
 				Some((handle, _)) => handle,
 				_ => return None,
 			};
 			// convert to string
-			let full_handle_str = core::str::from_utf8(&full_handle)
+			let display_handle_str = core::str::from_utf8(&display_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
 				.ok()?;
 
-			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
+			let (base_handle_str, suffix) = HandleConverter::split_display_name(display_handle_str);
 			let base_handle = base_handle_str.as_bytes().to_vec();
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
@@ -490,8 +489,8 @@ pub mod pallet {
 		/// * `Option<MessageSourceId>` - The `MessageSourceId` if the handle is valid.
 		///
 		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
-			let full_handle_str = core::str::from_utf8(&display_handle).unwrap_or("");
-			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
+			let display_handle_str = core::str::from_utf8(&display_handle).unwrap_or("");
+			let (base_handle_str, suffix) = HandleConverter::split_display_name(display_handle_str);
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
@@ -525,8 +524,8 @@ pub mod pallet {
 				suffix_sequence_index as usize,
 			);
 
-			let full_handle = Self::create_full_handle(base_handle_str, suffix);
-			full_handle
+			let display_handle = Self::create_full_handle(base_handle_str, suffix);
+			display_handle
 		}
 
 		/// Creates a full display handle by combining a base handle string with supplied suffix
@@ -633,10 +632,10 @@ pub mod pallet {
 			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
-			let full_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
+			let display_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
 
 			// Store the full display handle to MSA id
-			MSAIdToDisplayName::<T>::insert(msa_id, (full_handle.clone(), payload.expiration));
+			MSAIdToDisplayName::<T>::insert(msa_id, (display_handle.clone(), payload.expiration));
 
 			Ok(full_handle_vec)
 		}

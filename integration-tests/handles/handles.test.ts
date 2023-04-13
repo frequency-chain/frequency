@@ -101,8 +101,8 @@ describe("🤝 Handles", () => {
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
 
             /// Get MSA from full display handle (rpc)
-            let full_handle = handle + "." + suffix;
-            let msa_option = await ExtrinsicHelper.getMsaForHandle(full_handle);
+            let display_handle = handle + "." + suffix;
+            let msa_option = await ExtrinsicHelper.getMsaForHandle(display_handle);
             if (!msa_option.isSome) {
                 throw new Error("msa_option should be Some");
             }

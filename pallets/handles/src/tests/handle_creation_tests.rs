@@ -10,9 +10,9 @@ fn test_full_handle_creation() {
 	new_test_ext().execute_with(|| {
 		// Min is 10, Max is 99 inclusive
 		for sequence_index in 0..89 {
-			let full_handle = Handles::create_full_handle_for_index("test", sequence_index);
-			let full_handle_str = core::str::from_utf8(&full_handle).ok().unwrap();
-			println!("full_handle_str={}", full_handle_str);
+			let display_handle = Handles::create_full_handle_for_index("test", sequence_index);
+			let display_handle_str = core::str::from_utf8(&display_handle).ok().unwrap();
+			println!("display_handle_str={}", display_handle_str);
 		}
 	})
 }
