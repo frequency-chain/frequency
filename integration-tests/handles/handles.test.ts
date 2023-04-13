@@ -110,4 +110,28 @@ describe("🤝 Handles", () => {
             assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
          });
     });
+
+    describe("👇 Negative Test: Early retire handle", () => {
+        it("should not be able to retire a handle before expiration", async function () {
+            let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
+            if (!handle_response.isSome) {
+                throw new Error("handle_response should be Some");
+            }
+            let full_handle_state = handle_response.unwrap();
+            let suffix_from_state = full_handle_state.suffix;
+            let suffix = suffix_from_state.toNumber();
+            assert.notEqual(suffix, 0, "suffix should not be 0");
+
+            let currentBlock = await getBlockNumber();
+            await ExtrinsicHelper.run_to_block(currentBlock + 10);
+            try {
+                const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
+                const [event] = await retireHandle.fundAndSend();
+                assert.equal(event, undefined, "retireHandle should not return an event");
+            }
+            catch (e) {
+                assert.notEqual(e, undefined, "retireHandle should throw an error");
+            }
+        });
+    });
 });
