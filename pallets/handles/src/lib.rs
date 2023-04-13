@@ -23,7 +23,7 @@
 //! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
 //! - **Display Handle:** A handle is a unique identifier for a user. Display handle is `base_handle`.`suffix`.
 //! - **Canonical Handle:** A canonical handle is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
-//! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `canonical_handle`.`suffix`.
+//! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `base_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
 // Ensure we're `no_std` when compiling for WASM.
