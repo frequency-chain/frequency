@@ -199,15 +199,13 @@ Adjust reward amounts. This is why the reward amounts need to be adjustable.
 
 ## Alternatives and Rationale:
 
-### 1. Providers simply purchase capacity without staking (locking token balance)
-### 2. Accounts stake only for token and/or to be collators
-### 3. Only Simple Rewards staking type
-### 4. Rewards are accounted for periodically all together, at once.
+### 1. Rewards are accounted for periodically all together, at once.
 this puts an extreme burden on one or more blocks due to storage updates.
-### 5. At least some portion of rewards are accounted for every block; all rewards are updated for all stakers within the Era.
+### 2. At least some portion of rewards are accounted for every block; all rewards are updated for all stakers within the Era.
 This effectively creates a constant overhead, but this approach causes much heavier blocks than the chosen solution.
-### 6. Stakers for a given Provider could be "lazily" rewarded at the same time a Provider posts a new message at the beginning of an Epoch.  This presents a problem if a Provider does not post every Epoch, especially if the Rewards Era is less than or equal to an Epoch.  This will also put a lot of extra weight on blocks at the beginning of every Epoch.
-### 7. Pay rewards out every time there is a change for a given token staking account, or a change in Rewards parameters.
+### 3. Stakers for a given Provider could be "lazily" rewarded at the same time a Provider posts a new message at the beginning of an Epoch.
+This presents a problem if a Provider does not post every Epoch, especially if the Rewards Era is less than or equal to an Epoch.  This will also put a lot of extra weight on blocks at the beginning of every Epoch.
+### 4. Pay rewards out every time there is a change for a given token staking account, or a change in Rewards parameters.
 Since the only thing that changes staking rewards is the `StakingAccountDetails.total`, unless the Rewards calculation changes, we don't need to do a sweep unless the staker changes their total, either through staking more or unstaking.  This minimizes the average block burden significantly, however, occasionally, when the Rewards calculation changes, block time will be slower for the next Era due to rewards payouts.
 
 ### Why can't Frequency use Substrate `staking` pallet?
