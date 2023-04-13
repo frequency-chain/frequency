@@ -86,21 +86,6 @@ impl HandleConverter {
 		(base_handle_str, suffix_num)
 	}
 
-	/// Converts a string into a handle.
-	///
-	/// # Arguments
-	///
-	/// * `input_str` - A string slice that holds the input to be converted.
-	///
-	/// # Returns
-	///
-	/// A `Handle` instance.
-	pub fn convert_str_to_handle(input_str: &str) -> Handle {
-		let input_vec = input_str.as_bytes().to_vec();
-		let handle: Handle = input_vec.try_into().unwrap();
-		handle
-	}
-
 	/// Strips any Unicode whitespace characters from the provided string and returns the resulting string.
 	///
 	/// # Arguments
