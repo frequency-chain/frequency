@@ -79,11 +79,13 @@ The difference is:
 * With **Rewards + Capacity Staking**, the target Provider shares rewards with the staker.
   The target Provider receives some Capacity, and the staker receives periodic rewards in FRQCY.
 
-Whenever `StakingAccountDetails.total` changes, either by staking more or unstaking, rewards are calculated, minted and transferred immediately.  `StakingAccountDetails.total` is updated to be the current era.  Rewards are paid out from `last_rewarded_at` to `current_era() - 1` by applying the RewardsPoolParameters to each Era.
+
+Whenever `StakingAccountDetails.total` changes, either by staking more or unstaking, rewards are calculated, minted and transferred immediately.  Rewards may also be claimed directly for a specific AccountId by calling an extrinsic. In either case, `StakingAccountDetails.total` is updated to be the current era.  Rewards are paid out from `last_rewarded_at` to `current_era() - 1` by applying the RewardsPoolParameters to each Era.
+
 
 Whenever a Rewards Pool calculation is changed, it goes into effect at the start of the next Era. The new Rewards parameters are pushed to storage, and, assuming the history queue is full, the oldest one is removed.
 
-A special condition of this is a blend of the above:  some staking accounts are large enough that if their balance changes significantly, it can affect the Reward Pool significantly for all staking accounts.  We choose to
+A special condition of this is a blend of the above:  some staking accounts could be large enough that if their staking balance changes significantly, it also affects the Reward Pool significantly for all staking accounts.  Such accounts are called "whales" in blockchain jargon.  We deem "significant" change as greater than or equal to one hundredth of a percent (0.01%), rounded.  If so, a new set of Rewards parameters is pushed.  We _may_ need to extend the thaw period for a staking account when their unstaking will cause a RewardsPool history push, in order to strongly reduce incentives for staking/unstaking spam.
 
 ## Staking Token Rewards
 
@@ -102,7 +104,7 @@ pub struct StakingAccountDetails {
 ### New storage items and related types
 
 #### RewardsPoolHistory and RewardsPoolParameters
-We store changes to the Rewards Pool calculations when any change occurs that affects the Rewards Pool greater than or equal to a hundredth of a percent (0.01%), rounded up, or when Rewards Pool Parameters are changed.
+We store changes to the Rewards Pool calculations when any change occurs that affects the Rewards Pool greater than or equal to a hundredth of a percent (0.01%), rounded, or when Rewards Pool Parameters are changed.
 
 **Toy Example:**
 Let's assume a simple reward pool calculation relates to total token staked and the number of stakers, multiplied by some constant:
@@ -113,7 +115,7 @@ RewardPoolTokenAmount = (TotalToken + 1000*NumStakers)
 ```
 Say total staked token is 100k FRQCY, there are 25 stakers, and Moby staker has staked 20k FRQCY.  The reward pool starts at 125k/100k  = 1.25 FRQCY to spread among 25 stakers based on their stake.
 
-Moby account unstakes 10k FRQCY, which drops staked token by 10%.  The new reward pool is (90,000 + 25,000) / 100,000 = 1.15 FRQCY to spread among the stakers.  This causes the Reward Pool to go down by 12%, which is much larger than 0.01%), so a new entry is pushed into the RewardPool history.
+Moby account unstakes 10k FRQCY, which drops staked token by 10%.  The new reward pool is (90,000 + 25,000) / 100,000 = 1.15 FRQCY to spread among the stakers.  This causes the Reward Pool to go down by 12%, i.e. >0.01%, so a new entry is pushed into the RewardPool history.
 
 ```rust
 /// A queue of the last `RewardsPoolHistoryMaxDepth` RewardsPoolParameters.
@@ -148,7 +150,8 @@ pub struct RewardsPoolParameters<T: CapacityConfig> {
 * `change_reward_rate(origin, rate)`: governance-only
 * `change _reward_frequency(origin, period)`: governance-only
 * `change_staking_type(origin, target, new_type)`
-* `change_target(origin, old_target, new_target)`:
+* `change_target(origin, old_target, new_target)`
+* `claim_staking_reward(origin)`
 
 ### Capacity Pallet helper functions
 * `participation_rate`: function, calculates participation using some combination of Total amount staked, reward Pool Token Size, the number of providers, the provider capacity amount (total?), individual amount staked (for individual reward amount only)
@@ -156,7 +159,7 @@ pub struct RewardsPoolParameters<T: CapacityConfig> {
 * `pay_reward`: function,
 
 ### RPC
-* `unclaimed_staking_reward()`: caller can query unclaimed staking reward.
+* `unclaimed_staking_reward(account_id: AccountId) -> BalanceOf<T>`: caller can query the unclaimed staking reward for a given AccountId.
 
 ### Other functions
 * `change_staking_type`:  a function on StakingAccountDetails  (? maybe you have to unstake and restake to do this)
