@@ -56,7 +56,7 @@ There are many possible calculations but here are some ideas about what factors 
 * Allow staking rewards parameters to be adjusted without a chain upgrade.
 * Prevent rewards storage operations and calculations from excessively weighing down blocks.
 * Disallow receiving staking rewards for token that is not staked for a full Era.
-* Prevent unstaking "spam" which would destabilize the chain token economy and slow down block formation due to excessive database read/writes.
+* Prevent staking and unstaking "spam" which would destabilize the chain token economy and slow down block formation due to excessive database read/writes.
 * Create a living design document that changes as compelling new findings and needs arise
 
 ## Non-goals
