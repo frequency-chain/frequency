@@ -50,7 +50,7 @@ User handle ```registry``` on Frequency chain.
 * For each base handle requested, a storage map will be created with a randomly generated start index (in to the shuffled array) and a current index.  The current index will be incremented each time a new suffix is requested.
 * When the current index reaches the start index, all suffixes are exhausted and an error is returned.
 * Query the chain to check which values are available, check if the handle with the suffix is available.
-* Choose an available value and attempt to claim it by submitting the full handle with the suffix to the chain.
+* Choose an available value and attempt to claim it by submitting the display handle with the suffix to the chain.
 * Chain validates the handle and suffix and maps the handle to the ```msa_id```.
 * Chain maintains a reverse mapping from handle to msa for offchain use.
 
@@ -117,7 +117,7 @@ sequenceDiagram
 
 ### **Notes:**
 
-* The handle being mapped to MSA ID is the handle with the suffix i.e. full handle.
+* The handle being mapped to MSA ID is the handle with the suffix i.e. display handle.
 * Side note. While this is correct, we would want to store the key of **UserHandlesToMSAId** as either the reduced handle (aka post homoglyph replacement) or the hash of the reduced handle.
 
 * Idea around **RetiredHandles**: We could store this in the UserHandlesToMSAId data as "retired" with the block number it retired on. (That way it is merely waiting for current_block > (retire_block + HandleRetirementPeriod))
@@ -137,7 +137,7 @@ display_handle is the handle that the user wants to use. This is the handle that
 
 ### Create user handle with chosen handle
 
- As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The full handle will be the handle with the suffix.
+ As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the handle with the suffix.
 
 ``` rust
 Input
@@ -272,7 +272,7 @@ Output
 
 ## RPCs
 
-* RPC to get the full handle (handle + suffix) given a ```msa_id```.
+* RPC to get the display handle (handle + suffix) given a ```msa_id```.
 * RPC to get the current seed (more of a chain utility for general use).
 * RPC to get a set of available suffixes given a handle (Not important for v1, however nice to have)
 
