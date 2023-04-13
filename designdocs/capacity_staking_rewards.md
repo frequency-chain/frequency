@@ -198,8 +198,6 @@ Adjust reward amounts. This is why the reward amounts need to be adjustable.
 [//]: # (Another: the solution is well known and widely used, but it's not a perfect fit and requires complicated changes in one area.)
 
 ## Alternatives and Rationale:
-If Frequency were to wait until a withdrawal to calculate rewards, it would make accounting extremely complicated; since account holders may adjust their stake up or down, the chain would have to keep a ledger of amounts for every staking reward period, and if the reward rates change, that makes it even more complicated.  Rewards may not be applied off-chain, since token balances and staking rewards are part of consensus, and must be validatable.
-
 
 ### 1. Providers simply purchase capacity without staking (locking token balance)
 ### 2. Accounts stake only for token and/or to be collators
