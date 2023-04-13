@@ -36,6 +36,9 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+extern crate alloc;
+
+use alloc::string::String;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -421,9 +424,10 @@ pub mod pallet {
 
 			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
 			let base_handle = base_handle_str.as_bytes().to_vec();
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
-			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
-			Some(HandleResponse { base_handle, suffix, canonical_handle })
+			// Convert base handle into a canonical handle
+			let (_, canonical_handle) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+			Some(HandleResponse { base_handle, suffix, canonical_handle: canonical_handle.into() })
 		}
 
 		/// Get the next available suffixes for a given handle.
@@ -446,9 +450,10 @@ pub mod pallet {
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
 
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			// Convert base handle into a canonical handle
+			let (canonical_handle_str, canonical_handle) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
@@ -487,9 +492,9 @@ pub mod pallet {
 		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
 			let full_handle_str = core::str::from_utf8(&display_handle).unwrap_or("");
 			let (base_handle_str, suffix) = HandleConverter::split_display_name(full_handle_str);
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
-			let canonical_handle = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle.try_into().unwrap();
+			// Convert base handle into a canonical handle
+			let (_, canonical_handle) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 			let msa = Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix);
 			msa
 		}
@@ -511,7 +516,7 @@ pub mod pallet {
 			base_handle_str: &str,
 			suffix_sequence_index: SequenceIndex,
 		) -> Vec<u8> {
-			// Convert base display handle into a canonical display handle
+			// Convert base handle into a canonical handle
 			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
 
 			// Generate suffix from index into the suffix sequence
@@ -597,10 +602,9 @@ pub mod pallet {
 				Error::<T>::HandleContainsBlockedCharacters
 			);
 
-			// Convert base display handle into a canonical display handle
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			// Convert base handle into a canonical handle
+			let (canonical_handle_str, canonical_handle) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
@@ -657,15 +661,23 @@ pub mod pallet {
 			let (base_handle_str, suffix_num) =
 				HandleConverter::split_display_name(display_name_str);
 
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
-			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap();
+			// Convert base handle into a canonical handle
+			let (_, canonical_handle) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
 			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
 			MSAIdToDisplayName::<T>::remove(msa_id);
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
 
 			Ok(display_name_str.as_bytes().to_vec())
+		}
+
+		/// Converts a base handle to a canonical handle.
+		fn get_canonical_string_vec_from_base_handle(base_handle_str: &str) -> (String, Handle) {
+			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
+			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
+			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap_or_default();
+			(canonical_handle_str, canonical_handle)
 		}
 	}
 }
