@@ -1,8 +1,6 @@
 use crate as pallet_capacity;
 
 use common_primitives::{
-	handles::{HandleProvider, HandleResponse},
-	msa::MessageSourceId,
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -137,21 +135,6 @@ impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
-pub struct MockHandleProvider;
-impl HandleProvider for MockHandleProvider {
-	fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-		if msa_id == 1 {
-			Some(HandleResponse {
-				base_handle: "test1".into(),
-				canonical_handle: "test1".into(),
-				suffix: 2u16,
-			})
-		} else {
-			None
-		}
-	}
-}
-
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -160,7 +143,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = ConstU32<16>;
 	type SchemaValidator = Schemas;
-	type HandleProvider = MockHandleProvider;
+	type HandleProvider = ();
 	type MortalityWindowSize = ConstU32<100>;
 	type Proposal = RuntimeCall;
 	type ProposalProvider = CouncilProposalProvider;

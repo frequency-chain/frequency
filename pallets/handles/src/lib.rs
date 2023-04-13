@@ -36,12 +36,18 @@
 )]
 extern crate alloc;
 
-use alloc::string::String;
+use alloc::{string::String, vec};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-use handles_utils::{converter::HandleConverter, validator::HandleValidator};
+use handles_utils::{
+	converter::{convert_to_canonical, split_display_name, HANDLE_DELIMITER},
+	validator::{
+		consists_of_supported_unicode_character_sets, contains_blocked_characters,
+		is_reserved_handle,
+	},
+};
 
 #[cfg(test)]
 mod tests;
@@ -174,6 +180,8 @@ pub mod pallet {
 		ProofNotYetValid,
 		/// The handle is still in mortaility window
 		HandleWithinMortalityPeriod,
+		/// The handle is invalid
+		InvalidHandle,
 	}
 
 	#[pallet::event]
@@ -423,7 +431,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)
 				.ok()?;
 
-			let (base_handle_str, suffix) = HandleConverter::split_display_name(display_handle_str);
+			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
 			let base_handle = base_handle_str.as_bytes().to_vec();
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
@@ -492,7 +500,7 @@ pub mod pallet {
 		///
 		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
 			let display_handle_str = core::str::from_utf8(&display_handle).unwrap_or_default();
-			let (base_handle_str, suffix) = HandleConverter::split_display_name(display_handle_str);
+			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
@@ -518,7 +526,7 @@ pub mod pallet {
 			suffix_sequence_index: SequenceIndex,
 		) -> Vec<u8> {
 			// Convert base handle into a canonical handle
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = convert_to_canonical(&base_handle_str);
 
 			// Generate suffix from index into the suffix sequence
 			let suffix = Self::generate_suffix_for_canonical_handle(
@@ -527,29 +535,8 @@ pub mod pallet {
 			)
 			.unwrap_or_default();
 
-			Self::create_full_handle(base_handle_str, suffix)
-		}
-
-		/// Creates a full display handle by combining a base handle string with supplied suffix
-		///
-		/// # Arguments
-		///
-		/// * `base_handle_str` - The base handle string.
-		/// * `suffix` - The numeric suffix .
-		///
-		/// # Returns
-		///
-		/// * `Handle` - The full display handle.
-		///
-		#[cfg(test)]
-		pub fn create_full_handle(base_handle_str: &str, suffix: HandleSuffix) -> Vec<u8> {
-			// Compose the full display handle from the base handle, "." delimiter and suffix
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b"."); // The delimiter
-			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-			full_handle_vec
+			let display_handle = Self::build_full_display_handle(base_handle_str, suffix).unwrap();
+			display_handle.into_inner()
 		}
 
 		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
@@ -574,34 +561,7 @@ pub mod pallet {
 				Error::<T>::MSAHandleAlreadyExists
 			);
 
-			// Convert base handle to UTF-8 string slice while validating.
-			let base_handle_str = core::str::from_utf8(&payload.base_handle)
-				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
-
-			// Validation: The handle length must be valid.
-			// Note: the count() can panic but won't because the base_handle byte length is already checked
-			let len = base_handle_str.chars().count() as u32;
-
-			// Validation: Handle character length must be within range
-			ensure!(
-				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
-				Error::<T>::InvalidHandleCharacterLength
-			);
-
-			// Validation: The handle must consist of characters not containing reserved words or blocked characters
-			let handle_validator = HandleValidator::new();
-			ensure!(
-				handle_validator.consists_of_supported_unicode_character_sets(base_handle_str),
-				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
-			);
-			ensure!(
-				!handle_validator.is_reserved_handle(base_handle_str),
-				Error::<T>::HandleIsNotAllowed
-			);
-			ensure!(
-				!handle_validator.contains_blocked_characters(base_handle_str),
-				Error::<T>::HandleContainsBlockedCharacters
-			);
+			let base_handle_str = Self::validate_base_handle(payload.base_handle)?;
 
 			// Convert base handle into a canonical handle
 			let (canonical_handle_str, canonical_handle) =
@@ -610,10 +570,13 @@ pub mod pallet {
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())?;
+
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
 			)?;
+
+			let display_handle = Self::build_full_display_handle(&base_handle_str, suffix)?;
 
 			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
@@ -627,19 +590,62 @@ pub mod pallet {
 				Some(suffix_sequence_index),
 			);
 
-			// Compose the full display handle from the base handle, "." delimiter and suffix
-			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle_str.as_bytes());
-			full_handle_vec.extend(b"."); // The delimiter
-			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
-			full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
-
-			let display_handle: Handle = full_handle_vec.clone().try_into().ok().unwrap();
-
 			// Store the full display handle to MSA id
 			MSAIdToDisplayName::<T>::insert(msa_id, (display_handle.clone(), payload.expiration));
 
-			Ok(full_handle_vec)
+			Ok(display_handle.into_inner())
+		}
+
+		/// Checks that handle base string is valid
+		fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
+			// Convert base handle to UTF-8 string slice while validating.
+			let base_handle_str =
+				String::from_utf8(base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+
+			// Validation: The handle length must be valid.
+			// Note: the count() can panic but won't because the base_handle byte length is already checked
+			let len = base_handle_str.chars().count() as u32;
+
+			// Validation: Handle character length must be within range
+			ensure!(
+				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
+				Error::<T>::InvalidHandleCharacterLength
+			);
+			// Validation: The handle must consist of characters not containing reserved words or blocked characters
+			ensure!(
+				consists_of_supported_unicode_character_sets(&base_handle_str),
+				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
+			);
+			ensure!(!is_reserved_handle(&base_handle_str), Error::<T>::HandleIsNotAllowed);
+			ensure!(
+				!contains_blocked_characters(&base_handle_str),
+				Error::<T>::HandleContainsBlockedCharacters
+			);
+			Ok(base_handle_str)
+		}
+
+		/// Creates a full display handle by combining a base handle string with supplied suffix
+		///
+		/// # Arguments
+		///
+		/// * `base_handle_str` - The base handle string.
+		/// * `suffix` - The numeric suffix .
+		///
+		/// # Returns
+		///
+		/// * `Handle` - The full display handle.
+		///
+		fn build_full_display_handle(
+			base_handle: &str,
+			suffix: HandleSuffix,
+		) -> Result<Handle, DispatchError> {
+			let mut full_handle_vec: Vec<u8> = vec![];
+			full_handle_vec.extend(base_handle.as_bytes());
+			full_handle_vec.push(HANDLE_DELIMITER as u8); // The delimiter
+			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
+			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
+			let res = full_handle_vec.try_into().map_err(|_| Error::<T>::InvalidHandleEncoding)?;
+			Ok(res)
 		}
 
 		/// Retires a handle associated with a given MessageSourceId (MSA) in the dispatch module.
@@ -660,7 +666,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
 
 			let (base_handle_str, suffix_num) =
-				HandleConverter::split_display_name(display_name_str);
+				split_display_name(display_name_str).ok_or(Error::<T>::InvalidHandle)?;
 
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
@@ -675,7 +681,7 @@ pub mod pallet {
 
 		/// Converts a base handle to a canonical handle.
 		fn get_canonical_string_vec_from_base_handle(base_handle_str: &str) -> (String, Handle) {
-			let canonical_handle_str = HandleConverter::convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap_or_default();
 			(canonical_handle_str, canonical_handle)
