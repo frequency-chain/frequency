@@ -450,7 +450,7 @@ pub mod pallet {
 		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
-			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or("");
+			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
 			// Convert base handle into a canonical handle
 			let (canonical_handle_str, canonical_handle) =
