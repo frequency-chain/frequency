@@ -26,7 +26,6 @@
 //! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `base_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
-// Ensure we're `no_std` when compiling for WASM.
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
 #![deny(
