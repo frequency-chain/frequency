@@ -184,7 +184,7 @@ pub mod pallet {
 		HandleClaimed {
 			/// MSA id of handle owner
 			msa_id: MessageSourceId,
-			/// UTF-8 string in bytes
+			/// UTF-8 string in bytes of the display handle
 			handle: Vec<u8>,
 		},
 		/// Deposited when a handle is retired. [MSA id, display handle in UTF-8 bytes]
