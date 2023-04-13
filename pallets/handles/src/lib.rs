@@ -297,14 +297,17 @@ pub mod pallet {
 		fn generate_suffix_for_canonical_handle(
 			canonical_handle: &str,
 			cursor: usize,
-		) -> HandleSuffix {
+		) -> Result<u16, DispatchError> {
 			let mut suffix_generator = SuffixGenerator::new(
 				T::HandleSuffixMin::get() as usize,
 				T::HandleSuffixMax::get() as usize,
 				&canonical_handle,
 			);
-			let sequence: Vec<usize> = suffix_generator.suffix_iter().collect();
-			sequence[cursor] as HandleSuffix
+			let suffix_option = suffix_generator.suffix_iter().nth(cursor);
+			match suffix_option {
+				Some(suffix) => Ok(suffix as u16),
+				None => Err(Error::<T>::SuffixesExhausted.into()),
+			}
 		}
 	}
 
@@ -522,7 +525,8 @@ pub mod pallet {
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
-			);
+			)
+			.unwrap_or_default();
 
 			let display_handle = Self::create_full_handle(base_handle_str, suffix);
 			display_handle
@@ -611,7 +615,7 @@ pub mod pallet {
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
 				suffix_sequence_index as usize,
-			);
+			)?;
 
 			// Store canonical handle and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
