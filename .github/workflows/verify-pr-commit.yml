@@ -717,20 +717,28 @@ jobs:
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
 
-  run-benchmarks:
-    name: Run Benchmarks
-    runs-on: [self-hosted, Linux, X64, benchmark]
+  should-run-benchmarks:
     if: github.repository == 'LibertyDSNP/frequency'
+    name: Run Benchmarks?
+    runs-on: ubuntu-20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
+    outputs:
+      should_run_benchmarks: ${{steps.run-benchmarks.outputs.run}}
+      pallets: ${{steps.run-benchmarks.outputs.pallets}}
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y git
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
-          token: ${{ secrets.GHA_GIT_COMMIT || github.token }}
           ref: ${{github.event.pull_request.head.sha}}
       - name: Run Benchmarks?
         id: run-benchmarks
         shell: bash
         run: |
+          git config --global --add safe.directory /__w/frequency/frequency
           commit_message=$(git show -s --format=%s)
           echo "commit_message: $commit_message"
           regex='\[run-benchmarks (.*)\]$'
@@ -738,22 +746,33 @@ jobs:
             echo "Need to run benchmarks."
             pallets="${BASH_REMATCH[1]}"
             echo "Pallets: $pallets"
-            echo "RUN_BENCHMARKS=true" >> $GITHUB_ENV
+            echo "run=true" >> $GITHUB_OUTPUT
             echo "pallets=$pallets" >> $GITHUB_OUTPUT
           else
             echo "Do not need to run benchmarks."
-            echo "RUN_BENCHMARKS=false" >> $GITHUB_ENV
+            echo "run=false" >> $GITHUB_OUTPUT
             exit 0
           fi
+
+  run-benchmarks:
+    if: github.repository == 'LibertyDSNP/frequency' &&
+      needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
+    needs: should-run-benchmarks
+    name: Run Benchmarks
+    runs-on: [self-hosted, Linux, X64, benchmark]
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
+          ref: ${{github.event.pull_request.head.sha}}
       - name: Get Current Job Log URL
         id: jobs
-        if: env.RUN_BENCHMARKS == 'true'
         uses: Tiryoh/gha-jobid-action@603885a199c331cc2f828bcebeb1c4a275f4d6e1
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           job_name: "Run Benchmarks"
       - name: Set PR Commit Status to Pending
-        if: env.RUN_BENCHMARKS == 'true'
         uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
         with:
           name: "GithubActions - Run Benchmarks"
@@ -764,17 +783,14 @@ jobs:
             and calculating weights. DO NOT MERGE! A new commit will be added upon completion...
           failComment: "ERROR: Failed to set PR commit to pending status!"
       - name: Install Required Packages
-        if: env.RUN_BENCHMARKS == 'true'
         run: |
           sudo apt-get update
           sudo apt install -y protobuf-compiler libclang-dev
       - name: Install Rust Toolchain
-        if: env.RUN_BENCHMARKS == 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           toolchain: stable
       - name: Update Weights
-        if: env.RUN_BENCHMARKS == 'true'
         run: |
           set -x
           pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
@@ -789,12 +805,10 @@ jobs:
               echo "Finished benchmarks for pallets: ${pallets[*]}."
           fi
       - name: Print Updated Weights
-        if: env.RUN_BENCHMARKS == 'true'
         run: |
           git status
           git diff
       - name: Commit Updated Weights
-        if: env.RUN_BENCHMARKS == 'true'
         id: commit-updated-weights
         uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
         with:
@@ -803,7 +817,6 @@ jobs:
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
       - name: Set PR Commit Status to Success
-        if: env.RUN_BENCHMARKS == 'true'
         uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
         with:
           name: "GithubActions - Run Benchmarks"
