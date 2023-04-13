@@ -528,8 +528,7 @@ pub mod pallet {
 			)
 			.unwrap_or_default();
 
-			let display_handle = Self::create_full_handle(base_handle_str, suffix);
-			display_handle
+			Self::create_full_handle(base_handle_str, suffix)
 		}
 
 		/// Creates a full display handle by combining a base handle string with supplied suffix
