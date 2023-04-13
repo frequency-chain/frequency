@@ -1,4 +1,6 @@
-use crate::converter::HandleConverter;
+use crate::converter::{
+	replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
+};
 
 use std::{
 	fs::File,
@@ -18,7 +20,7 @@ fn test_replace_confusables() {
 		// that each subsequent character may be confused with
 		let first_character = original_line.chars().next().unwrap();
 
-		let normalized_line = HandleConverter::replace_confusables(&original_line);
+		let normalized_line = replace_confusables(&original_line);
 		for normalized_character in normalized_line.chars() {
 			let normalized_character_codepoint =
 				format!("\'\\u{{{:x}}}\'", normalized_character as u32);
@@ -33,7 +35,7 @@ fn test_replace_confusables() {
 #[test]
 fn test_strip_diacriticals() {
 	let diacritical_string = "ÄÅÖäåöĂăĔĚĕĞğģĬĭŎŏŬǓŭàáâñ";
-	let stripped_string = HandleConverter::strip_diacriticals(diacritical_string);
+	let stripped_string = strip_diacriticals(diacritical_string);
 	assert_eq!(stripped_string, "AAOaaoAaEEeGggIiOoUUuaaan");
 }
 
@@ -71,8 +73,29 @@ fn test_strip_unicode_whitespace() {
 		format_args!("{}hello{}world!{}", whitespace_string, whitespace_string, whitespace_string)
 			.to_string();
 	println!("String with whitespace: {}", string_with_whitespace);
-	let whitespace_stripped_string =
-		HandleConverter::strip_unicode_whitespace(&string_with_whitespace);
+	let whitespace_stripped_string = strip_unicode_whitespace(&string_with_whitespace);
 	println!("Whitespace stripped string: {}", whitespace_stripped_string);
 	assert_eq!(whitespace_stripped_string, "helloworld!");
+}
+
+#[test]
+fn test_split_display_name_success() {
+	assert_eq!(split_display_name("hello.123"), Some((String::from("hello"), 123u16)));
+	assert_eq!(split_display_name("hello.0"), Some((String::from("hello"), 0)));
+	assert_eq!(split_display_name("español.123"), Some((String::from("español"), 123)));
+	assert_eq!(split_display_name("日本語.123"), Some((String::from("日本語"), 123)));
+}
+
+#[test]
+fn test_split_display_name_failure() {
+	assert_eq!(split_display_name("hello123"), None);
+	assert_eq!(split_display_name("hello.-123"), None);
+	assert_eq!(split_display_name("hello.abc"), None);
+	assert_eq!(split_display_name("hello.abc123"), None);
+	assert_eq!(split_display_name("hello.12.3"), None);
+	assert_eq!(split_display_name("hello."), None);
+	assert_eq!(split_display_name("hello.0xffff"), None);
+	// u16::MAX + 1
+	assert_eq!(split_display_name("hello.65536"), None);
+	assert_eq!(split_display_name("hello.999999999"), None);
 }

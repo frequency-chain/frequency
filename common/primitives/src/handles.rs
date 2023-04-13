@@ -67,6 +67,13 @@ pub trait HandleProvider {
 	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
 }
 
+/// Blanket implementation for testing.
+impl HandleProvider for () {
+	fn get_handle_for_msa(_key: MessageSourceId) -> Option<HandleResponse> {
+		None
+	}
+}
+
 /// Output response for retrieving the next suffixes for a given handle
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
