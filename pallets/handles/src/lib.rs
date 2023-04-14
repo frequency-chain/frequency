@@ -43,6 +43,7 @@ mod benchmarking;
 
 use handles_utils::{
 	converter::{convert_to_canonical, split_display_name, HANDLE_DELIMITER},
+	suffix::generate_unique_suffixes,
 	validator::{
 		consists_of_supported_unicode_character_sets, contains_blocked_characters,
 		is_reserved_handle,
@@ -72,8 +73,6 @@ use sp_std::{prelude::*, vec::Vec};
 
 pub mod handles_signed_extension;
 
-pub mod suffix;
-use suffix::generate_unique_suffixes;
 pub mod weights;
 pub use weights::*;
 

@@ -6,7 +6,8 @@
 use core::ops::RangeInclusive;
 
 /// Reserved words that cannot be used as the handle.
-const RESERVED_WORDS: [&str; 3] = ["admin", "everyone", "all"];
+const RESERVED_WORDS: [&str; 8] =
+	["admin", "everyone", "all", "administrator", "mod", "moderator", "here", "channel"];
 /// Characters that cannot be used in the handle.
 const BLOCKED_CHARACTERS: [char; 5] = ['@', '#', ':', '.', '`'];
 /// Character that are allowed.

@@ -3,11 +3,11 @@
 //! `suffix_generator` provides a `SuffixGenerator` struct to generate unique suffix sequences for a given range
 //! and seed, excluding already used suffixes.
 
-use core::hash::Hasher;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
-use sp_std::vec::Vec;
 use twox_hash::XxHash64;
-
+extern crate alloc;
+use alloc::vec::Vec;
+use core::hash::Hasher;
 /// Generate a unique, shuffled suffix iterator.
 ///
 /// # Returns
@@ -17,13 +17,11 @@ use twox_hash::XxHash64;
 /// # Examples
 ///
 /// ```
-///  use pallet_handles::suffix::generate_unique_suffixes;
-///
 /// let min = 100;
 /// let max = 150;
 /// let canonical_base = "myhandle";
 ///
-/// let lazy_sequence = generate_unique_suffixes(min, max, canonical_base);
+/// let lazy_sequence = handles_utils::suffix::generate_unique_suffixes(min, max, canonical_base);
 /// let suffixes: Vec<u16> = lazy_sequence.collect();
 /// ```
 ///
@@ -59,11 +57,9 @@ pub fn generate_unique_suffixes(
 ///
 /// # Examples
 /// ```
-///  use pallet_handles::suffix::generate_seed;
-///
 /// let canonical_base = "myuser";
 ///
-/// let seed = generate_seed(canonical_base);
+/// let seed = handles_utils::suffix::generate_seed(canonical_base);
 /// ```
 pub fn generate_seed(canonical_base: &str) -> u64 {
 	let mut hasher = XxHash64::with_seed(0);

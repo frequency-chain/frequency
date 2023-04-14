@@ -4,7 +4,8 @@ use crate::validator::{
 
 #[test]
 fn test_is_reserved_handle_happy_path() {
-	let reserved_handles: Vec<&str> = vec!["admin", "everyone", "all"];
+	let reserved_handles: Vec<&str> =
+		vec!["admin", "everyone", "all", "mod", "moderator", "administrator", "here", "channel"];
 
 	for handle in reserved_handles {
 		assert!(is_reserved_handle(handle));

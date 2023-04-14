@@ -11,6 +11,7 @@
 
 pub mod confusables;
 pub mod converter;
+pub mod suffix;
 mod types;
 pub mod validator;
 
