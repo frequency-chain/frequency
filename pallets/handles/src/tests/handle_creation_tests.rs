@@ -233,7 +233,7 @@ fn test_get_next_suffixes() {
 		assert_eq!(base_handle, "test1".as_bytes().to_vec());
 		let suffix = handle_result.suffix;
 		assert!(suffix > 0);
-		let next_suffixes = Handles::get_next_suffixes(base_handle.clone(), 5);
+		let next_suffixes = Handles::get_next_suffixes(base_handle.try_into().unwrap(), 5);
 		assert_eq!(next_suffixes.suffixes.len(), 5);
 		let mut presumptive_suffixes = BTreeSet::new();
 		for suffix in next_suffixes.suffixes {
