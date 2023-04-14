@@ -305,14 +305,13 @@ pub mod pallet {
 			canonical_base: &str,
 			cursor: usize,
 		) -> Result<u16, DispatchError> {
-			match generate_unique_suffixes(
+			let mut lazy_suffix_sequence = generate_unique_suffixes(
 				T::HandleSuffixMin::get(),
 				T::HandleSuffixMax::get(),
 				&canonical_base,
-			)
-			.get(cursor)
-			{
-				Some(val) => Ok(*val),
+			);
+			match lazy_suffix_sequence.nth(cursor) {
+				Some(suffix) => Ok(suffix),
 				None => Err(Error::<T>::SuffixesExhausted.into()),
 			}
 		}
@@ -466,25 +465,24 @@ pub mod pallet {
 				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())
 					.unwrap_or_default();
 
-			let sequence = generate_unique_suffixes(
+			let lazy_suffix_sequence = generate_unique_suffixes(
 				T::HandleSuffixMin::get(),
 				T::HandleSuffixMax::get(),
 				&canonical_handle_str,
-			);
+			)
+			.enumerate();
 
 			let mut suffixes: Vec<HandleSuffix> = vec![];
 
-			for (i, suffix) in sequence.iter().enumerate() {
+			for (i, suffix) in lazy_suffix_sequence {
 				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
-					suffixes.push(*suffix);
+					suffixes.push(suffix);
 				}
 				if suffixes.len() == count as usize {
 					break
 				}
 			}
-			let response =
-				PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes };
-			response
+			PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes }
 		}
 
 		/// Retrieve a `MessageSourceId` for a given handle.

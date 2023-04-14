@@ -23,25 +23,28 @@ use twox_hash::XxHash64;
 /// let max = 150;
 /// let canonical_base = "myhandle";
 ///
-/// let sequence: Vec<u16> = generate_unique_suffixes(min, max, canonical_base);
+/// let lazy_sequence = generate_unique_suffixes(min, max, canonical_base);
+/// let suffixes: Vec<u16> = lazy_sequence.collect();
 /// ```
 ///
 /// This will output a unique, shuffled sequence of suffixes.
-pub fn generate_unique_suffixes(min: u16, max: u16, canonical_base: &str) -> Vec<u16> {
+/// Note: This is a lazy iterator, so it will not be evaluated until it is consumed.
+pub fn generate_unique_suffixes(
+	min: u16,
+	max: u16,
+	canonical_base: &str,
+) -> impl Iterator<Item = u16> + '_ {
 	let seed = generate_seed(canonical_base);
 	let mut rng = SmallRng::seed_from_u64(seed);
 
 	let mut indices: Vec<u16> = (min..=max).collect();
 	let min = min as usize;
 	let max = max as usize;
-	(min..=max)
-		.rev()
-		.map(move |i| {
-			let j = rng.gen_range(min..=i);
-			indices.swap(i - min, j - min);
-			indices[i - min]
-		})
-		.collect()
+	(min..=max).rev().map(move |i| {
+		let j = rng.gen_range(min..=i);
+		indices.swap(i - min, j - min);
+		indices[i - min]
+	})
 }
 
 /// Generate a seed from a unique canonical base handle.
