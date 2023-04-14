@@ -363,7 +363,7 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 
-    public static payWithCapacityBatchAll(keys: KeyringPair, calls: Vec<Call>): Extrinsic {
+    public static payWithCapacityBatchAll(keys: KeyringPair, calls: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 

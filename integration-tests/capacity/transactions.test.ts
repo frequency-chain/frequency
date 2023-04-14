@@ -1,12 +1,13 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Bytes, u64, u16, u128, Vec } from "@polkadot/types";
-import type { Call } from '@polkadot/types/interfaces/runtime';
+import { u8aToHex } from "@polkadot/util/u8a/toHex";
+import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
 import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
-    generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
+    generateDelegationPayload, getBlockNumber, signPayloadSr25519, stakeToProvider, fundKeypair,
     TEST_EPOCH_LENGTH,
     setEpochLength,
     generateAddKeyPayload,
@@ -245,36 +246,86 @@ describe("Capacity Transactions", function () {
                 const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
                 let delegatorKeys = createKeys("delegatorKeys");
-                const createSponsoredAccountWithDelegation = ExtrinsicHelper.createSponsoredAccountWithDelegation(
-                    delegatorKeys,
-                    capacityProviderKeys,
+                const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+                    delegatorKeys.publicKey,
                     signPayloadSr25519(delegatorKeys, addProviderData),
                     addProviderPayload
-                ).getCall();
-                console.log('createSponsoredAccountWithDelegation: ', createSponsoredAccountWithDelegation);
+                );
+
                 const handle = "test_handle";
                 const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+                const expiration = (await getBlockNumber()) + 5;
                 const handlePayload = {
                     baseHandle: handle_vec,
-                }
-                const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
-                const claimHandle = ExtrinsicHelper.claimHandle(
-                    delegatorKeys,
+                    expiration: expiration,
+                };
+                const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+                const calimHandleProof = {
+                    Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+                };
+
+                const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+                    delegatorKeys.publicKey,
+                    calimHandleProof,
                     claimHandlePayload
                 );
                 const calls = [
                     createSponsoredAccountWithDelegation,
-                    claimHandle.getCall(),
+                    claimHandle,
                 ];
-                const callsVec = ExtrinsicHelper.api.createType('Vec<Call>', calls);
-                let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(delegatorKeys, callsVec);
 
-                const [batchCompletedEvent, chainEvents] = await payWithCapacityBatchAllOp.payWithCapacity();
+                let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+
+                const [batchCompletedEvent, eventMap] = await payWithCapacityBatchAllOp.signAndSend();
 
                 if (batchCompletedEvent &&
                     !(ExtrinsicHelper.api.events.utility.BatchCompleted.is(batchCompletedEvent))) {
                         assert.fail("should return a BatchCompletedEvent");
                     }
+
+                assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
+                assert.notEqual(eventMap["handles.HandleClaimed"], undefined, 'should have returned HandleClaimed event');
+            });
+
+            it("batch fails if one transaction fails - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
+                await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
+
+                const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+                let delegatorKeys = createKeys("delegatorKeys");
+                const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+                    delegatorKeys.publicKey,
+                    signPayloadSr25519(delegatorKeys, addProviderData),
+                    addProviderPayload
+                );
+
+                const handle = "test_handle_that_exceeds_the_byte_limit";
+                const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+                const expiration = (await getBlockNumber()) + 5;
+                const handlePayload = {
+                    baseHandle: handle_vec,
+                    expiration: expiration,
+                };
+                const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+                const calimHandleProof = {
+                    Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+                };
+
+                const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+                    delegatorKeys.publicKey,
+                    calimHandleProof,
+                    claimHandlePayload
+                );
+                const calls = [
+                    createSponsoredAccountWithDelegation,
+                    claimHandle,
+                ];
+
+                let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+
+                await assert.rejects(payWithCapacityBatchAllOp.signAndSend(), {
+                    name: "InvalidHandleByteLength"
+                });
             });
         });
     });
