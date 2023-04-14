@@ -96,7 +96,7 @@ where
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle_input: Handle = base_handle.into_bytes().try_into().unwrap();
+		let handle_input: Handle = Self::get_handle(&base_handle)?;
 		let max_count = MAX_SUFFIXES_COUNT;
 		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
 		let suffixes_result = api.get_next_suffixes(&at, handle_input, count);
@@ -106,8 +106,14 @@ where
 	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle_vec: Handle = display_handle.into_bytes().try_into().unwrap();
+		let handle_vec: Handle = Self::get_handle(&display_handle)?;
 		let result = api.get_msa_for_handle(&at, handle_vec);
 		map_rpc_result(result)
+	}
+
+	fn get_handle(input: &str) -> Result<Handle, HandlesRpcError> {
+		let handle_bytes =
+			input.as_bytes().try_into().map_err(|_| HandlesRpcError::InvalidHandle)?;
+		Ok(Handle::new(handle_bytes))
 	}
 }
