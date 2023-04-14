@@ -101,13 +101,37 @@ describe("🤝 Handles", () => {
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
 
             /// Get MSA from full display handle (rpc)
-            let full_handle = handle + "." + suffix;
-            let msa_option = await ExtrinsicHelper.getMsaForHandle(full_handle);
+            let display_handle = handle + "." + suffix;
+            let msa_option = await ExtrinsicHelper.getMsaForHandle(display_handle);
             if (!msa_option.isSome) {
                 throw new Error("msa_option should be Some");
             }
             let msa_from_handle = msa_option.unwrap();
             assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
          });
+    });
+
+    describe("👇 Negative Test: Early retire handle", () => {
+        it("should not be able to retire a handle before expiration", async function () {
+            let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
+            if (!handle_response.isSome) {
+                throw new Error("handle_response should be Some");
+            }
+            let full_handle_state = handle_response.unwrap();
+            let suffix_from_state = full_handle_state.suffix;
+            let suffix = suffix_from_state.toNumber();
+            assert.notEqual(suffix, 0, "suffix should not be 0");
+
+            let currentBlock = await getBlockNumber();
+            await ExtrinsicHelper.run_to_block(currentBlock + 10);
+            try {
+                const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
+                const [event] = await retireHandle.fundAndSend();
+                assert.equal(event, undefined, "retireHandle should not return an event");
+            }
+            catch (e) {
+                assert.notEqual(e, undefined, "retireHandle should throw an error");
+            }
+        });
     });
 });

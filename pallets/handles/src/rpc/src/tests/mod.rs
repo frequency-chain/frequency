@@ -16,7 +16,7 @@ sp_api::mock_impl_runtime_apis! {
 			match msa_id {
 				VALID_MSA_ID => Some(HandleResponse {
 					base_handle: b"base_handle".to_vec(),
-					canonical_handle: b"canonical_handle".to_vec(),
+					canonical_base: b"canonical_base".to_vec(),
 					suffix: 1,
 				}),
 				_ => None,
@@ -64,7 +64,7 @@ async fn get_handle_with_success() {
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(b"base_handle".to_vec(), response.base_handle);
-	assert_eq!(b"canonical_handle".to_vec(), response.canonical_handle);
+	assert_eq!(b"canonical_base".to_vec(), response.canonical_base);
 	assert_eq!(1, response.suffix);
 }
 

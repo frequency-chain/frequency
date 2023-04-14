@@ -1,10 +1,6 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	handles::{HandleProvider, HandleResponse},
-	msa::MessageSourceId,
-	node::BlockNumber,
-	schema::SchemaId,
-	utils::wrap_binary_data,
+	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
 use frame_support::{
 	assert_ok,
@@ -41,6 +37,7 @@ frame_support::construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
+		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -104,6 +101,32 @@ impl pallet_schemas::Config for Test {
 	>;
 }
 
+impl pallet_handles::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = ();
+
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+
+	/// A type that will supply MSA related information
+	type MsaInfoProvider = Msa;
+
+	/// The minimum suffix value
+	type HandleSuffixMin = ConstU16<10>;
+
+	/// The maximum suffix value
+	type HandleSuffixMax = ConstU16<99>;
+
+	/// The mortality window for a handle claim
+	type MortalityWindowSize = ConstU32<150>;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
+}
+
 parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub const MaxProviderNameSize: u32 = 16;
@@ -160,20 +183,6 @@ impl pallet_msa::ProposalProvider<AccountId, RuntimeCall> for CouncilProposalPro
 		Council::proposal_count()
 	}
 }
-pub struct MockHandleProvider;
-impl HandleProvider for MockHandleProvider {
-	fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-		if msa_id == 1 {
-			Some(HandleResponse {
-				base_handle: "test1".into(),
-				canonical_handle: "test1".into(),
-				suffix: 2u16,
-			})
-		} else {
-			None
-		}
-	}
-}
 
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -183,7 +192,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
-	type HandleProvider = MockHandleProvider;
+	type HandleProvider = Handles;
 	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesStored = MaxSignaturesStored;
 	// The proposal type

@@ -5779,6 +5779,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "pallet-collective",
+ "pallet-handles",
  "pallet-schemas",
  "parity-scale-codec",
  "scale-info",

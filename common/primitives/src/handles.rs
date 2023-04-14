@@ -56,7 +56,7 @@ pub struct HandleResponse {
 	pub base_handle: Vec<u8>,
 	/// Canonical handle (reduced/translated version of base)
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub canonical_handle: Vec<u8>,
+	pub canonical_base: Vec<u8>,
 	/// Suffix
 	pub suffix: HandleSuffix,
 }
@@ -65,6 +65,13 @@ pub struct HandleResponse {
 pub trait HandleProvider {
 	/// Validate a handle for a given `MessageSourceAccount`
 	fn get_handle_for_msa(key: MessageSourceId) -> Option<HandleResponse>;
+}
+
+/// Blanket implementation for testing.
+impl HandleProvider for () {
+	fn get_handle_for_msa(_key: MessageSourceId) -> Option<HandleResponse> {
+		None
+	}
 }
 
 /// Output response for retrieving the next suffixes for a given handle

@@ -13,6 +13,7 @@ use crate::tests::other_tests::{
 	assert_revoke_delegation_by_delegator_no_effect, set_schema_count,
 };
 use common_primitives::{
+	handles::ClaimHandlePayload,
 	msa::{DelegatorId, ProviderId},
 	utils::wrap_binary_data,
 };
@@ -195,6 +196,13 @@ fn test_ensure_msa_cannot_retire_if_handle_exists() {
 
 		// Add two accounts to the MSA
 		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
+
+		let claim_payload = ClaimHandlePayload::<<Test as frame_system::Config>::BlockNumber> {
+			base_handle: "hello".into(),
+			expiration: 2,
+		};
+
+		assert_ok!(pallet_handles::Pallet::<Test>::do_claim_handle(msa_id, claim_payload));
 
 		// Assumption: handle exists
 		// Retire the MSA
