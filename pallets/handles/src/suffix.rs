@@ -57,7 +57,7 @@ pub fn generate_unique_suffixes(min: u16, max: u16, canonical_handle: &str) -> V
 /// # Examples
 /// ```
 ///  use pallet_handles::suffix::generate_seed;
-/// 
+///
 /// let canonical_handle = "myuser";
 ///
 /// let seed = generate_seed(canonical_handle);
@@ -65,7 +65,7 @@ pub fn generate_unique_suffixes(min: u16, max: u16, canonical_handle: &str) -> V
 pub fn generate_seed(canonical_handle: &str) -> u64 {
 	let mut hasher = XxHash64::with_seed(0);
 	hasher.write(canonical_handle.as_bytes());
-    let value_bytes: [u8; 4] = [0; 4];
-    hasher.write(&value_bytes);
-    hasher.finish()
+	let value_bytes: [u8; 4] = [0; 4];
+	hasher.write(&value_bytes);
+	hasher.finish()
 }

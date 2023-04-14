@@ -1,9 +1,6 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	msa::MessageSourceId,
-	node::BlockNumber,
-	schema::SchemaId,
-	utils::wrap_binary_data,
+	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
 use frame_support::{
 	assert_ok,

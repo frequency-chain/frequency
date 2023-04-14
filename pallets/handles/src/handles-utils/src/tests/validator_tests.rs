@@ -67,7 +67,5 @@ fn test_consists_of_supported_unicode_character_sets_rejects_emojis() {
 	// Constructing a string that with the smiling face emoji
 	let string_containing_emojis = format_args!("John{}", '\u{1F600}').to_string();
 
-	assert!(
-		!consists_of_supported_unicode_character_sets(&string_containing_emojis)
-	);
+	assert!(!consists_of_supported_unicode_character_sets(&string_containing_emojis));
 }
