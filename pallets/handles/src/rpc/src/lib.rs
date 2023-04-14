@@ -64,7 +64,10 @@ impl<C, M> HandlesHandler<C, M> {
 
 /// Errors that occur on the client RPC
 #[derive(Debug)]
-pub enum HandlesRpcError {}
+pub enum HandlesRpcError {
+	/// InvalidHandle
+	InvalidHandle,
+}
 
 impl From<HandlesRpcError> for RpcError {
 	fn from(e: HandlesRpcError) -> Self {
@@ -104,7 +107,7 @@ where
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
 		let handle_vec: Handle = display_handle.into_bytes().try_into().unwrap();
-		let result = api.get_msa_for_handle(&at, handle_vec.into());
+		let result = api.get_msa_for_handle(&at, handle_vec);
 		map_rpc_result(result)
 	}
 }

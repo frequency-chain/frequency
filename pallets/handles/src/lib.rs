@@ -452,8 +452,7 @@ pub mod pallet {
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
-		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
-			let base_handle: Handle = handle.try_into().unwrap_or_default();
+		pub fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
 			// Convert base handle into a canonical base
