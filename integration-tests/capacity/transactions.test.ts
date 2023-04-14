@@ -1,11 +1,13 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u64, u16, u128 } from "@polkadot/types";
+import { Bytes, u64, u16, u128, Vec } from "@polkadot/types";
+import { u8aToHex } from "@polkadot/util/u8a/toHex";
+import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
-import { AddKeyData, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
-    generateDelegationPayload, signPayloadSr25519, stakeToProvider, fundKeypair,
+    generateDelegationPayload, getBlockNumber, signPayloadSr25519, stakeToProvider, fundKeypair,
     TEST_EPOCH_LENGTH,
     setEpochLength,
     generateAddKeyPayload,
@@ -68,8 +70,8 @@ describe("Capacity Transactions", function () {
                 }
 
                 let fee: u128;
-                if (chainEvents["capacity.CapacityWithdrawn"] && 
-                    ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"])) 
+                if (chainEvents["capacity.CapacityWithdrawn"] &&
+                    ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"]))
                 {
                     fee = chainEvents["capacity.CapacityWithdrawn"].data.amount;
                 }
@@ -80,11 +82,11 @@ describe("Capacity Transactions", function () {
 
                 // Check for remaining capacity to be reduced by correct amount
                 const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
-                assert.equal(capacityStaked.remainingCapacity, remainingCapacity, 
+                assert.equal(capacityStaked.remainingCapacity, remainingCapacity,
                     `should return a capacityLedger with ${remainingCapacity} remainingCapacity`);
-                assert.equal(capacityStaked.totalTokensStaked, amountStaked, 
+                assert.equal(capacityStaked.totalTokensStaked, amountStaked,
                     `should return a capacityLedger with ${amountStaked} total tokens staked`);
-                assert.equal(capacityStaked.totalCapacityIssued, amountStaked, 
+                assert.equal(capacityStaked.totalCapacityIssued, amountStaked,
                     `should return a capacityLedger with ${amountStaked} total capacity issued`);
             });
 
@@ -217,6 +219,112 @@ describe("Capacity Transactions", function () {
                         name: "RpcError", message:
                             "1010: Invalid Transaction: Custom error: 1"
                     });
+                });
+            });
+        });
+    });
+    describe("pay_with_capacity_batch_all", function () {
+        describe("when caller has a Capacity account", async function () {
+            let capacityProviderKeys: KeyringPair;
+            let capacityProvider: u64;
+            let schemaId: u16;
+            let defaultPayload: AddProviderPayload;
+            const amountStaked = 9n * CENTS;
+
+            beforeEach(async function () {
+                capacityProviderKeys = createKeys("CapacityProviderKeys");
+                capacityProvider = await createMsaAndProvider(capacityProviderKeys, "CapacityProvider", FUNDS_AMOUNT);
+                defaultPayload = {
+                    authorizedMsaId: capacityProvider,
+                    schemaIds: [schemaId],
+                }
+            });
+
+            it("successfully pays with Capacity for a batch of eligible transactions - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
+                await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
+
+                const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+                let delegatorKeys = createKeys("delegatorKeys");
+                const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+                    delegatorKeys.publicKey,
+                    signPayloadSr25519(delegatorKeys, addProviderData),
+                    addProviderPayload
+                );
+
+                const handle = "test_handle";
+                const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+                const expiration = (await getBlockNumber()) + 5;
+                const handlePayload = {
+                    baseHandle: handle_vec,
+                    expiration: expiration,
+                };
+                const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+                const calimHandleProof = {
+                    Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+                };
+
+                const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+                    delegatorKeys.publicKey,
+                    calimHandleProof,
+                    claimHandlePayload
+                );
+                const calls = [
+                    createSponsoredAccountWithDelegation,
+                    claimHandle,
+                ];
+
+                let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+
+                const [batchCompletedEvent, eventMap] = await payWithCapacityBatchAllOp.signAndSend();
+
+                if (batchCompletedEvent &&
+                    !(ExtrinsicHelper.api.events.utility.BatchCompleted.is(batchCompletedEvent))) {
+                        assert.fail("should return a BatchCompletedEvent");
+                    }
+
+                assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
+                assert.notEqual(eventMap["handles.HandleClaimed"], undefined, 'should have returned HandleClaimed event');
+            });
+
+            it("batch fails if one transaction fails - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
+                await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
+
+                const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
+                const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+                let delegatorKeys = createKeys("delegatorKeys");
+                const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+                    delegatorKeys.publicKey,
+                    signPayloadSr25519(delegatorKeys, addProviderData),
+                    addProviderPayload
+                );
+
+                const handle = "test_handle_that_exceeds_the_byte_limit";
+                const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+                const expiration = (await getBlockNumber()) + 5;
+                const handlePayload = {
+                    baseHandle: handle_vec,
+                    expiration: expiration,
+                };
+                const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+                const calimHandleProof = {
+                    Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+                };
+
+                const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+                    delegatorKeys.publicKey,
+                    calimHandleProof,
+                    claimHandlePayload
+                );
+                const calls = [
+                    createSponsoredAccountWithDelegation,
+                    claimHandle,
+                ];
+
+                let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+
+                await assert.rejects(payWithCapacityBatchAllOp.signAndSend(), {
+                    name: "InvalidHandleByteLength"
                 });
             });
         });
