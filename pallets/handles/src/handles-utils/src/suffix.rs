@@ -3,11 +3,11 @@
 //! `suffix_generator` provides a `SuffixGenerator` struct to generate unique suffix sequences for a given range
 //! and seed, excluding already used suffixes.
 
-use core::hash::Hasher;
 use rand::{rngs::SmallRng, Rng, SeedableRng};
-use sp_std::vec::Vec;
 use twox_hash::XxHash64;
-
+extern crate alloc;
+use alloc::vec::Vec;
+use core::hash::Hasher;
 /// Generate a unique, shuffled suffix iterator.
 ///
 /// # Returns
