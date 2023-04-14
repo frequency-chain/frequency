@@ -1360,11 +1360,11 @@ impl_runtime_apis! {
 			Handles::get_handle_for_msa(msa_id)
 		}
 
-		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		fn get_next_suffixes(base_handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			Handles::get_next_suffixes(base_handle, count)
 		}
 
-		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+		fn get_msa_for_handle(display_handle: Vec<u8>) -> Option<MessageSourceId> {
 			Handles::get_msa_id_for_handle(display_handle)
 		}
 	}

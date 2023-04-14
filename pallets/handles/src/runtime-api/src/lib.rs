@@ -17,9 +17,10 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{
-	handles::{Handle, HandleResponse, PresumptiveSuffixesResponse},
+	handles::{HandleResponse, PresumptiveSuffixesResponse},
 	msa::MessageSourceId,
 };
+use sp_std::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
@@ -38,9 +39,9 @@ sp_api::decl_runtime_apis! {
 		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse>;
 
 		/// Retrieve the next `n` suffixes for a given handle
-		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse;
+		fn get_next_suffixes(base_handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse;
 
 		/// Retrieve msa for a particular handle
-		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId>;
+		fn get_msa_for_handle(display_handle: Vec<u8>) -> Option<MessageSourceId>;
 	}
 }

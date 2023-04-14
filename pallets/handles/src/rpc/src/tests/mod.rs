@@ -3,7 +3,7 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::handles::{Handle, PresumptiveSuffixesResponse};
+use common_primitives::handles::PresumptiveSuffixesResponse;
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
@@ -23,7 +23,7 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		fn get_next_suffixes(base_handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes = Vec::new();
 			for i in 0..count {
 				suffixes.push(i);
@@ -31,7 +31,7 @@ sp_api::mock_impl_runtime_apis! {
 			PresumptiveSuffixesResponse { base_handle: base_handle.into(),  suffixes }
 		}
 
-		fn get_msa_for_handle(_display_handle: Handle) -> Option<MessageSourceId>{
+		fn get_msa_for_handle(_display_handle: Vec<u8>) -> Option<MessageSourceId>{
 			Some(VALID_MSA_ID)
 		}
 	}
@@ -72,7 +72,7 @@ async fn get_handle_with_success() {
 async fn get_next_suffixes_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = HandlesHandler::new(client);
-	let result = api.get_next_suffixes("base_handle".to_string(), Some(3));
+	let result = api.get_next_suffixes("base_handle".as_bytes().to_vec(), Some(3));
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
@@ -83,7 +83,7 @@ async fn get_next_suffixes_with_success() {
 async fn get_msa_for_handle_with_success() {
 	let client = Arc::new(TestApi {});
 	let api = HandlesHandler::new(client);
-	let result = api.get_msa_for_handle("base_handle".to_string());
+	let result = api.get_msa_for_handle("base_handle".as_bytes().to_vec());
 
 	assert_eq!(true, result.is_ok());
 	assert_eq!(Some(VALID_MSA_ID), result.unwrap());

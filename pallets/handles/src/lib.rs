@@ -453,7 +453,7 @@ pub mod pallet {
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
-		pub fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		pub fn get_next_suffixes(base_handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
 			// Convert base handle into a canonical base
@@ -494,7 +494,7 @@ pub mod pallet {
 		///
 		/// * `Option<MessageSourceId>` - The `MessageSourceId` if the handle is valid.
 		///
-		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+		pub fn get_msa_id_for_handle(display_handle: Vec<u8>) -> Option<MessageSourceId> {
 			let display_handle_str = core::str::from_utf8(&display_handle).unwrap_or_default();
 			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
 			// Convert base handle into a canonical base

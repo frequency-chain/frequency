@@ -11,8 +11,7 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	handles::{
-		Handle, HandleResponse, PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT,
-		MAX_SUFFIXES_COUNT,
+		HandleResponse, PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT, MAX_SUFFIXES_COUNT,
 	},
 	msa::MessageSourceId,
 };
@@ -40,13 +39,13 @@ pub trait HandlesApi<BlockHash> {
 	#[method(name = "handles_getNextSuffixes")]
 	fn get_next_suffixes(
 		&self,
-		base_handle: String,
+		base_handle: Vec<u8>,
 		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse>;
 
 	/// retrieve `MessageSourceId` for a given handle
 	#[method(name = "handles_getMsaForHandle")]
-	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>>;
+	fn get_msa_for_handle(&self, display_handle: Vec<u8>) -> RpcResult<Option<MessageSourceId>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -64,7 +63,10 @@ impl<C, M> HandlesHandler<C, M> {
 
 /// Errors that occur on the client RPC
 #[derive(Debug)]
-pub enum HandlesRpcError {}
+pub enum HandlesRpcError {
+	/// Invalid handle input
+	InvalidHandleInput,
+}
 
 impl From<HandlesRpcError> for RpcError {
 	fn from(e: HandlesRpcError) -> Self {
@@ -88,23 +90,21 @@ where
 
 	fn get_next_suffixes(
 		&self,
-		base_handle: String,
+		base_handle: Vec<u8>,
 		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle_input: Handle = base_handle.into_bytes().try_into().unwrap();
 		let max_count = MAX_SUFFIXES_COUNT;
 		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
-		let suffixes_result = api.get_next_suffixes(&at, handle_input, count);
+		let suffixes_result = api.get_next_suffixes(&at, base_handle, count);
 		map_rpc_result(suffixes_result)
 	}
 
-	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>> {
+	fn get_msa_for_handle(&self, display_handle: Vec<u8>) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle_vec: Handle = display_handle.into_bytes().try_into().unwrap();
-		let result = api.get_msa_for_handle(&at, handle_vec.into());
+		let result = api.get_msa_for_handle(&at, display_handle);
 		map_rpc_result(result)
 	}
 }
