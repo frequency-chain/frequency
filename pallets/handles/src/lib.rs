@@ -503,7 +503,7 @@ pub mod pallet {
 			// Convert base handle into a canonical handle
 			let (_, canonical_handle) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
-			Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix);
+			Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix)
 		}
 
 		/// Creates a full display handle by combining a base handle string with a suffix generated
