@@ -217,7 +217,7 @@ fn test_handle_retire_replay_attack_with_different_account() {
 }
 
 #[test]
-fn test_handle_claim_and_retire_with_multiple_accounts() {
+fn test_base_handle_claim_and_retire_with_multiple_accounts() {
 	new_test_ext().execute_with(|| {
 		let base_handle_str = "test1";
 
