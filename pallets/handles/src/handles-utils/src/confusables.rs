@@ -6,6 +6,7 @@
 
 use phf::phf_map;
 /// The mapping from homoglyph character to canonical Unicode character
+/// Source of these ranges are from https://www.unicode.org/charts/
 pub static CONFUSABLES: phf::Map<char, char> = phf_map! {
 '\u{1c3}' => '\u{21}',
 '\u{2d51}' => '\u{21}',
