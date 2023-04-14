@@ -102,10 +102,10 @@ impl pallet_handles::Config for Test {
 	type MsaInfoProvider = MsaInfoHandler;
 
 	/// The minimum suffix value
-	type HandleSuffixMin = ConstU32<10>;
+	type HandleSuffixMin = ConstU16<10>;
 
 	/// The maximum suffix value
-	type HandleSuffixMax = ConstU32<99>;
+	type HandleSuffixMax = ConstU16<99>;
 
 	/// The mortality window for a handle claim
 	type MortalityWindowSize = ConstU32<150>;

@@ -73,7 +73,7 @@ use sp_std::{prelude::*, vec::Vec};
 pub mod handles_signed_extension;
 
 pub mod suffix;
-use suffix::SuffixGenerator;
+use suffix::generate_unique_suffixes;
 pub mod weights;
 pub use weights::*;
 
@@ -102,11 +102,11 @@ pub mod pallet {
 
 		/// The minimum suffix value
 		#[pallet::constant]
-		type HandleSuffixMin: Get<u32>;
+		type HandleSuffixMin: Get<u16>;
 
 		/// The maximum suffix value
 		#[pallet::constant]
-		type HandleSuffixMax: Get<u32>;
+		type HandleSuffixMax: Get<u16>;
 
 		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
@@ -305,14 +305,14 @@ pub mod pallet {
 			canonical_handle: &str,
 			cursor: usize,
 		) -> Result<u16, DispatchError> {
-			let mut suffix_generator = SuffixGenerator::new(
-				T::HandleSuffixMin::get() as usize,
-				T::HandleSuffixMax::get() as usize,
+			match generate_unique_suffixes(
+				T::HandleSuffixMin::get(),
+				T::HandleSuffixMax::get(),
 				&canonical_handle,
-			);
-			let suffix_option = suffix_generator.suffix_iter().nth(cursor);
-			match suffix_option {
-				Some(suffix) => Ok(suffix as u16),
+			)
+			.get(cursor)
+			{
+				Some(val) => Ok(*val),
 				None => Err(Error::<T>::SuffixesExhausted.into()),
 			}
 		}
@@ -455,7 +455,6 @@ pub mod pallet {
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
 		pub fn get_next_suffixes(handle: Vec<u8>, count: u16) -> PresumptiveSuffixesResponse {
-			let mut suffixes: Vec<HandleSuffix> = vec![];
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
@@ -467,17 +466,17 @@ pub mod pallet {
 				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
 					.unwrap_or_default();
 
-			// Generate suffixes from the next available suffix index
-			let mut suffix_generator = SuffixGenerator::new(
-				T::HandleSuffixMin::get() as usize,
-				T::HandleSuffixMax::get() as usize,
+			let sequence = generate_unique_suffixes(
+				T::HandleSuffixMin::get(),
+				T::HandleSuffixMax::get(),
 				&canonical_handle_str,
 			);
-			let sequence = suffix_generator.suffix_iter().enumerate();
 
-			for (i, suffix) in sequence {
+			let mut suffixes: Vec<HandleSuffix> = vec![];
+
+			for (i, suffix) in sequence.iter().enumerate() {
 				if i >= suffix_index as usize && i < (suffix_index as usize + count as usize) {
-					suffixes.push(suffix as u16);
+					suffixes.push(*suffix);
 				}
 				if suffixes.len() == count as usize {
 					break
