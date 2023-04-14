@@ -18,11 +18,11 @@
 //!
 //! ## Terminology
 //!
-//! Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_handle` and a unique numeric `suffix`.
+//! Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_base` and a unique numeric `suffix`.
 //!
 //! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
 //! - **Display Handle:** A handle is a unique identifier for a user. Display handle is `base_handle`.`suffix`.
-//! - **Canonical Handle:** A canonical handle is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
+//! - **Canonical Base:** A canonical base is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
 //! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `base_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
@@ -204,9 +204,9 @@ pub mod pallet {
 	}
 
 	impl<T: Config> Pallet<T> {
-		/// Gets the next suffix index for a canonical handle.
+		/// Gets the next suffix index for a canonical base.
 		///
-		/// This function takes a canonical handle as input and returns the next available
+		/// This function takes a canonical base as input and returns the next available
 		/// suffix index for that handle. If no current suffix index is found for the handle,
 		/// it starts from 0. If a current suffix index is found, it increments it by 1 to
 		/// get the next suffix index. If the increment operation fails due to overflow, it
@@ -214,17 +214,17 @@ pub mod pallet {
 		///
 		/// # Arguments
 		///
-		/// * `canonical_handle` - The canonical handle to get the next suffix index for.
+		/// * `canonical_base` - The canonical base to get the next suffix index for.
 		///
 		/// # Returns
 		///
-		/// * `Ok(SequenceIndex)` - The next suffix index for the canonical handle.
+		/// * `Ok(SequenceIndex)` - The next suffix index for the canonical base.
 		/// * `Err(DispatchError)` - The suffixes are exhausted.
 		pub fn get_next_suffix_index_for_canonical_handle(
-			canonical_handle: Handle,
+			canonical_base: Handle,
 		) -> Result<SequenceIndex, DispatchError> {
 			let next: SequenceIndex;
-			match Self::get_current_suffix_index_for_canonical_handle(canonical_handle) {
+			match Self::get_current_suffix_index_for_canonical_handle(canonical_base) {
 				None => {
 					next = 0;
 				},
@@ -289,12 +289,12 @@ pub mod pallet {
 			let mortality_size = T::MortalityWindowSize::get();
 			current_block + T::BlockNumber::from(mortality_size)
 		}
-		/// Generates a suffix for a canonical handle, using the provided `canonical_handle`
+		/// Generates a suffix for a canonical base, using the provided `canonical_base`
 		/// and `cursor` information.
 		///
 		/// # Arguments
 		///
-		/// * `canonical_handle` - The canonical handle to generate a suffix for.
+		/// * `canonical_base` - The canonical base to generate a suffix for.
 		/// * `cursor` - The cursor position in the sequence of suffixes to use for generation.
 		///
 		/// # Returns
@@ -302,13 +302,13 @@ pub mod pallet {
 		/// The generated suffix as a `u16`.
 		///
 		fn generate_suffix_for_canonical_handle(
-			canonical_handle: &str,
+			canonical_base: &str,
 			cursor: usize,
 		) -> Result<u16, DispatchError> {
 			match generate_unique_suffixes(
 				T::HandleSuffixMin::get(),
 				T::HandleSuffixMax::get(),
-				&canonical_handle,
+				&canonical_base,
 			)
 			.get(cursor)
 			{
@@ -433,10 +433,10 @@ pub mod pallet {
 
 			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
 			let base_handle = base_handle_str.as_bytes().to_vec();
-			// Convert base handle into a canonical handle
-			let (_, canonical_handle) =
+			// Convert base handle into a canonical base
+			let (_, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
-			Some(HandleResponse { base_handle, suffix, canonical_handle: canonical_handle.into() })
+			Some(HandleResponse { base_handle, suffix, canonical_base: canonical_base.into() })
 		}
 
 		/// Get the next available suffixes for a given handle.
@@ -458,12 +458,12 @@ pub mod pallet {
 			let base_handle: Handle = handle.try_into().unwrap_or_default();
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
-			// Convert base handle into a canonical handle
-			let (canonical_handle_str, canonical_handle) =
+			// Convert base handle into a canonical base
+			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
 			let suffix_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())
+				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())
 					.unwrap_or_default();
 
 			let sequence = generate_unique_suffixes(
@@ -500,10 +500,10 @@ pub mod pallet {
 		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
 			let display_handle_str = core::str::from_utf8(&display_handle).unwrap_or_default();
 			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
-			// Convert base handle into a canonical handle
-			let (_, canonical_handle) =
+			// Convert base handle into a canonical base
+			let (_, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
-			Self::get_msa_id_for_canonical_and_suffix(canonical_handle, suffix)
+			Self::get_msa_id_for_canonical_and_suffix(canonical_base, suffix)
 		}
 
 		/// Creates a full display handle by combining a base handle string with a suffix generated
@@ -523,7 +523,7 @@ pub mod pallet {
 			base_handle_str: &str,
 			suffix_sequence_index: SequenceIndex,
 		) -> Vec<u8> {
-			// Convert base handle into a canonical handle
+			// Convert base handle into a canonical base
 			let canonical_handle_str = convert_to_canonical(&base_handle_str);
 
 			// Generate suffix from index into the suffix sequence
@@ -538,7 +538,7 @@ pub mod pallet {
 		}
 
 		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
-		/// generating a canonical handle, generating a suffix, and composing the full display handle.
+		/// generating a canonical base, generating a suffix, and composing the full display handle.
 		///
 		/// # Arguments
 		///
@@ -561,13 +561,13 @@ pub mod pallet {
 
 			let base_handle_str = Self::validate_base_handle(payload.base_handle)?;
 
-			// Convert base handle into a canonical handle
-			let (canonical_handle_str, canonical_handle) =
+			// Convert base handle into a canonical base
+			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
-				Self::get_next_suffix_index_for_canonical_handle(canonical_handle.clone())?;
+				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())?;
 
 			let suffix = Self::generate_suffix_for_canonical_handle(
 				&canonical_handle_str,
@@ -576,15 +576,15 @@ pub mod pallet {
 
 			let display_handle = Self::build_full_display_handle(&base_handle_str, suffix)?;
 
-			// Store canonical handle and suffix to MSA id
+			// Store canonical base and suffix to MSA id
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::insert(
-				canonical_handle.clone(),
+				canonical_base.clone(),
 				suffix,
 				msa_id,
 			);
-			// Store canonical handle to suffix sequence index
+			// Store canonical base to suffix sequence index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
-				canonical_handle.clone(),
+				canonical_base.clone(),
 				Some(suffix_sequence_index),
 			);
 
@@ -666,23 +666,23 @@ pub mod pallet {
 			let (base_handle_str, suffix_num) =
 				split_display_name(display_name_str).ok_or(Error::<T>::InvalidHandle)?;
 
-			// Convert base handle into a canonical handle
-			let (_, canonical_handle) =
+			// Convert base handle into a canonical base
+			let (_, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
 			// Remove handle from storage but not from CanonicalBaseHandleToSuffixIndex because retired handles can't be reused
 			MSAIdToDisplayName::<T>::remove(msa_id);
-			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_handle, suffix_num);
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_base, suffix_num);
 
 			Ok(display_name_str.as_bytes().to_vec())
 		}
 
-		/// Converts a base handle to a canonical handle.
+		/// Converts a base handle to a canonical base.
 		fn get_canonical_string_vec_from_base_handle(base_handle_str: &str) -> (String, Handle) {
 			let canonical_handle_str = convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_handle: Handle = canonical_handle_vec.try_into().unwrap_or_default();
-			(canonical_handle_str, canonical_handle)
+			let canonical_base: Handle = canonical_handle_vec.try_into().unwrap_or_default();
+			(canonical_handle_str, canonical_base)
 		}
 	}
 }

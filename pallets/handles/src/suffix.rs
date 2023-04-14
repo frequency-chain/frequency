@@ -21,14 +21,14 @@ use twox_hash::XxHash64;
 ///
 /// let min = 100;
 /// let max = 150;
-/// let canonical_handle = "myhandle";
+/// let canonical_base = "myhandle";
 ///
-/// let sequence: Vec<u16> = generate_unique_suffixes(min, max, canonical_handle);
+/// let sequence: Vec<u16> = generate_unique_suffixes(min, max, canonical_base);
 /// ```
 ///
 /// This will output a unique, shuffled sequence of suffixes.
-pub fn generate_unique_suffixes(min: u16, max: u16, canonical_handle: &str) -> Vec<u16> {
-	let seed = generate_seed(canonical_handle);
+pub fn generate_unique_suffixes(min: u16, max: u16, canonical_base: &str) -> Vec<u16> {
+	let seed = generate_seed(canonical_base);
 	let mut rng = SmallRng::seed_from_u64(seed);
 
 	let mut indices: Vec<u16> = (min..=max).collect();
@@ -48,7 +48,7 @@ pub fn generate_unique_suffixes(min: u16, max: u16, canonical_handle: &str) -> V
 ///
 /// # Arguments
 ///
-/// * `canonical_handle` - The canonical handle as a string slice.
+/// * `canonical_base` - The canonical base as a string slice.
 ///
 /// # Returns
 ///
@@ -58,13 +58,13 @@ pub fn generate_unique_suffixes(min: u16, max: u16, canonical_handle: &str) -> V
 /// ```
 ///  use pallet_handles::suffix::generate_seed;
 ///
-/// let canonical_handle = "myuser";
+/// let canonical_base = "myuser";
 ///
-/// let seed = generate_seed(canonical_handle);
+/// let seed = generate_seed(canonical_base);
 /// ```
-pub fn generate_seed(canonical_handle: &str) -> u64 {
+pub fn generate_seed(canonical_base: &str) -> u64 {
 	let mut hasher = XxHash64::with_seed(0);
-	hasher.write(canonical_handle.as_bytes());
+	hasher.write(canonical_base.as_bytes());
 	let value_bytes: [u8; 4] = [0; 4];
 	hasher.write(&value_bytes);
 	hasher.finish()

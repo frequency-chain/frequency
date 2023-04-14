@@ -56,7 +56,7 @@ pub struct HandleResponse {
 	pub base_handle: Vec<u8>,
 	/// Canonical handle (reduced/translated version of base)
 	#[cfg_attr(feature = "std", serde(with = "as_string"))]
-	pub canonical_handle: Vec<u8>,
+	pub canonical_base: Vec<u8>,
 	/// Suffix
 	pub suffix: HandleSuffix,
 }
