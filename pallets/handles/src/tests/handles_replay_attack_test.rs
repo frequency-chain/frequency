@@ -73,7 +73,7 @@ fn test_handle_claim_replay_attack_with_different_account() {
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
-		// Try to claim the same handle again with a different account which should fail
+		// Try to claim the base handle again with a different account which should fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		assert_noop!(
 			Handles::claim_handle(
@@ -173,7 +173,7 @@ fn test_handle_claim_replay_attack_with_different_payload() {
 		let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 		full_handle_vec.extend(suffix.numtoa(10, &mut buff)); // Use base 10
 
-		// Try to claim the same handle again with a different payload which should fail
+		// Try to claim the base handle again with a different payload which should fail
 		let (payload2, proof2) =
 			get_signed_claims_payload(&alice, b"another-handle".to_vec(), expiration);
 		assert_noop!(
@@ -239,7 +239,7 @@ fn test_handle_claim_and_retire_with_multiple_accounts() {
 		let handle_result = handle.unwrap();
 		let prev_suffix: HandleSuffix = handle_result.suffix;
 
-		// Try to claim the handle with a different account which should not fail
+		// Try to claim the base andle with a different account which should not fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		let (payload2, proof2) =
 			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec(), expiration);
@@ -277,7 +277,7 @@ fn test_handle_claim_for_other_msa_with_no_existing_handle() {
 			payload.clone()
 		));
 
-		// Try to claim the handle for another MSA with a different account which should fail
+		// Try to claim the base handle for another MSA with a different account which should fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		let (payload2, proof2) =
 			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec(), expiration);
