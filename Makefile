@@ -1,5 +1,8 @@
 UNAME := $(shell uname)
 
+.PHONY: all
+all: start
+
 .PHONY: clean
 clean:
 	cargo clean
