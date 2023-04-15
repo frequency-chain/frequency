@@ -58,6 +58,7 @@ use sp_runtime::{
 	traits::{CheckedAdd, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
+use sp_std::ops::Mul;
 
 pub use common_primitives::{
 	capacity::{Nontransferable, Replenishable, TargetValidator},
@@ -145,6 +146,9 @@ pub mod pallet {
 			+ sp_std::hash::Hash
 			+ MaxEncodedLen
 			+ TypeInfo;
+
+		/// How much FRQCY one unit of Capacity costs.
+		type TokenPerCapacity: Get<u32>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -460,7 +464,7 @@ impl<T: Config> Pallet<T> {
 		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
-		capacity_details.deposit(&amount).ok_or(ArithmeticError::Overflow)?;
+		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account(&staker, staking_account);
 		Self::set_target_details_for(&staker, target, target_details);
@@ -512,7 +516,9 @@ impl<T: Config> Pallet<T> {
 
 	/// Calculates Capacity.
 	fn calculate_capacity(amount: BalanceOf<T>) -> BalanceOf<T> {
-		amount
+		let result = Perbill::from_rational(1u32, T::TokenPerCapacity::get().into());
+		let capacity_amount: BalanceOf<T> = result.mul(amount).into();
+		capacity_amount
 	}
 
 	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
@@ -545,18 +551,21 @@ impl<T: Config> Pallet<T> {
 			.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
-		let capacity_reduction = Self::calculate_capacity_reduction(
-			amount,
-			capacity_details.total_tokens_staked,
-			capacity_details.total_capacity_issued,
-		);
-		staking_target_details.withdraw(amount, capacity_reduction);
-		capacity_details.withdraw(capacity_reduction, amount);
+
+		let capacity_to_withdraw = Self::calculate_capacity(amount);
+
+		// let capacity_reduction = Self::calculate_capacity_reduction(
+		// 	amount,
+		// 	capacity_details.total_tokens_staked,
+		// 	capacity_details.total_capacity_issued,
+		// );
+		staking_target_details.withdraw(amount, capacity_to_withdraw);
+		capacity_details.withdraw(capacity_to_withdraw, amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
 
-		Ok(capacity_reduction)
+		Ok(capacity_to_withdraw)
 	}
 
 	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked.
@@ -617,7 +626,8 @@ impl<T: Config> Nontransferable for Pallet<T> {
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
-		capacity_details.deposit(&amount);
+		let capacity_to_deposit = Self::calculate_capacity(amount);
+		capacity_details.deposit(&amount, &capacity_to_deposit);
 		Self::set_capacity_for(msa_id, capacity_details);
 		Ok(())
 	}

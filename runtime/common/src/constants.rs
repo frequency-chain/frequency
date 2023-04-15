@@ -374,6 +374,7 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
-pub type CapacityMaxEpochLength = ConstU32<7_200>;
-pub type CapacityUnstakingThawPeriod = ConstU16<2>;
+pub type CapacityMaxEpochLength = ConstU32<7_200>; // one day, assuming 12 second blocks.
+pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days given the above
+pub type TokenPerCapacity = ConstU32<100>;
 // -end- Capacity Pallet ---

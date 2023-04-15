@@ -152,12 +152,17 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+parameter_types! {
+	pub static TokenPerCapacity: u32 = 10;
+	pub static MinimumStakingAmount: u64 = 10; // this has to be >= TokenPerCapacity
+}
+
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = Msa;
-	type MinimumStakingAmount = ConstU64<5>;
+	type MinimumStakingAmount = MinimumStakingAmount;
 	type MinimumTokenBalance = ConstU64<10>;
 	type MaxUnlockingChunks = ConstU32<4>;
 
@@ -167,12 +172,22 @@ impl pallet_capacity::Config for Test {
 	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU64<100>;
 	type EpochNumber = u32;
+	type TokenPerCapacity = TokenPerCapacity;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		balances: vec![(100, 10), (200, 20), (300, 30), (400, 40), (500, 50), (600, 60)],
+		balances: vec![
+			(50, 5),
+			(100, 100),
+			(200, 200),
+			(300, 300),
+			(400, 400),
+			(500, 500),
+			(600, 600),
+			(10_000, 10_000),
+		],
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

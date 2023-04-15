@@ -173,10 +173,10 @@ where
 {
 	/// Increase a targets total Tokens staked and Capacity total issuance by an amount.
 	/// To be called on a stake
-	pub fn deposit(&mut self, amount: &Balance) -> Option<()> {
-		self.remaining_capacity = amount.checked_add(&self.remaining_capacity)?;
+	pub fn deposit(&mut self, amount: &Balance, capacity: &Balance) -> Option<()> {
 		self.total_tokens_staked = amount.checked_add(&self.total_tokens_staked)?;
-		self.total_capacity_issued = amount.checked_add(&self.total_capacity_issued)?;
+		self.remaining_capacity = capacity.checked_add(&self.remaining_capacity)?;
+		self.total_capacity_issued = capacity.checked_add(&self.total_capacity_issued)?;
 
 		// We do not touch last_replenished epoch here, because it would create a DoS vulnerability.
 		// Since capacity is lazily replenished, an attacker could stake

@@ -83,8 +83,8 @@ benchmarks! {
 	}
 	unstake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(6u32.into());
-		let unstaking_amount = 5u32;
+		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(20u32.into());
+		let unstaking_amount = 9u32;
 		let capacity_amount: BalanceOf<T> = Capacity::<T>::calculate_capacity(staking_amount);
 		let target = 1;
 		let block_number = 4u32;
@@ -95,7 +95,7 @@ benchmarks! {
 
 		staking_account.deposit(staking_amount);
 		target_details.deposit(staking_amount, capacity_amount);
-		capacity_details.deposit(&capacity_amount);
+		capacity_details.deposit(&staking_amount, &capacity_amount);
 
 		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);

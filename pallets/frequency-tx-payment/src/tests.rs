@@ -264,7 +264,7 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 }
 
 #[test]
-fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tupple_with_fee_and_enum(
+fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tuple_with_fee_and_enum(
 ) {
 	let balance_factor = 10;
 
@@ -289,7 +289,9 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 			// fee = base_weight(5)
 			//   + extrinsic_weight(11) * WeightToFee(1)
 			//   + TransactionByteFee(1)* len(10) = 26
-			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
+			let res = charge_tx_payment.withdraw_fee(&who, call, &info, len);
+			assert_ok!(&res);
+			assert_eq!(res.unwrap().0, 26u64);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
 				true

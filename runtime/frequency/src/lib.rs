@@ -568,6 +568,7 @@ impl pallet_capacity::Config for Runtime {
 	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
+	type TokenPerCapacity = TokenPerCapacity;
 }
 
 impl pallet_schemas::Config for Runtime {
