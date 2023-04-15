@@ -554,11 +554,6 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw = Self::calculate_capacity(amount);
 
-		// let capacity_reduction = Self::calculate_capacity_reduction(
-		// 	amount,
-		// 	capacity_details.total_tokens_staked,
-		// 	capacity_details.total_capacity_issued,
-		// );
 		staking_target_details.withdraw(amount, capacity_to_withdraw);
 		capacity_details.withdraw(capacity_to_withdraw, amount);
 
@@ -626,8 +621,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
-		let capacity_to_deposit = Self::calculate_capacity(amount);
-		capacity_details.deposit(&amount, &capacity_to_deposit);
+		capacity_details.deposit(&amount, &Self::calculate_capacity(amount));
 		Self::set_capacity_for(msa_id, capacity_details);
 		Ok(())
 	}

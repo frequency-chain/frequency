@@ -11,8 +11,8 @@ fn unstake_happy_path() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
-		let staking_amount = 100; // 10 capacity
-		let unstaking_amount = 40; // 4 capacity
+		let staking_amount = 100;
+		let unstaking_amount = 40;
 
 		register_provider(target, String::from("Test Target"));
 

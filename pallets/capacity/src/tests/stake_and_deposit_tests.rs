@@ -35,9 +35,6 @@ fn stake_works() {
 			},
 			capacity_details
 		);
-		// assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 5);
-		// assert_eq!(Ca)
-		// assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
 		let events = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
