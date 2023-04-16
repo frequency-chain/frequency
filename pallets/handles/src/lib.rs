@@ -146,7 +146,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
 	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
-		StorageMap<_, Blake2_128Concat, Handle, SequenceIndex, OptionQuery>;
+		StorageMap<_, Blake2_128Concat, Handle, (SequenceIndex, HandleSuffix), OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
@@ -227,8 +227,14 @@ pub mod pallet {
 				None => {
 					next = 0;
 				},
-				Some(current) => {
-					next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
+				Some((current, suffix_min)) => {
+					let current_suffix_min = T::HandleSuffixMin::get();
+					// if saved suffix min has changed, reset the suffix index
+					if current_suffix_min != suffix_min {
+						next = 0;
+					} else {
+						next = current.checked_add(1).ok_or(Error::<T>::SuffixesExhausted)?;
+					}
 				},
 			}
 
@@ -581,7 +587,7 @@ pub mod pallet {
 			// Store canonical base to suffix sequence index
 			CanonicalBaseHandleToSuffixIndex::<T>::set(
 				canonical_base.clone(),
-				Some(suffix_sequence_index),
+				Some((suffix_sequence_index, T::HandleSuffixMin::get())),
 			);
 
 			// Store the full display handle to MSA id
