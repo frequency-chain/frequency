@@ -1,36 +1,29 @@
 use std::{
+	env,
 	fs::File,
-	io::{BufRead, BufReader, Write},
+	io::{BufRead, BufReader, BufWriter, Write},
+	path::Path,
 };
 
-// Helper function to generate a BTreeMap which maps each confusable character to its
-// canonical counterpart for each line in `confusable_characters.txt`.
-//
-// The first character of each line represent the canonical character (value) in the map that each
-// subsequent character of the line (key) maps to.
-//
-// Usage:
-//  confusables_generator
-//
-// Note that the executable must be run in the same folder as the data file, confusable_characters.txt.
-// Running this tool generates a Rust source file called "confusables.rs"
-fn convert_confuseables_to_unicode_escaped() {
-	let input_file = File::open("confusable_characters.txt");
+fn main() {
+	let input_file = File::open("src/data/confusable_characters.txt");
 	assert!(input_file.is_ok());
-
-	let mut output_file = std::fs::File::create("confusables.rs").expect("create failed");
+	let path = Path::new(&env::var("OUT_DIR").unwrap()).join("confusables.rs");
+	let mut output_file = BufWriter::new(File::create(&path).unwrap());
 
 	let reader = BufReader::new(input_file.ok().unwrap());
 
-	_ = output_file.write_all(b"//! This module provides utilities for handling confusable characters.\n\n");
+	_ = output_file
+		.write_all(b"// This module provides utilities for handling confusable characters.\n\n");
 	_ = output_file.write_all(b"// ******************************************************\n");
 	_ = output_file.write_all(b"// ***** THIS FILE IS AUTO-GENERATED.  DO NOT EDIT! *****\n");
 	_ = output_file.write_all(b"// ******************************************************\n");
 	_ = output_file.write_all(b"\n\n");
+	_ = output_file.write_all(b"/// Map it\n");
 	_ = output_file.write_all(b"use phf::phf_map;\n");
-	_ = output_file.write_all(b"/// The mapping from homoglyph character to canonical Unicode character\n");
+	_ = output_file
+		.write_all(b"/// The mapping from homoglyph character to canonical Unicode character\n");
 	_ = output_file.write_all(b"pub static CONFUSABLES: phf::Map<char, char> = phf_map! {\n");
-
 
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
@@ -49,9 +42,7 @@ fn convert_confuseables_to_unicode_escaped() {
 	}
 	_ = output_file.write_all(b"};\n\n");
 
-	println!("data written to confusables.rs");
-}
-
-fn main() {
-	convert_confuseables_to_unicode_escaped();
+	println!("cargo:rerun-if-changed=build.rs");
+	println!("cargo:rerun-if-changed=data/confusable_characters.txt");
+	println!("cargo:rerun-if-changed=validator.rs");
 }
