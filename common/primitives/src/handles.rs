@@ -29,10 +29,10 @@ pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
 pub type HandleSuffix = u16;
 
 /// The handle suffix range type
-pub type SuffixRangeType = HandleSuffix;
+pub type SuffixRangeType = u16;
 
 /// The cursor into the shuffled suffix sequence
-pub type SequenceIndex = HandleSuffix;
+pub type SequenceIndex = u16;
 
 /// Claim handle payload
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
