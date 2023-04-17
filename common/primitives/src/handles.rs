@@ -32,7 +32,7 @@ pub type HandleSuffix = u16;
 pub type SuffixRangeType = HandleSuffix;
 
 /// The cursor into the shuffled suffix sequence
-pub type SequenceIndex = u16;
+pub type SequenceIndex = HandleSuffix;
 
 /// Claim handle payload
 #[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
