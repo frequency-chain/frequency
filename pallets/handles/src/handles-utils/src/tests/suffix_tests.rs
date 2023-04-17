@@ -10,10 +10,10 @@ fn should_always_have_the_same_seed() {
 fn should_generate_the_same_sequence() {
 	assert_eq!(
 		generate_unique_suffixes(10, 99, "abcdefg").take(10).collect::<Vec<u16>>(),
-		vec![49, 28, 22, 87, 57, 39, 69, 54, 79, 37]
+		vec![23, 65, 16, 53, 25, 75, 29, 26, 10, 87]
 	);
 	assert_eq!(
 		generate_unique_suffixes(10, 99, "gfedcba").take(10).collect::<Vec<u16>>(),
-		vec![78, 52, 69, 46, 89, 34, 88, 49, 97, 77]
+		vec![64, 95, 99, 87, 44, 74, 20, 93, 43, 46]
 	);
 }
