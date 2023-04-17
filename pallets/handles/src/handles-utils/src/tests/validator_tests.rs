@@ -74,7 +74,7 @@ fn test_consists_of_supported_unicode_character_sets_rejects_emojis() {
 #[test]
 fn test_confusables_map_does_not_contain_keys_in_unsupported_character_sets() {
 	for key in CONFUSABLES.keys() {
-		//TODO: Remove this println! when the test is passings
+		//TODO: Remove this println! when the test is passing
 		println!("codepoint: {:x}", *key as u32);
 		assert!(consists_of_supported_unicode_character_sets(&key.to_string()));
 	}
