@@ -68,6 +68,8 @@ pub trait WeightInfo {
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight;
 	fn upsert_page_with_signature(s: u32, ) -> Weight;
 	fn delete_page_with_signature() -> Weight;
+	// Handles
+	fn claim_handle(b: u32, ) -> Weight;
 }
 
 /// Weights for pallet_msa using the Substrate node and recommended hardware.
@@ -197,5 +199,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_ref_time(65_000_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
+	}
+	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
+	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
+	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
+	fn claim_handle(b: u32, ) -> Weight {
+		Weight::from_ref_time(90_537_753 as u64)
+			// Standard Error: 27_078
+			.saturating_add(Weight::from_ref_time(104_522 as u64).saturating_mul(b as u64))
+			.saturating_add(T::DbWeight::get().reads(3 as u64))
+			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 }

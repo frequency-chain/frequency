@@ -24,6 +24,7 @@ ALL_CUSTOM_PALLETS=( \
   msa \
   schemas \
   stateful-storage \
+  handles \
   time-release \
   capacity \
   frequency-tx-payment \

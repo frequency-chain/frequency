@@ -95,6 +95,7 @@ benchmarks-frequency-tx-payment \
 benchmarks-overhead \
 benchmarks-schemas \
 benchmarks-stateful-storage \
+benchmarks-handles\
 benchmarks-time-release\
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
@@ -114,6 +115,7 @@ benchmarks-overhead-local \
 benchmarks-schemas-local \
 benchmarks-frequency-tx-payment-local \
 benchmarks-stateful-storage-local \
+benchmarks-handles-local \
 benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \

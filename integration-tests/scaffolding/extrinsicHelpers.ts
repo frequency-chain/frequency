@@ -1,7 +1,7 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u32, u64, Vec } from "@polkadot/types";
+import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
@@ -9,7 +9,10 @@ import {devAccounts, getBlockNumber, log, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
-import { ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
+import { u8aToHex } from "@polkadot/util/u8a/toHex";
+import { u8aWrapBytes } from "@polkadot/util";
+import type { Call } from '@polkadot/types/interfaces/runtime';
 
 export type ReleaseSchedule = {
     start: number;
@@ -92,6 +95,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
 
     private event?: IsEvent<C, N>;
     private extrinsic: () => SubmittableExtrinsic<"rxjs", T>;
+    // private call: Call;
     private keys: KeyringPair;
     public api: ApiRx;
 
@@ -127,6 +131,11 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         return firstValueFrom(this.extrinsic().paymentInfo(this.keys).pipe(
             map((info) => info.partialFee.toBigInt())
         ));
+    }
+
+    public getCall(): Call {
+        const call = ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
+        return call;
     }
 
     public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
@@ -310,6 +319,30 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule), keys, ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded);
     }
 
+    public static claimHandle(delegatorKeys: KeyringPair, payload: any): Extrinsic {
+        const proof = { Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(payload.toU8a()))) }
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.claimHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleClaimed);
+    }
+
+    public static retireHandle(delegatorKeys: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleRetired);
+    }
+
+    public static getHandleForMSA(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
+        let handle_response = ExtrinsicHelper.api.rpc.handles.getHandleForMsa(msa_id);
+        return firstValueFrom(handle_response);
+    }
+
+    public static getMsaForHandle(handle: string): Promise<Option<MessageSourceId>> {
+        let msa_response = ExtrinsicHelper.api.rpc.handles.getMsaForHandle(handle);
+        return firstValueFrom(msa_response);
+    }
+
+    public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
+        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
+        return firstValueFrom(suffixes);
+    }
+
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
     }
@@ -330,6 +363,10 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 
+    public static payWithCapacityBatchAll(keys: KeyringPair, calls: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
+    }
+
     public static async mine() {
       let res: CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
       ExtrinsicHelper.api.rpc.engine.finalizeBlock(res.blockHash);
@@ -338,7 +375,7 @@ export class ExtrinsicHelper {
     public static async run_to_block(blockNumber: number) {
       let currentBlock = await getBlockNumber();
       while (currentBlock < blockNumber) {
-        ExtrinsicHelper.mine();
+        await ExtrinsicHelper.mine();
         currentBlock = await getBlockNumber();
       }
     }

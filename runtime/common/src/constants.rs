@@ -133,6 +133,14 @@ pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
 pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
 // -end- Schemas Pallet ---
 
+// --- Handles Pallet ---
+// IMPORTANT: These values should only increase and never overlap with a previous set!
+/// The minimum suffix value
+pub type HandleSuffixMin = ConstU16<10>;
+/// The maximum suffix value
+pub type HandleSuffixMax = ConstU16<99>;
+// -end- Handles Pallet
+
 // --- TimeRelease Pallet ---
 // Update
 parameter_types! {

@@ -37,6 +37,7 @@ frame_support::construct_runtime!(
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
+		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>},
 	}
 );
 
@@ -98,6 +99,32 @@ impl pallet_schemas::Config for Test {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 	>;
+}
+
+impl pallet_handles::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = ();
+
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+
+	/// A type that will supply MSA related information
+	type MsaInfoProvider = Msa;
+
+	/// The minimum suffix value
+	type HandleSuffixMin = ConstU16<10>;
+
+	/// The maximum suffix value
+	type HandleSuffixMax = ConstU16<99>;
+
+	/// The mortality window for a handle claim
+	type MortalityWindowSize = ConstU32<150>;
+
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = ();
 }
 
 parameter_types! {
@@ -165,6 +192,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = MaxProviderNameSize;
 	type SchemaValidator = Schemas;
+	type HandleProvider = Handles;
 	type MortalityWindowSize = ConstU32<100>;
 	type MaxSignaturesStored = MaxSignaturesStored;
 	// The proposal type

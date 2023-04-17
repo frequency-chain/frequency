@@ -143,6 +143,7 @@ impl pallet_msa::Config for Test {
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type MaxProviderNameSize = ConstU32<16>;
 	type SchemaValidator = Schemas;
+	type HandleProvider = ();
 	type MortalityWindowSize = ConstU32<100>;
 	type Proposal = RuntimeCall;
 	type ProposalProvider = CouncilProposalProvider;

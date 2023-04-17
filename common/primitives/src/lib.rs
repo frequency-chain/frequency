@@ -11,6 +11,8 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+/// Types for the Handles pallet
+pub mod handles;
 /// macros
 pub mod macros;
 /// Structs and traits for the Messages pallet.

@@ -13,6 +13,7 @@ use crate::tests::other_tests::{
 	assert_revoke_delegation_by_delegator_no_effect, set_schema_count,
 };
 use common_primitives::{
+	handles::ClaimHandlePayload,
 	msa::{DelegatorId, ProviderId},
 	utils::wrap_binary_data,
 };
@@ -180,6 +181,34 @@ fn test_ensure_msa_can_retire_fails_if_any_delegations_exist() {
 		assert_err!(
 			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account),
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
+		);
+	})
+}
+
+#[test]
+fn test_ensure_msa_cannot_retire_if_handle_exists() {
+	new_test_ext().execute_with(|| {
+		let msa_id = 1;
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+
+		// Create accounts
+		let test_account_1 = AccountId32::new(test_account_1_key_pair.public().into());
+
+		// Add two accounts to the MSA
+		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
+
+		let claim_payload = ClaimHandlePayload::<<Test as frame_system::Config>::BlockNumber> {
+			base_handle: "hello".into(),
+			expiration: 2,
+		};
+
+		assert_ok!(pallet_handles::Pallet::<Test>::do_claim_handle(msa_id, claim_payload));
+
+		// Assumption: handle exists
+		// Retire the MSA
+		assert_noop!(
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account_1),
+			InvalidTransaction::Custom(ValidityError::HandleNotRetired as u8)
 		);
 	})
 }

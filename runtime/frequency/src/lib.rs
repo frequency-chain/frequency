@@ -30,6 +30,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{
+	handles::*,
 	messages::*,
 	msa::*,
 	node::*,
@@ -160,6 +161,7 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 );
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
@@ -427,7 +429,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 26,
+	spec_version: 27,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -536,6 +538,8 @@ impl pallet_msa::Config for Runtime {
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
 	type SchemaValidator = Schemas;
+	// The type that provides `Handle` related info for a given `MesssageSourceAccount`
+	type HandleProvider = Handles;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
 	// The maximum number of signatures that can be stored in the payload signature registry
@@ -875,6 +879,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
@@ -897,6 +902,7 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
+			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			_ => None,
 		}
 	}
@@ -1057,6 +1063,26 @@ impl pallet_stateful_storage::Config for Runtime {
 	type SchemaBenchmarkHelper = Schemas;
 }
 
+impl pallet_handles::Config for Runtime {
+	/// The overarching event type.
+	type RuntimeEvent = RuntimeEvent;
+	/// Weight information for extrinsics in this pallet.
+	type WeightInfo = pallet_handles::weights::SubstrateWeight<Runtime>;
+	/// The type that supplies MSA info
+	type MsaInfoProvider = Msa;
+	/// The minimum suffix value
+	type HandleSuffixMin = HandleSuffixMin;
+	/// The maximum suffix value
+	type HandleSuffixMax = HandleSuffixMax;
+	/// The conversion to a 32 byte AccountId
+	type ConvertIntoAccountId32 = ConvertInto;
+	// The number of blocks per virtual bucket
+	type MortalityWindowSize = MSAMortalityWindowSize;
+	/// A set of helper functions for benchmarking.
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
@@ -1129,6 +1155,7 @@ construct_runtime!(
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
+		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 	}
 );
 
@@ -1159,6 +1186,7 @@ mod benches {
 		[pallet_schemas, Schemas]
 		[pallet_messages, Messages]
 		[pallet_stateful_storage, StatefulStorage]
+		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
@@ -1324,6 +1352,20 @@ impl_runtime_apis! {
 
 		fn get_itemized_storage(msa_id: MessageSourceId, schema_id: SchemaId) -> Result<ItemizedStoragePageResponse, DispatchError> {
 			StatefulStorage::get_itemized_storage(msa_id, schema_id)
+		}
+	}
+
+	impl pallet_handles_runtime_api::HandlesRuntimeApi<Block> for Runtime {
+		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
+			Handles::get_handle_for_msa(msa_id)
+		}
+
+		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+			Handles::get_next_suffixes(base_handle, count)
+		}
+
+		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+			Handles::get_msa_id_for_handle(display_handle)
 		}
 	}
 

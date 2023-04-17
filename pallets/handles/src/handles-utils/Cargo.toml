@@ -1,0 +1,20 @@
+[package]
+authors = ["Frequency"]
+description = "Handles Utilities"
+edition = "2021"
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = "handles-utils"
+version = "0.0.0"
+publish = false
+repository = "https://github.com/libertyDSNP/frequency/"
+
+[dependencies]
+phf = { version = "0.11", default-features = false, features = ["macros"] }
+rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+unicode-normalization = { version = "0.1.22", default-features = false }
+twox-hash = { version = "1.6.3", default-features = false, features = ["digest_0_10"] }
+
+[features]
+default = ["std"]
+std = []
