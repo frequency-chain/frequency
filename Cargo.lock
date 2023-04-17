@@ -3312,8 +3312,8 @@ dependencies = [
 name = "handles-utils"
 version = "0.0.0"
 dependencies = [
+ "oorandom",
  "phf",
- "rand 0.8.5",
  "twox-hash",
  "unicode-normalization",
 ]
@@ -5160,6 +5160,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7e5500299e16ebb147ae15a00a942af264cf3688f47923b8fc2cd5858f23ad3"
 
 [[package]]
+name = "oorandom"
+version = "11.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0ab1bc2a289d34bd04a330323ac98a1b4bc82c9d9fcb1e66b63caa84da26b575"
+
+[[package]]
 name = "opaque-debug"
 version = "0.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5640,7 +5646,6 @@ dependencies = [
  "numtoa",
  "parity-scale-codec",
  "pretty_assertions",
- "rand 0.8.5",
  "scale-info",
  "serde",
  "sp-core",
