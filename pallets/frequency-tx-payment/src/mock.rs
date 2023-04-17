@@ -12,7 +12,7 @@ use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
-	AccountId32,
+	AccountId32, Perbill,
 };
 use sp_std::ops::Div;
 
@@ -213,12 +213,17 @@ impl pallet_transaction_payment::Config for Test {
 
 pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
 
+parameter_types! {
+	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+}
+
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = ();
-	type MinimumStakingAmount = ConstU64<10>; // this has to be >= TokenPerCapacity
+	// In test, this must be >= Token:Capacity ratio since unit is plancks
+	type MinimumStakingAmount = ConstU64<10>;
 	type MinimumTokenBalance = ConstU64<10>;
 	type MaxUnlockingChunks = ConstU32<4>;
 
@@ -228,7 +233,7 @@ impl pallet_capacity::Config for Test {
 	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU64<100>;
 	type EpochNumber = u32;
-	type TokenPerCapacity = ConstU32<TEST_TOKEN_PER_CAPACITY>;
+	type CapacityPerToken = TestCapacityPerToken;
 }
 
 use pallet_balances::Call as BalancesCall;

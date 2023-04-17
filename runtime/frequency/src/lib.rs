@@ -555,6 +555,10 @@ impl pallet_msa::Config for Runtime {
 	>;
 }
 
+parameter_types! {
+	pub const CapacityPerToken: Perbill = Perbill::from_percent(1);
+}
+
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
@@ -568,7 +572,7 @@ impl pallet_capacity::Config for Runtime {
 	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
-	type TokenPerCapacity = TokenPerCapacity;
+	type CapacityPerToken = CapacityPerToken;
 }
 
 impl pallet_schemas::Config for Runtime {

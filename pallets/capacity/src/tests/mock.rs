@@ -9,11 +9,11 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 };
 use frame_system::EnsureSigned;
-use sp_core::{ConstU8, H256};
+use sp_core::{crypto::Zeroize, ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32, DispatchError,
+	AccountId32, DispatchError, Perbill,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -152,12 +152,16 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+parameter_types! {
+	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+}
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = Msa;
-	type MinimumStakingAmount = ConstU64<10>; // this has to be >= TokenPerCapacity
+	// In test, this must be >= Token:Capacity ratio since unit is plancks
+	type MinimumStakingAmount = ConstU64<10>;
 	type MinimumTokenBalance = ConstU64<10>;
 	type MaxUnlockingChunks = ConstU32<4>;
 
@@ -167,7 +171,7 @@ impl pallet_capacity::Config for Test {
 	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU64<100>;
 	type EpochNumber = u32;
-	type TokenPerCapacity = ConstU32<10>;
+	type CapacityPerToken = TestCapacityPerToken;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

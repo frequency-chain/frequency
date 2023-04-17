@@ -365,7 +365,7 @@ fn ensure_can_stake_is_successful() {
 #[test]
 fn increase_stake_and_issue_capacity_is_successful() {
 	new_test_ext().execute_with(|| {
-		let staker = 100;
+		let staker = 10_000; // has 10_000 token
 		let target: MessageSourceId = 1;
 		let amount = 550;
 		let mut staking_account = StakingAccountDetails::<Test>::default();

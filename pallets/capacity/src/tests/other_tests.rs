@@ -130,19 +130,54 @@ fn it_configures_staking_minimum_greater_than_or_equal_to_existential_deposit() 
 	});
 }
 
+#[derive(Debug, Default)]
+struct UnstakingTestCase<T: Config> {
+	unstaking: u64,
+	total_staked: u64,
+	total_capacity: u64,
+	expected_reduction: BalanceOf<T>,
+}
+
 #[test]
 fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount() {
-	let unstaking_amount = 10;
-	let total_amount_staked = 100;
-	let total_capacity = 200;
-
-	let capacity_reduction = Capacity::calculate_capacity_reduction(
-		unstaking_amount,
-		total_amount_staked,
-		total_capacity,
-	);
-
-	assert_eq!(capacity_reduction, 20);
+	let test_cases: Vec<UnstakingTestCase<Test>> = vec![
+		UnstakingTestCase {
+			unstaking: 10,
+			total_staked: 100,
+			total_capacity: 200,
+			expected_reduction: 20,
+		},
+		UnstakingTestCase {
+			unstaking: 5,
+			total_staked: 300,
+			total_capacity: 30,
+			expected_reduction: 1,
+		},
+		UnstakingTestCase {
+			unstaking: 15,
+			total_staked: 30,
+			total_capacity: 2,
+			expected_reduction: 1,
+		},
+		UnstakingTestCase {
+			unstaking: 99,
+			total_staked: 100,
+			total_capacity: 2001,
+			expected_reduction: 1981,
+		},
+	];
+	for tc in test_cases {
+		let capacity_reduction = Capacity::calculate_capacity_reduction(
+			tc.unstaking,
+			tc.total_staked,
+			tc.total_capacity,
+		);
+		assert_eq!(
+			tc.expected_reduction, capacity_reduction,
+			"In case {:?} expected {:?}, got {:?}",
+			tc, tc.expected_reduction, capacity_reduction
+		);
+	}
 }
 
 #[test]

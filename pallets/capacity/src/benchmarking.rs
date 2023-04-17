@@ -39,7 +39,7 @@ benchmarks! {
 	stake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
-		let capacity: BalanceOf<T> = Capacity::<T>::calculate_capacity(amount);
+		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
 		let target = 1;
 
 		register_provider::<T>(target, "Foo");
@@ -85,7 +85,7 @@ benchmarks! {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(20u32.into());
 		let unstaking_amount = 9u32;
-		let capacity_amount: BalanceOf<T> = Capacity::<T>::calculate_capacity(staking_amount);
+		let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
 		let target = 1;
 		let block_number = 4u32;
 
