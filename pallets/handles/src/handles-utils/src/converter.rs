@@ -13,9 +13,6 @@ use alloc::{
 
 /// Will load up with all the confusables at build time.
 /// See build.rs
-#[derive(Clone)]
-enum CONFUSABLES {}
-
 include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 
 /// Delimiter for handles
