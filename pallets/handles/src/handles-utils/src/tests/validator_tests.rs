@@ -1,9 +1,5 @@
-use crate::{
-	confusables::CONFUSABLES,
-	validator::{
-		consists_of_supported_unicode_character_sets, contains_blocked_characters,
-		is_reserved_handle,
-	},
+use crate::validator::{
+	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
 };
 
 #[test]
@@ -74,6 +70,10 @@ fn test_consists_of_supported_unicode_character_sets_rejects_emojis() {
 
 	assert!(!consists_of_supported_unicode_character_sets(&string_containing_emojis));
 }
+
+// Will load `CONFUSABLES` with all the confusables at build time.
+// See build.rs
+include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 
 #[test]
 fn test_confusables_map_does_not_contain_keys_in_unsupported_character_sets() {
