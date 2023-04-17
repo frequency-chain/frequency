@@ -565,6 +565,7 @@ pub mod pallet {
 			);
 
 			let base_handle_str = Self::validate_base_handle(payload.base_handle)?;
+
 			// Convert base handle into a canonical base
 			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
