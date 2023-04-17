@@ -9,7 +9,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, ConstU64},
 };
 use frame_system::EnsureSigned;
-use sp_core::{crypto::Zeroize, ConstU8, H256};
+use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup},

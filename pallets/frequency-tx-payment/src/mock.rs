@@ -211,10 +211,11 @@ impl pallet_transaction_payment::Config for Test {
 	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
+// so the value can be used by create_capacity_for below, without having to pass it a Config.
 pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
 
 parameter_types! {
-	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(TEST_TOKEN_PER_CAPACITY);
 }
 
 impl pallet_capacity::Config for Test {

@@ -103,7 +103,7 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
 		let staking_amount = 60;
-		let unstaking_amount = 10; // TODO: we need to figure out how to deal with fractional capacity.
+		let unstaking_amount = 10;
 
 		register_provider(target, String::from("Test Target"));
 
