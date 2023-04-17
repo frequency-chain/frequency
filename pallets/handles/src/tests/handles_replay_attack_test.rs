@@ -128,7 +128,7 @@ fn test_claim_handle_fails_when_claiming_for_another_msa_with_no_existing_handle
 		// Try to claim the base handle for another MSA with a different account which should fail
 		let bob = sr25519::Pair::from_seed(&[1; 32]);
 		let (payload_spoofed, proof_spoofed) =
-			get_signed_claims_payload(&alice, base_handle_str.as_bytes().to_vec(), expiration);
+			get_signed_claims_payload(&bob, base_handle_str.as_bytes().to_vec(), expiration);
 		assert_noop!(
 			Handles::claim_handle(
 				RuntimeOrigin::signed(bob.public().into()),
