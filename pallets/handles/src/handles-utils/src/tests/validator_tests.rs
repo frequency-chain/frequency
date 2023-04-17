@@ -1,6 +1,6 @@
-use crate::validator::{
+use crate::{confusables::CONFUSABLES, validator::{
 	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
-};
+}};
 
 #[test]
 fn test_is_reserved_handle_happy_path() {
@@ -69,4 +69,13 @@ fn test_consists_of_supported_unicode_character_sets_rejects_emojis() {
 	let string_containing_emojis = format_args!("John{}", '\u{1F600}').to_string();
 
 	assert!(!consists_of_supported_unicode_character_sets(&string_containing_emojis));
+}
+
+#[test]
+fn test_confusables_map_does_not_contain_keys_in_unsupported_character_sets() {
+	for key in CONFUSABLES.keys() {
+		//TODO: Remove this println! when the test is passings
+		println!("codepoint: {:x}", *key as u32);
+		assert!(consists_of_supported_unicode_character_sets(&key.to_string()));
+	}
 }
