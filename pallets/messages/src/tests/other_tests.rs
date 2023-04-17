@@ -643,3 +643,17 @@ fn validate_cid_not_utf8_aligned_errors() {
 		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
 	})
 }
+
+#[test]
+fn validate_cid_not_correct_format_errors() {
+	new_test_ext().execute_with(|| {
+		// This should not panic, but should return an error.
+		let bad_cid = vec![0, 1, 0, 1, 203, 155, 0, 0, 0, 5, 67];
+
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
+		// This should not panic, but should return an error.
+		let another_bad_cid = vec![241, 0, 0, 0, 0, 0, 128, 132, 132, 132, 58];
+
+		assert_noop!(MessagesPallet::validate_cid(&another_bad_cid), Error::<Test>::InvalidCid);
+	})
+}
