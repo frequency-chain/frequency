@@ -39,7 +39,7 @@ pub fn generate_unique_suffixes(
 	// let min = min as usize;
 	// let max = max as usize;
 	(min..=max).rev().map(move |i| {
-		let j = rng.rand_range((min as u32)..(i+1) as u32) as u16;
+		let j = rng.rand_range((min as u32)..(i + 1) as u32) as u16;
 		indices.swap((i - min) as usize, (j - min) as usize);
 		indices[(i - min) as usize]
 	})
