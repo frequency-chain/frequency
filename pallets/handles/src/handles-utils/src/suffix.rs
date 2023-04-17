@@ -3,7 +3,7 @@
 //! `suffix_generator` provides a `SuffixGenerator` struct to generate unique suffix sequences for a given range
 //! and seed, excluding already used suffixes.
 
-use rand::{rngs::SmallRng, Rng, SeedableRng};
+use oorandom::Rand32;
 use twox_hash::XxHash64;
 extern crate alloc;
 use alloc::vec::Vec;
@@ -33,15 +33,15 @@ pub fn generate_unique_suffixes(
 	canonical_base: &str,
 ) -> impl Iterator<Item = u16> + '_ {
 	let seed = generate_seed(canonical_base);
-	let mut rng = SmallRng::seed_from_u64(seed);
+	let mut rng = Rand32::new(seed);
 
 	let mut indices: Vec<u16> = (min..=max).collect();
-	let min = min as usize;
-	let max = max as usize;
+	// let min = min as usize;
+	// let max = max as usize;
 	(min..=max).rev().map(move |i| {
-		let j = rng.gen_range(min..=i);
-		indices.swap(i - min, j - min);
-		indices[i - min]
+		let j = rng.rand_range((min as u32)..(i+1) as u32) as u16;
+		indices.swap((i - min) as usize, (j - min) as usize);
+		indices[(i - min) as usize]
 	})
 }
 

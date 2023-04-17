@@ -11,7 +11,7 @@ repository = "https://github.com/libertyDSNP/frequency/"
 
 [dependencies]
 phf = { version = "0.11", default-features = false, features = ["macros"] }
-rand = { version = "0.8.5", default-features = false, features = ["small_rng"] }
+oorandom = "11.1.3"
 unicode-normalization = { version = "0.1.22", default-features = false }
 twox-hash = { version = "1.6.3", default-features = false, features = ["digest_0_10"] }
 
