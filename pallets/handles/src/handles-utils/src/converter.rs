@@ -11,8 +11,8 @@ use alloc::{
 	vec::Vec,
 };
 
-/// Will load up with all the confusables at build time.
-/// See build.rs
+// Will load `CONFUSABLES` with all the confusables at build time.
+// See build.rs
 include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 
 /// Delimiter for handles
