@@ -1,6 +1,10 @@
-use crate::{confusables::CONFUSABLES, validator::{
-	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
-}};
+use crate::{
+	confusables::CONFUSABLES,
+	validator::{
+		consists_of_supported_unicode_character_sets, contains_blocked_characters,
+		is_reserved_handle,
+	},
+};
 
 #[test]
 fn test_is_reserved_handle_happy_path() {

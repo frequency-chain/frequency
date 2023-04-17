@@ -1,6 +1,9 @@
-use crate::{converter::{
-	replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
-}, convert_to_canonical};
+use crate::{
+	convert_to_canonical,
+	converter::{
+		replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
+	},
+};
 
 use crate::validator::consists_of_supported_unicode_character_sets;
 
