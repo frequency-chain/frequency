@@ -42,7 +42,7 @@ use alloc::{string::String, vec};
 mod benchmarking;
 
 use handles_utils::{
-	converter::{convert_to_canonical, split_display_name, HANDLE_DELIMITER},
+	converter::{convert_to_canonical, split_display_name, strip_diacriticals, HANDLE_DELIMITER},
 	suffix::generate_unique_suffixes,
 	validator::{
 		consists_of_supported_unicode_character_sets, contains_blocked_characters,
@@ -566,6 +566,13 @@ pub mod pallet {
 
 			let base_handle_str = Self::validate_base_handle(payload.base_handle)?;
 
+			// Strip diacritical marks from the validated handle
+			let diacritical_stripped_base_handle_str = strip_diacriticals(&base_handle_str);
+
+			Self::validate_base_handle_contains_characters_in_supported_ranges(
+				&diacritical_stripped_base_handle_str,
+			)?;
+
 			// Convert base handle into a canonical base
 			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
@@ -614,17 +621,24 @@ pub mod pallet {
 				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
 			);
-			// Validation: The handle must consist of characters not containing reserved words or blocked characters
-			ensure!(
-				consists_of_supported_unicode_character_sets(&base_handle_str),
-				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
-			);
+
 			ensure!(!is_reserved_handle(&base_handle_str), Error::<T>::HandleIsNotAllowed);
 			ensure!(
 				!contains_blocked_characters(&base_handle_str),
 				Error::<T>::HandleContainsBlockedCharacters
 			);
 			Ok(base_handle_str)
+		}
+
+		fn validate_base_handle_contains_characters_in_supported_ranges(
+			base_handle_str: &str,
+		) -> DispatchResult {
+			// Validation: The handle must consist of characters not containing reserved words or blocked characters
+			ensure!(
+				consists_of_supported_unicode_character_sets(&base_handle_str),
+				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
+			);
+			Ok(())
 		}
 
 		/// Creates a full display handle by combining a base handle string with supplied suffix

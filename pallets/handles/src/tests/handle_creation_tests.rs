@@ -243,3 +243,58 @@ fn test_get_next_suffixes() {
 		assert_eq!(presumptive_suffixes.len(), 5);
 	});
 }
+
+#[test]
+fn claim_handle_supports_stripping_diacriticals_from_utf8_with_combining_marks() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
+
+		// Construct a handle "Álvaro" where the first character consists of
+		// a base character and a combining mark for an accute accent
+		let mut handle_with_combining_mark = String::new();
+		handle_with_combining_mark.push('\u{0041}');
+		handle_with_combining_mark.push('\u{0301}');
+		handle_with_combining_mark.push_str("varo");
+
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			handle_with_combining_mark.as_bytes().to_vec(),
+			expiration,
+		);
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload.clone()
+		));
+
+		// Construct the handle "Álvaro" where the first character consists
+		// of the Latin-1 Supplement character 0x00C1, which contains both
+		// the base character `A` and the accute diacritical in one character
+		let mut handle_without_combining_mark = String::new();
+		handle_without_combining_mark.push('\u{00C1}');
+		handle_without_combining_mark.push_str("varo");
+
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			handle_with_combining_mark.as_bytes().to_vec(),
+			expiration,
+		);
+
+		// Assert that both forms of "Álvaro" pass validation and reduce
+		// to the same cannonical form as witnessed by the single unicode
+		// character form of the handle triggering `MSAHandleAlreadyExists`
+		// when the combined mark containing version has already successfully
+		// been used for handle creation
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload.clone()
+			),
+			Error::<Test>::MSAHandleAlreadyExists
+		);
+	});
+}

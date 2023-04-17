@@ -19,8 +19,8 @@ include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 pub const HANDLE_DELIMITER: char = '.';
 
 /// Creates a new `HandleConverter` instance with a built confusables map.
-/// Converts a given string to its canonical form by stripping Unicode whitespace,
-/// replacing confusable characters, and stripping diacritical marks.
+/// Converts a given string to its canonical form by stripping Unicode
+/// whitespace and replacing confusable characters.
 /// The resulting string is converted to lowercase ASCII characters.
 ///
 /// # Arguments
@@ -34,8 +34,7 @@ pub const HANDLE_DELIMITER: char = '.';
 pub fn convert_to_canonical(input_str: &str) -> alloc::string::String {
 	let white_space_stripped = strip_unicode_whitespace(input_str);
 	let confusables_removed = replace_confusables(&white_space_stripped);
-	let diacriticals_stripped = strip_diacriticals(&confusables_removed);
-	diacriticals_stripped.to_ascii_lowercase()
+	confusables_removed.to_ascii_lowercase()
 }
 
 /// Replaces any characters in the input string that are confusable with a different character.
