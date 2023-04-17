@@ -9,13 +9,11 @@
 	missing_docs
 )]
 
-pub mod confusables;
 pub mod converter;
 pub mod suffix;
 mod types;
 pub mod validator;
 
-pub use confusables::*;
 pub use converter::*;
 pub use validator::*;
 #[cfg(test)]

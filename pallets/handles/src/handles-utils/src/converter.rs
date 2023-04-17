@@ -2,13 +2,21 @@
 //!
 //! `handle_converter` provides functions to detect confusable Unicode characters in a
 //! given input string and return its canonical form.
-use crate::{confusables::CONFUSABLES, types::*};
+
 use unicode_normalization::{char::is_combining_mark, UnicodeNormalization};
 extern crate alloc;
+use crate::types::HandleSuffix;
 use alloc::{
 	string::{String, ToString},
 	vec::Vec,
 };
+
+/// Will load up with all the confusables at build time.
+/// See build.rs
+#[derive(Clone)]
+enum CONFUSABLES {}
+
+include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 
 /// Delimiter for handles
 pub const HANDLE_DELIMITER: char = '.';

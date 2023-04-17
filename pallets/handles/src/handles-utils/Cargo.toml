@@ -2,6 +2,7 @@
 authors = ["Frequency"]
 description = "Handles Utilities"
 edition = "2021"
+build = "build.rs"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "handles-utils"
