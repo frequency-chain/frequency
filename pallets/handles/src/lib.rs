@@ -101,11 +101,11 @@ pub mod pallet {
 
 		/// The minimum suffix value
 		#[pallet::constant]
-		type HandleSuffixMin: Get<u16>;
+		type HandleSuffixMin: Get<SuffixRangeType>;
 
 		/// The maximum suffix value
 		#[pallet::constant]
-		type HandleSuffixMax: Get<u16>;
+		type HandleSuffixMax: Get<SuffixRangeType>;
 
 		/// The number of blocks before a signature can be ejected from the PayloadSignatureRegistryList
 		#[pallet::constant]
@@ -142,11 +142,14 @@ pub mod pallet {
 	pub type MSAIdToDisplayName<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, (Handle, T::BlockNumber), OptionQuery>;
 
-	/// - Value: Cursor u16
+	/// - Key: Canonical Base Handle
+	/// - Value: (Sequence Index, Suffix Min)
+	/// - Sequence Index: The index of the next suffix to be used for this handle
+	/// - Suffix Min: The minimum suffix value for this handle
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
 	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
-		StorageMap<_, Blake2_128Concat, Handle, (SequenceIndex, HandleSuffix), OptionQuery>;
+		StorageMap<_, Blake2_128Concat, Handle, (SequenceIndex, SuffixRangeType), OptionQuery>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]

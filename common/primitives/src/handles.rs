@@ -28,6 +28,9 @@ pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
 /// The handle suffix
 pub type HandleSuffix = u16;
 
+/// The handle suffix range type
+pub type SuffixRangeType = HandleSuffix;
+
 /// The cursor into the shuffled suffix sequence
 pub type SequenceIndex = u16;
 
