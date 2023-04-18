@@ -1,18 +1,53 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::msa::MessageSourceId;
-use frame_support::{assert_noop, assert_ok};
+use common_primitives::{handles::SequenceIndex, msa::MessageSourceId};
+use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use handles_utils::converter::convert_to_canonical;
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
+
+/// Creates a full display handle by combining a base handle string with a suffix generated
+/// from an index into the suffix sequence.
+///
+/// # Arguments
+///
+/// * `base_handle_str` - The base handle string.
+/// * `suffix_sequence_index` - The index into the suffix sequence.
+///
+/// # Returns
+///
+/// * `DisplayHandle` - The full display handle.
+///
+fn create_full_handle_for_index(
+	base_handle_str: &str,
+	suffix_sequence_index: SequenceIndex,
+) -> Vec<u8> {
+	// Convert base handle into a canonical base
+	let canonical_handle_str = convert_to_canonical(&base_handle_str);
+
+	// Generate suffix from index into the suffix sequence
+	let suffix = Handles::generate_suffix_for_canonical_handle(
+		&canonical_handle_str,
+		suffix_sequence_index as usize,
+	)
+	.unwrap_or_default();
+
+	let display_handle = Handles::build_full_display_handle(base_handle_str, suffix).unwrap();
+	display_handle.into_inner()
+}
+
+struct TestCase<T> {
+	handle: &'static str,
+	expected: T,
+}
 
 #[test]
 fn test_full_handle_creation() {
 	new_test_ext().execute_with(|| {
 		// Min is 10, Max is 99 inclusive
 		for sequence_index in 0..89 {
-			let display_handle = Handles::create_full_handle_for_index("test", sequence_index);
-			let display_handle_str = core::str::from_utf8(&display_handle).ok().unwrap();
-			println!("display_handle_str={}", display_handle_str);
+			let display_handle = create_full_handle_for_index("test", sequence_index);
+			assert_ok!(core::str::from_utf8(&display_handle));
 		}
 	})
 }
@@ -33,7 +68,7 @@ fn claim_handle_happy_path() {
 
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
-		let handle = Handles::create_full_handle_for_index("test1", 0);
+		let handle = create_full_handle_for_index("test1", 0);
 		System::assert_last_event(Event::HandleClaimed { msa_id, handle }.into());
 	});
 }
@@ -43,25 +78,29 @@ fn claim_handle_already_claimed() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
-		assert_ok!(Handles::claim_handle(
-			RuntimeOrigin::signed(alice.public().into()),
-			alice.public().into(),
-			proof,
-			payload.clone()
-		));
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
-		assert_noop!(
-			Handles::claim_handle(
-				RuntimeOrigin::signed(alice.public().into()),
-				alice.public().into(),
-				proof,
-				payload
-			),
-			Error::<Test>::MSAHandleAlreadyExists
-		);
+
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
+			TestCase {
+				handle: "test1",
+				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
+			},
+		];
+
+		for test_case in test_cases {
+			let (payload, proof) =
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+
+			assert_eq!(
+				Handles::claim_handle(
+					RuntimeOrigin::signed(alice.public().into()),
+					alice.public().into(),
+					proof,
+					payload
+				),
+				test_case.expected
+			);
+		}
 	});
 }
 
@@ -70,26 +109,29 @@ fn claim_handle_already_claimed_with_different_case() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
-		assert_ok!(Handles::claim_handle(
-			RuntimeOrigin::signed(alice.public().into()),
-			alice.public().into(),
-			proof,
-			payload.clone()
-		));
 
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "TEST1".as_bytes().to_vec(), expiration);
-		assert_noop!(
-			Handles::claim_handle(
-				RuntimeOrigin::signed(alice.public().into()),
-				alice.public().into(),
-				proof,
-				payload
-			),
-			Error::<Test>::MSAHandleAlreadyExists
-		);
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
+			TestCase {
+				handle: "TEST1",
+				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
+			},
+		];
+
+		for test_case in test_cases {
+			let (payload, proof) =
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+
+			assert_eq!(
+				Handles::claim_handle(
+					RuntimeOrigin::signed(alice.public().into()),
+					alice.public().into(),
+					proof,
+					payload
+				),
+				test_case.expected
+			);
+		}
 	});
 }
 
@@ -98,26 +140,29 @@ fn claim_handle_already_claimed_with_homoglyph() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "test1".as_bytes().to_vec(), expiration);
-		assert_ok!(Handles::claim_handle(
-			RuntimeOrigin::signed(alice.public().into()),
-			alice.public().into(),
-			proof,
-			payload.clone()
-		));
 
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, "tést1".as_bytes().to_vec(), expiration);
-		assert_noop!(
-			Handles::claim_handle(
-				RuntimeOrigin::signed(alice.public().into()),
-				alice.public().into(),
-				proof,
-				payload
-			),
-			Error::<Test>::MSAHandleAlreadyExists
-		);
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
+			TestCase {
+				handle: "tést1",
+				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
+			},
+		];
+
+		for test_case in test_cases {
+			let (payload, proof) =
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+
+			assert_eq!(
+				Handles::claim_handle(
+					RuntimeOrigin::signed(alice.public().into()),
+					alice.public().into(),
+					proof,
+					payload
+				),
+				test_case.expected
+			);
+		}
 	});
 }
 
