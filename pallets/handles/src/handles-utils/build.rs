@@ -5,6 +5,13 @@ use std::{
 	path::Path,
 };
 
+mod constants;
+use constants::ALLOWED_UNICODE_CHARACTER_RANGES;
+
+fn allowed_char(c: char) -> bool {
+	ALLOWED_UNICODE_CHARACTER_RANGES.iter().any(|range| range.contains(&(c as u16)))
+}
+
 fn main() {
 	let input_file = File::open("src/data/confusable_characters.txt");
 	assert!(input_file.is_ok());
@@ -32,17 +39,25 @@ fn main() {
 		// The first character in the line will be the value of each key
 		let normalized_character = original_line_characters.next().unwrap();
 
+		// Skip if the normalized is not in the allowed range
+		if !allowed_char(normalized_character) {
+			continue
+		}
+
 		while let Some(homoglyph) = original_line_characters.next() {
-			let line = format!(
-				"\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n",
-				homoglyph as u32, normalized_character as u32
-			);
-			_ = output_file.write_all(line.as_bytes());
+			// Skip if the homoglyph is not in the allowed range
+			if allowed_char(homoglyph) {
+				let line = format!(
+					"\'\\u{{{:x}}}\' => \'\\u{{{:x}}}\',\n",
+					homoglyph as u32, normalized_character as u32
+				);
+				_ = output_file.write_all(line.as_bytes());
+			}
 		}
 	}
 	_ = output_file.write_all(b"};\n\n");
 
 	println!("cargo:rerun-if-changed=build.rs");
 	println!("cargo:rerun-if-changed=data/confusable_characters.txt");
-	println!("cargo:rerun-if-changed=validator.rs");
+	println!("cargo:rerun-if-changed=constants.rs");
 }
