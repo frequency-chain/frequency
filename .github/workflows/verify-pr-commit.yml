@@ -793,7 +793,7 @@ jobs:
       - name: Update Weights
         run: |
           set -x
-          pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
+          pallets_str="${{steps.should-run-benchmarks.outputs.pallets}}"
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
             echo "Running benchmarks for all pallets..."

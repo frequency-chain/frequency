@@ -89,6 +89,7 @@ upgrade-local:
 #       script directly, as it is able to run the build stage just once for all benchmarks
 #
 BENCH_TARGETS=\
+benchmarks-capacity \
 benchmarks-messages \
 benchmarks-msa \
 benchmarks-frequency-tx-payment \
@@ -109,13 +110,14 @@ benchmarks-pallet_treasury \
 benchmarks-pallet_utility
 
 BENCH_LOCAL_TARGETS=\
+benchmarks-capacity-local \
+benchmarks-handles-local \
 benchmarks-messages-local \
 benchmarks-msa-local \
 benchmarks-overhead-local \
 benchmarks-schemas-local \
 benchmarks-frequency-tx-payment-local \
 benchmarks-stateful-storage-local \
-benchmarks-handles-local \
 benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
@@ -161,9 +163,6 @@ benchmarks-multi:
 .PHONY: benchmarks-multi-local
 benchmarks-multi-local:
 	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
-
-benchmarks-capacity:
-	./scripts/run_benchmark.sh -p capacity
 
 .PHONY: docs
 docs:
