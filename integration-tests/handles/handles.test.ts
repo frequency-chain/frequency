@@ -139,7 +139,8 @@ describe("🤝 Handles", () => {
         it("should return same suffixes for `abcdefg` from chain as hardcoded", async function () {
             let suffixes = await ExtrinsicHelper.getNextSuffixesForHandle("abcdefg", 10);
             let suffixes_expected = [23, 65, 16, 53, 25, 75, 29, 26, 10, 87];
-            assert.deepEqual(suffixes.suffixes, suffixes_expected, "suffixes should be equal to suffixes_expected");
+            let resp_suffixes_number = suffixes.suffixes.map((x) => x.toNumber());
+            assert.deepEqual(resp_suffixes_number, suffixes_expected, "suffixes should be equal to suffixes_expected");
         });
     });
 });
