@@ -121,8 +121,8 @@ pub mod pallet {
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	/// - Keys: k1: Canonical base handle, k2: Suffix
-	/// - Value: MSA id
+	/// - Keys: k1: `CanonicalBase`, k2: `HandleSuffix`
+	/// - Value: `MessageSourceId`
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_id_for_canonical_and_suffix)]
 	pub type CanonicalBaseHandleAndSuffixToMSAId<T: Config> = StorageDoubleMap<
@@ -135,14 +135,14 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
-	/// - Key: MSA id
-	/// - Value: Display name
+	/// - Key: `MessageSourceId`
+	/// - Value: `DisplayHandle`
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, (DisplayHandle, T::BlockNumber), OptionQuery>;
 
-	/// - Key: Canonical Base DisplayHandle
+	/// - Key: `CanonicalBase`
 	/// - Value: (Sequence Index, Suffix Min)
 	/// - Sequence Index: The index of the next suffix to be used for this handle
 	/// - Suffix Min: The minimum suffix value for this handle
