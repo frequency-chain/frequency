@@ -11,8 +11,8 @@ type UnlockBVec<T> = BoundedVec<
 #[test]
 fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_unlock_chunk() {
 	let mut staking_account_details = StakingAccountDetails::<Test> {
-		active: BalanceOf::<Test>::from(10u64),
-		total: BalanceOf::<Test>::from(10u64),
+		active: BalanceOf::<Test>::from(15u64),
+		total: BalanceOf::<Test>::from(15u64),
 		unlocking: BoundedVec::default(),
 	};
 	assert_eq!(Ok(3u64), staking_account_details.withdraw(3, 3));
@@ -22,8 +22,8 @@ fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_u
 	assert_eq!(
 		staking_account_details,
 		StakingAccountDetails::<Test> {
-			active: BalanceOf::<Test>::from(7u64),
-			total: BalanceOf::<Test>::from(10u64),
+			active: BalanceOf::<Test>::from(12u64),
+			total: BalanceOf::<Test>::from(15u64),
 			unlocking: expected_chunks,
 		}
 	)
@@ -126,6 +126,6 @@ fn impl_staking_account_details_get_stakable_amount_for() {
 		assert_eq!(staking_account.get_stakable_amount_for(&account, 5), 5);
 
 		// When staking an amount above account free balance. It stakes all of the free balance.
-		assert_eq!(staking_account.get_stakable_amount_for(&account, 25), 10);
+		assert_eq!(staking_account.get_stakable_amount_for(&account, 200), 190);
 	});
 }

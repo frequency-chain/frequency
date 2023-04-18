@@ -374,6 +374,18 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
-pub type CapacityMaxEpochLength = ConstU32<7_200>;
-pub type CapacityUnstakingThawPeriod = ConstU16<2>;
+pub type CapacityMaxEpochLength = ConstU32<7_200>; // one day, assuming 12 second blocks.
+
+#[cfg(not(feature = "frequency-rococo-local"))]
+pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days given the above
+
+#[cfg(feature = "frequency-rococo-local")]
+pub type CapacityUnstakingThawPeriod = ConstU16<2>; // 2 Epochs
+
+parameter_types! {
+	// 1:50 Capacity:Token, must be declared this way instead of using `from_rational` because of
+	//  ```error[E0015]: cannot call non-const fn `Perbill::from_rational::<u32>` in constant functions```
+	pub const CapacityPerToken: Perbill = Perbill::from_percent(2);
+}
+
 // -end- Capacity Pallet ---

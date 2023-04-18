@@ -429,7 +429,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 27,
+	spec_version: 28,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -568,6 +568,7 @@ impl pallet_capacity::Config for Runtime {
 	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
+	type CapacityPerToken = CapacityPerToken;
 }
 
 impl pallet_schemas::Config for Runtime {

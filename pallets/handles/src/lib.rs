@@ -570,6 +570,10 @@ pub mod pallet {
 			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
+			Self::validate_canonical_handle_contains_characters_in_supported_ranges(
+				&canonical_handle_str,
+			)?;
+
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())?;
@@ -614,17 +618,24 @@ pub mod pallet {
 				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
 			);
-			// Validation: The handle must consist of characters not containing reserved words or blocked characters
-			ensure!(
-				consists_of_supported_unicode_character_sets(&base_handle_str),
-				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
-			);
+
 			ensure!(!is_reserved_handle(&base_handle_str), Error::<T>::HandleIsNotAllowed);
 			ensure!(
 				!contains_blocked_characters(&base_handle_str),
 				Error::<T>::HandleContainsBlockedCharacters
 			);
 			Ok(base_handle_str)
+		}
+
+		fn validate_canonical_handle_contains_characters_in_supported_ranges(
+			base_handle_str: &str,
+		) -> DispatchResult {
+			// Validation: The handle must consist of characters not containing reserved words or blocked characters
+			ensure!(
+				consists_of_supported_unicode_character_sets(&base_handle_str),
+				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
+			);
+			Ok(())
 		}
 
 		/// Creates a full display handle by combining a base handle string with supplied suffix

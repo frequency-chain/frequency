@@ -33,9 +33,9 @@ pub const HANDLE_DELIMITER: char = '.';
 ///
 pub fn convert_to_canonical(input_str: &str) -> alloc::string::String {
 	let white_space_stripped = strip_unicode_whitespace(input_str);
-	let confusables_removed = replace_confusables(&white_space_stripped);
-	let diacriticals_stripped = strip_diacriticals(&confusables_removed);
-	diacriticals_stripped.to_ascii_lowercase()
+	let diacriticals_stripped = strip_diacriticals(&white_space_stripped);
+	let confusables_removed = replace_confusables(&diacriticals_stripped);
+	confusables_removed.to_ascii_lowercase()
 }
 
 /// Replaces any characters in the input string that are confusable with a different character.

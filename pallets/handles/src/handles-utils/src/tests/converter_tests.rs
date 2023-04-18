@@ -1,5 +1,8 @@
-use crate::converter::{
-	replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
+use crate::{
+	convert_to_canonical,
+	converter::{
+		replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
+	},
 };
 
 use crate::validator::consists_of_supported_unicode_character_sets;
@@ -82,6 +85,28 @@ fn test_strip_unicode_whitespace() {
 	let whitespace_stripped_string = strip_unicode_whitespace(&string_with_whitespace);
 	println!("Whitespace stripped string: {}", whitespace_stripped_string);
 	assert_eq!(whitespace_stripped_string, "helloworld!");
+}
+
+#[test]
+fn test_convert_to_canonical_combining_marks_reduce_to_the_same_canonical_form() {
+	// Construct a handle "Álvaro" where the first character consists of
+	// a base character and a combining mark for an accute accent
+	let mut handle_with_combining_mark = String::new();
+	handle_with_combining_mark.push('\u{0041}');
+	handle_with_combining_mark.push('\u{0301}');
+	handle_with_combining_mark.push_str("varo");
+
+	// Construct the handle "Álvaro" where the first character consists
+	// of the Latin-1 Supplement character 0x00C1, which contains both
+	// the base character `A` and the accute diacritical in one character
+	let mut handle_without_combining_mark = String::new();
+	handle_without_combining_mark.push('\u{00C1}');
+	handle_without_combining_mark.push_str("varo");
+
+	let canonical_with_combining_mark = convert_to_canonical(&handle_with_combining_mark);
+	let canonical_without_combining_mark = convert_to_canonical(&handle_without_combining_mark);
+	assert_eq!(canonical_with_combining_mark, canonical_without_combining_mark);
+	assert_eq!(canonical_with_combining_mark, "avar0");
 }
 
 #[test]

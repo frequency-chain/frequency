@@ -216,14 +216,18 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
 }
 
 // Stakes the given amount of tokens from the given keys to the given provider
-export async function stakeToProvider(keys: KeyringPair, providerId: u64, amount: bigint): Promise<void> {
-  const stakeOp = ExtrinsicHelper.stake(keys, providerId, amount);
+export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+  const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
   const [stakeEvent] = await stakeOp.fundAndSend();
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
   if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {
     let stakedCapacity = stakeEvent.data.capacity;
-    assert.equal(stakedCapacity, amount, 'stakeToProvider: staked capacity should be equal to amount: ' + amount);
+
+    // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
+    let expectedCapacity = tokensToStake/TokenPerCapacity;
+
+    assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
   }
   else {
     return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
@@ -231,8 +235,9 @@ export async function stakeToProvider(keys: KeyringPair, providerId: u64, amount
 }
 
 export async function getNextEpochBlock() {
-  const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo())
-  return epochInfo.epochStart.toNumber() + TEST_EPOCH_LENGTH + 1;
+  const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo());
+  const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+  return actualEpochLength.toNumber() + epochInfo.epochStart.toNumber() + 1;
 }
 
 export async function setEpochLength(keys: KeyringPair, epochLength: number): Promise<void> {
@@ -242,6 +247,8 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
     ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent)) {
     const epochLength = setEpochLengthEvent.data.blocks;
     assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
+    const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+    assert.equal(actualEpochLength, TEST_EPOCH_LENGTH, `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`);
   }
   else {
     assert.fail("should return an EpochLengthUpdated event");
@@ -259,3 +266,5 @@ export async function createGraphChangeSchema(): Promise<u16> {
     assert.fail("failed to create a schema")
   }
 }
+
+export const TokenPerCapacity = 50n;
