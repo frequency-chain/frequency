@@ -11,8 +11,8 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	handles::{
-		Handle, HandleResponse, PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT,
-		MAX_SUFFIXES_COUNT,
+		BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse,
+		DEFAULT_SUFFIX_COUNT, MAX_SUFFIXES_COUNT,
 	},
 	msa::MessageSourceId,
 };
@@ -96,20 +96,20 @@ where
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle: Handle = base_handle
+		let base_handle: BaseHandle = base_handle
 			.into_bytes()
 			.try_into()
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;
 		let max_count = MAX_SUFFIXES_COUNT;
 		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
-		let suffixes_result = api.get_next_suffixes(&at, handle, count);
+		let suffixes_result = api.get_next_suffixes(&at, base_handle, count);
 		map_rpc_result(suffixes_result)
 	}
 
 	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
 		let at = BlockId::hash(self.client.info().best_hash);
-		let handle: Handle = display_handle
+		let handle: DisplayHandle = display_handle
 			.into_bytes()
 			.try_into()
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;

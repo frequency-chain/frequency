@@ -121,35 +121,40 @@ pub mod pallet {
 	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
-	/// - Keys: k1: Canonical base handle, k2: Suffix
-	/// - Value: MSA id
+	/// - Keys: k1: `CanonicalBase`, k2: `HandleSuffix`
+	/// - Value: `MessageSourceId`
 	#[pallet::storage]
 	#[pallet::getter(fn get_msa_id_for_canonical_and_suffix)]
 	pub type CanonicalBaseHandleAndSuffixToMSAId<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		Handle,
+		CanonicalBase,
 		Twox64Concat,
 		HandleSuffix,
 		MessageSourceId,
 		OptionQuery,
 	>;
 
-	/// - Key: MSA id
-	/// - Value: Display name
+	/// - Key: `MessageSourceId`
+	/// - Value: `DisplayHandle`
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, (Handle, T::BlockNumber), OptionQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, (DisplayHandle, T::BlockNumber), OptionQuery>;
 
-	/// - Key: Canonical Base Handle
+	/// - Key: `CanonicalBase`
 	/// - Value: (Sequence Index, Suffix Min)
 	/// - Sequence Index: The index of the next suffix to be used for this handle
 	/// - Suffix Min: The minimum suffix value for this handle
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
-	pub type CanonicalBaseHandleToSuffixIndex<T: Config> =
-		StorageMap<_, Blake2_128Concat, Handle, (SequenceIndex, SuffixRangeType), OptionQuery>;
+	pub type CanonicalBaseHandleToSuffixIndex<T: Config> = StorageMap<
+		_,
+		Blake2_128Concat,
+		CanonicalBase,
+		(SequenceIndex, SuffixRangeType),
+		OptionQuery,
+	>;
 
 	#[derive(PartialEq, Eq)] // for testing
 	#[pallet::error]
@@ -223,7 +228,7 @@ pub mod pallet {
 		/// * `Ok(SequenceIndex)` - The next suffix index for the canonical base.
 		/// * `Err(DispatchError)` - The suffixes are exhausted.
 		pub fn get_next_suffix_index_for_canonical_handle(
-			canonical_base: Handle,
+			canonical_base: CanonicalBase,
 		) -> Result<SequenceIndex, DispatchError> {
 			let next: SequenceIndex;
 			match Self::get_current_suffix_index_for_canonical_handle(canonical_base) {
@@ -385,7 +390,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Retire a handle for a given `Handle` owner.
+		/// Retire a handle for a given `DisplayHandle` owner.
 		///
 		/// # Arguments
 		///
@@ -461,7 +466,10 @@ pub mod pallet {
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
 		/// ```
-		pub fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		pub fn get_next_suffixes(
+			base_handle: BaseHandle,
+			count: u16,
+		) -> PresumptiveSuffixesResponse {
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
 			// Convert base handle into a canonical base
@@ -502,7 +510,7 @@ pub mod pallet {
 		///
 		/// * `Option<MessageSourceId>` - The `MessageSourceId` if the handle is valid.
 		///
-		pub fn get_msa_id_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+		pub fn get_msa_id_for_handle(display_handle: DisplayHandle) -> Option<MessageSourceId> {
 			let display_handle_str = core::str::from_utf8(&display_handle).unwrap_or_default();
 			let (base_handle_str, suffix) = split_display_name(display_handle_str)?;
 			// Convert base handle into a canonical base
@@ -521,7 +529,7 @@ pub mod pallet {
 		///
 		/// # Returns
 		///
-		/// * `Handle` - The full display handle.
+		/// * `DisplayHandle` - The full display handle.
 		///
 		#[cfg(test)]
 		pub fn create_full_handle_for_index(
@@ -552,7 +560,7 @@ pub mod pallet {
 		///
 		/// # Returns
 		///
-		/// * `Handle` - The full display handle.
+		/// * `DisplayHandle` - The full display handle.
 		///
 		pub fn do_claim_handle(
 			msa_id: MessageSourceId,
@@ -613,7 +621,7 @@ pub mod pallet {
 			// Note: the count() can panic but won't because the base_handle byte length is already checked
 			let len = base_handle_str.chars().count() as u32;
 
-			// Validation: Handle character length must be within range
+			// Validation: `BaseHandle` character length must be within range
 			ensure!(
 				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
@@ -647,12 +655,12 @@ pub mod pallet {
 		///
 		/// # Returns
 		///
-		/// * `Handle` - The full display handle.
+		/// * `DisplayHandle` - The full display handle.
 		///
 		fn build_full_display_handle(
 			base_handle: &str,
 			suffix: HandleSuffix,
-		) -> Result<Handle, DispatchError> {
+		) -> Result<DisplayHandle, DispatchError> {
 			let mut full_handle_vec: Vec<u8> = vec![];
 			full_handle_vec.extend(base_handle.as_bytes());
 			full_handle_vec.push(HANDLE_DELIMITER as u8); // The delimiter
@@ -694,10 +702,12 @@ pub mod pallet {
 		}
 
 		/// Converts a base handle to a canonical base.
-		fn get_canonical_string_vec_from_base_handle(base_handle_str: &str) -> (String, Handle) {
+		fn get_canonical_string_vec_from_base_handle(
+			base_handle_str: &str,
+		) -> (String, CanonicalBase) {
 			let canonical_handle_str = convert_to_canonical(&base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
-			let canonical_base: Handle = canonical_handle_vec.try_into().unwrap_or_default();
+			let canonical_base: CanonicalBase = canonical_handle_vec.try_into().unwrap_or_default();
 			(canonical_handle_str, canonical_base)
 		}
 	}

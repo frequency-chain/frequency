@@ -429,7 +429,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 28,
+	spec_version: 29,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1361,11 +1361,11 @@ impl_runtime_apis! {
 			Handles::get_handle_for_msa(msa_id)
 		}
 
-		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		fn get_next_suffixes(base_handle: BaseHandle, count: u16) -> PresumptiveSuffixesResponse {
 			Handles::get_next_suffixes(base_handle, count)
 		}
 
-		fn get_msa_for_handle(display_handle: Handle) -> Option<MessageSourceId> {
+		fn get_msa_for_handle(display_handle: DisplayHandle) -> Option<MessageSourceId> {
 			Handles::get_msa_id_for_handle(display_handle)
 		}
 	}

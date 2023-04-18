@@ -22,9 +22,15 @@ pub const SUFFIX_MAX_DIGITS: usize = 5; // The max value of a HandleSuffix (u16)
 pub const MAX_SUFFIXES_COUNT: u16 = 100;
 /// The default count of suffixes to request if none is provided
 pub const DEFAULT_SUFFIX_COUNT: u16 = 1;
-/// A handle (base, canonical, or display)
-pub type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
-
+/// A generic handle type  (base, canonical, or display)
+type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
+/// A base handle, which is chosen by the user
+pub type BaseHandle = Handle;
+/// A canonical base, which is a reduced/translated version of the base handle
+pub type CanonicalBase = Handle;
+/// A display handle, which is a base handle with suffix separated by a delimiter
+pub type DisplayHandle =
+	BoundedVec<u8, ConstU32<{ HANDLE_BASE_BYTES_MAX + SUFFIX_MAX_DIGITS as u32 + 1u32 }>>;
 /// The handle suffix
 pub type HandleSuffix = u16;
 
