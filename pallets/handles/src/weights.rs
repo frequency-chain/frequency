@@ -62,9 +62,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	fn claim_handle(b: u32, ) -> Weight {
-		Weight::from_ref_time(87_572_026 as u64)
-			// Standard Error: 20_086
-			.saturating_add(Weight::from_ref_time(83_769 as u64).saturating_mul(b as u64))
+		Weight::from_ref_time(88_832_025 as u64)
+			// Standard Error: 18_842
+			.saturating_add(Weight::from_ref_time(38_671 as u64).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -72,7 +72,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	fn retire_handle() -> Weight {
-		Weight::from_ref_time(28_247_000 as u64)
+		Weight::from_ref_time(28_685_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -85,9 +85,9 @@ impl WeightInfo for () {
 	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	fn claim_handle(b: u32, ) -> Weight {
-		Weight::from_ref_time(87_572_026 as u64)
-			// Standard Error: 20_086
-			.saturating_add(Weight::from_ref_time(83_769 as u64).saturating_mul(b as u64))
+		Weight::from_ref_time(88_832_025 as u64)
+			// Standard Error: 18_842
+			.saturating_add(Weight::from_ref_time(38_671 as u64).saturating_mul(b as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
@@ -95,7 +95,7 @@ impl WeightInfo for () {
 	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
 	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	fn retire_handle() -> Weight {
-		Weight::from_ref_time(28_247_000 as u64)
+		Weight::from_ref_time(28_685_000 as u64)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
