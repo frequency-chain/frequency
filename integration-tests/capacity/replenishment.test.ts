@@ -15,7 +15,7 @@ import {
   createGraphChangeSchema,
   CENTS,
   DOLLARS,
-  STARTING_BALANCE
+  TokenPerCapacity,
 } from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
 
@@ -29,7 +29,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
-    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", STARTING_BALANCE);
+    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", 50n*DOLLARS);
     assert.notEqual(stakeProviderId, 0, "stakeProviderId should not be zero");
     await stakeToProvider(stakeKeys, stakeProviderId, stakingAmount);
     return [stakeKeys, stakeProviderId];
@@ -46,18 +46,19 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Capacity is replenished", function () {
     it("after new epoch", async function () {
-      const totalCapacity = 3n * 1500n * 1000n;
-      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalCapacity);
+      const totalStaked = 2n*DOLLARS;
+      let expectedCapacity = totalStaked/TokenPerCapacity;
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // confirm that we start with a full tank
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-      assert.equal(totalCapacity, remainingCapacity);
+      assert.equal(expectedCapacity, remainingCapacity);
 
       await call.payWithCapacity(-1);
       remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-      assert(totalCapacity > remainingCapacity);
+      assert(expectedCapacity > remainingCapacity);
 
       // one more txn to deplete capacity more so this current remaining is different from when
       // we submitted the first message.
@@ -82,7 +83,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Capacity is not replenished", function () {
     it("if out of capacity and last_replenished_at is <= current epoch", async function () {
-      let [stakeKeys, stakeProviderId] = await createAndStakeProvider("NoSend", 3n * CENTS);
+      let [stakeKeys, _] = await createAndStakeProvider("NoSend", 150n * CENTS);
       let payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       let call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
@@ -103,24 +104,28 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function () {
     it("provider is still replenished and can send a message", async function () {
-      const providerStakeAmt = 2n * CENTS;
-      const userStakeAmt = 1n * CENTS;
-      const userIncrementAmt = 1000n;
+      const providerStakeAmt = 3n * DOLLARS;
+      const userStakeAmt = 100n * CENTS;
+      const userIncrementAmt = 1n * CENTS;
 
-      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", 1n * CENTS);
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", providerStakeAmt);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(devAccounts[0].keys, userKeys, 2n * CENTS + DOLLARS);
-      await ExtrinsicHelper.createMsa(userKeys).fundAndSend();
+      await fundKeypair(devAccounts[0].keys, userKeys, 5n* DOLLARS);
       let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
 
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
+      let expected_capacity = (providerStakeAmt + userStakeAmt)/TokenPerCapacity;
       const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt()
-      assert.equal(providerStakeAmt, totalCapacity);
+      assert.equal(expected_capacity, totalCapacity, `expected ${expected_capacity} capacity, got ${totalCapacity}`);
 
+      // do the txn a few times to run them out of funds
+      await call.payWithCapacity(-1)
+      await call.payWithCapacity(-1)
+      await call.payWithCapacity(-1)
       await call.payWithCapacity(-1)
 
       // ensure provider can't send a message; they are out of capacity

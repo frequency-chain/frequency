@@ -12,8 +12,9 @@ use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
-	AccountId32,
+	AccountId32, Perbill,
 };
+use sp_std::ops::Div;
 
 use frame_support::{
 	parameter_types,
@@ -210,12 +211,20 @@ impl pallet_transaction_payment::Config for Test {
 	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
+// so the value can be used by create_capacity_for below, without having to pass it a Config.
+pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
+
+parameter_types! {
+	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(TEST_TOKEN_PER_CAPACITY);
+}
+
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = ();
-	type MinimumStakingAmount = ConstU64<5>;
+	// In test, this must be >= Token:Capacity ratio since unit is plancks
+	type MinimumStakingAmount = ConstU64<10>;
 	type MinimumTokenBalance = ConstU64<10>;
 	type MaxUnlockingChunks = ConstU32<4>;
 
@@ -225,6 +234,7 @@ impl pallet_capacity::Config for Test {
 	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU64<100>;
 	type EpochNumber = u32;
+	type CapacityPerToken = TestCapacityPerToken;
 }
 
 use pallet_balances::Call as BalancesCall;
@@ -330,12 +340,12 @@ impl ExtBuilder {
 				<Test as frame_system::Config>::AccountId,
 				<Test as pallet_balances::Config>::Balance,
 			)> = vec![
-				(1, 10 * self.balance_factor),
-				(2, 20 * self.balance_factor),
-				(3, 30 * self.balance_factor),
-				(4, 40 * self.balance_factor),
-				(5, 50 * self.balance_factor),
-				(6, 60 * self.balance_factor),
+				(1, 100 * self.balance_factor),
+				(2, 200 * self.balance_factor),
+				(3, 300 * self.balance_factor),
+				(4, 400 * self.balance_factor),
+				(5, 500 * self.balance_factor),
+				(6, 600 * self.balance_factor),
 			];
 			msa_accounts.iter().for_each(|(account, balance)| {
 				let msa_id = create_msa_account(account.clone());
@@ -358,6 +368,7 @@ pub fn create_msa_account(
 
 fn create_capacity_for(target: MessageSourceId, amount: u64) {
 	let mut capacity_details = Capacity::get_capacity_for(target).unwrap_or_default();
-	capacity_details.deposit(&amount).unwrap();
+	let capacity: u64 = amount / (TEST_TOKEN_PER_CAPACITY as u64);
+	capacity_details.deposit(&amount, &capacity).unwrap();
 	Capacity::set_capacity_for(target, capacity_details);
 }
