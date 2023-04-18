@@ -243,3 +243,53 @@ fn test_get_next_suffixes() {
 		assert_eq!(presumptive_suffixes.len(), 5);
 	});
 }
+
+#[test]
+fn claim_handle_supports_stripping_diacriticals_from_utf8_with_combining_marks() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
+
+		// Construct a handle "Álvaro" where the first character consists of
+		// a base character and a combining mark for an accute accent
+		let mut handle_with_combining_mark = String::new();
+		handle_with_combining_mark.push('\u{0041}');
+		handle_with_combining_mark.push('\u{0301}');
+		handle_with_combining_mark.push_str("varo");
+
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			handle_with_combining_mark.as_bytes().to_vec(),
+			expiration,
+		);
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload.clone()
+		));
+	});
+}
+
+#[test]
+fn claim_handle_fails_when_handle_contains_unsupported_unicode_characters() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
+		let handle_with_unsupported_unicode_characters = "𓅓𓅱𓅱𓆑𓆷";
+		let (payload, proof) = get_signed_claims_payload(
+			&alice,
+			handle_with_unsupported_unicode_characters.as_bytes().to_vec(),
+			expiration,
+		);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload.clone()
+			),
+			Error::<Test>::HandleDoesNotConsistOfSupportedCharacterSets
+		);
+	});
+}
