@@ -83,12 +83,6 @@ ignore = [
     "RUSTSEC-2021-0139",
     # Substrate dependency. Does not effect WASM and dependencies do not appear to use effected functions
     "RUSTSEC-2020-0071",
-    # Substrate dependency.
-    #    See: https://github.com/LibertyDSNP/frequency/issues/860
-    #    See: https://github.com/LibertyDSNP/frequency/issues/864
-    "RUSTSEC-2022-0076",
-    # Polkadot build dependency only
-    "RUSTSEC-2023-0018",
     # Substrate depednency
     #    Windows issue, does not effect Frequency
     "RUSTSEC-2021-0145",
@@ -281,7 +275,7 @@ allow-git = []
 
 [sources.allow-org]
 # 1 or more github.com organizations to allow git sources for
-github = ["paritytech", "open-web3-stack"]
+github = ["paritytech"]
 # 1 or more gitlab.com organizations to allow git sources for
 # gitlab = [""]
 # 1 or more bitbucket.org organizations to allow git sources for
