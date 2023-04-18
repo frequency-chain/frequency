@@ -28,8 +28,9 @@ type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
 pub type BaseHandle = Handle;
 /// A canonical base, which is a reduced/translated version of the base handle
 pub type CanonicalBase = Handle;
-/// A display handle, which is a base handle with a suffix
-pub type DisplayHandle = Handle;
+/// A display handle, which is a base handle with suffix separated by a delimiter
+pub type DisplayHandle =
+	BoundedVec<u8, ConstU32<{ HANDLE_BASE_BYTES_MAX + SUFFIX_MAX_DIGITS as u32 + 1u32 }>>;
 /// The handle suffix
 pub type HandleSuffix = u16;
 
