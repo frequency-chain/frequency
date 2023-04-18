@@ -12,7 +12,6 @@ fn test_full_handle_creation() {
 		for sequence_index in 0..89 {
 			let display_handle = Handles::create_full_handle_for_index("test", sequence_index);
 			assert_ok!(core::str::from_utf8(&display_handle));
-
 		}
 	})
 }

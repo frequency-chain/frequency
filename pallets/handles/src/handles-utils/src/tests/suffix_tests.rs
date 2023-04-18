@@ -1,4 +1,6 @@
 use crate::suffix::{generate_seed, generate_unique_suffixes};
+use std::collections::HashSet;
+
 
 #[test]
 fn should_always_have_the_same_seed() {
@@ -16,4 +18,19 @@ fn should_generate_the_same_sequence() {
 		generate_unique_suffixes(10, 99, "gfedcba").take(10).collect::<Vec<u16>>(),
 		vec![64, 95, 99, 87, 44, 74, 20, 93, 43, 46]
 	);
+}
+
+#[test]
+fn should_generate_unique_sequence() {
+	let mut suffix_set = HashSet::new();
+	let suffixes = generate_unique_suffixes(0, 99, "abcdefg");
+
+	for suffix in suffixes {
+		let unique = suffix_set.insert(suffix);
+		assert!(
+			unique,
+			"Duplicate suffix generated: {}",
+			suffix
+		);
+	}
 }
