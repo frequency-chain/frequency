@@ -1,7 +1,6 @@
 use crate::suffix::{generate_seed, generate_unique_suffixes};
 use std::collections::HashSet;
 
-
 #[test]
 fn should_always_have_the_same_seed() {
 	assert_eq!(generate_seed("abcdefg"), 15079896798642598352u64);
@@ -27,10 +26,6 @@ fn should_generate_unique_sequence() {
 
 	for suffix in suffixes {
 		let unique = suffix_set.insert(suffix);
-		assert!(
-			unique,
-			"Duplicate suffix generated: {}",
-			suffix
-		);
+		assert!(unique, "Duplicate suffix generated: {}", suffix);
 	}
 }
