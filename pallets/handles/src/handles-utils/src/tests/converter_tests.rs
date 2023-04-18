@@ -106,6 +106,7 @@ fn test_convert_to_canonical_combining_marks_reduce_to_the_same_canonical_form()
 	let canonical_with_combining_mark = convert_to_canonical(&handle_with_combining_mark);
 	let canonical_without_combining_mark = convert_to_canonical(&handle_without_combining_mark);
 	assert_eq!(canonical_with_combining_mark, canonical_without_combining_mark);
+	assert_eq!(canonical_with_combining_mark, "avar0");
 }
 
 #[test]
