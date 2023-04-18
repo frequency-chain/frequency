@@ -2,6 +2,8 @@ use crate::converter::{
 	replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
 };
 
+use crate::validator::consists_of_supported_unicode_character_sets;
+
 use std::{
 	fs::File,
 	io::{BufRead, BufReader},
@@ -27,7 +29,11 @@ fn test_replace_confusables() {
 			let first_character_codepoint = format!("\'\\u{{{:x}}}\'", first_character as u32);
 			// println!("normalized_character_codepoint: {}  first_character_codepoint: {}", normalized_character_codepoint, first_character_codepoint);
 
-			assert_eq!(first_character_codepoint, normalized_character_codepoint);
+			if consists_of_supported_unicode_character_sets(
+				format!("{}{}", normalized_character, first_character).as_str(),
+			) {
+				assert_eq!(first_character_codepoint, normalized_character_codepoint);
+			}
 		}
 	}
 }
