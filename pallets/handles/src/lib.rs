@@ -314,7 +314,7 @@ pub mod pallet {
 		///
 		/// The generated suffix as a `u16`.
 		///
-		fn generate_suffix_for_canonical_handle(
+		pub fn generate_suffix_for_canonical_handle(
 			canonical_base: &str,
 			cursor: usize,
 		) -> Result<u16, DispatchError> {
@@ -519,37 +519,6 @@ pub mod pallet {
 			Self::get_msa_id_for_canonical_and_suffix(canonical_base, suffix)
 		}
 
-		/// Creates a full display handle by combining a base handle string with a suffix generated
-		/// from an index into the suffix sequence.
-		///
-		/// # Arguments
-		///
-		/// * `base_handle_str` - The base handle string.
-		/// * `suffix_sequence_index` - The index into the suffix sequence.
-		///
-		/// # Returns
-		///
-		/// * `DisplayHandle` - The full display handle.
-		///
-		#[cfg(test)]
-		pub fn create_full_handle_for_index(
-			base_handle_str: &str,
-			suffix_sequence_index: SequenceIndex,
-		) -> Vec<u8> {
-			// Convert base handle into a canonical base
-			let canonical_handle_str = convert_to_canonical(&base_handle_str);
-
-			// Generate suffix from index into the suffix sequence
-			let suffix = Self::generate_suffix_for_canonical_handle(
-				&canonical_handle_str,
-				suffix_sequence_index as usize,
-			)
-			.unwrap_or_default();
-
-			let display_handle = Self::build_full_display_handle(base_handle_str, suffix).unwrap();
-			display_handle.into_inner()
-		}
-
 		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
 		/// generating a canonical base, generating a suffix, and composing the full display handle.
 		///
@@ -657,7 +626,7 @@ pub mod pallet {
 		///
 		/// * `DisplayHandle` - The full display handle.
 		///
-		fn build_full_display_handle(
+		pub fn build_full_display_handle(
 			base_handle: &str,
 			suffix: HandleSuffix,
 		) -> Result<DisplayHandle, DispatchError> {
