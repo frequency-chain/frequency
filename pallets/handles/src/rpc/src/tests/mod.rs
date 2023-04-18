@@ -3,7 +3,7 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::handles::{Handle, PresumptiveSuffixesResponse};
+use common_primitives::handles::{BaseHandle, PresumptiveSuffixesResponse};
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
@@ -23,7 +23,7 @@ sp_api::mock_impl_runtime_apis! {
 			}
 		}
 
-		fn get_next_suffixes(base_handle: Handle, count: u16) -> PresumptiveSuffixesResponse {
+		fn get_next_suffixes(base_handle: BaseHandle, count: u16) -> PresumptiveSuffixesResponse {
 			let mut suffixes = Vec::new();
 			for i in 0..count {
 				suffixes.push(i);
