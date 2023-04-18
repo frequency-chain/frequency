@@ -6,14 +6,14 @@ import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
 import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
-    devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
-    generateDelegationPayload, getBlockNumber, signPayloadSr25519, stakeToProvider, fundKeypair,
-    TEST_EPOCH_LENGTH,
-    setEpochLength,
-    generateAddKeyPayload,
-    CENTS,
-    DOLLARS,
-    createGraphChangeSchema
+  devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
+  generateDelegationPayload, getBlockNumber, signPayloadSr25519, stakeToProvider, fundKeypair,
+  TEST_EPOCH_LENGTH,
+  setEpochLength,
+  generateAddKeyPayload,
+  CENTS,
+  DOLLARS,
+  createGraphChangeSchema, TokenPerCapacity
 } from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
 
@@ -33,7 +33,7 @@ describe("Capacity Transactions", function () {
             let capacityKeys: KeyringPair;
             let capacityProvider: u64;
             let schemaId: u16;
-            const amountStaked = 9n * CENTS;
+            const amountStaked = 25n * DOLLARS;
 
             beforeEach(async function () {
                 capacityKeys = createKeys("CapacityKeys");
@@ -63,7 +63,6 @@ describe("Capacity Transactions", function () {
                     signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
                 const [grantDelegationEvent, chainEvents] = await grantDelegationOp.payWithCapacity();
-
                 if (grantDelegationEvent &&
                     !(ExtrinsicHelper.api.events.msa.DelegationGranted.is(grantDelegationEvent))) {
                     assert.fail("should return a DelegationGranted event");
@@ -78,16 +77,15 @@ describe("Capacity Transactions", function () {
                 else {
                     assert.fail("should return a CapacityWithdrawn event");
                 }
-                const remainingCapacity = amountStaked - fee.toBigInt();
+                const expectedRemainingCapacity = amountStaked/TokenPerCapacity - fee.toBigInt();
 
                 // Check for remaining capacity to be reduced by correct amount
                 const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
-                assert.equal(capacityStaked.remainingCapacity, remainingCapacity,
-                    `should return a capacityLedger with ${remainingCapacity} remainingCapacity`);
-                assert.equal(capacityStaked.totalTokensStaked, amountStaked,
-                    `should return a capacityLedger with ${amountStaked} total tokens staked`);
-                assert.equal(capacityStaked.totalCapacityIssued, amountStaked,
-                    `should return a capacityLedger with ${amountStaked} total capacity issued`);
+
+                let remaining = capacityStaked.remainingCapacity.toBigInt();
+                assert.equal(remaining, expectedRemainingCapacity);
+                assert.equal(capacityStaked.totalTokensStaked, amountStaked);
+                assert.equal(capacityStaked.totalCapacityIssued, amountStaked/TokenPerCapacity);
             });
 
             // When a user attempts to pay for a non-capacity transaction with Capacity,
@@ -229,7 +227,7 @@ describe("Capacity Transactions", function () {
             let capacityProvider: u64;
             let schemaId: u16;
             let defaultPayload: AddProviderPayload;
-            const amountStaked = 9n * CENTS;
+            const amountStaked = 9n * DOLLARS;
 
             beforeEach(async function () {
                 capacityProviderKeys = createKeys("CapacityProviderKeys");
@@ -260,13 +258,13 @@ describe("Capacity Transactions", function () {
                     expiration: expiration,
                 };
                 const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
-                const calimHandleProof = {
+                const claimHandleProof = {
                     Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
                 };
 
                 const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
                     delegatorKeys.publicKey,
-                    calimHandleProof,
+                    claimHandleProof,
                     claimHandlePayload
                 );
                 const calls = [
