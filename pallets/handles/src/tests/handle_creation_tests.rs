@@ -79,20 +79,17 @@ fn claim_handle_already_claimed() {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
 
-		let test_cases: [TestCase<DispatchResult>; 2] =[
-			TestCase {
-				handle: "test1",
-				expected: Ok(()),
-			},
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
 			TestCase {
 				handle: "test1",
 				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
-			}
+			},
 		];
 
 		for test_case in test_cases {
 			let (payload, proof) =
-			get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
 
 			assert_eq!(
 				Handles::claim_handle(
@@ -113,20 +110,17 @@ fn claim_handle_already_claimed_with_different_case() {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
 
-		let test_cases: [TestCase<DispatchResult>; 2] =[
-			TestCase {
-				handle: "test1",
-				expected: Ok(()),
-			},
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
 			TestCase {
 				handle: "TEST1",
 				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
-			}
+			},
 		];
 
 		for test_case in test_cases {
 			let (payload, proof) =
-			get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
 
 			assert_eq!(
 				Handles::claim_handle(
@@ -147,20 +141,17 @@ fn claim_handle_already_claimed_with_homoglyph() {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiration = 100;
 
-		let test_cases: [TestCase<DispatchResult>; 2] =[
-			TestCase {
-				handle: "test1",
-				expected: Ok(()),
-			},
+		let test_cases: [TestCase<DispatchResult>; 2] = [
+			TestCase { handle: "test1", expected: Ok(()) },
 			TestCase {
 				handle: "tést1",
 				expected: Err(Error::<Test>::MSAHandleAlreadyExists.into()),
-			}
+			},
 		];
 
 		for test_case in test_cases {
 			let (payload, proof) =
-			get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
+				get_signed_claims_payload(&alice, test_case.handle.as_bytes().to_vec(), expiration);
 
 			assert_eq!(
 				Handles::claim_handle(
