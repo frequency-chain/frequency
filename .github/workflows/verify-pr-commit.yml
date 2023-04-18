@@ -743,15 +743,14 @@ jobs:
           echo "commit_message: $commit_message"
           regex='\[run-benchmarks (.*)\]$'
           if [[ $commit_message =~ $regex ]]; then
-            echo "Need to run benchmarks."
+            echo "Yes, need to run benchmarks."
             pallets="${BASH_REMATCH[1]}"
             echo "Pallets: $pallets"
             echo "run=true" >> $GITHUB_OUTPUT
             echo "pallets=$pallets" >> $GITHUB_OUTPUT
           else
-            echo "Do not need to run benchmarks."
+            echo "No, do not need to run benchmarks."
             echo "run=false" >> $GITHUB_OUTPUT
-            exit 0
           fi
 
   run-benchmarks:
@@ -761,6 +760,10 @@ jobs:
     name: Run Benchmarks
     runs-on: [self-hosted, Linux, X64, benchmark]
     steps:
+      - name: Print Info
+        run: |
+          echo "Running benchmarks..."
+          echo "Pallets: ${{needs.should-run-benchmarks.outputs.pallets}}"
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -793,7 +796,7 @@ jobs:
       - name: Update Weights
         run: |
           set -x
-          pallets_str="${{steps.run-benchmarks.outputs.pallets}}"
+          pallets_str="${{needs.should-run-benchmarks.outputs.pallets}}"
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
             echo "Running benchmarks for all pallets..."
