@@ -6,6 +6,7 @@ on:
   pull_request:
     branches:
       - main
+      - '*-development' # Feature Branches should suffix with -development
 env:
   BIN_DIR: target/release
 jobs:
