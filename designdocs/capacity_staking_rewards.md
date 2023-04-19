@@ -30,10 +30,14 @@ A system consisting only of providers and coinless users who delegate to provide
 To build a self-sustaining Frequency network where control is decentralized, a variety of economic solutions are needed.  One of these is the ability to stake FRQCY token in return for something; this creates an incentive for participation and involvement with the chain fundamentals and governance.
 
 ## Assumptions
-* The exact formula for calculating rewards is provided in advance and used in the implementation of this design.
-* The reward pool size is fixed until it is either set directly by governance or calculated from a value set by governance (which of these is TBD)
+* The exact formula for calculating rewards is determined in advance and used in the implementation of this design.
 * Rewards are not prorated; they are calculated based on the staking account balance at the start of an Era.
 * Like other blockchains, we round away "dust", values that are 10<sup>-6</sup> FRQCY or less. (??)
+
+## To be decided:
+* Is Reward Pool fixed?
+* What are the inputs to the economic model?
+* How does the capacity generated from Maximized Capacity Staking different from that from Rewards Capacity Staking?
 
 ## Economic Model
 By "economic model" we mean the formulae used to manage staking rewards to achieve the goals of decentralization, economic stabiilty, and sustainability.
@@ -54,7 +58,7 @@ Example 2: Capacity is consistently under-utilized:  We could decrease the cost 
 
 Example 3: The median is significantly higher than the mean, which means a handful of Providers (or just one) are dominating Capacity use, which could mean a trend toward centralization.  We could decrease the cost of Capacity to encourage all Providers to post more often, and to encourage more new Providers.  We could also increase the reward rate to encourage more staking, which could also provide capacity to new Providers.
 
-### Example possible calculations
+### Example possible calculations for rewards:
 There are many possible calculations but here are some ideas about what factors could influence the rewards and how they could be incorporated, starting with very simple (and also very unlikely) to complicated (probably also not likely).  For a reward pool P, Staked Token t, Stakers s, Providers p:
 
 * Reward is like simple interest. Network rewards are fixed at M / total staked token, where M is some number set by governance.
@@ -63,13 +67,13 @@ $$ P = {M \over t} $$
 
 * Reward pool is linear and rewards decentralization of stakers and Providers.  Example:
 
-$$ P = {Nt + Ms + Pp \over 100} $$,
+$$ P = {Nt + Ms + Pp \over 100} $$
 
 where N, M, and P are constants set by governance.
 
 * Reward pool is some polynomial:
 
-$$ P = { Nt + Ms^n + Pp^2 } $$
+$$ P = { Nt + Ms^i + Pp^j } $$
 
 * Rewards/Capacity are based on a more complex equation, which depends on the size of the targeted Provider.
 We could implement diminishing returns on rewards and/or capacity.  This would reward smaller Providers and stakers who target them much more than "whales". The coefficient could be adjusted based on total number of accounts, number of Providers, total token staked, etc, depending on where we want the "hump" to be for most Providers and stakers; we would probably want it significantly above their average Capacity level so that purchasing more Capacity is still approximately a linear return, whereas much larger participants ("whales") would have to spend more money to get the same increase in Capacity.
@@ -97,13 +101,13 @@ Since there is no difference to the chain for what Provider is posting what mess
 ## Proposal:
 Any Frequency account with a set minimum amount of FRQCY to may stake token to the network.
 On staking, the staker designates a type of staking, plus a target Provider to receive Capacity.
-There are two types of staking, **Maximized Rewards** and **Simple Rewards**.
+There are two types of staking, **Maximized Capacity Staking** and **Rewards Capacity Staking**.
 In both types, the staker designates a target Provider who receives capacity upon staking.
 The difference is:
 
-* With **Maximized Capacity Staking**, the target Provider receives more Capacity than it would with Simple Rewards.
+* With **Maximized Capacity Staking**, the target Provider receives more Capacity than it would with Rewards Capacity Staking.
   The staker does not receive any token rewards.
-* With **Rewards + Capacity Staking**, the target Provider shares rewards with the staker.
+* With **Rewards Capacity Staking**, the target Provider shares rewards with the staker.
   The target Provider receives some Capacity, and the staker receives periodic rewards in FRQCY.
 
 
@@ -170,11 +174,11 @@ pub struct RewardsPoolParameters<T: CapacityConfig> {
 ```
 
 ### Properties and Pallet Storage (DRAFT! some of these are just a guess!)
-* `staking_type` (Maximized or Simple): An enum. A property on `StakingAccountDetails`
+* `staking_type` (Maximized or Rewards): An enum. A property on `StakingAccountDetails`
 * `pub type RewardRate: StorageValue<_, uint16, ValueQuery>`: Stores the reward rate as hundredths of a percent; a reward rate of 1.25% would be stored as `125`.
 * `pub type RewardFrequency<T: Config> StorageValue<_, <T: BlockNumber` _\[or EpochNumber\]_ `>, ValueQuery>`: Stores Reward frequency in number of epochs or blocks, **TBD**
 * `pub type CapacityPriceMaximized<T: Config> StorageValue<_, BalanceOf<T>, ValueQuery>`:  Stores the price of 1 capacity in FRQCY, in the case of Maximized Staking.
-* `pub type CapacityPriceSimple<T: Config> StorageValue<_, BalanceOf<T>, ValueQuery>`: Stores the price of 1 capacity in FRQCY, in the case of Simple/Rewards Staking.
+* `pub type CapacityPriceRewards<T: Config> StorageValue<_, BalanceOf<T>, ValueQuery>`: Stores the price of 1 capacity in FRQCY, in the case of Rewards Staking.
 
 ### Capacity Pallet extrinsics
 * `change_reward_rate(origin, rate)`: governance-only
@@ -204,7 +208,7 @@ pub struct RewardsPoolParameters<T: CapacityConfig> {
 Staking locks up token.  Locked token may not be immediately withdrawn; this dampens some level of speculation-driven volatility as well as that driven by opportunistic Capacity purchases.
 
 ### Benefit: improved engagement and expanded user base
-A Provider may, for example, airdrop tokens to users who meet certain criteria, such as referrals or sharing links on other platforms.  Users with token may choose Simple Reward staking to generate Capacity for their Provider and also get token rewards.
+A Provider may, for example, airdrop tokens to users who meet certain criteria, such as referrals or sharing links on other platforms.  Users with token may choose Reward staking to generate Capacity for their Provider and also get token rewards.
 
 ### Benefit: improved economic sustainability
 A staking reward system can improve /onboard/uptake/usage/...
