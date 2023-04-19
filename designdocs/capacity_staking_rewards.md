@@ -69,24 +69,14 @@ where N, M, and P are constants set by governance.
 
 * Reward pool is some polynomial:
 
-$$ P = Nt + Ms^2 + Pp^2 $$
+$$ P = { Nt + Ms^n + Pp^2 } $$
 
 * Rewards/Capacity are based on a more complex equation, which depends on the size of the targeted Provider.
-We could implement diminishing returns on rewards and/or capacity, such as with a natural log function.  This would reward smaller Providers and stakers who target them much more than "whales". The coefficient could be adjusted based on total number of accounts, number of Providers, total token staked, etc, depending on where we want the "hump" to be for most Providers and stakers; we would probably want it significantly above their average Capacity level so that purchasing more Capacity is still approximately a linear return, whereas much larger participants ("whales") would have to spend more money to get the same increase in Capacity.
+We could implement diminishing returns on rewards and/or capacity.  This would reward smaller Providers and stakers who target them much more than "whales". The coefficient could be adjusted based on total number of accounts, number of Providers, total token staked, etc, depending on where we want the "hump" to be for most Providers and stakers; we would probably want it significantly above their average Capacity level so that purchasing more Capacity is still approximately a linear return, whereas much larger participants ("whales") would have to spend more money to get the same increase in Capacity.
 
 Such a system could diminish the "nothing succeeds like success" effect, however, if the effect is too strong, whales could be driven off the platform since growth is too expensive.  It should be carefully tailored so new Providers could grow their presence relatively easily.  This is much different from the norm of resource acquisition, where "bulk discounts" dominate.
 
 Since there is no difference to the chain for what Provider is posting what message, a "bulk discount" for posting Capacity messages doesn't apply. Furthermore, large Providers will make a much bigger hit on database access than smaller ones.
-
-A log or ln function would have increasing diminishing returns, which would make growth increasingly more expensive.
-
-$$ R = N\log{ (Ms + Pp) } $$
-
-A simple power law could suffice for the Capacity/Reward per token
-
-$$ R = { N(x-Ti)^j } $$
-
-Where N is a governance constant, T<sub>i</sub> is the initial price for one unit of Capacity, and j is a positive integer < 1.
 
 ## Goals
 * Outline the architecture for the implementation of staking rewards for Capacity.
@@ -138,18 +128,21 @@ pub struct StakingAccountDetails {
 }
 ```
 
+**Unstaking thaw period** (Maybe)
+We change the thaw period to begin at the first block of next Epoch instead of immediately.
+
 ### New storage items and related types
 
 #### RewardsPoolHistory and RewardsPoolParameters
 We store changes to the Rewards Pool calculations when any change occurs that affects the Rewards Pool greater than or equal to a hundredth of a percent (0.01%), rounded, or when Rewards Pool Parameters are changed.
 
-**Toy Example:**
+**Toy Example using a very simple rewards equation:**
 Let's assume a simple reward pool calculation relates to total token staked and the number of stakers, multiplied by some constant:
-```rust
-RewardPoolTokenAmount = (TotalToken + 1000*NumStakers)
-                        _____________________________
-                                 100,000
-```
+
+$$ P = { t + Cs  \over 100,000 } $$$
+
+Where P is the Reward Pool Total, t is total staked token and s is the number of stakers as before.
+
 Say total staked token is 100k FRQCY, there are 25 stakers, and Moby staker has staked 20k FRQCY.  The reward pool starts at 125k/100k  = 1.25 FRQCY to spread among 25 stakers based on their stake.
 
 Moby account unstakes 10k FRQCY, which drops staked token by 10%.  The new reward pool is (90,000 + 25,000) / 100,000 = 1.15 FRQCY to spread among the stakers.  This causes the Reward Pool to go down by 12%, i.e. >0.01%, so a new entry is pushed into the RewardPool history.
