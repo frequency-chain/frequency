@@ -15,7 +15,7 @@ It consists of enhancements to the capacity pallet, needed traits and their impl
 ## Glossary
 1. **FRQCY**: the native token of the Frequency blockchain
 1. **Capacity**: the non-transferrable utility token which can be used only to pay for certain Frequency transactions.
-1. **Account**: a Frequency System Account controlled by a private key and addressed by a public key, having at least a minimum balance (currently 1 FRQCY).
+1. **Account**: a Frequency System Account controlled by a private key and addressed by a public key, having at least a minimum balance (currently 0.01 FRQCY).
 1. **Stake** (verb): to lock some amount of a token against transfer for a period of time in exchange for some reward.
 1. **Era**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon.
 1. **Staking Reward**: a per-Era share of a staking reward pool of FRQCY tokens for a given staking account.
@@ -26,30 +26,67 @@ It consists of enhancements to the capacity pallet, needed traits and their impl
 [//]: # (Example: The proposed feature is a testing library. The context is: the library is for our chosen blockchain. The scope is: this is for a specific repository, so it's not meant to be reused. That means it won't be a separate package, and the code will be tailored for this repo. One might also say that the scope is also limited to developer testing, so it's not meant to be used in CI or a test environment such as a test blockchain network.)
 
 ## Problem Statement:
-To build a self-sustaining Frequency network, a variety of economic incentives are needed.  One of these is the ability to stake FRQCY token in return for something.
-
-[//]: # (The "why." A short summary of the issue&#40;s&#41; that this design solves. This doesn't have to be a technical problem, and it doesn't have to be a literal "problem." It could also be a necessary feature. "Developer unhappiness", "user experience needs improvement", are also problems.)
+A system consisting only of providers and coinless users who delegate to providers will tend toward centralization.
+To build a self-sustaining Frequency network where control is decentralized, a variety of economic solutions are needed.  One of these is the ability to stake FRQCY token in return for something; this creates an incentive for participation and involvement with the chain fundamentals and governance.
 
 ## Assumptions
 * The exact formula for calculating rewards is provided in advance and used in the implementation of this design.
 * The reward pool size is fixed until it is either set directly by governance or calculated from a value set by governance (which of these is TBD)
 * Rewards are not prorated; they are calculated based on the staking account balance at the start of an Era.
+* Like other blockchains, we round away "dust", values that are 10<sup>-6</sup> FRQCY or less. (??)
+
+## Economic Model
+By "economic model" we mean the formulae used to manage staking rewards to achieve the goals of decentralization, economic stabiilty, and sustainability.
+
+Inputs in the economic model to consider could include:
+* Proportion of accounts are staking to total accounts
+* Mean number MSAs per Provider, or the mean compared to median.
+* Proportion of token staked to free balance held by non-Treasury accounts
+* The Capacity-per-Epoch use rate, perhaps averaged over N epochs
+* The length of an Epoch in blocks
+* The length of an Era n blocks
+
+These could be used to adjust the cost of capacity and the reward return percentage.
+
+Example 1: We want a specific percentage of token accounts to stake in order to meet a certain decentralization goal, and we are below that amount.  We increase the reward rate to encourage token holders to stake, without adjusting the cost of capacity.
+
+Example 2: Capacity is consistently under-utilized:  We could decrease the cost of Capacity without changing the reward rate to encourage all Providers to post more often.  We could also decrease the reward rate, which would cause some unstaking and reduce the available Capacity in the network.
+
+Example 3: The median is significantly higher than the mean, which means a handful of Providers (or just one) are dominating Capacity use, which could mean a trend toward centralization.  We could decrease the cost of Capacity to encourage all Providers to post more often, and to encourage more new Providers.  We could also increase the reward rate to encourage more staking, which could also provide capacity to new Providers.
 
 ### Example possible calculations
-There are many possible calculations but here are some ideas about what factors could influence the rewards and how they could be incorporated.
-* Reward pool is like simple interest. Network rewards are fixed at M / total staked token, where M is some number set by governance.
+There are many possible calculations but here are some ideas about what factors could influence the rewards and how they could be incorporated, starting with very simple (and also very unlikely) to complicated (probably also not likely).  For a reward pool P, Staked Token t, Stakers s, Providers p:
 
-* Reward pool is linear, and is proportional to staked token and rewards decentralization of Providers. Example:
-    1. Reward pool = (StakedToken + Providers\*1000) / 1000
+* Reward is like simple interest. Network rewards are fixed at M / total staked token, where M is some number set by governance.
 
-* Reward pool is linear and rewards decentralization of stakers, decentralization of Providers.  Example:
-    1. Reward pool = N\*StakedToken + (M\*Stakers + P\*Providers) / 1000, where N, M, and P are constants set by governance.
+$$ P = {M \over t} $$
 
-* Reward pool is a polynomial function:
-    1. Reward pool = (N\*StakedToken + M\*Stakers^2 + P\*Providers^2) / sqrt(2), where N, M, and P are constants set by governance.
+* Reward pool is linear and rewards decentralization of stakers and Providers.  Example:
 
-* There is no fixed reward pool, but rewards per FRQCY staked are calculated based on a logarithmic function:
-    1. RewardPerFRQCY = N * e^-2\*(M\*Stakers + P\*Providers), where N, M, and P are constants set by governance.
+$$ P = {Nt + Ms + Pp \over 100} $$,
+
+where N, M, and P are constants set by governance.
+
+* Reward pool is some polynomial:
+
+$$ P = Nt + Ms^2 + Pp^2 $$
+
+* Rewards/Capacity are based on a more complex equation, which depends on the size of the targeted Provider.
+We could implement diminishing returns on rewards and/or capacity, such as with a natural log function.  This would reward smaller Providers and stakers who target them much more than "whales". The coefficient could be adjusted based on total number of accounts, number of Providers, total token staked, etc, depending on where we want the "hump" to be for most Providers and stakers; we would probably want it significantly above their average Capacity level so that purchasing more Capacity is still approximately a linear return, whereas much larger participants ("whales") would have to spend more money to get the same increase in Capacity.
+
+Such a system could diminish the "nothing succeeds like success" effect, however, if the effect is too strong, whales could be driven off the platform since growth is too expensive.  It should be carefully tailored so new Providers could grow their presence relatively easily.  This is much different from the norm of resource acquisition, where "bulk discounts" dominate.
+
+Since there is no difference to the chain for what Provider is posting what message, a "bulk discount" for posting Capacity messages doesn't apply. Furthermore, large Providers will make a much bigger hit on database access than smaller ones.
+
+A log or ln function would have increasing diminishing returns, which would make growth increasingly more expensive.
+
+$$ R = N\log{ (Ms + Pp) } $$
+
+A simple power law could suffice for the Capacity/Reward per token
+
+$$ R = { N(x-Ti)^j } $$
+
+Where N is a governance constant, T<sub>i</sub> is the initial price for one unit of Capacity, and j is a positive integer < 1.
 
 ## Goals
 * Outline the architecture for the implementation of staking rewards for Capacity.
