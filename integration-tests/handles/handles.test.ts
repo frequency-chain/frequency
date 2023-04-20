@@ -48,7 +48,8 @@ describe("🤝 Handles", () => {
             let suffix_from_state = full_handle_state.suffix;
             let suffix = suffix_from_state.toNumber();
             assert.notEqual(suffix, 0, "suffix should not be 0");
-
+            assert.notEqual(full_handle_state.canonical_base, undefined, "canonical_base should not be undefined");
+            assert.notEqual(full_handle_state.base_handle, undefined, "base_handle should not be undefined");
             let currentBlock = await getBlockNumber();
             await ExtrinsicHelper.run_to_block(currentBlock + 20);
 
