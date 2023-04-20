@@ -178,6 +178,10 @@ The extrinsic must be signed by the MSA owner's private key. The signature must 
 
 As a network, Frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles.
 
+Note: As of this implementation
+
+* Retiring display handle will not be available for reuse, given the unique nature of the display handle with the suffix.
+
 Input
 
 * origin - must be a signed origin and must be the owner of the handle.
