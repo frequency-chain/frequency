@@ -61,7 +61,7 @@ Example 1: We want a specific percentage of token accounts to stake in order to 
 
 Example 2: Capacity is consistently under-utilized:  We could decrease the cost of Capacity without changing the reward rate to encourage all Providers to post more often.  We could also decrease the reward rate, which would cause some unstaking and reduce the available Capacity in the network.
 
-Example 3: The median is significantly higher than the mean, which means a handful of Providers (or just one) are dominating Capacity use, which could mean a trend toward centralization.  We could decrease the cost of Capacity to encourage all Providers to post more often, and to encourage more new Providers.  We could also increase the reward rate to encourage more staking, which could also provide capacity to new Providers.
+Example 3: The median number of MSAs per provider is significantly lower than the mean, which could indicate a handful of Providers (or just one) are dominating Capacity use, which could mean a trend toward centralization.  We could decrease the cost of Capacity to encourage all Providers to post more often, and to encourage more new Providers.  We could also increase the reward rate to encourage more staking, which could also provide capacity to new Providers.
 
 ### Example possible calculations for rewards:
 There are many possible calculations but here are some ideas about what factors could influence the rewards and how they could be incorporated, starting with very simple (and also very unlikely) to complicated (probably also not likely).  
