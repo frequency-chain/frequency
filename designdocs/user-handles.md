@@ -23,7 +23,7 @@ The high level requirements for user handles are:
 
 * Handles can be claimed as long as they are in allowed characters ranges configured on chain.
 * Suffixes are randomly constrained and selected within a range configured on chain.
-* Suffixes window must be configurable by governance.
+* Suffixes window must be runtime configurable.
 * Ensure handles and suffixes are unique and non-conflicting.
 * Make the system resistant to namespace exhaustion, homoglyphs and race conditions.
 * Make the system easy to use and integrate with existing UI and wallet systems.
