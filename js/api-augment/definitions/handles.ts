@@ -39,7 +39,7 @@ export default {
     HandleSuffix: "u16",
     HandleResponse: {
       base_handle: "String",
-      canonical_handle: "String",
+      canonical_base: "String",
       suffix: "u16",
     },
     PresumptiveSuffixesResponse: {
