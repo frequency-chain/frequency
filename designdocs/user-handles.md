@@ -136,9 +136,9 @@ ClaimHandlePayload {
 }
 ```
 
-### Create user handle with chosen handle
+### Claim handle
 
- As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The full handle will be the handle with the suffix.
+ As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the base handle with the suffix.
 
 Input
 
@@ -174,7 +174,7 @@ Signature requirements
 
 The extrinsic must be signed by the MSA owner's private key. The signature must be verified on-chain to ensure that the user is the owner of the handle. Without the possibility of a replay attack, the chain can verify that the user is the owner of the handle and no special mechanism to handle signature reuse is required.
 
-### Retire user handle
+### Retire handle
 
 As a network, Frequency should allow users to retire their handles. This extrinsic will allow users to retire their handles. Retired handles will be available for reuse after a time period set by governance.
 
@@ -188,66 +188,19 @@ Output
 * Errors -
   * `InvalidMessageSourceAccount` if the caller does not have a valid MSA ID.
   * `MSAHandleDoesNotExist` if the handle does not exist.
-  * `NotHandleOwner` if the caller is not the owner of the handle.
+  * `HandleWithinMortalityPeriod` if an early retirement on a handle is requested
 
 **Note:**
 
-* Create, and change (and retire depending on if it is Pays::No) should be Capacity possible transactions.
-* If retiring a ```Pays::No transaction```? then, we could skip both owner_key and proof_of_ownership.
-* If retiring an MSA (```retire_msa``` call), Frequency should also retire the handle associated with the MSA.
+* Claim handle should be Capacity possible transactions.
+* Retire handle should be ```Pays::No```.
+* If retiring an MSA (```retire_msa``` call), the corresponding handle should not exists.
 
 ## RPCs
 
-* RPC to get the full handle (handle + suffix) given a ```msa_id```.
-* RPC to get the current seed (more of a chain utility for general use).
-* RPC to get a set of available suffixes given a handle (Not important for v1, however nice to have)
-
-## Crate design overview for Frequency-handles
-
-We propose creating a new crate, Frequency-handles, that will provide the following functionality:
-
-### Translation
-
-Given a user handle and a seed, the crate will provide a function that will generate a suffix for the handle. This function will be used to generate a suffix for a user handle when creating a new handle. Typical operations will be:
-
-* Generate a suffix for a user handle using the current seed and suffix range.
-* Create a PRNG helper function that takes a seed and generates a sequence of suffixes.
-
-### Verification
-
-The crate will provide a verification function that takes a user handle and a suffix and verifies that the handle is valid and the suffix is available. This function will be used to verify a handle and suffix when a user attempts to create a new handle or change their handle. Typical operations will be:
-
-* Verify that the handle is valid, i.e. it follows the handle guidelines.
-* Check for homoglpyhs.
-
-### PRNG
-
-The crate will use a PRNG (pseudo-random number generator) to generate suffix values for user handles. The PRNG will take a seed value derived from the current block's Merkle root and the user's desired handle base, and generate a sequence of 10/20 values that will be used as suffixes. These suffixes will then be checked for availability on the chain before attempting to create a new handle.
-
-## Frequency-handles crate sequence diagram
-
-Frequency-handles is a standalone rust crate that provide basic functionality for generating and validating handles. It is intended to be used by the Frequency chain to provide handle generation and validation functionality.
-
-```mermaid
-sequenceDiagram
-    participant App
-    participant Frequency-RPC
-    participant Frequency-handles
-    participant Frequency
-    App->>Frequency: Request to register a handle with optional suffix
-    Frequency-->>Frequency-handles: Check handle against guidelines
-    Frequency-handles-->>Frequency: Return handle validation result
-    Frequency-->>Frequency-handles: Generate few random suffix values, guided by seed and suffix range
-    Frequency-handles-->>Frequency: Return suffixes
-    Frequency-->>Frequency: Check handle and suffix availability
-    Frequency-->>Frequency-handles: Run validation on the handle and suffix
-    Frequency-handles-->>Frequency: Return validation result and register the handle
-    Frequency-->>App: Emit event for handle registration
-    App->>Frequency: Request to get ```msa_id``` for a handle
-    Frequency -->> App: Return ```msa_id``` for the handle
-    App->>Frequency-RPC: Request to get handle for a ```msa_id```
-    Frequency-RPC -->> App: Return handle for the ```msa_id```
-```
+* RPC to get the display handle (base handle + suffix) given a ```msa_id```.
+* RPC to get the ```msa_id``` given a display handle.
+* RPC to get a set of available suffixes given a base handle and count (limited to 100 and defaulted to 1)
 
 ## Risks
 
