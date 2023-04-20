@@ -45,7 +45,7 @@ The high level requirements for user handles are:
 * User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ``` (this is just a suggestion, we can add more if needed)
 * User handles cannot match any in a blocklist. e.g. (@admin, @everyone, @all) and others (this is just a suggestion, we can add more if needed)
 * Suffixes are numeric and contain digits without any leading zeros.
-* Suffixes are u32 limited to a range defined by governance
+* Suffixes are `u16` limited to a range set as runtime `Config` parameters.
 * Suffix will be randomly constrained.
 * Homoglyph versions of handles should still resolve to the same ```msa_id``` (e.g. ```user.1234``` and ```u$er.1234``` should resolve to the same ```msa_id```).
 * `Display Handle` is the handle that is displayed to the user and must be unique.
