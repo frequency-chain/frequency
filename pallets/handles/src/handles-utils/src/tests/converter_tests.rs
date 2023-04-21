@@ -3,14 +3,49 @@ use crate::{
 	converter::{
 		replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
 	},
+	validator::{
+		consists_of_supported_unicode_character_sets, contains_blocked_characters, is_valid,
+	},
 };
-
-use crate::validator::consists_of_supported_unicode_character_sets;
 
 use std::{
 	fs::File,
 	io::{BufRead, BufReader},
 };
+
+#[test]
+fn wil_fuzz() {
+	let file = File::open("src/data/fuzz.txt");
+	assert!(file.is_ok());
+
+	let reader = BufReader::new(file.ok().unwrap());
+	let mut valid = 0;
+	let mut rejected = 0;
+	for line_result in reader.lines() {
+		let original_line = line_result.ok().unwrap();
+		let canonical = convert_to_canonical(&original_line);
+		if is_valid(&canonical) {
+			valid += 1;
+			println!("Original: {}\nCanonical: {}\n", original_line, canonical);
+			for c in canonical.chars() {
+				println!("Valid char: \"{}\" Unicode: \"{}\"\n\n", c, c.escape_unicode());
+			}
+		} else {
+			rejected += 1;
+			if !contains_blocked_characters(&canonical) {
+				// println!("REJECTED Original: {}\nCanonical: {}\n", original_line, canonical);
+				for c in canonical.chars() {
+					let s = c.to_string();
+					if !is_valid(s.as_str()) {
+						// println!("Unable to validate char: \"{}\" Unicode: \"{}\"", c, c.escape_unicode());
+						// println!("Is Valid Range Char?: \"{}\"", consists_of_supported_unicode_character_sets(s.as_str()));
+					}
+				}
+			}
+		}
+	}
+	println!("Successful: {}\nRejected: {}\nTotal: {}", valid, rejected, valid + rejected);
+}
 
 #[test]
 fn test_replace_confusables() {

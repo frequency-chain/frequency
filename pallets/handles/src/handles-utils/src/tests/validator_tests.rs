@@ -1,6 +1,9 @@
 use crate::validator::{
 	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
+	is_valid,
 };
+
+use crate::convert_to_canonical;
 
 #[test]
 fn test_is_reserved_handle_happy_path() {
@@ -81,5 +84,25 @@ include!(concat!(env!("OUT_DIR"), "/confusables.rs"));
 fn test_confusables_map_does_not_contain_keys_in_unsupported_character_sets() {
 	for key in CONFUSABLES.keys() {
 		assert!(consists_of_supported_unicode_character_sets(&key.to_string()));
+	}
+}
+
+#[test]
+fn wil_should_reject_symbols() {
+	let should_reject = vec!["⏾", "☾", "🌘"];
+
+	for s in should_reject {
+		assert!(!consists_of_supported_unicode_character_sets(s));
+	}
+}
+
+#[test]
+fn wil_test_specific_one() {
+	let canon = convert_to_canonical("13rukato24");
+	for c in canon.chars() {
+		if !is_valid(canon.as_str()) {
+			println!("Unable to validate char: \"{}\"", c);
+			println!("Blocked Char?: \"{}\"", contains_blocked_characters(c.to_string().as_str()));
+		}
 	}
 }

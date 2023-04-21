@@ -25,6 +25,21 @@ fn ensure_sorted_blocked_characters() {
 	assert_eq!(BLOCKED_CHARACTERS, sorted);
 }
 
+/// Asks all the is valid questions in one call
+///
+/// # Arguments
+///
+/// * `input_str` - A string slice representing the handle to check.
+///
+/// # Returns
+///
+/// A boolean value indicating whether the string is valid.
+pub fn is_valid(input_str: &str) -> bool {
+	!is_reserved_handle(input_str) &&
+		!contains_blocked_characters(input_str) &&
+		consists_of_supported_unicode_character_sets(input_str)
+}
+
 /// Determines whether a given string is a reserved handle in the current context.
 ///
 /// # Arguments
