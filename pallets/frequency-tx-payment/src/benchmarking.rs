@@ -24,7 +24,7 @@ benchmarks! {
 
 	impl_benchmark_test_suite!(
 		Pallet,
-		crate::mock::ExtBuilder::default().build(),
-		crate::mock::Test
+		crate::tests::mock::ExtBuilder::default().build(),
+		crate::tests::mock::Test
 	);
 }

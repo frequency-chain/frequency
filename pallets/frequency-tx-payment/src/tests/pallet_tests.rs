@@ -1,5 +1,7 @@
-use super::*;
-use crate::{self as pallet_frequency_tx_payment, mock::*, ChargeFrqTransactionPayment};
+use crate::{
+	self as pallet_frequency_tx_payment, tests::mock::*, ChargeFrqTransactionPayment, DispatchInfo,
+	*,
+};
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
@@ -540,7 +542,7 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_does_not_have_the_requ
 		.execute_with(|| {
 			// An account that has an MSA but has not bet the min balance for key deposit.
 			let account_id = 10u64;
-			let _ = mock::create_msa_account(account_id);
+			let _ = tests::mock::create_msa_account(account_id);
 
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
