@@ -390,7 +390,7 @@ pub fn run() -> Result<()> {
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
 			run_local(cli);
-			#[cfg(not(feature = "frequency-rococo-local"))]
+			#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 			run_parachain(cli);
 			Ok(())
 		},
@@ -411,7 +411,7 @@ fn run_local(cli: Cli) -> Result<()> {
 	});
 }
 
-#[cfg(not(feature = "frequency-rococo-local"))]
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 fn run_parachain(cli: Cli) -> Result<()> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	runner.run_node_until_exit(|config| async move {

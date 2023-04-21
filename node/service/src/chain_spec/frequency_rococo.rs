@@ -143,7 +143,7 @@ fn testnet_genesis(
 		// of this.
 		aura: Default::default(),
 		aura_ext: Default::default(),
-		#[cfg(not(feature = "frequency-rococo-local"))]
+		#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 		parachain_system: Default::default(),
 		sudo: SudoConfig {
 			// Assign network admin rights.

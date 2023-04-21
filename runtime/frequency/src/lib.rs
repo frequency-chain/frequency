@@ -522,7 +522,7 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
-	#[cfg(not(feature = "frequency-rococo-local"))]
+	#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	#[cfg(feature = "frequency-rococo-local")]
 	type OnSetCode = ();
@@ -632,7 +632,7 @@ impl pallet_time_release::Config for Runtime {
 	type TransferOrigin = EnsureSigned<AccountId>;
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
-	#[cfg(not(feature = "frequency-rococo-local"))]
+	#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
 	#[cfg(feature = "frequency-rococo-local")]
 	type BlockNumberProvider = System;
@@ -1118,7 +1118,7 @@ construct_runtime!(
 	{
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
-		#[cfg(not(feature = "frequency-rococo-local"))]
+		#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
@@ -1304,7 +1304,7 @@ impl_runtime_apis! {
 		}
 	}
 
-	#[cfg(not(feature = "frequency-rococo-local"))]
+	#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
@@ -1446,9 +1446,9 @@ impl_runtime_apis! {
 	}
 }
 
-#[cfg(not(feature = "frequency-rococo-local"))]
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 struct CheckInherents;
-#[cfg(not(feature = "frequency-rococo-local"))]
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
 		block: &Block,
@@ -1470,7 +1470,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	}
 }
 
-#[cfg(not(feature = "frequency-rococo-local"))]
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
