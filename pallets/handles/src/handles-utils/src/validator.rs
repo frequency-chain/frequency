@@ -11,8 +11,19 @@ use constants::ALLOWED_UNICODE_CHARACTER_RANGES;
 /// Reserved words that cannot be used as the handle.
 const RESERVED_WORDS: [&str; 8] =
 	["admin", "everyone", "all", "administrator", "mod", "moderator", "here", "channel"];
+
 /// Characters that cannot be used in the handle.
 const BLOCKED_CHARACTERS: [char; 5] = ['@', '#', ':', '.', '`'];
+
+// We MUST have the BLOCKED_CHARACTERS constant sorted or we cannot use the faster `binary_search` function.
+// Cannot easily be sorted at compile time currently
+#[test]
+fn ensure_sorted_blocked_characters() {
+	let mut sorted = BLOCKED_CHARACTERS;
+	sorted.sort();
+	assert_eq!(BLOCKED_CHARACTERS, sorted);
+}
+
 
 /// Determines whether a given string is a reserved handle in the current context.
 ///
@@ -37,7 +48,7 @@ pub fn is_reserved_handle(input_str: &str) -> bool {
 ///
 /// A boolean value indicating whether the string contains any blocked characters (`true`) or not (`false`).
 pub fn contains_blocked_characters(input_str: &str) -> bool {
-	input_str.chars().any(|c| BLOCKED_CHARACTERS.contains(&c))
+	input_str.chars().any(|c| BLOCKED_CHARACTERS.binary_search(&c).is_ok())
 }
 
 /// Checks that the given string contains characters within the ranges of supported
