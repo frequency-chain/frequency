@@ -18,10 +18,7 @@ use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::{
-	config::{BasePath, PrometheusConfig},
-	TaskManager,
-};
+use sc_service::config::{BasePath, PrometheusConfig};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
@@ -238,8 +235,6 @@ macro_rules! construct_async_run {
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
-	let flag = cfg!(feature = "frequency-rococo-local");
-
 	match &cli.subcommand {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -392,19 +387,18 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(version), task_manager))
 			})
 		},
-		None =>
-			if flag {
-				#[cfg(feature = "frequency-rococo-local")]
-				run_local(cli)
-			} else {
-				#[cfg(not(feature = "frequency-rococo-local"))]
-				run_parachain(cli)
-			},
+		None => {
+			#[cfg(feature = "frequency-rococo-local")]
+			run_local(cli);
+			#[cfg(not(feature = "frequency-rococo-local"))]
+			run_parachain(cli);
+			Ok(())
+		},
 	}
 }
 
 #[cfg(feature = "frequency-rococo-local")]
-fn run_local(cli: Cli) {
+fn run_local(cli: Cli) -> Result<()> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	runner.run_node_until_exit(|config| async move {
 		if cli.instant_sealing {
@@ -418,7 +412,7 @@ fn run_local(cli: Cli) {
 }
 
 #[cfg(not(feature = "frequency-rococo-local"))]
-fn run_parachain(cli: Cli) {
+fn run_parachain(cli: Cli) -> Result<()> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	runner.run_node_until_exit(|config| async move {
 		let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
