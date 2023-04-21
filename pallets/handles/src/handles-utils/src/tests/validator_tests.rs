@@ -22,7 +22,8 @@ fn test_is_reserved_handle_negative() {
 
 #[test]
 fn test_contains_blocked_characters_happy_path() {
-	let handles: Vec<&str> = vec!["@lbert", "coca:cola", "#freemont", "charles.darwin", "`String`"];
+	let handles: Vec<&str> =
+		vec!["@lbert", "coca:cola", "#freemont", "charles.darwin", "`String`", ":(){ :|:& };:"];
 	for handle in handles {
 		assert!(contains_blocked_characters(handle));
 	}
@@ -30,7 +31,8 @@ fn test_contains_blocked_characters_happy_path() {
 
 #[test]
 fn test_contains_blocked_characters_negative() {
-	let handles: Vec<&str> = vec!["albert", "coca_cola", "freemont", "charles-darwin", "'String'"];
+	let handles: Vec<&str> =
+		vec!["albert", "coca_cola", "freemont", "charles-darwin", "Single Quote'd"];
 	for handle in handles {
 		assert!(!contains_blocked_characters(handle));
 	}

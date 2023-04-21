@@ -1,5 +1,8 @@
 use super::mock::*;
-use crate::{Config, EpochLength, Error, Event};
+use crate::{
+	tests::testing_utils::{run_to_block, system_run_to_block},
+	Config, EpochLength, Error, Event,
+};
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use sp_runtime::DispatchError::BadOrigin;
 #[test]
@@ -56,4 +59,55 @@ fn get_epoch_length_should_return_storage_epoch_length() {
 
 		assert_eq!(epoch_length, 101u64);
 	});
+}
+
+#[test]
+fn start_new_epoch_if_needed_when_not_starting_from_zero() {
+	new_test_ext().execute_with(|| {
+		EpochLength::<Test>::set(100u64);
+		let epoch_info = Capacity::get_current_epoch_info();
+		let cur_epoch = Capacity::get_current_epoch();
+		// Run the system to block 999 before initializing Capacity to emulate
+		// deploying to an existing network where blockheight is greater than 0.
+		system_run_to_block(999);
+		run_to_block(1000);
+		let after_epoch = Capacity::get_current_epoch();
+		let after_epoch_info = Capacity::get_current_epoch_info();
+		assert_eq!(epoch_info.epoch_start, 0);
+		assert_eq!(after_epoch_info.epoch_start, 1000);
+		assert_eq!(after_epoch, cur_epoch + 1);
+	})
+}
+
+#[test]
+fn start_new_epoch_if_needed_when_epoch_length_changes() {
+	new_test_ext().execute_with(|| {
+		EpochLength::<Test>::set(100u64);
+		// Starting block = 100
+		system_run_to_block(100);
+		let epoch_info = Capacity::get_current_epoch_info();
+		let cur_epoch = Capacity::get_current_epoch();
+		assert_eq!(epoch_info.epoch_start, 0);
+		assert_eq!(cur_epoch, 0);
+		run_to_block(150);
+		let middle_epoch = Capacity::get_current_epoch();
+		let middle_epoch_info = Capacity::get_current_epoch_info();
+		assert_eq!(middle_epoch, 1);
+		assert_eq!(middle_epoch_info.epoch_start, 101);
+		// Change epoch length = 20
+		EpochLength::<Test>::set(20u64);
+		run_to_block(151);
+		let after_epoch = Capacity::get_current_epoch();
+		let after_epoch_info = Capacity::get_current_epoch_info();
+		// epoch 1 starts at 101
+		// epoch 2 starts at 151 (First block after epoch length change)
+		assert_eq!(after_epoch_info.epoch_start, 151);
+		assert_eq!(after_epoch, 2);
+		run_to_block(171);
+		let last_epoch = Capacity::get_current_epoch();
+		let last_epoch_info = Capacity::get_current_epoch_info();
+		assert_eq!(last_epoch, 3);
+		// epoch 3 starts at 171 (151 + 20)
+		assert_eq!(last_epoch_info.epoch_start, 171);
+	})
 }
