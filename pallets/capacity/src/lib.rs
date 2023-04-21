@@ -130,7 +130,6 @@ pub mod pallet {
 		type UnstakingThawPeriod: Get<u16>;
 
 		/// Maximum number of blocks an epoch can be
-		/// currently used as the actual value of epoch length.
 		#[pallet::constant]
 		type MaxEpochLength: Get<Self::BlockNumber>;
 
@@ -576,10 +575,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
-		if Self::get_current_epoch_info()
-			.epoch_start
-			.saturating_add(Self::get_epoch_length())
-			.eq(&current_block)
+		// Should we start a new epoch?
+		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
+			Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
