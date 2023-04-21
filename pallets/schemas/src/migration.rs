@@ -39,27 +39,9 @@ pub mod v0 {
 /// - `Schema` is a copy of the original `Schema` struct with the `settings` field added
 pub mod v1 {
 	use super::*;
-	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-	#[scale_info(skip_type_params(MaxModelSize))]
-
-	/// translate schemas and return the weight to test the migration
-	#[cfg(feature = "try-runtime")]
-	pub fn pre_migrate_schemas_to_v1<T: Config>() -> Weight {
-		migrate_to_v1::<T>()
-	}
 
 	/// Runs the actual migration when runtime upgrade is performed
-	pub fn migrate_schemas_to_v1<T: Config>() -> Weight {
-		migrate_to_v1::<T>()
-	}
-
-	/// post migration check
-	#[cfg(feature = "try-runtime")]
-	pub fn post_migrate_schemas_to_v1<T: Config>() -> Weight {
-		migrate_to_v1::<T>()
-	}
-
-	fn migrate_to_v1<T: Config>() -> Weight {
+	pub fn migrate<T: Config>() -> Weight {
 		let mut weight: Weight = Weight::zero();
 
 		if StorageVersion::get::<Pallet<T>>() < 1 {
@@ -85,27 +67,44 @@ pub mod v1 {
 // ==============================================
 /// Schema migration to v1 for pallet-stateful-storage
 /// This struct derives OnRuntimeUpgrade trait which is used to run the migration (check runtime)
-pub struct SchemaMigration<T: Config>(PhantomData<T>);
+pub struct Migration<T: Config>(PhantomData<T>);
 
-impl<T: Config> OnRuntimeUpgrade for SchemaMigration<T> {
-	#[cfg(feature = "try-runtime")]
-	fn pre_upgrade() -> Result<Vec<u8>, &'static str> {
-		let weight = v1::pre_migrate_schemas_to_v1::<T>();
-		log::info!("pre_upgrade weight: {:?}", weight);
-		Ok(Vec::new())
-	}
-
+impl<T: Config> OnRuntimeUpgrade for Migration<T> {
 	fn on_runtime_upgrade() -> Weight {
-		v1::migrate_schemas_to_v1::<T>()
-	}
+		let version = StorageVersion::get::<Pallet<T>>();
+		let mut weight: Weight = Weight::zero();
 
-	#[cfg(feature = "try-runtime")]
-	fn post_upgrade(_state: Vec<u8>) -> Result<(), &'static str> {
-		let weight = v1::post_migrate_schemas_to_v1::<T>();
-		log::info!("post_upgrade weight: {:?}", weight);
-		Ok(())
+		if version < 1 {
+			weight = weight.saturating_add(v1::migrate::<T>());
+		}
+
+		weight
 	}
 }
 // ==============================================
 //       END RUNTIME STORAGE MIGRATION: Schemas
 // ==============================================
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::tests::mock::{Test as T, *};
+
+	#[test]
+	fn no_migrations_means_zero_weight() {
+		new_test_ext().execute_with(|| {
+			StorageVersion::new(100).put::<Pallet<T>>();
+			let weight = Migration::<T>::on_runtime_upgrade();
+			assert_eq!(weight, Weight::zero());
+		});
+	}
+
+	#[test]
+	fn v1_can_migrate() {
+		new_test_ext().execute_with(|| {
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 0);
+			v1::migrate::<T>();
+			assert_eq!(StorageVersion::get::<Pallet<T>>(), 1);
+		});
+	}
+}
