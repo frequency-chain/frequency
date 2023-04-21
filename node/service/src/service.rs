@@ -183,6 +183,7 @@ pub fn new_partial(
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
+#[cfg(not(feature = "frequency-rococo-local"))]
 async fn start_node_impl(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
@@ -441,6 +442,7 @@ fn build_consensus(
 }
 
 /// Start a parachain node.
+#[cfg(not(feature = "frequency-rococo-local"))]
 pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

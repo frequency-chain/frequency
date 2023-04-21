@@ -1,23 +1,27 @@
-use crate::cli::{Cli, RelayChainCli, Subcommand};
+use crate::{
+	benchmarking::{inherent_benchmark_data, RemarkBuilder},
+	cli::{Cli, RelayChainCli, Subcommand},
+};
 use codec::Encode;
+use common_primitives::node::Block;
 use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::BenchmarkCmd;
-use log::info;
-
-use crate::benchmarking::{inherent_benchmark_data, RemarkBuilder};
-use common_primitives::node::Block;
 use frequency_service::{
 	chain_spec,
 	service::{
 		frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch,
 	},
 };
+use log::info;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
-use sc_service::config::{BasePath, PrometheusConfig};
+use sc_service::{
+	config::{BasePath, PrometheusConfig},
+	TaskManager,
+};
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
@@ -234,6 +238,8 @@ macro_rules! construct_async_run {
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
+	let flag = cfg!(feature = "frequency-rococo-local");
+
 	match &cli.subcommand {
 		Some(Subcommand::BuildSpec(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
@@ -386,69 +392,82 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(version), task_manager))
 			})
 		},
-		None => {
-			let runner = cli.create_runner(&cli.run.normalize())?;
-
-			runner.run_node_until_exit(|config| async move {
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain ID in chain-spec.")?;
-
+		None =>
+			if flag {
 				#[cfg(feature = "frequency-rococo-local")]
-				if cli.instant_sealing {
-					return frequency_service::service::frequency_dev_instant_sealing(config, true)
-						.map_err(Into::into)
-				} else if cli.manual_sealing {
-					return frequency_service::service::frequency_dev_instant_sealing(config, false)
-						.map_err(Into::into)
-				}
-
-				let id = ParaId::from(para_id);
-
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
-
-				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-				let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-					.map_err(|e| format!("{:?}", e))?;
-				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
-				info!("Parachain id: {:?}", id);
-				info!("Parachain Account: {}", parachain_account);
-				info!("Parachain genesis state: {}", genesis_state);
-				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-
-				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
-				);
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-						.map_err(|err| format!("Relay chain argument error: {}", err))?;
-
-				let collator_options = cli.run.collator_options();
-				let hwbench = if !cli.no_hardware_benchmarks {
-					config.database.path().map(|database_path| {
-						let _ = std::fs::create_dir_all(&database_path);
-						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
-				frequency_service::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
-			})
-		},
+				run_local(cli)
+			} else {
+				#[cfg(not(feature = "frequency-rococo-local"))]
+				run_parachain(cli)
+			},
 	}
+}
+
+#[cfg(feature = "frequency-rococo-local")]
+fn run_local(cli: Cli) {
+	let runner = cli.create_runner(&cli.run.normalize())?;
+	runner.run_node_until_exit(|config| async move {
+		if cli.instant_sealing {
+			return frequency_service::service::frequency_dev_instant_sealing(config, true)
+				.map_err(Into::into)
+		} else if cli.manual_sealing {
+			return frequency_service::service::frequency_dev_instant_sealing(config, false)
+				.map_err(Into::into)
+		}
+	});
+}
+
+#[cfg(not(feature = "frequency-rococo-local"))]
+fn run_parachain(cli: Cli) {
+	let runner = cli.create_runner(&cli.run.normalize())?;
+	runner.run_node_until_exit(|config| async move {
+		let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
+			.map(|e| e.para_id)
+			.ok_or("Could not find parachain ID in chain-spec.")?;
+		let id = ParaId::from(para_id);
+
+		let parachain_account =
+			AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+
+		let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
+		let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
+			.map_err(|e| format!("{:?}", e))?;
+		let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
+
+		info!("Parachain id: {:?}", id);
+		info!("Parachain Account: {}", parachain_account);
+		info!("Parachain genesis state: {}", genesis_state);
+		info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
+
+		let tokio_handle = config.tokio_handle.clone();
+		let polkadot_cli = RelayChainCli::new(
+			&config,
+			[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
+		);
+		let polkadot_config =
+			SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
+				.map_err(|err| format!("Relay chain argument error: {}", err))?;
+
+		let collator_options = cli.run.collator_options();
+		let hwbench = if !cli.no_hardware_benchmarks {
+			config.database.path().map(|database_path| {
+				let _ = std::fs::create_dir_all(&database_path);
+				sc_sysinfo::gather_hwbench(Some(database_path))
+			})
+		} else {
+			None
+		};
+		return frequency_service::service::start_parachain_node(
+			config,
+			polkadot_config,
+			collator_options,
+			id,
+			hwbench,
+		)
+		.await
+		.map(|r| r.0)
+		.map_err(Into::into)
+	});
 }
 
 impl DefaultConfigurationValues for RelayChainCli {
