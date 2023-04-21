@@ -13,7 +13,8 @@ const RESERVED_WORDS: [&str; 8] =
 	["admin", "everyone", "all", "administrator", "mod", "moderator", "here", "channel"];
 
 /// Characters that cannot be used in the handle.
-const BLOCKED_CHARACTERS: [char; 5] = ['@', '#', ':', '.', '`'];
+const BLOCKED_CHARACTERS: [char; 16] =
+	['"', '#', '%', '(', ')', ',', '.', ':', ';', '<', '>', '@', '\\', '`', '{', '}'];
 
 // We MUST have the BLOCKED_CHARACTERS constant sorted or we cannot use the faster `binary_search` function.
 // Cannot easily be sorted at compile time currently
