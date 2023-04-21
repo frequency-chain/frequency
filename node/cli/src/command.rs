@@ -383,10 +383,13 @@ pub fn run() -> Result<()> {
 		},
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
-			return run_local(cli);
-			
-			#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-			return run_parachain(cli);
+			return run_local(cli)
+
+			#[cfg(any(
+				not(feature = "frequency-rococo-local"),
+				feature = "all-frequency-features"
+			))]
+			return run_parachain(cli)
 		},
 	}
 }
@@ -412,11 +415,11 @@ use cumulus_client_cli::generate_genesis_block;
 #[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 use cumulus_primitives_core::ParaId;
 #[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use log::info;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 use sp_core::hexdisplay::HexDisplay;
 #[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use log::info;
 
 #[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 fn run_parachain(cli: Cli) -> Result<()> {
