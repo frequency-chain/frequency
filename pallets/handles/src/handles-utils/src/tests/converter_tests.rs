@@ -43,9 +43,9 @@ fn test_replace_confusables() {
 
 #[test]
 fn test_strip_diacriticals() {
-	let diacritical_string = "ÄÅÖäåöĂăĔĚĕĞğģĬĭŎŏŬǓŭàáâñ";
+	let diacritical_string = "ÄÅÖäåöĂăĔĚĕĞğģĬĭŎŏŬǓŭàáâñ⁰⁴⁵₀₁₂ด้้้้้็็็็็้้้้้็็็็Z̮̞̠͙͔ͅḀ̗̞͈̻̗Ḷ͙͎̯̹̞͓G̻O̭̗̮𝕿";
 	let stripped_string = strip_diacriticals(diacritical_string);
-	assert_eq!(stripped_string, "AAOaaoAaEEeGggIiOoUUuaaan");
+	assert_eq!(stripped_string, "AAOaaoAaEEeGggIiOoUUuaaan045012ดZALGOT");
 }
 
 #[test]
