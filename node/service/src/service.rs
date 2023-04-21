@@ -373,6 +373,7 @@ fn build_import_queue(
 	.map_err(Into::into)
 }
 
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 fn build_consensus(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,

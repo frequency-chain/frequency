@@ -2,10 +2,7 @@ use crate::{
 	benchmarking::{inherent_benchmark_data, RemarkBuilder},
 	cli::{Cli, RelayChainCli, Subcommand},
 };
-use codec::Encode;
 use common_primitives::node::Block;
-use cumulus_client_cli::generate_genesis_block;
-use cumulus_primitives_core::ParaId;
 use frame_benchmarking_cli::BenchmarkCmd;
 use frequency_service::{
 	chain_spec,
@@ -13,14 +10,11 @@ use frequency_service::{
 		frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch,
 	},
 };
-use log::info;
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
 enum ChainIdentity {
@@ -389,10 +383,10 @@ pub fn run() -> Result<()> {
 		},
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
-			run_local(cli);
+			return run_local(cli);
+			
 			#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-			run_parachain(cli);
-			Ok(())
+			return run_parachain(cli);
 		},
 	}
 }
@@ -404,12 +398,25 @@ fn run_local(cli: Cli) -> Result<()> {
 		if cli.instant_sealing {
 			return frequency_service::service::frequency_dev_instant_sealing(config, true)
 				.map_err(Into::into)
-		} else if cli.manual_sealing {
+		} else {
 			return frequency_service::service::frequency_dev_instant_sealing(config, false)
 				.map_err(Into::into)
 		}
-	});
+	})
 }
+
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use codec::Encode;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use cumulus_client_cli::generate_genesis_block;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use cumulus_primitives_core::ParaId;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use sp_core::hexdisplay::HexDisplay;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+use log::info;
 
 #[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
 fn run_parachain(cli: Cli) -> Result<()> {
@@ -461,7 +468,7 @@ fn run_parachain(cli: Cli) -> Result<()> {
 		.await
 		.map(|r| r.0)
 		.map_err(Into::into)
-	});
+	})
 }
 
 impl DefaultConfigurationValues for RelayChainCli {
