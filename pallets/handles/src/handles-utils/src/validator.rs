@@ -25,7 +25,6 @@ fn ensure_sorted_blocked_characters() {
 	assert_eq!(BLOCKED_CHARACTERS, sorted);
 }
 
-
 /// Determines whether a given string is a reserved handle in the current context.
 ///
 /// # Arguments
