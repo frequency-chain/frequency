@@ -383,13 +383,17 @@ pub fn run() -> Result<()> {
 		},
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
-			return run_local(cli);
+			{
+				run_local(cli)
+			}
 
 			#[cfg(any(
 				not(feature = "frequency-rococo-local"),
 				feature = "all-frequency-features"
 			))]
-			return run_parachain(cli);
+			{
+				run_parachain(cli)
+			}
 		},
 	}
 }
