@@ -24,3 +24,4 @@ ignore:
   - "**/*tests.rs" # Ignore test files for coverage
   - "**/tests/*.rs" # Ignore test files for coverage
   - "**/*mock.rs" # Ignore test mock files for coverage
+  - "**/*runtime-api/src/lib.rs" # Ignore runtime-api libraries that are just traits
