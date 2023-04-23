@@ -384,7 +384,7 @@ pub fn run() -> Result<()> {
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
 			{
-				run_local(cli)
+				return run_local(cli);
 			}
 
 			#[cfg(any(
@@ -392,7 +392,7 @@ pub fn run() -> Result<()> {
 				feature = "all-frequency-features"
 			))]
 			{
-				run_parachain(cli)
+				return run_parachain(cli);
 			}
 		},
 	}
