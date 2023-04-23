@@ -226,6 +226,7 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
+#[rustfmt::skip] // This is necessary to workaround a bug in rustfmt with the function returns in the None case.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
@@ -383,17 +384,13 @@ pub fn run() -> Result<()> {
 		},
 		None => {
 			#[cfg(feature = "frequency-rococo-local")]
-			{
-				return run_local(cli);
-			}
+			return run_local(cli);
 
 			#[cfg(any(
 				not(feature = "frequency-rococo-local"),
 				feature = "all-frequency-features"
 			))]
-			{
-				return run_parachain(cli);
-			}
+			return run_parachain(cli);
 		},
 	}
 }
