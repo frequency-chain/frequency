@@ -45,7 +45,7 @@ where
 				provider_msa_id: self.provider_msa_id,
 				index: self.index,
 				block_number,
-				msa_id: Some(self.msa_id.unwrap_or_default()),
+				msa_id: self.msa_id,
 				payload: Some(self.payload.to_vec()),
 				cid: None,
 				payload_length: None,
