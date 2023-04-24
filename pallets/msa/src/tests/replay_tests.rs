@@ -180,9 +180,9 @@ fn replaying_grant_delegation_fails() {
 #[test]
 pub fn add_signature_replay_boundary_checks() {
 	struct TestCase {
-		current: u64,
-		mortality: u64,
-		run_to: u64,
+		current: u32,
+		mortality: u32,
+		run_to: u32,
 	}
 	new_test_ext().execute_with(|| {
 		// This tests signature replay attacks for mortality window size = 100 and 2 buckets,
@@ -192,21 +192,21 @@ pub fn add_signature_replay_boundary_checks() {
 		// checking explicitly for the error `SignatureAlreadySubmitted`.
 		let test_cases: Vec<TestCase> = vec![
 			// 1-block expiration for bucket 0, mortality crosses no boundary
-			TestCase { current: 1u64, mortality: 3u64, run_to: 2u64 },
+			TestCase { current: 1u32, mortality: 3u32, run_to: 2u32 },
 			// expiration for bucket 1, mortality is fast, crosses a 100-block boundary, we check at the boundary.
 			// at block 100, on_initialize's bucket-clearing has happened by the time register_extrinsic is called,
 			// so this should make sure that the signature is still there and the wrong bucket was not cleared.
-			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64 },
+			TestCase { current: 99u32, mortality: 101u32, run_to: 100u32 },
 			// This does the same as above, only it's a different bucket.
-			TestCase { current: 11_149u64, mortality: 11_201u64, run_to: 11_200u64 },
+			TestCase { current: 11_149u32, mortality: 11_201u32, run_to: 11_200u32 },
 			// This sets mortality at a boundary
-			TestCase { current: 11_149u64, mortality: 11_200u64, run_to: 11_199u64 },
+			TestCase { current: 11_149u32, mortality: 11_200u32, run_to: 11_199u32 },
 			// This does the same as above, but for a different bucket.
-			TestCase { current: 11_249u64, mortality: 11_300u64, run_to: 11_299u64 },
+			TestCase { current: 11_249u32, mortality: 11_300u32, run_to: 11_299u32 },
 			// This case sets current block at a boundary, and sets the mortality to the very last block before the boundary
-			TestCase { current: 1_100u64, mortality: 1_199u64, run_to: 1_198u64 },
+			TestCase { current: 1_100u32, mortality: 1_199u32, run_to: 1_198u32 },
 			// This case has current block right before a boundary, and sets expiration to the very last possible block
-			TestCase { current: 1_699u64, mortality: 1_798u64, run_to: 1_797u64 },
+			TestCase { current: 1_699u32, mortality: 1_798u32, run_to: 1_797u32 },
 		];
 		for tc in test_cases {
 			System::set_block_number(tc.current);

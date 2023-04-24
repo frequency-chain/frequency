@@ -124,7 +124,7 @@ pub mod pallet {
 
 		/// Maximum count of schemas granted for publishing data per Provider
 		#[pallet::constant]
-		type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + sp_std::fmt::Debug + Eq;
+		type MaxSchemaGrantsPerDelegation: Get<u32>;
 
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]

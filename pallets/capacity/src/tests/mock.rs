@@ -1,7 +1,7 @@
 use crate as pallet_capacity;
 
 use common_primitives::{
-	node::{AccountId, ProposalProvider},
+	node::{AccountId, Header, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
@@ -11,7 +11,6 @@ use frame_support::{
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, DispatchError, Perbill,
 };
@@ -41,14 +40,14 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
@@ -72,30 +71,8 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
-}
-impl Clone for MaxSchemaGrantsPerDelegation {
-	fn clone(&self) -> Self {
-		MaxSchemaGrantsPerDelegation {}
-	}
-}
+pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
-impl Eq for MaxSchemaGrantsPerDelegation {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
-impl PartialEq for MaxSchemaGrantsPerDelegation {
-	fn eq(&self, _other: &Self) -> bool {
-		true
-	}
-}
-
-impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
 pub struct TestAccountId;
 
 impl Convert<u64, AccountId> for TestAccountId {
@@ -152,6 +129,7 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+// Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 }
@@ -169,7 +147,7 @@ impl pallet_capacity::Config for Test {
 	type BenchmarkHelper = Msa;
 
 	type UnstakingThawPeriod = ConstU16<2>;
-	type MaxEpochLength = ConstU64<100>;
+	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
 }

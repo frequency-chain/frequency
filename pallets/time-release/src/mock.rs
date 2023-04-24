@@ -1,13 +1,14 @@
 //! Mocks for the Time-release module.
 
 use super::*;
+use common_primitives::node::Header;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, ConstU64, EnsureOrigin, Everything},
 };
 use frame_system::RawOrigin;
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup};
+use sp_runtime::traits::IdentityLookup;
 
 use crate as pallet_time_release;
 
@@ -16,14 +17,14 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type Version = ();
@@ -75,12 +76,13 @@ impl EnsureOrigin<RuntimeOrigin> for EnsureAliceOrBob {
 	}
 }
 
+// Needs parameter_types! for the impls below
 parameter_types! {
-	pub static MockBlockNumberProvider: u64 = 0;
+	pub static MockBlockNumberProvider: u32 = 0;
 }
 
 impl BlockNumberProvider for MockBlockNumberProvider {
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 
 	fn current_block_number() -> Self::BlockNumber {
 		Self::get()

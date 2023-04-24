@@ -120,7 +120,7 @@ pub mod pallet {
 
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
-		type MaxPaginatedPageId: Get<u32>;
+		type MaxPaginatedPageId: Get<u16>;
 
 		/// The maximum number of actions in itemized actions
 		#[pallet::constant]
@@ -291,10 +291,7 @@ pub mod pallet {
 			payload: BoundedVec<u8, <T>::MaxPaginatedPageSizeBytes>,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			ensure!(
-				page_id as u32 <= T::MaxPaginatedPageId::get(),
-				Error::<T>::PageIdExceedsMaxAllowed
-			);
+			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
 			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, false)?;
 			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::update_paginated(
@@ -322,10 +319,7 @@ pub mod pallet {
 			#[pallet::compact] target_hash: PageHash,
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
-			ensure!(
-				page_id as u32 <= T::MaxPaginatedPageId::get(),
-				Error::<T>::PageIdExceedsMaxAllowed
-			);
+			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
 			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, true)?;
 			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
@@ -390,7 +384,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			ensure!(
-				payload.page_id as u32 <= T::MaxPaginatedPageId::get(),
+				payload.page_id <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
 			Self::check_payload_expiration(
@@ -431,7 +425,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			ensure!(
-				payload.page_id as u32 <= T::MaxPaginatedPageId::get(),
+				payload.page_id <= T::MaxPaginatedPageId::get(),
 				Error::<T>::PageIdExceedsMaxAllowed
 			);
 			Self::check_payload_expiration(

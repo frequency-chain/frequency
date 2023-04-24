@@ -10,20 +10,18 @@ use common_primitives::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
-	node::AccountId,
+	node::{AccountId, Header},
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
-	stateful_storage::PageId,
 };
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU64},
+	traits::{ConstU16, ConstU32},
 	Twox128,
 };
 use frame_system as system;
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Pair, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	DispatchError,
 };
@@ -55,14 +53,14 @@ impl system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -74,15 +72,16 @@ impl system::Config for Test {
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
 
+pub type MaxItemizedActionsCount = ConstU32<6>;
+pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+pub type StatefulMortalityWindowSize = ConstU32<10>;
+
+// Needs parameter_types! for the impls below
 parameter_types! {
 	pub const MaxItemizedPageSizeBytes: u32 = 1024;
-	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
 	pub const MaxItemizedBlobSizeBytes: u32 = 64;
-	pub const MaxPaginatedPageId: PageId = 32;
-	pub const MaxItemizedActionsCount: u32 = 6;
-
-	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
-	pub const StatefulMortalityWindowSize: u32 = 10;
+	pub const MaxPaginatedPageSizeBytes: u32 = 1024;
+	pub const MaxPaginatedPageId: u16 = 32;
 }
 
 impl Default for MaxItemizedPageSizeBytes {
@@ -141,7 +140,7 @@ impl MsaValidator for MsaInfoHandler {
 }
 
 impl ProviderLookup for DelegationInfoHandler {
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
@@ -156,7 +155,7 @@ impl ProviderLookup for DelegationInfoHandler {
 	}
 }
 impl DelegationValidator for DelegationInfoHandler {
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
@@ -342,28 +341,6 @@ impl PartialEq for MaxItemizedBlobSizeBytes {
 }
 
 impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
-
-impl Clone for MaxSchemaGrantsPerDelegation {
-	fn clone(&self) -> Self {
-		MaxSchemaGrantsPerDelegation {}
-	}
-}
-
-impl Eq for MaxSchemaGrantsPerDelegation {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
-impl PartialEq for MaxSchemaGrantsPerDelegation {
-	fn eq(&self, _other: &Self) -> bool {
-		true
-	}
-}
-
-impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
 	}

@@ -43,7 +43,7 @@ pub fn cannot_register_too_many_signatures() {
 #[test]
 pub fn stores_signature_and_increments_count() {
 	new_test_ext().execute_with(|| {
-		System::set_block_number(1 as u64);
+		System::set_block_number(1);
 		let mortality_block: BlockNumber = 51;
 		let signature = generate_test_signature();
 		assert_ok!(Msa::register_signature(&signature, mortality_block.into()));
@@ -162,9 +162,9 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 }
 
 struct TestCase {
-	current: u64,
-	mortality: u64,
-	run_to: u64,
+	current: u32,
+	mortality: u32,
+	run_to: u32,
 	expected_ok: bool,
 }
 
@@ -174,35 +174,35 @@ pub fn add_msa_key_replay_fails() {
 		// these should all fail replay
 		let test_cases: Vec<TestCase> = vec![
 			TestCase {
-				current: 10_949u64,
-				mortality: 11_001u64,
-				run_to: 10_848u64,
+				current: 10_949u32,
+				mortality: 11_001u32,
+				run_to: 10_848u32,
 				expected_ok: true,
 			},
-			TestCase { current: 1u64, mortality: 3u64, run_to: 5u64, expected_ok: false },
-			TestCase { current: 99u64, mortality: 101u64, run_to: 100u64, expected_ok: true },
+			TestCase { current: 1u32, mortality: 3u32, run_to: 5u32, expected_ok: false },
+			TestCase { current: 99u32, mortality: 101u32, run_to: 100u32, expected_ok: true },
 			TestCase {
-				current: 1_100u64,
-				mortality: 1_199u64,
-				run_to: 1_198u64,
-				expected_ok: true,
-			},
-			TestCase {
-				current: 1_102u64,
-				mortality: 1_201u64,
-				run_to: 1_200u64,
+				current: 1_100u32,
+				mortality: 1_199u32,
+				run_to: 1_198u32,
 				expected_ok: true,
 			},
 			TestCase {
-				current: 1_099u64,
-				mortality: 1_148u64,
-				run_to: 1_101u64,
+				current: 1_102u32,
+				mortality: 1_201u32,
+				run_to: 1_200u32,
 				expected_ok: true,
 			},
 			TestCase {
-				current: 1_000_000u64,
-				mortality: 1_000_000u64,
-				run_to: 1_000_000u64,
+				current: 1_099u32,
+				mortality: 1_148u32,
+				run_to: 1_101u32,
+				expected_ok: true,
+			},
+			TestCase {
+				current: 1_000_000u32,
+				mortality: 1_000_000u32,
+				run_to: 1_000_000u32,
 				expected_ok: false,
 			},
 		];
