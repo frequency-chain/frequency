@@ -77,7 +77,7 @@ pub use pallet_time_release;
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 pub use common_runtime::{
-	constants::MaxDataSize,
+	constants::Const30u32,
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
@@ -533,7 +533,7 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
-	type MaxSchemaGrantsPerDelegation = MaxDataSize;
+	type MaxSchemaGrantsPerDelegation = Const30u32;
 	// The maximum provider name size (in bytes)
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info

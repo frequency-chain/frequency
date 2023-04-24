@@ -20,26 +20,26 @@ pub const TOKEN_DECIMALS: u8 = 8;
 
 parameter_types! {
 	/// Clone + Debug + Eq  implementation for u32 types
-	pub const MaxDataSize: u32 = 30;
+	pub const Const30u32: u32 = 30;
 }
 
-impl Clone for MaxDataSize {
+impl Clone for Const30u32 {
 	fn clone(&self) -> Self {
-		MaxDataSize {}
+		Const30u32 {}
 	}
 }
 
-impl Eq for MaxDataSize {
+impl Eq for Const30u32 {
 	fn assert_receiver_is_total_eq(&self) {}
 }
 
-impl PartialEq for MaxDataSize {
+impl PartialEq for Const30u32 {
 	fn eq(&self, other: &Self) -> bool {
 		self == other
 	}
 }
 
-impl sp_std::fmt::Debug for MaxDataSize {
+impl sp_std::fmt::Debug for Const30u32 {
 	#[cfg(feature = "std")]
 	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
 		Ok(())
