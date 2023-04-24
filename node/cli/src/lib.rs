@@ -33,3 +33,8 @@ pub use runtime_version_cmd::*;
 
 #[cfg(feature = "cli")]
 pub use sc_cli::{Error, Result};
+
+#[cfg(feature = "frequency-rococo-local")]
+pub mod run_localchain;
+#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
+pub mod run_parachain;

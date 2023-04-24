@@ -226,7 +226,6 @@ macro_rules! construct_async_run {
 }
 
 /// Parse command line arguments into service configuration.
-#[rustfmt::skip] // This is necessary to workaround a bug in rustfmt with the function returns in the None case.
 pub fn run() -> Result<()> {
 	let cli = Cli::from_args();
 
@@ -382,97 +381,23 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(version), task_manager))
 			})
 		},
-		None => {
-			#[cfg(feature = "frequency-rococo-local")]
-			return run_local(cli);
-
-			#[cfg(any(
-				not(feature = "frequency-rococo-local"),
-				feature = "all-frequency-features"
-			))]
-			return run_parachain(cli);
-		},
+		None => run_chain(cli),
 	}
 }
 
-#[cfg(feature = "frequency-rococo-local")]
-fn run_local(cli: Cli) -> Result<()> {
-	let runner = cli.create_runner(&cli.run.normalize())?;
-	runner.run_node_until_exit(|config| async move {
-		if cli.instant_sealing {
-			return frequency_service::service::frequency_dev_instant_sealing(config, true)
-				.map_err(Into::into)
-		} else {
-			return frequency_service::service::frequency_dev_instant_sealing(config, false)
-				.map_err(Into::into)
-		}
-	})
-}
+pub fn run_chain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
+	#[allow(unused)]
+	let mut result = Ok(());
+	#[cfg(feature = "frequency-rococo-local")]
+	{
+		result = crate::run_localchain::run_localchain(cli);
+	}
+	#[cfg(not(feature = "frequency-rococo-local"))]
+	{
+		result = crate::run_parachain::run_parachain(cli);
+	}
 
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use codec::Encode;
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use cumulus_client_cli::generate_genesis_block;
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use cumulus_primitives_core::ParaId;
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use log::info;
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use sp_core::hexdisplay::HexDisplay;
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
-
-#[cfg(any(not(feature = "frequency-rococo-local"), feature = "all-frequency-features"))]
-fn run_parachain(cli: Cli) -> Result<()> {
-	let runner = cli.create_runner(&cli.run.normalize())?;
-	runner.run_node_until_exit(|config| async move {
-		let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
-			.map(|e| e.para_id)
-			.ok_or("Could not find parachain ID in chain-spec.")?;
-		let id = ParaId::from(para_id);
-
-		let parachain_account =
-			AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
-
-		let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-		let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-			.map_err(|e| format!("{:?}", e))?;
-		let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
-		info!("Parachain id: {:?}", id);
-		info!("Parachain Account: {}", parachain_account);
-		info!("Parachain genesis state: {}", genesis_state);
-		info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-
-		let tokio_handle = config.tokio_handle.clone();
-		let polkadot_cli = RelayChainCli::new(
-			&config,
-			[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
-		);
-		let polkadot_config =
-			SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-				.map_err(|err| format!("Relay chain argument error: {}", err))?;
-
-		let collator_options = cli.run.collator_options();
-		let hwbench = if !cli.no_hardware_benchmarks {
-			config.database.path().map(|database_path| {
-				let _ = std::fs::create_dir_all(&database_path);
-				sc_sysinfo::gather_hwbench(Some(database_path))
-			})
-		} else {
-			None
-		};
-		return frequency_service::service::start_parachain_node(
-			config,
-			polkadot_config,
-			collator_options,
-			id,
-			hwbench,
-		)
-		.await
-		.map(|r| r.0)
-		.map_err(Into::into)
-	})
+	result
 }
 
 impl DefaultConfigurationValues for RelayChainCli {
