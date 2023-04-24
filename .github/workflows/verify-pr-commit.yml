@@ -6,7 +6,7 @@ on:
   pull_request:
     branches:
       - main
-      - '*-development' # Feature Branches should suffix with -development
+      - "*-development" # Feature Branches should suffix with -development
 env:
   BIN_DIR: target/release
 jobs:
@@ -277,7 +277,7 @@ jobs:
       - name: Install Required Packages
         run: |
           apt-get update
-          apt-get install -y curl protobuf-compiler build-essential libclang-dev
+          apt-get install -y curl protobuf-compiler build-essential libclang-dev git
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -285,6 +285,9 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
+      - name: Init Git
+        run: |
+          git config --global --add safe.directory /__w/frequency/frequency
       - name: Run Tests
         run: cargo test --features runtime-benchmarks,all-frequency-features --workspace --release
 
