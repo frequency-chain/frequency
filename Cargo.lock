@@ -1040,6 +1040,7 @@ dependencies = [
 name = "common-primitives"
 version = "0.0.0"
 dependencies = [
+ "coverage-helper",
  "enumflags2",
  "frame-support",
  "frame-system",
@@ -1135,6 +1136,12 @@ checksum = "b49ba7ef1ad6107f8824dbe97de947cbaac53c44e7f9756a1fba0d37c1eec505"
 dependencies = [
  "memchr",
 ]
+
+[[package]]
+name = "coverage-helper"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a9db510e477cf3c14a6c56aa2ed28e499f1e27e01c17723b41ece793d11cf3fe"
 
 [[package]]
 name = "cpp_demangle"

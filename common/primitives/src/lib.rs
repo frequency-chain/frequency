@@ -11,6 +11,9 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+// Don't count [test] code as uncovered
+#![cfg_attr(coverage_nightly, feature(no_coverage))]
+
 /// Types for the Handles pallet
 pub mod handles;
 /// macros
