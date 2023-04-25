@@ -300,7 +300,7 @@ fn claim_handle_supports_stripping_diacriticals_from_utf8_with_combining_marks()
 		let mut handle_with_combining_mark = String::new();
 		handle_with_combining_mark.push('\u{0041}');
 		handle_with_combining_mark.push('\u{0301}');
-		handle_with_combining_mark.push_str("varo");
+		handle_with_combining_mark.push_str("lvaro");
 
 		let (payload, proof) = get_signed_claims_payload(
 			&alice,

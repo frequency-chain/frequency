@@ -94,19 +94,21 @@ fn test_convert_to_canonical_combining_marks_reduce_to_the_same_canonical_form()
 	let mut handle_with_combining_mark = String::new();
 	handle_with_combining_mark.push('\u{0041}');
 	handle_with_combining_mark.push('\u{0301}');
-	handle_with_combining_mark.push_str("varo");
+	handle_with_combining_mark.push_str("lvaro");
 
 	// Construct the handle "Álvaro" where the first character consists
 	// of the Latin-1 Supplement character 0x00C1, which contains both
 	// the base character `A` and the accute diacritical in one character
 	let mut handle_without_combining_mark = String::new();
 	handle_without_combining_mark.push('\u{00C1}');
-	handle_without_combining_mark.push_str("varo");
+	handle_without_combining_mark.push_str("lvaro");
 
 	let canonical_with_combining_mark = convert_to_canonical(&handle_with_combining_mark);
 	let canonical_without_combining_mark = convert_to_canonical(&handle_without_combining_mark);
+
+	let expected_canonical_form = String::from("a1var0");
 	assert_eq!(canonical_with_combining_mark, canonical_without_combining_mark);
-	assert_eq!(canonical_with_combining_mark, "avar0");
+	assert_eq!(canonical_with_combining_mark, expected_canonical_form);
 }
 
 #[test]
