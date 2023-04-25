@@ -24,16 +24,16 @@ fn wil_fuzz() {
 	for line_result in reader.lines() {
 		let original_line = line_result.ok().unwrap();
 		let canonical = convert_to_canonical(&original_line);
-		if is_valid(&canonical) {
+		if !crate::is_reserved_handle(original_line.as_str()) && is_valid(&canonical) {
 			valid += 1;
-			println!("Original: {}\nCanonical: {}\n", original_line, canonical);
-			for c in canonical.chars() {
-				println!("Valid char: \"{}\" Unicode: \"{}\"\n\n", c, c.escape_unicode());
-			}
+			// println!("Original: {}\nCanonical: {}\n", original_line, canonical);
+			// for c in canonical.chars() {
+			// 	println!("Valid char: \"{}\" Unicode: \"{}\"\n\n", c, c.escape_unicode());
+			// }
 		} else {
 			rejected += 1;
 			if !contains_blocked_characters(&canonical) {
-				// println!("REJECTED Original: {}\nCanonical: {}\n", original_line, canonical);
+				println!("REJECTED Original: {}\nCanonical: {}\n", original_line, canonical);
 				for c in canonical.chars() {
 					let s = c.to_string();
 					if !is_valid(s.as_str()) {
