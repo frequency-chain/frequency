@@ -130,22 +130,48 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(..) => Self::is_utility_call_allowed(call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(..) => Self::is_utility_call_allowed(call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
+		}
+	}
+}
+
+impl BaseCallFilter {
+	fn is_utility_call_allowed(call: &RuntimeCall) -> bool {
+		match call {
+			// Check utility calls especially for batch calls
+			// Block specific calls from Frequency pallets
+			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
+				calls.iter().all(|call| match call {
+					// Block following `pallet-msa` calls
+					RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator {
+						..
+					}) |
+					RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider {
+						..
+					}) |
+					RuntimeCall::Msa(pallet_msa::Call::delete_msa_public_key { .. }) |
+					RuntimeCall::Msa(pallet_msa::Call::retire_msa { .. }) |
+
+					// Block following `pallet-handles` calls
+					RuntimeCall::Handles(pallet_handles::Call::retire_handle { .. }) => false,
+					_ => true,
+				}),
+			_ => false,
 		}
 	}
 }
