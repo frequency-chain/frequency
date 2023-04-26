@@ -9,7 +9,7 @@ use sc_cli::SubstrateCli;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 
-pub fn run_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
+pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
 	runner.run_node_until_exit(|config| async move {
 		let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
