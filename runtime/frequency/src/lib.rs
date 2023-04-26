@@ -162,6 +162,7 @@ impl BaseCallFilter {
 	fn is_blocked_call(call: &RuntimeCall) -> bool {
 		match call {
             // Block following `Pays::No` from `pallet-msa` calls
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
             RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator { .. }) |
             RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider { .. }) |
             RuntimeCall::Msa(pallet_msa::Call::delete_msa_public_key { .. }) |
