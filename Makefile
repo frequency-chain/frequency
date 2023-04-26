@@ -205,6 +205,9 @@ build:
 build-benchmarks:
 	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
 
+build-no-relay:
+	cargo build --locked --features  frequency-no-relay
+
 build-local:
 	cargo build --locked --features  frequency-rococo-local
 
