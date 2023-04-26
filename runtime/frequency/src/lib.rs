@@ -23,8 +23,8 @@ use sp_runtime::{
 };
 
 use codec::Encode;
+use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -40,6 +40,7 @@ use common_primitives::{
 };
 
 pub use common_runtime::{
+	call_blocklist::blocked_calls,
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
 };
@@ -149,19 +150,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
-	// Returns a list of blocked calls as a vector of tuples (pallet_name, call_name)
-	fn blocked_calls() -> Vec<(&'static str, &'static str)> {
-		vec![
-			("Msa", "create_provider"),
-			("Msa", "revoke_delegation_by_delegator"),
-			("Msa", "revoke_delegation_by_provider"),
-			("Msa", "delete_msa_public_key"),
-			("Msa", "retire_msa"),
-			("Handles", "retire_handle"),
-		]
-	}
 	fn is_utility_call_allowed(call: &RuntimeCall) -> bool {
-		let blocked_calls = Self::blocked_calls();
+		let blocked_calls = blocked_calls();
 		match call {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
@@ -171,8 +161,11 @@ impl BaseCallFilter {
 		}
 	}
 
-	fn is_blocked_call(call: &RuntimeCall, blocked_calls: &[(&'static str, &'static str)]) -> bool {
-		let target = match call {
+	fn is_blocked_call(
+		call: &RuntimeCall,
+		blocked_calls: &BTreeMap<&'static str, Vec<&'static str>>,
+	) -> bool {
+		let (pallet, func) = match call {
 			RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator { .. }) =>
 				("Msa", "revoke_delegation_by_delegator"),
 			RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider { .. }) =>
@@ -184,7 +177,11 @@ impl BaseCallFilter {
 				("Handles", "retire_handle"),
 			_ => return false,
 		};
-		blocked_calls.binary_search(&target).is_ok()
+
+		match blocked_calls.get(pallet) {
+			Some(functions) => functions.contains(&func),
+			None => false,
+		}
 	}
 }
 
