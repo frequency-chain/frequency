@@ -149,28 +149,42 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
+	// Returns a list of blocked calls as a vector of tuples (pallet_name, call_name)
+	fn blocked_calls() -> Vec<(&'static str, &'static str)> {
+		vec![
+			("Msa", "create_provider"),
+			("Msa", "revoke_delegation_by_delegator"),
+			("Msa", "revoke_delegation_by_provider"),
+			("Msa", "delete_msa_public_key"),
+			("Msa", "retire_msa"),
+			("Handles", "retire_handle"),
+		]
+	}
 	fn is_utility_call_allowed(call: &RuntimeCall) -> bool {
+		let blocked_calls = Self::blocked_calls();
 		match call {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
-				!calls.iter().any(Self::is_blocked_call),
+				!calls.iter().any(|call| Self::is_blocked_call(call, &blocked_calls)),
 			_ => false,
 		}
 	}
 
-	fn is_blocked_call(call: &RuntimeCall) -> bool {
-		match call {
-            // Block following `Pays::No` from `pallet-msa` calls
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::delete_msa_public_key { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::retire_msa { .. }) |
-            // Block following `Pays::No` from `pallet-handles` calls
-            RuntimeCall::Handles(pallet_handles::Call::retire_handle { .. }) => true,
-            _ => false,
-        }
+	fn is_blocked_call(call: &RuntimeCall, blocked_calls: &[(&'static str, &'static str)]) -> bool {
+		let target = match call {
+			RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator { .. }) =>
+				("Msa", "revoke_delegation_by_delegator"),
+			RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider { .. }) =>
+				("Msa", "revoke_delegation_by_provider"),
+			RuntimeCall::Msa(pallet_msa::Call::delete_msa_public_key { .. }) =>
+				("Msa", "delete_msa_public_key"),
+			RuntimeCall::Msa(pallet_msa::Call::retire_msa { .. }) => ("Msa", "retire_msa"),
+			RuntimeCall::Handles(pallet_handles::Call::retire_handle { .. }) =>
+				("Handles", "retire_handle"),
+			_ => return false,
+		};
+		blocked_calls.binary_search(&target).is_ok()
 	}
 }
 
