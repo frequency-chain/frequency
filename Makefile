@@ -79,7 +79,11 @@ ci-local: check lint lint-audit test integration-test
 
 .PHONY: upgrade
 upgrade-local:
-	./scripts/init.sh upgrade-frequency
+	./scripts/init.sh upgrade-frequency-rococo-local
+
+upgrade-no-relay:
+	./scripts/init.sh upgrade-frequency-no-relay
+
 
 #
 # We use hard-coded variables (rather than a pattern) so that smart shells with
@@ -177,6 +181,9 @@ docker-prune:
 .PHONY: check
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
+
+check-no-relay:
+	SKIP_WASM_BUILD= cargo check --features  frequency-no-relay
 
 check-local:
 	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local

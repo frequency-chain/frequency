@@ -70,8 +70,8 @@ start-frequency)
   ;;
 
 start-frequency-instant)
-  printf "\nBuilding frequency with runtime instant sealing ...\n"
-  cargo build --features frequency-rococo-local
+  printf "\nBuilding Frequency with runtime instant sealing ...\n"
+  cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -101,7 +101,7 @@ start-frequency-instant)
 
 start-frequency-manual)
   printf "\nBuilding frequency with runtime manual sealing ...\n"
-  cargo build --locked --features frequency-rococo-local
+  cargo build --locked --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -161,14 +161,14 @@ start-frequency-container)
     --state-cache-size 0 \
   ;;
 
-register-frequency)
+register-frequency-rococo-local)
   echo "reserving and registering parachain with relay via first available slot..."
 
   cd scripts/js/onboard
   yarn && yarn register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
-onboard-frequency)
+onboard-frequency-rococo-local)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
 
    onboard_dir="$base_dir/onboard"
@@ -189,14 +189,14 @@ onboard-frequency)
   yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
   ;;
 
-offboard-frequency)
+offboard-frequency-rococo-local)
   echo "cleaning up parachain for id '$para_id'..."
 
   cd scripts/js/onboard
   yarn && yarn cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
 
-upgrade-frequency)
+upgrade-frequency-rococo-local)
 
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
@@ -214,6 +214,25 @@ upgrade-frequency)
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
   ./scripts/enact-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
+
+  ;;
+
+upgrade-frequency-no-relay)
+
+  root_dir=$(git rev-parse --show-toplevel)
+  echo "root_dir is set to $root_dir"
+
+  # Due to defaults and profile=release, the target directory will be $root_dir/target/release
+  cargo build \
+    --locked \
+    --profile release \
+    --package frequency-runtime \
+    --features frequency-no-relay \
+    -Z unstable-options
+
+  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+
+  ./scripts/runtime-upgrade-sudo.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
   ;;
 

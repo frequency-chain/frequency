@@ -64,7 +64,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
 		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
-		#[cfg(feature = "frequency-rococo-local")]
+		#[cfg(any(feature = "frequency-rococo-local", feature = "frequency-no-relay"))]
 		"frequency-local" | "dev" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
@@ -385,16 +385,17 @@ pub fn run() -> Result<()> {
 	}
 }
 
+// This appears messy but due to layers of Rust complexity, it's necessary.
 pub fn run_chain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	#[allow(unused)]
-	let mut result = Ok(());
-	#[cfg(feature = "frequency-rococo-local")]
+	let mut result: sc_service::Result<(), polkadot_cli::Error> = Ok(());
+	#[cfg(feature = "frequency-no-relay")]
 	{
-		result = crate::run_localchain::run_localchain(cli);
+		result = crate::run_as_localchain::run_as_localchain(cli);
 	}
-	#[cfg(not(feature = "frequency-rococo-local"))]
+	#[cfg(not(feature = "frequency-no-relay"))]
 	{
-		result = crate::run_parachain::run_parachain(cli);
+		result = crate::run_as_parachain::run_as_parachain(cli);
 	}
 
 	result

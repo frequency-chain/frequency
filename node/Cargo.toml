@@ -26,6 +26,10 @@ std = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
+frequency-no-relay = [
+  "frequency-service/frequency-no-relay",
+  "frequency-cli/frequency-no-relay"
+]
 frequency-rococo-local = [
   "frequency-service/frequency-rococo-local",
   "frequency-cli/frequency-rococo-local"
