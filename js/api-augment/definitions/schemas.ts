@@ -34,7 +34,7 @@ export default {
       model: "SchemaModel",
       model_type: "ModelType",
       payload_location: "PayloadLocation",
-      setting: "Vec<SchemaSetting>",
+      settings: "Vec<SchemaSetting>",
     },
     ModelType: {
       _enum: ["AvroBinary", "Parquet"],
