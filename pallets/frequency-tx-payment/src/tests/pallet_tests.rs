@@ -158,7 +158,7 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 
 #[test]
 fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_succesful() {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -178,19 +178,19 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
 			let len = 10;
 
-			assert_eq!(Capacity::balance(1), 100);
+			assert_eq!(Capacity::balance(1), 1_000_000_000);
 
 			let pre = ChargeFrqTransactionPayment::<Test>::from(0u64)
 				.pre_dispatch(&account_id, balances_call, &dispatch_info, len)
 				.unwrap();
 
 			// Token account Balance is not effected
-			assert_eq!(Balances::free_balance(1), 100);
+			assert_eq!(Balances::free_balance(1), 1_000_000_000);
 
-			// capacity_balance = free_balance - base_weight(5)
+			// capacity_balance = free_balance - base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
 			//   - extrinsic_weight(11) * WeightToFee(1)
 			//   - TransactionByteFee(1)* len(10) = 80
-			assert_eq!(Capacity::balance(1), 100 - 5 - 11 - 10);
+			assert_eq!(Capacity::balance(1), 1_000_000_000 - 90_764_000 - 11 - 10);
 
 			let post_info: PostDispatchInfo =
 				PostDispatchInfo { actual_weight: None, pays_fee: Default::default() };
@@ -204,7 +204,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			));
 
 			// Checking balance was not modified after post-dispatch.
-			assert_eq!(Capacity::balance(1), 100 - 5 - 11 - 10);
+			assert_eq!(Capacity::balance(1), 1_000_000_000 - 90_764_000 - 11 - 10);
 		});
 }
 
@@ -268,7 +268,7 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 #[test]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tuple_with_fee_and_enum(
 ) {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -288,12 +288,12 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
 			let len = 10;
 
-			// fee = base_weight(5)
+			// fee = base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
 			//   + extrinsic_weight(11) * WeightToFee(1)
-			//   + TransactionByteFee(1)* len(10) = 26
+			//   + TransactionByteFee(1)* len(10) = CAPACITY_EXTRINSIC_BASE_WEIGHT + 21
 			let res = charge_tx_payment.withdraw_fee(&who, call, &info, len);
 			assert_ok!(&res);
-			assert_eq!(res.unwrap().0, 26u64);
+			assert_eq!(res.unwrap().0, 90_764_000 + 21);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
 				true
@@ -303,7 +303,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 
 #[test]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_with_fee_and_enum() {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -323,10 +323,13 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
 			let len = 10;
 
-			// fee = base_weight(5)
+			// fee = base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
 			//   + extrinsic_weight(11) * WeightToFee(1)
 			//   + TransactionByteFee(1)* len(10) = 20
-			assert_eq!(charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0, 26u64);
+			assert_eq!(
+				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0,
+				(90_764_000 + 21u64)
+			);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
 				true
@@ -480,6 +483,8 @@ fn charge_frq_transaction_payment_tip_is_some_amount_for_non_capacity_calls() {
 	assert_eq!(result, 200u64);
 }
 
+/// Test Helper Function
+/// Asserts that the `withdraw_fee` function returns the expected result.
 pub fn assert_withdraw_fee_result(
 	account_id: <Test as frame_system::Config>::AccountId,
 	call: &<Test as Config>::RuntimeCall,
@@ -508,7 +513,7 @@ pub fn assert_withdraw_fee_result(
 
 #[test]
 fn withdraw_fee_allows_only_configured_capacity_calls() {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -591,14 +596,14 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with
 
 #[test]
 fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee() {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	// uses funded account with MSA Id
 	let provider_msa_id = 2u64;
 	let provider_account_id = 2u64;
 	let current_epoch = 11u32;
-	let total_capacity_issued = 30u64;
-	let total_tokens_staked = 30u64;
+	let total_capacity_issued = 3_000_000_000u64;
+	let total_tokens_staked = 3_000_000_000u64;
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -608,7 +613,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 			CurrentEpoch::<Test>::set(current_epoch);
 
 			let capacity_details = CapacityDetails {
-				remaining_capacity: 1,
+				remaining_capacity: 1_000_000_000,
 				total_tokens_staked,
 				total_capacity_issued,
 				last_replenished_epoch: 10,
@@ -625,7 +630,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: total_capacity_issued.saturating_sub(26),
+					remaining_capacity: total_capacity_issued.saturating_sub(90_764_000 + 21),
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch: current_epoch,
@@ -636,13 +641,13 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 
 #[test]
 fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
-	let balance_factor = 10;
+	let balance_factor = 100_000_000;
 
 	// uses funded account with MSA Id
 	let provider_msa_id = 2u64;
 	let provider_account_id = 2u64;
-	let total_capacity_issued = 30u64;
-	let total_tokens_staked = 30u64;
+	let total_capacity_issued = 3_000_000_000u64;
+	let total_tokens_staked = 3_000_000_000u64;
 	let last_replenished_epoch = 10u32;
 	let current_epoch = last_replenished_epoch;
 
@@ -654,7 +659,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			CurrentEpoch::<Test>::set(current_epoch);
 
 			let capacity_details = CapacityDetails {
-				remaining_capacity: 27,
+				remaining_capacity: 2_700_000_000,
 				total_tokens_staked,
 				total_capacity_issued,
 				last_replenished_epoch,
@@ -672,7 +677,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: 1u64, // fee is 26
+					remaining_capacity: 2_700_000_000.saturating_sub(90_764_000 + 21),
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch,
@@ -692,14 +697,13 @@ fn compute_capacity_fee_successful() {
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
-			// fee = base_weight + extrinsic weight + len = 5 + 11 + 10 = 26
+			// fee = base_weight + extrinsic weight + len = CAPACITY_EXTRINSIC_BASE_WEIGHT + 11 + 10 = CAPACITY_EXTRINSIC_BASE_WEIGHT + 21
 			let fee = FrequencyTxPayment::compute_capacity_fee(
 				10u32,
-				DispatchClass::Normal,
 				<Test as Config>::CapacityCalls::get_stable_weight(call).unwrap(),
 			);
 
-			assert_eq!(fee, 26);
+			assert_eq!(fee, 90_764_000 + 21);
 		});
 }
 
