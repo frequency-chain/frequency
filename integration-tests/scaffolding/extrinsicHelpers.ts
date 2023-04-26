@@ -372,6 +372,10 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
+    public static executeUtilityBatchAll(keys: KeyringPair, calls: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.utility.batchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
+    }
+    
     public static async mine() {
       let res: CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
       ExtrinsicHelper.api.rpc.engine.finalizeBlock(res.blockHash);
