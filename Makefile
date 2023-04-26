@@ -41,15 +41,15 @@ local-block:
 
 .PHONY: register
 register:
-	./scripts/init.sh register-frequency
+	./scripts/init.sh register-frequency-rococo-local
 
 .PHONY: onboard
 onboard:
-	./scripts/init.sh onboard-frequency
+	./scripts/init.sh onboard-frequency-rococo-local
 
 .PHONY: offboard
 offboard:
-	./scripts/init.sh offboard-frequency
+	./scripts/init.sh offboard-frequency-rococo-local
 
 .PHONY: specs
 specs-rococo-2000:
