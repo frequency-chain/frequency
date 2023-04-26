@@ -30,8 +30,8 @@ describe("Utility Batch Filtering", function () {
         const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
         badBatch.push(ExtrinsicHelper.api.tx.balances.transfer(recipient.address, 1000))
         badBatch.push(ExtrinsicHelper.api.tx.system.remark("Hello From Batch"))
-        badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa())
         badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle())
+        badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa())
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         try {
             await batch.fundAndSend();
