@@ -9,7 +9,7 @@ import {devAccounts, getBlockNumber, log, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
-import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse } from "@frequency-chain/api-augment/interfaces";
+import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse, SchemaResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
@@ -229,6 +229,11 @@ export class ExtrinsicHelper {
     /** Generic Schema Extrinsics */
     public static createSchemaWithSettingsGov(delegatorKeys: KeyringPair, keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated", grant: "AppendOnly"| "SignatureRequired"): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernance(delegatorKeys.publicKey, JSON.stringify(model), modelType, payloadLocation, [grant]), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+    }
+
+    /** Get Schema RPC */
+    public static getSchema(schemaId: u16): Promise<Option<SchemaResponse>> {
+        return firstValueFrom(ExtrinsicHelper.api.rpc.schemas.getBySchemaId(schemaId));
     }
 
     /** MSA Extrinsics */

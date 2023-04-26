@@ -6,6 +6,7 @@ import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { createKeys, createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { u16 } from "@polkadot/types";
 
 describe("#createSchema", function () {
     let keys: KeyringPair;
@@ -73,5 +74,21 @@ describe("#createSchema", function () {
       await assert.rejects(ex.sudoSignAndSend(), {
         name: 'InvalidSetting'
       });
+    });
+
+    it("should not fail to create itemized schema with AppendOnly settings", async function () {
+        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(keys, sudoKey, AVRO_GRAPH_CHANGE, "AvroBinary", "Itemized", "AppendOnly");
+        const [event] = await createSchema.sudoSignAndSend();
+        assert.notEqual(event, undefined);
+        let itemizedSchemaId: u16 = new u16(ExtrinsicHelper.api.registry, 0);
+        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+            itemizedSchemaId = event.data.schemaId;
+        }
+        assert.notEqual(itemizedSchemaId.toNumber(), 0);
+        let schema_response = await ExtrinsicHelper.getSchema(itemizedSchemaId);
+        assert(schema_response.isSome);
+        let schema_response_value = schema_response.unwrap();
+        let schema_settings = schema_response_value.settings;
+        assert.notEqual(schema_settings.length, 0);
     });
 })
