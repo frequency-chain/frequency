@@ -154,7 +154,7 @@ impl BaseCallFilter {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
-				!calls.iter().any(Self::is_batch_call_allowed),
+				calls.iter().any(Self::is_batch_call_allowed),
 			_ => false,
 		}
 	}
@@ -162,10 +162,10 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all `FrequencyTxPayment` calls from utility batch
+			RuntimeCall::FrequencyTxPayment(..) => false,
 			// Block all `Pays::No` calls from utility batch
-			RuntimeCall::FrequencyTxPayment(..) => true,
-			_ if Self::is_pays_no_call(call) => true,
-			_ => false,
+			_ if Self::is_pays_no_call(call) => false,
+			_ => true,
 		}
 	}
 
