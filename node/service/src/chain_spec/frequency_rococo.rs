@@ -91,14 +91,14 @@ pub fn development_config() -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		None,
+		Some("dev"),
 		// Fork ID
 		None,
 		// Properties
 		Some(properties),
 		// Extensions
 		Extensions {
-			relay_chain: "rococo-local".into(), // You MUST set this to the correct network!
+			relay_chain: "dev".into(), // You MUST set this to the correct network!
 			para_id: 1000,
 		},
 	)

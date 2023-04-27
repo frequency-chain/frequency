@@ -530,7 +530,7 @@ pub fn frequency_dev_instant_sealing(
 			.import_notification_stream()
 			.filter(move |_| futures::future::ready(is_instant))
 			.map(|_| sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-				create_empty: false,
+				create_empty: true,
 				finalize: true,
 				parent_hash: None,
 				sender: None,

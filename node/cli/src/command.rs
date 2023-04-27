@@ -21,6 +21,7 @@ enum ChainIdentity {
 	Frequency,
 	FrequencyRococo,
 	FrequencyLocal,
+	FrequencyDev,
 }
 
 trait IdentifyChain {
@@ -35,6 +36,8 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 			ChainIdentity::FrequencyRococo
 		} else if self.id() == "frequency-local" {
 			ChainIdentity::FrequencyLocal
+		} else if self.id() == "dev" {
+			ChainIdentity::FrequencyDev
 		} else {
 			panic!("Unknown chain identity")
 		}
@@ -47,6 +50,7 @@ impl PartialEq for ChainIdentity {
 			(ChainIdentity::Frequency, ChainIdentity::Frequency) => true,
 			(ChainIdentity::FrequencyRococo, ChainIdentity::FrequencyRococo) => true,
 			(ChainIdentity::FrequencyLocal, ChainIdentity::FrequencyLocal) => true,
+			(ChainIdentity::FrequencyDev, ChainIdentity::FrequencyDev) => true,
 			_ => false,
 		}
 	}
@@ -65,11 +69,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-no-relay")]
-		"frequency-no-relay" | "dev" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
+		"dev" => return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
 		#[cfg(feature = "frequency-rococo-local")]
-		"frequency-local" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
+		"frequency-local" => return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
@@ -137,6 +139,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency-rococo-local"))]
 				return Err("Frequency Local runtime is not available.".into())
+			} else if ChainIdentity::FrequencyDev == spec.identify() {
+				#[cfg(feature = "frequency-no-relay")]
+				{
+					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+						path_buf,
+					)?))
+				}
+				#[cfg(not(feature = "frequency-no-relay"))]
+				return Err("Frequency Dev (no relay) runtime is not available.".into())
 			} else {
 				return Err("Unknown chain spec.".into())
 			}
