@@ -162,8 +162,8 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all nested `batch` calls from utility batch
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) => false,
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) => false,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
 
 			// Block all `FrequencyTxPayment` calls from utility batch
