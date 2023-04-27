@@ -36,7 +36,8 @@ describe("Utility Batch Filtering", function () {
         let error: any;
         try {
             await batch.fundAndSend();
-        } catch (error) {
+        } catch (err) {
+            error = err;
             assert.notEqual(error, undefined, "should return an error");
         }
         assert.notEqual(error, undefined, "should return an error");
