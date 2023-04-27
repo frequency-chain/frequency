@@ -1,5 +1,5 @@
-use super::*;
 use crate as pallet_frequency_tx_payment;
+use crate::*;
 
 use common_primitives::{
 	msa::MessageSourceId,
@@ -14,7 +14,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
 	AccountId32, Perbill,
 };
-use sp_std::ops::Div;
 
 use frame_support::{
 	parameter_types,
