@@ -135,7 +135,6 @@ parameter_types! {
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
 pub type MaxProviderNameSize = ConstU32<16>;
-pub type MaxSchemas = ConstU32<5>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 /// Interface to collective pallet to propose a proposal.

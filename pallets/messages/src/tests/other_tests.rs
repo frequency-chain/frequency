@@ -10,8 +10,7 @@ use multibase::Base;
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
-use sp_core::ConstU32;
-use sp_core::Get;
+use sp_core::{ConstU32, Get};
 use sp_std::vec::Vec;
 
 #[derive(Serialize)]
