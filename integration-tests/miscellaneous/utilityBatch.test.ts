@@ -57,7 +57,8 @@ describe("Utility Batch Filtering", function () {
         const batch = ExtrinsicHelper.executeUtilityBatch(sender, badBatch);
         let [ok, eventMap] = await batch.fundAndSend();
         assert.equal(ok, undefined, "should not return an ok event");
-        assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return an eventMap");
+        assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
+        assert.notEqual(eventMap["utility.BatchInterrupted"], undefined, "should return a batch interrupted event");
     });
 
     it("should fail to execute ❌ forceBatch with disallowed calls", async function () {
@@ -72,7 +73,8 @@ describe("Utility Batch Filtering", function () {
         const forceBatch = ExtrinsicHelper.executeUtilityForceBatch(sender, badBatch);
         let [ok, eventMap] = await forceBatch.fundAndSend();
         assert.equal(ok, undefined, "should not return an ok event");
-        assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return an eventMap");
+        assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
+        assert.notEqual(eventMap["utility.BatchCompletedWithErrors"], undefined, "should return a batch completed with error event");
     });
 
     it("should fail to execute ❌ batch  with `Pays::No` calls", async function () {
