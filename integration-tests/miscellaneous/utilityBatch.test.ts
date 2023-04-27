@@ -33,10 +33,12 @@ describe("Utility Batch Filtering", function () {
         badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle())
         badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa())
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
+        let error: any;
         try {
             await batch.fundAndSend();
         } catch (error) {
             assert.notEqual(error, undefined, "should return an error");
         }
+        assert.notEqual(error, undefined, "should return an error");
     });    
 });
