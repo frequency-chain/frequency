@@ -32,15 +32,35 @@ describe("Utility Batch Filtering", function () {
         badBatch.push(ExtrinsicHelper.api.tx.system.remark("Hello From Batch"))
         badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle())
         badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa())
-        const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
+        const batchAll = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         let error: any;
         try {
-            await batch.fundAndSend();
+            await batchAll.fundAndSend();
         } catch (err) {
             error = err;
-            assert.notEqual(error, undefined, "should return an error");
+            assert.notEqual(error, undefined, " batchAll should return an error");
         }
-        assert.notEqual(error, undefined, "should return an error");
+        assert.notEqual(error, undefined, " batchAll should return an error");
+
+        const batch = ExtrinsicHelper.executeUtilityBatch(sender, badBatch);
+        try {
+            await batch.fundAndSend();
+        }
+        catch (err) {
+            error = err;
+            assert.notEqual(error, undefined, "batch should return an error");
+        }
+        assert.notEqual(error, undefined, "batch should return an error");
+
+        const forceBatch = ExtrinsicHelper.executeUtilityForceBatch(sender, badBatch);
+        try {
+            await forceBatch.fundAndSend();
+        }
+        catch (err) {
+            error = err;
+            assert.notEqual(error, undefined, "forceBatch should return an error");
+        }
+        assert.notEqual(error, undefined, "forceBatch should return an error");
     });
     
     it("should fail to execute ❌ batch  with `Pays::No` calls", async function () {
