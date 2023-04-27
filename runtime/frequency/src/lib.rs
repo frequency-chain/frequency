@@ -175,6 +175,8 @@ impl BaseCallFilter {
 
 			// Block all `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
+
+			// Allow all other calls
 			_ => true,
 		}
 	}
