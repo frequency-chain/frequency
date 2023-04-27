@@ -11,11 +11,11 @@ use sp_std::prelude::*;
 pub type OffchainPayloadType = (Vec<u8>, u32);
 
 /// A single message type definition.
-#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 #[scale_info(skip_type_params(MaxDataSize))]
 pub struct Message<MaxDataSize>
 where
-	MaxDataSize: Get<u32> + Clone,
+	MaxDataSize: Get<u32>,
 {
 	///  Data structured by the associated schema's model.
 	pub payload: BoundedVec<u8, MaxDataSize>,
@@ -32,7 +32,7 @@ where
 
 impl<MaxDataSize> Message<MaxDataSize>
 where
-	MaxDataSize: Get<u32> + Clone,
+	MaxDataSize: Get<u32>,
 {
 	/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
 	pub fn map_to_response(
@@ -45,7 +45,7 @@ where
 				provider_msa_id: self.provider_msa_id,
 				index: self.index,
 				block_number,
-				msa_id: Some(self.msa_id.unwrap_or_default()),
+				msa_id: self.msa_id,
 				payload: Some(self.payload.to_vec()),
 				cid: None,
 				payload_length: None,

@@ -310,20 +310,9 @@ jobs:
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
-      - name: Install cargo-llvm-cov
-        uses: taiki-e/install-action@cargo-llvm-cov
-      - name: Generate code coverage
-        run: |
-          cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
-          --ignore-filename-regex "^.*\/(mock\.rs|weights(\.rs)?|benchmarking\.rs).*$" \
-          --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
-          --features all-frequency-features
-      - name: Upload to codecov.io
-        uses: codecov/codecov-action@v3
-        with:
-          files: lcov.info
-          fail_ci_if_error: false # optional (default = false)
-          verbose: true # optional (default = false)
+      - name: Generate and Upload Code Coverage
+        id: codecov
+        uses: ./.github/workflows/common/codecov
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks

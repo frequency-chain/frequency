@@ -34,6 +34,10 @@ export const signedExtensions: ExtDef = {
     extrinsic: {},
     payload: {},
   },
+  HandlesSignedExtension: {
+    extrinsic: {},
+    payload: {},
+  },
 };
 
 /**
