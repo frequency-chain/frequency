@@ -46,7 +46,7 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::{DispatchClass, DispatchError},
+	dispatch::{DispatchClass, DispatchError, GetDispatchInfo, Pays},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
@@ -154,23 +154,23 @@ impl BaseCallFilter {
 			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
-				!calls.iter().any(Self::is_blocked_call),
+				!calls.iter().any(Self::is_batch_call_allowed),
 			_ => false,
 		}
 	}
 
-	fn is_blocked_call(call: &RuntimeCall) -> bool {
+	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
-            // Block following `Pays::No` from `pallet-msa` calls
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_delegator { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::revoke_delegation_by_provider { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::delete_msa_public_key { .. }) |
-            RuntimeCall::Msa(pallet_msa::Call::retire_msa { .. }) |
-            // Block following `Pays::No` from `pallet-handles` calls
-            RuntimeCall::Handles(pallet_handles::Call::retire_handle { .. }) => true,
-            _ => false,
-        }
+			// Block all `FrequencyTxPayment` calls from utility batch
+			// Block all `Pays::No` calls from utility batch
+			RuntimeCall::FrequencyTxPayment(..) => true,
+			_ if Self::is_pays_no_call(call) => true,
+			_ => false,
+		}
+	}
+
+	fn is_pays_no_call(call: &RuntimeCall) -> bool {
+		call.get_dispatch_info().pays_fee == Pays::No
 	}
 }
 
