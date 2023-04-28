@@ -173,7 +173,7 @@ impl BaseCallFilter {
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 
-			// Block all `Pays::No` calls from utility batch
+			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
 
 			// Allow all other calls

@@ -28,8 +28,10 @@ describe("Utility Batch Filtering", function () {
     it("should fail to execute ❌ batchAll with disallowed calls", async function () {
         // bad batch: with a mix of allowed and disallowed calls
         const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
+        //allowed
         badBatch.push(ExtrinsicHelper.api.tx.balances.transfer(recipient.address, 1000))
         badBatch.push(ExtrinsicHelper.api.tx.system.remark("Hello From Batch"))
+        // not allowed
         badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle())
         badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa())
         let error: any;
