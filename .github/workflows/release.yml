@@ -50,6 +50,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
+          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
       - name: Create Release Branch?
         id: create-release-branch
@@ -119,6 +120,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+          fetch-depth: 0
       - name: Version Code
         shell: bash
         run: |
@@ -150,8 +152,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
-        os: [[self-hosted, Linux, X64, build]]
+        # os: [[self-hosted, Linux, X64, testing, v2], [self-hosted, Linux, ARM64,  testing, v2]]
+        os: [[self-hosted, Linux, X64, testing, v2]]
         network: [local, rococo, mainnet]
         include:
           - network: local
@@ -166,12 +168,12 @@ jobs:
             spec: frequency
             build-profile: production
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, build]
+          - os: [self-hosted, Linux, X64, testing, v2]
             arch: amd64
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
-    container: ubuntu:20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -249,8 +251,8 @@ jobs:
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
-    env:
-      HOME: /root
+    # env:
+    #   HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -272,6 +274,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
+    # runs-on: [self-hosted, Linux, X64, testing, v2]
     runs-on: [self-hosted, Linux, X64, build]
     steps:
       - name: Install Required Packages
@@ -285,11 +288,12 @@ jobs:
         uses: actions/checkout@v3
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
+      # - name: Reset Runner
+      #   uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
+          # targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
@@ -354,8 +358,8 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: public.ecr.aws/lts/ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
