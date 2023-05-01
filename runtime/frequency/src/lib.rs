@@ -130,16 +130,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utilit_call) =>
-					Self::is_utility_call_allowed(pallet_utilit_call),
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utilit_call) =>
-					Self::is_utility_call_allowed(pallet_utilit_call),
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
