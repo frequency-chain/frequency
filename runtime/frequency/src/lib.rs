@@ -130,14 +130,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(..) => Self::is_utility_call_allowed(call),
+				RuntimeCall::Utility(pallet_utilit_call) =>
+					Self::is_utility_call_allowed(pallet_utilit_call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(..) => Self::is_utility_call_allowed(call),
+				RuntimeCall::Utility(pallet_utilit_call) =>
+					Self::is_utility_call_allowed(pallet_utilit_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
@@ -149,12 +151,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
-	fn is_utility_call_allowed(call: &RuntimeCall) -> bool {
+	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
-			RuntimeCall::Utility(pallet_utility::Call::batch { calls, .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
-				calls.iter().any(Self::is_batch_call_allowed),
+			pallet_utility::Call::batch { calls, .. } |
+			pallet_utility::Call::batch_all { calls, .. } |
+			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
 			_ => true,
 		}
 	}
