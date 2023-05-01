@@ -155,7 +155,7 @@ impl BaseCallFilter {
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls, .. }) |
 			RuntimeCall::Utility(pallet_utility::Call::force_batch { calls, .. }) =>
 				calls.iter().any(Self::is_batch_call_allowed),
-			_ => false,
+			_ => true,
 		}
 	}
 
