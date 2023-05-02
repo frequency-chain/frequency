@@ -83,7 +83,7 @@ sequenceDiagram
     participant Frequency
     User->>App: enter desired handle
     loop until msa_id and handle successfully created
-        alt Optionally retrive n number ofpresumtive suffix
+        alt Optionally retrive n number of presumtive suffix
         App->>RPC: get_next_suffixes(handle, n)
         RPC->>Frequency: query state for current index for a base handle
         Frequency-->>RPC: return current index
