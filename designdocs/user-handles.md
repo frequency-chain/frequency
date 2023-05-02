@@ -138,7 +138,7 @@ ClaimHandlePayload {
 
 ### Claim handle
 
- As a network, Frequency should allow users to choose their own handle, while chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the base handle with the suffix.
+ As a network, Frequency should allow users to choose their own handle, while the chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the base handle with the suffix.
 
 Input
 
