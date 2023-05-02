@@ -10,7 +10,7 @@
 	unused_imports
 )]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{traits::Get, weights::{Weight, constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_NANOS}}};
 use sp_std::marker::PhantomData;
 
 /// The base fee for extrinsics is calculated by running benchmarks.
