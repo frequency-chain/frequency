@@ -41,7 +41,6 @@ The high level requirements for user handles are:
 
 * User handles must be unique and each msa can only be mapped to one handle.
 * User handles must be between 3 and 20 characters (32b limit) long.
-* User handles must only contain characters that are URL safe
 * User handles cannot contain the following substrings (or homoglyphs): @, #, :, ., ``` (this is just a suggestion, we can add more if needed)
 * User handles cannot match any in a blocklist. e.g. (@admin, @everyone, @all) and others (this is just a suggestion, we can add more if needed)
 * Suffixes are numeric and contain digits without any leading zeros.
