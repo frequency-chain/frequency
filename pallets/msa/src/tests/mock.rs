@@ -1,18 +1,20 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
+	msa::MessageSourceId,
+	node::{BlockNumber, Header},
+	schema::SchemaId,
+	utils::wrap_binary_data,
 };
 use frame_support::{
 	assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, EitherOfDiverse, OnFinalize, OnInitialize},
 };
 use frame_system::EnsureRoot;
 use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, MultiSignature,
 };
@@ -63,14 +65,14 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -127,35 +129,14 @@ impl pallet_handles::Config for Test {
 	type MsaBenchmarkHelper = ();
 }
 
+// Needs parameter_types! for the Option and statics
 parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
-	pub const MaxProviderNameSize: u32 = 16;
-	pub const MaxSchemas: u32 = 5;
-	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
+pub type MaxProviderNameSize = ConstU32<16>;
+pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
-impl Clone for MaxSchemaGrantsPerDelegation {
-	fn clone(&self) -> Self {
-		MaxSchemaGrantsPerDelegation {}
-	}
-}
-
-impl Eq for MaxSchemaGrantsPerDelegation {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
-impl PartialEq for MaxSchemaGrantsPerDelegation {
-	fn eq(&self, _other: &Self) -> bool {
-		true
-	}
-}
-
-impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
 
@@ -224,7 +205,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext
 }
 
-pub fn run_to_block(n: u64) {
+pub fn run_to_block(n: u32) {
 	while System::block_number() < n {
 		if System::block_number() > 1 {
 			System::on_finalize(System::block_number());

@@ -1,18 +1,16 @@
 use frame_support::{
 	dispatch::DispatchError,
-	parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse},
+	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use frame_system::EnsureRoot;
 
-use common_primitives::{node::AccountId, schema::SchemaId};
+use common_primitives::node::{AccountId, Header};
 pub use common_runtime::constants::*;
 use pallet_collective;
 use smallvec::smallvec;
 use sp_core::{Encode, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, Perbill,
 };
@@ -48,9 +46,7 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const MaxSchemaRegistrations: SchemaId = 64_000;
-}
+pub type MaxSchemaRegistrations = ConstU16<64_000>;
 
 pub struct WeightToFee;
 
@@ -125,14 +121,14 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type OnNewAccount = ();

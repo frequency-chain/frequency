@@ -53,7 +53,7 @@ impl From<DelegatorId> for MessageSourceId {
 }
 
 /// Struct for the information of the relationship between an MSA and a Provider
-#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, PartialEq, MaxEncodedLen, Eq)]
+#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
 #[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
 pub struct Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
 where
@@ -63,6 +63,19 @@ where
 	pub revoked_at: BlockNumber,
 	/// Schemas that the provider is allowed to use for a delegated message.
 	pub schema_permissions: BoundedBTreeMap<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>,
+}
+
+// Cannot derive the PartialEq without a mess of impl PartialEq for MaxSchemaGrantsPerDelegation
+impl<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation> PartialEq
+	for Delegation<SchemaId, BlockNumber, MaxSchemaGrantsPerDelegation>
+where
+	SchemaId: PartialEq,
+	BlockNumber: PartialEq,
+	MaxSchemaGrantsPerDelegation: Get<u32>,
+{
+	fn eq(&self, other: &Self) -> bool {
+		self.revoked_at == other.revoked_at && self.schema_permissions == other.schema_permissions
+	}
 }
 
 impl<
@@ -173,7 +186,7 @@ pub trait ProviderLookup {
 	/// Type for block number.
 	type BlockNumber;
 	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + Eq;
+	type MaxSchemaGrantsPerDelegation: Get<u32>;
 	/// Schema Id is the unique identifier for a Schema
 	type SchemaId;
 
@@ -189,7 +202,7 @@ pub trait DelegationValidator {
 	/// Type for block number.
 	type BlockNumber;
 	/// Type for maximum number of schemas that can be granted to a provider.
-	type MaxSchemaGrantsPerDelegation: Get<u32> + Clone + Eq;
+	type MaxSchemaGrantsPerDelegation: Get<u32>;
 	/// Schema Id is the unique identifier for a Schema
 	type SchemaId;
 

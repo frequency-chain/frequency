@@ -1,55 +1,21 @@
 use crate::prod_or_testnet_or_local;
-use common_primitives::{
-	node::{Balance, BlockNumber},
-	schema::SchemaId,
-};
+use common_primitives::node::BlockNumber;
 
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
-	traits::{ConstU32, ConstU8},
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 	PalletId,
 };
-use sp_core::{ConstU128, ConstU16};
 
 pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
 pub const TOKEN_DECIMALS: u8 = 8;
 
-parameter_types! {
-	/// Clone + Debug + Eq  implementation for u32 types
-	pub const MaxDataSize: u32 = 30;
-}
-
-impl Clone for MaxDataSize {
-	fn clone(&self) -> Self {
-		MaxDataSize {}
-	}
-}
-
-impl Eq for MaxDataSize {
-	fn assert_receiver_is_total_eq(&self) {}
-}
-
-impl PartialEq for MaxDataSize {
-	fn eq(&self, other: &Self) -> bool {
-		self == other
-	}
-}
-
-impl sp_std::fmt::Debug for MaxDataSize {
-	#[cfg(feature = "std")]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
+/// The maximum number of schema grants allowed per delegation
+pub type MaxSchemaGrants = ConstU32<30>;
 
 /// This determines the average expected block time that we are targeting.
 /// Blocks will be produced at a minimum duration defined by `SLOT_DURATION`.
@@ -121,10 +87,8 @@ pub type MSAMaxSignaturesStored = ConstU32<50_000>;
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
-parameter_types! {
-	/// The maximum number of schema registrations
-	pub const SchemasMaxRegistrations: SchemaId = 65_000;
-}
+/// The maximum number of schema registrations
+pub type SchemasMaxRegistrations = ConstU16<65_000>;
 /// The minimum schema model size (in bytes)
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
 /// The maximum length of a schema model (in bytes)
@@ -143,18 +107,14 @@ pub type HandleSuffixMax = ConstU16<99>;
 
 // --- TimeRelease Pallet ---
 // Update
-parameter_types! {
-	pub const MinReleaseTransfer: Balance = 0;
-}
+pub type MinReleaseTransfer = ConstU128<0>;
 
 /// Update
 pub const MAX_RELEASE_SCHEDULES: u32 = 50;
 // -end- TimeRelease Pallet ---
 
 // --- Timestamp Pallet ---
-parameter_types! {
-	pub const MinimumPeriod: u64 = SLOT_DURATION / 2;
-}
+pub type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 // -end- Timestamp Pallet ---
 
 // --- Authorship Pallet ---
@@ -175,10 +135,8 @@ pub type SchedulerMaxScheduledPerBlock = FIFTY;
 /// Expected to be removed in Polkadot v0.9.31
 pub type PreimageMaxSize = ConstU32<{ 4096 * 1024 }>;
 
-parameter_types! {
-	pub const PreimageBaseDeposit: Balance = currency::deposit(10, 64);
-	pub const PreimageByteDeposit: Balance = currency::deposit(0, 1);
-}
+pub type PreimageBaseDeposit = ConstU128<{ currency::deposit(10, 64) }>;
+pub type PreimageByteDeposit = ConstU128<{ currency::deposit(0, 1) }>;
 // -end- Preimage Pallet ---
 
 // --- Council ---
@@ -187,9 +145,7 @@ pub type CouncilMaxProposals = ConstU32<25>;
 // The maximum number of council members
 pub type CouncilMaxMembers = ConstU32<10>;
 
-parameter_types! {
-	pub const CouncilMotionDuration: BlockNumber = 5 * DAYS;
-}
+pub type CouncilMotionDuration = ConstU32<{ 5 * DAYS }>;
 // -end- Council ---
 
 // --- Technical Committee ---
@@ -198,23 +154,30 @@ pub type TCMaxProposals = ConstU32<25>;
 // The maximum number of technical committee members
 pub type TCMaxMembers = ConstU32<10>;
 
-parameter_types! {
-	pub const TCMotionDuration: BlockNumber = 5 * DAYS;
-}
+pub type TCMotionDuration = ConstU32<{ 5 * DAYS }>;
 // -end- Technical Committee ---
 
 // --- Democracy Pallet ---
 // Config from
 // https://github.com/paritytech/substrate/blob/367dab0d4bd7fd7b6c222dd15c753169c057dd42/bin/node/runtime/src/lib.rs#L880
-parameter_types! {
-	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
-	pub VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
-	pub FastTrackVotingPeriod: BlockNumber = prod_or_testnet_or_local!(3 * HOURS, 30 * MINUTES, 5 * MINUTES);
-	pub EnactmentPeriod: BlockNumber = prod_or_testnet_or_local!(8 * DAYS, 30 * HOURS, 10 * MINUTES);
-	pub CooloffPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES);
-	pub MinimumDeposit: Balance = prod_or_testnet_or_local!(currency::deposit(5, 0), 100 * currency::deposit(5, 0), 100 * currency::deposit(5, 0));
-	pub SpendPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 10 * MINUTES, 10 * MINUTES);
-}
+pub type LaunchPeriod = ConstU32<{ prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES) }>;
+pub type VotingPeriod = ConstU32<{ prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES) }>;
+pub type FastTrackVotingPeriod =
+	ConstU32<{ prod_or_testnet_or_local!(3 * HOURS, 30 * MINUTES, 5 * MINUTES) }>;
+pub type EnactmentPeriod =
+	ConstU32<{ prod_or_testnet_or_local!(8 * DAYS, 30 * HOURS, 10 * MINUTES) }>;
+pub type CooloffPeriod = ConstU32<{ prod_or_testnet_or_local!(7 * DAYS, 1 * DAYS, 5 * MINUTES) }>;
+pub type MinimumDeposit = ConstU128<
+	{
+		prod_or_testnet_or_local!(
+			currency::deposit(5, 0),
+			100 * currency::deposit(5, 0),
+			100 * currency::deposit(5, 0)
+		)
+	},
+>;
+pub type SpendPeriod =
+	ConstU32<{ prod_or_testnet_or_local!(7 * DAYS, 10 * MINUTES, 10 * MINUTES) }>;
 pub type DemocracyMaxVotes = ConstU32<100>;
 pub type DemocracyMaxProposals = HUNDRED;
 // -end- Democracy Pallet ---
@@ -226,6 +189,7 @@ pub const TREASURY_PALLET_ID: PalletId = PalletId(*b"py/trsry");
 
 // https://wiki.polkadot.network/docs/learn-treasury
 // https://paritytech.github.io/substrate/master/pallet_treasury/pallet/trait.Config.html
+// Needs parameter_types! for the Permill and PalletId
 parameter_types! {
 
 	/// Keyless account that holds the money for the treasury
@@ -235,36 +199,33 @@ parameter_types! {
 	/// This will be transferred to OnSlash if the proposal is rejected
 	pub const ProposalBondPercent: Permill = Permill::from_percent(5);
 
-	/// Minimum bond for a treasury proposal
-	pub const ProposalBondMinimum: Balance = 100 * currency::DOLLARS;
-
-	/// Minimum bond for a treasury proposal
-	pub const ProposalBondMaximum: Balance = 1_000 * currency::DOLLARS;
-
 	/// How much of the treasury to burn, if funds remain at the end of the SpendPeriod
 	/// Set to zero until the economic system is setup and stabilized
 	pub const Burn: Permill = Permill::zero();
-
-	/// Maximum number of approved proposals per Spending Period
-	/// Set to 64 or 16 per week
-	pub const MaxApprovals: u32 = 64;
 }
+
+/// Maximum number of approved proposals per Spending Period
+/// Set to 64 or 16 per week
+pub type MaxApprovals = ConstU32<64>;
+
+/// Minimum bond for a treasury proposal
+pub type ProposalBondMinimum = ConstU128<{ 100 * currency::DOLLARS }>;
+
+/// Minimum bond for a treasury proposal
+pub type ProposalBondMaximum = ConstU128<{ 1_000 * currency::DOLLARS }>;
+
 // -end- Treasury Pallet ---
 
 // --- Transaction Payment Pallet ---
 // The fee multiplier
 pub type TransactionPaymentOperationalFeeMultiplier = ConstU8<5>;
 
-parameter_types! {
-	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * currency::MILLICENTS;
-}
+/// Relay Chain `TransactionByteFee` / 10
+pub type TransactionByteFee = ConstU128<{ 10 * currency::MILLICENTS }>;
 // -end- Transaction Payment Pallet ---
 
 // --- Frequency Transaction Payment Pallet ---
-parameter_types! {
-	pub const MaximumCapacityBatchLength: u8 = 2;
-}
+pub type MaximumCapacityBatchLength = ConstU8<2>;
 // -end- Frequency Transaction Payment Pallet ---
 
 // --- Session Pallet ---
@@ -281,15 +242,15 @@ pub type AuraMaxAuthorities = ConstU32<100_000>;
 // Values for each runtime environment are independently configurable.
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
 // 5 in rococo testnet and 5 in rococo local
+
+pub type CollatorMaxCandidates = ConstU32<50>;
+pub type CollatorMinCandidates = ConstU32<1>;
+pub type CollatorMaxInvulnerables = ConstU32<{ prod_or_testnet_or_local!(16, 5, 5) }>;
+pub type CollatorKickThreshold =
+	ConstU32<{ prod_or_testnet_or_local!(6 * HOURS, 6 * HOURS, 6 * HOURS) }>;
+
+// Needs parameter_types! for the PalletId and impls below
 parameter_types! {
-	pub CollatorMaxCandidates: u32 = 50;
-	pub CollatorMinCandidates: u32 = 1;
-	pub CollatorMaxInvulnerables: u32 = prod_or_testnet_or_local!(16, 5, 5);
-	pub CollatorKickThreshold: BlockNumber = prod_or_testnet_or_local!(
-		6 * HOURS,
-		6 * HOURS,
-		6 * HOURS
-	);
 	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 50; // 50K
 }
@@ -306,6 +267,7 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 }
 // -end- Messages Pallet ---
 
+// Needs parameter_types! to reduce pallet dependencies
 parameter_types! {
 	/// SS58 Prefix for the for Frequency Network
 	/// 90 is the prefix for the Frequency Network on Polkadot
@@ -314,6 +276,7 @@ parameter_types! {
 }
 
 // --- Stateful Storage Pallet ---
+// Needs parameter_types! for the impls below
 parameter_types! {
 	/// The maximum size of a page (in bytes) for an Itemized storage model (64KB)
 	pub const MaxItemizedPageSizeBytes: u32 = 64 * 1024;
@@ -321,13 +284,13 @@ parameter_types! {
 	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 	/// The maximum size of a single item in an itemized storage model (in bytes)
 	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
-	/// The maximum number of pages in a Paginated storage model
-	pub const MaxPaginatedPageId: u32 = 16;
-	/// The maximum number of actions in itemized actions
-	pub const MaxItemizedActionsCount: u32 = 5;
-	/// The number of blocks for Stateful mortality is 24 hours
-	pub const StatefulMortalityWindowSize: u32 = 14400;
 }
+/// The maximum number of pages in a Paginated storage model
+pub type MaxPaginatedPageId = ConstU16<16>;
+/// The maximum number of actions in itemized actions
+pub type MaxItemizedActionsCount = ConstU32<5>;
+/// The number of blocks for Stateful mortality is 24 hours
+pub type StatefulMortalityWindowSize = ConstU32<14400>;
 // -end- Stateful Storage Pallet
 
 impl Default for MaxItemizedPageSizeBytes {
@@ -382,6 +345,7 @@ pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days gi
 #[cfg(feature = "frequency-rococo-local")]
 pub type CapacityUnstakingThawPeriod = ConstU16<2>; // 2 Epochs
 
+// Needs parameter_types! for the Perbil
 parameter_types! {
 	// 1:50 Capacity:Token, must be declared this way instead of using `from_rational` because of
 	//  ```error[E0015]: cannot call non-const fn `Perbill::from_rational::<u32>` in constant functions```
