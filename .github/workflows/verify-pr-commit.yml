@@ -63,7 +63,7 @@ jobs:
         # Match this include to the real build-binaries job
         include:
           - git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-no-relay
             branch_alias: pr
             network: local
           - git_branch: main
@@ -89,7 +89,7 @@ jobs:
         network: [rococo, mainnet]
         include:
           - git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-no-relay
             branch_alias: pr
             network: local
           - git_branch: main
