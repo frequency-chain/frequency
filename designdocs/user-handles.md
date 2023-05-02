@@ -59,7 +59,7 @@ Handles```registry``` on Frequency chain.
 * For each base handle requested, a storage map will be created with a randomly generated start index (in to the shuffled array) and a current index.  The current index will be incremented each time a new suffix is requested.
 * When the current index reaches the start index, all suffixes are exhausted and an error is returned.
 * Alternativelty: Query the chain to check which values are possibly available, check if the handle with the suffix is available before claiming a handle.
-* Chain validates the handle and suffix and maps the handle to the ```msa_id```.
+* Chain validates the handle and generates the next suffix and maps the handle to the ```msa_id```.
 * Chain maintains a reverse mapping from handle to msa for offchain use.
 * Chain provides a set of rpcs to query msa for a given `DisplayHandle` and vice versa.
 * Chain providers an rpc to get presumptive suffix for a given base handle.
