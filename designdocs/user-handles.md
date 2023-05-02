@@ -13,7 +13,7 @@ The goal of this proposal is to enable users to create unique handles on the Fre
 * ```MessageSourceAccount``` exists for a user to create a handle.
 * It is optional for a user to create a handle.
 * Handles are unique and have a 1:1 mapping with ```MessageSourceAccount```.
-* Handles have `n`digits of suffix and is defined by a window of suffixes as `HandleSuffixMin` to `HandleSuffixMax`.
+* Handles have `n` digits of suffix and is defined by a window of suffixes as `HandleSuffixMin` to `HandleSuffixMax`.
 * Handles should support capacity based transactions.
 * Retirement should be feeless.
 
