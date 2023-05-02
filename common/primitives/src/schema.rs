@@ -112,3 +112,21 @@ impl SchemaSettings {
 	}
 }
 impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn schema_settings_when_disabled_has_no_enabled() {
+		let settings = SchemaSettings::all_disabled();
+		assert_eq!(settings.get_enabled(), BitFlags::EMPTY);
+	}
+
+	#[test]
+	fn schema_settings_set_from_all_enabled_check() {
+		let settings = SchemaSettings::from(BitFlags::ALL);
+		assert!(settings.is_enabled(SchemaSetting::AppendOnly));
+		assert!(settings.is_enabled(SchemaSetting::SignatureRequired));
+	}
+}

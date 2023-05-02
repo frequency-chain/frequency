@@ -1,20 +1,18 @@
-use super::*;
 use crate as pallet_frequency_tx_payment;
+use crate::*;
 
 use common_primitives::{
 	msa::MessageSourceId,
-	node::{AccountId, ProposalProvider},
+	node::{AccountId, Header, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_system::EnsureSigned;
 use pallet_transaction_payment::CurrencyAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
 	AccountId32, Perbill,
 };
-use sp_std::ops::Div;
 
 use frame_support::{
 	parameter_types,
@@ -67,14 +65,14 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
@@ -98,28 +96,8 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 }
 
-parameter_types! {
-	pub const MaxSchemaGrantsPerDelegation: u32 = 30;
-	pub const MaximumCapacityBatchLength: u8 = 2;
-}
-impl Clone for MaxSchemaGrantsPerDelegation {
-	fn clone(&self) -> Self {
-		MaxSchemaGrantsPerDelegation {}
-	}
-}
-impl Eq for MaxSchemaGrantsPerDelegation {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-impl PartialEq for MaxSchemaGrantsPerDelegation {
-	fn eq(&self, _other: &Self) -> bool {
-		true
-	}
-}
-impl sp_std::fmt::Debug for MaxSchemaGrantsPerDelegation {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
+pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+pub type MaximumCapacityBatchLength = ConstU8<2>;
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
@@ -178,6 +156,7 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+// Needs parameter_types! for the impls below
 parameter_types! {
 	pub static WeightToFee: u64 = 1;
 	pub static TransactionByteFee: u64 = 1;
@@ -214,6 +193,7 @@ impl pallet_transaction_payment::Config for Test {
 // so the value can be used by create_capacity_for below, without having to pass it a Config.
 pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
 
+// Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(TEST_TOKEN_PER_CAPACITY);
 }
@@ -232,7 +212,7 @@ impl pallet_capacity::Config for Test {
 	type BenchmarkHelper = ();
 
 	type UnstakingThawPeriod = ConstU16<2>;
-	type MaxEpochLength = ConstU64<100>;
+	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
 }

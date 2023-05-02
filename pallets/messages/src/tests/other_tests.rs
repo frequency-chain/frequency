@@ -10,6 +10,7 @@ use multibase::Base;
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
+use sp_core::{ConstU32, Get};
 use sp_std::vec::Vec;
 
 #[derive(Serialize)]
@@ -64,7 +65,7 @@ fn populate_messages(
 			.unwrap();
 			counter += 1;
 		}
-		Messages::<Test>::insert(idx as u64, schema_id, list);
+		Messages::<Test>::insert(idx as u32, schema_id, list);
 	}
 }
 
@@ -345,7 +346,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 fn retrieved_ipfs_message_should_always_be_in_base32() {
 	new_test_ext().execute_with(|| {
 		let schema_id = IPFS_SCHEMA_ID;
-		let current_block: u64 = 1;
+		let current_block: u32 = 1;
 
 		// Populate message storage using Base64-encoded CID
 		populate_messages(schema_id, vec![1], PayloadLocation::IPFS, Some(DUMMY_CID_BASE64));
@@ -656,4 +657,40 @@ fn validate_cid_not_correct_format_errors() {
 
 		assert_noop!(MessagesPallet::validate_cid(&another_bad_cid), Error::<Test>::InvalidCid);
 	})
+}
+
+#[test]
+fn map_to_response_on_chain() {
+	let payload_vec = b"123456789012345678901234567890".to_vec();
+	let payload_bounded = BoundedVec::<u8, ConstU32<100>>::try_from(payload_vec.clone()).unwrap();
+	let msg =
+		Message { payload: payload_bounded, provider_msa_id: 10u64, msa_id: None, index: 1u16 };
+	let expected = MessageResponse {
+		provider_msa_id: 10u64,
+		index: 1u16,
+		block_number: 42,
+		msa_id: None,
+		payload: Some(payload_vec),
+		cid: None,
+		payload_length: None,
+	};
+	assert_eq!(msg.map_to_response(42, PayloadLocation::OnChain), expected);
+}
+
+#[test]
+fn map_to_response_ipfs() {
+	let cid = DUMMY_CID_SHA512;
+	let payload_tuple: crate::OffchainPayloadType = (multibase::decode(cid).unwrap().1, 10);
+	let payload = BoundedVec::<u8, ConstU32<500>>::try_from(payload_tuple.encode()).unwrap();
+	let msg = Message { payload, provider_msa_id: 10u64, msa_id: None, index: 1u16 };
+	let expected = MessageResponse {
+		provider_msa_id: 10u64,
+		index: 1u16,
+		block_number: 42,
+		msa_id: None,
+		payload: None,
+		cid: Some(cid.as_bytes().to_vec()),
+		payload_length: Some(10),
+	};
+	assert_eq!(msg.map_to_response(42, PayloadLocation::IPFS), expected);
 }

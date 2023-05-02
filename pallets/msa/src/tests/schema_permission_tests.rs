@@ -244,12 +244,12 @@ fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 			&mut delegation,
 			schema_id
 		));
-		let default_block_number = 0u64;
+		let default_block_number = 0u32;
 
 		assert_eq!(delegation.schema_permissions.len(), 1);
 		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &default_block_number);
 
-		let revoked_block_number = 2u64;
+		let revoked_block_number = 2u32;
 
 		assert_ok!(PermittedDelegationSchemas::<Test>::try_get_mut_schema(
 			&mut delegation,
@@ -273,7 +273,7 @@ pub fn ensure_valid_schema_grant_success() {
 
 		System::set_block_number(System::block_number() + 1);
 
-		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16, 1u64));
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 1_u16, 1u32));
 	})
 }
 
@@ -294,7 +294,7 @@ pub fn ensure_valid_schema_grant_errors_when_delegation_relationship_is_valid_an
 		System::set_block_number(System::block_number() + 1);
 
 		assert_err!(
-			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16, 1u64),
+			Msa::ensure_valid_schema_grant(provider, delegator, 3_u16, 1u32),
 			Error::<Test>::SchemaNotGranted
 		);
 	})

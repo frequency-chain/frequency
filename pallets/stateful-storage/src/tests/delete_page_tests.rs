@@ -10,7 +10,7 @@ use common_primitives::{stateful_storage::PageHash, utils::wrap_binary_data};
 use frame_support::{assert_err, assert_ok, assert_storage_noop};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
-use sp_core::{sr25519, Pair};
+use sp_core::{sr25519, Get, Pair};
 use sp_runtime::MultiSignature;
 
 #[test]
@@ -27,7 +27,7 @@ fn delete_page_id_out_of_bounds_errors() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id,
 				schema_id,
-				page_id,
+				page_id.into(),
 				NONEXISTENT_PAGE_HASH,
 			),
 			Error::<Test>::PageIdExceedsMaxAllowed
@@ -288,10 +288,11 @@ fn delete_page_with_signature_having_out_of_window_payload_should_fail() {
 		let delegator_key = pair.public();
 		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
 		let page_id = 1;
+		let mortality_window: u32 = <Test as Config>::MortalityWindowSize::get();
 		let payload = PaginatedDeleteSignaturePayload {
 			target_hash: PageHash::default(),
 			msa_id,
-			expiration: (<Test as Config>::MortalityWindowSize::get() + 1).into(),
+			expiration: (mortality_window + 1).into(),
 			schema_id,
 			page_id,
 		};

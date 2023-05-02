@@ -46,7 +46,7 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::{DispatchClass, DispatchError},
+	dispatch::{DispatchClass, DispatchError, GetDispatchInfo, Pays},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
@@ -77,7 +77,7 @@ pub use pallet_time_release;
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
 pub use common_runtime::{
-	constants::MaxDataSize,
+	constants::MaxSchemaGrants,
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
@@ -130,16 +130,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
@@ -147,6 +147,43 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				_ => true,
 			}
 		}
+	}
+}
+
+impl BaseCallFilter {
+	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
+		match call {
+			pallet_utility::Call::batch { calls, .. } |
+			pallet_utility::Call::batch_all { calls, .. } |
+			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
+			_ => true,
+		}
+	}
+
+	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
+		match call {
+			// Block all nested `batch` calls from utility batch
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+
+			// Block all `FrequencyTxPayment` calls from utility batch
+			RuntimeCall::FrequencyTxPayment(..) => false,
+
+			// Block `create_provider` and `create_schema` calls from utility batch
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
+
+			// Block `Pays::No` calls from utility batch
+			_ if Self::is_pays_no_call(call) => false,
+
+			// Allow all other calls
+			_ => true,
+		}
+	}
+
+	fn is_pays_no_call(call: &RuntimeCall) -> bool {
+		call.get_dispatch_info().pays_fee == Pays::No
 	}
 }
 
@@ -183,7 +220,7 @@ pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, Si
 pub type Migrations = (
 	remove_sudo::RemoveSudo,
 	pallet_msa::migration::Migration<Runtime>,
-	pallet_schemas::migration::SchemaMigration<Runtime>,
+	pallet_schemas::migration::Migration<Runtime>,
 );
 
 /// Executive: handles dispatch to the various modules.
@@ -429,7 +466,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 30,
+	spec_version: 33,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -442,6 +479,7 @@ pub fn native_version() -> NativeVersion {
 	NativeVersion { runtime_version: VERSION, can_author_with: Default::default() }
 }
 
+// Needs parameter_types! for the complex logic
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 
@@ -533,7 +571,7 @@ impl pallet_msa::Config for Runtime {
 	// The maximum number of public keys per MSA
 	type MaxPublicKeysPerMsa = MsaMaxPublicKeysPerMsa;
 	// The maximum number of schema grants per delegation
-	type MaxSchemaGrantsPerDelegation = MaxDataSize;
+	type MaxSchemaGrantsPerDelegation = MaxSchemaGrants;
 	// The maximum provider name size (in bytes)
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
@@ -593,13 +631,11 @@ impl pallet_schemas::Config for Runtime {
 	type MaxSchemaSettingsPerSchema = MaxSchemaSettingsPerSchema;
 }
 
-parameter_types! {
-	// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
-	pub const DepositBase: Balance = currency::deposit(1, 88);
-	// Additional storage item size of 32 bytes.
-	pub const DepositFactor: Balance = currency::deposit(0, 32);
-	pub const MaxSignatories: u32 = 100;
-}
+// One storage item; key size is 32; value is size 4+4+16+32 bytes = 56 bytes.
+pub type DepositBase = ConstU128<{ currency::deposit(1, 88) }>;
+// Additional storage item size of 32 bytes.
+pub type DepositFactor = ConstU128<{ currency::deposit(0, 32) }>;
+pub type MaxSignatories = ConstU32<100>;
 
 // See https://paritytech.github.io/substrate/master/pallet_multisig/pallet/trait.Config.html for
 // the descriptions of these configs.
@@ -613,11 +649,8 @@ impl pallet_multisig::Config for Runtime {
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
 }
 
-parameter_types! {
-	//update
-	/// Need this declaration method for use + type safety in benchmarks
-	pub const MaxReleaseSchedules: u32 = MAX_RELEASE_SCHEDULES;
-}
+/// Need this declaration method for use + type safety in benchmarks
+pub type MaxReleaseSchedules = ConstU32<{ MAX_RELEASE_SCHEDULES }>;
 
 // See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
@@ -663,6 +696,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 }
+// Needs parameter_types! for the Weight type
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
