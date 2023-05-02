@@ -5,6 +5,7 @@ use crate::{
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use sp_runtime::DispatchError::BadOrigin;
+
 #[test]
 fn set_epoch_length_happy_path() {
 	new_test_ext().execute_with(|| {
@@ -45,7 +46,7 @@ fn get_epoch_length_should_return_max_epoch_length_when_unset() {
 	new_test_ext().execute_with(|| {
 		let epoch_length: <Test as frame_system::Config>::BlockNumber =
 			Capacity::get_epoch_length();
-		let max_epoch_length: u64 = <Test as Config>::MaxEpochLength::get();
+		let max_epoch_length: u32 = <Test as Config>::MaxEpochLength::get();
 
 		assert_eq!(epoch_length, max_epoch_length);
 	});
@@ -53,18 +54,18 @@ fn get_epoch_length_should_return_max_epoch_length_when_unset() {
 #[test]
 fn get_epoch_length_should_return_storage_epoch_length() {
 	new_test_ext().execute_with(|| {
-		EpochLength::<Test>::set(101u64);
+		EpochLength::<Test>::set(101u32);
 		let epoch_length: <Test as frame_system::Config>::BlockNumber =
 			Capacity::get_epoch_length();
 
-		assert_eq!(epoch_length, 101u64);
+		assert_eq!(epoch_length, 101u32);
 	});
 }
 
 #[test]
 fn start_new_epoch_if_needed_when_not_starting_from_zero() {
 	new_test_ext().execute_with(|| {
-		EpochLength::<Test>::set(100u64);
+		EpochLength::<Test>::set(100u32);
 		let epoch_info = Capacity::get_current_epoch_info();
 		let cur_epoch = Capacity::get_current_epoch();
 		// Run the system to block 999 before initializing Capacity to emulate
@@ -82,7 +83,7 @@ fn start_new_epoch_if_needed_when_not_starting_from_zero() {
 #[test]
 fn start_new_epoch_if_needed_when_epoch_length_changes() {
 	new_test_ext().execute_with(|| {
-		EpochLength::<Test>::set(100u64);
+		EpochLength::<Test>::set(100u32);
 		// Starting block = 100
 		system_run_to_block(100);
 		let epoch_info = Capacity::get_current_epoch_info();
@@ -95,7 +96,7 @@ fn start_new_epoch_if_needed_when_epoch_length_changes() {
 		assert_eq!(middle_epoch, 1);
 		assert_eq!(middle_epoch_info.epoch_start, 101);
 		// Change epoch length = 20
-		EpochLength::<Test>::set(20u64);
+		EpochLength::<Test>::set(20u32);
 		run_to_block(151);
 		let after_epoch = Capacity::get_current_epoch();
 		let after_epoch_info = Capacity::get_current_epoch_info();

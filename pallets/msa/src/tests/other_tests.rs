@@ -400,7 +400,7 @@ pub fn valid_schema_grant() {
 
 		System::set_block_number(System::block_number() + 1);
 
-		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 2u16, 1u64));
+		assert_ok!(Msa::ensure_valid_schema_grant(provider, delegator, 2u16, 1u32));
 	})
 }
 

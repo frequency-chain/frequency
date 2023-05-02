@@ -22,10 +22,10 @@ fn time_release_from_chain_spec_works() {
 		assert_eq!(
 			TimeRelease::release_schedules(&CHARLIE),
 			vec![
-				ReleaseSchedule { start: 2u64, period: 3u64, period_count: 1u32, per_period: 5u64 },
+				ReleaseSchedule { start: 2u32, period: 3u32, period_count: 1u32, per_period: 5u64 },
 				ReleaseSchedule {
-					start: 2u64 + 3u64,
-					period: 3u64,
+					start: 2u32 + 3u32,
+					period: 3u32,
 					period_count: 3u32,
 					per_period: 5u64,
 				}
@@ -53,7 +53,7 @@ fn transfer_works() {
 		System::set_block_number(1);
 
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 1u32, per_period: 100u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 1u32, per_period: 100u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
 		assert_eq!(TimeRelease::release_schedules(&BOB), vec![schedule.clone()]);
 		System::assert_last_event(RuntimeEvent::TimeRelease(crate::Event::ReleaseScheduleAdded {
@@ -70,17 +70,17 @@ fn self_releasing() {
 		System::set_block_number(1);
 
 		let schedule = ReleaseSchedule {
-			start: 0u64,
-			period: 10u64,
+			start: 0u32,
+			period: 10u32,
 			period_count: 1u32,
 			per_period: ALICE_BALANCE,
 		};
 
 		let bad_schedule = ReleaseSchedule {
-			start: 0u64,
-			period: 10u64,
+			start: 0u32,
+			period: 10u32,
 			period_count: 1u32,
-			per_period: 10 * ALICE_BALANCE,
+			per_period: 64 * ALICE_BALANCE,
 		};
 
 		assert_noop!(
@@ -103,13 +103,13 @@ fn self_releasing() {
 fn add_new_release_schedule_merges_with_current_locked_balance_and_until() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 
 		MockBlockNumberProvider::set(12);
 
 		let another_schedule =
-			ReleaseSchedule { start: 10u64, period: 13u64, period_count: 1u32, per_period: 7u64 };
+			ReleaseSchedule { start: 10u32, period: 13u32, period_count: 1u32, per_period: 7u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, another_schedule));
 
 		assert_eq!(
@@ -123,7 +123,7 @@ fn add_new_release_schedule_merges_with_current_locked_balance_and_until() {
 fn cannot_use_fund_if_not_claimed() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 10u64, period: 10u64, period_count: 1u32, per_period: 50u64 };
+			ReleaseSchedule { start: 10u32, period: 10u32, period_count: 1u32, per_period: 50u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 		assert!(
 			PalletBalances::ensure_can_withdraw(&BOB, 1, WithdrawReasons::TRANSFER, 49).is_err()
@@ -135,14 +135,14 @@ fn cannot_use_fund_if_not_claimed() {
 fn transfer_fails_if_zero_period_or_count() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 1u64, period: 0u64, period_count: 1u32, per_period: 100u64 };
+			ReleaseSchedule { start: 1u32, period: 0u32, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule),
 			Error::<Test>::ZeroReleasePeriod
 		);
 
 		let schedule =
-			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 0u32, per_period: 100u64 };
+			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 0u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule),
 			Error::<Test>::ZeroReleasePeriodCount
@@ -154,7 +154,7 @@ fn transfer_fails_if_zero_period_or_count() {
 fn transfer_fails_if_transfer_err() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 1u32, per_period: 100u64 };
+			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
 			pallet_balances::Error::<Test, _>::InsufficientBalance,
@@ -166,14 +166,14 @@ fn transfer_fails_if_transfer_err() {
 fn transfer_fails_if_overflow() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 2u32, per_period: u64::MAX };
+			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 2u32, per_period: u64::MAX };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule),
 			ArithmeticError::Overflow,
 		);
 
 		let another_schedule =
-			ReleaseSchedule { start: u64::MAX, period: 1u64, period_count: 2u32, per_period: 1u64 };
+			ReleaseSchedule { start: u32::MAX, period: 1u32, period_count: 2u32, per_period: 1u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, another_schedule),
 			ArithmeticError::Overflow,
@@ -185,7 +185,7 @@ fn transfer_fails_if_overflow() {
 fn transfer_fails_if_bad_origin() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 1u32, per_period: 100u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(CHARLIE), BOB, schedule),
 			BadOrigin
@@ -197,7 +197,7 @@ fn transfer_fails_if_bad_origin() {
 fn claim_works() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 
 		MockBlockNumberProvider::set(11);
@@ -227,7 +227,7 @@ fn claim_works() {
 fn claim_for_works() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 
 		assert_ok!(TimeRelease::claim_for(RuntimeOrigin::signed(ALICE), BOB));
@@ -252,11 +252,11 @@ fn claim_for_works() {
 fn update_release_schedules_works() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 
 		let updated_schedule =
-			ReleaseSchedule { start: 0u64, period: 20u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 20u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::update_release_schedules(
 			RuntimeOrigin::root(),
 			BOB,
@@ -295,7 +295,7 @@ fn update_release_schedules_fails_if_unexpected_existing_locks() {
 fn transfer_check_for_min() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 1u64, period: 1u64, period_count: 1u32, per_period: 3u64 };
+			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 1u32, per_period: 3u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
 			Error::<Test>::AmountLow
@@ -307,11 +307,11 @@ fn transfer_check_for_min() {
 fn multiple_release_schedule_claim_works() {
 	ExtBuilder::build().execute_with(|| {
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
 
 		let schedule2 =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 3u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 3u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule2.clone()));
 
 		assert_eq!(TimeRelease::release_schedules(&BOB), vec![schedule, schedule2.clone()]);
@@ -338,7 +338,7 @@ fn exceeding_maximum_schedules_should_fail() {
 		set_balance::<Test>(&ALICE, 1000);
 
 		let schedule =
-			ReleaseSchedule { start: 0u64, period: 10u64, period_count: 2u32, per_period: 10u64 };
+			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 
 		for _ in 0..49 {
 			assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
@@ -368,7 +368,7 @@ fn exceeding_maximum_schedules_should_fail() {
 #[test]
 fn cliff_release_works() {
 	const VESTING_AMOUNT: u64 = 12;
-	const VESTING_PERIOD: u64 = 20;
+	const VESTING_PERIOD: u32 = 20;
 
 	ExtBuilder::build().execute_with(|| {
 		let cliff_schedule = ReleaseSchedule {
@@ -437,7 +437,7 @@ fn alice_time_releaes_schedule() {
 			june_2024_release_start,
 			period_duration,
 			number_of_periods,
-			amount_released_per_period.into(),
+			amount_released_per_period,
 		);
 
 		set_balance::<Test>(&ALICE, total_award);
@@ -610,7 +610,7 @@ fn date_to_approximate_block_number(input_date: DateTime<Utc>) -> u32 {
 // Quarter 12: April 2026
 // Time-Relese schedules:
 // Monthly unlocks 1 / 24 of 100K starting July 1, 2024
-fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSchedule<u64, u64>>)>
+fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSchedule<u32, u64>>)>
 {
 	let total_award: u64 = 100_000;
 	vec![

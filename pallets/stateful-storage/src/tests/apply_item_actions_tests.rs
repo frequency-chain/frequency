@@ -13,7 +13,7 @@ use common_primitives::{
 use frame_support::{assert_err, assert_ok, BoundedVec};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
-use sp_core::{sr25519, Pair};
+use sp_core::{sr25519, Get, Pair};
 use sp_runtime::MultiSignature;
 
 #[test]
@@ -383,11 +383,12 @@ fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
 		let schema_id = ITEMIZED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
+		let mortality_window: u32 = <Test as Config>::MortalityWindowSize::get();
 		let payload = ItemizedSignaturePayload {
 			actions: BoundedVec::try_from(actions).unwrap(),
 			target_hash: PageHash::default(),
 			msa_id,
-			expiration: (<Test as Config>::MortalityWindowSize::get() + 1).into(),
+			expiration: (mortality_window + 1).into(),
 			schema_id,
 		};
 		let encode_data_new_key_data = wrap_binary_data(payload.encode());

@@ -105,16 +105,16 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 0u64));
-		assert_ok!(sp.try_insert(2u16, 0u64));
-		assert_ok!(sp.try_insert(3u16, 0u64));
+		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
+		assert_ok!(sp.try_insert(1u16, 0u32));
+		assert_ok!(sp.try_insert(2u16, 0u32));
+		assert_ok!(sp.try_insert(3u16, 0u32));
 
-		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
+		let expected = Delegation { revoked_at: 0u32, schema_permissions: sp };
 
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
 
-		let revoked_block_number: u64 = 100;
+		let revoked_block_number: u32 = 100;
 		System::set_block_number(revoked_block_number);
 		// Revoke all schema ids.
 		let (delegator_signature, add_provider_payload) =
@@ -132,7 +132,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
+		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
 		assert_ok!(sp.try_insert(1u16, revoked_block_number)); // schema id 1 revoked at revoked_block_number
 		assert_ok!(sp.try_insert(2u16, revoked_block_number)); // schema id 2 revoked at revoked_block_number
 		assert_ok!(sp.try_insert(3u16, revoked_block_number)); // schema id 3 revoked at revoked_block_number
@@ -158,11 +158,11 @@ pub fn grant_delegation_changes_schema_permissions() {
 			add_provider_payload
 		));
 
-		let mut sp = BoundedBTreeMap::<SchemaId, u64, MaxSchemaGrantsPerDelegation>::new();
-		assert_ok!(sp.try_insert(1u16, 100u64)); // schema id 1 revoked at block 100
-		assert_ok!(sp.try_insert(2u16, 0u64)); // schema id 2 granted (block 0)
-		assert_ok!(sp.try_insert(3u16, 0u64)); // schema id 3 granted (block 0)
-		assert_ok!(sp.try_insert(4u16, 0u64)); // schema id 4 granted (block 0)
+		let mut sp = BoundedBTreeMap::<SchemaId, u32, MaxSchemaGrantsPerDelegation>::new();
+		assert_ok!(sp.try_insert(1u16, 100u32)); // schema id 1 revoked at block 100
+		assert_ok!(sp.try_insert(2u16, 0u32)); // schema id 2 granted (block 0)
+		assert_ok!(sp.try_insert(3u16, 0u32)); // schema id 3 granted (block 0)
+		assert_ok!(sp.try_insert(4u16, 0u32)); // schema id 4 granted (block 0)
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));

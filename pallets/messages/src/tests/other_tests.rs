@@ -10,7 +10,7 @@ use multibase::Base;
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
-use sp_core::ConstU32;
+use sp_core::{ConstU32, Get};
 use sp_std::vec::Vec;
 
 #[derive(Serialize)]
@@ -65,7 +65,7 @@ fn populate_messages(
 			.unwrap();
 			counter += 1;
 		}
-		Messages::<Test>::insert(idx as u64, schema_id, list);
+		Messages::<Test>::insert(idx as u32, schema_id, list);
 	}
 }
 
@@ -346,7 +346,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_return_offchain_payl
 fn retrieved_ipfs_message_should_always_be_in_base32() {
 	new_test_ext().execute_with(|| {
 		let schema_id = IPFS_SCHEMA_ID;
-		let current_block: u64 = 1;
+		let current_block: u32 = 1;
 
 		// Populate message storage using Base64-encoded CID
 		populate_messages(schema_id, vec![1], PayloadLocation::IPFS, Some(DUMMY_CID_BASE64));
