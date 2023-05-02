@@ -46,7 +46,7 @@ pub use common_runtime::{
 
 use frame_support::{
 	construct_runtime,
-	dispatch::{DispatchClass, DispatchError},
+	dispatch::{DispatchClass, DispatchError, GetDispatchInfo, Pays},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
@@ -130,16 +130,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				// Utility Calls are blocked. Issue #599
-				RuntimeCall::Utility(..) => false,
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
@@ -147,6 +147,43 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				_ => true,
 			}
 		}
+	}
+}
+
+impl BaseCallFilter {
+	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
+		match call {
+			pallet_utility::Call::batch { calls, .. } |
+			pallet_utility::Call::batch_all { calls, .. } |
+			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
+			_ => true,
+		}
+	}
+
+	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
+		match call {
+			// Block all nested `batch` calls from utility batch
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+
+			// Block all `FrequencyTxPayment` calls from utility batch
+			RuntimeCall::FrequencyTxPayment(..) => false,
+
+			// Block `create_provider` and `create_schema` calls from utility batch
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
+
+			// Block `Pays::No` calls from utility batch
+			_ if Self::is_pays_no_call(call) => false,
+
+			// Allow all other calls
+			_ => true,
+		}
+	}
+
+	fn is_pays_no_call(call: &RuntimeCall) -> bool {
+		call.get_dispatch_info().pays_fee == Pays::No
 	}
 }
 
@@ -429,7 +466,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: spec_name!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 32,
+	spec_version: 33,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
