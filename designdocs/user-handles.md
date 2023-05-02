@@ -82,7 +82,7 @@ sequenceDiagram
     participant RPC
     participant Frequency
     User->>App: enter desired handle
-    loop until msa_id and handle successfully created
+    loop until msa_id and handle successfully claimed
         alt Optionally retrive n number of presumtive suffix
         App->>RPC: get_next_suffixes(handle, n)
         RPC->>Frequency: query state for current index for a base handle
@@ -100,7 +100,7 @@ sequenceDiagram
         Frequency-->>Frequency: check_handle_availability(...handle, suffix)
         Frequency-->>Frequency: fail if available suffix does not match signed_payload suffix
         Frequency-->>Frequency: submit transaction
-        Frequency-->>App: MsaHandleCreated event with (msa_id, handle+suffix)
+        Frequency-->>App: HandleClaimed event with (msa_id, handle+suffix)
     end
     App->>User: proceed with setup
     User->>App: request to get msa_id
@@ -146,7 +146,7 @@ Input
 
 Output
 
-* Event - `HandleCreated` with the MSA ID and the handle.
+* Event - `HandleClaimed` with the MSA ID and the handle.
 * Errors -
   * `HandleAlreadyExists` if the handle already exists.
   * `InvalidHandleByteLength` if the base handle size exceeds the maximum allowed size.
