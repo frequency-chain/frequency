@@ -198,7 +198,7 @@ Output
 
 * Claim handle should be Capacity possible transactions.
 * Retire handle should be ```Pays::No```.
-* If retiring an MSA (```retire_msa``` call), the corresponding handle should not exists.
+* An MSA cannot be retired (```retire_msa``` call) if a claimed user handle has not also been retired first.
 
 ## RPCs
 
