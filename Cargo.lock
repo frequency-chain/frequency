@@ -6334,6 +6334,7 @@ name = "pallet-time-release"
 version = "0.0.0"
 dependencies = [
  "chrono",
+ "common-primitives",
  "frame-benchmarking",
  "frame-support",
  "frame-system",

@@ -14,7 +14,7 @@ use common_primitives::{
 use frame_support::{assert_err, assert_ok};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
-use sp_core::{sr25519, Pair};
+use sp_core::{sr25519, Get, Pair};
 use sp_runtime::MultiSignature;
 use sp_std::hash::Hasher;
 use twox_hash::XxHash64;
@@ -42,7 +42,7 @@ fn upsert_page_id_out_of_bounds_errors() {
 				RuntimeOrigin::signed(caller_1),
 				msa_id.into(),
 				schema_id,
-				page_id,
+				page_id.into(),
 				hash_payload(&payload),
 				payload
 			),
@@ -373,11 +373,12 @@ fn upsert_page_with_signature_having_out_of_window_payload_should_fail() {
 		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
 		let page_id = 1;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let mortality_window: u32 = <Test as Config>::MortalityWindowSize::get();
 		let payload = PaginatedUpsertSignaturePayload {
 			payload,
 			target_hash: PageHash::default(),
 			msa_id,
-			expiration: (<Test as Config>::MortalityWindowSize::get() + 1).into(),
+			expiration: (mortality_window + 1).into(),
 			schema_id,
 			page_id,
 		};

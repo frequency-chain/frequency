@@ -18,7 +18,7 @@ pub fn staking_events() -> Vec<Event<Test>> {
 	result
 }
 
-pub fn run_to_block(n: u64) {
+pub fn run_to_block(n: u32) {
 	while System::block_number() < n {
 		if System::block_number() > 1 {
 			System::on_finalize(System::block_number());
@@ -28,8 +28,8 @@ pub fn run_to_block(n: u64) {
 		Capacity::on_initialize(System::block_number());
 	}
 }
-// Remove capacity on_initialize, needed to emulate pre-existing blockheight
-pub fn system_run_to_block(n: u64) {
+// Remove capacity on_initialize, needed to emulate pre-existing block height
+pub fn system_run_to_block(n: u32) {
 	while System::block_number() < n {
 		if System::block_number() > 1 {
 			System::on_finalize(System::block_number());

@@ -5,16 +5,15 @@ pub use pallet_handles::Call as HandlesCall;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
-	node::AccountId,
+	node::{AccountId, Header},
 	utils::wrap_binary_data,
 };
 use frame_support::{
 	dispatch::DispatchError,
-	traits::{ConstU16, ConstU32, ConstU64, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Encode, Pair, H256};
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	MultiSignature,
 };
@@ -70,14 +69,14 @@ impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
+	type BlockNumber = u32;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
-	type BlockHashCount = ConstU64<250>;
+	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();
@@ -141,7 +140,7 @@ pub fn test_public(n: u8) -> AccountId32 {
 }
 
 // Run to the given block number
-pub fn run_to_block(n: u64) {
+pub fn run_to_block(n: u32) {
 	while System::block_number() < n {
 		if System::block_number() > 1 {
 			System::on_finalize(System::block_number());
@@ -156,8 +155,8 @@ pub fn run_to_block(n: u64) {
 pub fn get_signed_claims_payload(
 	account: &sr25519::Pair,
 	handle: Vec<u8>,
-	signature_expiration: u64,
-) -> (ClaimHandlePayload<u64>, MultiSignature) {
+	signature_expiration: u32,
+) -> (ClaimHandlePayload<u32>, MultiSignature) {
 	let base_handle = handle;
 	let payload = ClaimHandlePayload::new(base_handle.clone(), signature_expiration);
 	let encoded_payload = wrap_binary_data(payload.encode());
