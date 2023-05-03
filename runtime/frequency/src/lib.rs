@@ -444,27 +444,9 @@ impl_opaque_keys! {
 	}
 }
 
-// The duplicate macros are annoying, but #[sp_version::runtime_version]
-// has fairly string limits on what can go in there.
-
-// Override the spec name when not mainnet to be frequency-rococo
-#[cfg(not(feature = "frequency"))]
-macro_rules! spec_name {
-	( $y:expr ) => {{
-		create_runtime_str!("frequency-rococo")
-	}};
-}
-
-#[cfg(feature = "frequency")]
-macro_rules! spec_name {
-	( $y:expr ) => {{
-		create_runtime_str!($y)
-	}};
-}
-
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: spec_name!("frequency"),
+	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
 	spec_version: 34,
