@@ -15,8 +15,27 @@ use sp_std::marker::PhantomData;
 
 /// The base fee for extrinsics is calculated by running benchmarks.
 /// Capacity needs the base fee to remain stable and not change when benchmarks are run.
-/// CAPACITY_EXTRINSIC_BASE_WEIGHT is a snapshot of the base fee at the time of writing,
+/// CAPACITY_EXTRINSIC_BASE_WEIGHT is a snapshot of the ExtrinsicBaseWeight
 /// taken from: runtime/common/src/weights/extrinsic_weights.rs
+///   THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
+///   DATE: 2023-04-05 (Y/M/D)
+///   HOSTNAME: `benchmark-runner-p5rt6-vk9q8`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+///
+///   SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency Local Testnet`
+///   WARMUPS: `10`, REPEAT: `100`
+///   WEIGHT-PATH: `runtime/common/src/weights`
+///   WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
+///
+///   Executed Command:
+///     ./scripts/../target/production/frequency
+///     benchmark
+///     overhead
+///     --execution=wasm
+///     --wasm-execution=compiled
+///     --weight-path=runtime/common/src/weights
+///     --chain=dev
+///     --warmup=10
+///     --repeat=100,
 ///
 /// Time to execute a NO-OP extrinsic, for example `System::remark`.
 /// Calculated by multiplying the *Average* with `1.0` and adding `0`.
