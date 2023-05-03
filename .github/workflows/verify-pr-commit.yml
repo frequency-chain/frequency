@@ -429,7 +429,7 @@ jobs:
         run: |
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=dev --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -571,9 +571,9 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          ./$REF_BIN_FILENAME export-metadata --chain=dev --tmp metadata-ref.json
+          ./$REF_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
-          ./$TEST_BIN_FILENAME export-metadata --chain=dev --tmp metadata.json
+          ./$TEST_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
           match=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
           echo "Metadata matches?: $match"

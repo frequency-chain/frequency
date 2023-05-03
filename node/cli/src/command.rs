@@ -69,9 +69,11 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-no-relay")]
-		"dev" => return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
+		"dev" | "frequency-no-relay" =>
+			return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
 		#[cfg(feature = "frequency-rococo-local")]
-		"frequency-local" => return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
+		"frequency-local" | "frequency-rococo-local" =>
+			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
