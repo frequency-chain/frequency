@@ -82,7 +82,7 @@ pub struct Cli {
 	///
 	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
 	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
-	#[clap(long = "instant-sealing", requires = "dev")]
+	#[clap(long = "instant-sealing")]
 	pub instant_sealing: bool,
 
 	/// Manual block sealing
@@ -90,7 +90,7 @@ pub struct Cli {
 	///
 	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
 	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
-	#[clap(long = "manual-sealing", requires = "dev")]
+	#[clap(long = "manual-sealing")]
 	pub manual_sealing: bool,
 }
 

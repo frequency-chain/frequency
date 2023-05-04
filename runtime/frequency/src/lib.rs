@@ -6,11 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-// Don't allow both frequency and all-frequency-features so that we always have a good mainnet runtime
-#[cfg(all(feature = "frequency", feature = "all-frequency-features"))]
-compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
-
-#[cfg(not(feature = "frequency-no-relay"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 use cumulus_pallet_parachain_system::{
 	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
 };
@@ -450,7 +446,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 34,
+	spec_version: 34,  // Remember to update this in the struct below
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -461,9 +457,9 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
-	impl_name: create_runtime_str!("frequency-rococo"),
+	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 34,
+	spec_version: 34,  // Remember to have this match the struct above
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -959,7 +955,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
-#[cfg(not(feature = "frequency-no-relay"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();

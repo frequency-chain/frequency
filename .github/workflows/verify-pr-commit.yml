@@ -633,7 +633,6 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           ./${{env.BIN_FILENAME}} \
-            --dev \
             -lruntime=debug \
             --chain=frequency-rococo-local \
             --instant-sealing \
