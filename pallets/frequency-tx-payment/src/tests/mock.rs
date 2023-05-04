@@ -20,6 +20,8 @@ use frame_support::{
 	weights::WeightToFee as WeightToFeeTrait,
 };
 
+pub use common_runtime::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
+
 use frame_support::weights::Weight;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -51,7 +53,7 @@ impl Get<frame_system::limits::BlockWeights> for BlockWeights {
 				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
 			})
 			.for_class(DispatchClass::non_mandatory(), |weights| {
-				weights.max_total = Weight::from_ref_time(1024).set_proof_size(u64::MAX).into();
+				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
 			})
 			.build_or_panic()
 	}
@@ -328,8 +330,8 @@ impl ExtBuilder {
 				(6, 600 * self.balance_factor),
 			];
 			msa_accounts.iter().for_each(|(account, balance)| {
-				let msa_id = create_msa_account(account.clone());
-				create_capacity_for(msa_id, balance.clone());
+				let msa_id = create_msa_account(*account);
+				create_capacity_for(msa_id, *balance);
 			});
 		});
 
