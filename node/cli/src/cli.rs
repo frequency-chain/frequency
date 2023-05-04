@@ -80,16 +80,16 @@ pub struct Cli {
 	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
 	/// Empty blocks can also be formed using the `engine_createBlock` RPC
 	///
-	/// Can only be used with `--dev` and turned on with frequency-no-relay feature flag
-	#[cfg(feature = "frequency-no-relay")]
+	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
+	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
 	#[clap(long = "instant-sealing", requires = "dev")]
 	pub instant_sealing: bool,
 
 	/// Manual block sealing
 	/// Blocks are only formed using the `engine_createBlock` RPC
 	///
-	/// Can only be used with `--dev` and turned on with frequency-no-relay feature flag
-	#[cfg(feature = "frequency-no-relay")]
+	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
+	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
 	#[clap(long = "manual-sealing", requires = "dev")]
 	pub manual_sealing: bool,
 }
