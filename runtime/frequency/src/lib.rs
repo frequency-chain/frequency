@@ -444,7 +444,7 @@ impl_opaque_keys! {
 	}
 }
 
-#[cfg(any(feature = "frequency", feature = "frequency-no-relay"))]
+#[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
@@ -457,7 +457,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	state_version: 1,
 };
 
-#[cfg(not(any(feature = "frequency", feature = "frequency-no-relay")))]
+#[cfg(not(feature = "frequency"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
