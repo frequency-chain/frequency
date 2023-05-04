@@ -635,6 +635,7 @@ jobs:
           ./${{env.BIN_FILENAME}} \
             --dev \
             -lruntime=debug \
+            --chain=frequency-rococo-local \
             --instant-sealing \
             --wasm-execution=compiled \
             --execution=wasm \
