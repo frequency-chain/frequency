@@ -440,26 +440,28 @@ impl_opaque_keys! {
 	}
 }
 
+// IMPORTANT: Remember to update spec_version in BOTH structs below
 #[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 34,  // Remember to update this in the struct below
+	spec_version: 34,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
 	state_version: 1,
 };
 
+// IMPORTANT: Remember to update spec_version in above struct too
 #[cfg(not(feature = "frequency"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 34,  // Remember to have this match the struct above
+	spec_version: 34,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
