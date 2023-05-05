@@ -20,6 +20,7 @@ pub mod frequency;
 ))]
 pub mod frequency_rococo;
 
+#[allow(clippy::expect_used)]
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
 	TPublic::Pair::from_string(&format!("//{}", seed), None)

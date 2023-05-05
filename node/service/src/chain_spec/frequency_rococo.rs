@@ -13,6 +13,7 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
+#[allow(clippy::unwrap_used)]
 /// Generates the Live Frequency Rococo chain spec from the raw json
 pub fn load_frequency_rococo_spec() -> ChainSpec {
 	ChainSpec::from_json_bytes(
@@ -180,6 +181,7 @@ pub fn local_testnet_config() -> ChainSpec {
 	)
 }
 
+#[allow(clippy::expect_used)]
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,

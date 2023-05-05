@@ -38,4 +38,6 @@ rustflags = [
 	"-Dunused",
 	# Built-in individual lints
 	# "-D<rustc_lint_name>",
+	"-Dclippy::unwrap_used",
+	"-Dclippy::expect_used",
 ]

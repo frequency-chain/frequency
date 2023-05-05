@@ -44,7 +44,8 @@
 //! * Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
 //! * Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
 //!
-
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
 #![deny(

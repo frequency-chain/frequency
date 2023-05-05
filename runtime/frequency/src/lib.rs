@@ -1477,6 +1477,7 @@ impl_runtime_apis! {
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 struct CheckInherents;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
+#[allow(clippy::expect_used)]
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
 		block: &Block,
