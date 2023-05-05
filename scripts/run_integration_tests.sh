@@ -30,29 +30,45 @@ function cleanup () {
 
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
+TEST_AGAINST_FREQUENCY_ROCOCO=0
+
 trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
 trap 'cleanup INT' INT
 
-while getopts "s" OPTNAME
+while getopts "sr" OPTNAME
 do
     case "${OPTNAME}" in
-        "s") SKIP_JS_BUILD=1
+        "s")
+            SKIP_JS_BUILD=1
+        ;;
+        "r")
+            TEST_AGAINST_FREQUENCY_ROCOCO=1
         ;;
     esac
 done
 shift $((OPTIND-1))
 
-TEST="test"
-START="start"
+NPM_RUN_COMMAND="test"
+BLOCK_SEALING="instant"
 
-if [[ "$1" == "load" ]]; then
-    TEST="test:load"
-    START="start-manual"
+if [ $TEST_AGAINST_FREQUENCY_ROCOCO == 1 ]; then
+    PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
+    NPM_RUN_COMMAND="test:relay"
+    CHAIN_ENVIRONMENT="rococo"
+else
+    PROVIDER_URL="ws://127.0.0.1:9944"
+    CHAIN_ENVIRONMENT="local"
+
+    if [[ "$1" == "load" ]]; then
+        NPM_RUN_COMMAND="test:load"
+        BLOCK_SEALING="manual"
+    fi
 fi
 
 echo "The integration test output will be logged on this console"
-echo "and the Frequency node output will be logged to the file frequency.log."
+
+echo "The Frequency node output will be logged to the file frequency.log."
 echo "You can 'tail -f frequency.log' in another terminal to see both side-by-side."
 echo ""
 echo -e "Checking to see if Frequency is running..."
@@ -68,15 +84,15 @@ else
         exit 1
     fi
 
-    echo "Starting a Frequency Node with ${START}..."
-    case ${START} in
-        "start") ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
+    echo "Starting a Frequency Node with block sealing ${BLOCK_SEALING}..."
+    case ${BLOCK_SEALING} in
+        "instant") ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
         ;;
-        "start-manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
+        "manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
         ;;
     esac
 
-    declare -i timeout_secs=30
+    declare -i timeout_secs=60
     declare -i i=0
     while (( !PID && i < timeout_secs ))
     do
@@ -119,4 +135,4 @@ npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
-WS_PROVIDER_URL="ws://127.0.0.1:9944" npm run $TEST
+CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND

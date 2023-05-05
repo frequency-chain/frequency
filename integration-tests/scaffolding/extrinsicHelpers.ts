@@ -5,7 +5,7 @@ import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/type
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import {devAccounts, getBlockNumber, log, Sr25519Signature} from "./helpers";
+import {devAccounts, getBlockNumber, log, rococoAccounts, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -139,8 +139,15 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     }
 
     public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
+        let default_source;
+        if (process.env.CHAIN_ENVIRONMENT == "rococo") {
+            default_source = rococoAccounts[0];
+        } else {
+            default_source = devAccounts[0];
+        }
+
         const amount = await this.getEstimatedTxFee();
-        await ExtrinsicHelper.transferFunds(source || devAccounts[0].keys, this.keys, amount).signAndSend(nonce);
+        await ExtrinsicHelper.transferFunds(source || default_source.keys, this.keys, amount).signAndSend(nonce);
     }
 
     public async fundAndSend(source?: KeyringPair, nonce?: number): Promise<ParsedEventResult> {

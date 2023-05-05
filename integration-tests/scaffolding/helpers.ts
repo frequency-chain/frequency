@@ -18,12 +18,13 @@ import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
-export interface DevAccount {
+export interface Account {
   uri: string,
   keys: KeyringPair,
 }
 
-export let devAccounts: DevAccount[] = [];
+export let devAccounts: Account[] = [];
+export let rococoAccounts: Account[] = [];
 
 export type Sr25519Signature = { Sr25519: `0x${string}` }
 
@@ -114,11 +115,17 @@ export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, devAccount?: KeyringPair, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, source?: KeyringPair, nonce?: number): Promise<KeyringPair> {
+  let default_source;
+  if (process.env.CHAIN_ENVIRONMENT == "rococo") {
+    default_source = rococoAccounts[0];
+  } else {
+    default_source = devAccounts[0];
+  }
   const keypair = createKeys(keyName);
 
   // Transfer funds from source (usually pre-funded dev account) to new account
-  await fundKeypair((devAccount || devAccounts[0].keys), keypair, amount, nonce);
+  await fundKeypair((source || default_source.keys), keypair, amount, nonce);
 
   return keypair;
 }
