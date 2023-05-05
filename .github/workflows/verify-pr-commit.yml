@@ -746,6 +746,19 @@ jobs:
             echo "run=false" >> $GITHUB_OUTPUT
           fi
 
+  clear-metadata-mismatch-label:
+    name: Clear Metadata Mismatch Label
+    runs-on: ubuntu-20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
+    env:
+      GITHUB_PR_LABEL: metadata-mismatch
+    steps:
+      - name: Clear Metadata Mismatch Label
+        if: contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        with:
+          labels: ${{env.GITHUB_PR_LABEL}}
+
   run-benchmarks:
     if: github.repository == 'LibertyDSNP/frequency' &&
       needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
