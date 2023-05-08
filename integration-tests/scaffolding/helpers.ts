@@ -53,7 +53,7 @@ export async function getBlockNumber(): Promise<number> {
   return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
 }
 
-export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 5, blockNumber?: number): Promise<AddKeyData> {
+export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 100, blockNumber?: number): Promise<AddKeyData> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
     expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
