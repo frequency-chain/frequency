@@ -311,6 +311,8 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
+    # This job currently fails on EKS runners and must be run on standalone until
+    # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build]
     container: public.ecr.aws/lts/ubuntu:20.04
     steps:

@@ -11,15 +11,10 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
-    container: public.ecr.aws/lts/ubuntu:20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
-      - name: Install Required Packages
-        run: |
-          apt-get update
-          apt-get install -y git
-          git config --global --add safe.directory /__w/frequency/frequency
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Check for Changed Files
@@ -34,13 +29,9 @@ jobs:
     name: Merge - Publish JS API Augment Release Candidate
     env:
       HOME: /root
-    runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    runs-on: [self-hosted, Linux, X64, testing, v2]
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
-      - name: Install Required Packages
-        run: |
-          apt-get update
-          apt-get install -y curl protobuf-compiler build-essential libclang-dev
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -80,14 +71,11 @@ jobs:
 
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
+    # This job currently fails on EKS runners and must be run on standalone until
+    # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
-      - name: Install Required Packages
-        run: |
-          apt-get update
-          apt-get install -y curl protobuf-compiler build-essential libclang-dev git
-          git --version
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
@@ -101,6 +89,7 @@ jobs:
 
   publish-ci-base-image:
     needs: changes
+    if: needs.changes.outputs.ci-base-image == 'true'
     name: Publish CI Base Image
     env:
       IMAGE_NAME: ci-base-image
