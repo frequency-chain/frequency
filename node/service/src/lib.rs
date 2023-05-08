@@ -3,14 +3,6 @@
 #![warn(missing_docs)]
 #![warn(unused_extern_crates)]
 
-// // Don't allow both frequency and all-frequency-features so that we always have a good mainnet runtime
-// #[cfg(all(feature = "frequency", feature = "all-frequency-features"))]
-// compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
-
-// // Don't allow both frequency-no-relay and all-frequency-features so that we always have a good mainnet runtime
-// #[cfg(all(feature = "frequency-no-relay", feature = "all-frequency-features"))]
-// compile_error!("feature \"frequency-no-relay\" and feature \"all-frequency-features\" cannot be enabled at the same time");
-
 #[cfg(not(any(
 	feature = "frequency",
 	feature = "frequency-rococo-local",
