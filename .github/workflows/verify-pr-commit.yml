@@ -19,7 +19,13 @@ jobs:
       build-binary: ${{steps.filter.outputs.build-binary}}
       cargo-lock: ${{steps.filter.outputs.cargo-lock}}
       run-integration-tests: ${{steps.filter.outputs.run-integration-tests}}
+      ci-docker-image: ${{steps.filter.outputs.ci-docker-image}}
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y git
+          git config --global --add safe.directory /__w/frequency/frequency
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Check for Changed Files
@@ -48,6 +54,8 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
               - 'integration-tests/**/*.{ts,json}'
+            ci-docker-image:
+              - 'tools/ci/docker/ci-base-image.dockerfile'
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -64,6 +72,10 @@ jobs:
         include:
           - git_branch: ${{github.head_ref}}
             spec: frequency-rococo-local
+            branch_alias: pr
+            network: local
+          - git_branch: ${{github.head_ref}}
+            spec: frequency-no-relay
             branch_alias: pr
             network: local
           - git_branch: main
@@ -92,6 +104,10 @@ jobs:
             spec: frequency-rococo-local
             branch_alias: pr
             network: local
+          - git_branch: ${{github.head_ref}}
+            spec: frequency-no-relay
+            branch_alias: pr
+            network: local
           - git_branch: main
             spec: frequency-rococo-local
             branch_alias: main
@@ -118,7 +134,7 @@ jobs:
       - name: Set Env Vars
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
-          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}-${{matrix.branch_alias}}" >> $GITHUB_ENV
+          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -406,7 +422,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
@@ -449,9 +465,9 @@ jobs:
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
-  verify-docker-images:
+  verify-node-docker-images:
     needs: build-binaries
-    name: Verify Docker Images
+    name: Verify Node Docker Images
     runs-on: ubuntu-20.04
     container: public.ecr.aws/lts/ubuntu:20.04
     steps:
@@ -465,7 +481,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
-          echo "BUILT_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
+          echo "BUILT_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
@@ -502,6 +518,37 @@ jobs:
           push: false
           file: docker/${{env.IMAGE_NAME}}.dockerfile
 
+  verify-ci-docker-image:
+    needs: changes
+    if: needs.changes.outputs.ci-docker-image == 'true'
+    name: Verify CI Docker Image
+    runs-on: ubuntu-20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
+    steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt-get install -y curl
+          curl -fsSL https://get.docker.com -o get-docker.sh
+          sh get-docker.sh
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+        with:
+          platforms: "amd64"
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build CI image
+        env:
+          IMAGE_PATH: tools/ci/docker
+          IMAGE_NAME: ci-base-image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          push: false
+          file: ${{env.IMAGE_PATH}}/${{env.IMAGE_NAME}}.dockerfile
+
   execute-binary-checks:
     needs: build-binaries
     name: Execute Binary Checks
@@ -516,12 +563,7 @@ jobs:
         uses: actions/checkout@v3
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.mainnet-pr" >> $GITHUB_ENV
-      # # XXX Do I need to install toolchain?
-      # - name: Install Rust Toolchain
-      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-      #   with:
-      #     toolchain: stable
+          echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -554,8 +596,8 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local-main" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -613,7 +655,7 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local-pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.frequency-no-relay.pr" >> $GITHUB_ENV
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
@@ -634,7 +676,7 @@ jobs:
         run: |
           ./${{env.BIN_FILENAME}} \
             -lruntime=debug \
-            --chain=frequency-rococo-local \
+            --dev \
             --instant-sealing \
             --wasm-execution=compiled \
             --execution=wasm \
@@ -679,8 +721,8 @@ jobs:
         run: |
           echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_ROCOCO=frequency.rococo-pr" >> $GITHUB_ENV
-          echo "BIN_FILENAME_MAINNET=frequency.mainnet-pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_ROCOCO=frequency.rococo.frequency-rococo-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         uses: actions/download-artifact@v3
         with:
@@ -745,6 +787,19 @@ jobs:
             echo "No, do not need to run benchmarks."
             echo "run=false" >> $GITHUB_OUTPUT
           fi
+
+  clear-metadata-mismatch-label:
+    name: Clear Metadata Mismatch Label
+    runs-on: ubuntu-20.04
+    container: public.ecr.aws/lts/ubuntu:20.04
+    env:
+      GITHUB_PR_LABEL: metadata-mismatch
+    steps:
+      - name: Clear Metadata Mismatch Label
+        if: contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        with:
+          labels: ${{env.GITHUB_PR_LABEL}}
 
   run-benchmarks:
     if: github.repository == 'LibertyDSNP/frequency' &&
