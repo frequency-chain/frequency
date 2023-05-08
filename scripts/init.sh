@@ -232,7 +232,9 @@ upgrade-frequency-no-relay)
 
   wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
-  ./scripts/runtime-upgrade-sudo.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
+  ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
+
+  ./scripts/enact-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
   ;;
 
