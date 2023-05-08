@@ -31,12 +31,13 @@ function cleanup () {
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
 TEST_AGAINST_FREQUENCY_ROCOCO=0
+TEST_AGAINST_LOCAL_RELAY=0
 
 trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
 trap 'cleanup INT' INT
 
-while getopts "sr" OPTNAME
+while getopts "srl" OPTNAME
 do
     case "${OPTNAME}" in
         "s")
@@ -44,6 +45,9 @@ do
         ;;
         "r")
             TEST_AGAINST_FREQUENCY_ROCOCO=1
+        ;;
+        "l")
+            TEST_AGAINST_LOCAL_RELAY=1
         ;;
     esac
 done
@@ -56,6 +60,10 @@ if [ $TEST_AGAINST_FREQUENCY_ROCOCO == 1 ]; then
     PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
     NPM_RUN_COMMAND="test:relay"
     CHAIN_ENVIRONMENT="rococo"
+elif [ $TEST_AGAINST_LOCAL_RELAY == 1 ]; then
+    PROVIDER_URL="ws://127.0.0.1:9944"
+    NPM_RUN_COMMAND="test:relay"
+    CHAIN_ENVIRONMENT="local"
 else
     PROVIDER_URL="ws://127.0.0.1:9944"
     CHAIN_ENVIRONMENT="local"
@@ -135,4 +143,5 @@ npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
+set -x
 CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
