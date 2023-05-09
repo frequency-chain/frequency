@@ -6,10 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-// Don't allow both frequency and all-frequency-features so that we always have a good mainnet runtime
-#[cfg(all(feature = "frequency", feature = "all-frequency-features"))]
-compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
-
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 use cumulus_pallet_parachain_system::{
 	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
 };
@@ -443,30 +440,28 @@ impl_opaque_keys! {
 	}
 }
 
-// The duplicate macros are annoying, but #[sp_version::runtime_version]
-// has fairly string limits on what can go in there.
-
-// Override the spec name when not mainnet to be frequency-rococo
-#[cfg(not(feature = "frequency"))]
-macro_rules! spec_name {
-	( $y:expr ) => {{
-		create_runtime_str!("frequency-rococo")
-	}};
-}
-
+// IMPORTANT: Remember to update spec_version in BOTH structs below
 #[cfg(feature = "frequency")]
-macro_rules! spec_name {
-	( $y:expr ) => {{
-		create_runtime_str!($y)
-	}};
-}
-
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: spec_name!("frequency"),
+	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 33,
+	spec_version: 34,
+	impl_version: 0,
+	apis: RUNTIME_API_VERSIONS,
+	transaction_version: 1,
+	state_version: 1,
+};
+
+// IMPORTANT: Remember to update spec_version in above struct too
+#[cfg(not(feature = "frequency"))]
+#[sp_version::runtime_version]
+pub const VERSION: RuntimeVersion = RuntimeVersion {
+	spec_name: create_runtime_str!("frequency-rococo"),
+	impl_name: create_runtime_str!("frequency"),
+	authoring_version: 1,
+	spec_version: 34,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -559,7 +554,10 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
+	#[cfg(feature = "frequency-no-relay")]
+	type OnSetCode = ();
 	type MaxConsumers = FrameSystemMaxConsumers;
 }
 
@@ -661,7 +659,10 @@ impl pallet_time_release::Config for Runtime {
 	type TransferOrigin = EnsureSigned<AccountId>;
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+	#[cfg(feature = "frequency-no-relay")]
+	type BlockNumberProvider = System;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
@@ -956,6 +957,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
@@ -1144,6 +1146,7 @@ construct_runtime!(
 	{
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>} = 0,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{
 			Pallet, Call, Config, Storage, Inherent, Event<T>, ValidateUnsigned,
 		} = 1,
@@ -1329,6 +1332,7 @@ impl_runtime_apis! {
 		}
 	}
 
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
 			ParachainSystem::collect_collation_info(header)
@@ -1470,8 +1474,9 @@ impl_runtime_apis! {
 	}
 }
 
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 struct CheckInherents;
-
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	fn check_inherents(
 		block: &Block,
@@ -1493,6 +1498,7 @@ impl cumulus_pallet_parachain_system::CheckInherents<Block> for CheckInherents {
 	}
 }
 
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,

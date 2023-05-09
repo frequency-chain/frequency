@@ -1,12 +1,9 @@
-use crate::cli::{Cli, RelayChainCli, Subcommand};
-use codec::Encode;
-use cumulus_client_cli::generate_genesis_block;
-use cumulus_primitives_core::ParaId;
-use frame_benchmarking_cli::BenchmarkCmd;
-use log::info;
-
-use crate::benchmarking::{inherent_benchmark_data, RemarkBuilder};
+use crate::{
+	benchmarking::{inherent_benchmark_data, RemarkBuilder},
+	cli::{Cli, RelayChainCli, Subcommand},
+};
 use common_primitives::node::Block;
+use frame_benchmarking_cli::BenchmarkCmd;
 use frequency_service::{
 	chain_spec,
 	service::{
@@ -18,14 +15,13 @@ use sc_cli::{
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
-use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
 use std::net::SocketAddr;
 
 enum ChainIdentity {
 	Frequency,
 	FrequencyRococo,
 	FrequencyLocal,
+	FrequencyDev,
 }
 
 trait IdentifyChain {
@@ -40,6 +36,8 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 			ChainIdentity::FrequencyRococo
 		} else if self.id() == "frequency-local" {
 			ChainIdentity::FrequencyLocal
+		} else if self.id() == "dev" {
+			ChainIdentity::FrequencyDev
 		} else {
 			panic!("Unknown chain identity")
 		}
@@ -52,6 +50,7 @@ impl PartialEq for ChainIdentity {
 			(ChainIdentity::Frequency, ChainIdentity::Frequency) => true,
 			(ChainIdentity::FrequencyRococo, ChainIdentity::FrequencyRococo) => true,
 			(ChainIdentity::FrequencyLocal, ChainIdentity::FrequencyLocal) => true,
+			(ChainIdentity::FrequencyDev, ChainIdentity::FrequencyDev) => true,
 			_ => false,
 		}
 	}
@@ -69,8 +68,11 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
 		#[cfg(feature = "frequency")]
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
+		#[cfg(feature = "frequency-no-relay")]
+		"dev" | "frequency-no-relay" =>
+			return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
 		#[cfg(feature = "frequency-rococo-local")]
-		"frequency-local" | "dev" =>
+		"frequency-local" | "frequency-rococo-local" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
 		"frequency-rococo" | "rococo" | "testnet" =>
@@ -84,6 +86,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					}
 					#[cfg(not(feature = "frequency"))]
 					return Err("Frequency runtime is not available.".into())
+				} else if cfg!(feature = "frequency-no-relay") {
+					#[cfg(feature = "frequency-no-relay")]
+					{
+						return Ok(Box::new(chain_spec::frequency_rococo::development_config()))
+					}
+					#[cfg(not(feature = "frequency-no-relay"))]
+					return Err("Frequency Development (no relay) runtime is not available.".into())
 				} else if cfg!(feature = "frequency-rococo-local") {
 					#[cfg(feature = "frequency-rococo-local")]
 					{
@@ -132,6 +141,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency-rococo-local"))]
 				return Err("Frequency Local runtime is not available.".into())
+			} else if ChainIdentity::FrequencyDev == spec.identify() {
+				#[cfg(feature = "frequency-no-relay")]
+				{
+					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+						path_buf,
+					)?))
+				}
+				#[cfg(not(feature = "frequency-no-relay"))]
+				return Err("Frequency Dev (no relay) runtime is not available.".into())
 			} else {
 				return Err("Unknown chain spec.".into())
 			}
@@ -386,69 +404,24 @@ pub fn run() -> Result<()> {
 				Ok((cmd.run(version), task_manager))
 			})
 		},
-		None => {
-			let runner = cli.create_runner(&cli.run.normalize())?;
-
-			runner.run_node_until_exit(|config| async move {
-				let para_id = chain_spec::Extensions::try_get(&*config.chain_spec)
-					.map(|e| e.para_id)
-					.ok_or("Could not find parachain ID in chain-spec.")?;
-
-				#[cfg(feature = "frequency-rococo-local")]
-				if cli.instant_sealing {
-					return frequency_service::service::frequency_dev_instant_sealing(config, true)
-						.map_err(Into::into)
-				} else if cli.manual_sealing {
-					return frequency_service::service::frequency_dev_instant_sealing(config, false)
-						.map_err(Into::into)
-				}
-
-				let id = ParaId::from(para_id);
-
-				let parachain_account =
-					AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
-
-				let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-				let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-					.map_err(|e| format!("{:?}", e))?;
-				let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
-				info!("Parachain id: {:?}", id);
-				info!("Parachain Account: {}", parachain_account);
-				info!("Parachain genesis state: {}", genesis_state);
-				info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
-
-				let tokio_handle = config.tokio_handle.clone();
-				let polkadot_cli = RelayChainCli::new(
-					&config,
-					[RelayChainCli::executable_name()].iter().chain(cli.relay_chain_args.iter()),
-				);
-				let polkadot_config =
-					SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
-						.map_err(|err| format!("Relay chain argument error: {}", err))?;
-
-				let collator_options = cli.run.collator_options();
-				let hwbench = if !cli.no_hardware_benchmarks {
-					config.database.path().map(|database_path| {
-						let _ = std::fs::create_dir_all(&database_path);
-						sc_sysinfo::gather_hwbench(Some(database_path))
-					})
-				} else {
-					None
-				};
-				frequency_service::service::start_parachain_node(
-					config,
-					polkadot_config,
-					collator_options,
-					id,
-					hwbench,
-				)
-				.await
-				.map(|r| r.0)
-				.map_err(Into::into)
-			})
-		},
+		None => run_chain(cli),
 	}
+}
+
+// This appears messy but due to layers of Rust complexity, it's necessary.
+pub fn run_chain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
+	#[allow(unused)]
+	let mut result: sc_service::Result<(), polkadot_cli::Error> = Ok(());
+	#[cfg(feature = "frequency-no-relay")]
+	{
+		result = crate::run_as_localchain::run_as_localchain(cli);
+	}
+	#[cfg(not(feature = "frequency-no-relay"))]
+	{
+		result = crate::run_as_parachain::run_as_parachain(cli);
+	}
+
+	result
 }
 
 impl DefaultConfigurationValues for RelayChainCli {

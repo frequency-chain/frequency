@@ -20,7 +20,7 @@ pub mod weights;
 #[macro_export]
 macro_rules! prod_or_testnet_or_local {
 	($prod:expr, $test:expr, $local:expr) => {
-		if cfg!(feature = "frequency-rococo-local") {
+		if cfg!(any(feature = "frequency-rococo-local", feature = "frequency-no-relay")) {
 			$local
 		} else if cfg!(feature = "frequency-rococo-testnet") {
 			$test

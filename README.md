@@ -65,6 +65,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 4. Running `make check` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
     ```sh
+    make check-no-relay
     make check-local
     make check-rococo
     make check-mainnet
@@ -85,6 +86,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     Above will build frequency with all frequency features. Alternatively you may run following command to build with specific features:
 
     ```sh
+    make build-no-relay
     make build-local
     make build-rococo
     make build-mainnet

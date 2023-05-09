@@ -41,15 +41,15 @@ local-block:
 
 .PHONY: register
 register:
-	./scripts/init.sh register-frequency
+	./scripts/init.sh register-frequency-rococo-local
 
 .PHONY: onboard
 onboard:
-	./scripts/init.sh onboard-frequency
+	./scripts/init.sh onboard-frequency-rococo-local
 
 .PHONY: offboard
 offboard:
-	./scripts/init.sh offboard-frequency
+	./scripts/init.sh offboard-frequency-rococo-local
 
 .PHONY: specs
 specs-rococo-2000:
@@ -79,7 +79,11 @@ ci-local: check lint lint-audit test integration-test
 
 .PHONY: upgrade
 upgrade-local:
-	./scripts/init.sh upgrade-frequency
+	./scripts/init.sh upgrade-frequency-rococo-local
+
+upgrade-no-relay:
+	./scripts/init.sh upgrade-frequency-no-relay
+
 
 #
 # We use hard-coded variables (rather than a pattern) so that smart shells with
@@ -178,6 +182,9 @@ docker-prune:
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features
 
+check-no-relay:
+	SKIP_WASM_BUILD= cargo check --features  frequency-no-relay
+
 check-local:
 	SKIP_WASM_BUILD= cargo check --features  frequency-rococo-local
 
@@ -197,6 +204,9 @@ build:
 
 build-benchmarks:
 	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
+
+build-no-relay:
+	cargo build --locked --features  frequency-no-relay
 
 build-local:
 	cargo build --locked --features  frequency-rococo-local

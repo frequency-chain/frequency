@@ -217,6 +217,7 @@ try-runtime = [
 frequency = ["common-runtime/frequency"]
 frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]
 frequency-rococo-local = ["common-runtime/frequency-rococo-local"]
+frequency-no-relay = ["common-runtime/frequency-no-relay"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["sp-api/disable-logging"]

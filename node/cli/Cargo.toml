@@ -79,10 +79,12 @@ runtime-benchmarks = [
 try-runtime = ["frequency-service/try-runtime", "try-runtime-cli", "try-runtime-cli/try-runtime"]
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
+frequency-no-relay = ["frequency-service/frequency-no-relay"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
 frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet"]
 all-frequency-features = [
   "frequency",
+  "frequency-no-relay",
   "frequency-rococo-local",
   "frequency-rococo-testnet",
   "frequency-service/all-frequency-features"
