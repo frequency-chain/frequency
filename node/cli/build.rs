@@ -1,5 +1,20 @@
 use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_changed};
 
+#[cfg(not(any(
+	feature = "frequency",
+	feature = "frequency-rococo-local",
+	feature = "frequency-no-relay",
+	feature = "frequency-rococo-testnet"
+)))]
+compile_error!(
+	r#"You must enable one of these features:
+- Mainnet: "frequency"
+- Frequency Rococo: "frequency-rococo-testnet"
+- Local: "frequency-rococo-local"
+- No Relay: "frequency-no-relay",
+- All: "frequency-lint-check"#
+);
+
 // Don't allow more than one main feature (except for benchmark/lint/check) so that we always have a good mainnet runtime
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
