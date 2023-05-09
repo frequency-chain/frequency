@@ -38,7 +38,6 @@ pub struct ExportMetadataCmd {
 	pub tmp: bool,
 }
 
-// REVIEW: Should this be refactored or panic is okay here?
 #[allow(clippy::unwrap_used)]
 impl ExportMetadataCmd {
 	/// Run the export-metadata command
