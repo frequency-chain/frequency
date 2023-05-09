@@ -6,20 +6,18 @@ import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createMsaAndProvider,
     stakeToProvider, fundKeypair,
-    getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength
+    getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
+    CENTS, DOLLARS, createAndFundKeypair
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
 
 describe("Capacity Staking Tests", function () {
-    const CENTS = 1000000n;
-    const DOLLARS = 100n * CENTS;
     const accountBalance: bigint = 200n * DOLLARS;
     const tokenMinStake: bigint = 1n * CENTS;
     let capacityMin: bigint = tokenMinStake / 50n;
 
     before(async function () {
-        // this isn't working now?
         await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
     });
 
@@ -145,6 +143,44 @@ describe("Capacity Staking Tests", function () {
                         assert.equal(capacityStaked.totalTokensStaked, 1n * CENTS, "should return a capacityLedger with 1M total tokens staked");
                         assert.equal(capacityStaked.totalCapacityIssued, expectedCapacity, "should return a capacityLedger with 1/50M capacity issued");
                     });
+
+                    it("successfully increases the amount that was targeted to provider from different accounts", async function () {
+                        // Create a new account
+                        const additionalKeys = await createAndFundKeypair(accountBalance);
+
+                        // get the current account info
+                        let currentAcctInfo = await ExtrinsicHelper.getAccountInfo(additionalKeys.address);
+                        const currentStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+
+                        await assert.doesNotReject(stakeToProvider(additionalKeys, stakeProviderId, 1n*CENTS));
+
+                        const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+                        assert.equal(
+                            capacityStaked.remainingCapacity,
+                            currentStaked.remainingCapacity.toBigInt() + capacityMin,
+                             `should return a capacityLedger with ${capacityMin} remaining, got ${capacityStaked.remainingCapacity}`
+                        );
+                        assert.equal(
+                            capacityStaked.totalTokensStaked,
+                            currentStaked.totalTokensStaked.toBigInt() +  tokenMinStake,
+                            `should return a capacityLedger with ${tokenMinStake} total staked, got: ${capacityStaked.totalTokensStaked}`
+                        );
+                        assert.equal(
+                            capacityStaked.totalCapacityIssued,
+                            currentStaked.totalCapacityIssued.toBigInt() + capacityMin, 
+                            `should return a capacityLedger with ${capacityMin} total issued, got ${capacityStaked.totalCapacityIssued}`
+                        );
+
+                        // Confirm that the tokens were not staked in the stakeKeys account using the query API
+                        const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(additionalKeys.address);
+
+                        let increasedMiscFrozen: bigint = stakedAcctInfo.data.miscFrozen.toBigInt() - currentAcctInfo.data.miscFrozen.toBigInt();
+                        let increasedFeeFrozen: bigint = stakedAcctInfo.data.feeFrozen.toBigInt() - currentAcctInfo.data.feeFrozen.toBigInt();
+
+                        assert.equal(increasedMiscFrozen, tokenMinStake, `expected miscFrozen=${tokenMinStake}, got ${increasedMiscFrozen}`);
+                        assert.equal(increasedFeeFrozen, tokenMinStake, `expected feeFrozen=${tokenMinStake}, got ${increasedFeeFrozen}`);
+                    });
+
                 });
             });
         });
@@ -152,11 +188,13 @@ describe("Capacity Staking Tests", function () {
 
     describe("when staking and targeting an InvalidTarget", async function () {
         it("fails to stake", async function () {
+            const maxMsaId = (await ExtrinsicHelper.getCurrentMsaIdentifierMaximum()).toNumber();
+
             let stakeKeys = createKeys("StakeKeys");
             let stakeAmount = 100n * DOLLARS;
             await fundKeypair(devAccounts[0].keys, stakeKeys, stakeAmount)
 
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, 99, stakeAmount);
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
         });
     });
