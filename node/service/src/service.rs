@@ -183,6 +183,7 @@ pub fn new_partial(
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 async fn start_node_impl(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
@@ -372,6 +373,7 @@ fn build_import_queue(
 	.map_err(Into::into)
 }
 
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 fn build_consensus(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
@@ -441,6 +443,7 @@ fn build_consensus(
 }
 
 /// Start a parachain node.
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
@@ -453,7 +456,7 @@ pub async fn start_parachain_node(
 
 /// Function to start frequency parachain with instant sealing in dev mode.
 /// This function is called when --chain dev --instant-sealing is passed.
-#[cfg(feature = "frequency-rococo-local")]
+#[cfg(feature = "frequency-no-relay")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,
 	is_instant: bool,
@@ -527,7 +530,7 @@ pub fn frequency_dev_instant_sealing(
 			.import_notification_stream()
 			.filter(move |_| futures::future::ready(is_instant))
 			.map(|_| sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-				create_empty: false,
+				create_empty: true,
 				finalize: true,
 				parent_hash: None,
 				sender: None,

@@ -51,6 +51,7 @@ default = ["std"]
 frequency = []
 frequency-rococo-testnet = []
 frequency-rococo-local = []
+frequency-no-relay = []
 std = [
 	"frame-support/std",
 	"cumulus-primitives-core/std",
