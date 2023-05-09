@@ -319,7 +319,7 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
+          cargo install --locked --git https://github.com/chevdor/srtool-cli --tag v0.10.0
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
