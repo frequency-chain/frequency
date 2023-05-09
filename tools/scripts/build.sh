@@ -15,7 +15,7 @@ cargo --version
 
 case $TARGET in
   build-node)
-    cargo build --release --features all-frequency-features "$@"
+    cargo build --release --features frequency-no-relay "$@"
     ;;
 
   build-runtime)
@@ -25,12 +25,12 @@ case $TARGET in
     ;;
 
   tests)
-    cargo test --features runtime-benchmarks,all-frequency-features,std --workspace --release
+    cargo test --features runtime-benchmarks,frequency-lint-check,std --workspace --release
     ;;
 
   lint)
     cargo fmt -- --check
-    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features all-frequency-features,std -- -D warnings
+    SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features frequency-lint-check,std -- -D warnings
     RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps
     ;;
 esac

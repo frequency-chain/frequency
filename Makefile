@@ -65,7 +65,7 @@ format:
 .PHONY: lint
 lint:
 	cargo fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,all-frequency-features,frequency-lint-check -- -D warnings
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
 	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-audit:
@@ -180,7 +180,7 @@ docker-prune:
 
 .PHONY: check
 check:
-	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,all-frequency-features,frequency-lint-check
+	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
 check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
@@ -200,10 +200,10 @@ js:
 
 .PHONY: build
 build:
-	cargo build --locked --release --features all-frequency-features
+	cargo build --locked --release --features frequency-no-relay
 
 build-benchmarks:
-	cargo build --profile production --features runtime-benchmarks --features all-frequency-features --workspace
+	cargo build --profile production --features runtime-benchmarks,frequency-lint-check --workspace
 
 build-no-relay:
 	cargo build --locked --features frequency-no-relay
@@ -225,7 +225,7 @@ build-mainnet-release:
 
 .PHONY: test
 test:
-	cargo test --workspace --locked --features runtime-benchmarks,all-frequency-features
+	cargo test --workspace --locked --features runtime-benchmarks,frequency-lint-check
 
 integration-test:
 	./scripts/run_integration_tests.sh
@@ -241,15 +241,15 @@ integration-test-load-only:
 
 .PHONY: try-runtime
 try-runtime:
-	cargo run --release --features all-frequency-features,try-runtime try-runtime --help
+	cargo run --release --features frequency-lint-check,try-runtime try-runtime --help
 
 try-runtime-upgrade-rococo:
 	cargo build --release --features frequency-rococo-testnet,try-runtime
-	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://rpc.rococo.frequency.xyz:443
+	cargo run --release --features frequency-lint-check,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://rpc.rococo.frequency.xyz:443
 
 try-runtime-upgrade-mainnet:
 	cargo build --release --features frequency,try-runtime
-	cargo run --release --features all-frequency-features,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://1.rpc.frequency.xyz:443
+	cargo run --release --features frequency-lint-check,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://1.rpc.frequency.xyz:443
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes

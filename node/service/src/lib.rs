@@ -15,7 +15,7 @@ compile_error!(
 - Frequency Rococo: "frequency-rococo-testnet"
 - Local: "frequency-rococo-local"
 - No Relay: "frequency-no-relay",
-- All: "all-frequency-features""#
+- All: "frequency-lint-check"#
 );
 
 pub mod chain_spec;
