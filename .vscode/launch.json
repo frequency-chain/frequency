@@ -24,6 +24,7 @@
             ],
             "args": [
                 "--dev",
+                "-lruntime=debug",
                 "-lexecutor=trace",
                 "--instant-sealing",
                 "--wasm-execution=compiled",
