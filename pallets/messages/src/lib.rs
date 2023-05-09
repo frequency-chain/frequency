@@ -32,6 +32,8 @@
 //! ## Implementations
 //! - None
 //!
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
@@ -233,25 +235,31 @@ pub mod pallet {
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
-			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(
-				schema.unwrap().payload_location == PayloadLocation::IPFS,
-				Error::<T>::InvalidPayloadLocation
-			);
+			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+				ensure!(
+					schema.payload_location == PayloadLocation::IPFS,
+					Error::<T>::InvalidPayloadLocation
+				);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			let current_block = frame_system::Pallet::<T>::block_number();
-			if Self::add_message(provider_msa_id, None, bounded_payload, schema_id, current_block)?
-			{
-				Self::deposit_event(Event::MessagesStored {
+				let provider_msa_id = Self::find_msa_id(&provider_key)?;
+				let current_block = frame_system::Pallet::<T>::block_number();
+				if Self::add_message(
+					provider_msa_id,
+					None,
+					bounded_payload,
 					schema_id,
-					block_number: current_block,
-					count: 1, // hardcoded to 1 for backwards compatibility
-				});
+					current_block,
+				)? {
+					Self::deposit_event(Event::MessagesStored {
+						schema_id,
+						block_number: current_block,
+						count: 1, // hardcoded to 1 for backwards compatibility
+					});
+				}
+				Ok(())
+			} else {
+				Err(Error::<T>::InvalidSchemaId.into())
 			}
-
-			Ok(())
 		}
 
 		/// Add an on-chain message for a given schema id.
@@ -281,48 +289,50 @@ pub mod pallet {
 			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
 				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			let schema = T::SchemaProvider::get_schema_by_id(schema_id);
-			ensure!(schema.is_some(), Error::<T>::InvalidSchemaId);
-			ensure!(
-				schema.unwrap().payload_location == PayloadLocation::OnChain,
-				Error::<T>::InvalidPayloadLocation
-			);
+			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+				ensure!(
+					schema.payload_location == PayloadLocation::OnChain,
+					Error::<T>::InvalidPayloadLocation
+				);
 
-			let provider_msa_id = Self::find_msa_id(&provider_key)?;
-			let provider_id = ProviderId(provider_msa_id);
+				let provider_msa_id = Self::find_msa_id(&provider_key)?;
+				let provider_id = ProviderId(provider_msa_id);
 
-			let current_block = frame_system::Pallet::<T>::block_number();
-			// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
-			let maybe_delegator = match on_behalf_of {
-				Some(delegator_msa_id) => {
-					let delegator_id = DelegatorId(delegator_msa_id);
-					T::SchemaGrantValidator::ensure_valid_schema_grant(
-						provider_id,
-						delegator_id,
-						schema_id,
-						current_block,
-					)
-					.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
-					delegator_id
-				},
-				None => DelegatorId(provider_msa_id), // Delegate is also the Provider
-			};
+				let current_block = frame_system::Pallet::<T>::block_number();
+				// On-chain messages either are sent from the user themselves, or on behalf of another MSA Id
+				let maybe_delegator = match on_behalf_of {
+					Some(delegator_msa_id) => {
+						let delegator_id = DelegatorId(delegator_msa_id);
+						T::SchemaGrantValidator::ensure_valid_schema_grant(
+							provider_id,
+							delegator_id,
+							schema_id,
+							current_block,
+						)
+						.map_err(|_| Error::<T>::UnAuthorizedDelegate)?;
+						delegator_id
+					},
+					None => DelegatorId(provider_msa_id), // Delegate is also the Provider
+				};
 
-			if Self::add_message(
-				provider_msa_id,
-				Some(maybe_delegator.into()),
-				bounded_payload,
-				schema_id,
-				current_block,
-			)? {
-				Self::deposit_event(Event::MessagesStored {
+				if Self::add_message(
+					provider_msa_id,
+					Some(maybe_delegator.into()),
+					bounded_payload,
 					schema_id,
-					block_number: current_block,
-					count: 1, // hardcoded to 1 for backwards compatibility
-				});
-			}
+					current_block,
+				)? {
+					Self::deposit_event(Event::MessagesStored {
+						schema_id,
+						block_number: current_block,
+						count: 1, // hardcoded to 1 for backwards compatibility
+					});
+				}
 
-			Ok(())
+				Ok(())
+			} else {
+				Err(Error::<T>::InvalidSchemaId.into())
+			}
 		}
 	}
 }

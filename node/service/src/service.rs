@@ -182,6 +182,7 @@ pub fn new_partial(
 /// Start a node with the given parachain `Configuration` and relay chain `Configuration`.
 ///
 /// This is the actual implementation that is abstract over the executor and the runtime api.
+#[allow(clippy::expect_used)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
 async fn start_node_impl(
@@ -456,6 +457,7 @@ pub async fn start_parachain_node(
 
 /// Function to start frequency parachain with instant sealing in dev mode.
 /// This function is called when --chain dev --instant-sealing is passed.
+#[allow(clippy::expect_used)]
 #[cfg(feature = "frequency-no-relay")]
 pub fn frequency_dev_instant_sealing(
 	config: Configuration,

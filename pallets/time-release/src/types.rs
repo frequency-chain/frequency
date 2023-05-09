@@ -42,6 +42,7 @@ impl<BlockNumber: AtLeast32Bit + Copy, Balance: AtLeast32Bit + MaxEncodedLen + C
 	///
 	/// Note this func assumes schedule is a valid one(non-zero period and
 	/// non-overflow total amount), and it should be guaranteed by callers.
+	#[allow(clippy::expect_used)]
 	pub fn locked_amount(&self, time: BlockNumber) -> Balance {
 		// full = (time - start) / period
 		// unrealized = period_count - full

@@ -1,4 +1,5 @@
 #![cfg(feature = "runtime-benchmarks")]
+#![allow(clippy::unwrap_used)]
 
 use super::*;
 use crate::Pallet as Handles;

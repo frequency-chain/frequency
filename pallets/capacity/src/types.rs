@@ -55,6 +55,7 @@ impl<T: Config> StakingAccountDetails<T> {
 	}
 
 	#[cfg(any(feature = "runtime-benchmarks", test))]
+	#[allow(clippy::unwrap_used)]
 	///  tmp fn for testing only
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.

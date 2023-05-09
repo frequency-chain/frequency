@@ -26,6 +26,8 @@
 //! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `base_handle`.`suffix`.
 //! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
 
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
 #![deny(
