@@ -12,7 +12,7 @@
 [![Issues][issues-shield]][issues-url]
 [![Codecov][codecov-shield]][codecov-url]
 
-Frequency is a Polkadot parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
+Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
 
 # Table of Contents
 
@@ -62,7 +62,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
 3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
-4. Running `make check` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
+4. Running `make check` will run cargo checks for all Frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
     ```sh
     make check-no-relay
@@ -83,7 +83,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     make build
     ```
 
-    Above will build frequency with all frequency features. Alternatively you may run following command to build with specific features:
+    Above will build Frequency with all features. Alternatively you may run following command to build with specific features:
 
     ```sh
     make build-no-relay
@@ -92,7 +92,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     make build-mainnet
     ```
 
-    To build local, rococo or mainnet features respectively.
+    To build local, rococo (testnet) or mainnet features respectively.
 
 At this point you should have `./target/release` directory generated locally with compiled
 project files.
@@ -131,15 +131,15 @@ sudo apt install —-assume-yes build-essential
 sudo apt install --assume-yes clang curl libssl-dev cmake
 ```
 
-2. Follow [official instructions to install rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
+2. Follow [official instructions to install Rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
 3. Follow steps 6-10 at [Substrate: Linux development](https://docs.substrate.io/main-docs/install/linux/)
-4. Proceed with checking out and building frequency as above.
+4. Proceed with checking out and building Frequency as above.
 
 # Run
 
 There are 2 options to run the chain locally:
 
-_Note, Running frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
+_Note, Running Frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
 
 1.  Collator Node without a relay chain (in manual/instant sealing mode)
 2.  Collator Node with a local relay chain
@@ -170,7 +170,7 @@ Great for testing multiple items in the same block or other block formation test
 make start-manual
 ```
 
-### Instant Sealing mode
+### Instant Sealing
 
 Same as Manual Sealing, but will also automatically trigger the formation of a block whenever a transaction is added to the validated transaction pool.
 Great for most testing.
@@ -284,12 +284,12 @@ make benchmarks
 -   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
 -   Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 -   Alternatively, run `make format-lint` to run both at the same time.
--   Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the RustSec Advisory Database. [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
+-   Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
 # Verify Runtime
 
 1. Check out the commit at which the runtime was built.
-2. Use srtool to verify the runtime:
+2. Use [srtool](https://github.com/paritytech/srtool) to verify the runtime:
     ```sh
     TARGET=build-runtime RUST_TOOLCHAIN=nightly ./tools/scripts/build.sh
     ```
