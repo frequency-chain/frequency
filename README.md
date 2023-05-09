@@ -62,7 +62,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 1. Install Rust using the [official instructions](https://www.rust-lang.org/tools/install).
 2. Check out this repository
 3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
-4. Running `make check` will run cargo checks for all frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
+4. Running `make check` will run cargo checks for all Frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
     ```sh
     make check-no-relay
@@ -71,7 +71,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     make check-mainnet
     ```
 
-5. Build Wasm and native code.
+5. Build [Wasm](https://webassembly.org) and native code.
 
     _Note, if you get errors complaining about missing
     dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
@@ -83,7 +83,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     make build
     ```
 
-    Above will build frequency with all frequency features. Alternatively you may run following command to build with specific features:
+    Above will build Frequency with all Frequency features. Alternatively you may run following command to build with specific features:
 
     ```sh
     make build-no-relay
@@ -133,13 +133,13 @@ sudo apt install --assume-yes clang curl libssl-dev cmake
 
 2. Follow [official instructions to install rust](https://www.rust-lang.org/tools/install), but select `3. customize the installation`, then reply **n** to `Modify PATH variable? (Y/n)`
 3. Follow steps 6-10 at [Substrate: Linux development](https://docs.substrate.io/main-docs/install/linux/)
-4. Proceed with checking out and building frequency as above.
+4. Proceed with checking out and building Frequency as above.
 
 # Run
 
 There are 2 options to run the chain locally:
 
-_Note, Running frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
+_Note, Running Frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
 
 1.  Collator Node without a relay chain (in manual/instant sealing mode)
 2.  Collator Node with a local relay chain
@@ -149,7 +149,6 @@ _Note, Running frequency via following options does not require binary to be bui
 ![](docs/images/local-dev-env-option-1.jpg)
 
 This option runs just one collator node without the need for a relay chain.
-
 
 ### Manual Sealing
 a. Blocks can be triggered by calling the `engine_createBlock` RPC
@@ -170,7 +169,7 @@ Great for testing multiple items in the same block or other block formation test
 make start-manual
 ```
 
-### Instant Sealing mode
+### Instant Sealing
 
 Same as Manual Sealing, but will also automatically trigger the formation of a block whenever a transaction is added to the validated transaction pool.
 Great for most testing.
@@ -232,7 +231,7 @@ This option runs one collator node as local host process and two relay chain val
 #### Stop and Clean Environment
 
 1. Off-board Frequency from relay chain.: `make offboard`
-2. to stop Frequency running in the terminal: `[Ctrl+C] `
+2. To stop Frequency running in the terminal: `[Ctrl+C] `
 3. Stop the relay chain. `make stop-relay`
 4. Run to remove unused volumes. `make docker-prune`
 5. Clean up temporary directory to avoid any conflicts with next onboarding:
