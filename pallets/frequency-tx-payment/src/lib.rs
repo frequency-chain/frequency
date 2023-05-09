@@ -19,6 +19,8 @@
 //! - pay_with_capacity
 //!
 
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use codec::{Decode, Encode};

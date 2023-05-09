@@ -12,6 +12,7 @@ fn allowed_char(c: char) -> bool {
 	ALLOWED_UNICODE_CHARACTER_RANGES.iter().any(|range| range.contains(&(c as u16)))
 }
 
+#[allow(clippy::unwrap_used)]
 fn main() {
 	let input_file = File::open("src/data/confusable_characters.txt");
 	assert!(input_file.is_ok());

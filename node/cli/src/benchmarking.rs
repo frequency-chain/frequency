@@ -1,6 +1,7 @@
 //! Setup code for [`super::command`] which would otherwise bloat that module.
 //!
 //! Should only be used for benchmarking as it may break in other contexts.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 
 use common_primitives::node::{AccountId, Balance, Signature};
 use frame_support::pallet_prelude::InherentData;

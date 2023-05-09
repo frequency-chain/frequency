@@ -38,6 +38,7 @@ pub struct ExportMetadataCmd {
 	pub tmp: bool,
 }
 
+#[allow(clippy::unwrap_used)]
 impl ExportMetadataCmd {
 	/// Run the export-metadata command
 	pub async fn run<B, C>(&self, client: Arc<C>) -> Result<(), Error>

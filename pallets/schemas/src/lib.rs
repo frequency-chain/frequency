@@ -40,6 +40,8 @@
 //!
 //! The Schemas pallet depends on the [`GenesisConfig`].
 //!
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
 #![deny(
@@ -455,6 +457,7 @@ pub mod pallet {
 	}
 }
 
+#[allow(clippy::unwrap_used)]
 #[cfg(feature = "runtime-benchmarks")]
 impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 	/// Sets schema count.

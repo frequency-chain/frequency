@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used)]
 use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;

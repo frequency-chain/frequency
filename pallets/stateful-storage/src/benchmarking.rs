@@ -1,3 +1,4 @@
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use super::*;
 use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
 use codec::{Decode, Encode};

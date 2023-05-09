@@ -40,6 +40,8 @@
 //! - [`PaginatedPage`](../pallet_stateful_storage/types/type.PaginatedPage.html): A page containing paginated data
 //!
 
+// Substrate macros are tripping the clippy::expect_used lint.
+#![allow(clippy::expect_used)]
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
