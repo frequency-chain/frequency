@@ -74,7 +74,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 
     _Note, if you get errors complaining about missing
     dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
-    manager(e.g. Homebrew on Mac) and re-run the command again._
+    manager(e.g. [Homebrew](https://brew.sh/) on macOS) and re-run the command again._
 
     ```sh
     rustup update
@@ -97,7 +97,7 @@ project files.
 
 ### asdf Support
 
-Install the required plugins for asdf:
+Install the required plugins for [asdf](https://asdf-vm.com):
 
 ```sh
 asdf plugin-add rust
@@ -116,7 +116,7 @@ NOTE: I could find no clang plugin that worked so your system still needs clang 
 
 ## Remote Instance such as AWS EC2
 
-For remote instances running Linux, if you want to check out and build such as on an AWS EC2 instance, the process is slightly different to what is in the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
+For remote instances running Linux, if you want to check out and build such as on an [AWS EC2](https://aws.amazon.com/ec2) instance, the process is slightly different to what is in the [Substrate documentation](https://docs.substrate.io/main-docs/install/linux/).
 
 ### Ubuntu
 
