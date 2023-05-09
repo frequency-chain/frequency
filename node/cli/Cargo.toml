@@ -82,6 +82,7 @@ frequency = ["frequency-service/frequency"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
 frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet"]
+frequency-lint-check = []
 all-frequency-features = [
   "frequency",
   "frequency-no-relay",
