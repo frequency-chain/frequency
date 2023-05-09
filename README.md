@@ -71,7 +71,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     make check-mainnet
     ```
 
-5. Build Wasm and native code.
+5. Build [Wasm](https://webassembly.org) and native code.
 
     _Note, if you get errors complaining about missing
     dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
@@ -149,7 +149,6 @@ _Note, Running Frequency via following options does not require binary to be bui
 ![](docs/images/local-dev-env-option-1.jpg)
 
 This option runs just one collator node without the need for a relay chain.
-
 
 ### Manual Sealing
 a. Blocks can be triggered by calling the `engine_createBlock` RPC
@@ -232,7 +231,7 @@ This option runs one collator node as local host process and two relay chain val
 #### Stop and Clean Environment
 
 1. Off-board Frequency from relay chain.: `make offboard`
-2. to stop Frequency running in the terminal: `[Ctrl+C] `
+2. To stop Frequency running in the terminal: `[Ctrl+C] `
 3. Stop the relay chain. `make stop-relay`
 4. Run to remove unused volumes. `make docker-prune`
 5. Clean up temporary directory to avoid any conflicts with next onboarding:
