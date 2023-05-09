@@ -7,59 +7,6 @@
         {
             "type": "lldb",
             "request": "launch",
-            "name": "Debug Collator Node",
-            "initCommands": [
-                "settings set plugin.jit-loader.gdb.enable on"
-            ],
-            "program": "${workspaceFolder}/target/release/frequency",
-            "args": [
-                "--chain=frequency-local",
-                "--alice",
-                "--base-path=/tmp/frequency/parachain/2000",
-                "--wasm-execution=compiled",
-                "--execution=native",
-                "--force-authoring",
-                "--port=30333",
-                "--rpc-port=9933",
-                "--ws-port=9944",
-                "--rpc-external",
-                "--rpc-cors=all",
-                "--ws-external",
-                "--rpc-methods=unsafe",
-                "--state-cache-size=0"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug Native Instant-Sealing-Mode",
-            "initCommands": [
-                "settings set plugin.jit-loader.gdb.enable on"
-            ],
-            "program": "${workspaceFolder}/target/debug/frequency",
-            "args": [
-                "--dev",
-                "-lexecutor=trace",
-                "--instant-sealing",
-                "--wasm-execution=compiled",
-                "--execution=native",
-                "--no-telemetry",
-                "--no-prometheus",
-                "--port=30333",
-                "--rpc-port=9933",
-                "--ws-port=9944",
-                "--rpc-external",
-                "--rpc-cors=all",
-                "--ws-external",
-                "--rpc-methods=unsafe",
-                "--tmp"
-            ],
-            "cwd": "${workspaceFolder}"
-        },
-        {
-            "type": "lldb",
-            "request": "launch",
             "name": "Debug No-relay w/cargo",
             "cargo": {
                 "args": [
@@ -99,46 +46,9 @@
         },
         {
             "type": "lldb",
-            "request": "launch",
-            "name": "Debug executable 'frequency'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--profile",
-                    "bench-dev",
-                    "--features",
-                    "frequency-rococo-local",
-                ],
-                "filter": {
-                    "name": "frequency",
-                    "kind": "bin"
-                }
-            },
-            "initCommands": [
-                "settings set plugin.jit-loader.gdb.enable on"
-            ],
-            "args": [
-                "--dev",
-                "-lexecutor=trace",
-                "--instant-sealing",
-                "--wasm-execution=compiled",
-                "--execution=native",
-                "--no-telemetry",
-                "--no-prometheus",
-                "--port=30333",
-                "--rpc-port=9933",
-                "--ws-port=9944",
-                "--rpc-external",
-                "--rpc-cors=all",
-                "--ws-external",
-                "--rpc-methods=unsafe",
-                "--tmp"
-            ],
-            "cwd": "${workspaceFolder}",
-            "env": {
-                "WASM_BUILD_TYPE": "debug",
-            }
-
+            "request": "attach",
+            "name": "Attach to Frequency",
+            "program": "${workspaceFolder}/target/debug/frequency",
         },
         {
             "type": "lldb",
@@ -501,11 +411,5 @@
             "args": [],
             "cwd": "${workspaceFolder}"
         },
-        {
-            "type": "lldb",
-            "request": "attach",
-            "name": "Attach to Frequency",
-            "program": "${workspaceFolder}/target/debug/frequency",
-        }
     ]
 }
