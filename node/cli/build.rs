@@ -27,7 +27,6 @@ compile_error!(
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
-// Don't allow more than one main feature (except for benchmark/lint/check) so that we always have a good mainnet runtime
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-no-relay",
@@ -39,7 +38,6 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
-// Don't allow more than one main feature (except for benchmark/lint/check) so that we always have a good mainnet runtime
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-rococo-local",
@@ -51,7 +49,6 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
-// Don't allow more than one main feature (except for benchmark/lint/check) so that we always have a good mainnet runtime
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-rococo-testnet",
