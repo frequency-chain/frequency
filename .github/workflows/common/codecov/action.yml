@@ -11,7 +11,7 @@ runs:
         cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
         --ignore-filename-regex "^.*\/(node\/|runtime\/|mock\.rs|weights(\.rs)?|benchmarking\.rs|runtime-api/src/lib\.rs).*$" \
         --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
-        --features all-frequency-features
+        --features frequency-lint-check
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v3
       with:

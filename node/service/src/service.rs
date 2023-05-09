@@ -184,7 +184,7 @@ pub fn new_partial(
 /// This is the actual implementation that is abstract over the executor and the runtime api.
 #[allow(clippy::expect_used)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 async fn start_node_impl(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
@@ -374,7 +374,7 @@ fn build_import_queue(
 	.map_err(Into::into)
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 fn build_consensus(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
@@ -444,7 +444,7 @@ fn build_consensus(
 }
 
 /// Start a parachain node.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "all-frequency-features"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,

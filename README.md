@@ -291,7 +291,7 @@ make benchmarks
 1. Check out the commit at which the runtime was built.
 2. Use srtool to verify the runtime:
     ```sh
-    TARGET=build-runtime RUST_TOOLCHAIN=nightly ./tools/scripts/build.sh
+    TARGET=build-runtime RUST_TOOLCHAIN=nightly cargo build --features frequency-no-relay
     ```
 
 # Local Runtime Upgrade
