@@ -6,6 +6,7 @@
 #[cfg(not(any(
 	feature = "frequency",
 	feature = "frequency-rococo-local",
+	feature = "frequency-no-relay",
 	feature = "frequency-rococo-testnet"
 )))]
 compile_error!(
@@ -13,6 +14,7 @@ compile_error!(
 - Mainnet: "frequency"
 - Frequency Rococo: "frequency-rococo-testnet"
 - Local: "frequency-rococo-local"
+- No Relay: "frequency-no-relay",
 - All: "all-frequency-features""#
 );
 

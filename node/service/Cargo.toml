@@ -111,10 +111,12 @@ runtime-benchmarks = [
   "polkadot-service/runtime-benchmarks",
 ]
 frequency = ["frequency-runtime"]
+frequency-no-relay = ["frequency-runtime"]
 frequency-rococo-local = ["frequency-runtime"]
 frequency-rococo-testnet = ["frequency-runtime"]
 all-frequency-features = [
   "frequency",
+  "frequency-no-relay",
   "frequency-rococo-local",
   "frequency-rococo-testnet",
 ]
