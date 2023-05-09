@@ -86,7 +86,7 @@ start-frequency-instant)
     -lruntime=debug \
     --instant-sealing \
     --wasm-execution=compiled \
-    --execution=wasm \
+    --execution=native \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \

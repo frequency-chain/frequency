@@ -1,0 +1,416 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug No-relay w/cargo",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--features",
+                    "frequency-no-relay",
+                ],
+                "filter": {
+                    "name": "frequency",
+                    "kind": "bin"
+                }
+            },
+            "initCommands": [
+                "settings set plugin.jit-loader.gdb.enable on"
+            ],
+            "args": [
+                "--dev",
+                "-lruntime=debug",
+                "-lexecutor=trace",
+                "--instant-sealing",
+                "--wasm-execution=compiled",
+                "--execution=native",
+                "--no-telemetry",
+                "--no-prometheus",
+                "--port=30333",
+                "--rpc-port=9933",
+                "--ws-port=9944",
+                "--rpc-external",
+                "--rpc-cors=all",
+                "--ws-external",
+                "--rpc-methods=unsafe",
+                "--tmp"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "WASM_BUILD_TYPE": "debug",
+            }
+        },
+        {
+            "type": "lldb",
+            "request": "attach",
+            "name": "Attach to Frequency",
+            "program": "${workspaceFolder}/target/debug/frequency",
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in executable 'frequency'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--bin=frequency",
+                    "--package=frequency"
+                ],
+                "filter": {
+                    "name": "frequency",
+                    "kind": "bin"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'frequency-cli'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=frequency-cli"
+                ],
+                "filter": {
+                    "name": "frequency-cli",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'common-primitives'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=common-primitives"
+                ],
+                "filter": {
+                    "name": "common-primitives",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'frequency-service'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=frequency-service"
+                ],
+                "filter": {
+                    "name": "frequency-service",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'common-helpers'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=common-helpers"
+                ],
+                "filter": {
+                    "name": "common-helpers",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'common-runtime'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=common-runtime"
+                ],
+                "filter": {
+                    "name": "common-runtime",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'frequency-runtime'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=frequency-runtime"
+                ],
+                "filter": {
+                    "name": "frequency-runtime",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-capacity'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-capacity"
+                ],
+                "filter": {
+                    "name": "pallet-capacity",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-msa'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-msa"
+                ],
+                "filter": {
+                    "name": "pallet-msa",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-schemas'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-schemas"
+                ],
+                "filter": {
+                    "name": "pallet-schemas",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-frequency-tx-payment'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-frequency-tx-payment"
+                ],
+                "filter": {
+                    "name": "pallet-frequency-tx-payment",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-messages'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-messages"
+                ],
+                "filter": {
+                    "name": "pallet-messages",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-messages-runtime-api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-messages-runtime-api"
+                ],
+                "filter": {
+                    "name": "pallet-messages-runtime-api",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-msa-runtime-api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-msa-runtime-api"
+                ],
+                "filter": {
+                    "name": "pallet-msa-runtime-api",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-schemas-runtime-api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-schemas-runtime-api"
+                ],
+                "filter": {
+                    "name": "pallet-schemas-runtime-api",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'system-runtime-api'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=system-runtime-api"
+                ],
+                "filter": {
+                    "name": "system-runtime-api",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-messages-rpc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-messages-rpc"
+                ],
+                "filter": {
+                    "name": "pallet-messages-rpc",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-msa-rpc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-msa-rpc"
+                ],
+                "filter": {
+                    "name": "pallet-msa-rpc",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug unit tests in library 'pallet-schemas-rpc'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--lib",
+                    "--package=pallet-schemas-rpc"
+                ],
+                "filter": {
+                    "name": "pallet-schemas-rpc",
+                    "kind": "lib"
+                }
+            },
+            "args": [],
+            "cwd": "${workspaceFolder}"
+        },
+    ]
+}
