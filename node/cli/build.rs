@@ -1,22 +1,60 @@
 use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_changed};
 
-// NOTE: These checks are commented out temporarily and will be addressed in a future issue/PR
-//
-// Don't allow both frequency and all-frequency-features so that we always have a good mainnet runtime
-// #[cfg(all(
-// 	feature = "frequency",
-// 	feature = "all-frequency-features",
-// 	not(feature = "runtime-benchmarks")
-// ))]
-// compile_error!("feature \"frequency\" and feature \"all-frequency-features\" cannot be enabled at the same time");
+#[cfg(not(any(
+	feature = "frequency",
+	feature = "frequency-rococo-local",
+	feature = "frequency-no-relay",
+	feature = "frequency-rococo-testnet"
+)))]
+compile_error!(
+	r#"You must enable one of these features:
+- Mainnet: "frequency"
+- Frequency Rococo: "frequency-rococo-testnet"
+- Local: "frequency-rococo-local"
+- No Relay: "frequency-no-relay",
+- All: "frequency-lint-check"#
+);
 
-// Don't allow both frequency-no-relay and all-frequency-features so that we always have a good mainnet runtime
-// #[cfg(all(
-// 	feature = "frequency",
-// 	feature = "all-frequency-features",
-// 	not(feature = "runtime-benchmarks")
-// ))]
-// compile_error!("feature \"frequency-no-relay\" and feature \"all-frequency-features\" cannot be enabled at the same time");
+// Don't allow more than one main feature (except for benchmark/lint/check) so that we always have a good mainnet runtime
+#[cfg(all(
+	not(feature = "frequency-lint-check"),
+	feature = "frequency",
+	any(
+		feature = "frequency-no-relay",
+		feature = "frequency-rococo-local",
+		feature = "frequency-rococo-testnet"
+	)
+))]
+compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
+
+#[cfg(all(
+	not(feature = "frequency-lint-check"),
+	feature = "frequency-no-relay",
+	any(
+		feature = "frequency",
+		feature = "frequency-rococo-local",
+		feature = "frequency-rococo-testnet"
+	)
+))]
+compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
+
+#[cfg(all(
+	not(feature = "frequency-lint-check"),
+	feature = "frequency-rococo-local",
+	any(
+		feature = "frequency",
+		feature = "frequency-no-relay",
+		feature = "frequency-rococo-testnet"
+	)
+))]
+compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
+
+#[cfg(all(
+	not(feature = "frequency-lint-check"),
+	feature = "frequency-rococo-testnet",
+	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-rococo-local",)
+))]
+compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 fn main() {
 	generate_cargo_keys();

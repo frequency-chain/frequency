@@ -196,7 +196,7 @@ function run_benchmark() {
 
 if [[ ${skip_build} == false ]]
 then
-  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,all-frequency-features --workspace"
+  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
   echo ${CMD}
   ${CMD} || exit_err
 fi

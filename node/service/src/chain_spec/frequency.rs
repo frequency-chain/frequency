@@ -444,8 +444,8 @@ fn frequency_genesis(
 		aura: Default::default(),
 		aura_ext: Default::default(),
 		parachain_system: Default::default(),
-		// SUDO removed Jan 2023, but needed when testing and checking with all-frequency-features
-		#[cfg(any(not(feature = "frequency"), feature = "all-frequency-features"))]
+		// SUDO removed Jan 2023, but needed when testing and checking with frequency-lint-check
+		#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 		sudo: Default::default(),
 		schemas: Default::default(),
 		time_release: Default::default(),
