@@ -239,6 +239,12 @@ integration-test-load:
 integration-test-load-only:
 	./scripts/run_integration_tests.sh -s load
 
+integration-test-rococo:
+	./scripts/run_integration_tests.sh -c frequency_rococo
+
+integration-test-local-relay:
+	./scripts/run_integration_tests.sh -c local_relay
+
 .PHONY: try-runtime
 try-runtime:
 	cargo run --release --features frequency-lint-check,try-runtime try-runtime --help

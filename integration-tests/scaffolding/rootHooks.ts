@@ -1,18 +1,28 @@
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { createKeys } from "./apiConnection";
-import { devAccounts } from "./helpers";
+import { devAccounts, rococoAccounts } from "./helpers";
 
 export let EXISTENTIAL_DEPOSIT: bigint;
 
 exports.mochaHooks = {
     async beforeAll() {
         await ExtrinsicHelper.initialize();
-        for (const uri of ["//Alice", "//Bob", "//Charlie", "//Dave", "//Eve", "//Ferdie"]) {
-            devAccounts.push({
-                uri,
-                keys: createKeys(uri),
-            });
+
+        if (process.env.CHAIN_ENVIRONMENT == "rococo") {
+            const seed_phrase = "Place holder for seed phrase";
+            rococoAccounts.push({
+                uri: "RococoTestRunnerAccount",
+                keys: createKeys(seed_phrase),
+        });
+        } else {
+            for (const uri of ["//Alice", "//Bob", "//Charlie", "//Dave", "//Eve", "//Ferdie"]) {
+                devAccounts.push({
+                    uri,
+                    keys: createKeys(uri),
+                });
+            }
         }
+
 
         EXISTENTIAL_DEPOSIT = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt();
     },
