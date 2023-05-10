@@ -1,5 +1,5 @@
 //! Frequency CLI library.
-use std::path::PathBuf;
+use std::{path::PathBuf, str::FromStr};
 
 use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
 
@@ -49,6 +49,29 @@ pub enum Subcommand {
 	ExportRuntimeVersion(ExportRuntimeVersionCmd),
 }
 
+/// Block authoring scheme to be used by the dev service.
+#[derive(Debug, Copy, Clone)]
+pub enum SealingMode {
+	/// Author a block immediately upon receiving a transaction into the transaction pool
+	Instant,
+	/// Author a block upon receiving an RPC command
+	Manual,
+	/// Author blocks at a regular interval specified in seconds
+	Interval,
+}
+
+impl FromStr for SealingMode {
+	type Err = String;
+
+	fn from_str(s: &str) -> Result<Self, Self::Err> {
+		match s {
+			"instant" => Ok(Self::Instant),
+			"manual" => Ok(Self::Manual),
+			"interval" => Ok(Self::Interval),
+			_ => Err(String::from("")),
+		}
+	}
+}
 #[derive(Debug, clap::Parser)]
 #[clap(
 	propagate_version = true,
@@ -79,19 +102,19 @@ pub struct Cli {
 	/// Instant block sealing
 	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
 	/// Empty blocks can also be formed using the `engine_createBlock` RPC
-	///
-	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
-	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
-	#[clap(long = "instant-sealing")]
-	pub instant_sealing: bool,
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long, default_value = "instant")]
+	pub sealing: SealingMode,
 
-	/// Manual block sealing
-	/// Blocks are only formed using the `engine_createBlock` RPC
-	///
-	/// Can only be used with frequency-no-relay and frequency-rococo-local feature flags
-	#[cfg(any(feature = "frequency-no-relay", feature = "frequency-rococo-local"))]
-	#[clap(long = "manual-sealing")]
-	pub manual_sealing: bool,
+	/// Interval in seconds for interval sealing.
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long, default_value = "120")]
+	pub sealing_interval: u16,
+
+	/// Whether to create empty blocks in manual and interval sealing modes.
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long)]
+	pub create_empty_blocks: bool,
 }
 
 #[derive(Debug)]
