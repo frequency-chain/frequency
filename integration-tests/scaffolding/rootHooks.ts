@@ -7,7 +7,7 @@ export let EXISTENTIAL_DEPOSIT: bigint;
 exports.mochaHooks = {
     async beforeAll() {
         await ExtrinsicHelper.initialize();
-        let default_source;
+
         if (process.env.CHAIN_ENVIRONMENT == "rococo") {
             const seed_phrase = "Place holder for seed phrase";
             rococoAccounts.push({

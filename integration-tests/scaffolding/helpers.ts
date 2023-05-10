@@ -111,21 +111,20 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
+export function getDefaultFundingSource() {
+  return process.env.CHAIN_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
+}
+
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
 export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, source?: KeyringPair, nonce?: number): Promise<KeyringPair> {
-  let default_source;
-  if (process.env.CHAIN_ENVIRONMENT == "rococo") {
-    default_source = rococoAccounts[0];
-  } else {
-    default_source = devAccounts[0];
-  }
+  const default_funding_source = getDefaultFundingSource();
   const keypair = createKeys(keyName);
 
   // Transfer funds from source (usually pre-funded dev account) to new account
-  await fundKeypair((source || default_source.keys), keypair, amount, nonce);
+  await fundKeypair((source || default_funding_source.keys), keypair, amount, nonce);
 
   return keypair;
 }
