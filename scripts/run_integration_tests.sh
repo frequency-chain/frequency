@@ -30,49 +30,50 @@ function cleanup () {
 
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
-TEST_AGAINST_FREQUENCY_ROCOCO=0
-TEST_AGAINST_LOCAL_RELAY=0
+CHAIN="local_instant_sealing"
 
 trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
 trap 'cleanup INT' INT
 
-while getopts "srl" OPTNAME
+while getopts "sc:" OPTNAME
 do
     case "${OPTNAME}" in
         "s")
             SKIP_JS_BUILD=1
         ;;
-        "r")
-            TEST_AGAINST_FREQUENCY_ROCOCO=1
-        ;;
-        "l")
-            TEST_AGAINST_LOCAL_RELAY=1
+        "c")
+            CHAIN=$OPTARG
         ;;
     esac
 done
 shift $((OPTIND-1))
 
-NPM_RUN_COMMAND="test"
-BLOCK_SEALING="instant"
+case "${CHAIN}" in
+    "local_instant_sealing")
+        PROVIDER_URL="ws://127.0.0.1:9944"
+        CHAIN_ENVIRONMENT="local"
+        BLOCK_SEALING="instant"
+        NPM_RUN_COMMAND="test"
 
-if [ $TEST_AGAINST_FREQUENCY_ROCOCO == 1 ]; then
-    PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
-    NPM_RUN_COMMAND="test:relay"
-    CHAIN_ENVIRONMENT="rococo"
-elif [ $TEST_AGAINST_LOCAL_RELAY == 1 ]; then
-    PROVIDER_URL="ws://127.0.0.1:9944"
-    NPM_RUN_COMMAND="test:relay"
-    CHAIN_ENVIRONMENT="local"
-else
-    PROVIDER_URL="ws://127.0.0.1:9944"
-    CHAIN_ENVIRONMENT="local"
-
-    if [[ "$1" == "load" ]]; then
-        NPM_RUN_COMMAND="test:load"
-        BLOCK_SEALING="manual"
-    fi
-fi
+        if [[ "$1" == "load" ]]; then
+            NPM_RUN_COMMAND="test:load"
+            BLOCK_SEALING="manual"
+        fi
+    ;;
+    "local_relay")
+        PROVIDER_URL="ws://127.0.0.1:9944"
+        NPM_RUN_COMMAND="test:relay"
+        CHAIN_ENVIRONMENT="local"
+        BLOCK_SEALING="instant"
+    ;;
+    "frequency_rococo")
+        PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
+        NPM_RUN_COMMAND="test:relay"
+        CHAIN_ENVIRONMENT="rococo"
+        BLOCK_SEALING="instant"
+    ;;
+esac
 
 echo "The integration test output will be logged on this console"
 
