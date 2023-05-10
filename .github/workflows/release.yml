@@ -152,12 +152,16 @@ jobs:
       matrix:
         # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
         os: [[self-hosted, Linux, X64, build]]
-        network: [local, rococo, mainnet]
+        network: [dev, local, rococo, mainnet]
         include:
+          - network: dev
+            spec: frequency-no-relay
+            build-profile: release
+            release-file-name-prefix: frequency-dev
           - network: local
             spec: frequency-rococo-local
             build-profile: release
-            release-file-name-prefix: frequency-local
+            release-file-name-prefix: frequency-rococo-local
           - network: rococo
             spec: frequency-rococo-testnet
             build-profile: production
@@ -389,7 +393,7 @@ jobs:
       CHAIN_SPEC: frequency-rococo-local
       BUILD_PROFILE: release
       BIN_DIR: target/release
-      RELEASE_FILENAME_PREFIX: frequency-local
+      RELEASE_FILENAME_PREFIX: frequency-rococo-local
       ARCH: amd64
     runs-on: ubuntu-20.04
     steps:
@@ -423,7 +427,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
           chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment

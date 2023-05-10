@@ -34,7 +34,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 			ChainIdentity::Frequency
 		} else if self.id() == "frequency-rococo" {
 			ChainIdentity::FrequencyRococo
-		} else if self.id() == "frequency-local" {
+		} else if self.id() == "frequency-rococo-local" {
 			ChainIdentity::FrequencyLocal
 		} else if self.id() == "dev" {
 			ChainIdentity::FrequencyDev
@@ -72,10 +72,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"dev" | "frequency-no-relay" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
 		#[cfg(feature = "frequency-rococo-local")]
-		"frequency-local" | "frequency-rococo-local" =>
+		"frequency-rococo-local" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-rococo-testnet")]
-		"frequency-rococo" | "rococo" | "testnet" =>
+		"frequency-rococo-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
 			if path.is_empty() {
