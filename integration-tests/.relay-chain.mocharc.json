@@ -1,0 +1,16 @@
+{
+    "exit": true,
+    "extension": [
+        "ts"
+    ],
+    "parallel": false,
+    "require": [
+        "scaffolding/rootHooks.ts",
+        "scaffolding/extrinsicHelpers.ts"
+    ],
+    "loader": "ts-node/esm",
+    "spec": [
+        "./{,!(node_modules|load-tests)/**}/createMsa.test.ts"
+    ],
+    "timeout": 200000
+}

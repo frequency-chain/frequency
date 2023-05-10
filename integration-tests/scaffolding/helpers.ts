@@ -18,12 +18,13 @@ import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 
-export interface DevAccount {
+export interface Account {
   uri: string,
   keys: KeyringPair,
 }
 
-export let devAccounts: DevAccount[] = [];
+export let devAccounts: Account[] = [];
+export let rococoAccounts: Account[] = [];
 
 export type Sr25519Signature = { Sr25519: `0x${string}` }
 
@@ -52,7 +53,7 @@ export async function getBlockNumber(): Promise<number> {
   return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
 }
 
-export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 5, blockNumber?: number): Promise<AddKeyData> {
+export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 100, blockNumber?: number): Promise<AddKeyData> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
     expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
@@ -110,15 +111,20 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
+export function getDefaultFundingSource() {
+  return process.env.CHAIN_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
+}
+
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, devAccount?: KeyringPair, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, source?: KeyringPair, nonce?: number): Promise<KeyringPair> {
+  const default_funding_source = getDefaultFundingSource();
   const keypair = createKeys(keyName);
 
   // Transfer funds from source (usually pre-funded dev account) to new account
-  await fundKeypair((devAccount || devAccounts[0].keys), keypair, amount, nonce);
+  await fundKeypair((source || default_funding_source.keys), keypair, amount, nonce);
 
   return keypair;
 }
