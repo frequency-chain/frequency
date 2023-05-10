@@ -107,6 +107,19 @@ describe("Add Offchain Message", function () {
         }
     });
 
+    it("should successfully add onchain message", async function () {
+        const f = ExtrinsicHelper.addOnChainMessage(keys, dummySchemaId, "0xdeadbeef");
+        const [event] = await f.fundAndSend();
+
+        assert.notEqual(event, undefined, "should have returned a MessagesStored event");
+        if (event && f.api.events.messages.MessagesStored.is(event)) {
+            messageBlockNumber = event.data.blockNumber;
+            assert.deepEqual(event.data.schemaId, dummySchemaId, 'schema ids should be equal');
+            assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
+            assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
+        }
+    });
+
     it("should successfully retrieve added message and returned CID should have Base32 encoding", async function () {
         const f = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(schemaId, { from_block: starting_block, from_index: 0, to_block: starting_block + 999, page_size: 999 }));
         const response: MessageResponse = f.content[f.content.length - 1];

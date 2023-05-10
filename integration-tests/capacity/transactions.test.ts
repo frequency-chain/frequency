@@ -1,6 +1,7 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Bytes, u64, u16, u128, Vec } from "@polkadot/types";
+import { Bytes, u32, u64, u16, u128, Vec } from "@polkadot/types";
+import { Codec } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
@@ -13,13 +14,19 @@ import {
   generateAddKeyPayload,
   CENTS,
   DOLLARS,
-  createGraphChangeSchema, TokenPerCapacity
+  createGraphChangeSchema,
+  TokenPerCapacity,
+  Sr25519Signature,
+  assertEvent,
+  getCurrentItemizedHash,
+  getCurrentPaginatedHash,
+  getRemainingCapacity,
 } from "../scaffolding/helpers";
-import { firstValueFrom } from "rxjs";
-
-function assertEvent(events: EventMap, eventName: string) {
-    assert(events.hasOwnProperty(eventName));
-}
+import { loadIpfs, getBases } from "../messages/loadIPFS";
+import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
+import { async, firstValueFrom } from "rxjs";
+import { SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 
 describe("Capacity Transactions", function () {
     const FUNDS_AMOUNT: bigint = 200n * DOLLARS;
@@ -45,14 +52,44 @@ describe("Capacity Transactions", function () {
 
             });
 
+            it("successfully pays with Capacity for eligible transaction - addPublicKeytoMSA", async function () {
+                let authorizedKeys: KeyringPair[] = [];
+                let defaultPayload: AddKeyData = {};
+                let payload: AddKeyData;
+                let ownerSig: Sr25519Signature;
+                let newSig: Sr25519Signature;
+                let addKeyData: Codec;
+
+                await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+
+                authorizedKeys.push(await createAndFundKeypair());
+                defaultPayload.msaId = capacityProvider
+                defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
+
+                payload = await generateAddKeyPayload(defaultPayload);
+                addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
+                ownerSig = signPayloadSr25519(capacityKeys, addKeyData);
+                newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
+                const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, payload);
+
+                const [_, chainEvents] = await addPublicKeyOp.payWithCapacity();
+
+                assertEvent(chainEvents, "msa.PublicKeyAdded");
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+            });
+
+            // REVIEW: No existing e2e test for createSponsoredAccountWithDelegation
+            it("should test pays with Capacity for eligible transaction - createSponsoredAccountWithDelegation");
+
             it("successfully pays with Capacity for eligible transaction - grantDelegation", async function () {
                 await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
 
                 let delegatorKeys = createKeys("delegatorKeys");
                 await fundKeypair(devAccounts[0].keys, delegatorKeys, 100n * DOLLARS);
 
-                let [MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
-                assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
+                let [_, MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+                assertEvent(MsaCreatedEvent, "msa.MsaCreated");
+                // assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
 
                 const payload = await generateDelegationPayload({
                     authorizedMsaId: capacityProvider,
@@ -87,6 +124,159 @@ describe("Capacity Transactions", function () {
                 assert.equal(capacityStaked.totalTokensStaked, amountStaked);
                 assert.equal(capacityStaked.totalCapacityIssued, amountStaked/TokenPerCapacity);
             });
+
+            it("successfully pays with Capacity for eligible transaction - addIPFSMessage", async function () {
+                // REVIEW: need more staking?
+                await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+                // Create a schema for IPFS
+                const createSchema = ExtrinsicHelper.createSchema(capacityKeys, PARQUET_BROADCAST, "Parquet", "IPFS");
+                let [event] = await createSchema.fundAndSend();
+                if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+                    [, schemaId] = event.data;
+                }
+                const ipfs_payload_data = "This is a test of Frequency.";
+                const ipfs_payload_len = ipfs_payload_data.length + 1;
+                let ipfs_node: any;
+                let ipfs_cid_64: string;
+                ipfs_node = await loadIpfs();
+                const { base64, base32 } = await getBases();
+                const file = await ipfs_node.add({ path: 'integration_test.txt', content: ipfs_payload_data }, { cidVersion: 1, onlyHash: true });
+                ipfs_cid_64 = file.cid.toString(base64);
+                const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, schemaId, ipfs_cid_64, ipfs_payload_len);
+
+                const [_, chainEvents] = await call.payWithCapacity();
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                assertEvent(chainEvents, "messages.MessagesStored");
+            });
+
+            it("successfully pays with Capacity for eligible transaction - addOnchainMessage", async function () {
+                // REVIEW: need more staking?
+                await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+                // Create a dummy on-chain schema
+                let dummySchemaId: u16;
+                const createDummySchema = ExtrinsicHelper.createSchema(
+                    capacityKeys, 
+                    { type: "record", name: "Dummy on-chain schema", fields: [] }, 
+                    "AvroBinary", 
+                    "OnChain"
+                );
+                const [dummySchemaEvent] = await createDummySchema.fundAndSend();
+                if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
+                    [, dummySchemaId] = dummySchemaEvent.data;
+                }
+                else {
+                    assert.fail("should have returned a SchemaCreated event");
+                }
+                const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, "0xdeadbeef");
+                const [_, chainEvents] = await call.payWithCapacity();
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                assertEvent(chainEvents, "messages.MessagesStored");
+            });
+
+            it("successfully pays with Capacity for eligible transaction - applyItemActions", async function () {
+                // REVIEW: need more staking?
+                await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+                // Create a schema to allow delete actions
+                let schemaId_deletable: SchemaId;
+                const createSchemaDeletable = ExtrinsicHelper.createSchema(capacityKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+                const [eventDeletable] = await createSchemaDeletable.fundAndSend();
+                if (eventDeletable && createSchemaDeletable.api.events.schemas.SchemaCreated.is(eventDeletable)) {
+                    schemaId_deletable = eventDeletable.data.schemaId;
+                }
+                else {
+                    assert.fail("setup should populate schemaId");
+                }
+
+                // Add and update actions
+                let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+
+                const add_action = {
+                    "Add": payload_1
+                }
+
+                let payload_2 = new Bytes(ExtrinsicHelper.api.registry, "Hello World Again From Frequency");
+
+                const update_action = {
+                    "Add": payload_2
+                }
+
+                const target_hash = await getCurrentItemizedHash(capacityProvider, schemaId_deletable);
+
+                let add_actions = [add_action, update_action];
+                const call = ExtrinsicHelper.applyItemActions(capacityKeys, schemaId_deletable, capacityProvider, add_actions, target_hash);
+                const [pageUpdateEvent, chainEvents] = await call.payWithCapacity();
+                assertEvent(chainEvents, "system.ExtrinsicSuccess");
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                // REVIEW: Is this event correct?
+                assert.notEqual(pageUpdateEvent, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+ 
+            });
+
+            // REVIEW: No existing e2e test for createSponsoredAccountWithDelegation
+            it("successfully pays with Capacity for eligible transaction - upsertPage; deletePage", async function () {
+                // REVIEW: need more staking?
+                await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+
+                // Create a schema for Paginated PayloadLocation
+                const createSchema = ExtrinsicHelper.createSchema(capacityKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+                const [event] = await createSchema.fundAndSend();
+                if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+                    schemaId = event.data.schemaId;
+                }
+                assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+
+                let page_id = 0;
+                let target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id)
+
+                // Add and update actions
+                const payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+                let call = ExtrinsicHelper.upsertPage(capacityKeys, schemaId, capacityProvider, page_id, payload_1, target_hash);
+                let [pageUpdateEvent1, chainEvents] = await call.payWithCapacity();
+                assertEvent(chainEvents, "system.ExtrinsicSuccess");
+                assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
+
+                // Remove the page
+                target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id)
+                call = ExtrinsicHelper.removePage(capacityKeys, schemaId, capacityProvider, page_id, target_hash);
+                let [pageRemove, chainEvents2] = await call.payWithCapacity();
+                assertEvent(chainEvents2, "system.ExtrinsicSuccess");
+                assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
+                // assertEvent(chainEvents2, "PaginatedPageDeleted");
+                assert.notEqual(pageRemove, undefined, "should have returned an event");
+            });
+
+
+            it("successfully pays with Capacity for eligible transaction - deletePage", async function () {
+                // REVIEW: need more staking?
+                // await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
+
+                // // Create a schema for Paginated PayloadLocation
+                // const createSchema = ExtrinsicHelper.createSchema(capacityKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+                // const [event] = await createSchema.fundAndSend();
+                // if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+                //     schemaId = event.data.schemaId;
+                // }
+                // assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+
+                // // Remove the page
+                // let page_id = 0;
+                // let target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id)
+                // let call = ExtrinsicHelper.removePage(capacityKeys, schemaId, capacityProvider, page_id, target_hash);
+                // const [pageRemove, chainEvents] = await call.payWithCapacity();
+                // assertEvent(chainEvents, "system.ExtrinsicSuccess");
+                // assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+                // assertEvent(chainEvents, "PaginatedPageDeleted");
+                // assert.notEqual(pageRemove, undefined, "should have returned an event");
+            });
+
+            it("successfully pays with Capacity for eligible transaction - applyItemActionsWithSignature");
+
+            it("successfully pays with Capacity for eligible transaction - upsertPageWithSignature");
+
+            it("successfully pays with Capacity for eligible transaction - deletePageWithSignature");
+
+            it("successfully pays with Capacity for eligible transaction - claimHandle");
 
             // When a user attempts to pay for a non-capacity transaction with Capacity,
             // it should error and drop the transaction from the transaction-pool.
