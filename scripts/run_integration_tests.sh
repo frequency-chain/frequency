@@ -72,6 +72,9 @@ case "${CHAIN}" in
         NPM_RUN_COMMAND="test:relay"
         CHAIN_ENVIRONMENT="rococo"
         BLOCK_SEALING="instant"
+
+        read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
+
     ;;
 esac
 
@@ -144,4 +147,5 @@ npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
-CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
+
+CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT FUNDING_ACCOUNT_SEED_PHRASE=$FUNDING_ACCOUNT_SEED_PHRASE WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
