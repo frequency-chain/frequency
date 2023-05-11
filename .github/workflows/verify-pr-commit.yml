@@ -321,14 +321,15 @@ jobs:
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
             features: frequency-rococo-testnet
           - network: mainnet
             build-profile: production
             package: frequency-runtime
             runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
             features: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -338,8 +339,8 @@ jobs:
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
-          echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
-            ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
+          echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
+            ${{matrix.runtime-dir}}/src/lib.rs)" >> $GITHUB_ENV
       - name: Validate Extracted Version
         shell: bash
         run: |
@@ -349,6 +350,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
+          echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip WASM builds during development/testing
       # - name: Cache WASM for Testing
       #   id: cache-wasm
@@ -364,11 +366,14 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
+      - name: Check Deterministic WASM Build Exists
+        if: steps.cache-wasm.outputs.cache-hit != 'true'
+        run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
 
   verify-js-api-augment:
     needs: build-binaries
