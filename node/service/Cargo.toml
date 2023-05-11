@@ -21,6 +21,7 @@ serde = { version = "1.0.151", features = ["derive"] }
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
 common-runtime = { path = "../../runtime/common" }
+cli-opt = { default-features = false, path = "../cli-opt" }
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

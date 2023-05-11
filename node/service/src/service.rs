@@ -4,6 +4,8 @@
 // std
 use std::{sync::Arc, time::Duration};
 
+use cli_opt::SealingMode;
+
 use cumulus_client_cli::CollatorOptions;
 use frequency_runtime::RuntimeApi;
 
@@ -459,9 +461,9 @@ pub async fn start_parachain_node(
 /// This function is called when --chain dev --instant-sealing is passed.
 #[allow(clippy::expect_used)]
 #[cfg(feature = "frequency-no-relay")]
-pub fn frequency_dev_instant_sealing(
+pub fn frequency_dev_sealing(
 	config: Configuration,
-	is_instant: bool,
+	sealing_mode: SealingMode,
 ) -> Result<TaskManager, sc_service::error::Error> {
 	let parachain_config = prepare_node_config(config);
 
@@ -530,7 +532,7 @@ pub fn frequency_dev_instant_sealing(
 		let import_stream = pool
 			.validated_pool()
 			.import_notification_stream()
-			.filter(move |_| futures::future::ready(is_instant))
+			.filter(move |_| futures::future::ready(sealing_mode == SealingMode::Instant))
 			.map(|_| sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
 				create_empty: true,
 				finalize: true,
@@ -575,7 +577,7 @@ pub fn frequency_dev_instant_sealing(
 			});
 		// we spawn the future on a background thread managed by service.
 		task_manager.spawn_essential_handle().spawn_blocking(
-			if is_instant { "instant-seal" } else { "manual-seal" },
+			if sealing_mode == SealingMode::Instant { "instant-seal" } else { "manual-seal" },
 			Some("block-authoring"),
 			authorship_future,
 		);
