@@ -283,7 +283,3 @@ export async function getRemainingCapacity(providerId: u64): Promise<u128> {
   const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
   return capacityStaked.remainingCapacity;
 }
-// export async function getCapacityFee(providerId: u64): Promise<u128> {
-//   const capacityFee = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
-//   return capacityStaked.;
-// }

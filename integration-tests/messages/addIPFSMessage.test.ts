@@ -53,6 +53,10 @@ describe("Add Offchain Message", function () {
         }
     })
 
+    after(async function () {
+        await ipfs_node.stop();
+    });
+
     it('should fail if insufficient funds', async function () {
         await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend(), {
             message: /Inability to pay some fees/,
@@ -126,4 +130,5 @@ describe("Add Offchain Message", function () {
         const cid = Buffer.from(response.cid.unwrap()).toString();
         assert.equal(cid, ipfs_cid_32, 'returned CID should match base32-encoded CID');
     })
+
 });
