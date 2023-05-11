@@ -328,7 +328,6 @@ jobs:
             runtime-dir: runtime/frequency
             features: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -364,8 +363,8 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          srtool build \
-            --default-features="on-chain-release-build,no-metadata-docs,${{matrix.features}}" \
+          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
             --root
