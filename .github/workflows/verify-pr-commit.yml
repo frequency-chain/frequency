@@ -338,8 +338,8 @@ jobs:
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
-          echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
-            ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
+          echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
+            ${{matrix.runtime-dir}}/src/lib.rs)" >> $GITHUB_ENV
       - name: Validate Extracted Version
         shell: bash
         run: |
