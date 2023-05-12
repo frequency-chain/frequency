@@ -126,6 +126,7 @@ describe("Capacity Transactions", function () {
             });
 
             describe("when capacity eligible transaction is from the messages pallet", async function () {
+                this.timeout(5000); // Override default timeout of 500ms to allow for IPFS node startup
                 beforeEach(async function () {
                     await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
                 });
