@@ -87,6 +87,7 @@ pub struct Cli {
 
 	#[cfg(feature = "frequency-no-relay")]
 	#[clap(long = "manual-sealing", help = "deprecated")]
+
 	pub manual_sealing: bool,
 
 	/// Instant block sealing

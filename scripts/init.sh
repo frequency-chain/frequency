@@ -54,7 +54,7 @@ start-frequency)
   fi
 
   ./scripts/run_collator.sh \
-    --chain="frequency-local" --alice \
+    --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -85,6 +85,36 @@ start-frequency-instant)
     --dev \
     -lruntime=debug \
     --sealing=instant \
+    --wasm-execution=compiled \
+    --execution=wasm \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --tmp
+  ;;
+
+start-frequency-native)
+  printf "\nBuilding Frequency with runtime instant sealing, natvie execution ...\n"
+  cargo build --features frequency-no-relay
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/debug/frequency \
+    --dev \
+    -lruntime=debug \
+    --instant-sealing \
     --wasm-execution=compiled \
     --execution=native \
     --no-telemetry \
@@ -146,7 +176,7 @@ start-frequency-container)
   frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
-    --chain="frequency-local" --alice \
+    --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -176,11 +206,11 @@ onboard-frequency-rococo-local)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-local")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-local" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-rococo-local")
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-local")
-      ./target/release/frequency export-genesis-wasm --chain="frequency-local" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-rococo-local")
+      ./target/release/frequency export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     fi
 
   echo "WASM path:" "${wasm_location}"

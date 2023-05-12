@@ -19,7 +19,7 @@ case $build_step in
   rococo-2000)
     mkdir -p ./res/genesis/local
     echo "Building Spec for  frequency rococo localnet paraid=2000"
-    $PWD/target/$profile/frequency build-spec --disable-default-bootnode --chain=frequency-local > ./res/genesis/local/frequency-spec-rococo.json
+    $PWD/target/$profile/frequency build-spec --disable-default-bootnode --chain=frequency-rococo-local > ./res/genesis/local/frequency-spec-rococo.json
     sed -i.bu "s/\"parachainId\": 2000/\"parachainId\": $parachain_id/g" ./res/genesis/local/frequency-spec-rococo.json
     sed -i.bu "s/\"para_id\": 2000/\"para_id\": $parachain_id/g" ./res/genesis/local/frequency-spec-rococo.json
     $PWD/target/$profile/frequency build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-rococo.json > ./res/genesis/local/rococo-local-frequency-2000-raw.json
