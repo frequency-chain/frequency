@@ -465,7 +465,7 @@ pub fn frequency_dev_sealing(
 	config: Configuration,
 	sealing_mode: SealingMode,
 ) -> Result<TaskManager, sc_service::error::Error> {
-	log::info!("NO-RELAY MODE with {} sealing", sealing_mode);
+	log::info!("Starting in development mode (no relay chain) with {} sealing.", sealing_mode);
 
 	let parachain_config = prepare_node_config(config);
 
