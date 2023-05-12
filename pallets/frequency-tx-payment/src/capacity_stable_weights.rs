@@ -27,7 +27,7 @@ use sp_std::marker::PhantomData;
 ///   WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
 ///
 ///   Executed Command:
-///     ./scripts/../target/production/frequency
+///     ./scripts/../target/release/frequency
 ///     benchmark
 ///     overhead
 ///     --execution=wasm
