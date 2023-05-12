@@ -11,6 +11,9 @@ clean:
 start:
 	./scripts/init.sh start-frequency-instant
 
+start-native:
+	./scripts/init.sh start-frequency-native
+
 start-relay:
 	./scripts/init.sh start-relay-chain
 

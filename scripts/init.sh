@@ -86,6 +86,36 @@ start-frequency-instant)
     -lruntime=debug \
     --instant-sealing \
     --wasm-execution=compiled \
+    --execution=wasm \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9933)) \
+    --ws-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --ws-external \
+    --rpc-methods=Unsafe \
+    --tmp
+  ;;
+
+start-frequency-native)
+  printf "\nBuilding Frequency with runtime instant sealing, natvie execution ...\n"
+  cargo build --features frequency-no-relay
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/debug/frequency \
+    --dev \
+    -lruntime=debug \
+    --instant-sealing \
+    --wasm-execution=compiled \
     --execution=native \
     --no-telemetry \
     --no-prometheus \
