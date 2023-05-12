@@ -2811,7 +2811,6 @@ dependencies = [
 name = "frequency-cli"
 version = "0.0.0"
 dependencies = [
- "chrono",
  "clap",
  "cli-opt",
  "common-primitives",
