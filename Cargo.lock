@@ -994,6 +994,13 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a2dd5a6fe8c6e3502f568a6353e5273bbb15193ad9a89e457b9970798efbea1"
 
 [[package]]
+name = "cli-opt"
+version = "0.0.0"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "coarsetime"
 version = "0.1.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2805,6 +2812,7 @@ name = "frequency-cli"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "cli-opt",
  "common-primitives",
  "common-runtime",
  "cumulus-client-cli",
@@ -2928,6 +2936,7 @@ name = "frequency-service"
 version = "0.0.0"
 dependencies = [
  "clap",
+ "cli-opt",
  "common-helpers",
  "common-primitives",
  "common-runtime",

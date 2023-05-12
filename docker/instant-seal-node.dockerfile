@@ -49,4 +49,4 @@ ENTRYPOINT ["/frequency/frequency", \
 	]
 
 # Params which can be overriden from CLI
-CMD ["--instant-sealing"]
+CMD ["--sealing=instant"]

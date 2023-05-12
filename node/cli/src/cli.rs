@@ -1,7 +1,12 @@
 //! Frequency CLI library.
+use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
 use std::path::PathBuf;
 
-use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
+#[cfg(feature = "frequency-no-relay")]
+use std::num::NonZeroU16;
+
+#[cfg(feature = "frequency-no-relay")]
+use cli_opt::SealingMode;
 
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
@@ -76,18 +81,34 @@ pub struct Cli {
 	#[clap(raw = true)]
 	pub relay_chain_args: Vec<String>,
 
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long = "instant-sealing", help = "deprecated")]
+	pub instant_sealing: bool,
+
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long = "manual-sealing", help = "deprecated")]
+	pub manual_sealing: bool,
+
 	/// Instant block sealing
 	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
 	/// Empty blocks can also be formed using the `engine_createBlock` RPC
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long = "instant-sealing")]
-	pub instant_sealing: bool,
+	#[clap(long, value_enum, help = "The sealing mode", default_value_t=SealingMode::Instant)]
+	pub sealing: SealingMode,
 
-	/// Manual block sealing
-	/// Blocks are only formed using the `engine_createBlock` RPC
+	/// Interval in seconds for interval sealing.
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long = "manual-sealing")]
-	pub manual_sealing: bool,
+	#[clap(long, help = "The interval in seconds", default_value = "120", value_name = "SECONDS")]
+	pub sealing_interval: NonZeroU16,
+
+	/// Whether to create empty blocks in manual and interval sealing modes.
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(
+		long,
+		default_value = "true",
+		help = "Allows empty blocks to be created when sealing in manual and interval modes"
+	)]
+	pub sealing_allow_empty_blocks: bool,
 }
 
 #[derive(Debug)]

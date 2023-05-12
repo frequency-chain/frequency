@@ -25,6 +25,8 @@ frequency-service = { package = "frequency-service", path = "../service", defaul
 pallet-msa = { package = "pallet-msa", path = "../../pallets/msa", default-features = false }
 pallet-frequency-tx-payment = { package = "pallet-frequency-tx-payment", path = "../../pallets/frequency-tx-payment", default-features = false }
 pallet-handles = { package = "pallet-handles", path = "../../pallets/handles", default-features = false }
+cli-opt = { default-features = false, path = "../cli-opt" }
+
 # Substrate
 frame-benchmarking-cli = { git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.36" }
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }

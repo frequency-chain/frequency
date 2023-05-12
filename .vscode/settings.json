@@ -12,5 +12,6 @@
         "jacogr",
         "lruntime",
         "pkill"
-    ]
+    ],
+    "rust-analyzer.showUnlinkedFileNotification": false
 }
