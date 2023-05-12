@@ -1,7 +1,11 @@
 //! Frequency CLI library.
 use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
-use std::{num::NonZeroU16, path::PathBuf};
+use std::path::PathBuf;
 
+#[cfg(feature = "frequency-no-relay")]
+use std::num::NonZeroU16;
+
+#[cfg(feature = "frequency-no-relay")]
 use cli_opt::SealingMode;
 
 /// Sub-commands supported by the collator.
