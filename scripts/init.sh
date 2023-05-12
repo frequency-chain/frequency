@@ -66,7 +66,7 @@ start-frequency)
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
-    --state-cache-size 0 \
+    --trie-cache-size 0 \
   ;;
 
 start-frequency-instant)
@@ -188,7 +188,7 @@ start-frequency-container)
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
-    --state-cache-size 0 \
+    --trie-cache-size 0 \
   ;;
 
 register-frequency-rococo-local)
