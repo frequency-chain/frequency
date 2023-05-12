@@ -96,15 +96,8 @@ jobs:
       BRANCH_NAME: main
     runs-on: ubuntu-20.04
     steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -123,8 +116,7 @@ jobs:
         with:
           result-encoding: string
           script: return `ghcr.io/${context.repo.owner.toLowerCase()}/${context.repo.repo.toLowerCase()}`
-      - name: Build and push prod docker image
-        id: docker_build
+      - name: Build and Push Docker Image
         uses: docker/build-push-action@v4
         with:
           context: tools/ci/docker

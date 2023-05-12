@@ -297,8 +297,8 @@ jobs:
           toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
-          echo "RUNTIME_SPEC_VERSION=$(sed -nr 's/spec_version:\s*([0-9]+),/\1/p' \
-            ${{matrix.runtime-dir}}/src/lib.rs | tr -d '[:space:]')" >> $GITHUB_ENV
+          echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
+            ${{matrix.runtime-dir}}/src/lib.rs)" >> $GITHUB_ENV
       - name: Validate Extracted Version
         shell: bash
         run: |
@@ -328,7 +328,7 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          RUST_LOG=debug srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
