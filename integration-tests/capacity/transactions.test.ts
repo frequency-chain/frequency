@@ -9,7 +9,7 @@ import { AddKeyData, AddProviderPayload, ExtrinsicHelper } from "../scaffolding/
 import { loadIpfs, getBases } from "../messages/loadIPFS";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import { firstValueFrom } from "rxjs";
-import { SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 import {
     devAccounts, createKeys, createAndFundKeypair, createMsaAndProvider,
@@ -127,7 +127,10 @@ describe("Capacity Transactions", function () {
 
             describe("when capacity eligible transaction is from the messages pallet", async function () {
                 this.timeout(5000); // Override default timeout of 500ms to allow for IPFS node startup
+                let starting_block: number;
+
                 beforeEach(async function () {
+                    starting_block = (await firstValueFrom(ExtrinsicHelper.api.rpc.chain.getHeader())).number.toNumber();
                     await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
                 });
 
@@ -174,6 +177,16 @@ describe("Capacity Transactions", function () {
                     const [_, chainEvents] = await call.payWithCapacity();
                     assertEvent(chainEvents, "capacity.CapacityWithdrawn");
                     assertEvent(chainEvents, "messages.MessagesStored");
+                    const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
+                            dummySchemaId,
+                            { from_block: starting_block,
+                            from_index: 0,
+                            to_block: starting_block + 999,
+                            page_size: 999
+                            }
+                        ));
+                    const response: MessageResponse = get.content[get.content.length - 1];
+                    assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
                 });
             });
 
