@@ -81,6 +81,14 @@ pub struct Cli {
 	#[clap(raw = true)]
 	pub relay_chain_args: Vec<String>,
 
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long = "instant-sealing", help = "deprecated")]
+	pub instant_sealing: bool,
+
+	#[cfg(feature = "frequency-no-relay")]
+	#[clap(long = "manual-sealing", help = "deprecated")]
+	pub manual_sealing: bool,
+
 	/// Instant block sealing
 	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
 	/// Empty blocks can also be formed using the `engine_createBlock` RPC
