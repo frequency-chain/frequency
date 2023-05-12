@@ -1,7 +1,7 @@
 UNAME := $(shell uname)
 
 .PHONY: all
-all: start
+all: build
 
 .PHONY: clean
 clean:

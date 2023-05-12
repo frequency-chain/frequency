@@ -54,7 +54,7 @@ start-frequency)
   fi
 
   ./scripts/run_collator.sh \
-    --chain="frequency-local" --alice \
+    --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -146,7 +146,7 @@ start-frequency-container)
   frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
-    --chain="frequency-local" --alice \
+    --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
     --execution=wasm \
@@ -176,11 +176,11 @@ onboard-frequency-rococo-local)
 
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-local")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-local" > $wasm_location
+      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-rococo-local")
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-local")
-      ./target/release/frequency export-genesis-wasm --chain="frequency-local" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-rococo-local")
+      ./target/release/frequency export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     fi
 
   echo "WASM path:" "${wasm_location}"
