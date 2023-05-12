@@ -17,6 +17,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
+- [Security]
 - [Prerequisites](#prerequisites)
   - [Hardware](#hardware)
 - [Build](#build)
@@ -39,6 +40,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 - [Verify Runtime](#verify-runtime)
 - [Local Runtime Upgrade](#local-runtime-upgrade)
 - [Contributing](#contributing)
+- [Security Issue Reporting](#security-issue-reporting)
 - [Additional Resources](#additional-resources)
 - [Miscellaneous](#miscellaneous)
 
@@ -313,6 +315,11 @@ The current scripts follow this process for upgrading locally:
 Interested in contributing?
 Wonderful!
 Please check out [the information here](./CONTRIBUTING.md).
+
+# Security Issue Reporting
+
+Do you know of an on-chain vulnerability (or possible one) that can lead to economic loss, privacy loss, or instability of the network?
+Please report it to [security@frequency.xyz](mailto:security@frequency.xyz)
 
 # Additional Resources
 

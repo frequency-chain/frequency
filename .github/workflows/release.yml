@@ -340,7 +340,7 @@ jobs:
       - name: Install subwasm
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Test WASM file
         if: steps.cache-wasm.outputs.cache-hit != 'true'
@@ -703,7 +703,7 @@ jobs:
           ls -la
       - name: Install subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Get Runtimes Info
         id: get-runtimes-info
