@@ -100,7 +100,7 @@ start-frequency-instant)
   ;;
 
 start-frequency-native)
-  printf "\nBuilding Frequency with runtime instant sealing, natvie execution ...\n"
+  printf "\nBuilding Frequency with runtime instant sealing, native execution ...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -114,7 +114,7 @@ start-frequency-native)
   ./target/debug/frequency \
     --dev \
     -lruntime=debug \
-    --instant-sealing \
+    --sealing=instant \
     --wasm-execution=compiled \
     --execution=native \
     --no-telemetry \
