@@ -84,7 +84,7 @@ start-frequency-instant)
   ./target/debug/frequency \
     --dev \
     -lruntime=debug \
-    --instant-sealing \
+    --sealing=instant \
     --wasm-execution=compiled \
     --execution=native \
     --no-telemetry \
@@ -119,7 +119,7 @@ start-frequency-manual)
   ./target/debug/frequency \
     --dev \
     -lruntime=debug \
-    --manual-sealing \
+    --sealing=manual \
     --wasm-execution=compiled \
     --execution=wasm \
     --no-telemetry \

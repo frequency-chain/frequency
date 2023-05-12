@@ -458,7 +458,7 @@ pub async fn start_parachain_node(
 }
 
 /// Function to start frequency parachain with instant sealing in dev mode.
-/// This function is called when --chain dev --instant-sealing is passed.
+/// This function is called when --chain dev --sealing=instant is passed.
 #[allow(clippy::expect_used)]
 #[cfg(feature = "frequency-no-relay")]
 pub fn frequency_dev_sealing(

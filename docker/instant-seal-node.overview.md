@@ -29,7 +29,7 @@ curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d  
 
 | Argument | Description |
 | --- | --- |
-| `--instant-sealing` | Manual sealing + automatically form a block each time a transaction enters the validated transaction pool |
+| `--sealing=instant` | Manual sealing + automatically form a block each time a transaction enters the validated transaction pool |
 
 ### Run
 
@@ -43,7 +43,7 @@ docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-
 
 | Argument | Description |
 | --- | --- |
-| `--manual-sealing` | Only form a block when `engine_createBlock` RPC is called |
+| `--sealing=manual` | Only form a block when `engine_createBlock` RPC is called |
 | `--help` | See all the options possible |
 
 ### Run

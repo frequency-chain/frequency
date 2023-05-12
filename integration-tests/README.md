@@ -76,7 +76,7 @@ Load Testing
 ==================
 Load tests are located in the `load-tests/` directory.
 The tests in that folder are NOT run with a normal test run.
-It is configured to run in manual-sealing mode only. To run the tests, do the following:
+It is configured to run in manual sealing mode only. To run the tests, do the following:
 
 ```
 make integration-load-test

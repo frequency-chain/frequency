@@ -26,7 +26,7 @@
                 "--dev",
                 "-lruntime=debug",
                 "-lexecutor=trace",
-                "--instant-sealing",
+                "--sealing=instant",
                 "--wasm-execution=compiled",
                 "--execution=native",
                 "--no-telemetry",

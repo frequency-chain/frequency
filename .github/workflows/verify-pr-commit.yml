@@ -620,7 +620,7 @@ jobs:
           ./${{env.BIN_FILENAME}} \
             -lruntime=debug \
             --dev \
-            --instant-sealing \
+            --sealing=instant \
             --wasm-execution=compiled \
             --execution=wasm \
             --no-telemetry \
