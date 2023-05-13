@@ -18,6 +18,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
+mod xcm_config;
+pub use crate::xcm_config::*;
 
 use codec::Encode;
 
@@ -1185,6 +1187,9 @@ construct_runtime!(
 
 		// FRQC Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+
+		// XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Config<T>} = 50,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
