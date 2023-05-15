@@ -63,7 +63,25 @@ jobs:
     strategy:
       matrix:
         # Match this to the real build-binaries job
-        network: [dev, local, rococo, mainnet]
+        include:
+          - network: dev
+            git_branch: ${{github.head_ref}}
+            spec: frequency-no-relay
+            branch_alias: pr
+          - network: local
+            git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
+            branch_alias: pr
+          - network: local
+            git_branch: main
+            spec: frequency-rococo-local
+            branch_alias: main
+          - network: rococo
+            spec: frequency-rococo-testnet
+            branch_alias: pr
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -93,7 +111,9 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    # This job intermittently fails on EKS runners and must be run on standalone until
+    # https://www.pivotaltracker.com/story/show/185045683 is resolved.
+    runs-on: [self-hosted, Linux, X64, build]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     env:
       NETWORK: mainnet
