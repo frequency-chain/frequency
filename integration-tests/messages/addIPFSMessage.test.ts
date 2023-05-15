@@ -2,7 +2,7 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16, u32 } from "@polkadot/types";
 import { loadIpfs, getBases } from "./loadIPFS";
@@ -49,7 +49,7 @@ describe("Add Offchain Message", function () {
         if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
             [, dummySchemaId] = dummySchemaEvent.data;
         }
-    })
+    });
 
     it('should fail if insufficient funds', async function () {
         await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend(), {
@@ -136,5 +136,9 @@ describe("Add Offchain Message", function () {
             const response: MessageResponse = get.content[get.content.length - 1];
             assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
         });
+    });
+
+    after(async function() {
+        ipfs_node.stop();
     });
 });
