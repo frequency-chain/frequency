@@ -3,7 +3,7 @@
 export RUST_LOG=info
 THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
-PROFILE=production
+PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
@@ -51,7 +51,7 @@ function usage() {
         -s            Skip the build step; use existing binary for the current profile
 
         -t <profile>  Use '--profile=<profile>' in the build step & for locating the
-                      resulting binary. Valid targets are: dev,production,release,bench-dev
+                      resulting binary. Valid targets are: dev,release,bench-dev
 
                       (NOTE: using the 'bench-dev' profile will generate a warning in the WASM build.
                        this can safely be ignored. 'bench-dev' is a clone of 'release' and is useful
@@ -106,7 +106,7 @@ while getopts 'dh:p:st:v' flag; do
     t)
       # Set target profile
       case ${OPTARG} in
-        production|release|dev|bench-dev)
+        release|dev|bench-dev)
           PROFILE="${OPTARG}"
           PROFILE_DIR=${PROFILE}
           # For historical reasons, cargo puts dev builds in the "debug" directory
