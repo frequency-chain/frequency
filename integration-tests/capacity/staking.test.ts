@@ -96,12 +96,15 @@ describe("Capacity Staking Tests", function () {
                   // get the current account info
                    let oldStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
 
-                    await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, 1n*CENTS));
+                    await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, tokenMinStake));
 
                     const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-                    assert.equal(capacityStaked.remainingCapacity, capacityMin, "should return a capacityLedger with  remainingCapacity");
-                    assert.equal(capacityStaked.totalTokensStaked, tokenMinStake, "should return a capacityLedger with 50M total staked");
-                    assert.equal(capacityStaked.totalCapacityIssued, capacityMin, "should return a capacityLedger with 1M capacity issued");
+                    assert.equal(capacityStaked.remainingCapacity, capacityMin,
+                        `expected capacityStaked.remainingCapacity = ${capacityMin}, got ${capacityStaked.remainingCapacity}`);
+                    assert.equal(capacityStaked.totalTokensStaked, tokenMinStake,
+                        `expected capacityStaked.totalTokensStaked = ${tokenMinStake}, got ${capacityStaked.totalTokensStaked}`);
+                    assert.equal(capacityStaked.totalCapacityIssued, capacityMin,
+                        `expected capacityStaked.totalCapacityIssued = ${capacityMin}, got ${capacityStaked.totalCapacityIssued}`);
 
                     // Confirm that the tokens were staked in the stakeKeys account using the query API
                     const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
@@ -152,7 +155,7 @@ describe("Capacity Staking Tests", function () {
                         let currentAcctInfo = await ExtrinsicHelper.getAccountInfo(additionalKeys.address);
                         const currentStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
 
-                        await assert.doesNotReject(stakeToProvider(additionalKeys, stakeProviderId, 1n*CENTS));
+                        await assert.doesNotReject(stakeToProvider(additionalKeys, stakeProviderId, tokenMinStake));
 
                         const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
                         assert.equal(
@@ -252,7 +255,7 @@ describe("Capacity Staking Tests", function () {
 
         describe("when account has not staked", async function () {
             it("errors with StakingAccountNotFound", async function () {
-                const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, providerId, 1000000);
+                const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, providerId, tokenMinStake);
                 await assert.rejects(failUnstakeObj.fundAndSend(), { name: "StakingAccountNotFound" });
             });
         });
