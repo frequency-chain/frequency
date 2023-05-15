@@ -82,11 +82,11 @@ pub struct Cli {
 	pub relay_chain_args: Vec<String>,
 
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long = "instant-sealing", help = "deprecated")]
+	#[clap(long = "instant-sealing", help = "Deprecated.  Use --sealing=instant instead.")]
 	pub instant_sealing: bool,
 
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long = "manual-sealing", help = "deprecated")]
+	#[clap(long = "manual-sealing", help = "Deprecated.  Use --sealing=manual instead.")]
 	pub manual_sealing: bool,
 
 	/// Instant block sealing
