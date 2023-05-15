@@ -1,5 +1,4 @@
 use crate::cli::Cli;
-use cli_opt::SealingMode;
 use sc_cli::SubstrateCli;
 use std::process;
 
