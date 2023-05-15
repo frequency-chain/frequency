@@ -22,7 +22,7 @@
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
-// ./scripts/../target/production/frequency
+// ./scripts/../target/release/frequency
 // benchmark
 // pallet
 // --pallet=pallet_handles

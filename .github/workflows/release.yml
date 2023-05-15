@@ -164,11 +164,11 @@ jobs:
             release-file-name-prefix: frequency-rococo-local
           - network: rococo
             spec: frequency-rococo-testnet
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency-rococo
           - network: mainnet
             spec: frequency
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64, build]
             arch: amd64
@@ -252,7 +252,7 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: production
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
@@ -260,7 +260,7 @@ jobs:
             features: frequency-rococo-testnet
             wasm-core-version: frequency-rococo
           - network: mainnet
-            build-profile: production
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
@@ -433,7 +433,7 @@ jobs:
         include:
           - network: mainnet
             spec: frequency
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - os: ubuntu-20.04
             arch: amd64
@@ -480,13 +480,13 @@ jobs:
     name: Compare Metadata
     runs-on: ubuntu-20.04
     env:
-      BIN_DIR: target/production
+      BIN_DIR: target/release
       BIN_FILENAME: frequency.amd64
       TEST_BIN_FILENAME: frequency.amd64
       TEST_DOWNLOAD_DIR: download-test
       REF_BIN_FILENAME: frequency-ref.amd64
       REF_DOWNLOAD_DIR: download-ref
-      OUTPUT_DIR: target/production
+      OUTPUT_DIR: target/release
       FREQUENCY_PROCESS_NAME: frequency
     steps:
       - name: Set Env Vars
@@ -770,10 +770,10 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency-rococo
           - network: mainnet
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - arch: amd64
             docker-platform: linux/amd64
