@@ -7,6 +7,9 @@ members = [
   "runtime/*",
   "common/helpers",
 ]
+exclude = [
+  "xcm-simulator"
+]
 
 [profile.release]
 panic = "unwind"

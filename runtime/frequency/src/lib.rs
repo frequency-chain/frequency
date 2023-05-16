@@ -18,6 +18,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
 };
+
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm_config;
 // pub use crate::xcm_config::*;
 
