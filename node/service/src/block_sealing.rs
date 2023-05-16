@@ -35,6 +35,7 @@ pub fn frequency_dev_sealing(
 		other: (_block_import, mut telemetry, _),
 	} = new_partial(&parachain_config, true)?;
 
+	// Build the network components required for the blockchain.
 	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &parachain_config,
@@ -46,13 +47,15 @@ pub fn frequency_dev_sealing(
 			warp_sync: None,
 		})?;
 
+	// Start off-chain workers if enabled
 	if parachain_config.offchain_worker.enabled {
 		let offchain_workers = Arc::new(sc_offchain::OffchainWorkers::new_with_options(
 			client.clone(),
 			sc_offchain::OffchainWorkerOptions { enable_http_requests: false },
 		));
 
-		// Start the offchain workers to have
+		// Spawn a task to handle off-chain notifications.
+		// This task is responsible for processing off-chain events or data for the blockchain.
 		task_manager.spawn_handle().spawn(
 			"offchain-notifications",
 			None,
@@ -73,7 +76,7 @@ pub fn frequency_dev_sealing(
 	let select_chain = maybe_select_chain
 		.expect("In frequency dev mode, `new_partial` will return some `select_chain`; qed");
 
-	// Is this a block authoring node?
+	// Only block authoring nodes create, seal and finalize blocks
 	let command_sink = if role.is_authority() {
 		let proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
@@ -87,6 +90,8 @@ pub fn frequency_dev_sealing(
 		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
 
 		let pool = transaction_pool.pool().clone();
+
+		// For instant sealing, map new transaction import notifications to the seal block command
 		let import_stream = pool
 			.validated_pool()
 			.import_notification_stream()
@@ -101,6 +106,7 @@ pub fn frequency_dev_sealing(
 		let client_for_cidp = client.clone();
 		let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
+		// Prepare the future for manual sealing block authoring
 		let authorship_future =
 			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
 				block_import,
@@ -133,7 +139,8 @@ pub fn frequency_dev_sealing(
 					}
 				},
 			});
-		// we spawn the future on a background thread managed by service.
+
+		// Spawn a background task for block authoring
 		task_manager.spawn_essential_handle().spawn_blocking(
 			if sealing_mode == SealingMode::Instant { "instant-seal" } else { "manual-seal" },
 			Some("block-authoring"),
@@ -144,6 +151,7 @@ pub fn frequency_dev_sealing(
 		None
 	};
 
+    // Build the RPC
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
