@@ -144,5 +144,4 @@ npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
-set -x
 CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
