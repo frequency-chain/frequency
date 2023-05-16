@@ -4,7 +4,7 @@ use common_primitives::node::Hash;
 pub use futures::stream::StreamExt;
 use sc_service::{Configuration, TaskManager};
 use sp_blockchain::HeaderBackend;
-use std::sync::Arc;
+use std::{sync::Arc, task::Poll};
 
 // Cumulus
 use cumulus_client_consensus_common::ParachainBlockImport;
@@ -92,17 +92,36 @@ pub fn frequency_dev_sealing(
 		let pool = transaction_pool.pool().clone();
 
 		// For instant sealing, set up a stream that automatically creates and finalizes
-		// blocks as soon as transactions arrive.  Thus, it is empty for manual sealing.
-		let import_stream = pool
-			.validated_pool()
-			.import_notification_stream()
-			.filter(move |_| futures::future::ready(sealing_mode == SealingMode::Instant))
-			.map(|_| sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-				create_empty: true,
-				finalize: true,
-				parent_hash: None,
-				sender: None,
-			});
+		// blocks as soon as transactions arrive.
+		// For manual sealing, there's an empty stream.
+		// For interval sealing, set up a timed poll.
+
+		let import_stream = match sealing_mode {
+			SealingMode::Manual => futures::stream::empty().boxed(),
+			SealingMode::Instant =>
+				Box::pin(pool.validated_pool().import_notification_stream().map(|_| {
+					sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+						create_empty: true,
+						finalize: true,
+						parent_hash: None,
+						sender: None,
+					}
+				})),
+			SealingMode::Interval => {
+				let interval = std::time::Duration::from_secs(sealing_interval.into());
+				let mut interval_stream = tokio::time::interval(interval);
+
+				Box::pin(futures::stream::poll_fn(move |cx| {
+					interval_stream.poll_tick(cx);
+					Poll::Ready(Some(sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+						create_empty: sealing_allow_empty_blocks,
+						finalize: true,
+						parent_hash: None,
+						sender: None,
+					}))
+				}))
+			},
+		};
 
 		let client_for_cidp = client.clone();
 		let block_import = ParachainBlockImport::new(client.clone(), backend.clone());

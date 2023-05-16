@@ -18,6 +18,7 @@ hex-literal = "0.3.4"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 log = "0.4.17"
 serde = { version = "1.0.151", features = ["derive"] }
+tokio = "1.28.1"
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
 common-runtime = { path = "../../runtime/common" }
