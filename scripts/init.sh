@@ -43,7 +43,7 @@ stop-frequency-docker)
 
 start-frequency)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release --features frequency-rococo-local
+  cargo build --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -66,7 +66,7 @@ start-frequency)
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
-    --state-cache-size 0 \
+    --trie-cache-size 0 \
   ;;
 
 start-frequency-instant)
@@ -131,7 +131,7 @@ start-frequency-native)
 
 start-frequency-manual)
   printf "\nBuilding frequency with runtime manual sealing ...\n"
-  cargo build --locked --features frequency-no-relay
+  cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -188,7 +188,7 @@ start-frequency-container)
     --rpc-cors all \
     --ws-external \
     --rpc-methods=Unsafe \
-    --state-cache-size 0 \
+    --trie-cache-size 0 \
   ;;
 
 register-frequency-rococo-local)
@@ -231,15 +231,13 @@ upgrade-frequency-rococo-local)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=release, the target directory will be $root_dir/target/release
+  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
   cargo build \
-    --locked \
-    --profile release \
     --package frequency-runtime \
     --features frequency-rococo-local \
     -Z unstable-options
 
-  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 
@@ -252,15 +250,13 @@ upgrade-frequency-no-relay)
   root_dir=$(git rev-parse --show-toplevel)
   echo "root_dir is set to $root_dir"
 
-  # Due to defaults and profile=release, the target directory will be $root_dir/target/release
+  # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
   cargo build \
-    --locked \
-    --profile release \
     --package frequency-runtime \
     --features frequency-no-relay \
     -Z unstable-options
 
-  wasm_location=$root_dir/target/release/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
+  wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
   ./scripts/runtime-upgrade.sh "//Alice" "ws://0.0.0.0:9944" $wasm_location
 

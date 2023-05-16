@@ -142,8 +142,8 @@ benchmarks:
 
 #
 # Target to run benchmarks for local development. Uses the "bench-dev" profile,
-# since "production" is unnecessary in local development, and by using "bench-dev"
-# (which is just a clone of "release"), we don't overwrite our "release" target used
+# since "release" is unnecessary in local development, and by using "bench-dev"
+# (which is just a clone of "prodic"), we don't overwrite our "release" target used
 # for development testing.
 .PHONY: benchmarks-local
 benchmarks-local:
@@ -203,32 +203,32 @@ js:
 
 .PHONY: build
 build:
-	cargo build --locked --release --features frequency-no-relay
+	cargo build --features frequency-no-relay
 
 build-benchmarks:
-	cargo build --profile production --features runtime-benchmarks,frequency-lint-check --workspace
+	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace
 
 build-no-relay:
-	cargo build --locked --features frequency-no-relay
+	cargo build --features frequency-no-relay
 
 build-local:
-	cargo build --locked --features frequency-rococo-local
+	cargo build --features frequency-rococo-local
 
 build-rococo:
-	cargo build --locked --release --features frequency-rococo-testnet
+	cargo build --features frequency-rococo-testnet
 
 build-mainnet:
-	cargo build --locked --release --features frequency
+	cargo build --features frequency
 
 build-rococo-release:
-	cargo build --locked --features frequency-rococo-testnet --profile production
+	cargo build --locked --features frequency-rococo-testnet --release
 
 build-mainnet-release:
-	cargo build --locked --features  frequency --profile production
+	cargo build --locked --features  frequency --release
 
 .PHONY: test
 test:
-	cargo test --workspace --locked --features runtime-benchmarks,frequency-lint-check
+	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
 integration-test:
 	./scripts/run_integration_tests.sh
