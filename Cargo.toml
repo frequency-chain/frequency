@@ -20,3 +20,6 @@ inherits = "release"
 strip = false
 codegen-units = 16
 lto = false
+
+[patch."https://github.com/multiformats/rust-cid"]
+multihash = "0.18.1"
