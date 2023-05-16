@@ -111,14 +111,16 @@ pub fn frequency_dev_sealing(
 				let interval = std::time::Duration::from_secs(sealing_interval.into());
 				let mut interval_stream = tokio::time::interval(interval);
 
-				Box::pin(futures::stream::poll_fn(move |cx| {
-					interval_stream.poll_tick(cx);
-					Poll::Ready(Some(sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-						create_empty: sealing_allow_empty_blocks,
-						finalize: true,
-						parent_hash: None,
-						sender: None,
-					}))
+				Box::pin(futures::stream::poll_fn(move |cx| match interval_stream.poll_tick(cx) {
+					Poll::Ready(_instant) => Poll::Ready(Some(
+						sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+							create_empty: sealing_allow_empty_blocks,
+							finalize: true,
+							parent_hash: None,
+							sender: None,
+						},
+					)),
+					Poll::Pending => Poll::Pending,
 				}))
 			},
 		};
