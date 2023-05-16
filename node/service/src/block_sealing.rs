@@ -91,7 +91,8 @@ pub fn frequency_dev_sealing(
 
 		let pool = transaction_pool.pool().clone();
 
-		// For instant sealing, map new transaction import notifications to the seal block command
+		// For instant sealing, set up a stream that automatically creates and finalizes
+		// blocks as soon as transactions arrive.  Thus, it is empty for manual sealing.
 		let import_stream = pool
 			.validated_pool()
 			.import_notification_stream()
@@ -151,7 +152,7 @@ pub fn frequency_dev_sealing(
 		None
 	};
 
-    // Build the RPC
+	// Build the RPC
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
