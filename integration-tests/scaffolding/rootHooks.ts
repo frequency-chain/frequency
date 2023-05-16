@@ -8,7 +8,7 @@ exports.mochaHooks = {
     async beforeAll() {
         await ExtrinsicHelper.initialize();
 
-        if (process.env.CHAIN_ENVIRONMENT == "rococo") {
+        if (process.env.CHAIN_ENVIRONMENT === "rococo") {
             const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
 
             if (seed_phrase === undefined) {

@@ -10,6 +10,13 @@ import { firstValueFrom } from "rxjs";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
 
 describe("Add Offchain Message", function () {
+    // Increase global timeout to allow for the IPFS node startup when
+    // the test chain validation is "instant_finality". Running against a live
+    // chain doesn't bump into this problem because the timeouts are higher.
+    if (process.env.TEST_CHAIN_VALIDATION === "instant_finality") {
+        this.timeout(5000);
+    }
+
     let keys: KeyringPair;
     let schemaId: u16;
     let dummySchemaId: u16;

@@ -32,6 +32,12 @@ RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
 CHAIN="local_instant_sealing"
 
+# A distinction is made between the local node and the the test chain
+# because the local node will be built and generate the js api augment
+# for the polkadot.js api even when testing against a live chain.
+LOCAL_NODE_BLOCK_SEALING="instant"
+TEST_CHAIN_VALIDATION="instant_finality"
+
 trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
 trap 'cleanup INT' INT
@@ -52,26 +58,25 @@ shift $((OPTIND-1))
 case "${CHAIN}" in
     "local_instant_sealing")
         PROVIDER_URL="ws://127.0.0.1:9944"
-        CHAIN_ENVIRONMENT="local"
-        BLOCK_SEALING="instant"
         NPM_RUN_COMMAND="test"
+        CHAIN_ENVIRONMENT="local"
 
         if [[ "$1" == "load" ]]; then
             NPM_RUN_COMMAND="test:load"
-            BLOCK_SEALING="manual"
+            LOCAL_NODE_BLOCK_SEALING="manual"
         fi
     ;;
     "local_relay")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test:relay"
         CHAIN_ENVIRONMENT="local"
-        BLOCK_SEALING="instant"
+        TEST_CHAIN_VALIDATION="consensus"
     ;;
     "frequency_rococo")
         PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
         NPM_RUN_COMMAND="test:relay"
         CHAIN_ENVIRONMENT="rococo"
-        BLOCK_SEALING="instant"
+        TEST_CHAIN_VALIDATION="consensus"
 
         read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
 
@@ -96,8 +101,8 @@ else
         exit 1
     fi
 
-    echo "Starting a Frequency Node with block sealing ${BLOCK_SEALING}..."
-    case ${BLOCK_SEALING} in
+    echo "Starting a Frequency Node with block sealing ${LOCAL_NODE_BLOCK_SEALING}..."
+    case ${LOCAL_NODE_BLOCK_SEALING} in
         "instant") ${RUNDIR}/init.sh start-frequency-instant >& frequency.log &
         ;;
         "manual") ${RUNDIR}/init.sh start-frequency-manual >& frequency.log &
@@ -148,4 +153,4 @@ echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
 
-CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT FUNDING_ACCOUNT_SEED_PHRASE=$FUNDING_ACCOUNT_SEED_PHRASE WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
+CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT FUNDING_ACCOUNT_SEED_PHRASE=$FUNDING_ACCOUNT_SEED_PHRASE TEST_CHAIN_VALIDATION=$TEST_CHAIN_VALIDATION WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
