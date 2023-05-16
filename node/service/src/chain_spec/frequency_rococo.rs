@@ -4,7 +4,9 @@ use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
+use frequency_runtime::{
+	AuraId, CouncilConfig, PolkadotXcmConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig,
+};
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
@@ -14,6 +16,11 @@ pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConf
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
 #[allow(clippy::unwrap_used)]
+
+// move
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 /// Generates the Live Frequency Rococo chain spec from the raw json
 pub fn load_frequency_rococo_spec() -> ChainSpec {
 	ChainSpec::from_json_bytes(
@@ -236,5 +243,6 @@ fn testnet_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 	}
 }

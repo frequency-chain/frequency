@@ -1,24 +1,44 @@
 // use cumulus_primitives_utility::ParentAsUmp;
 
-use crate::{
-	AccountId, Balance, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime,
-	RuntimeCall, RuntimeEvent, RuntimeOrigin,
+use super::{
+	AccountId, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin,
 };
 use frame_support::{
 	parameter_types,
-	traits::{Everything, Nothing},
+	traits::{ConstU32, Everything, Nothing},
 };
+
+pub use common_runtime::fee::WeightToFee;
+
+use polkadot_parachain::primitives::Sibling;
+
+use cumulus_pallet_xcm;
 
 use pallet_xcm;
 use xcm::{
 	latest::{MultiLocation, NetworkId},
-	prelude::Parachain,
+	prelude::{Here, Parachain},
 };
 
 use xcm_executor::XcmExecutor;
 
 // Helpers to build XCM configuration
-use xcm_builder::{EnsureXcmOrigin, FixedWeightBounds, LocationInverter, SignedToAccountId32};
+use xcm_builder::{
+	AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
+	IsConcrete, LocationInverter, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	SignedToAccountId32, UsingComponents,
+};
+
+// use common_primitives::node::AccountId;
+
+/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// when determining ownership of accounts for asset transacting and when attempting to use XCM
+/// `Transact` in order to determine the dispatch Origin.
+pub type LocationToAccountId = (
+	// Sibling parachain origin convert to AcountId via the `ParaId::into`.
+	SiblingParachainConvertsVia<Sibling, AccountId>,
+);
 
 /// Means for transacting the native currency on this chain
 pub type LocalAssetTrasaction = CurrencyAdapter<
@@ -31,36 +51,76 @@ pub type LocalAssetTrasaction = CurrencyAdapter<
 	// Our chains account ID type
 	AccountId,
 	// We do not track any teleport of `Balances`
+	(),
 >;
+
+/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
+/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
+/// biases the kind of local `Origin` it will become.
+pub type XcmOriginToTransactDispatchOrigin = (
+	// if kind is Native and origin is a parachain, convert to a
+	// ParachainOrigin origin.
+	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+);
+
+/// Means for transacting assets on this chain.
+pub type AssetTransactors = (LocalAssetTrasaction,);
+
+// The barriers one of which must be passed for an XCM message to be executed.
+pub type Barrier = (
+	// If the message is one that immediately attemps to pay for execution, then allow it.
+	AllowTopLevelPaidExecutionFrom<Everything>,
+);
 
 pub struct XcmConfig;
 // Most function of these traits are called iwthing the executor upon
 // receving specific instruction opcodes.
 impl xcm_executor::Config for XcmConfig {
+	type RuntimeCall = RuntimeCall;
 	// How to withdraw and deposit assets
-	type AssetTransactor = LocalAssetTransactor;
-	// type AssetClaims = ();
-	// type AssetExchanger = ();
-	// type AssetLocker = ();
-	// type AssetTrap = ();
-	// type Barrier = Barrier;
-	// type CallDispatcher = RuntimeCall;
-	// type FeeManager = ();
-	// type IsReserve = ();
-	// type IsTeleporter = ();
-	// type MaxAssetsIntoHolding = ConstU32<64>;
-	// type MessageExporter = ();
-	// type OriginConverter = SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>;
-	// type PalletInstancesInfo = AllPalletsWithSystem;
-	// type ResponseHandler = ();
-	// type RuntimeCall = RuntimeCall;
-	// type SafeCallFilter = DipTransactSafeCalls;
-	// type SubscriptionService = ();
-	// type UniversalAliases = Nothing;
-	// type UniversalLocation = UniversalLocation;
-	// type Trader = UsingComponents<IdentityFee<Balance>, HereLocation, AccountId, Balances, ()>;
-	// type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, ConstU32<100>>;
-	// type XcmSender = XcmRouter;
+	type AssetTransactor = AssetTransactors;
+	// Defines a single function to implement for converting the origin on the behalf of which,
+	// the extrinsic call of a Transact instruction will be performed.
+	// Converts a Multilocation to an OriginTrait type.
+	type OriginConverter = XcmOriginToTransactDispatchOrigin;
+
+	// 	It must return whether it accepts the origin as a reliable source for respectively a reserve or
+	// teleported assets. The reserve check is performed when receiving a ReceiveAssetDeposited
+	// instruction and the teleport when receiving a ReceiveTeleportedAsset.
+	type IsReserve = ();
+	type IsTeleporter = ();
+
+	// 	The framework provides a single
+	// implementation parameterized by the Ancestry which is Here for a relay chain and is Parachain
+	// for a parachain.
+	type LocationInverter = LocationInverter<Ancestry>;
+
+	// Answer the question “should this message be executed?”
+	type Barrier = Barrier;
+
+	/// The means of determining an XCM message's weight.
+	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, ConstU32<100>>;
+
+	// The way to purchase the weight necessary to execute the message.
+	type Trader = UsingComponents<WeightToFee, SelfReserve, AccountId, Balances, ()>;
+
+	// Enables implementing defined actions when receiving QueryResponse
+	// DO we need this for version negotiation?
+	type ResponseHandler = ();
+
+	// The AssetTrap defines the action to perform on assets left in the holding of the XCVM after
+	// executing a message.
+	type AssetClaims = ();
+	type AssetTrap = ();
+
+	// Do we need this?
+	// since we are not sending messages I do not think so.
+	// Defines the action to perform when reeving XCM version changes notifications.
+	type SubscriptionService = ();
+
+	/// How to send an onward XCM message.
+	/// Do we need this?
+	type XcmSender = XcmRouter;
 }
 
 // impl cumulus_pallet_xcmp_queue::Config for Runtime {
@@ -81,6 +141,7 @@ impl xcm_executor::Config for XcmConfig {
 parameter_types! {
 	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
+	pub SelfReserve: MultiLocation = MultiLocation { parents: 0, interior: Here };
 }
 
 parameter_types! {
@@ -161,6 +222,11 @@ impl pallet_xcm::Config for Runtime {
 
 	// the XCM version that will be advertised by the palled when being asked. The current version is V2 The current version is V2.
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+}
+
+impl cumulus_pallet_xcm::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
 // impl cumulus_pallet_xcmp_queue::Config for Runtime {

@@ -5,7 +5,9 @@ use common_runtime::constants::{
 	FREQUENCY_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, TechnicalCommitteeConfig};
+use frequency_runtime::{
+	AuraId, CouncilConfig, PolkadotXcmConfig, Ss58Prefix, TechnicalCommitteeConfig,
+};
 
 use hex::FromHex;
 use sc_service::ChainType;
@@ -17,6 +19,10 @@ use sp_runtime::traits::AccountIdConversion;
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
 
 use super::{get_properties, Extensions};
+
+// move
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 pub mod frequency_mainnet_keys {
 
@@ -456,5 +462,6 @@ fn frequency_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 	}
 }
