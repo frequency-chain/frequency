@@ -14,6 +14,7 @@ describe("Add Offchain Message", function () {
     // the test chain validation is "instant_finality". Running against a live
     // chain doesn't bump into this problem because the timeouts are higher.
     if (process.env.TEST_CHAIN_VALIDATION === "instant_finality") {
+        console.log("OVERRIDDING TIMEOUT!!!!!");
         this.timeout(5000);
     }
 
