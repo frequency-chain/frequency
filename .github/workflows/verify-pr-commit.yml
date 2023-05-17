@@ -317,13 +317,13 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: debug
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-rococo-testnet
           - network: mainnet
-            build-profile: debug
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
