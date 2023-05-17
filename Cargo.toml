@@ -21,5 +21,6 @@ strip = false
 codegen-units = 16
 lto = false
 
+# Remove this patch if messages/Cargo.toml::cid dependency is updated to use multihash 0.18.1 or greater
 [patch."https://github.com/multiformats/rust-cid"]
 multihash = "0.18.1"
