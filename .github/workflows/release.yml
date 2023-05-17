@@ -26,8 +26,9 @@ env:
 
 jobs:
   validate-release-version:
-    runs-on: ubuntu-20.04
     name: Validate Release Version
+    runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -46,6 +47,7 @@ jobs:
     needs: validate-release-version
     name: Create Release Branch
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -85,7 +87,7 @@ jobs:
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler libclang-dev
+          sudo apt install -y protobuf-compiler libclang-dev clang cmake
       - name: Install Rust Toolchain
         if: steps.is-full-release.outputs.is-full-release == 'true'
         # Match installation steps to CI base docker image
@@ -112,11 +114,8 @@ jobs:
     needs: run-all-benchmarks
     name: Version Code
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -152,7 +151,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, build], [self-hosted, Linux, ARM64,  build]]
+        # This job intermittently fails on EKS runners and must be run on standalone until
+        # https://www.pivotaltracker.com/story/show/185045683 is resolved.
         os: [[self-hosted, Linux, X64, build]]
         network: [dev, local, rococo, mainnet]
         include:
@@ -179,10 +179,6 @@ jobs:
     runs-on: ${{matrix.os}}
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
-      - name: Install Required Packages
-        run: |
-          apt-get update
-          apt-get install -y curl protobuf-compiler build-essential libclang-dev file
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -234,7 +230,8 @@ jobs:
 
   # Could not port this job to container because this creates docker-in-docker
   # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host
+  # the mapped volume which don't exist on the host.
+  # See https://github.com/LibertyDSNP/frequency/issues/1543
   build-runtimes:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
@@ -309,7 +306,7 @@ jobs:
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
-      - name: Install subwasm
+      - name: Install Subwasm
         run: |
           cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
@@ -331,10 +328,6 @@ jobs:
     runs-on: [self-hosted, Linux, X64, build]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
-      - name: Install Required Packages
-        run: |
-          apt-get update
-          apt-get install -y curl protobuf-compiler build-essential libclang-dev
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -360,6 +353,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-rococo-local
       ARCH: amd64
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Set Env Vars
         run: |
@@ -423,6 +417,7 @@ jobs:
           - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Set Env Vars
         run: |
@@ -460,6 +455,10 @@ jobs:
           echo "  Actual: ${ACTUAL_VERSION%-*}"
           [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
 
+  # Could not port this job to container because the reference node will be started in a
+  # parallel container to the job polkadot-js-tools container and the latter will not
+  # be able to connect to the former without runner supporting DinD mode first.
+  # See https://github.com/LibertyDSNP/frequency/issues/1543
   compare-metadata:
     needs: build-binaries
     name: Compare Metadata
@@ -602,6 +601,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -624,6 +624,10 @@ jobs:
       - name: Install Tera CLI
         run: |
           cargo install --git https://github.com/chevdor/tera-cli
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Verify Tera CLI Install
+        run: |
+          which tera
           tera --version
       - name: Build Changelog
         id: build-changelog
@@ -765,6 +769,7 @@ jobs:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Set Env Vars
         run: |
@@ -808,22 +813,21 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Parachain Image
-        if: env.TEST_RUN != 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
-          push: true
+          push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
-        if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
+        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
-          push: true
+          push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
@@ -859,6 +863,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Set Env Vars
         run: |
@@ -902,22 +907,22 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Dev Image
-        if: env.TEST_RUN != 'true'
+        # if: env.TEST_RUN != 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
-          push: true
+          push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
-        if: env.TEST_RUN != 'true' && steps.is-full-release.outputs.is-full-release == 'true'
+        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v4
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
-          push: true
+          push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
@@ -935,6 +940,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     permissions:
       contents: read
       pages: write
@@ -952,6 +958,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release JS API Augment
     runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3

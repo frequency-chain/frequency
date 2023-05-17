@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
-      # 1482-add-rust-toolchain-install-to-ci-base-image
+      # - 1482-add-rust-toolchain-install-to-ci-base-image
 env:
   BIN_DIR: target/release
 
