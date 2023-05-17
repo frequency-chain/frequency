@@ -164,11 +164,11 @@ jobs:
             release-file-name-prefix: frequency-rococo-local
           - network: rococo
             spec: frequency-rococo-testnet
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency-rococo
           - network: mainnet
             spec: frequency
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - os: [self-hosted, Linux, X64, build]
             arch: amd64
@@ -190,21 +190,12 @@ jobs:
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Cache Binary for Testing
-        if: env.TEST_RUN == 'true'
-        id: cache-binary
-        uses: actions/cache@v3
-        with:
-          path: ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          key: binaries-${{runner.os}}-${{matrix.network}}-${{matrix.arch}}-${{env.NEW_RELEASE_TAG}}
       - name: Install Rust Toolchain
-        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
           toolchain: stable
       - name: Compile for ${{matrix.network}}
-        if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
             --locked \
@@ -261,7 +252,7 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: production
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
@@ -269,7 +260,7 @@ jobs:
             features: frequency-rococo-testnet
             wasm-core-version: frequency-rococo
           - network: mainnet
-            build-profile: production
+            build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
@@ -313,20 +304,11 @@ jobs:
           release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
-      - name: Cache WASM for Testing
-        if: env.TEST_RUN == 'true'
-        id: cache-wasm
-        uses: actions/cache@v3
-        with:
-          path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-          key: runtimes-${{runner.os}}-${{matrix.network}}-${{env.NEW_RELEASE_TAG}}
       - name: Install srtool-cli
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
@@ -338,12 +320,10 @@ jobs:
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install subwasm
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Test WASM file
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
@@ -372,7 +352,6 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Install Rust Toolchain
-        if: steps.cache-binary.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
           targets: wasm32-unknown-unknown
@@ -416,11 +395,16 @@ jobs:
         run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
         working-directory: js/api-augment
       - name: Download Binaries
-        id: download
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}
@@ -449,7 +433,7 @@ jobs:
         include:
           - network: mainnet
             spec: frequency
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - os: ubuntu-20.04
             arch: amd64
@@ -466,11 +450,16 @@ jobs:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
       - name: Download Binaries
-        id: download
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}
@@ -491,13 +480,13 @@ jobs:
     name: Compare Metadata
     runs-on: ubuntu-20.04
     env:
-      BIN_DIR: target/production
+      BIN_DIR: target/release
       BIN_FILENAME: frequency.amd64
       TEST_BIN_FILENAME: frequency.amd64
       TEST_DOWNLOAD_DIR: download-test
       REF_BIN_FILENAME: frequency-ref.amd64
       REF_DOWNLOAD_DIR: download-ref
-      OUTPUT_DIR: target/production
+      OUTPUT_DIR: target/release
       FREQUENCY_PROCESS_NAME: frequency
     steps:
       - name: Set Env Vars
@@ -648,7 +637,6 @@ jobs:
         run: |
           echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
       - name: Install Tera CLI
-        if: steps.cache-tera.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/chevdor/tera-cli
           tera --version
@@ -703,7 +691,7 @@ jobs:
           ls -la
       - name: Install subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Get Runtimes Info
         id: get-runtimes-info
@@ -782,10 +770,10 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency-rococo
           - network: mainnet
-            build-profile: production
+            build-profile: release
             release-file-name-prefix: frequency
           - arch: amd64
             docker-platform: linux/amd64
@@ -809,11 +797,16 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
-        id: download
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}
@@ -865,13 +858,19 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [local]
         arch: [amd64]
         node: [collator-node-local, instant-seal-node]
         include:
-          - network: local
+          - node: collator-node-local
+            network: local
             build-profile: release
+            release-file-name-prefix: frequency-rococo-local
+          - node: instant-seal-node
+            network: dev
+            build-profile: release
+            release-file-name-prefix: frequency-dev
           - arch: amd64
+            build-profile: release
             docker-platform: linux/amd64
     env:
       DOCKER_HUB_PROFILE: frequencychain
@@ -881,7 +880,7 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=frequency-${{matrix.network}}.${{matrix.arch}}" >> $GITHUB_ENV
+          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
@@ -892,11 +891,16 @@ jobs:
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
-        id: download
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: .
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}

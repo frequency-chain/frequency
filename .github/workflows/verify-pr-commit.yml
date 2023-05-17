@@ -9,6 +9,7 @@ on:
       - "*-development" # Feature Branches should suffix with -development
 env:
   BIN_DIR: target/release
+
 jobs:
   changes:
     name: Determine Changed Files
@@ -58,25 +59,23 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
-        network: [rococo, mainnet]
-        # Match this include to the real build-binaries job
+        # Match this to the real build-binaries job
         include:
-          - git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
-            branch_alias: pr
-            network: local
-          - git_branch: ${{github.head_ref}}
+          - network: dev
+            git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
-            network: local
-          - git_branch: main
+          - network: local
+            git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
+            branch_alias: pr
+          - network: local
+            git_branch: main
             spec: frequency-rococo-local
             branch_alias: main
-            network: local
           - network: rococo
             spec: frequency-rococo-testnet
             branch_alias: pr
@@ -93,27 +92,28 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [rococo, mainnet]
         include:
-          - git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
-            branch_alias: pr
-            network: local
-          - git_branch: ${{github.head_ref}}
+          - network: dev
+            git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
-            network: local
-          - git_branch: main
+          - network: local
+            git_branch: ${{github.head_ref}}
+            spec: frequency-rococo-local
+            branch_alias: pr
+          - network: local
+            git_branch: main
             spec: frequency-rococo-local
             branch_alias: main
-            network: local
           - network: rococo
             spec: frequency-rococo-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    # This job intermittently fails on EKS runners and must be run on standalone until
+    # https://www.pivotaltracker.com/story/show/185045683 is resolved.
+    runs-on: [self-hosted, Linux, X64, build]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     env:
       NETWORK: mainnet
@@ -304,7 +304,6 @@ jobs:
       matrix:
         network: [rococo, mainnet]
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -318,13 +317,13 @@ jobs:
         network: [rococo, mainnet]
         include:
           - network: rococo
-            build-profile: production
+            build-profile: debug
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-rococo-testnet
           - network: mainnet
-            build-profile: production
+            build-profile: debug
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
@@ -399,10 +398,16 @@ jobs:
         run: npm run lint
         working-directory: js/api-augment
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -441,10 +446,16 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Rename Binary
         working-directory: ${{env.BIN_DIR}}
         run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.DOCKER_BIN_FILENAME}}
@@ -512,10 +523,16 @@ jobs:
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -542,10 +559,16 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
           echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -598,13 +621,19 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local.frequency-no-relay.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.dev.frequency-no-relay.pr" >> $GITHUB_ENV
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
         uses: actions/download-artifact@v3
         with:
@@ -649,7 +678,7 @@ jobs:
       - name: Run Integration Tests
         working-directory: integration-tests
         run: |
-          WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
+          CHAIN_ENVIRONMENT="local" TEST_CHAIN_VALIDATION="instant_finality" WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
       - name: Stop Local Node
         if: always()
         run: pkill ${{env.FREQUENCY_PROCESS_NAME}}
@@ -667,10 +696,16 @@ jobs:
           echo "BIN_FILENAME_ROCOCO=frequency.rococo.frequency-rococo-testnet.pr" >> $GITHUB_ENV
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
+        id: download-binaries
         uses: actions/download-artifact@v3
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+      - name: List Downloaded Binaries
+        run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |

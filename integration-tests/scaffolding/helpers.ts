@@ -1,6 +1,6 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u32, u64, Option} from "@polkadot/types";
+import { u16, u32, u64, Option, u128} from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -8,6 +8,7 @@ import { env } from "./env";
 import {
   AddKeyData,
   AddProviderPayload,
+  EventMap,
   ExtrinsicHelper,
   ItemizedSignaturePayload, PaginatedDeleteSignaturePayload,
   PaginatedUpsertSignaturePayload
@@ -274,3 +275,11 @@ export async function createGraphChangeSchema(): Promise<u16> {
 }
 
 export const TokenPerCapacity = 50n;
+
+export function assertEvent(events: EventMap, eventName: string) {
+  assert(events.hasOwnProperty(eventName));
+}
+export async function getRemainingCapacity(providerId: u64): Promise<u128> {
+  const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
+  return capacityStaked.remainingCapacity;
+}

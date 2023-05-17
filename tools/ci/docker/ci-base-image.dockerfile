@@ -10,4 +10,4 @@ RUN apt-get update && \
 	curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && \
 	rm -rf /var/lib/apt/lists/*
 
-RUN git config --system --add safe.directory *
+RUN git config --system --add safe.directory /__w/frequency/frequency
