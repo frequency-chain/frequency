@@ -146,7 +146,7 @@ benchmarks:
 #
 # Target to run benchmarks for local development. Uses the "bench-dev" profile,
 # since "release" is unnecessary in local development, and by using "bench-dev"
-# (which is just a clone of "prodic"), we don't overwrite our "release" target used
+# (which is just a clone of "release"), we don't overwrite our "release" target used
 # for development testing.
 .PHONY: benchmarks-local
 benchmarks-local:

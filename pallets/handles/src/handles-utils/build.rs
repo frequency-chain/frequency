@@ -14,6 +14,10 @@ fn allowed_char(c: char) -> bool {
 
 #[allow(clippy::unwrap_used)]
 fn main() {
+	println!("cargo:rerun-if-changed=build.rs");
+	println!("cargo:rerun-if-changed=src/data/confusable_characters.txt");
+	println!("cargo:rerun-if-changed=constants.rs");
+
 	let input_file = File::open("src/data/confusable_characters.txt");
 	assert!(input_file.is_ok());
 	let path = Path::new(&env::var("OUT_DIR").unwrap()).join("confusables.rs");
@@ -57,8 +61,4 @@ fn main() {
 		}
 	}
 	_ = output_file.write_all(b"};\n\n");
-
-	println!("cargo:rerun-if-changed=build.rs");
-	println!("cargo:rerun-if-changed=data/confusable_characters.txt");
-	println!("cargo:rerun-if-changed=constants.rs");
 }

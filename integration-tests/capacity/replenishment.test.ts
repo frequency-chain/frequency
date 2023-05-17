@@ -16,16 +16,13 @@ import {
   CENTS,
   DOLLARS,
   TokenPerCapacity,
+  assertEvent,
+  getRemainingCapacity
 } from "../scaffolding/helpers";
-import { firstValueFrom } from "rxjs";
 
 describe("Capacity Replenishment Testing: ", function () {
   let schemaId: u16;
 
-  async function getRemainingCapacity(providerId: u64): Promise<u128> {
-    const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
-    return capacityStaked.remainingCapacity;
-  }
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
@@ -35,9 +32,6 @@ describe("Capacity Replenishment Testing: ", function () {
     return [stakeKeys, stakeProviderId];
   }
 
-  function assertEvent(events: EventMap, eventName: string) {
-    assert(events.hasOwnProperty(eventName));
-  }
 
   before(async function () {
     await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);

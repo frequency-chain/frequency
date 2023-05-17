@@ -12,11 +12,12 @@
 [![Issues][issues-shield]][issues-url]
 [![Codecov][codecov-shield]][codecov-url]
 
-Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain designed to run Decentralized Social Network Protocol (DSNP), but it could run other things.
+Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain for data distribution protocols such as [DSNP](https://www.dsnp.org).
 
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
+- [Security]
 - [Prerequisites](#prerequisites)
   - [Hardware](#hardware)
 - [Build](#build)
@@ -40,6 +41,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 - [Verify Runtime](#verify-runtime)
 - [Local Runtime Upgrade](#local-runtime-upgrade)
 - [Contributing](#contributing)
+- [Security Issue Reporting](#security-issue-reporting)
 - [Additional Resources](#additional-resources)
 - [Miscellaneous](#miscellaneous)
 
@@ -50,11 +52,11 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 
 ---
 
--   For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose environment, so no need to install it separately.
+- For Mac users, [Docker Desktop](https://docs.docker.com/desktop/mac/install/) engine also installs docker compose environment, so no need to install it separately.
 
 ## Hardware
 
-We run benchmarks with and recommend the same [reference hardware specified by Parity](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
+We run benchmarks with and recommend the same [reference hardware specified by Parity for Validators](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
 
 # Build
 
@@ -95,8 +97,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
 
     To build local, rococo (testnet) or mainnet features respectively.
 
-At this point you should have `./target/release` directory generated locally with compiled
-project files.
+At this point you should have `./target/debug` directory generated locally with compiled project files. (or `./target/release` for `make build-*-release`)
 
 ### asdf Support
 
@@ -115,7 +116,7 @@ Install the dependency versions declared in `.tool-versions`
 asdf install
 ```
 
-NOTE: I could find no clang plugin that worked so your system still needs clang to be installed.
+NOTE: asdf does not support clang and needs to be installed separately.
 
 ## Remote Instance such as AWS EC2
 
@@ -220,13 +221,8 @@ This option runs one collator node as local host process and two relay chain val
     ```sh
     make register
     ```
-1. Generate chain spec files. If this is your first time running the project or
-   new pallets/runtime code changes have been made to Frequency, then the chain specs
-   need to be generated. Refer to [generation spec file](#generate-a-new-spec-file)
-   for more details.
 
-1. Start Frequency as parachain. This step will generate genesis/wasm and onboard the
-   parachain.
+1. Start Frequency as parachain. This step will generate genesis/wasm and start the parachain collator.
 
     ```sh
     make start-frequency
@@ -239,7 +235,7 @@ This option runs one collator node as local host process and two relay chain val
 
 #### Stop and Clean Environment
 
-1. Off-board Frequency from relay chain.: `make offboard`
+1. Off-board Frequency from relay chain: `make offboard`
 2. To stop Frequency running in the terminal: `[Ctrl+C] `
 3. Stop the relay chain. `make stop-relay`
 4. Run to remove unused volumes. `make docker-prune`
@@ -289,33 +285,38 @@ make benchmarks
 
 # Format, Lint and Audit Source Code
 
--   Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
--   Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
--   Alternatively, run `make format-lint` to run both at the same time.
--   Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
+- Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
+- Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
+- Alternatively, run `make format-lint` to run both at the same time.
+- Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
-# Verify Runtime
+# Runtime
+
+## Verify Runtime
 
 1. Check out the commit at which the runtime was built.
-2. Use [srtool](https://github.com/paritytech/srtool) to verify the runtime:
+2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify the runtime:
     ```sh
-    TARGET=build-runtime RUST_TOOLCHAIN=nightly cargo build --features frequency-no-relay
+    SRTOOL_TAG="1.66.1" srtool build \
+            --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
+            --profile=release \
+            --package=frequency-runtime \
+            --root
     ```
 
-# Local Runtime Upgrade
+## Local Runtime Upgrade
 
 To upgrade the runtime, run the following command:
 
+### Local Relay Chain
 ```sh
 make upgrade-local
 ```
 
-The current scripts follow this process for upgrading locally:
-
-1. Build new runtime and generate the compressed wasm: `make specs-rococo-2000`
-2. Call `authorizeUpgrade` extrinsic from parachain system to initiate the upgrade.
-3. Call `enactAuthorizedUpgrade` extrinsic from parachain system to enact the upgrade.
-4. For testnet and mainnet, the upgrade is done slightly differently using `scheduler` and enactment is scheduled for a specific block number in the future.
+### Standalone Chain (No Relay)
+```sh
+make upgrade-no-relay
+```
 
 # Contributing
 
@@ -323,11 +324,16 @@ Interested in contributing?
 Wonderful!
 Please check out [the information here](./CONTRIBUTING.md).
 
+# Security Issue Reporting
+
+Do you know of an on-chain vulnerability (or possible one) that can lead to economic loss, privacy loss, or instability of the network?
+Please report it to [security@frequency.xyz](mailto:security@frequency.xyz)
+
 # Additional Resources
 
--   [Cumulus Project](https://github.com/paritytech/cumulus)
--   [Cumulus Tutorials](https://docs.substrate.io/tutorials/)
--   [Prep Substrate environment for development](https://docs.substrate.io/install/)
+- [Cumulus Project](https://github.com/paritytech/cumulus)
+- [Cumulus Tutorials](https://docs.substrate.io/tutorials/)
+- [Prep Substrate environment for development](https://docs.substrate.io/install/)
 
 # Miscellaneous
 

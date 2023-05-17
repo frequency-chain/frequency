@@ -13,7 +13,7 @@ fi
 
 
 echo "checking for 🏭 subwasm and installing if needed..."
-which subwasm || cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.18.0
+which subwasm || cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1
 
 ws_provider=$1
 

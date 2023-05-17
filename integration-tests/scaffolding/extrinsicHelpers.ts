@@ -218,6 +218,10 @@ export class ExtrinsicHelper {
         return ExtrinsicHelper.apiPromise.query.schemas.governanceSchemaModelMaxBytes();
     }
 
+    public static getCurrentMsaIdentifierMaximum() {
+        return ExtrinsicHelper.apiPromise.query.msa.currentMsaIdentifierMaximum();
+    }
+
     /** Balance Extrinsics */
     public static transferFunds(keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transfer(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
