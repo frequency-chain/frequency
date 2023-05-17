@@ -25,9 +25,10 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
   - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
     - [Ubuntu](#ubuntu)
 - [Run](#run)
-  - [1. Collator Node in Instant/Manual Sealing Mode](#1-collator-node-in-instantmanual-sealing-mode)
-    - [Terminal: Instant Sealing](#terminal-instant-sealing)
-    - [Terminal: Manual Sealing](#terminal-manual-sealing)
+  - [1. Collator Node without a Relay Chain](#1-collator-node-in-instantmanual-sealing-mode)
+    - [Instant Sealing](#instant-sealing)
+    - [Manual Sealing](#manual-sealing)
+    - [Interval Sealing](#interval-sealing)
   - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
     - [Mixed Terminal/Docker](#mixed-terminaldocker)
       - [Stop and Clean Environment](#stop-and-clean-environment)
@@ -141,7 +142,7 @@ There are 2 options to run the chain locally:
 
 _Note, Running Frequency via following options does not require binary to be built or chain specs to be generated separately, and is programmed within the scripts for simplicity._
 
-1.  Collator Node without a relay chain (in manual/instant sealing mode)
+1.  Collator Node without a relay chain (in manual/instant/interval sealing mode)
 2.  Collator Node with a local relay chain
 
 ## 1. Collator Node without a Relay Chain
@@ -190,6 +191,14 @@ To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 | ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
 | Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
+
+### Interval Sealing
+
+This sealing mode will automatically trigger the formation of a block at a specified interval (default is every 120 seconds.)
+
+```sh
+make start-interval
+```
 
 ## 2. Collator Node with Local Relay Chain
 
