@@ -21,10 +21,16 @@ use frame_support::{
 	traits::{Everything, Nothing},
 };
 use sp_core::H256;
-use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
+use sp_runtime::{generic, traits::{IdentityLookup, BlakeTwo256}};
+
 
 use polkadot_parachain::primitives::Id as ParaId;
+pub use polkadot_core_primitives::AccountId;
+use polkadot_core_primitives::{Balance, BlockNumber, Hash};
 use polkadot_runtime_parachains::{configuration, origin, shared, ump};
+use polkadot_runtime_common::BlockHashCount;
+use rococo_runtime::{ExistentialDeposit, FirstMessageFactorPercent, MaxLocks, MaxReserves};
+
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, ChildParachainAsNative,
@@ -34,23 +40,16 @@ use xcm_builder::{
 };
 use xcm_executor::{Config, XcmExecutor};
 
-pub type AccountId = AccountId32;
-pub type Balance = u128;
-
-parameter_types! {
-	pub const BlockHashCount: u64 = 250;
-}
-
 impl frame_system::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Index = u64;
-	type BlockNumber = u64;
-	type Hash = H256;
+	type BlockNumber = BlockNumber;
+	type Hash = Hash;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Header = generic::Header<BlockNumber, BlakeTwo256>;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type BlockWeights = ();
@@ -66,12 +65,6 @@ impl frame_system::Config for Runtime {
 	type SS58Prefix = ();
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
-}
-
-parameter_types! {
-	pub ExistentialDeposit: Balance = 1;
-	pub const MaxLocks: u32 = 50;
-	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Runtime {
@@ -94,22 +87,24 @@ impl configuration::Config for Runtime {
 
 parameter_types! {
 	pub const KsmLocation: MultiLocation = Here.into();
-	pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
+	pub const RocLocation: MultiLocation = Here.into();
+	// fix
+	pub const RococoNetwork: NetworkId = NetworkId::Kusama;
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
 	pub Ancestry: MultiLocation = Here.into();
 	pub UnitWeightCost: u64 = 1_000;
 }
 
 pub type SovereignAccountOf =
-	(ChildParachainConvertsVia<ParaId, AccountId>, AccountId32Aliases<KusamaNetwork, AccountId>);
+	(ChildParachainConvertsVia<ParaId, AccountId>, AccountId32Aliases<RococoNetwork, AccountId>);
 
 pub type LocalAssetTransactor =
-	XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
+	XcmCurrencyAdapter<Balances, IsConcrete<RocLocation>, SovereignAccountOf, AccountId, ()>;
 
 type LocalOriginConverter = (
 	SovereignSignedViaLocation<SovereignAccountOf, RuntimeOrigin>,
 	ChildParachainAsNative<origin::Origin, RuntimeOrigin>,
-	SignedAccountId32AsNative<KusamaNetwork, RuntimeOrigin>,
+	SignedAccountId32AsNative<RococoNetwork, RuntimeOrigin>,
 	ChildSystemParachainAsSuperuser<ParaId, RuntimeOrigin>,
 );
 
@@ -140,7 +135,7 @@ impl Config for XcmConfig {
 	type SubscriptionService = ();
 }
 
-pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, KusamaNetwork>;
+pub type LocalOriginToLocation = SignedToAccountId32<RuntimeOrigin, AccountId, RococoNetwork>;
 
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -158,10 +153,6 @@ impl pallet_xcm::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
-}
-
-parameter_types! {
-	pub const FirstMessageFactorPercent: u64 = 100;
 }
 
 impl ump::Config for Runtime {

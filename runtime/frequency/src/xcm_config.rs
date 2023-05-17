@@ -2,12 +2,14 @@
 
 use super::{
 	AccountId, Balances, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin,
+	RuntimeEvent, RuntimeOrigin, XcmpQueue,
 };
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, Everything, Nothing},
 };
+
+use frame_system::EnsureRoot;
 
 pub use common_runtime::fee::WeightToFee;
 
@@ -123,18 +125,6 @@ impl xcm_executor::Config for XcmConfig {
 	type XcmSender = XcmRouter;
 }
 
-// impl cumulus_pallet_xcmp_queue::Config for Runtime {
-// 	type ChannelInfo = ParachainSystem;
-// 	type ControllerOrigin = EnsureRoot<AccountId>;
-// 	type ControllerOriginConverter = ();
-// 	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
-// 	type PriceForSiblingDelivery = ();
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type VersionWrapper = ();
-// 	type WeightInfo = ();
-// 	type XcmExecutor = XcmExecutor<XcmConfig>;
-// }
-
 // Converts a local signed origin into an XCM multilocation.
 // Forms the basis for local origins sending/executing XCMS.
 
@@ -178,7 +168,7 @@ pub type XcmRouter = (
 	// on_initialize.
 	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, PolkadotXcm>,
 	// ..and XCMP to communicate with the sibling chains.
-	// XcmpQueue,
+	XcmpQueue,
 );
 
 impl pallet_xcm::Config for Runtime {
@@ -229,6 +219,18 @@ impl cumulus_pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
 
-// impl cumulus_pallet_xcmp_queue::Config for Runtime {
-
-// }
+// A pallet which uses the XCMP transport layer to handle both incoming and outgoing XCM message sending and dispatch, queuing, signalling and backpressure.
+// To do so, it implements:
+//  - XcmpMessageHandler
+//  - XcmpMessageSource
+// Also provides an implementation of SendXcm which can be placed in a router tuple for relaying XCM over XCMP if the destination is Parent/Parachain. It requires an implementation of XcmExecutor for dispatching incoming XCM messages.
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+	type ChannelInfo = ParachainSystem;
+	type ControllerOrigin = EnsureRoot<AccountId>;
+	type ControllerOriginConverter = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type RuntimeEvent = RuntimeEvent;
+	type VersionWrapper = ();
+	type WeightInfo = ();
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+}

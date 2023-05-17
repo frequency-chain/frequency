@@ -14,15 +14,17 @@
 // You should have received a copy of the GNU General Public License
 // along with Polkadot.  If not, see <http://www.gnu.org/licenses/>.
 
-mod parachain;
+mod parachains;
 mod relay_chain;
+
+use parachains::parachain;
 
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
 use xcm_simulator::{decl_test_network, decl_test_parachain, decl_test_relay_chain};
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const INITIAL_BALANCE: u128 = 1_000_000_000;
+pub const INITIAL_BALANCE: u128 = 2_000_000_000;
 
 decl_test_parachain! {
 	pub struct ParaA {
@@ -69,7 +71,7 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-	pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE)] }
+	pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE)] }
 		.assimilate_storage(&mut t)
 		.unwrap();
 
@@ -235,7 +237,7 @@ mod tests {
 	fn withdraw_and_deposit() {
 		MockNet::reset();
 
-		let send_amount = 10;
+		let send_amount = 100_000_000;
 
 		ParaA::execute_with(|| {
 			let message = Xcm(vec![
@@ -269,7 +271,7 @@ mod tests {
 	fn query_holding() {
 		MockNet::reset();
 
-		let send_amount = 10;
+		let send_amount = 100_000_000;
 		let query_id_set = 1234;
 
 		// Send a message which fully succeeds on the relay chain

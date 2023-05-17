@@ -1190,11 +1190,9 @@ construct_runtime!(
 		// FRQC Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
-		// Do we need this?
-		// XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
-
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 50,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 51,
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 51,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
