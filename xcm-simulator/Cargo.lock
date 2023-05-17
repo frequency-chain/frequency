@@ -11938,6 +11938,8 @@ dependencies = [
 name = "xcm-simulator-frequency"
 version = "0.0.0"
 dependencies = [
+ "common-primitives",
+ "common-runtime",
  "cumulus-pallet-xcm",
  "cumulus-primitives-utility",
  "frame-support",

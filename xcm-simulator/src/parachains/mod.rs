@@ -6,7 +6,7 @@ use sp_runtime::traits::Hash;
 use xcm::{latest::prelude::*, VersionedXcm};
 
 pub(crate) mod parachain;
-// pub(crate) mod frequency;
+pub(crate) mod frequency;
 
 #[frame_support::pallet]
 pub mod mock_msg_queue {

@@ -16,26 +16,18 @@
 
 //! Parachain runtime mock.
 
-use codec::{Decode, Encode};
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{Everything, Nothing},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 };
 use sp_core::H256;
-use sp_runtime::{
-	testing::Header,
-	traits::{Hash, IdentityLookup},
-	AccountId32,
-};
+use sp_runtime::{testing::Header, traits::IdentityLookup, AccountId32};
 use sp_std::prelude::*;
 
 use pallet_xcm::XcmPassthrough;
-use polkadot_core_primitives::BlockNumber as RelayBlockNumber;
-use polkadot_parachain::primitives::{
-	DmpMessageHandler, Id as ParaId, Sibling, XcmpMessageFormat, XcmpMessageHandler,
-};
-use xcm::{latest::prelude::*, VersionedXcm};
+use polkadot_parachain::primitives::Sibling;
+use xcm::latest::prelude::*;
 use xcm_builder::{
 	AccountId32Aliases, AllowUnpaidExecutionFrom, CurrencyAdapter as XcmCurrencyAdapter,
 	EnsureXcmOrigin, FixedRateOfFungible, FixedWeightBounds, IsConcrete, LocationInverter,
