@@ -121,7 +121,7 @@ pub fn frequency_dev_sealing(
 					Poll::Ready(_instant) => {
 						let engine_cmd =
 							sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-								create_empty: sealing_allow_empty_blocks,
+								create_empty: true,
 								finalize: true,
 								parent_hash: None,
 								sender: None,
