@@ -11,8 +11,8 @@ use cumulus_client_consensus_common::ParachainBlockImport;
 use cumulus_client_service::prepare_node_config;
 use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 
-/// Function to start frequency parachain with instant sealing in dev mode.
-/// This function is called when --chain dev --sealing=instant is passed.
+/// Function to start Frequency in dev mode without a relay chain
+/// This function is called when --chain dev --sealing= is passed.
 #[allow(clippy::expect_used)]
 pub fn frequency_dev_sealing(
 	config: Configuration,
