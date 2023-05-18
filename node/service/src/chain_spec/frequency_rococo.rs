@@ -19,6 +19,8 @@ use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_propertie
 
 // move
 /// The default XCM version to set in genesis config.
+/// pallet_xcm
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
 
 /// Generates the Live Frequency Rococo chain spec from the raw json
@@ -243,6 +245,7 @@ fn testnet_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		polkadot_xcm: PolkadotXcmConfig { safe_xcm_version: Some(SAFE_XCM_VERSION) },
 	}
 }

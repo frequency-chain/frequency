@@ -204,3 +204,31 @@ fn query_holding() {
 		);
 	});
 }
+
+#[test]
+fn frequency_xcmp() {
+	MockNet::reset();
+
+	let remark = parachain::RuntimeCall::System(
+		frame_system::Call::<parachain::Runtime>::remark_with_event { remark: vec![1, 2, 3] },
+	);
+	ParaA::execute_with(|| {
+		assert_ok!(ParachainPalletXcm::send_xcm(
+			Here,
+			(Parent, Parachain(3)),
+			Xcm(vec![Transact {
+				origin_type: OriginKind::SovereignAccount,
+				require_weight_at_most: INITIAL_BALANCE as u64,
+				call: remark.encode().into(),
+			}]),
+		));
+	});
+
+	ParaB::execute_with(|| {
+		use parachain::{RuntimeEvent, System};
+		assert!(System::events().iter().any(|r| matches!(
+			r.event,
+			RuntimeEvent::System(frame_system::Event::Remarked { .. })
+		)));
+	});
+}

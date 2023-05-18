@@ -19,7 +19,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
-// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm_config;
 // pub use crate::xcm_config::*;
 
@@ -961,6 +961,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
+// update this
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -1190,8 +1191,11 @@ construct_runtime!(
 		// FRQC Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin, Config} = 51,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
 
 		// Frequency related pallets

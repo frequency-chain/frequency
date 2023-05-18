@@ -47,6 +47,15 @@ decl_test_parachain! {
 	}
 }
 
+decl_test_parachain! {
+	pub struct Frequency {
+		Runtime = Parachain::Runtime,
+		XcmpMessageHandler = parachain::MsgQueue,
+		DmpMessageHandler = parachain::MsgQueue,
+		new_ext = para_ext(3),
+	}
+}
+
 decl_test_relay_chain! {
 	pub struct Relay {
 		Runtime = relay_chain::Runtime,
@@ -61,6 +70,7 @@ decl_test_network! {
 		parachains = vec![
 			(1, ParaA),
 			(2, ParaB),
+			(3, Frequency),
 		],
 	}
 }
