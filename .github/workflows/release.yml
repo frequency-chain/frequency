@@ -310,7 +310,7 @@ jobs:
           srtool --version
       - name: Build Deterministic WASM
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.69.0-0.10.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}} \
