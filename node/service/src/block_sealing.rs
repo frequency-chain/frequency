@@ -126,8 +126,7 @@ pub fn frequency_dev_sealing(
 								parent_hash: None,
 								sender: None,
 							};
-							Poll::Ready(Some(engine_cmd))
-
+						Poll::Ready(Some(engine_cmd))
 					},
 					Poll::Pending => Poll::Pending,
 				}))
