@@ -20,12 +20,11 @@ pub fn frequency_dev_sealing(
 	sealing_interval: u16,
 	sealing_allow_empty_blocks: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
-	let extra;
-	if sealing_mode == SealingMode::Interval {
-		extra = format!(" ({}s interval)", sealing_interval);
+	let extra = if sealing_mode == SealingMode::Interval {
+		format!(" ({}s interval)", sealing_interval);
 	} else {
-		extra = String::from("");
-	}
+		String::from("");
+	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
 	let parachain_config = prepare_node_config(config);
