@@ -7,7 +7,6 @@ use sp_blockchain::HeaderBackend;
 use std::{sync::Arc, task::Poll};
 
 // Cumulus
-use cumulus_client_service::prepare_node_config;
 use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 
 /// Function to start Frequency in dev mode without a relay chain
@@ -25,8 +24,6 @@ pub fn frequency_dev_sealing(
 	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
-	let parachain_config = prepare_node_config(config);
-
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -36,12 +33,12 @@ pub fn frequency_dev_sealing(
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (_block_import, mut telemetry, _),
-	} = new_partial(&parachain_config, true)?;
+	} = new_partial(&config, true)?;
 
 	// Build the network components required for the blockchain.
 	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
-			config: &parachain_config,
+			config: &config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
@@ -51,7 +48,7 @@ pub fn frequency_dev_sealing(
 		})?;
 
 	// Start off-chain workers if enabled
-	if parachain_config.offchain_worker.enabled {
+	if config.offchain_worker.enabled {
 		let offchain_workers = Arc::new(sc_offchain::OffchainWorkers::new_with_options(
 			client.clone(),
 			sc_offchain::OffchainWorkerOptions { enable_http_requests: false },
@@ -63,7 +60,7 @@ pub fn frequency_dev_sealing(
 			"offchain-notifications",
 			None,
 			sc_offchain::notification_future(
-				parachain_config.role.is_authority(),
+				config.role.is_authority(),
 				client.clone(),
 				offchain_workers,
 				task_manager.spawn_handle(),
@@ -72,9 +69,9 @@ pub fn frequency_dev_sealing(
 		);
 	}
 
-	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+	let prometheus_registry = config.prometheus_registry().cloned();
 
-	let role = parachain_config.role.clone();
+	let role = config.role.clone();
 
 	let select_chain = maybe_select_chain
 		.expect("In frequency dev mode, `new_partial` will return some `select_chain`; qed");
@@ -203,7 +200,7 @@ pub fn frequency_dev_sealing(
 		client: client.clone(),
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
-		config: parachain_config,
+		config,
 		keystore: keystore_container.sync_keystore(),
 		backend,
 		network: network.clone(),
