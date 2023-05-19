@@ -195,7 +195,7 @@ To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
 ### Interval Sealing
 
-This sealing mode will automatically trigger the formation of a block at a specified interval (default is every 120 seconds.)
+This sealing mode will automatically trigger the formation of a block at a specified interval (default is every 12 seconds.)
 
 ```sh
 make start-interval
