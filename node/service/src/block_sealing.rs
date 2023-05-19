@@ -3,11 +3,7 @@ use cli_opt::SealingMode;
 use common_primitives::node::Hash;
 pub use futures::stream::StreamExt;
 use sc_service::{Configuration, TaskManager};
-use sp_blockchain::HeaderBackend;
 use std::{sync::Arc, task::Poll};
-
-// Cumulus
-use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
@@ -127,8 +123,6 @@ pub fn frequency_dev_sealing(
 			},
 		};
 
-		let client_for_cidp = client.clone();
-
 		// Prepare the future for manual sealing block authoring
 		let authorship_future =
 			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
@@ -139,27 +133,8 @@ pub fn frequency_dev_sealing(
 				commands_stream: futures::stream_select!(commands_stream, import_stream),
 				select_chain,
 				consensus_data_provider: None,
-				create_inherent_data_providers: move |block: Hash, _| {
-					let current_para_block = client_for_cidp
-						.number(block)
-						.expect("Header lookup should succeed")
-						.expect("Header passed in as parent should be present in backend.");
-					async move {
-						let mocked_parachain = MockValidationDataInherentDataProvider {
-							current_para_block,
-							para_blocks_per_relay_epoch: 0,
-							relay_offset: 1000,
-							relay_blocks_per_para_block: 2,
-							relay_randomness_config: (),
-							xcm_config: Default::default(),
-							raw_downward_messages: vec![],
-							raw_horizontal_messages: vec![],
-						};
-						Ok((
-							sp_timestamp::InherentDataProvider::from_system_time(),
-							mocked_parachain,
-						))
-					}
+				create_inherent_data_providers: move |_block: Hash, _| async move {
+					Ok((sp_timestamp::InherentDataProvider::from_system_time(),))
 				},
 			});
 
