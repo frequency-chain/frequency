@@ -18,6 +18,8 @@ hex-literal = "0.3.4"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 log = "0.4.17"
 serde = { version = "1.0.151", features = ["derive"] }
+tokio = { version = "1.24.1", features = ["macros", "time", "parking_lot"] }
+
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
 common-runtime = { path = "../../runtime/common" }
@@ -97,7 +99,6 @@ system-runtime-api = { path = "../../runtime/system-runtime-api" }
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 
 [dev-dependencies]
-tokio = { version = "1.24.1", features = ["macros", "time", "parking_lot"] }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.36" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 scale-info = { version = "2.2.0", default-features = false, features = [
