@@ -321,7 +321,7 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
+          rustup run stable cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
