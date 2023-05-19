@@ -11,6 +11,7 @@ pub fn frequency_dev_sealing(
 	config: Configuration,
 	sealing_mode: SealingMode,
 	sealing_interval: u16,
+	sealing_create_empty_blocks: bool,
 ) -> Result<TaskManager, sc_service::error::Error> {
 	let extra: String = if sealing_mode == SealingMode::Interval {
 		format!(" ({}s interval)", sealing_interval)
@@ -110,7 +111,7 @@ pub fn frequency_dev_sealing(
 					Poll::Ready(_instant) => {
 						let engine_cmd =
 							sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-								create_empty: true,
+								create_empty: sealing_create_empty_blocks,
 								finalize: true,
 								parent_hash: None,
 								sender: None,
