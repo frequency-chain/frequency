@@ -289,7 +289,6 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -318,8 +317,8 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
-          echo "/github/home/.cargo/bin" >> $PATH
+          curl -L -o srtool.deb https://github.com/chevdor/srtool-cli/releases/download/v0.12.0/srtool_linux_amd64_v0.12.0.deb
+          dpkg -i srtool.deb
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
