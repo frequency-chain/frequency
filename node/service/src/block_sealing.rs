@@ -1,6 +1,5 @@
 use crate::service::new_partial;
 use cli_opt::SealingMode;
-use common_primitives::node::Hash;
 pub use futures::stream::StreamExt;
 use sc_service::{Configuration, TaskManager};
 use std::{sync::Arc, task::Poll};
@@ -133,7 +132,7 @@ pub fn frequency_dev_sealing(
 				commands_stream: futures::stream_select!(commands_stream, import_stream),
 				select_chain,
 				consensus_data_provider: None,
-				create_inherent_data_providers: move |_block: Hash, _| async move {
+				create_inherent_data_providers: |_, _| async {
 					Ok((sp_timestamp::InherentDataProvider::from_system_time(),))
 				},
 			});
