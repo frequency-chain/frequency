@@ -292,6 +292,10 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          toolchain: stable
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
@@ -317,9 +321,7 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          sudo apt install libc6
-          curl -L -o srtool.deb https://github.com/chevdor/srtool-cli/releases/download/v0.12.0/srtool_linux_amd64_v0.12.0.deb
-          sudo dpkg -i srtool.deb
+          cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
