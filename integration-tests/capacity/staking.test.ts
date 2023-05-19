@@ -211,7 +211,7 @@ describe("Capacity Staking Tests", function () {
     });
 
     describe("when attempting to stake below the minimum staking requirements", async function () {
-        it.only("should fail to stake for InsufficientStakingAmount", async function () {
+        it("should fail to stake for InsufficientStakingAmount", async function () {
             let stakingKeys = createKeys("stakingKeys");
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", 150n * CENTS);
             let stakeAmount = 1500n;
