@@ -317,8 +317,9 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
+          sudo apt install libc6
           curl -L -o srtool.deb https://github.com/chevdor/srtool-cli/releases/download/v0.12.0/srtool_linux_amd64_v0.12.0.deb
-          dpkg -i srtool.deb
+          sudo dpkg -i srtool.deb
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
