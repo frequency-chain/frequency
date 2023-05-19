@@ -314,10 +314,12 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
+      # REVIEW: The $PATH is not set right?
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           cargo install --git https://github.com/chevdor/srtool-cli
+          echo "/github/home/.cargo/bin" >> $PATH
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
