@@ -7,7 +7,6 @@ use sp_blockchain::HeaderBackend;
 use std::{sync::Arc, task::Poll};
 
 // Cumulus
-use cumulus_client_consensus_common::ParachainBlockImport;
 use cumulus_client_service::prepare_node_config;
 use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 
@@ -132,12 +131,11 @@ pub fn frequency_dev_sealing(
 		};
 
 		let client_for_cidp = client.clone();
-		let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
 		// Prepare the future for manual sealing block authoring
 		let authorship_future =
 			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
-				block_import,
+				block_import: client.clone(),
 				env: proposer_factory,
 				client: client.clone(),
 				pool: transaction_pool.clone(),
