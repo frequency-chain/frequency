@@ -133,12 +133,6 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
-      - name: Install Rust Toolchain
-        if: steps.cache-binary.outputs.cache-hit != 'true'
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          targets: wasm32-unknown-unknown
-          toolchain: stable
       - name: Compile Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
@@ -170,11 +164,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          components: rustfmt
-          toolchain: stable
       - name: Set Up Cargo Deny
         run: |
           cargo install --force cargo-deny
@@ -191,11 +180,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          components: rustfmt
-          toolchain: stable
       - name: Check
         run: cargo fmt --check
 
@@ -208,11 +192,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          components: clippy
-          toolchain: stable
       - name: Lint
         run: |
           SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
@@ -230,11 +209,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
-          targets: wasm32-unknown-unknown
       - name: Build Rust Docs
         run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -247,10 +221,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -263,11 +233,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          targets: wasm32-unknown-unknown
-          toolchain: stable
       - name: Init Git
         run: |
           git config --global --add safe.directory /__w/frequency/frequency
@@ -285,11 +250,6 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          targets: wasm32-unknown-unknown
-          toolchain: stable
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
@@ -357,10 +317,11 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
+      # REVIEW: The $PATH is not set right?
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
+          rustup run stable cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
@@ -811,10 +772,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install -y protobuf-compiler libclang-dev
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
       - name: Update Weights
         run: |
           set -x

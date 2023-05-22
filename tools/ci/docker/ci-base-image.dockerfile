@@ -10,4 +10,7 @@ RUN apt-get update && \
 	curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && \
 	rm -rf /var/lib/apt/lists/*
 
+RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+
 RUN git config --system --add safe.directory /__w/frequency/frequency
