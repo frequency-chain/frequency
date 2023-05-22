@@ -22,7 +22,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "nightly-2022-11-15" # TODO: Set this dynamically
+  RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
 
 jobs:
   validate-release-version:
@@ -175,7 +175,7 @@ jobs:
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -190,11 +190,11 @@ jobs:
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      # - name: Install Rust Toolchain
-      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-      #   with:
-      #     targets: wasm32-unknown-unknown
-      #     toolchain: stable
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          targets: wasm32-unknown-unknown
+          toolchain: stable
       - name: Compile for ${{matrix.network}}
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
@@ -339,7 +339,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ubuntu:20.04
     steps:
       - name: Install Required Packages
         run: |
@@ -351,11 +351,11 @@ jobs:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      # - name: Install Rust Toolchain
-      #   uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-      #   with:
-      #     targets: wasm32-unknown-unknown
-      #     toolchain: stable
+      - name: Install Rust Toolchain
+        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
+        with:
+          targets: wasm32-unknown-unknown
+          toolchain: stable
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
