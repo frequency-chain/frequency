@@ -20,7 +20,7 @@ mod relay_chain;
 #[cfg(test)]
 mod tests;
 
-use parachains::parachain;
+use parachains::{parachain, frequency};
 
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
@@ -49,9 +49,9 @@ decl_test_parachain! {
 
 decl_test_parachain! {
 	pub struct Frequency {
-		Runtime = Parachain::Runtime,
-		XcmpMessageHandler = parachain::MsgQueue,
-		DmpMessageHandler = parachain::MsgQueue,
+		Runtime = frequency::Runtime,
+		XcmpMessageHandler = frequency::MsgQueue,
+		DmpMessageHandler = frequency::MsgQueue,
 		new_ext = para_ext(3),
 	}
 }

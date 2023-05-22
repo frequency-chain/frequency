@@ -34,7 +34,7 @@ pub use common_runtime::{
 
 pub use frequency_runtime::{
 	xcm_config::{
-		Barrier, LocationToAccountId, MaxInstructions, RelayNetwork, SelfReserve, UnitWeightCost,
+		Barrier, MaxInstructions, UnitWeightCost, FrequencyLocation
 	},
 	BalancesMaxLocks, BalancesMaxReserves, RuntimeBlockLength, RuntimeBlockWeights, Session,
 	Version,
@@ -47,9 +47,11 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter,
-	SiblingParachainAsNative, SignedToAccountId32, UsingComponents,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
+
+use crate::Frequency;
 
 impl frame_system::Config for Runtime {
 	type BaseCallFilter = Everything;
@@ -120,6 +122,9 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = pallet_collator_selection::weights::SubstrateWeight<Runtime>;
 }
 
+parameter_types! {
+	pub RelayNetwork: NetworkId = NetworkId::Kusama;
+}
 // impl pallet_sudo::Config for Runtime {
 // 	type RuntimeCall = RuntimeCall;
 // 	type RuntimeEvent = RuntimeEvent;
@@ -163,18 +168,31 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
+/// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
+/// when determining ownership of accounts for asset transacting and when attempting to use XCM
+/// `Transact` in order to determine the dispatch Origin.
+pub type LocationToAccountId = (
+	// Sibling parachain origin convert to AcountId via the `ParaId::into`.
+	// SiblingParachainConvertsVia<Sibling, AccountId>,
+	//
+	AccountId32Aliases<RelayNetwork, AccountId>,
+);
+
+
 pub type AssetTransactors = (LocalAssetTransactor,);
 pub type LocalAssetTransactor =
-	CurrencyAdapter<Balances, IsConcrete<SelfReserve>, LocationToAccountId, AccountId, ()>;
+	CurrencyAdapter<Balances, IsConcrete<FrequencyLocation>, LocationToAccountId, AccountId, ()>;
 
 pub type XcmOriginToTransactDispatchOrigin = (
 	// RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
+	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
 	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+	// SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 );
 pub type XcmRouter = crate::ParachainXcmRouter<MsgQueue>;
 
 pub struct XcmConfig;
-impl Config for XcmConfig {
+impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
@@ -187,7 +205,7 @@ impl Config for XcmConfig {
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 
-	type Trader = (UsingComponents<WeightToFee, SelfReserve, AccountId, Balances, ()>,);
+	type Trader = (UsingComponents<WeightToFee, FrequencyLocation, AccountId, Balances, ()>,);
 
 	type ResponseHandler = ();
 
@@ -211,9 +229,9 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		MsgQueue: super::mock_msg_queue::{Pallet, Storage, Event<T>},
-		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin} = 31,
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 32,
+		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
 		// Sudo: pallet_sudo = 40,
 	}
 );

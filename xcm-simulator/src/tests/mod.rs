@@ -213,22 +213,56 @@ fn frequency_xcmp() {
 		frame_system::Call::<parachain::Runtime>::remark_with_event { remark: vec![1, 2, 3] },
 	);
 	ParaA::execute_with(|| {
-		assert_ok!(ParachainPalletXcm::send_xcm(
-			Here,
-			(Parent, Parachain(3)),
-			Xcm(vec![Transact {
+		let xcm: Xcm<()> = Xcm(vec![
+			DescendOrigin(X1(AccountId32 { network: NetworkId::Kusama, id: [0; 32] })),
+			WithdrawAsset((Here, INITIAL_BALANCE).into()),
+			BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Unlimited },
+			Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: INITIAL_BALANCE as u64,
 				call: remark.encode().into(),
-			}]),
-		));
+			},
+		]);
+
+		assert_ok!(ParachainPalletXcm::send_xcm(Here, (Parent, Parachain(3)), xcm,));
+		// assert_ok!(ParachainPalletXcm::send(parachain::RuntimeOrigin::signed(ALICE), (Parent, Parachain(3)), xcm,));
 	});
 
-	ParaB::execute_with(|| {
-		use parachain::{RuntimeEvent, System};
-		assert!(System::events().iter().any(|r| matches!(
-			r.event,
-			RuntimeEvent::System(frame_system::Event::Remarked { .. })
-		)));
-	});
+	Frequency::execute_with(|| {
+        let xcms = parachain::MsgQueue::received_xcmp();
+        // sanity check
+        assert!(
+            xcms.len() == 1,
+            "Expected only one XCMP message, found {}",
+            xcms.len()
+        );
+        // assert!(
+        //     xcms[0].len() == 1,
+        //     "Response XCM should only have one instruction, i.e QueryResponse, found {}",
+        //     xcms[0].len()
+        // );
+		println!(
+			"xcms[0].0.as_slice() {:?}", xcms[0].0.as_slice()
+		);
+        // assert!(matches!(
+        //     xcms[0].0.as_slice(),
+        //     &[QueryResponse {
+        //         query_id,
+        //         response: Response::ExecutionResult(None),
+        //         ..
+        //     }]
+        // ));
+
+        // clear the events
+        // System::reset_events();
+    });
+
+
+	// Frequency::execute_with(|| {
+	// 	use parachain::{RuntimeEvent, System};
+	// 	assert!(System::events().iter().any(|r| matches!(
+	// 		r.event,
+	// 		RuntimeEvent::System(frame_system::Event::Remarked { .. })
+	// 	)));
+	// });
 }

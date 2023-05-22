@@ -29,7 +29,7 @@ use xcm_executor::XcmExecutor;
 use xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds,
 	IsConcrete, LocationInverter, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedToAccountId32, UsingComponents,
+	SignedToAccountId32, SovereignSignedViaLocation, UsingComponents, TakeWeightCredit, AccountId32Aliases,
 };
 
 // use common_primitives::node::AccountId;
@@ -40,6 +40,8 @@ use xcm_builder::{
 pub type LocationToAccountId = (
 	// Sibling parachain origin convert to AcountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
+	//
+	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
 /// Means for transacting the native currency on this chain
@@ -47,7 +49,7 @@ pub type LocalAssetTrasaction = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<SelfReserve>,
+	IsConcrete<FrequencyLocation>,
 	// Convert an XCM MultiLocation into a local account id:
 	LocationToAccountId,
 	// Our chains account ID type
@@ -62,7 +64,9 @@ pub type LocalAssetTrasaction = CurrencyAdapter<
 pub type XcmOriginToTransactDispatchOrigin = (
 	// if kind is Native and origin is a parachain, convert to a
 	// ParachainOrigin origin.
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+	// SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
+	// SignedToAccountId32
 );
 
 /// Means for transacting assets on this chain.
@@ -70,6 +74,7 @@ pub type AssetTransactors = (LocalAssetTrasaction,);
 
 // The barriers one of which must be passed for an XCM message to be executed.
 pub type Barrier = (
+	TakeWeightCredit,
 	// If the message is one that immediately attemps to pay for execution, then allow it.
 	AllowTopLevelPaidExecutionFrom<Everything>,
 );
@@ -104,7 +109,7 @@ impl xcm_executor::Config for XcmConfig {
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, ConstU32<100>>;
 
 	// The way to purchase the weight necessary to execute the message.
-	type Trader = UsingComponents<WeightToFee, SelfReserve, AccountId, Balances, ()>;
+	type Trader = UsingComponents<WeightToFee, FrequencyLocation, AccountId, Balances, ()>;
 
 	// Enables implementing defined actions when receiving QueryResponse
 	// DO we need this for version negotiation?
@@ -129,9 +134,9 @@ impl xcm_executor::Config for XcmConfig {
 // Forms the basis for local origins sending/executing XCMS.
 
 parameter_types! {
-	pub const RelayNetwork: NetworkId = NetworkId::Polkadot;
+	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
-	pub SelfReserve: MultiLocation = MultiLocation { parents: 0, interior: Here };
+	pub FrequencyLocation: MultiLocation = MultiLocation { parents: 0, interior: Here };
 }
 
 parameter_types! {

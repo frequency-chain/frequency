@@ -32,6 +32,11 @@ pub mod mock_msg_queue {
 	pub(super) type ParachainId<T: Config> = StorageValue<_, ParaId, ValueQuery>;
 
 	#[pallet::storage]
+    #[pallet::getter(fn received_xcmp)]
+    /// A queue of received XCMP messages
+    pub(super) type ReceivedXcmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn received_dmp)]
 	/// A queue of received DMP messages
 	pub(super) type ReceivedDmp<T: Config> = StorageValue<_, Vec<Xcm<T::RuntimeCall>>, ValueQuery>;
@@ -84,8 +89,12 @@ pub mod mock_msg_queue {
 				Ok(xcm) => {
 
 					let location = (1, Parachain(sender.into()));
-					match T::XcmExecutor::execute_xcm(location, xcm, max_weight.ref_time()) {
-						Outcome::Error(e) => (Err(e.clone()), Event::Fail(Some(hash), e)),
+					<ReceivedXcmp<T>>::append(xcm.clone());
+					match T::XcmExecutor::execute_xcm(location, xcm.clone(), max_weight.ref_time()) {
+						Outcome::Error(e) => {
+							println!("Error in XCMP handling: {:?}, sender=Parachain({sender}), xcm={xcm:?}", e);
+							(Err(e.clone()), Event::Fail(Some(hash), e))
+						},
 						Outcome::Complete(w) =>
 							(Ok(Weight::from_ref_time(w)), Event::Success(Some(hash))),
 						// As far as the caller is concerned, this was dispatched without error, so

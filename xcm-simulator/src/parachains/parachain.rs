@@ -96,9 +96,10 @@ parameter_types! {
 }
 
 parameter_types! {
-	pub const KsmLocation: MultiLocation = MultiLocation::parent();
+	pub const KsmLocation: MultiLocation = MultiLocation { parents: 0, interior: Here };
 	pub const RelayNetwork: NetworkId = NetworkId::Kusama;
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
+	
 }
 
 pub type LocationToAccountId = (

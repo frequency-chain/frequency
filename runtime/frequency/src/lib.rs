@@ -19,7 +19,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult,
 };
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm_config;
 // pub use crate::xcm_config::*;
 
