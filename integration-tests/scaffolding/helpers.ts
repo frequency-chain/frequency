@@ -18,6 +18,8 @@ import {HandleResponse, MessageSourceId, PageHash} from "@frequency-chain/api-au
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
+import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 
 export interface Account {
   uri: string,
@@ -263,15 +265,89 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
-export async function createGraphChangeSchema(): Promise<u16> {
-  const [createSchemaEvent, eventMap] = await ExtrinsicHelper
-    .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
-    .fundAndSend();
-  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
-  if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
-    return createSchemaEvent.data.schemaId;
+export async function getOrCreateGraphChangeSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+    const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
+    return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
-    assert.fail("failed to create a schema")
+    const [createSchemaEvent, eventMap] = await ExtrinsicHelper
+      .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+      .fundAndSend();
+    assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+    if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+      return createSchemaEvent.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+    const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
+    return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
+  } else {
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, PARQUET_BROADCAST, "Parquet", "IPFS");
+    let [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateDummySchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+    const ROCOCO_DUMMY_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 52);
+    return ROCOCO_DUMMY_SCHEMA_ID;
+  } else {
+    const createDummySchema = ExtrinsicHelper.createSchema(
+      devAccounts[0].keys,
+      { type: "record", name: "Dummy on-chain schema", fields: [] },
+      "AvroBinary",
+      "OnChain"
+    );
+    const [dummySchemaEvent] = await createDummySchema.fundAndSend();
+    if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
+      return dummySchemaEvent.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+    const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
+    return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
+  } else {
+    let schemaId: u16;
+    // Create a schema for Paginated PayloadLocation
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+    const [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+    const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
+    return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
+  } else {
+    let schemaId: u16;
+    // Create a schema for Paginated PayloadLocation
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+    const [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
   }
 }
 
