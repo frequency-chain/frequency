@@ -51,8 +51,10 @@ sc-transaction-pool-api = { git = "https://github.com/paritytech/substrate", bra
 sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-block-builder = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-blockchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-consensus = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-consensus-aura = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-keystore = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-offchain = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }

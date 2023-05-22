@@ -1,7 +1,21 @@
 use crate::service::new_partial;
 use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
+use sc_consensus::block_import::BlockImport;
+
+use core::marker::PhantomData;
+use futures::Stream;
+use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
+use sc_consensus_manual_seal::{
+	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
+};
 use sc_service::{Configuration, TaskManager};
+use sc_transaction_pool_api::TransactionPool;
+use sp_api::{ProvideRuntimeApi, TransactionFor};
+use sp_blockchain::HeaderBackend;
+use sp_consensus::{Environment, Proposer, SelectChain};
+use sp_inherents::CreateInherentDataProviders;
+use sp_runtime::traits::Block as BlockT;
 use std::{sync::Arc, task::Poll};
 
 /// Function to start Frequency in dev mode without a relay chain
@@ -96,7 +110,7 @@ pub fn frequency_dev_sealing(
 			SealingMode::Manual => futures::stream::empty().boxed(),
 			SealingMode::Instant =>
 				Box::pin(pool.validated_pool().import_notification_stream().map(|_| {
-					sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
+					EngineCommand::SealNewBlock {
 						create_empty: true,
 						finalize: true,
 						parent_hash: None,
@@ -107,25 +121,28 @@ pub fn frequency_dev_sealing(
 				let interval = std::time::Duration::from_secs(sealing_interval.into());
 				let mut interval_stream = tokio::time::interval(interval);
 
-				Box::pin(futures::stream::poll_fn(move |cx| match interval_stream.poll_tick(cx) {
-					Poll::Ready(_instant) => {
-						let engine_cmd =
-							sc_consensus_manual_seal::rpc::EngineCommand::SealNewBlock {
-								create_empty: sealing_create_empty_blocks,
-								finalize: true,
-								parent_hash: None,
-								sender: None,
-							};
-						Poll::Ready(Some(engine_cmd))
-					},
-					Poll::Pending => Poll::Pending,
+				Box::pin(futures::stream::poll_fn(move |cx| {
+					let engine_seal_cmd = EngineCommand::SealNewBlock {
+						create_empty: sealing_create_empty_blocks,
+						finalize: true,
+						parent_hash: None,
+						sender: None,
+					};
+					match interval_stream.poll_tick(cx) {
+						Poll::Ready(_instant) => {
+							log::info!("⏳ Interval timer triggered");
+							Poll::Ready(Some(engine_seal_cmd))
+						},
+						Poll::Pending => Poll::Pending,
+					}
 				}))
 			},
 		};
 
 		// Prepare the future for manual sealing block authoring
-		let authorship_future =
-			sc_consensus_manual_seal::run_manual_seal(sc_consensus_manual_seal::ManualSealParams {
+		let authorship_future = run_seal_command(
+			sealing_create_empty_blocks,
+			sc_consensus_manual_seal::ManualSealParams {
 				block_import: client.clone(),
 				env: proposer_factory,
 				client: client.clone(),
@@ -136,7 +153,8 @@ pub fn frequency_dev_sealing(
 				create_inherent_data_providers: |_, _| async {
 					Ok((sp_timestamp::InherentDataProvider::from_system_time(),))
 				},
-			});
+			},
+		);
 
 		// Spawn a background task for block authoring
 		task_manager.spawn_essential_handle().spawn_blocking(
@@ -187,4 +205,72 @@ pub fn frequency_dev_sealing(
 	network_starter.start_network();
 
 	Ok(task_manager)
+}
+
+/// Override manual sealing to handle creating non-empty blocks for interval sealing mode without nuisance warning logs
+pub async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
+	sealing_create_empty_blocks: bool,
+	ManualSealParams {
+		mut block_import,
+		mut env,
+		client,
+		pool,
+		mut commands_stream,
+		select_chain,
+		consensus_data_provider,
+		create_inherent_data_providers,
+	}: ManualSealParams<B, BI, E, C, TP, SC, CS, CIDP, P>,
+) where
+	B: BlockT + 'static,
+	BI: BlockImport<B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor<C, B>>
+		+ Send
+		+ Sync
+		+ 'static,
+	C: HeaderBackend<B> + Finalizer<B, CB> + ProvideRuntimeApi<B> + 'static,
+	CB: ClientBackend<B> + 'static,
+	E: Environment<B> + 'static,
+	E::Proposer: Proposer<B, Proof = P, Transaction = TransactionFor<C, B>>,
+	CS: Stream<Item = EngineCommand<<B as BlockT>::Hash>> + Unpin + 'static,
+	SC: SelectChain<B> + 'static,
+	TransactionFor<C, B>: 'static,
+	TP: TransactionPool<Block = B>,
+	CIDP: CreateInherentDataProviders<B, ()>,
+	P: Send + Sync + 'static,
+{
+	while let Some(command) = commands_stream.next().await {
+		match command {
+			EngineCommand::SealNewBlock { create_empty, finalize, parent_hash, sender } =>
+				if sealing_create_empty_blocks ||
+					(!sealing_create_empty_blocks && pool.ready().count() > 0)
+				{
+					sc_consensus_manual_seal::seal_block(
+						sc_consensus_manual_seal::SealBlockParams {
+							sender,
+							parent_hash,
+							finalize,
+							create_empty,
+							env: &mut env,
+							select_chain: &select_chain,
+							block_import: &mut block_import,
+							consensus_data_provider: consensus_data_provider.as_deref(),
+							pool: pool.clone(),
+							client: client.clone(),
+							create_inherent_data_providers: &create_inherent_data_providers,
+						},
+					)
+					.await;
+				},
+			EngineCommand::FinalizeBlock { hash, sender, justification } => {
+				let justification = justification.map(|j| (MANUAL_SEAL_ENGINE_ID, j));
+				finalize_block(FinalizeBlockParams {
+					hash,
+					sender,
+					justification,
+					finalizer: client.clone(),
+					_phantom: PhantomData,
+				})
+				.await
+			},
+		}
+	}
 }
