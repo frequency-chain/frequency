@@ -293,13 +293,14 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y wget file build-essential
+          sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
         uses: actions/checkout@v3
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | bash -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
@@ -324,7 +325,8 @@ jobs:
       - name: Install srtool-cli
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          rustup run stable cargo install --git https://github.com/chevdor/srtool-cli
+          rustup show
+          cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
@@ -337,6 +339,10 @@ jobs:
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+      - name: Install subwasm
+        run: |
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          subwasm --version
 
   verify-js-api-augment:
     needs: build-binaries
@@ -775,9 +781,14 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt install -y protobuf-compiler libclang-dev
+      - name: Install Rust Toolchain
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | bash -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Update Weights
         run: |
-          set -x
+          rustup show
           pallets_str="${{needs.should-run-benchmarks.outputs.pallets}}"
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
