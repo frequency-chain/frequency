@@ -3,16 +3,23 @@ The proposed feature is a design for staking FRQCY token in exchange for Capacit
 It is specific to the Frequency Substrate parachain.
 It consists of enhancements to the capacity pallet, needed traits and their implementations, and needed runtime configuration.
 
+This does _not_ outline the Staking Rewards economic model; it describes the economic model as a black box, i.e. an interface.
+
 ## Context and Scope:
+The Frequency Transaction Payment system uses Capacity to pay for certain transactions on chain.  Accounts that wish to pay with Capacity must:
+
 1. Have an [MSA](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/accounts.md)
 2. Be a [Provider](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_registration.md) (see also [Provider Permissions and Grants](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_permissions.md))
 3. Stake a minimum amount of FRQCY token to receive [Capacity](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/capacity.md).
 
 # Problem Statement
 This document outlines how to implement the economic model described in [Capacity Staking Rewards Economic Model](TBD), specifically:
-1. Parameters for calculating rewards
-2. How and when to calculate and pay out rewards
-3. Any other required changes to Capacity Staking
+1. determining the token value of the Reward Pool for a given Era
+2. how to calculate rewards for an individual staker
+3. when rewards are calculated
+4. when rewards are paid out
+5. where these calculations are performed, and
+6. Any other required changes to Capacity Staking as currently implemented
 
 ## Glossary
 1. **FRQCY**: the native token of the Frequency blockchain
@@ -34,87 +41,86 @@ pub struct StakingAccountDetails {
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
     /// The number of the last StakingEra that this account's rewards were claimed.
     pub last_rewarded_at: T::StakingEra, // NEW
+    pub staking_type: StakingType, // NEW
 }
 ```
 
 **Unstaking thaw period**
 We change the thaw period to begin at the first block of next Epoch instead of immediately.
 
-### New storage items and related types
-
-#### RewardsPoolHistory and RewardsPoolParameters
-
-[//]: # (We store changes to the Rewards Pool calculations when any change occurs that affects the Rewards Pool greater than or equal to a hundredth of a percent &#40;0.01%&#41;, rounded, or when Rewards Pool Parameters are changed.)
-
-[//]: # ()
-[//]: # (**Toy Example using a very simple rewards equation:**)
-
-[//]: # (Let's assume a simple reward pool calculation relates to total token staked and the number of stakers, multiplied by some constant:)
-
-[//]: # ()
-[//]: # ($$ P = { t + Cs  \over 100,000 } $$$)
-
-[//]: # ()
-[//]: # (Where P is the Reward Pool Total, t is total staked token and s is the number of stakers as before.)
-
-[//]: # ()
-[//]: # (Say total staked token is 100k FRQCY, there are 25 stakers, and Moby staker has staked 20k FRQCY.  The reward pool starts at 125k/100k  = 1.25 FRQCY to spread among 25 stakers based on their stake.)
-
-[//]: # ()
-[//]: # (Moby account unstakes 10k FRQCY, which drops staked token by 10%.  The new reward pool is &#40;90,000 + 25,000&#41; / 100,000 = 1.15 FRQCY to spread among the stakers.  This causes the Reward Pool to go down by 12%, i.e. >0.01%, so a new entry is pushed into the RewardPool history.)
+### StakingRewardsProvider - Economic Model Interface
 
 ```rust
-/// A queue of the last `RewardsPoolHistoryMaxDepth` RewardsPoolParameters.
-type RewardsPoolHistory<T>: BoundedVec<RewardsPoolParameters<T>, T::RewardsPoolHistoryMaxDepth>;
-```
+use std::hash::Hash;
 
-```rust
-/// The parameters for a rewards pool that applied from `applied_at` StakingEra to the next time
-/// the parameters changed.
-pub struct RewardsPoolParameters<T: CapacityConfig> {
-    /// the total of all FRQCY staked when these parameters were applied
-    pub staking_total: BalanceOf<T>,
-    /// the size of the rewards pool when these parameters were applied
-    pub rewards_pool_total: BalanceOf<T>
-    /// the first era these parameters were applied
-    pub applied_at: T::StakingEra,
-    /// the number of providers
-    pub providers: uint32,
-    /// the number of stakers
-    pub stakers: uint32,
+pub struct StakingRewardClaim<T: Config> {
+    pub claimedReward: BalanceOf<T>,
+    pub newStakingAccountState: StakingAccountDetails<T: Config>
+}
+
+pub type StakingRewardsProvider<T: Config> {
+type BalanceOf<T>;
+type AccountIdOf<T>;
+type EraOf<T>;
+
+pub fn rewardPoolSize(era: EraOf<T>) -> BalanceOf<T>;
+
+pub fn stakingRewardFor(accountId: AccountIdOf<T>, era: EraOf<T>) -> BalanceOf<T>;
+
+pub fn stakingRewardTotal(accountId: AccountIdOf<T>, fromEra: EraOf<T>, toEra: EraOf<T>);
+
+pub fn validateStakingRewardClaim(accountId: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
+
+pub fn payoutEligible(accountId: AccountIdOf<T>) -> bool;
 }
 ```
 
-### Properties and Pallet Storage (DRAFT! some of these are just a guess!)
-* `staking_type` (Maximized or Rewards): An enum. A property on `StakingAccountDetails`
-* `pub type RewardRate: StorageValue<_, uint16, ValueQuery>`: Stores the reward rate as hundredths of a percent; a reward rate of 1.25% would be stored as `125`.
-* `pub type RewardFrequency<T: Config> StorageValue<_, <T: BlockNumber` _\[or EpochNumber\]_ `>, ValueQuery>`: Stores Reward frequency in number of epochs or blocks, **TBD**
-* `pub type CapacityPriceMaximized<T: Config> StorageValue<_, BalanceOf<T>, ValueQuery>`:  Stores the price of 1 capacity in FRQCY, in the case of Maximized Staking.
-* `pub type CapacityPriceRewards<T: Config> StorageValue<_, BalanceOf<T>, ValueQuery>`: Stores the price of 1 capacity in FRQCY, in the case of Rewards Staking.
 
-### Capacity Pallet extrinsics
-* `change_reward_rate(origin, rate)`: governance-only
-* `change _reward_frequency(origin, period)`: governance-only
-* `change_staking_type(origin, target, new_type)`
-* `change_target(origin, old_target, new_target)`
-* `claim_staking_reward(origin)`
+### New storage items and related types
+```rust
+#[pallet::storage]
+#[pallet::getter(fn get_reward_pool_for)]
+pub type StakingRewardPool<T: Config> =
+    <StorageMap<_, Twox64Concat, T::Era, BalanceOf<T>>;
+```
 
-### Capacity Pallet helper functions
-* `participation_rate`: function, calculates participation using some combination of Total amount staked, reward Pool Token Size, the number of providers, the provider capacity amount (total?), individual amount staked (for individual reward amount only)
-* `current_staking_reward(account_id, target)`: function, calculates the current rewards that would be paid out if the StakingAccount holder unstaked at the current block.
-* `pay_reward`: function,
+### New extrinsics
+1. **claimStakingReward(origin,proof,payload)**
+```rust
+/// validates the reward claim
+/// if validated, mints token and transfers to Origin.
+/// Errors:
+///     - if Origin does not own the StakingRewardDetails in the claim.
+///     - if validation of calculation fails
+///     - if rewards were already paid out in the current Era
+#[pallet::call_index(n)]
+pub fn claimStakingReward(
+    origin: OriginFor<T>,
+    proof: Hash,
+    payload: StakingRewardClaim<T>
+);
+```
+
+2. **change_staking_target(origin, from, to, amount)**
+```rust
+/// change a staking account detail's target MSA Id to a new one.
+/// If amount is specified, that amount up to the total staking amount is retargeted,
+/// otherwise ALL of the total staking amount for 'from' is changed to the new target MSA Id.
+/// Errors:
+///    -  if 'from' has no funds targeted in the staking account
+///    - if 'to' MSA Id does not exist or is not a Provider
+///    - if Origin does not have a staking account.
+#[pallet:call_index(n+1)]
+pub fn change_staking_target(
+    origin: OriginFor<T>,
+    from: MessageSourceId,
+    to: MessageSourceId,
+    amount: Option<BalanceOf<T>>
+);
+```
 
 ### RPC
-* `unclaimed_staking_reward(account_id: AccountId) -> BalanceOf<T>`: caller can query the unclaimed staking reward for a given AccountId.
 
-### Other functions
-* `change_staking_type`:  a function on StakingAccountDetails  (? maybe you have to unstake and restake to do this)
-
-[//]: # (A high level overview, followed by a detailed description.)
-[//]: # (This is where specific technology, such as language, frameworks, encryption algorithms, type of authentication, and APIs can be described.)
-[//]: # (It can include diagrams such as a system context diagram, or a sequence diagram.)
-
----
 ## Benefits and Risks:
 ### Benefit: stabler message costs
 Staking locks up token.  Locked token may not be immediately withdrawn; this dampens some level of speculation-driven volatility as well as that driven by opportunistic Capacity purchases.
@@ -151,15 +157,6 @@ Adjust reward amounts. This is why the reward amounts need to be adjustable.
 [//]: # (Another: the solution is well known and widely used, but it's not a perfect fit and requires complicated changes in one area.)
 
 ## Alternatives and Rationale:
-
-### 1. Rewards are accounted for periodically all together, at once.
-this puts an extreme burden on one or more blocks due to storage updates.
-### 2. At least some portion of rewards are accounted for every block; all rewards are updated for all stakers within the Era.
-This effectively creates a constant overhead, but this approach causes much heavier blocks than the chosen solution.
-### 3. Stakers for a given Provider could be "lazily" rewarded at the same time a Provider posts a new message at the beginning of an Epoch.
-This presents a problem if a Provider does not post every Epoch, especially if the Rewards Era is less than or equal to an Epoch.  This will also put a lot of extra weight on blocks at the beginning of every Epoch.
-### 4. Pay rewards out every time there is a change for a given token staking account, or a change in Rewards parameters.
-Since the only thing that changes staking rewards is the `StakingAccountDetails.total`, unless the Rewards calculation changes, we don't need to do a sweep unless the staker changes their total, either through staking more or unstaking.  This minimizes the average block burden significantly, however, occasionally, when the Rewards calculation changes, block time will be slower for the next Era due to rewards payouts.
 
 ### Why can't Frequency use Substrate `staking` pallet?
 The staking pallet is for rewarding node validators, and rewards must be claimed within `HISTORY_DEPTH` blocks before the record of them is purged.  Reward payouts for a given validator can be called by any account and the rewards go o the validator and are shared with its nominators. The staking pallet keeps track of what rewards have been claimed within that `HISTORY_DEPTH` number of blocks.
