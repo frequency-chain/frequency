@@ -101,13 +101,14 @@ At this point you should have `./target/debug` directory generated locally with 
 
 ### asdf Support
 
+Frequency optionally supports [asdf](https://asdf-vm.com) for managing dependencies of the following tools:
 Install the required plugins for [asdf](https://asdf-vm.com):
+Please note that if you use rustup, asdf may conflict and cause issues. It is recommended to use one or the other, but not both for rust.
 
 ```sh
 asdf plugin-add rust
 asdf plugin-add make
 asdf plugin-add cmake https://github.com/srivathsanmurali/asdf-cmake.git
-asdf plugin-add protoc https://github.com/paxosglobal/asdf-protoc.git
 ```
 
 Install the dependency versions declared in `.tool-versions`
@@ -116,7 +117,7 @@ Install the dependency versions declared in `.tool-versions`
 asdf install
 ```
 
-NOTE: asdf does not support clang and needs to be installed separately.
+NOTE: asdf does not support clang and it needs to be installed separately.
 
 ## Remote Instance such as AWS EC2
 
