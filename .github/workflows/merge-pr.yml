@@ -27,8 +27,6 @@ jobs:
 
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
-    env:
-      HOME: /root
     runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
