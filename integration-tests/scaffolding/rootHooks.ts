@@ -8,11 +8,11 @@ exports.mochaHooks = {
     async beforeAll() {
         await ExtrinsicHelper.initialize();
 
-        if (process.env.FUNDING_ACCOUNT_ENVIRONMENT === "rococo") {
+        if (process.env.CHAIN_ENVIRONMENT === "rococo") {
             const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
 
             if (seed_phrase === undefined) {
-                console.error("FUNDING_ACCOUNT_SEED_PHRASE must not be undefined when FUNDING_ACCOUNT_ENVIRONMENT is \"rococo\"");
+                console.error("FUNDING_ACCOUNT_SEED_PHRASE must not be undefined when CHAIN_ENVIRONMENT is \"rococo\"");
                 process.exit(1);
             }
 

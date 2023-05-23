@@ -59,7 +59,7 @@ case "${CHAIN}" in
     "local_instant_sealing")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test"
-        FUNDING_ACCOUNT_ENVIRONMENT="dev"
+        CHAIN_ENVIRONMENT="dev"
 
         if [[ "$1" == "load" ]]; then
             NPM_RUN_COMMAND="test:load"
@@ -69,13 +69,13 @@ case "${CHAIN}" in
     "local_relay")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test:relay"
-        FUNDING_ACCOUNT_ENVIRONMENT="dev"
+        CHAIN_ENVIRONMENT="dev"
         TEST_CHAIN_VALIDATION="consensus"
     ;;
     "frequency_rococo")
         PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
         NPM_RUN_COMMAND="test:relay"
-        FUNDING_ACCOUNT_ENVIRONMENT="rococo"
+        CHAIN_ENVIRONMENT="rococo"
         TEST_CHAIN_VALIDATION="consensus"
 
         read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
@@ -153,4 +153,4 @@ echo "---------------------------------------------"
 echo "Starting Tests..."
 echo "---------------------------------------------"
 
-FUNDING_ACCOUNT_ENVIRONMENT=$FUNDING_ACCOUNT_ENVIRONMENT FUNDING_ACCOUNT_SEED_PHRASE=$FUNDING_ACCOUNT_SEED_PHRASE TEST_CHAIN_VALIDATION=$TEST_CHAIN_VALIDATION WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
+CHAIN_ENVIRONMENT=$CHAIN_ENVIRONMENT FUNDING_ACCOUNT_SEED_PHRASE=$FUNDING_ACCOUNT_SEED_PHRASE TEST_CHAIN_VALIDATION=$TEST_CHAIN_VALIDATION WS_PROVIDER_URL="$PROVIDER_URL" npm run $NPM_RUN_COMMAND
