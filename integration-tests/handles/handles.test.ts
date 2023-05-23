@@ -118,6 +118,7 @@ describe("🤝 Handles", () => {
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
             }
+
             let full_handle_state = handle_response.unwrap();
             let suffix_from_state = full_handle_state.suffix;
             let suffix = suffix_from_state.toNumber();

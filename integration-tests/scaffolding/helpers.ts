@@ -113,7 +113,7 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
 }
 
 export function getDefaultFundingSource() {
-  return process.env.CHAIN_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
+  return process.env.FUNDING_ACCOUNT_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
 }
 
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {

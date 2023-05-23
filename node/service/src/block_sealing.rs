@@ -141,6 +141,7 @@ pub fn frequency_dev_sealing(
 
 		// Prepare the future for manual sealing block authoring
 		let authorship_future = run_seal_command(
+			sealing_mode,
 			sealing_create_empty_blocks,
 			sc_consensus_manual_seal::ManualSealParams {
 				block_import: client.clone(),
@@ -209,6 +210,7 @@ pub fn frequency_dev_sealing(
 
 /// Override manual sealing to handle creating non-empty blocks for interval sealing mode without nuisance warning logs
 pub async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
+	sealing_mode: SealingMode,
 	sealing_create_empty_blocks: bool,
 	ManualSealParams {
 		mut block_import,
@@ -240,8 +242,9 @@ pub async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
 	while let Some(command) = commands_stream.next().await {
 		match command {
 			EngineCommand::SealNewBlock { create_empty, finalize, parent_hash, sender } =>
-				if sealing_create_empty_blocks ||
-					(!sealing_create_empty_blocks && pool.ready().count() > 0)
+				if sealing_mode != SealingMode::Interval ||
+					sealing_create_empty_blocks ||
+					pool.ready().count() > 0
 				{
 					sc_consensus_manual_seal::seal_block(
 						sc_consensus_manual_seal::SealBlockParams {

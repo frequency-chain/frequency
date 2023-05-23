@@ -391,8 +391,7 @@ export class ExtrinsicHelper {
     }
 
     public static async mine() {
-      let res: CreatedBlock = await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
-      ExtrinsicHelper.api.rpc.engine.finalizeBlock(res.blockHash);
+      await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
     }
 
     public static async run_to_block(blockNumber: number) {
