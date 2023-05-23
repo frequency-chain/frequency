@@ -1,5 +1,11 @@
 # Capacity Staking Rewards Economic Model
 
+This document outlines the economic model to be used for:
+1. determining the token value of the Reward Pool for a given Era
+2. how to calculate rewards for an individual staker
+3. when rewards are calculated
+4. when rewards are paid out
+5. where these calculations are performed
 
 ## Context and Scope:
 The Frequency Transaction Payment system uses Capacity to pay for certain transactions on chain.  Accounts that wish to pay with Capacity must:
@@ -9,9 +15,6 @@ The Frequency Transaction Payment system uses Capacity to pay for certain transa
 
 There is also a business case for allowing any token holder to lock up its tokens in exchange for a reward - known as _staking_ - while also targeting a Provider to receive some Capacity.
 
-[//]: # (A short description of the landscape in which the new system is being built, what is actually being built.)
-[//]: # (It may also say what is not being built, and any assumptions.)
-[//]: # (Example: The proposed feature is a testing library. The context is: the library is for our chosen blockchain. The scope is: this is for a specific repository, so it's not meant to be reused. That means it won't be a separate package, and the code will be tailored for this repo. One might also say that the scope is also limited to developer testing, so it's not meant to be used in CI or a test environment such as a test blockchain network.)
 
 ## Problem Statement:
 A system consisting only of providers and coinless users who delegate to providers will tend toward centralization.
@@ -70,41 +73,61 @@ Such a system could diminish the "nothing succeeds like success" effect, however
 
 Since there is no difference to the chain for what Provider is posting what message, a "bulk discount" for posting Capacity messages doesn't apply.
 
-### One way to set the difference between Maximized and Reward Staking
-
 ## Goals
-* Outline the architecture for the implementation of staking rewards for Capacity.
-* Allow staking rewards parameters to be adjusted without a chain upgrade.
-* Prevent rewards storage operations and calculations from excessively weighing down blocks.
-* Disallow receiving staking rewards for token that is not staked for a full Era.
-* Prevent staking and unstaking "spam" which would destabilize the chain token economy and slow down block formation due to excessive database read/writes.
-* Create a living design document that changes as compelling new findings and needs arise
+1. Specify verbally or in pseudo-code how to do the 5 things listed at the top of this document
 
-## Non-goals
-* Do not finalize names, functions, storage types and shape of storage and structs
-* Do not determine the actual amount of rewards - either in Capacity or FRQCY - for staking
-* Do not account for other economic incentives on the Frequency network, such as collator rewards.
-* Cannot account for token price in any other currency.
-* Do not change how paying for transactions with Capacity works
-
----
+## Non-Goals
+1. Do not specify implementation details
+2. Do not specify final naming
 ## Proposal:
-Any Frequency account with a set minimum amount of FRQCY to may stake token to the network.
-On staking, the staker designates a type of staking, plus a target Provider to receive Capacity.
-There are two types of staking, **Maximized Capacity Staking** and **Rewards Capacity Staking**.
-In both types, the staker designates a target Provider who receives capacity upon staking.
-The difference is:
 
-* With **Maximized Capacity Staking**, the target Provider receives more Capacity than it would with Rewards Capacity Staking.
-  The staker does not receive any token rewards.
-* With **Rewards Capacity Staking**, the target Provider shares rewards with the staker.
-  The target Provider receives some Capacity, and the staker receives periodic rewards in FRQCY.
+## Benefits and Risks:
+### Benefit: stabler message costs
+Staking locks up token.  Locked token may not be immediately withdrawn; this dampens some level of speculation-driven volatility as well as that driven by opportunistic Capacity purchases.
 
+### Benefit: improved engagement and expanded user base
+A Provider may, for example, airdrop tokens to users who meet certain criteria, such as referrals or sharing links on other platforms.  Users with token may choose Reward staking to generate Capacity for their Provider and also get token rewards.
 
-Whenever `StakingAccountDetails.total` changes, either by staking more or unstaking, rewards are calculated, minted and transferred immediately.  Rewards may also be claimed directly for a specific AccountId by calling an extrinsic. In either case, `StakingAccountDetails.total` is updated to be the current era.  Rewards are paid out from `last_rewarded_at` to `current_era() - 1` by applying the RewardsPoolParameters to each Era.
+### Benefit: improved economic sustainability
+A staking reward system can improve /onboard/uptake/usage/...
 
+### Risk: staking system incentivizes gaming
+If the staking system is too complicated, it can breed exploits and encourage gaming the systme.
+If the staking system does not make it worthwhile to stake for rewards, the goal of decentralization is not achieved, and/or it can encourage gaming the system
 
-Whenever a Rewards Pool calculation is changed, it goes into effect at the start of the next Era. The new Rewards parameters are pushed to storage, and, assuming the history queue is full, the oldest one is removed.
+# Risk: staking system penalizes whale Providers
+If the system is unreliable, unstable or not economical enough for large Providers -- _particularly_ compared to alternatives -- the goal of decentralization may be achieved in some sense, but at the expense of widespread adoption.
 
-A special condition of this is a blend of the above:  some staking accounts could be large enough that if their staking balance changes significantly, it also affects the Reward Pool significantly for all staking accounts.  Such accounts are called "whales" in blockchain jargon.  We deem "significant" change as greater than or equal to one hundredth of a percent (0.01%), rounded.  If so, a new set of Rewards parameters is pushed.  We _may_ need to extend the thaw period for a staking account when their unstaking will cause a RewardsPool history push, in order to strongly reduce incentives for staking/unstaking spam.
+### Risk: Faulty reward calculations:
+* Maximized Stake for capacity is not cheaper per txn than pay-as-you-go with token
+* Maximized Stake for capacity pays better than staking to be a collator
 
+### Arguments in favor of storage values for reward rate and capacity price
+* transparency:  it's more transparent than a Config, which could be changed only by an upgrade. This is because changes to Config values can be easily overlooked if they are buried in a large upgrade. Making them be subject to governance approval puts the change on chain, making it more subject to review.
+* stabler: reward rates and capacity prices would have an automatic upper limit to how frequently they could change.
+
+### Arguments against
+* risk to network sustainability:  it's possible that proposed changes which would actually be necessary to Frequency's economic stability and sustainability may be rejected by token voters. This is mitigated particularly at the start of Frequency's operation given the token distribution, and also with the voting power and permissions of Frequency and Technical Councils.
+
+#### Mitigation:
+Adjust reward amounts. This is why the reward amounts need to be adjustable.
+
+[//]: # (the reasons why this solution was chosen, and the risks this solution poses.)
+[//]: # (For example, the solution may be very simple, but there could performance bottlenecks above a certain threshold.)
+[//]: # (Another: the solution is well known and widely used, but it's not a perfect fit and requires complicated changes in one area.)
+
+## Alternatives and Rationale:
+
+### Why can't Frequency use Substrate `staking` pallet?
+The staking pallet is for rewarding node validators, and rewards must be claimed within `HISTORY_DEPTH` blocks before the record of them is purged.  Reward payouts for a given validator can be called by any account and the rewards go o the validator and are shared with its nominators. The staking pallet keeps track of what rewards have been claimed within that `HISTORY_DEPTH` number of blocks.
+
+Since Capacity Rewards staking is for FRQCY token account holders, we should not require those holders to have to call an extrinsic regularly to receive rewards.
+
+Secondly, we must plan for the number of Providers to dwarf the number of validators on the Polkadot Relay chain.  The Polkadot relay chain currently has validators in the hundreds.  Calculating the payouts for hundreds of items in RocksDB storage is a very different prospect than calculating rewards for thousands of Providers and potentially tens of millions (or more) of Rewards stakers.  It may be that this type of optimization is deferred, however, this design must not make it difficult to optimize.
+
+[//]: # (discuss alternatives that were considered, and why they were rejected.)
+[//]: # (Note when there are absolute requirements that the solution does not and can't meet. One example might be, it's a proprietary solution but we need something open source.)
+
+## Sources:
+
+[//]: # (sources of information that led to this design.)
