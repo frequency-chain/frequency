@@ -59,7 +59,7 @@ case "${CHAIN}" in
     "local_instant_sealing")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test"
-        CHAIN_ENVIRONMENT="local"
+        CHAIN_ENVIRONMENT="dev"
 
         if [[ "$1" == "load" ]]; then
             NPM_RUN_COMMAND="test:load"
@@ -69,7 +69,7 @@ case "${CHAIN}" in
     "local_relay")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test:relay"
-        CHAIN_ENVIRONMENT="local"
+        CHAIN_ENVIRONMENT="dev"
         TEST_CHAIN_VALIDATION="consensus"
     ;;
     "frequency_rococo")
@@ -94,8 +94,8 @@ if [ -n "$( get_frequency_pid )" ]
 then
     echo "Frequency is already running."
 else
-    echo "Building local Frequency executable..."
-    if ! make build-local
+    echo "Building a no-relay Frequency executable..."
+    if ! make build-no-relay
     then
         echo "Error building Frequency executable; aborting."
         exit 1

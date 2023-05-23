@@ -152,6 +152,14 @@ pub fn new_partial(
 
 	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
+	#[cfg(feature = "frequency-no-relay")]
+	let import_queue = sc_consensus_manual_seal::import_queue(
+		Box::new(client.clone()),
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry(),
+	);
+
+	#[cfg(not(feature = "frequency-no-relay"))]
 	let import_queue = build_import_queue(
 		client.clone(),
 		block_import.clone(),
@@ -335,6 +343,7 @@ async fn start_node_impl(
 }
 
 /// Build the import queue for the parachain runtime.
+#[cfg(not(feature = "frequency-no-relay"))]
 fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
