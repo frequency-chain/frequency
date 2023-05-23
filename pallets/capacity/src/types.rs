@@ -7,8 +7,10 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
+use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
+use common_primitives::node::{AccountId, Hash};
 
 /// The type used for storing information about staking details.
 #[derive(
@@ -21,8 +23,15 @@ pub struct StakingAccountDetails<T: Config> {
 	/// The total amount of tokens in `active` and `unlocking`
 	pub total: BalanceOf<T>,
 	/// Unstaked balances that are thawing or awaiting withdrawal.
-	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+	pub unlocking: 				BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+	/// What type of staking this account is doing
+	pub staking_type: StakingType,
+	/// The None or Some(number): never, or the last RewardEra that this account's rewards were claimed.
+	pub last_rewards_claimed_at: Option<RewardEra>,
+	/// Chunks that have been retargeted within T::UnstakingThawPeriod
+	pub stake_change_unlocking:	BoundedVec<UnlockChunk<BalanceOf<T>, RewardEra>, T::MaxUnlockingChunks>,
 }
+
 /// The type that is used to record a single request for a number of tokens to be unlocked.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct UnlockChunk<Balance, EpochNumber> {
@@ -124,7 +133,14 @@ impl<T: Config> StakingAccountDetails<T> {
 
 impl<T: Config> Default for StakingAccountDetails<T> {
 	fn default() -> Self {
-		Self { active: Zero::zero(), total: Zero::zero(), unlocking: Default::default() }
+		Self {
+			active: Zero::zero(),
+			total: Zero::zero(),
+			unlocking: dbg!(Default::default()),
+			last_rewards_claimed_at: None,
+			staking_type: StakingType::MaximumCapacity,
+			stake_change_unlocking: dbg!(Default::default()),
+		}
 	}
 }
 
@@ -233,3 +249,52 @@ pub struct EpochInfo<BlockNumber> {
 	/// The block number when this epoch started.
 	pub epoch_start: BlockNumber,
 }
+
+/// A claim to be rewarded `claimed_reward` in token value
+pub struct StakingRewardClaim<T: Config> {
+	/// How much is claimed, in token
+	pub claimed_reward: BalanceOf<T>,
+	/// The end state of the staking account if the operations are valid
+	pub staking_account_end_state: StakingAccountDetails<T>,
+	/// The starting era for the claimed reward period, inclusive
+	pub from_era: RewardEra,
+	/// The ending era for the claimed reward period, inclusive
+	pub to_era: RewardEra,
+}
+
+/// A trait that provides the Economic Model for Provider Boosting.
+pub trait StakingRewardsProvider<T: Config> {
+	/// Return the size of the reward pool for the given era, in token
+	/// Errors:
+	///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
+	fn reward_pool_size(era: RewardEra) -> BalanceOf<T>;
+
+	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
+	/// Errors:
+	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
+	fn staking_reward_total(account_id: AccountId, from_era: RewardEra, to_era: RewardEra);
+
+	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - MaxUnlockingChunksExceeded
+	///     - All other conditions that would prevent a reward from being claimed return 'false'
+	fn validate_staking_reward_claim(
+		account_id: AccountId,
+		proof: Hash,
+		payload: StakingRewardClaim<T>,
+	) -> bool;
+
+	/// Return whether `accountId` can claim a reward. Staking accounts may not claim a reward more than once
+	/// per Era, may not claim rewards before a complete Era has been staked, and may not claim more rewards past
+	/// the number of `MaxUnlockingChunks`.
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - MaxUnlockingChunksExceeded
+	///     - All other conditions that would prevent a reward from being claimed return 'false'
+	fn payout_eligible(account_id: AccountId) -> bool;
+}
+
+/// Needed data about a RewardPool for a given RewardEra.
+pub struct RewardPoolInfo {}
