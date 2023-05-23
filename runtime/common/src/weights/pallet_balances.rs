@@ -46,13 +46,13 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_creating() -> Weight {
+	fn force_set_balance_creating() -> Weight {
 		Weight::from_ref_time(23_026_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: System Account (r:1 w:1)
-	fn set_balance_killing() -> Weight {
+	fn force_set_balance_killing() -> Weight {
 		Weight::from_ref_time(25_706_000 as u64)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
