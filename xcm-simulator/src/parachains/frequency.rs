@@ -40,6 +40,7 @@ pub use frequency_runtime::{
 	Version,
 };
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
+use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::BlockHashCount;
 use sp_core::{ConstU128, ConstU16, ConstU32};
 use sp_runtime::traits::{AccountIdLookup, BlakeTwo256};
@@ -47,13 +48,11 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter,
-	SiblingParachainAsNative, AllowTopLevelPaidExecutionFrom, SiblingParachainConvertsVia, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
+	SiblingParachainAsNative, AllowTopLevelPaidExecutionFrom, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
 
 use crate::with_computed_origin::WithComputedOrigin;
-
-use crate::Frequency;
 
 impl frame_system::Config for Runtime {
 	type BaseCallFilter = Everything;
@@ -125,7 +124,7 @@ impl pallet_collator_selection::Config for Runtime {
 }
 
 parameter_types! {
-	pub RelayNetwork: NetworkId = NetworkId::Kusama;
+	pub RelayNetwork: NetworkId = NetworkId::Any;
 }
 // impl pallet_sudo::Config for Runtime {
 // 	type RuntimeCall = RuntimeCall;

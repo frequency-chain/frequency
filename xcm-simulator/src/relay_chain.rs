@@ -88,8 +88,7 @@ impl configuration::Config for Runtime {
 
 parameter_types! {
 	pub const KsmLocation: MultiLocation = Here.into();
-	pub const RocLocation: MultiLocation = Here.into();
-	// fix
+	pub const KusamaNetwork: NetworkId = NetworkId::Kusama;
 	pub const RococoNetwork: NetworkId = NetworkId::Kusama;
 	pub const AnyNetwork: NetworkId = NetworkId::Any;
 	pub Ancestry: MultiLocation = Here.into();
@@ -97,15 +96,15 @@ parameter_types! {
 }
 
 pub type SovereignAccountOf =
-	(ChildParachainConvertsVia<ParaId, AccountId>, AccountId32Aliases<RococoNetwork, AccountId>);
+	(ChildParachainConvertsVia<ParaId, AccountId>, AccountId32Aliases<KusamaNetwork, AccountId>);
 
 pub type LocalAssetTransactor =
-	XcmCurrencyAdapter<Balances, IsConcrete<RocLocation>, SovereignAccountOf, AccountId, ()>;
+	XcmCurrencyAdapter<Balances, IsConcrete<KsmLocation>, SovereignAccountOf, AccountId, ()>;
 
 type LocalOriginConverter = (
 	SovereignSignedViaLocation<SovereignAccountOf, RuntimeOrigin>,
 	ChildParachainAsNative<origin::Origin, RuntimeOrigin>,
-	SignedAccountId32AsNative<RococoNetwork, RuntimeOrigin>,
+	SignedAccountId32AsNative<KusamaNetwork, RuntimeOrigin>,
 	ChildSystemParachainAsSuperuser<ParaId, RuntimeOrigin>,
 );
 

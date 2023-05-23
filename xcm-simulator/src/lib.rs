@@ -22,7 +22,7 @@ pub mod with_computed_origin;
 #[cfg(test)]
 mod tests;
 
-use parachains::{parachain, frequency};
+use parachains::{frequency, parachain};
 
 use polkadot_parachain::primitives::Id as ParaId;
 use sp_runtime::traits::AccountIdConversion;
@@ -54,7 +54,23 @@ decl_test_parachain! {
 		Runtime = frequency::Runtime,
 		XcmpMessageHandler = frequency::MsgQueue,
 		DmpMessageHandler = frequency::MsgQueue,
-		new_ext = para_ext(3),
+		new_ext = {
+			use frequency::{MsgQueue, Runtime, System};
+
+			let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
+
+			pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE)] }
+				.assimilate_storage(&mut t)
+				.unwrap();
+
+			let mut ext = sp_io::TestExternalities::new(t);
+			ext.execute_with(|| {
+				System::set_block_number(1);
+				MsgQueue::set_para_id(3u32.into());
+			});
+
+			ext
+		},
 	}
 }
 
@@ -86,9 +102,11 @@ pub fn para_ext(para_id: u32) -> sp_io::TestExternalities {
 
 	let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
-	pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE)] }
-		.assimilate_storage(&mut t)
-		.unwrap();
+	pallet_balances::GenesisConfig::<Runtime> {
+		balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE)],
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {
@@ -116,4 +134,4 @@ pub fn relay_ext() -> sp_io::TestExternalities {
 
 pub type RelayChainPalletXcm = pallet_xcm::Pallet<relay_chain::Runtime>;
 pub type ParachainPalletXcm = pallet_xcm::Pallet<parachain::Runtime>;
-
+pub type FrequencyPalletXcm = pallet_xcm::Pallet<frequency::Runtime>;
