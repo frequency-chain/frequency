@@ -175,7 +175,7 @@ jobs:
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
-    container: ubuntu:20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Install Required Packages
         run: |
@@ -190,11 +190,6 @@ jobs:
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          targets: wasm32-unknown-unknown
-          toolchain: stable
       - name: Compile for ${{matrix.network}}
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
@@ -244,8 +239,6 @@ jobs:
     outputs:
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
-    env:
-      HOME: /root
     strategy:
       fail-fast: true
       matrix:
@@ -267,21 +260,16 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     steps:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt-get install -y curl protobuf-compiler build-essential libclang-dev file
-          curl -fsSL https://get.docker.com -o get-docker.sh
-          sh get-docker.sh
-          docker run hello-world
+          sudo apt install -y wget file build-essential
       - name: Check Out Repo
         uses: actions/checkout@v3
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Reset Runner
-        uses: ./.github/workflows/common/reset-self-hosted-runner
       - name: Install Rust Toolchain
         uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
         with:
@@ -306,22 +294,21 @@ jobs:
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       - name: Install srtool-cli
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
+          rustup run stable cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         run: |
           RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}} \
-            --root
+            --package=${{matrix.package}}
       - name: Rename WASM file
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          rustup run stable cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Test WASM file
         run: |
@@ -339,7 +326,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build]
-    container: ubuntu:20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Install Required Packages
         run: |
@@ -351,11 +338,6 @@ jobs:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          targets: wasm32-unknown-unknown
-          toolchain: stable
       - name: Build Docs
         run: |
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
