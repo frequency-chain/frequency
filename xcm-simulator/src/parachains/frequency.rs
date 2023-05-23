@@ -34,7 +34,7 @@ pub use common_runtime::{
 
 pub use frequency_runtime::{
 	xcm_config::{
-		Barrier, MaxInstructions, UnitWeightCost, FrequencyLocation
+		MaxInstructions, UnitWeightCost, FrequencyLocation
 	},
 	BalancesMaxLocks, BalancesMaxReserves, RuntimeBlockLength, RuntimeBlockWeights, Session,
 	Version,
@@ -47,9 +47,11 @@ use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
 	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter,
-	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
+	SiblingParachainAsNative, AllowTopLevelPaidExecutionFrom, SiblingParachainConvertsVia, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
 };
 use xcm_executor::{Config, XcmExecutor};
+
+use crate::with_computed_origin::WithComputedOrigin;
 
 use crate::Frequency;
 
@@ -190,6 +192,10 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 );
 pub type XcmRouter = crate::ParachainXcmRouter<MsgQueue>;
+
+pub type Barrier = (
+    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, ConstU32<8>>,
+);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

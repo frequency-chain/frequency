@@ -4,9 +4,12 @@ members = [
   "node/cli",
   "node/service",
   "pallets/*",
-  "runtime/*",
+	# "xcm/xcm-builder",
+	# "xcm/xcm-executor",
+	# "xcm/pallet-xcm",
   "common/helpers",
   "xcm-simulator",
+  "runtime/*",
 ]
 # exclude = [
 #  "xcm-simulator"

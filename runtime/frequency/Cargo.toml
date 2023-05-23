@@ -85,9 +85,13 @@ polkadot-parachain = {git = "https://github.com/paritytech/polkadot", default-fe
 polkadot-runtime-common = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36"}
 
 xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36"}
+# xcm = {path = "../../xcm", default-features = false }
 xcm-builder = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36"}
+# xcm-builder = {path = "../../xcm/xcm-builder", default-features = false }
 xcm-executor = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36"}
+# xcm-executor = {path = "../../xcm/xcm-executor", default-features = false }
 pallet-xcm = {git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.36"}
+# pallet-xcm = {path = "../../xcm/pallet-xcm", default-features = false }
 
 
 # Cumulus
@@ -169,6 +173,9 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"system-runtime-api/std",
+	"xcm/std",
+	"xcm-executor/std",
+	"xcm-builder/std",
 ]
 runtime-benchmarks = [
 	"hex-literal",

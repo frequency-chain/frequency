@@ -17,6 +17,8 @@
 mod parachains;
 mod relay_chain;
 
+pub mod with_computed_origin;
+
 #[cfg(test)]
 mod tests;
 

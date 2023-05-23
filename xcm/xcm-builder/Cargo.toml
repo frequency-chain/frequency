@@ -1,0 +1,51 @@
+[package]
+name = "xcm-builder"
+edition = "2021"
+description = "Tools & types for building with XCM and its executor."
+version = "0.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+parity-scale-codec = { version = "3.1.5", default-features = false, features = ["derive"] }
+scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
+xcm = { git = "https://github.com/paritytech/polkadot", default-feature = false, branch = "release-v0.9.36" }
+xcm-executor = { path = "../xcm-executor", default-features = false }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-arithmetic = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+pallet-transaction-payment = { git = "https://github.com/paritytech/substrate", default-features = false , branch = "polkadot-v0.9.36" }
+log = { version = "0.4.17", default-features = false }
+
+# Polkadot dependencies
+polkadot-parachain = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+
+[dev-dependencies]
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36" }
+pallet-xcm = { path = "../pallet-xcm" }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot", branch = "release-v0.9.36" }
+[features]
+default = ["std"]
+runtime-benchmarks = [
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks"
+]
+std = [
+	"log/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"xcm/std",
+	"xcm-executor/std",
+	"sp-std/std",
+	"sp-arithmetic/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"polkadot-parachain/std",
+	"pallet-transaction-payment/std",
+]

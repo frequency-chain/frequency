@@ -39,7 +39,7 @@ use xcm_builder::{
 /// `Transact` in order to determine the dispatch Origin.
 pub type LocationToAccountId = (
 	// Sibling parachain origin convert to AcountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
+	// SiblingParachainConvertsVia<Sibling, AccountId>,
 	//
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
@@ -74,8 +74,9 @@ pub type AssetTransactors = (LocalAssetTrasaction,);
 
 // The barriers one of which must be passed for an XCM message to be executed.
 pub type Barrier = (
-	TakeWeightCredit,
+	// TakeWeightCredit,
 	// If the message is one that immediately attemps to pay for execution, then allow it.
+	// WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>>,
 	AllowTopLevelPaidExecutionFrom<Everything>,
 );
 

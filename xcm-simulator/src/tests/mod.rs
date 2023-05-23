@@ -214,7 +214,7 @@ fn frequency_xcmp() {
 	);
 	ParaA::execute_with(|| {
 		let xcm: Xcm<()> = Xcm(vec![
-			DescendOrigin(X1(AccountId32 { network: NetworkId::Kusama, id: [0; 32] })),
+			DescendOrigin(X1(AccountId32 { network: NetworkId::Any, id: [0; 32] })),
 			WithdrawAsset((Here, INITIAL_BALANCE).into()),
 			BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Unlimited },
 			Transact {
