@@ -22,7 +22,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "nightly-2022-10-09" # TODO: Set this dynamically
+  RUST_TOOLCHAIN: "nightly-2022-11-15" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
@@ -88,12 +88,14 @@ jobs:
           sudo apt install -y protobuf-compiler libclang-dev
       - name: Install Rust Toolchain
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | bash -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Update Weights for All Pallets
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
+          rustup show
           make benchmarks
           git status -s
           git diff
@@ -271,9 +273,10 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Install Rust Toolchain
-        uses: dtolnay/rust-toolchain@e12eda571dc9a5ee5d58eecf4738ec291c66f295
-        with:
-          toolchain: stable
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | bash -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
@@ -294,7 +297,7 @@ jobs:
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       - name: Install srtool-cli
         run: |
-          rustup run stable cargo install --git https://github.com/chevdor/srtool-cli
+          cargo install --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         run: |
@@ -308,7 +311,7 @@ jobs:
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install subwasm
         run: |
-          rustup run stable cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
       - name: Test WASM file
         run: |
