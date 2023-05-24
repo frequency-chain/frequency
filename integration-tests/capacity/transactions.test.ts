@@ -16,7 +16,7 @@ import {
     TokenPerCapacity, Sr25519Signature, assertEvent, getCurrentItemizedHash, getCurrentPaginatedHash,
     generateItemizedSignaturePayload, createDelegator, generatePaginatedUpsertSignaturePayload,
     generatePaginatedDeleteSignaturePayload, getOrCreateDummySchema, getOrCreateAvroChatMessageItemizedSchema,
-    getOrCreateParquetBroadcastSchema, getOrCreateAvroChatMessagePaginatedSchema
+    getOrCreateParquetBroadcastSchema, getOrCreateAvroChatMessagePaginatedSchema, CHAIN_ENVIRONMENT
 } from "../scaffolding/helpers";
 
 describe("Capacity Transactions", function () {
@@ -123,9 +123,9 @@ describe("Capacity Transactions", function () {
 
             describe("when capacity eligible transaction is from the messages pallet", async function () {
                 // Increase global timeout to allow for the IPFS node startup when
-                // the test chain validation is "instant_finality". Running against a live
+                // the Frequency node is built for development. Running against a live
                 // chain doesn't bump into this problem because the timeouts are higher.
-                if (process.env.TEST_CHAIN_VALIDATION === "instant_finality") {
+                if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
                     this.timeout(5000);
                 }
 

@@ -35,6 +35,11 @@ export const TEST_EPOCH_LENGTH = 10;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
+export const CHAIN_ENVIRONMENT = {
+  DEVELOPMENT: "dev",
+  ROCOCO_TESTNET: "rococo-testnet",
+  ROCOCO_LOCAL: "rococo-local",
+}
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
@@ -115,7 +120,7 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
 }
 
 export function getDefaultFundingSource() {
-  return process.env.CHAIN_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
+  return process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET ? rococoAccounts[0] : devAccounts[0];
 }
 
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
@@ -266,7 +271,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
 }
 
 export async function getOrCreateGraphChangeSchema(): Promise<u16> {
-  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
     const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
     return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
@@ -283,7 +288,7 @@ export async function getOrCreateGraphChangeSchema(): Promise<u16> {
 }
 
 export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
-  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
     const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
     return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
   } else {
@@ -298,7 +303,7 @@ export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
 }
 
 export async function getOrCreateDummySchema(): Promise<u16> {
-  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
     const ROCOCO_DUMMY_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 52);
     return ROCOCO_DUMMY_SCHEMA_ID;
   } else {
@@ -318,7 +323,7 @@ export async function getOrCreateDummySchema(): Promise<u16> {
 }
 
 export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> {
-  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
     const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
     return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
   } else {
@@ -335,7 +340,7 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> 
 }
 
 export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
-  if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
     const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
     return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
   } else {

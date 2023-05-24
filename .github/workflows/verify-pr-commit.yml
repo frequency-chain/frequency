@@ -647,8 +647,10 @@ jobs:
         working-directory: integration-tests
       - name: Run Integration Tests
         working-directory: integration-tests
-        run: |
-          CHAIN_ENVIRONMENT="dev" TEST_CHAIN_VALIDATION="instant_finality" WS_PROVIDER_URL="ws://127.0.0.1:9944" npm test
+        env:
+          CHAIN_ENVIRONMENT=dev
+          WS_PROVIDER_URL=ws://127.0.0.1:9944
+        run: npm test
       - name: Stop Local Node
         if: always()
         run: pkill ${{env.FREQUENCY_PROCESS_NAME}}

@@ -2,7 +2,7 @@ import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { createAndFundKeypair } from "../scaffolding/helpers";
+import { CHAIN_ENVIRONMENT, createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16, u32 } from "@polkadot/types";
 import { loadIpfs, getBases } from "./loadIPFS";
@@ -13,7 +13,7 @@ describe("Add Offchain Message", function () {
     // Increase global timeout to allow for the IPFS node startup when
     // the test chain validation is "instant_finality". Running against a live
     // chain doesn't bump into this problem because the timeouts are higher.
-    if (process.env.TEST_CHAIN_VALIDATION === "instant_finality") {
+    if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
         this.timeout(5000);
     }
 

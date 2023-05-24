@@ -5,7 +5,7 @@ import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createMsaAndProvider,
-    stakeToProvider, fundKeypair,
+    stakeToProvider, CHAIN_ENVIRONMENT,
     getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
     CENTS, DOLLARS, createAndFundKeypair
 }
@@ -19,9 +19,9 @@ describe("Capacity Staking Tests", function () {
 
     before(async function () {
         // Pallet config changes such as modifying the epoch length will
-        // only be modified when running tests against a Frequency
-        // node with instant sealing.
-        if (process.env.TEST_CHAIN_VALIDATION === "instant_finality") {
+        // only be modified when running tests against a Frequency node built
+        // for development.
+        if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
             await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
         }
     });
@@ -71,9 +71,9 @@ describe("Capacity Staking Tests", function () {
 
         it("successfully withdraws the unstaked amount", async function () {
             // Withdrawing unstaked token will only be executed against a Frequency
-            // node with instant sealing due to the long length of time it would
+            // node built for development due to the long length of time it would
             // take to wait for an epoch period to roll over.
-            if (process.env.TEST_CHAIN_VALIDATION !== "instant_finality") this.skip();
+            if (process.env.CHAIN_ENVIRONMENT !== CHAIN_ENVIRONMENT.DEVELOPMENT) this.skip();
 
             // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
             let newEpochBlock = await getNextEpochBlock();
@@ -271,7 +271,8 @@ describe("Capacity Staking Tests", function () {
     describe("withdraw_unstaked()", async function () {
         describe("when attempting to call withdrawUnstake before first calling unstake", async function () {
             it("errors with NoUnstakedTokensAvailable", async function () {
-                if (process.env.TEST_CHAIN_VALIDATION === "consensus") {
+                if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_LOCAL ||
+                    process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
                     this.timeout(250000);
                 }
 

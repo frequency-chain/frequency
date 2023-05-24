@@ -1,6 +1,6 @@
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { createKeys } from "./apiConnection";
-import { devAccounts, rococoAccounts } from "./helpers";
+import { CHAIN_ENVIRONMENT, devAccounts, rococoAccounts } from "./helpers";
 
 export let EXISTENTIAL_DEPOSIT: bigint;
 
@@ -8,7 +8,7 @@ exports.mochaHooks = {
     async beforeAll() {
         await ExtrinsicHelper.initialize();
 
-        if (process.env.CHAIN_ENVIRONMENT === "rococo") {
+        if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
             const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
 
             if (seed_phrase === undefined) {
