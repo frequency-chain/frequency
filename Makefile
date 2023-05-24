@@ -248,7 +248,7 @@ integration-test-load-only:
 integration-test-rococo:
 	./scripts/run_integration_tests.sh -c rococo_testnet
 
-integration-test-local-relay:
+integration-test-rococo-local:
 	./scripts/run_integration_tests.sh -c rococo_local
 
 .PHONY: try-runtime
