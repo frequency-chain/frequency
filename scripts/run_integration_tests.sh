@@ -91,6 +91,15 @@ if [ -n "$( get_frequency_pid )" ]
 then
     echo "Frequency is already running."
 else
+    if [ "${CHAIN_ENVIRONMENT}" = "rococo-local" ]
+    then
+        echo "Frequency is not running."
+        echo "The intended use case of running integration tests with a chain environment"
+        echo "of \"rococo-local\" is to run the tests against a locally running Frequency"
+        echo "chain with locally running Polkadot relay nodes."
+        exit 1
+    fi
+
     echo "Building a no-relay Frequency executable..."
     if ! make build-no-relay
     then
