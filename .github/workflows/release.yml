@@ -236,13 +236,22 @@ jobs:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
     outputs:
+      runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     strategy:
       fail-fast: true
       matrix:
-        network: [rococo, mainnet]
+        network: [dev, rococo, mainnet]
         include:
+          - network: dev
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            release-wasm-file-name-prefix: frequency-dev_runtime
+            features: frequency-no-relay
+            wasm-core-version: frequency-dev
           - network: rococo
             build-profile: release
             package: frequency-runtime
@@ -591,6 +600,7 @@ jobs:
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
     outputs:
+      runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
       runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
     steps:
@@ -684,6 +694,7 @@ jobs:
       - name: Get Runtimes Info
         id: get-runtimes-info
         working-directory: /tmp
+        # Do NOT produce the dev version. That doesn't need to be part of the release notes, just in the artifacts
         run: |
           runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
           runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
