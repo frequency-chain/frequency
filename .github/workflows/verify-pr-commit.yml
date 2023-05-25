@@ -648,8 +648,8 @@ jobs:
       - name: Run Integration Tests
         working-directory: integration-tests
         env:
-          CHAIN_ENVIRONMENT=dev
-          WS_PROVIDER_URL=ws://127.0.0.1:9944
+          CHAIN_ENVIRONMENT: dev
+          WS_PROVIDER_URL: ws://127.0.0.1:9944
         run: npm test
       - name: Stop Local Node
         if: always()
