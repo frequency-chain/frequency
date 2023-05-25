@@ -277,8 +277,15 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [rococo, mainnet]
+        network: [dev, rococo, mainnet]
         include:
+          - network: dev
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            features: frequency-no-relay
+            wasm-core-version: frequency-rococo
           - network: rococo
             build-profile: release
             package: frequency-runtime
