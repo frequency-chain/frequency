@@ -246,10 +246,10 @@ integration-test-load-only:
 	./scripts/run_integration_tests.sh -s load
 
 integration-test-rococo:
-	./scripts/run_integration_tests.sh -c frequency_rococo
+	./scripts/run_integration_tests.sh -c rococo_testnet
 
-integration-test-local-relay:
-	./scripts/run_integration_tests.sh -c local_relay
+integration-test-rococo-local:
+	./scripts/run_integration_tests.sh -c rococo_local
 
 .PHONY: try-runtime
 try-runtime:

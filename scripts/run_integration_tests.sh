@@ -30,13 +30,12 @@ function cleanup () {
 
 RUNDIR=$(dirname ${0})
 SKIP_JS_BUILD=
-CHAIN="local_instant_sealing"
+CHAIN="development"
 
 # A distinction is made between the local node and the the test chain
 # because the local node will be built and generate the js api augment
 # for the polkadot.js api even when testing against a live chain.
 LOCAL_NODE_BLOCK_SEALING="instant"
-TEST_CHAIN_VALIDATION="instant_finality"
 
 trap 'cleanup EXIT' EXIT
 trap 'cleanup TERM' TERM
@@ -56,7 +55,7 @@ done
 shift $((OPTIND-1))
 
 case "${CHAIN}" in
-    "local_instant_sealing")
+    "development")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test"
         CHAIN_ENVIRONMENT="dev"
@@ -66,17 +65,15 @@ case "${CHAIN}" in
             LOCAL_NODE_BLOCK_SEALING="manual"
         fi
     ;;
-    "local_relay")
+    "rococo_local")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test:relay"
-        CHAIN_ENVIRONMENT="dev"
-        TEST_CHAIN_VALIDATION="consensus"
+        CHAIN_ENVIRONMENT="rococo-local"
     ;;
-    "frequency_rococo")
+    "rococo_testnet")
         PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
         NPM_RUN_COMMAND="test:relay"
-        CHAIN_ENVIRONMENT="rococo"
-        TEST_CHAIN_VALIDATION="consensus"
+        CHAIN_ENVIRONMENT="rococo-testnet"
 
         read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
 
@@ -94,6 +91,15 @@ if [ -n "$( get_frequency_pid )" ]
 then
     echo "Frequency is already running."
 else
+    if [ "${CHAIN_ENVIRONMENT}" = "rococo-local" ]
+    then
+        echo "Frequency is not running."
+        echo "The intended use case of running integration tests with a chain environment"
+        echo "of \"rococo-local\" is to run the tests against a locally running Frequency"
+        echo "chain with locally running Polkadot relay nodes."
+        exit 1
+    fi
+
     echo "Building a no-relay Frequency executable..."
     if ! make build-no-relay
     then

@@ -18,6 +18,8 @@ import {HandleResponse, MessageSourceId, PageHash} from "@frequency-chain/api-au
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
+import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
+import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
 
 export interface Account {
   uri: string,
@@ -33,6 +35,11 @@ export const TEST_EPOCH_LENGTH = 10;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
+export const CHAIN_ENVIRONMENT = {
+  DEVELOPMENT: "dev",
+  ROCOCO_TESTNET: "rococo-testnet",
+  ROCOCO_LOCAL: "rococo-local",
+}
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
@@ -113,7 +120,7 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
 }
 
 export function getDefaultFundingSource() {
-  return process.env.CHAIN_ENVIRONMENT === "rococo" ? rococoAccounts[0] : devAccounts[0];
+  return process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET ? rococoAccounts[0] : devAccounts[0];
 }
 
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
@@ -207,7 +214,8 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
   Promise<u64> {
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
-  await fundKeypair(devAccounts[0].keys, keys, amount);
+  const default_funding_source = await getDefaultFundingSource();
+  await fundKeypair(default_funding_source.keys, keys, amount);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
   assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
@@ -262,15 +270,89 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
-export async function createGraphChangeSchema(): Promise<u16> {
-  const [createSchemaEvent, eventMap] = await ExtrinsicHelper
-    .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
-    .fundAndSend();
-  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
-  if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
-    return createSchemaEvent.data.schemaId;
+export async function getOrCreateGraphChangeSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+    const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
+    return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
-    assert.fail("failed to create a schema")
+    const [createSchemaEvent, eventMap] = await ExtrinsicHelper
+      .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+      .fundAndSend();
+    assertExtrinsicSuccess(eventMap);
+    if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+      return createSchemaEvent.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+    const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
+    return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
+  } else {
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, PARQUET_BROADCAST, "Parquet", "IPFS");
+    let [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateDummySchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+    const ROCOCO_DUMMY_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 52);
+    return ROCOCO_DUMMY_SCHEMA_ID;
+  } else {
+    const createDummySchema = ExtrinsicHelper.createSchema(
+      devAccounts[0].keys,
+      { type: "record", name: "Dummy on-chain schema", fields: [] },
+      "AvroBinary",
+      "OnChain"
+    );
+    const [dummySchemaEvent] = await createDummySchema.fundAndSend();
+    if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
+      return dummySchemaEvent.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+    const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
+    return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
+  } else {
+    let schemaId: u16;
+    // Create a schema for Paginated PayloadLocation
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+    const [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
+  }
+}
+
+export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
+  if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+    const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
+    return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
+  } else {
+    let schemaId: u16;
+    // Create a schema for Paginated PayloadLocation
+    const createSchema = ExtrinsicHelper.createSchema(devAccounts[0].keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+    const [event] = await createSchema.fundAndSend();
+    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+      return event.data.schemaId;
+    } else {
+      assert.fail("failed to create a schema")
+    }
   }
 }
 
@@ -282,4 +364,8 @@ export function assertEvent(events: EventMap, eventName: string) {
 export async function getRemainingCapacity(providerId: u64): Promise<u128> {
   const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
   return capacityStaked.remainingCapacity;
+}
+
+export function assertExtrinsicSuccess(eventMap: EventMap) {
+  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
 }

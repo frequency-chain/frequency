@@ -5,7 +5,7 @@ import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     devAccounts, createKeys, createMsaAndProvider,
-    stakeToProvider, fundKeypair,
+    stakeToProvider, CHAIN_ENVIRONMENT,
     getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
     CENTS, DOLLARS, createAndFundKeypair
 }
@@ -13,12 +13,17 @@ import {
 import { firstValueFrom } from "rxjs";
 
 describe("Capacity Staking Tests", function () {
-    const accountBalance: bigint = 200n * DOLLARS;
+    const accountBalance: bigint = 2n * DOLLARS;
     const tokenMinStake: bigint = 1n * CENTS;
     let capacityMin: bigint = tokenMinStake / 50n;
 
     before(async function () {
-        await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+        // Pallet config changes such as modifying the epoch length will
+        // only be modified when running tests against a Frequency node built
+        // for development.
+        if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
+            await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+        }
     });
 
     describe("scenario: user staking, unstaking, and withdraw-unstaked", function () {
@@ -65,6 +70,11 @@ describe("Capacity Staking Tests", function () {
         });
 
         it("successfully withdraws the unstaked amount", async function () {
+            // Withdrawing unstaked token will only be executed against a Frequency
+            // node built for development due to the long length of time it would
+            // take to wait for an epoch period to roll over.
+            if (process.env.CHAIN_ENVIRONMENT !== CHAIN_ENVIRONMENT.DEVELOPMENT) this.skip();
+
             // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
             let newEpochBlock = await getNextEpochBlock();
             await ExtrinsicHelper.run_to_block(newEpochBlock + TEST_EPOCH_LENGTH + 1);
@@ -89,7 +99,6 @@ describe("Capacity Staking Tests", function () {
             assert.equal(capacityStaked.totalTokensStaked, 0, "should return a capacityLedger with 0 total tokens staked");
             assert.equal(capacityStaked.totalCapacityIssued, 0, "should return a capacityLedger with 0 capacity issued");
         });
-
         describe("when staking to multiple times", async function () {
             describe("and targeting same provider", async function () {
                 it("successfully increases the amount that was targeted to provider", async function () {
@@ -123,7 +132,7 @@ describe("Capacity Staking Tests", function () {
 
                     beforeEach(async function () {
                         otherProviderKeys = createKeys("OtherProviderKeys");
-                        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider", accountBalance);
+                        otherProviderId = await createMsaAndProvider(otherProviderKeys, "OtherProvider");
                     });
 
                     it("does not change other targets amounts", async function () {
@@ -170,7 +179,7 @@ describe("Capacity Staking Tests", function () {
                         );
                         assert.equal(
                             capacityStaked.totalCapacityIssued,
-                            currentStaked.totalCapacityIssued.toBigInt() + capacityMin, 
+                            currentStaked.totalCapacityIssued.toBigInt() + capacityMin,
                             `should return a capacityLedger with ${capacityMin} total issued, got ${capacityStaked.totalCapacityIssued}`
                         );
 
@@ -193,9 +202,8 @@ describe("Capacity Staking Tests", function () {
         it("fails to stake", async function () {
             const maxMsaId = (await ExtrinsicHelper.getCurrentMsaIdentifierMaximum()).toNumber();
 
-            let stakeKeys = createKeys("StakeKeys");
-            let stakeAmount = 100n * DOLLARS;
-            await fundKeypair(devAccounts[0].keys, stakeKeys, stakeAmount)
+            const stakeAmount = 10n * CENTS;
+            const stakeKeys = await createAndFundKeypair(stakeAmount, "StakeKeys");
 
             const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
@@ -205,7 +213,7 @@ describe("Capacity Staking Tests", function () {
     describe("when attempting to stake below the minimum staking requirements", async function () {
         it("should fail to stake for InsufficientStakingAmount", async function () {
             let stakingKeys = createKeys("stakingKeys");
-            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
+            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", 150n * CENTS);
             let stakeAmount = 1500n;
 
             const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount);
@@ -216,7 +224,7 @@ describe("Capacity Staking Tests", function () {
     describe("when attempting to stake a zero amount", async function () {
         it("fails to stake and errors ZeroAmountNotAllowed", async function () {
             let stakingKeys = createKeys("stakingKeys");
-            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
+            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", );
 
             const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
@@ -225,9 +233,8 @@ describe("Capacity Staking Tests", function () {
 
     describe("when staking an amount and account balanace is too low", async function () {
         it("fails to stake and errors BalanceTooLowtoStake", async function () {
-            let accountBalance: bigint = 2n * CENTS;
             let stakingKeys = createKeys("stakingKeys");
-            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
+            let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys");
             let stakingAmount = 1n * DOLLARS;
 
             const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
@@ -264,6 +271,11 @@ describe("Capacity Staking Tests", function () {
     describe("withdraw_unstaked()", async function () {
         describe("when attempting to call withdrawUnstake before first calling unstake", async function () {
             it("errors with NoUnstakedTokensAvailable", async function () {
+                if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_LOCAL ||
+                    process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+                    this.timeout(250000);
+                }
+
                 let stakingKeys: KeyringPair = createKeys("stakingKeys");
                 let providerId: u64 = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
 

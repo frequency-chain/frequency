@@ -12,7 +12,7 @@ import {
   getNextEpochBlock,
   TEST_EPOCH_LENGTH,
   setEpochLength,
-  createGraphChangeSchema,
+  getOrCreateGraphChangeSchema,
   CENTS,
   DOLLARS,
   TokenPerCapacity,
@@ -35,7 +35,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   before(async function () {
     await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
-    schemaId = await createGraphChangeSchema();
+    schemaId = await getOrCreateGraphChangeSchema();
   });
 
   describe("Capacity is replenished", function () {

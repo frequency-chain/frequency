@@ -5,7 +5,7 @@ import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createKeys, createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { createKeys, createAndFundKeypair, devAccounts, assertExtrinsicSuccess } from "../scaffolding/helpers";
 import { u16 } from "@polkadot/types";
 
 describe("#createSchema", function () {
@@ -65,7 +65,7 @@ describe("#createSchema", function () {
         const f = ExtrinsicHelper.createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
         const [createSchemaEvent, eventMap] = await f.fundAndSend();
 
-        assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+        assertExtrinsicSuccess(eventMap);
         assert.notEqual(createSchemaEvent, undefined);
     });
 

@@ -10,7 +10,7 @@
     ],
     "loader": "ts-node/esm",
     "spec": [
-        "./{,!(node_modules|load-tests)/**}/{createMsa,addIPFSMessage}.test.ts"
+        "./{,!(node_modules|load-tests)/**}/{createMsa,addIPFSMessage,staking,transactions}.test.ts"
     ],
     "timeout": 200000
 }
