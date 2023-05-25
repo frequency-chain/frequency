@@ -278,7 +278,7 @@ export async function getOrCreateGraphChangeSchema(): Promise<u16> {
     const [createSchemaEvent, eventMap] = await ExtrinsicHelper
       .createSchema(devAccounts[0].keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
       .fundAndSend();
-    assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+    assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
       return createSchemaEvent.data.schemaId;
     } else {
@@ -364,4 +364,8 @@ export function assertEvent(events: EventMap, eventName: string) {
 export async function getRemainingCapacity(providerId: u64): Promise<u128> {
   const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
   return capacityStaked.remainingCapacity;
+}
+
+export function assertExtrinsicSuccess(eventMap: EventMap) {
+  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
 }
