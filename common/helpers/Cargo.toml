@@ -7,7 +7,7 @@ license = "Apache-2.0"
 name = "common-helpers"
 publish = false
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.0.0"
+version = "1.6.2-rc1+polkadot0.9.36"
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
