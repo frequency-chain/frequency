@@ -251,7 +251,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-dev_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-dev
+            wasm-core-version: frequency-rococo
           - network: rococo
             build-profile: release
             package: frequency-runtime
