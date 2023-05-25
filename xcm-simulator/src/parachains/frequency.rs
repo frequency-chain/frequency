@@ -39,6 +39,7 @@ pub use frequency_runtime::{
 	BalancesMaxLocks, BalancesMaxReserves, RuntimeBlockLength, RuntimeBlockWeights, Session,
 	Version,
 };
+use crate::foreign_chain_alias_account::ForeignChainAliasAccount;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::BlockHashCount;
@@ -176,7 +177,8 @@ pub type LocationToAccountId = (
 	// Sibling parachain origin convert to AcountId via the `ParaId::into`.
 	// SiblingParachainConvertsVia<Sibling, AccountId>,
 	//
-	AccountId32Aliases<RelayNetwork, AccountId>,
+	// AccountId32Aliases<RelayNetwork, AccountId>,
+	ForeignChainAliasAccount<AccountId>,
 );
 
 
