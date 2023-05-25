@@ -173,7 +173,7 @@ benchmarks-multi-local:
 	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
 
 benchmarks-capacity:
-	./scripts/run_benchmark.sh -p capacity
+	./scripts/run_benchmarks.sh -p capacity
 
 .PHONY: docs
 docs:
