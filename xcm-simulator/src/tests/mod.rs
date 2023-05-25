@@ -215,11 +215,6 @@ fn frequency_xcmp() {
 		frame_system::Call::<frequency::Runtime>::remark_with_event { remark: vec![1, 2, 3] },
 	);
 	ParaA::execute_with(|| {
-	// assert_eq!(
-	// 	parachain::Balances::free_balance(ALICE),
-	// 	INITIAL_BALANCE 
-	// );
-
 		let xcm: Xcm<()> = Xcm(vec![
 			DescendOrigin(X1(AccountId32 { network: NetworkId::Any, id: [0; 32] })),
 			WithdrawAsset((Here, send_amount).into()),
@@ -259,13 +254,4 @@ fn frequency_xcmp() {
 	
         System::reset_events();
     });
-
-
-	// Frequency::execute_with(|| {
-	// 	use parachain::{RuntimeEvent, System};
-	// 	assert!(System::events().iter().any(|r| matches!(
-	// 		r.event,
-	// 		RuntimeEvent::System(frame_system::Event::Remarked { .. })
-	// 	)));
-	// });
 }

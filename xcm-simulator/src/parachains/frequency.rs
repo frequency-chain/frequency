@@ -201,7 +201,17 @@ pub type Barrier = (
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
+
+	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
+
+	/// use to check if xcm message can be processed
+	type Barrier = Barrier;
+	/// used to convert the multilocation to an accountid to place assets in holding registry
 	type AssetTransactor = AssetTransactors;
+	/// 
+	type Trader = (UsingComponents<WeightToFee, FrequencyLocation, AccountId, Balances, ()>,);
+	
+	// used for in Transact instructor to convert to the correct origin.
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 
 	type IsReserve = ();
@@ -209,10 +219,7 @@ impl xcm_executor::Config for XcmConfig {
 
 	type LocationInverter = LocationInverter<Ancestry>;
 
-	type Barrier = Barrier;
-	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 
-	type Trader = (UsingComponents<WeightToFee, FrequencyLocation, AccountId, Balances, ()>,);
 
 	type ResponseHandler = ();
 
