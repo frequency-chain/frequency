@@ -267,6 +267,9 @@ jobs:
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
+  # Could not port this job to container because this creates docker-in-docker
+  # situation and fails when srtool-ci container is trying to process files in
+  # the mapped volume which don't exist on the host
   verify-build-runtimes:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
@@ -282,12 +285,14 @@ jobs:
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-rococo-testnet
+            wasm-core-version: frequency-rococo
           - network: mainnet
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
+            wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
     steps:
       - name: Install Required Packages
@@ -327,6 +332,11 @@ jobs:
         run: |
           rustup show
           cargo install --git https://github.com/chevdor/srtool-cli
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Test srtool-cli Install
+        run: |
+          echo "PATH: $PATH"
+          which srtool
           srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
@@ -334,15 +344,19 @@ jobs:
           RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}} \
-            --root
+            --package=${{matrix.package}}
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-      - name: Install subwasm
+      - name: Install Subwasm
         run: |
           cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
           subwasm --version
+      - name: Test WASM file
+        run: |
+          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+            (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
 
   verify-js-api-augment:
     needs: build-binaries
@@ -782,7 +796,7 @@ jobs:
       - name: Install Required Packages
         run: |
           sudo apt-get update
-          sudo apt install -y protobuf-compiler libclang-dev
+          sudo apt install -y protobuf-compiler libclang-dev clang cmake
       - name: Install Rust Toolchain
         # Match installation steps to CI base docker image
         run: |
