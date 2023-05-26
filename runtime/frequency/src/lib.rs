@@ -8,7 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{
-	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
+	RelayNumberStrictlyIncreases, RelaychainDataProvider,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -337,7 +337,7 @@ mod remove_sudo {
 
 		// TODO: correct weight?
 		fn weights_from(reads: u64, writes: u64) -> Weight {
-			Weight::from_ref_time(0u64)
+			Weight::from_parts(0u64, 0)
 				.saturating_add(RocksDbWeight::get().reads(reads))
 				.saturating_add(RocksDbWeight::get().writes(writes))
 		}
@@ -441,6 +441,7 @@ impl_opaque_keys! {
 }
 
 // IMPORTANT: Remember to update spec_version in BOTH structs below
+// spec_version must be a numeric literal; macros are not supported
 #[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
@@ -660,7 +661,7 @@ impl pallet_time_release::Config for Runtime {
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
 	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
 }
@@ -679,8 +680,9 @@ impl pallet_timestamp::Config for Runtime {
 // the descriptions of these configs.
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	type UncleGenerations = AuthorshipUncleGenerations;
-	type FilterUncle = ();
+	// REVIEW: Have these traits been deleted from pallet_authorship?
+	// type UncleGenerations = AuthorshipUncleGenerations;
+	// type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
@@ -696,11 +698,17 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
+	type MaxHolds = ConstU32<0>;
+    type MaxFreezes = ConstU32<0>;
+	type HoldIdentifier = ();
+    type FreezeIdentifier = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
+	// REVIEW: from substrate
+	pub MaxProposalWeight: Weight = sp_runtime::Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
@@ -739,6 +747,7 @@ impl pallet_preimage::Config for Runtime {
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -749,6 +758,9 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
+	// REVIEW: from substrate
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -761,6 +773,9 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
+	// REVIEW: from substrate
+	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -806,6 +821,8 @@ impl pallet_democracy::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
+	// REVIEW: from copilot
+	type SubmitOrigin = frame_system::EnsureSigned<AccountId>;
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
 	/// be tabled immediately and with a shorter voting/enactment period.
 	type FastTrackOrigin = EitherOfDiverse<
@@ -1174,7 +1191,7 @@ construct_runtime!(
 		Treasury: pallet_treasury::{Pallet, Call, Storage, Config, Event<T>} = 14,
 
 		// Collator support. The order of these 4 are important and shall not change.
-		Authorship: pallet_authorship::{Pallet, Call, Storage} = 20,
+		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
 		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
@@ -1260,6 +1277,16 @@ impl_runtime_apis! {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
 		}
+
+		// REVIEW: substrate node template
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		// REVIEW: substrate node template
+		fn metadata_versions() -> Vec<u32> {
+			Runtime::metadata_versions()
+		}
 	}
 
 	impl sp_block_builder::BlockBuilder<Block> for Runtime {
@@ -1329,6 +1356,14 @@ impl_runtime_apis! {
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+		// REVIEW: substrate
+		fn query_weight_to_fee(weight: Weight) -> Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+		// REVIEW: substrate
+		fn query_length_to_fee(len: u32) -> Balance {
+			TransactionPayment::length_to_fee(len)
 		}
 	}
 
