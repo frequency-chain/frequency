@@ -46,7 +46,7 @@ pub fn frequency_dev_sealing(
 	} = new_partial(&config, true)?;
 
 	// Build the network components required for the blockchain.
-	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
+	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			client: client.clone(),
@@ -54,7 +54,7 @@ pub fn frequency_dev_sealing(
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync: None,
+			warp_sync_params: None,
 		})?;
 
 	// Start off-chain workers if enabled
@@ -195,9 +195,10 @@ pub fn frequency_dev_sealing(
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config,
-		keystore: keystore_container.sync_keystore(),
+		keystore: keystore_container.keystore(),
 		backend,
 		network: network.clone(),
+		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
