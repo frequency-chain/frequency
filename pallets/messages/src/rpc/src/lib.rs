@@ -19,7 +19,7 @@ use jsonrpsee::{
 use pallet_messages_runtime_api::MessagesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::{traits::Block as BlockT};
 use std::sync::Arc;
 
 #[cfg(test)]
@@ -84,10 +84,9 @@ where
 
 		// Connect to on-chain data
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
 
 		// Schema Fetch and Check
-		let schema: SchemaResponse = match api.get_schema_by_id(&at, schema_id) {
+		let schema: SchemaResponse = match api.get_schema_by_id(self.client.info().best_hash, schema_id) {
 			Ok(Some(s)) => s,
 			_ => fail!(MessageRpcError::InvalidSchemaId),
 		};
@@ -100,7 +99,7 @@ where
 		'loops: for block_number in from..to {
 			let list: Vec<MessageResponse> = api
 				.get_messages_by_schema_and_block(
-					&at,
+					self.client.info().best_hash,
 					schema.schema_id,
 					schema.payload_location,
 					block_number,

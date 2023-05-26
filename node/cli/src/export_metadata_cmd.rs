@@ -4,10 +4,10 @@ use serde_json::{json, to_writer};
 use sp_api::{Metadata, ProvideRuntimeApi};
 use sp_core::Bytes;
 use sp_runtime::{
-	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT},
 };
 use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
+use sc_client_api::HeaderBackend;
 
 /// The `export-metadata` command used to export chain metadata.
 /// Remember that this uses the chain database. So it will pull the _current_ metadata from that database.
@@ -44,13 +44,18 @@ impl ExportMetadataCmd {
 	pub async fn run<B, C>(&self, client: Arc<C>) -> Result<(), Error>
 	where
 		B: BlockT,
-		C: ProvideRuntimeApi<B>,
+		C: ProvideRuntimeApi<B> + HeaderBackend<B>,
 		C::Api: Metadata<B> + 'static,
 		<<B::Header as HeaderT>::Number as FromStr>::Err: Debug,
 	{
-		let from = self.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(0u32);
+		let api = client.runtime_api();
+
+		let block_number = self.from.as_ref().and_then(|f| f.parse().ok()).unwrap_or(0u32);
+		let maybe_hash = client.hash(block_number.into())?;
+		let block_hash = maybe_hash.ok_or_else(|| Error::from("Block not found"))?;
+
 		let metadata: Bytes =
-			client.runtime_api().metadata(&BlockId::number(from.into())).unwrap().into();
+			api.metadata(block_hash).unwrap().into();
 		let result = json!({ "result": metadata });
 
 		let file: Box<dyn io::Write> = match &self.output {
