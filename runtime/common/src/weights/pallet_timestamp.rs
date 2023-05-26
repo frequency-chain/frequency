@@ -35,11 +35,11 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T> {
 	// Storage: Timestamp Now (r:1 w:1)
 	fn set() -> Weight {
-		Weight::from_ref_time(7_922_000 as u64)
+		Weight::from_parts(7_922_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	fn on_finalize() -> Weight {
-		Weight::from_ref_time(4_382_000 as u64)
+		Weight::from_parts(4_382_000 as u64, 0)
 	}
 }

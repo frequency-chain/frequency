@@ -22,7 +22,7 @@ fn test_weights_are_stable() {
 			(SubstrateWeight::<Test>::claim_handle(100), 100989953),
 		];
 		for t in table {
-			assert_eq!(t.0, Weight::from_ref_time(t.1));
+			assert_eq!(t.0, Weight::from_parts(t.1, 0));
 		}
 	});
 }

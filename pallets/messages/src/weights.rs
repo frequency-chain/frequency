@@ -62,9 +62,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(150_375_758 as u64)
+		Weight::from_parts(150_375_758 as u64, 0)
 			// Standard Error: 54
-			.saturating_add(Weight::from_ref_time(1_135 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(1_135 as u64, 0).saturating_mul(n as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -72,7 +72,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(130_347_000 as u64)
+		Weight::from_parts(130_347_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -85,9 +85,9 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(150_375_758 as u64)
+		Weight::from_parts(150_375_758 as u64, 0)
 			// Standard Error: 54
-			.saturating_add(Weight::from_ref_time(1_135 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(1_135 as u64, 0).saturating_mul(n as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -95,7 +95,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Messages Messages (r:1 w:1)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(130_347_000 as u64)
+		Weight::from_parts(130_347_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

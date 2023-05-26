@@ -70,9 +70,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
 	fn apply_item_actions(s: u32, ) -> Weight {
-		Weight::from_ref_time(66_026_301 as u64)
+		Weight::from_parts(66_026_301 as u64, 0)
 			// Standard Error: 161
-			.saturating_add(Weight::from_ref_time(2_145 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(2_145 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -81,9 +81,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
-		Weight::from_ref_time(23_029_186 as u64)
+		Weight::from_parts(23_029_186 as u64, 0)
 			// Standard Error: 53
-			.saturating_add(Weight::from_ref_time(339 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(339 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -92,7 +92,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_ref_time(26_000_000 as u64)
+		Weight::from_parts(26_000_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -100,9 +100,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(105_921_191 as u64)
+		Weight::from_parts(105_921_191 as u64, 0)
 			// Standard Error: 267
-			.saturating_add(Weight::from_ref_time(6_150 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(6_150 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -110,9 +110,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn upsert_page_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(61_324_707 as u64)
+		Weight::from_parts(61_324_707 as u64, 0)
 			// Standard Error: 249
-			.saturating_add(Weight::from_ref_time(4_406 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(4_406 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -120,7 +120,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn delete_page_with_signature() -> Weight {
-		Weight::from_ref_time(65_000_000 as u64)
+		Weight::from_parts(65_000_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -133,9 +133,9 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
 	fn apply_item_actions(s: u32, ) -> Weight {
-		Weight::from_ref_time(66_026_301 as u64)
+		Weight::from_parts(66_026_301 as u64, 0)
 			// Standard Error: 161
-			.saturating_add(Weight::from_ref_time(2_145 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(2_145 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -144,9 +144,9 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
-		Weight::from_ref_time(23_029_186 as u64)
+		Weight::from_parts(23_029_186 as u64, 0)
 			// Standard Error: 53
-			.saturating_add(Weight::from_ref_time(339 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(339 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -155,7 +155,7 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_ref_time(26_000_000 as u64)
+		Weight::from_parts(26_000_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -163,9 +163,9 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(105_921_191 as u64)
+		Weight::from_parts(105_921_191 as u64, 0)
 			// Standard Error: 267
-			.saturating_add(Weight::from_ref_time(6_150 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(6_150 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -173,9 +173,9 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn upsert_page_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(61_324_707 as u64)
+		Weight::from_parts(61_324_707 as u64, 0)
 			// Standard Error: 249
-			.saturating_add(Weight::from_ref_time(4_406 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(4_406 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -183,7 +183,7 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:1 w:0)
 	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
 	fn delete_page_with_signature() -> Weight {
-		Weight::from_ref_time(65_000_000 as u64)
+		Weight::from_parts(65_000_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

@@ -66,9 +66,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(19_730_000 as u64)
+		Weight::from_parts(19_730_000 as u64, 0)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(28_294 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(28_294 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -76,9 +76,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema_via_governance(m: u32, ) -> Weight {
-		Weight::from_ref_time(19_380_000 as u64)
+		Weight::from_parts(19_380_000 as u64, 0)
 			// Standard Error: 43
-			.saturating_add(Weight::from_ref_time(28_250 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(28_250 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -88,15 +88,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Council ProposalCount (r:1 w:1)
 	// Storage: Council Voting (r:0 w:1)
 	fn propose_to_create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(11_234_174 as u64)
+		Weight::from_parts(11_234_174 as u64, 0)
 			// Standard Error: 55
-			.saturating_add(Weight::from_ref_time(4_457 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(4_457 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(13_266_000 as u64)
+		Weight::from_parts(13_266_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -107,9 +107,9 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(19_730_000 as u64)
+		Weight::from_parts(19_730_000 as u64, 0)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(28_294 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(28_294 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -117,9 +117,9 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
 	// Storage: Schemas Schemas (r:0 w:1)
 	fn create_schema_via_governance(m: u32, ) -> Weight {
-		Weight::from_ref_time(19_380_000 as u64)
+		Weight::from_parts(19_380_000 as u64, 0)
 			// Standard Error: 43
-			.saturating_add(Weight::from_ref_time(28_250 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(28_250 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -129,15 +129,15 @@ impl WeightInfo for () {
 	// Storage: Council ProposalCount (r:1 w:1)
 	// Storage: Council Voting (r:0 w:1)
 	fn propose_to_create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(11_234_174 as u64)
+		Weight::from_parts(11_234_174 as u64, 0)
 			// Standard Error: 55
-			.saturating_add(Weight::from_ref_time(4_457 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(4_457 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(13_266_000 as u64)
+		Weight::from_parts(13_266_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

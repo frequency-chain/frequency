@@ -38,13 +38,13 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy Blacklist (r:1 w:0)
 	// Storage: Democracy DepositOf (r:0 w:1)
 	fn propose() -> Weight {
-		Weight::from_ref_time(53_488_000 as u64)
+		Weight::from_parts(53_488_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Democracy DepositOf (r:1 w:1)
 	fn second() -> Weight {
-		Weight::from_ref_time(47_594_000 as u64)
+		Weight::from_parts(47_594_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -52,7 +52,7 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy VotingOf (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vote_new() -> Weight {
-		Weight::from_ref_time(59_109_000 as u64)
+		Weight::from_parts(59_109_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -60,14 +60,14 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy VotingOf (r:1 w:1)
 	// Storage: Balances Locks (r:1 w:1)
 	fn vote_existing() -> Weight {
-		Weight::from_ref_time(59_097_000 as u64)
+		Weight::from_parts(59_097_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Democracy ReferendumInfoOf (r:1 w:1)
 	// Storage: Democracy Cancellations (r:1 w:1)
 	fn emergency_cancel() -> Weight {
-		Weight::from_ref_time(21_407_000 as u64)
+		Weight::from_parts(21_407_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -78,39 +78,39 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy ReferendumInfoOf (r:1 w:1)
 	// Storage: Democracy Blacklist (r:0 w:1)
 	fn blacklist() -> Weight {
-		Weight::from_ref_time(85_594_000 as u64)
+		Weight::from_parts(85_594_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(6 as u64))
 	}
 	// Storage: Democracy NextExternal (r:1 w:1)
 	// Storage: Democracy Blacklist (r:1 w:0)
 	fn external_propose() -> Weight {
-		Weight::from_ref_time(16_174_000 as u64)
+		Weight::from_parts(16_174_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Democracy NextExternal (r:0 w:1)
 	fn external_propose_majority() -> Weight {
-		Weight::from_ref_time(4_796_000 as u64)
+		Weight::from_parts(4_796_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Democracy NextExternal (r:0 w:1)
 	fn external_propose_default() -> Weight {
-		Weight::from_ref_time(4_696_000 as u64)
+		Weight::from_parts(4_696_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Democracy NextExternal (r:1 w:1)
 	// Storage: Democracy ReferendumCount (r:1 w:1)
 	// Storage: Democracy ReferendumInfoOf (r:0 w:1)
 	fn fast_track() -> Weight {
-		Weight::from_ref_time(22_009_000 as u64)
+		Weight::from_parts(22_009_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Democracy NextExternal (r:1 w:1)
 	// Storage: Democracy Blacklist (r:1 w:1)
 	fn veto_external() -> Weight {
-		Weight::from_ref_time(26_775_000 as u64)
+		Weight::from_parts(26_775_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -118,13 +118,13 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy DepositOf (r:1 w:1)
 	// Storage: System Account (r:1 w:1)
 	fn cancel_proposal() -> Weight {
-		Weight::from_ref_time(72_086_000 as u64)
+		Weight::from_parts(72_086_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
 	// Storage: Democracy ReferendumInfoOf (r:0 w:1)
 	fn cancel_referendum() -> Weight {
-		Weight::from_ref_time(13_847_000 as u64)
+		Weight::from_parts(13_847_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Democracy LowestUnbaked (r:1 w:1)
@@ -132,9 +132,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy ReferendumInfoOf (r:2 w:0)
 	/// The range of component `r` is `[0, 99]`.
 	fn on_initialize_base(r: u32, ) -> Weight {
-		Weight::from_ref_time(7_034_036 as u64)
+		Weight::from_parts(7_034_036 as u64, 0)
 			// Standard Error: 4_954
-			.saturating_add(Weight::from_ref_time(2_449_989 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(2_449_989 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -147,9 +147,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy ReferendumInfoOf (r:2 w:0)
 	/// The range of component `r` is `[0, 99]`.
 	fn on_initialize_base_with_launch_period(r: u32, ) -> Weight {
-		Weight::from_ref_time(9_633_745 as u64)
+		Weight::from_parts(9_633_745 as u64, 0)
 			// Standard Error: 5_233
-			.saturating_add(Weight::from_ref_time(2_459_881 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(2_459_881 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
@@ -159,9 +159,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy ReferendumInfoOf (r:2 w:2)
 	/// The range of component `r` is `[0, 99]`.
 	fn delegate(r: u32, ) -> Weight {
-		Weight::from_ref_time(46_635_804 as u64)
+		Weight::from_parts(46_635_804 as u64, 0)
 			// Standard Error: 6_680
-			.saturating_add(Weight::from_ref_time(3_701_114 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(3_701_114 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
@@ -171,9 +171,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy ReferendumInfoOf (r:2 w:2)
 	/// The range of component `r` is `[0, 99]`.
 	fn undelegate(r: u32, ) -> Weight {
-		Weight::from_ref_time(24_901_768 as u64)
+		Weight::from_parts(24_901_768 as u64, 0)
 			// Standard Error: 5_484
-			.saturating_add(Weight::from_ref_time(3_673_093 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(3_673_093 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(r as u64)))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
@@ -181,7 +181,7 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	}
 	// Storage: Democracy PublicProps (r:0 w:1)
 	fn clear_public_proposals() -> Weight {
-		Weight::from_ref_time(4_843_000 as u64)
+		Weight::from_parts(4_843_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Democracy VotingOf (r:1 w:1)
@@ -189,9 +189,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `r` is `[0, 99]`.
 	fn unlock_remove(r: u32, ) -> Weight {
-		Weight::from_ref_time(30_533_305 as u64)
+		Weight::from_parts(30_533_305 as u64, 0)
 			// Standard Error: 1_832
-			.saturating_add(Weight::from_ref_time(94_733 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(94_733 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -200,9 +200,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: System Account (r:1 w:1)
 	/// The range of component `r` is `[0, 99]`.
 	fn unlock_set(r: u32, ) -> Weight {
-		Weight::from_ref_time(29_740_857 as u64)
+		Weight::from_parts(29_740_857 as u64, 0)
 			// Standard Error: 1_295
-			.saturating_add(Weight::from_ref_time(139_016 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(139_016 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -210,9 +210,9 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy VotingOf (r:1 w:1)
 	/// The range of component `r` is `[1, 100]`.
 	fn remove_vote(r: u32, ) -> Weight {
-		Weight::from_ref_time(17_169_182 as u64)
+		Weight::from_parts(17_169_182 as u64, 0)
 			// Standard Error: 1_183
-			.saturating_add(Weight::from_ref_time(124_563 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(124_563 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -220,10 +220,29 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 	// Storage: Democracy VotingOf (r:1 w:1)
 	/// The range of component `r` is `[1, 100]`.
 	fn remove_other_vote(r: u32, ) -> Weight {
-		Weight::from_ref_time(17_120_555 as u64)
+		Weight::from_parts(17_120_555 as u64, 0)
 			// Standard Error: 1_157
-			.saturating_add(Weight::from_ref_time(124_983 as u64).saturating_mul(r as u64))
+			.saturating_add(Weight::from_parts(124_983 as u64, 0).saturating_mul(r as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
+	}
+	// REVIEW: copilot
+	fn set_external_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_external_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn set_proposal_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_proposal_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn set_referendum_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_referendum_metadata() -> Weight {
+		Weight::from_parts(0, 0)
 	}
 }
