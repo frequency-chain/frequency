@@ -366,6 +366,11 @@ export async function getRemainingCapacity(providerId: u64): Promise<u128> {
   return capacityStaked.remainingCapacity;
 }
 
+export async function getNonce(keys: KeyringPair): Promise<number> {
+  const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
+  return nonce.toNumber();
+}
+
 export function assertExtrinsicSuccess(eventMap: EventMap) {
   assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
 }

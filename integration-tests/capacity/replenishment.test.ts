@@ -17,7 +17,8 @@ import {
   DOLLARS,
   TokenPerCapacity,
   assertEvent,
-  getRemainingCapacity
+  getRemainingCapacity,
+  getNonce
 } from "../scaffolding/helpers";
 
 describe("Capacity Replenishment Testing: ", function () {
@@ -77,20 +78,12 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Capacity is not replenished", function () {
     it("if out of capacity and last_replenished_at is <= current epoch", async function () {
-      let [stakeKeys, _] = await createAndStakeProvider("NoSend", 150n * CENTS);
+      let [stakeKeys, stakeProviderId] = await createAndStakeProvider("NoSend", 150n * CENTS);
       let payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       let call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // run until we can't afford to send another message.
-      await call.payWithCapacity(-1);
-
-      let nextEpochBlock = await getNextEpochBlock();
-
-      // mine until just before epoch rolls over
-      await ExtrinsicHelper.run_to_block(nextEpochBlock - 1);
-
-      // TODO: it's weird that we can run one more capacity txn before running out.
-      await call.payWithCapacity(-1)
+      await drainCapacity(call, stakeProviderId, stakeKeys);
 
       await assert_capacity_call_fails_with_balance_too_low(call);
     });
@@ -105,22 +98,18 @@ describe("Capacity Replenishment Testing: ", function () {
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", providerStakeAmt);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(devAccounts[0].keys, userKeys, 5n* DOLLARS);
+      await fundKeypair(devAccounts[0].keys, userKeys, 5n * DOLLARS);
       let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
 
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
-      let expected_capacity = (providerStakeAmt + userStakeAmt)/TokenPerCapacity;
-      const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt()
-      assert.equal(expected_capacity, totalCapacity, `expected ${expected_capacity} capacity, got ${totalCapacity}`);
+      let expectedCapacity = (providerStakeAmt + userStakeAmt) / TokenPerCapacity;
+      const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+      assert.equal(expectedCapacity, totalCapacity, `expected ${expectedCapacity} capacity, got ${totalCapacity}`);
 
-      // do the txn a few times to run them out of funds
-      await call.payWithCapacity(-1)
-      await call.payWithCapacity(-1)
-      await call.payWithCapacity(-1)
-      await call.payWithCapacity(-1)
+      const callCapacityCost = await drainCapacity(call, stakeProviderId, stakeKeys);
 
       // ensure provider can't send a message; they are out of capacity
       await assert_capacity_call_fails_with_balance_too_low(call);
@@ -130,7 +119,6 @@ describe("Capacity Replenishment Testing: ", function () {
       await ExtrinsicHelper.run_to_block(nextEpochBlock);
 
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-      let callCapacityCost = totalCapacity - remainingCapacity;
       // double check we still do not have enough to send another message
       assert(remainingCapacity < callCapacityCost);
 
@@ -149,3 +137,18 @@ describe("Capacity Replenishment Testing: ", function () {
     })
   })
 });
+
+async function drainCapacity(call, stakeProviderId: u64, stakeKeys: KeyringPair): Promise<bigint> {
+  const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+    // Figure out the cost per call in Capacity
+    await call.payWithCapacity(-1);
+    let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+    const callCapacityCost = totalCapacity - remainingCapacity;
+
+    // Run them out of funds, but don't flake just because it landed near an epoch boundary.
+    await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
+    const callsBeforeEmpty = Math.floor(Number(totalCapacity) / Number(callCapacityCost));
+    const nonce = await getNonce(stakeKeys);
+    await Promise.all(Array.from({ length: callsBeforeEmpty } , (_, k) => call.payWithCapacity(nonce + k)));
+    return callCapacityCost;
+}
