@@ -13,6 +13,7 @@ import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, Paginated
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
+import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 
 export type ReleaseSchedule = {
     start: number;
@@ -141,8 +142,11 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
         let default_funding_source = getDefaultFundingSource();
 
-        const amount = await this.getEstimatedTxFee();
-        await ExtrinsicHelper.transferFunds(source || default_funding_source.keys, this.keys, amount).signAndSend(nonce);
+        const [amount, accountInfo] = await Promise.all([this.getEstimatedTxFee(), ExtrinsicHelper.getAccountInfo(this.keys.address)]);
+        const freeBalance = BigInt(accountInfo.data.free.toString()) - EXISTENTIAL_DEPOSIT;
+        if (amount > freeBalance) {
+            await ExtrinsicHelper.transferFunds(source || default_funding_source.keys, this.keys, amount).signAndSend(nonce);
+        }
     }
 
     public async fundAndSend(source?: KeyringPair, nonce?: number): Promise<ParsedEventResult> {
