@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
-      - 1543-use-dind-image-for-ci-base-image
+      # - 1543-use-dind-image-for-ci-base-image
 env:
   BIN_DIR: target/release
 
