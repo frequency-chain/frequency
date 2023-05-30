@@ -39,7 +39,6 @@
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(
-	rustdoc::all,
 	missing_docs,
 	unused_parens,
 	unused_imports

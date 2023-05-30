@@ -18,7 +18,7 @@ use jsonrpsee::{
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
 use std::sync::Arc;
 

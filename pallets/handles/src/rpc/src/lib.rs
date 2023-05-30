@@ -23,7 +23,7 @@ use jsonrpsee::{
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 #[cfg(test)]
@@ -100,7 +100,8 @@ where
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;
 		let max_count = MAX_SUFFIXES_COUNT;
 		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
-		let suffixes_result = api.get_next_suffixes(self.client.info().best_hash, base_handle, count);
+		let suffixes_result =
+			api.get_next_suffixes(self.client.info().best_hash, base_handle, count);
 		map_rpc_result(suffixes_result)
 	}
 

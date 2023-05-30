@@ -25,7 +25,7 @@ use pallet_msa_runtime_api::MsaRuntimeApi;
 use rayon::prelude::*;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 #[cfg(test)]
@@ -93,6 +93,7 @@ where
 		block_number: BlockNumber,
 		schema_id: Option<SchemaId>,
 	) -> RpcResult<Vec<(DelegatorId, bool)>> {
+		let at = self.client.info().best_hash;
 		let results = delegator_msa_ids
 			.par_iter()
 			.map(|delegator_msa_id| {
@@ -100,7 +101,7 @@ where
 				// api.has_delegation returns  Result<bool, ApiError>), so _or(false) should not happen,
 				// but just in case, protect against panic
 				let has_delegation: bool = match api.has_delegation(
-					self.client.info().best_hash,
+					at,
 					*delegator_msa_id,
 					provider_msa_id,
 					block_number,
@@ -124,8 +125,11 @@ where
 		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaId>>> {
 		let api = self.client.runtime_api();
-		let runtime_api_result =
-			api.get_granted_schemas_by_msa_id(self.client.info().best_hash, delegator_msa_id, provider_msa_id);
+		let runtime_api_result = api.get_granted_schemas_by_msa_id(
+			self.client.info().best_hash,
+			delegator_msa_id,
+			provider_msa_id,
+		);
 		map_rpc_result(runtime_api_result)
 	}
 }

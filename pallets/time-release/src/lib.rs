@@ -158,7 +158,7 @@ pub mod module {
 
 	/// Release schedules of an account.
 	///
-	/// ReleaseSchedules: map AccountId => Vec<ReleaseSchedule>
+	/// ReleaseSchedules: `map AccountId => Vec<ReleaseSchedule>`
 	#[pallet::storage]
 	#[pallet::getter(fn release_schedules)]
 	pub type ReleaseSchedules<T: Config> = StorageMap<

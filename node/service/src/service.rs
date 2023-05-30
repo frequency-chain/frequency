@@ -28,7 +28,7 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 // Substrate Imports
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::{NetworkService, NetworkBlock};
+use sc_network::{NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -95,6 +95,7 @@ type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, P
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
 /// be able to perform chain operations.
+#[allow(deprecated)]
 pub fn new_partial(
 	config: &Configuration,
 	instant_sealing: bool,
@@ -216,7 +217,7 @@ async fn start_node_impl(
 		hwbench.clone(),
 	)
 	.await
-	// REVIEW: from cumulus 
+	// REVIEW: from cumulus
 	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);
@@ -311,7 +312,6 @@ async fn start_node_impl(
 		)?;
 
 		let spawner = task_manager.spawn_handle();
-
 
 		let params = StartCollatorParams {
 			para_id: id,

@@ -1,13 +1,11 @@
 use clap::Parser;
 use sc_cli::{CliConfiguration, Error, GenericNumber, SharedParams};
+use sc_client_api::HeaderBackend;
 use serde_json::{json, to_writer};
 use sp_api::{Metadata, ProvideRuntimeApi};
 use sp_core::Bytes;
-use sp_runtime::{
-	traits::{Block as BlockT, Header as HeaderT},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
-use sc_client_api::HeaderBackend;
 
 /// The `export-metadata` command used to export chain metadata.
 /// Remember that this uses the chain database. So it will pull the _current_ metadata from that database.
@@ -54,8 +52,7 @@ impl ExportMetadataCmd {
 		let maybe_hash = client.hash(block_number.into())?;
 		let block_hash = maybe_hash.ok_or_else(|| Error::from("Block not found"))?;
 
-		let metadata: Bytes =
-			api.metadata(block_hash).unwrap().into();
+		let metadata: Bytes = api.metadata(block_hash).unwrap().into();
 		let result = json!({ "result": metadata });
 
 		let file: Box<dyn io::Write> = match &self.output {

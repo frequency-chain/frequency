@@ -226,7 +226,7 @@ impl<PageDataSize: Get<u32>> From<BoundedVec<u8, PageDataSize>> for Page<PageDat
 	}
 }
 
-/// Deserializing a Page from a Vec<u8> is used for reading from storage--
+/// Deserializing a Page from a `Vec<u8>` is used for reading from storage--
 /// so we must first read the nonce, then the data payload.
 impl<PageDataSize: Get<u32>> TryFrom<Vec<u8>> for Page<PageDataSize> {
 	type Error = ();

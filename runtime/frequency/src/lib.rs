@@ -7,9 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{
-	RelayNumberStrictlyIncreases, RelaychainDataProvider,
-};
+use cumulus_pallet_parachain_system::{RelayNumberStrictlyIncreases, RelaychainDataProvider};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -699,9 +697,9 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type MaxHolds = ConstU32<0>;
-    type MaxFreezes = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 	type HoldIdentifier = ();
-    type FreezeIdentifier = ();
+	type FreezeIdentifier = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {

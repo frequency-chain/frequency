@@ -34,7 +34,7 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	/// * The delegator must already have a MSA id
 	/// * The MSA must already have a handle associated with it
 	///
-	/// Returns a `ValidTransaction` or wrapped [`pallet::Error`]
+	/// Returns a `ValidTransaction` or wrapped [`pallet-handles::Error`]
 	///
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]

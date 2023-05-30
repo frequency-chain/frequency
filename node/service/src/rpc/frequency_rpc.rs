@@ -7,7 +7,7 @@
 )]
 
 use common_helpers::rpc::map_rpc_result;
-use common_primitives::{rpc::RpcEvent};
+use common_primitives::rpc::RpcEvent;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
