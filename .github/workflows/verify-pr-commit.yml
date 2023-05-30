@@ -301,7 +301,9 @@ jobs:
             features: frequency
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:1543-use-dind-image-for-ci-base-image
+    container:
+      image: ghcr.io/libertydsnp/frequency/ci-base-image:1543-use-dind-image-for-ci-base-image
+      options: --privileged
     steps:
       # - name: Install Required Packages
       #   run: |
