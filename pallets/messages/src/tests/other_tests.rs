@@ -170,7 +170,6 @@ fn add_message_should_store_message_in_storage() {
 					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 						block_number: 1,
 						schema_id: schema_id_1,
-						count: 1
 					}),
 					topics: vec![]
 				},
@@ -179,7 +178,6 @@ fn add_message_should_store_message_in_storage() {
 					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
 						block_number: 1,
 						schema_id: schema_id_2,
-						count: 1
 					}),
 					topics: vec![]
 				},
