@@ -301,21 +301,25 @@ jobs:
             features: frequency
             wasm-core-version: frequency
     runs-on: [self-hosted, Linux, X64, testing, v2]
-    container:
-      image: ghcr.io/libertydsnp/frequency/ci-base-image:1543-use-dind-image-for-ci-base-image
-      options: --privileged
+    # container:
+    #   image: ghcr.io/libertydsnp/frequency/ci-base-image:1543-use-dind-image-for-ci-base-image
+    #   options: --privileged
     steps:
+      - name: Install Required Packages
+        run: |
+          apt-get update
+          apt install -y wget file build-essential curl
       # - name: Install Required Packages
       #   run: |
       #     sudo apt-get update
       #     sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
         uses: actions/checkout@v3
-      # - name: Install Rust Toolchain
-      #   # Match installation steps to CI base docker image
-      #   run: |
-      #     curl https://sh.rustup.rs -sSf | bash -s -- -y
-      #     echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Install Rust Toolchain
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | bash -s -- -y
+          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
