@@ -214,8 +214,8 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
   Promise<u64> {
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
-  const default_funding_source = await getDefaultFundingSource();
-  await fundKeypair(default_funding_source.keys, keys, amount);
+  const defaultFundingSource = getDefaultFundingSource();
+  await fundKeypair(defaultFundingSource.keys, keys, amount);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
   assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');

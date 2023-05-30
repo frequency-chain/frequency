@@ -1,8 +1,8 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Null, u16, u64, u128 } from "@polkadot/types"
+import { u16, u64 } from "@polkadot/types"
 import assert from "assert";
-import { EventMap, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
   devAccounts,
   createKeys,
@@ -26,7 +26,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
-    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", 50n*DOLLARS);
+    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", 50n * DOLLARS);
     assert.notEqual(stakeProviderId, 0, "stakeProviderId should not be zero");
     await stakeToProvider(stakeKeys, stakeProviderId, stakingAmount);
     return [stakeKeys, stakeProviderId];
@@ -40,8 +40,8 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Capacity is replenished", function () {
     it("after new epoch", async function () {
-      const totalStaked = 2n*DOLLARS;
-      let expectedCapacity = totalStaked/TokenPerCapacity;
+      const totalStaked = 2n * DOLLARS;
+      let expectedCapacity = totalStaked / TokenPerCapacity;
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
