@@ -41,25 +41,27 @@ describe("Capacity Replenishment Testing: ", function () {
 
   describe("Capacity is replenished", function () {
     it("after new epoch", async function () {
-      const totalStaked = 2n * DOLLARS;
+      const totalStaked = 3n * DOLLARS;
       let expectedCapacity = totalStaked / TokenPerCapacity;
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("ReplFirst", totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // confirm that we start with a full tank
+      await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-      assert.equal(expectedCapacity, remainingCapacity);
+      assert.equal(expectedCapacity, remainingCapacity, "Our expected capacity from staking is wrong");
 
       await call.payWithCapacity(-1);
       remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-      assert(expectedCapacity > remainingCapacity);
+      assert(expectedCapacity > remainingCapacity, "Our remaining capacity is much higher than expected.");
+      const capacityPerCall = expectedCapacity - remainingCapacity;
+      assert(remainingCapacity > capacityPerCall, "We don't have enough to make a second call");
 
       // one more txn to deplete capacity more so this current remaining is different from when
       // we submitted the first message.
       await call.payWithCapacity(-1);
-      const newEpochBlock = await getNextEpochBlock();
-      await ExtrinsicHelper.run_to_block(newEpochBlock);
+      await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
 
       // this should cause capacity to be refilled and then deducted by the cost of one message.
       await call.payWithCapacity(-1);
