@@ -18,14 +18,14 @@ fn transaction_payment_validate_is_succesful() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 			let dispatch_info =
-				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			assert_ok!(ChargeFrqTransactionPayment::<Test>::from(0u64).validate(
@@ -43,14 +43,14 @@ fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 			let dispatch_info =
-				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			assert_noop!(
@@ -71,14 +71,14 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 			let dispatch_info =
-				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			assert_eq!(Balances::free_balance(1), 100);
@@ -114,14 +114,14 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 			let dispatch_info =
-				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			assert_eq!(Balances::free_balance(1), 100);
@@ -136,7 +136,7 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 			assert_eq!(Balances::free_balance(1), 100 - 5 - 5 - 10);
 
 			let post_info: PostDispatchInfo = PostDispatchInfo {
-				actual_weight: Some(Weight::from_ref_time(2)),
+				actual_weight: Some(Weight::from_parts(2, 0)),
 				pays_fee: Default::default(),
 			};
 
@@ -162,7 +162,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
@@ -175,7 +175,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 				});
 
 			let dispatch_info =
-				DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			assert_eq!(Capacity::balance(1), 1_000_000_000);
@@ -214,7 +214,7 @@ fn pay_with_capacity_happy_path() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let key_without_msa = 20u64;
@@ -233,7 +233,7 @@ fn pay_with_capacity_errors_with_call_error() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let existing_key_with_msa = 1u64;
@@ -272,7 +272,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -285,7 +285,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 					})],
 				});
 
-			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			// fee = base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
@@ -307,7 +307,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -320,7 +320,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 					})),
 				});
 
-			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
 			// fee = base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
@@ -344,7 +344,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_capacity_tx_when_user_
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(100))
+		.base_weight(Weight::from_parts(100, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -357,7 +357,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_capacity_tx_when_user_
 					})),
 				});
 
-			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 			let result = charge_tx_payment.withdraw_fee(&who, call, &info, len);
 			assert_eq!(
@@ -374,7 +374,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_non_capacity_tx_when_u
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(100))
+		.base_weight(Weight::from_parts(100, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -382,7 +382,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_non_capacity_tx_when_u
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
-			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 			let error = charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap_err();
 			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
@@ -396,7 +396,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_non_capacity_tx_returns_tuppl
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -404,7 +404,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_non_capacity_tx_returns_tuppl
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
-			let info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 			let result = charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap();
 
@@ -428,7 +428,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_free_non_capacity_tx_returns_
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
@@ -437,7 +437,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_free_non_capacity_tx_returns_
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
 			let info = DispatchInfo {
-				weight: Weight::from_ref_time(5),
+				weight: Weight::from_parts(5, 0),
 				pays_fee: Pays::No,
 				..Default::default()
 			};
@@ -490,7 +490,7 @@ pub fn assert_withdraw_fee_result(
 	call: &<Test as Config>::RuntimeCall,
 	expected_err: Option<TransactionValidityError>,
 ) {
-	let dispatch_info = DispatchInfo { weight: Weight::from_ref_time(5), ..Default::default() };
+	let dispatch_info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity { call: Box::new(call.clone()) });
@@ -517,7 +517,7 @@ fn withdraw_fee_allows_only_configured_capacity_calls() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let account_id = 1u64;
@@ -542,7 +542,7 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_does_not_have_the_requ
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			// An account that has an MSA but has not bet the min balance for key deposit.
@@ -606,7 +606,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			CurrentEpoch::<Test>::set(current_epoch);
@@ -652,7 +652,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			CurrentEpoch::<Test>::set(current_epoch);
@@ -690,7 +690,7 @@ fn compute_capacity_fee_successful() {
 	let balance_factor = 10;
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let call: &<Test as Config>::RuntimeCall =
@@ -712,7 +712,7 @@ fn pay_with_capacity_batch_all_happy_path() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let origin = 1u64;
@@ -740,7 +740,7 @@ fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() 
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let origin = 1u64;
@@ -772,7 +772,7 @@ fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
-		.base_weight(Weight::from_ref_time(5))
+		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
 			let origin = 1u64;

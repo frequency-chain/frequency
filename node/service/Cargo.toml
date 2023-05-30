@@ -62,6 +62,7 @@ sp-session = { git = "https://github.com/paritytech/substrate", branch = "polkad
 sp-timestamp = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 sp-transaction-pool = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 sp-wasm-interface = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+sp-inherents = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
