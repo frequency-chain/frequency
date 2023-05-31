@@ -19,8 +19,7 @@ describe("Create Accounts", function () {
 
         it("should successfully create an MSA account", async function () {
             const f = ExtrinsicHelper.createMsa(keys);
-            await f.fundOperation();
-            const [msaCreatedEvent, chainEvents] = await f.signAndSend();
+            const [msaCreatedEvent, chainEvents] = await f.fundAndSend();
 
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(msaCreatedEvent, undefined, "should have returned  an MsaCreated event");

@@ -160,8 +160,7 @@ export async function createDelegator(): Promise<[KeyringPair, u64]> {
   let keys = await createAndFundKeypair();
   let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
   const createMsa = ExtrinsicHelper.createMsa(keys);
-  await createMsa.fundOperation();
-  const [msaCreatedEvent, _] = await createMsa.signAndSend();
+  const [msaCreatedEvent, _] = await createMsa.fundAndSend();
 
   if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
     delegator_msa_id = msaCreatedEvent.data.msaId;
@@ -182,8 +181,7 @@ export async function createDelegatorAndDelegation(schemaId: u16, providerId: u6
   const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-  await grantDelegationOp.fundOperation();
-  await grantDelegationOp.signAndSend();
+  await grantDelegationOp.fundAndSend();
 
   return [keys, delegator_msa_id];
 }
