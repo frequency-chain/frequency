@@ -78,6 +78,7 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
+use common_primitives::capacity::StakingRewardsProvider;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::TryStateSelect;
 
@@ -739,7 +740,7 @@ use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
-use pallet_stateful_storage::Call as StatefulStorageCall;
+use pallet_stateful_storage::{types::ItemAction::Delete, Call as StatefulStorageCall};
 
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
