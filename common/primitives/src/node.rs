@@ -36,6 +36,9 @@ pub type Signature = MultiSignature;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
+/// the time period in blocks that Staking Rewards are based upon
+pub type Era = u32;
+
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
 /// The provider of a collective action interface, for example an instance of `pallet-collective`.

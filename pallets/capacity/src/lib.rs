@@ -92,6 +92,7 @@ const STAKING_ID: LockIdentifier = *b"netstkng";
 pub mod pallet {
 	use super::*;
 
+	use common_primitives::capacity::StakingRewardsProvider;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
@@ -151,6 +152,27 @@ pub mod pallet {
 		/// How much FRQCY one unit of Capacity costs
 		#[pallet::constant]
 		type CapacityPerToken: Get<Perbill>;
+
+		/// A period of `EraLength` blocks in which a Staking Pool applies and
+		/// when Staking Rewards may be earned.
+		type Era: Parameter
+			+ Member
+			+ MaybeSerializeDeserialize
+			+ MaybeDisplay
+			+ AtLeast32BitUnsigned
+			+ Default
+			+ Copy
+			+ sp_std::hash::Hash
+			+ MaxEncodedLen
+			+ TypeInfo;
+		/// The number of blocks in a Staking Era
+		#[pallet::constant]
+		type EraLength: Get<u32>;
+		/// The maximum number of eras over which one can claim rewards
+		#[pallet::constant]
+		type StakingRewardsPastErasMax: Get<u32>;
+
+		type RewardsProvider: StakingRewardsProvider;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -591,6 +613,12 @@ impl<T: Config> Pallet<T> {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
 			T::DbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
 		}
+	}
+
+	pub fn payout_eligible(account_id: T::AccountId) -> boolean {
+		let _staking_account =
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+		false
 	}
 }
 
