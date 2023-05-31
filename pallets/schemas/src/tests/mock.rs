@@ -3,7 +3,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
-use frame_system::EnsureRoot;
+use frame_system::{EnsureRoot};
 
 use common_primitives::node::{AccountId, Header};
 pub use common_runtime::constants::*;
@@ -33,7 +33,10 @@ frame_support::construct_runtime!(
 );
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
-// the descriptions of these configs.
+// the descriptions of these configs.2
+// REVIEW: This is now the right type, but is the value correct?
+type MaxProposalWeight = frame_support::weights::constants::BlockExecutionWeight;
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -44,6 +47,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
+
+	type SetMembersOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 pub type MaxSchemaRegistrations = ConstU16<64_000>;

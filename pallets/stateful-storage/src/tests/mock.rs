@@ -396,12 +396,12 @@ pub fn test_public(n: MessageSourceId) -> AccountId32 {
 
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
-	use sp_keystore::{testing::KeyStore, KeystoreExt, KeystorePtr};
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
-	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as KeystorePtr));
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
 }
