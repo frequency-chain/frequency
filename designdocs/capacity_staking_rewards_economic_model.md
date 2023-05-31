@@ -80,3 +80,54 @@ Since there is no difference to the chain for what Provider is posting what mess
 1. Do not specify implementation details
 2. Do not specify final naming
 ## Proposal:
+
+## Benefits and Risks:
+### Benefit: stabler message costs
+Staking locks up token.  Locked token may not be immediately withdrawn; this dampens some level of speculation-driven volatility as well as that driven by opportunistic Capacity purchases.
+
+### Benefit: improved engagement and expanded user base
+A Provider may, for example, airdrop tokens to users who meet certain criteria, such as referrals or sharing links on other platforms.  Users with token may choose Reward staking to generate Capacity for their Provider and also get token rewards.
+
+### Benefit: improved economic sustainability
+A staking reward system can improve /onboard/uptake/usage/...
+
+### Risk: staking system incentivizes gaming
+If the staking system is too complicated, it can breed exploits and encourage gaming the systme.
+If the staking system does not make it worthwhile to stake for rewards, the goal of decentralization is not achieved, and/or it can encourage gaming the system
+
+# Risk: staking system penalizes whale Providers
+If the system is unreliable, unstable or not economical enough for large Providers -- _particularly_ compared to alternatives -- the goal of decentralization may be achieved in some sense, but at the expense of widespread adoption.
+
+### Risk: Faulty reward calculations:
+* Maximized Stake for capacity is not cheaper per txn than pay-as-you-go with token
+* Maximized Stake for capacity pays better than staking to be a collator
+
+### Arguments in favor of storage values for reward rate and capacity price
+* transparency:  it's more transparent than a Config, which could be changed only by an upgrade. This is because changes to Config values can be easily overlooked if they are buried in a large upgrade. Making them be subject to governance approval puts the change on chain, making it more subject to review.
+* stabler: reward rates and capacity prices would have an automatic upper limit to how frequently they could change.
+
+### Arguments against
+* risk to network sustainability:  it's possible that proposed changes which would actually be necessary to Frequency's economic stability and sustainability may be rejected by token voters. This is mitigated particularly at the start of Frequency's operation given the token distribution, and also with the voting power and permissions of Frequency and Technical Councils.
+
+#### Mitigation:
+Adjust reward amounts. This is why the reward amounts need to be adjustable.
+
+[//]: # (the reasons why this solution was chosen, and the risks this solution poses.)
+[//]: # (For example, the solution may be very simple, but there could performance bottlenecks above a certain threshold.)
+[//]: # (Another: the solution is well known and widely used, but it's not a perfect fit and requires complicated changes in one area.)
+
+## Alternatives and Rationale:
+
+### Why can't Frequency use Substrate `staking` pallet?
+The staking pallet is for rewarding node validators, and rewards must be claimed within `HISTORY_DEPTH` blocks before the record of them is purged.  Reward payouts for a given validator can be called by any account and the rewards go o the validator and are shared with its nominators. The staking pallet keeps track of what rewards have been claimed within that `HISTORY_DEPTH` number of blocks.
+
+Since Capacity Rewards staking is for FRQCY token account holders, we should not require those holders to have to call an extrinsic regularly to receive rewards.
+
+Secondly, we must plan for the number of Providers to dwarf the number of validators on the Polkadot Relay chain.  The Polkadot relay chain currently has validators in the hundreds.  Calculating the payouts for hundreds of items in RocksDB storage is a very different prospect than calculating rewards for thousands of Providers and potentially tens of millions (or more) of Rewards stakers.  It may be that this type of optimization is deferred, however, this design must not make it difficult to optimize.
+
+[//]: # (discuss alternatives that were considered, and why they were rejected.)
+[//]: # (Note when there are absolute requirements that the solution does not and can't meet. One example might be, it's a proprietary solution but we need something open source.)
+
+## Sources:
+
+[//]: # (sources of information that led to this design.)

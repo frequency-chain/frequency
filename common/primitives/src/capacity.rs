@@ -1,6 +1,8 @@
 use crate::msa::MessageSourceId;
 use frame_support::traits::tokens::Balance;
 use sp_runtime::DispatchError;
+use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
+use crate::node::{AccountId, Era, Hash};
 
 /// A trait for checking that a target MSA can be staked to.
 pub trait TargetValidator {
@@ -46,4 +48,36 @@ pub trait Replenishable {
 
 	/// Checks if an account can be replenished.
 	fn can_replenish(msa_id: MessageSourceId) -> bool;
+}
+
+
+pub trait StakingRewardsProvider {
+	type Balance: Balance;
+	/// Return the size of the reward pool for the given era, in token
+	/// Errors:
+	///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
+	fn reward_pool_size(era: Era) -> Self::Balance;
+
+	/// Return the total unclaimed reward in token for `accountId` for `fromEra` --> `toEra`, inclusive
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current Era.
+	fn staking_reward_total(accountId: AccountId, fromEra: Era, toEra: Era);
+
+	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - MaxUnlockingChunksExceeded
+	///     - All other conditions that would prevent a reward from being claimed return 'false'
+	fn validate_staking_reward_claim(accountId: AccountId, proof: Hash, payload: StakingRewardClaim) -> bool;
+
+	/// Return whether `accountId` can claim a reward. Staking accounts may not claim a reward more than once
+	/// per Era, may not claim rewards before a complete Era has been staked, and may not claim more rewards past
+	/// the number of `MaxUnlockingChunks`.
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - MaxUnlockingChunksExceeded
+	///     - All other conditions that would prevent a reward from being claimed return 'false'
+	fn payout_eligible(accountId: AccountIdOf<T>) -> bool;
 }
