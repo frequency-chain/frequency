@@ -138,8 +138,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     }
 
     public getCall(): Call {
-        const call = ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
-        return call;
+        return ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
     }
 
     async fundOperation(source?: KeyringPair) {
@@ -259,7 +258,6 @@ export class ExtrinsicHelper {
     }
 
     public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array): Extrinsic {
-        ExtrinsicHelper.api.query.msa
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.deleteMsaPublicKey(publicKey), keys, ExtrinsicHelper.api.events.msa.PublicKeyDeleted);
     }
 
