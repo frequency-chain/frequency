@@ -41,64 +41,161 @@ pub struct StakingAccountDetails {
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
     /// The number of the last StakingEra that this account's rewards were claimed.
     pub last_rewarded_at: T::StakingEra, // NEW
+    /// What type of staking this account is doing
     pub staking_type: StakingType, // NEW
+    /// staking amounts that have been retargeted are prevented from being retargeted again for the
+    /// configured Thawing Period number of blocks.
+    pub stakeChangeUnlocking: BoundedVec<UnlockChunk<BalanceOf<T>, EraOf<T>>, T::MaxUnlockingChunks>
 }
 ```
 
 **Unstaking thaw period**
 We change the thaw period to begin at the first block of next Epoch instead of immediately.
 
-### StakingRewardsProvider - Economic Model Interface
+### Changes to extrinsics
+```rust
+pub fn stake(
+    origin: OriginFor<T>,
+    target: MessageSourceId,
+    amount: BalanceOf<T>,
+    staking_type: StakingType // NEW
+) -> DispatchResult {
+    /// etc.
+}
+
+pub fn unstake(
+    origin: OriginFor<T>,
+    target: MessageSourceId,
+    requested_amount: BalanceOf<T>,
+) -> DispatchResult {
+    // NEW BEHAVIOR:
+    // If StakingType is RewardsType
+    //   If payout_eligible,
+    //     check whether their last payout era is recent enough to pay out all rewards at once.
+    //     if so, first pay out all rewards and then continue with rest of unstaking code as is
+    //     if not, emit error "MustFirstClaimUnclaimedRewards", "UnclaimedRewardsOverTooManyEras" or something like that
+    //   If not payout eligible,
+    //     check whether the last payout era is the current one.
+    //     if so, all rewards have been claimed, so continue with rest of unstaking code as is,
+    //
+    //     otherwise, they have too many unlocking chunks so they'll have to wait. - the unstaking code
+    //     will catch this anyway and emit `MaxUnlockingChunksExceeded`
+}
+```
+### StakingRewardsProvider - Economic Model trait
 
 ```rust
 use std::hash::Hash;
 
-pub struct StakingRewardClaim<T: Config> {
-    pub claimedReward: BalanceOf<T>,
-    pub newStakingAccountState: StakingAccountDetails<T: Config>
+pub struct StakingRewardClaim<Balance, StakingAccountDetails, Era> {
+    /// How much is claimed, in token
+    pub claimed_reward: Balance,
+    /// The end state of the staking account if the operations are valid
+    pub staking_account_end_state: StakingAccountDetails,
+    /// The starting era for the claimed reward period, inclusive
+    pub from_era: Era,
+    /// The ending era for the claimed reward period, inclusive
+    pub to_era: Era,
 }
 
-pub type StakingRewardsProvider<T: Config> {
-type BalanceOf<T>;
-type AccountIdOf<T>;
-type EraOf<T>;
+pub trait StakingRewardsProvider {
+    type Balance;
+    type AccountId;
+    type Era;
 
-pub fn rewardPoolSize(era: EraOf<T>) -> BalanceOf<T>;
+    /// Return the size of the reward pool for the given era, in token
+    /// Errors:
+    ///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
+    fn reward_pool_size(era: EraOf<T>) -> BalanceOf<T>;
 
-pub fn stakingRewardFor(accountId: AccountIdOf<T>, era: EraOf<T>) -> BalanceOf<T>;
+    /// Return the total unclaimed reward in token for `accountId` for `fromEra` --> `toEra`, inclusive
+    /// Errors:
+    ///     - NotAStakingAccount
+    ///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current Era.
+    fn staking_reward_total(accountId: AccountIdOf<T>, fromEra: EraOf<T>, toEra: EraOf<T>);
 
-pub fn stakingRewardTotal(accountId: AccountIdOf<T>, fromEra: EraOf<T>, toEra: EraOf<T>);
+    /// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+    /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
+    /// Errors:
+    ///     - NotAStakingAccount
+    ///     - MaxUnlockingChunksExceeded
+    ///     - All other conditions that would prevent a reward from being claimed return 'false'
+    fn validate_staking_reward_claim(accountId: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
 
-pub fn validateStakingRewardClaim(accountId: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
-
-pub fn payoutEligible(accountId: AccountIdOf<T>) -> bool;
+    /// Return whether `accountId` can claim a reward. Staking accounts may not claim a reward more than once
+    /// per Era, may not claim rewards before a complete Era has been staked, and may not claim more rewards past
+    /// the number of `MaxUnlockingChunks`.
+    /// Errors:
+    ///     - NotAStakingAccount
+    ///     - MaxUnlockingChunksExceeded
+    ///     - All other conditions that would prevent a reward from being claimed return 'false'
+    fn payout_eligible(accountId: AccountIdOf<T>) -> bool;
 }
 ```
 
-
-### New storage items and related types
+### New storage items, Config and related types
 ```rust
+pub enum StakingType {
+    /// Staking account targets Providers for capacity only, no token reward
+    MaximizedCapacity,
+    /// Staking account targets Providers and splits reward between capacity to the Provider
+    /// and token for the account holder
+    Rewards,
+}
+
+pub trait Config: frame_system::Config {
+    // ...
+
+    /// A period of `EraLength` blocks in which a Staking Pool applies and
+    /// when Staking Rewards may be earned.
+    type Era:  Parameter
+                + Member
+                + MaybeSerializeDeserialize
+                + MaybeDisplay
+                + AtLeast32BitUnsigned
+                + Default
+                + Copy
+                + sp_std::hash::Hash
+                + MaxEncodedLen
+                + TypeInfo;
+    /// The number of blocks in a Staking Era
+    type EraLength: Get<u32>;
+    /// The maximum number of eras over which one can claim rewards
+    type StakingRewardsPastErasMax: Get<u32>;
+
+    type RewardsProvider: StakingRewardsProvider;
+};
+
+pub struct RewardPoolInfo<T: Config> {
+    total_staked_token: BalanceOf<T>,
+}
+
 #[pallet::storage]
-#[pallet::getter(fn get_reward_pool_for)]
-pub type StakingRewardPool<T: Config> =
-    <StorageMap<_, Twox64Concat, T::Era, BalanceOf<T>>;
+#[pallet::getter(fn get_reward_pool_for_era)]
+pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, T::Era, RewardPoolInfo<T>;
+
+#[pallet::storage]
+#[pallet::getter(fn currentEra)]
+pub type Era<T:Config> = StorageValue<_, T::Era, ValueQuery>;
 ```
 
 ### New extrinsics
 1. **claimStakingReward(origin,proof,payload)**
 ```rust
-/// validates the reward claim
-/// if validated, mints token and transfers to Origin.
+/// TBD whether this is the form for claiming rewards
+/// Validates the reward claim. If validated, mints token and transfers to Origin.
 /// Errors:
-///     - if Origin does not own the StakingRewardDetails in the claim.
-///     - if validation of calculation fails
-///     - if rewards were already paid out in the current Era
+///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
+///     - StakingRewardClaimInvalid:  if validation of calculation fails
+///     - StakingAccountIneligibleForPayout:  if rewards were already paid out in the provided Era range
+/// `proof` - the Merkle proof for the reward claim
 #[pallet::call_index(n)]
 pub fn claimStakingReward(
     origin: OriginFor<T>,
     proof: Hash,
     payload: StakingRewardClaim<T>
 );
+
 ```
 
 2. **change_staking_target(origin, from, to, amount)**
@@ -106,11 +203,15 @@ pub fn claimStakingReward(
 /// change a staking account detail's target MSA Id to a new one.
 /// If amount is specified, that amount up to the total staking amount is retargeted,
 /// otherwise ALL of the total staking amount for 'from' is changed to the new target MSA Id.
+/// No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
+/// Each call creates one chunk.
 /// Errors:
-///    -  if 'from' has no funds targeted in the staking account
+///     - NotAStakingAccount if origin has no StakingAccount associated with it
+///     -  if 'from' has no funds targeted in the staking account
 ///    - if 'to' MSA Id does not exist or is not a Provider
 ///    - if Origin does not have a staking account.
-#[pallet:call_index(n+1)]
+///    - if 'from' target staking amount is still thawing in
+#[pallet:call_index(n+1)] // n = current call index in the pallet
 pub fn change_staking_target(
     origin: OriginFor<T>,
     from: MessageSourceId,
@@ -120,54 +221,8 @@ pub fn change_staking_target(
 ```
 
 ### RPC
+```rust
+/// RPC access to the pallet function by the same name
+pub fn payout_eligible(accountId: AccountId) -> boolean;
+```
 
-## Benefits and Risks:
-### Benefit: stabler message costs
-Staking locks up token.  Locked token may not be immediately withdrawn; this dampens some level of speculation-driven volatility as well as that driven by opportunistic Capacity purchases.
-
-### Benefit: improved engagement and expanded user base
-A Provider may, for example, airdrop tokens to users who meet certain criteria, such as referrals or sharing links on other platforms.  Users with token may choose Reward staking to generate Capacity for their Provider and also get token rewards.
-
-### Benefit: improved economic sustainability
-A staking reward system can improve /onboard/uptake/usage/...
-
-### Risk: staking system incentivizes gaming
-If the staking system is too complicated, it can breed exploits and encourage gaming the systme.
-If the staking system does not make it worthwhile to stake for rewards, the goal of decentralization is not achieved, and/or it can encourage gaming the system
-
-# Risk: staking system penalizes whale Providers
-If the system is unreliable, unstable or not economical enough for large Providers -- _particularly_ compared to alternatives -- the goal of decentralization may be achieved in some sense, but at the expense of widespread adoption.
-
-### Risk: Faulty reward calculations:
-* Maximized Stake for capacity is not cheaper per txn than pay-as-you-go with token
-* Maximized Stake for capacity pays better than staking to be a collator
-
-### Arguments in favor of storage values for reward rate and capacity price
-* transparency:  it's more transparent than a Config, which could be changed only by an upgrade. This is because changes to Config values can be easily overlooked if they are buried in a large upgrade. Making them be subject to governance approval puts the change on chain, making it more subject to review.
-* stabler: reward rates and capacity prices would have an automatic upper limit to how frequently they could change.
-
-### Arguments against
-* risk to network sustainability:  it's possible that proposed changes which would actually be necessary to Frequency's economic stability and sustainability may be rejected by token voters. This is mitigated particularly at the start of Frequency's operation given the token distribution, and also with the voting power and permissions of Frequency and Technical Councils.
-
-#### Mitigation:
-Adjust reward amounts. This is why the reward amounts need to be adjustable.
-
-[//]: # (the reasons why this solution was chosen, and the risks this solution poses.)
-[//]: # (For example, the solution may be very simple, but there could performance bottlenecks above a certain threshold.)
-[//]: # (Another: the solution is well known and widely used, but it's not a perfect fit and requires complicated changes in one area.)
-
-## Alternatives and Rationale:
-
-### Why can't Frequency use Substrate `staking` pallet?
-The staking pallet is for rewarding node validators, and rewards must be claimed within `HISTORY_DEPTH` blocks before the record of them is purged.  Reward payouts for a given validator can be called by any account and the rewards go o the validator and are shared with its nominators. The staking pallet keeps track of what rewards have been claimed within that `HISTORY_DEPTH` number of blocks.
-
-Since Capacity Rewards staking is for FRQCY token account holders, we should not require those holders to have to call an extrinsic regularly to receive rewards.
-
-Secondly, we must plan for the number of Providers to dwarf the number of validators on the Polkadot Relay chain.  The Polkadot relay chain currently has validators in the hundreds.  Calculating the payouts for hundreds of items in RocksDB storage is a very different prospect than calculating rewards for thousands of Providers and potentially tens of millions (or more) of Rewards stakers.  It may be that this type of optimization is deferred, however, this design must not make it difficult to optimize.
-
-[//]: # (discuss alternatives that were considered, and why they were rejected.)
-[//]: # (Note when there are absolute requirements that the solution does not and can't meet. One example might be, it's a proprietary solution but we need something open source.)
-
-## Sources:
-
-[//]: # (sources of information that led to this design.)

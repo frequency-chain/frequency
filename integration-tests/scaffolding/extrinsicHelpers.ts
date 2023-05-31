@@ -1,11 +1,11 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/types";
+import { Compact, u128, u16, u32, u64, Vec, Option } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import { devAccounts, getBlockNumber, log, getDefaultFundingSource, Sr25519Signature} from "./helpers";
+import { getBlockNumber, log, getDefaultFundingSource, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -135,8 +135,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     }
 
     public getCall(): Call {
-        const call = ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
-        return call;
+        return ExtrinsicHelper.api.createType('Call', this.extrinsic.call);
     }
 
     async fundOperation(source?: KeyringPair) {
@@ -256,7 +255,6 @@ export class ExtrinsicHelper {
     }
 
     public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array): Extrinsic {
-        ExtrinsicHelper.api.query.msa
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.deleteMsaPublicKey(publicKey), keys, ExtrinsicHelper.api.events.msa.PublicKeyDeleted);
     }
 

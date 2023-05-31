@@ -78,6 +78,7 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
+use common_primitives::capacity::StakingRewardsProvider;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::TryStateSelect;
 
@@ -407,6 +408,10 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
+	type Era = Era;
+	type EraLength = ConstU32<{ 14 * DAYS }>;
+	type StakingRewardsPastErasMax = ConstU32<26u32>; // 1 year
+	type RewardsProvider = StakingRewardsProvider;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -733,7 +738,7 @@ impl pallet_transaction_payment::Config for Runtime {
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
-use pallet_stateful_storage::Call as StatefulStorageCall;
+use pallet_stateful_storage::{types::ItemAction::Delete, Call as StatefulStorageCall};
 
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
