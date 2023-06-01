@@ -2,10 +2,7 @@ use sp_api::{ApiRef, ProvideRuntimeApi};
 use substrate_test_runtime_client::runtime::Block;
 
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, NumberFor, Zero},
-};
+use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
 
 pub struct TestApi {}
 
@@ -23,7 +20,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 impl<Block: BlockT> HeaderBackend<Block> for TestApi {
 	fn header(
 		&self,
-		_id: BlockId<Block>,
+		_id: <Block as sp_api::BlockT>::Hash,
 	) -> std::result::Result<Option<Block::Header>, sp_blockchain::Error> {
 		Ok(None)
 	}
@@ -43,7 +40,7 @@ impl<Block: BlockT> HeaderBackend<Block> for TestApi {
 
 	fn status(
 		&self,
-		_id: BlockId<Block>,
+		_id: <Block as sp_api::BlockT>::Hash,
 	) -> std::result::Result<sc_client_api::blockchain::BlockStatus, sp_blockchain::Error> {
 		Ok(sc_client_api::blockchain::BlockStatus::Unknown)
 	}
