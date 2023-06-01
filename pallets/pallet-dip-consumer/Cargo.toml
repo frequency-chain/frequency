@@ -7,17 +7,18 @@ homepage = "https://kilt.io/"
 license-file = "LICENSE"
 description = "Pallet enabling receiving identity information from providers via the pallet-dip-provider pallet."
 repository = "https://github.com/KILTprotocol/kilt-node"
-version = "1.11.0-dev"
+# version = "1.11.0-dev"
+version = "0.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-kilt-support = { path = "../support", defaut-features = false }
-dip-support = { path = "../dip-support", defaut-features = false }
 cumulus-pallet-xcm = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36", default-features = false }
+dip-support = { path = "../dip-support", default-features = false }
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.36"}
+kilt-support = { path = "../kilt-support", default-features = false }
 parity-scale-codec = {version = "3.1.5", default-features = false}
 scale-info = {version = "2.2.0", default-features = false, features = [
   "derive",
@@ -28,15 +29,16 @@ sp-std = {default-features = false, git = "https://github.com/paritytech/substra
 default = ["std"]
 std = [
   "cumulus-pallet-xcm/std",
-  "dip-support/std",
   "frame-support/std",
   "frame-system/std",
   "kilt-support/std",
   "parity-scale-codec/std",
   "scale-info/std",
   "sp-std/std",
+  "dip-support/std",
 ]
 runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "kilt-support/runtime-benchmarks",
 ]

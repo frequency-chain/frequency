@@ -2084,6 +2084,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "dip-support"
+version = "0.0.0"
+dependencies = [
+ "frame-support",
+ "parity-scale-codec",
+ "scale-info",
+]
+
+[[package]]
 name = "directories"
 version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2939,6 +2948,7 @@ dependencies = [
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-dip-consumer",
  "pallet-frequency-tx-payment",
  "pallet-handles",
  "pallet-handles-runtime-api",
@@ -3961,6 +3971,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f6d5ed8676d904364de097082f4e7d240b571b67989ced0240f08b7f966f940"
 dependencies = [
  "cpufeatures",
+]
+
+[[package]]
+name = "kilt-support"
+version = "0.0.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "serde",
+ "sp-core",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]
@@ -5655,6 +5680,20 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-dip-consumer"
+version = "0.0.0"
+dependencies = [
+ "cumulus-pallet-xcm",
+ "dip-support",
+ "frame-support",
+ "frame-system",
+ "kilt-support",
+ "parity-scale-codec",
+ "scale-info",
  "sp-std",
 ]
 

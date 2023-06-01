@@ -74,6 +74,9 @@ pub use pallet_msa;
 pub use pallet_schemas;
 pub use pallet_time_release;
 
+// KILT
+pub use pallet_dip_consumer;
+
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
