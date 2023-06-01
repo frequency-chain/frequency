@@ -217,6 +217,9 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
+	type RewardEra = u32;
+	type EraLength = ConstU32<5>;
+	type StakingRewardsPastErasMax = ConstU32<2>;
 }
 
 use pallet_balances::Call as BalancesCall;

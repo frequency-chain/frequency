@@ -7,10 +7,12 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
-use common_primitives::capacity::StakingType;
+use common_primitives::{
+	capacity::StakingType,
+	node::{AccountId, Hash},
+};
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
-use common_primitives::node::{AccountId, Hash};
 
 /// The type used for storing information about staking details.
 #[derive(
@@ -23,13 +25,14 @@ pub struct StakingAccountDetails<T: Config> {
 	/// The total amount of tokens in `active` and `unlocking`
 	pub total: BalanceOf<T>,
 	/// Unstaked balances that are thawing or awaiting withdrawal.
-	pub unlocking: 				BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
 	/// What type of staking this account is doing
 	pub staking_type: StakingType,
 	/// The None or Some(number): never, or the last RewardEra that this account's rewards were claimed.
 	pub last_rewards_claimed_at: Option<RewardEra>,
 	/// Chunks that have been retargeted within T::UnstakingThawPeriod
-	pub stake_change_unlocking:	BoundedVec<UnlockChunk<BalanceOf<T>, RewardEra>, T::MaxUnlockingChunks>,
+	pub stake_change_unlocking:
+		BoundedVec<UnlockChunk<BalanceOf<T>, RewardEra>, T::MaxUnlockingChunks>,
 }
 
 /// The type that is used to record a single request for a number of tokens to be unlocked.
@@ -136,10 +139,10 @@ impl<T: Config> Default for StakingAccountDetails<T> {
 		Self {
 			active: Zero::zero(),
 			total: Zero::zero(),
-			unlocking: dbg!(Default::default()),
+			unlocking: BoundedVec::default(),
 			last_rewards_claimed_at: None,
 			staking_type: StakingType::MaximumCapacity,
-			stake_change_unlocking: dbg!(Default::default()),
+			stake_change_unlocking: BoundedVec::default(),
 		}
 	}
 }
@@ -272,7 +275,11 @@ pub trait StakingRewardsProvider<T: Config> {
 	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
 	/// Errors:
 	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
-	fn staking_reward_total(account_id: AccountId, from_era: RewardEra, to_era: RewardEra);
+	fn staking_reward_total(
+		account_id: AccountId,
+		from_era: RewardEra,
+		to_era: RewardEra,
+	) -> BalanceOf<T>;
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
