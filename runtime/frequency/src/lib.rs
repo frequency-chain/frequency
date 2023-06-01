@@ -408,7 +408,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
-	type Era = Era;
+	type Era = RewardEra;
 	type EraLength = ConstU32<{ 14 * DAYS }>;
 	type StakingRewardsPastErasMax = ConstU32<26u32>; // 1 year
 	type RewardsProvider = StakingRewardsProvider;

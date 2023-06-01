@@ -42,10 +42,11 @@ benchmarks! {
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
 		let target = 1;
+		let staking_type = StakingType::MaximumCapacity;
 
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
+	}: _ (RawOrigin::Signed(caller.clone()), target, amount, staking_type)
 	verify {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));

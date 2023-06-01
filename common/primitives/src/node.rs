@@ -37,7 +37,7 @@ pub type Signature = MultiSignature;
 pub type Index = u32;
 
 /// the time period in blocks that Staking Rewards are based upon
-pub type Era = u32;
+pub type RewardEra = u32;
 
 /// A hash of some data used by the chain.
 pub type Hash = sp_core::H256;
