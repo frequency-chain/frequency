@@ -10,6 +10,7 @@ use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturatin
 use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
+use common_primitives::node::{AccountId, Hash};
 
 /// The type used for storing information about staking details.
 #[derive(
