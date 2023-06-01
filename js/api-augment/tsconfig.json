@@ -13,7 +13,6 @@
         "strict": true,
         "skipLibCheck": true,
         "target": "es2022",
-        "watch": false,
         "typeRoots": [
             "node_modules/@types"
         ],
