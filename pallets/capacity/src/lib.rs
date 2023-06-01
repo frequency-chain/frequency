@@ -70,6 +70,10 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
+use common_primitives::{
+	capacity::StakingType,
+	node::{RewardEra},
+};
 
 pub use pallet::*;
 pub use types::*;
@@ -80,6 +84,7 @@ pub mod types;
 mod benchmarking;
 
 #[cfg(test)]
+mod tests;
 mod tests;
 
 pub mod weights;
@@ -92,7 +97,7 @@ const STAKING_ID: LockIdentifier = *b"netstkng";
 pub mod pallet {
 	use super::*;
 
-	use common_primitives::capacity::StakingRewardsProvider;
+	use common_primitives::capacity::{StakingType};
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
@@ -171,8 +176,8 @@ pub mod pallet {
 		/// The maximum number of eras over which one can claim rewards
 		#[pallet::constant]
 		type StakingRewardsPastErasMax: Get<u32>;
-
-		type RewardsProvider: StakingRewardsProvider;
+		/// The StakingRewardsProvider used by this pallet in a given runtime
+		type RewardsProvider: StakingRewardsProvider<Self>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -313,6 +318,12 @@ pub mod pallet {
 		MaxEpochLengthExceeded,
 		/// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
 		BalanceTooLowtoStake,
+		/// Staker tried to change StakingType on an existing account
+		CannotChangeStakingType,
+		/// The Era specified is too far in the past or is in the future
+		EraOutOfRange,
+		/// Rewards were already paid out for the specified Era range
+		StakingAccountIneligibleForPayout,
 	}
 
 	#[pallet::hooks]
@@ -329,19 +340,22 @@ pub mod pallet {
 		/// ### Errors
 		///
 		/// - Returns Error::ZeroAmountNotAllowed if the staker is attempting to stake a zero amount.
+
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
+		/// - Returns Error::CannotChangeStakingType if the staking account exists and staking_type is different
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::stake())]
 		pub fn stake(
 			origin: OriginFor<T>,
 			target: MessageSourceId,
 			amount: BalanceOf<T>,
+			staking_type: StakingType,
 		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 
 			let (mut staking_account, actual_amount) =
-				Self::ensure_can_stake(&staker, target, amount)?;
+				Self::ensure_can_stake(&staker, target, amount, staking_type)?;
 
 			let capacity = Self::increase_stake_and_issue_capacity(
 				&staker,
@@ -451,11 +465,21 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
+		staking_type: StakingType,
 	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
 		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 
-		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
+		let staking_account: StakingAccountDetails<T> =
+			Self::get_staking_account_for(&staker).unwrap_or_default();
+		// if total > 0 the account exists already. Prevent the staking type from being changed.
+		if staking_account.total > Zero::zero() {
+			ensure!(
+				staking_account.staking_type == staking_type,
+				Error::<T>::CannotChangeStakingType
+			);
+		}
+
 		let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
@@ -615,9 +639,10 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	pub fn payout_eligible(account_id: T::AccountId) -> boolean {
+	/// Returns whether `account_id` may claim and and be paid token rewards.
+	pub fn payout_eligible(account_id: T::AccountId) -> bool {
 		let _staking_account =
-			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+			Self::get_staking_account_for(account_id).ok_or(Error::<T>::StakingAccountNotFound);
 		false
 	}
 }
