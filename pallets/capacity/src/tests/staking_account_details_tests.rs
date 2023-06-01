@@ -14,6 +14,9 @@ fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_u
 		active: BalanceOf::<Test>::from(15u64),
 		total: BalanceOf::<Test>::from(15u64),
 		unlocking: BoundedVec::default(),
+		staking_type: StakingType::MaximumCapacity,
+		last_rewards_claimed_at: None,
+		stake_change_unlocking: BoundedVec::default(),
 	};
 	assert_eq!(Ok(3u64), staking_account_details.withdraw(3, 3));
 	let expected_chunks: UnlockBVec<Test> =
@@ -25,6 +28,9 @@ fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_u
 			active: BalanceOf::<Test>::from(12u64),
 			total: BalanceOf::<Test>::from(15u64),
 			unlocking: expected_chunks,
+			staking_type: StakingType::MaximumCapacity,
+			last_rewards_claimed_at: None,
+			stake_change_unlocking: BoundedVec::default(),
 		}
 	)
 }
@@ -35,6 +41,9 @@ fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
 		active: BalanceOf::<Test>::from(10u64),
 		total: BalanceOf::<Test>::from(10u64),
 		unlocking: BoundedVec::default(),
+		staking_type: StakingType::MaximumCapacity,
+		last_rewards_claimed_at: None,
+		stake_change_unlocking: BoundedVec::default(),
 	};
 	assert_eq!(Ok(10u64), staking_account_details.withdraw(6, 3));
 	assert_eq!(0u64, staking_account_details.active);
@@ -55,6 +64,9 @@ fn staking_account_details_withdraw_returns_err_when_too_many_chunks() {
 		active: BalanceOf::<Test>::from(10u64),
 		total: BalanceOf::<Test>::from(10u64),
 		unlocking: maximum_chunks,
+		staking_type: StakingType::MaximumCapacity,
+		last_rewards_claimed_at: None,
+		stake_change_unlocking: BoundedVec::default(),
 	};
 
 	assert_err!(staking_account_details.withdraw(6, 3), Error::<Test>::MaxUnlockingChunksExceeded);
@@ -97,6 +109,9 @@ fn impl_staking_account_details_increase_by() {
 			active: BalanceOf::<Test>::from(10u64),
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
+			staking_type: StakingType::MaximumCapacity,
+			last_rewards_claimed_at: None,
+			stake_change_unlocking: BoundedVec::default(),
 		}
 	)
 }
@@ -109,6 +124,9 @@ fn impl_staking_account_details_default() {
 			active: BalanceOf::<Test>::zero(),
 			total: BalanceOf::<Test>::zero(),
 			unlocking: BoundedVec::default(),
+			staking_type: StakingType::MaximumCapacity,
+			last_rewards_claimed_at: None,
+			stake_change_unlocking: BoundedVec::default(),
 		},
 	);
 }
