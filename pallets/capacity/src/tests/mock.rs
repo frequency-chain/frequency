@@ -14,6 +14,9 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill,
 };
+// use common_primitives::node::{Balance, Hash, RewardEra};
+use common_primitives::node::RewardEra;
+// use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -129,6 +132,25 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+// pub struct TestStakingRewardsProvider {}
+// impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
+// 	fn reward_pool_size(era: RewardEra) -> BalanceOf<Test> {
+// 		Balance::from(10_000u64);
+// 	}
+//
+// 	fn staking_reward_total(account_id: AccountId, from_era: RewardEra, to_era: RewardEra) -> BalanceOf<Test> {
+// 		Balance::from(10u64)
+// 	}
+//
+// 	fn validate_staking_reward_claim(account_id: AccountId, proof: Hash, payload: StakingRewardClaim<Test>) -> bool {
+// 		true
+// 	}
+//
+// 	fn payout_eligible(account_id: AccountId) -> bool {
+// 		true
+// 	}
+// }
+
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
@@ -151,6 +173,10 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
+	type RewardEra = u32;
+	type EraLength = ConstU32<10>;
+	type StakingRewardsPastErasMax = ConstU32<5>;
+	// type RewardsProvider = TestStakingRewardsProvider;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
