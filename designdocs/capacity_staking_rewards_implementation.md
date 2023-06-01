@@ -3,23 +3,17 @@ The proposed feature is a design for staking FRQCY token in exchange for Capacit
 It is specific to the Frequency Substrate parachain.
 It consists of enhancements to the capacity pallet, needed traits and their implementations, and needed runtime configuration.
 
-This does _not_ outline the Staking Rewards economic model; it describes the economic model as a black box, i.e. an interface.
+This does _not_ outline the economic model for Staking Rewards (also known as "Provider Boosting"); it describes the economic model as a black box, i.e. an interface.
 
 ## Context and Scope:
 The Frequency Transaction Payment system uses Capacity to pay for certain transactions on chain.  Accounts that wish to pay with Capacity must:
 
 1. Have an [MSA](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/accounts.md)
 2. Be a [Provider](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_registration.md) (see also [Provider Permissions and Grants](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_permissions.md))
-3. Stake a minimum amount of FRQCY token to receive [Capacity](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/capacity.md).
+3. Stake a minimum amount of FRQCY (on mainnet, UNIT on Rococo testnet) token to receive [Capacity](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/capacity.md).
 
 # Problem Statement
-This document outlines how to implement the economic model described in [Capacity Staking Rewards Economic Model](TBD), specifically:
-1. determining the token value of the Reward Pool for a given RewardEra
-2. how to calculate rewards for an individual staker
-3. when rewards are calculated
-4. when rewards are paid out
-5. where these calculations are performed, and
-6. Any other required changes to Capacity Staking as currently implemented
+This document outlines how to implement the Staking for Rewards feature described in [Capacity Staking Rewards Economic Model (TBD)](TBD), without, at this time, regard to what the economic model actually is.
 
 ## Glossary
 1. **FRQCY**: the native token of the Frequency blockchain
@@ -47,7 +41,7 @@ pub struct StakingAccountDetails {
     pub staking_type: StakingType, // NEW
     /// staking amounts that have been retargeted are prevented from being retargeted again for the
     /// configured Thawing Period number of blocks.
-    pub stakeChangeUnlocking: BoundedVec<UnlockChunk<BalanceOf<T>, EraOf<T>>, T::MaxUnlockingChunks> // NEW
+    pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, EraOf<T>>, T::MaxUnlockingChunks> // NEW
 }
 ```
 
@@ -62,7 +56,9 @@ pub fn stake(
     amount: BalanceOf<T>,
     staking_type: StakingType // NEW
 ) -> DispatchResult {
-    /// etc.
+    /// NEW BEHAVIOR:
+    // if the account is new, save the new staking type
+    // if not new and staking type is different, Error::
 }
 
 pub fn unstake(
@@ -84,7 +80,7 @@ pub fn unstake(
     //     will catch this anyway and emit `MaxUnlockingChunksExceeded`
 }
 ```
-### StakingRewardsProvider - Economic Model trait
+### NEW: StakingRewardsProvider - Economic Model trait
 
 ```rust
 use std::hash::Hash;
@@ -110,27 +106,28 @@ pub trait StakingRewardsProvider {
     ///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current RewardEra.
     fn reward_pool_size(era: EraOf<T>) -> BalanceOf<T>;
 
-    /// Return the total unclaimed reward in token for `accountId` for `fromEra` --> `toEra`, inclusive
+    /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
     /// Errors:
     ///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current RewardEra.
-    fn staking_reward_total(accountId: AccountId, fromEra: RewardEra, toEra: RewardEra);
+    fn staking_reward_total(account_id: AccountId, fromEra: RewardEra, toEra: RewardEra);
 
-    /// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+    /// Validate a payout claim for `account_id`, using `proof` and the provided `payload` StakingRewardClaim.
     /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
     /// Errors: None
-    fn validate_staking_reward_claim(accountId: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
+    fn validate_staking_reward_claim(account_id: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
 
-    /// Return whether `accountId` can claim a reward. Staking accounts may not claim a reward more than once
+    /// Return whether `account_id` can claim a reward. Staking accounts may not claim a reward more than once
     /// per RewardEra, may not claim rewards before a complete RewardEra has been staked, and may not claim more rewards past
     /// the number of `MaxUnlockingChunks`.
-    /// Errors:   None
-    fn payout_eligible(accountId: AccountIdOf<T>) -> bool;
+    /// Errors:
+    ///     NotAStakingAccount if account_id has no StakingAccountDetails in storage.
+    fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
 }
 ```
 
 The number of blocks for which Rewards from a RewardPool applies is called a `RewardEra`; this is to distinguish it from `Era` in the Substrate staking pallet; this way automatic imports don't accidentally pull in the wrong thing.
 
-### New storage items, Config and related types
+### NEW: storage items, Config, Errors and related types
 ```rust
 pub enum StakingType {
     /// Staking account targets Providers for capacity only, no token reward
@@ -172,22 +169,38 @@ pub struct RewardPoolInfo<T: Config> {
 
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
+/// Reward Pool history
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 
 #[pallet::storage]
-#[pallet::getter(fn current_era)]
-pub type RewardEra<T:Config> = StorageValue<_, T::RewardEra, ValueQuery>;
+#[pallet::whitelist_storage]
+#[pallet::getter(fn get_current_era)]
+/// Similar to CurrentEpoch
+pub type CurrentEra<T:Config> = StorageValue<_, T::RewardEra, ValueQuery>;
+
+pub enum Error<T> {
+    /// ...
+    /// Staker tried to change StakingType on an existing account
+    CannotChangeStakingType,
+    /// The Era specified is too far in the past or is in the future
+    EraOutOfRange,
+    /// Rewards were already paid out for the specified Era range
+    IneligibleForPayoutInEraRange,
+}
 ```
 
 ### New extrinsics
-1. **claim_staking_reward(origin,proof,payload)**
+1. *claim_staking_reward*
+    a. `claim_staking_reward(origin,proof,payload)`
 ```rust
-/// TBD whether this is the form for claiming rewards
+/// TBD whether this is the form for claiming rewards.  This could be the form if calculations are
+/// done off chain and submitted for validation.
 /// Validates the reward claim. If validated, mints token and transfers to Origin.
 /// Errors:
 ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
 ///     - StakingRewardClaimInvalid:  if validation of calculation fails
-///     - StakingAccountIneligibleForPayout:  if rewards were already paid out in the provided RewardEra range
+///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
+///     - EraOutOfRange: if one or both of the StakingRewardClaim eras are invalid
 /// `proof` - the Merkle proof for the reward claim
 #[pallet::call_index(n)]
 pub fn claim_staking_reward(
@@ -195,21 +208,37 @@ pub fn claim_staking_reward(
     proof: Hash,
     payload: StakingRewardClaim<T>
 );
-
+```
+    b. `claim_staking_reward(origin, from_era, to_era)`
+```rust
+/// An alternative, depending on staking reward economic model. This could be the form if calculations are done on chain.
+/// from_era: if None, since last_reward_claimed_at
+/// to_era: if None, to CurrentEra - 1
+///  Errors:
+///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
+///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
+///     - EraOutOfRange: if one or both of the eras specified are invalid
+#[pallet::call_index(n)]
+pub fn claim_staking_reward(
+    origin: OriginFor<T>,
+    from_era: Option<T::RewardEra>,
+    to_era: Option<T::RewardEra>
+);
 ```
 
 2. **change_staking_target(origin, from, to, amount)**
 ```rust
-/// change a staking account detail's target MSA Id to a new one.
-/// If amount is specified, that amount up to the total staking amount is retargeted,
-/// otherwise ALL of the total staking amount for 'from' is changed to the new target MSA Id.
+/// Change a staking account detail's target MSA Id to a new one.
+/// If Some(amount) is specified, that amount up to the total staking amount is retargeted.  Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking amount for the `from` target, the entire amount is retargeted.
+/// If amount is None, ALL of the total staking amount for 'from' is changed to the new target MSA Id.
 /// No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
 /// Each call creates one chunk.
 /// Errors:
-///     - NotAStakingAccount if origin has no StakingAccount associated with it
-///     -  if 'from' has no funds targeted in the staking account
-///     - if 'to' MSA Id does not exist or is not a Provider
-///     - if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
+///    - NotAStakingAccount if origin has no StakingAccount associated with the target
+///    - pallet_msa::Error::ProviderNotRegistered if 'to' MSA Id does not exist or is not a Provider
+///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
+///    - ZeroAmountNotAllowed if `amount` is zero
+///    - InsufficientStakingAmount if `amount` to transfer to the new target is below the minimum staking amount.
 #[pallet:call_index(n+1)] // n = current call index in the pallet
 pub fn change_staking_target(
     origin: OriginFor<T>,
