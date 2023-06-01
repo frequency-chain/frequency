@@ -31,7 +31,7 @@ pub use crate::{origin::*, pallet::*};
 pub mod pallet {
 	use super::*;
 
-	use cumulus_pallet_xcm::ensure_sibling_para;
+	use cumulus_pallet_xcm::{ensure_sibling_para, Origin as CumulusOrigin};
 	use frame_support::{dispatch::Dispatchable, pallet_prelude::*, traits::Contains, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use parity_scale_codec::MaxEncodedLen;
@@ -39,12 +39,13 @@ pub mod pallet {
 
 	use dip_support::IdentityDetailsAction;
 
-	use crate::{identity::IdentityDetails, traits::IdentityProofVerifier};
+	// use crate::{identity::IdentityDetails, traits::IdentityProofVerifier};
+	use crate::{identity::IdentityDetails };
 
-	pub type VerificationResultOf<T> = <<T as Config>::ProofVerifier as IdentityProofVerifier<
-		<T as Config>::RuntimeCall,
-		<T as Config>::Identifier,
-	>>::VerificationResult;
+	// pub type VerificationResultOf<T> = <<T as Config>::ProofVerifier as IdentityProofVerifier<
+	// 	<T as Config>::RuntimeCall,
+	// 	<T as Config>::Identifier,
+	// >>::VerificationResult;
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
@@ -62,7 +63,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Preliminary filter to filter out calls before doing any heavier
 		/// computations.
-		type DipCallOriginFilter: Contains<<Self as Config>::RuntimeCall>;
+		// type DipCallOriginFilter: Contains<<Self as Config>::RuntimeCall>;
 		/// The identifier of a subject, e.g., a DID.
 		type Identifier: Parameter + MaxEncodedLen;
 		/// The details stored in this pallet associated with any given subject.
@@ -78,21 +79,24 @@ pub mod pallet {
 		type ProofDigest: Parameter + MaxEncodedLen;
 		/// The logic of the proof verifier, called upon each execution of the
 		/// `dispatch_as` extrinsic.
-		type ProofVerifier: IdentityProofVerifier<
-			<Self as Config>::RuntimeCall,
-			Self::Identifier,
-			Proof = Self::Proof,
-			IdentityDetails = IdentityDetails<Self::ProofDigest, Self::IdentityDetails>,
-			Submitter = <Self as frame_system::Config>::AccountId,
-		>;
+		// type ProofVerifier: IdentityProofVerifier<
+		// 	<Self as Config>::RuntimeCall,
+		// 	Self::Identifier,
+		// 	Proof = Self::Proof,
+		// 	IdentityDetails = IdentityDetails<Self::ProofDigest, Self::IdentityDetails>,
+		// 	Submitter = <Self as frame_system::Config>::AccountId,
+		// >;
 		/// The overarching runtime call type.
-		type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = <Self as Config>::RuntimeOrigin>;
+		// type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = <Self as Config>::RuntimeOrigin>;
+		type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-		/// The overarching runtime origin type.
-		type RuntimeOrigin: From<Origin<Self>>
-			+ From<<Self as frame_system::Config>::RuntimeOrigin>
-			+ Into<Result<cumulus_pallet_xcm::Origin, <Self as Config>::RuntimeOrigin>>;
+		// The overarching runtime origin type.
+		// type RuntimeOrigin: From<Origin<Self>>
+		// 	+ From<<Self as frame_system::Config>::RuntimeOrigin>
+		// 	+ Into<Result<cumulus_pallet_xcm::Origin, <Self as Config>::RuntimeOrigin>>;
+		type Origin: From<<Self as frame_system::Config>::RuntimeOrigin>
+		+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
 	}
 
 	#[pallet::pallet]
@@ -123,9 +127,9 @@ pub mod pallet {
 
 	/// The origin this pallet creates after a user has provided a valid
 	/// identity proof to dispatch other calls.
-	#[pallet::origin]
-	pub type Origin<T> =
-		DipOrigin<<T as Config>::Identifier, <T as frame_system::Config>::AccountId, VerificationResultOf<T>>;
+	// #[pallet::origin]
+	// pub type Origin<T> =
+	// 	DipOrigin<<T as Config>::Identifier, <T as frame_system::Config>::AccountId, VerificationResultOf<T>>;
 
 	// TODO: Benchmarking
 	#[pallet::call]
@@ -136,7 +140,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			action: IdentityDetailsAction<T::Identifier, T::ProofDigest>,
 		) -> DispatchResult {
-			ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_sibling_para(<T as Config>::Origin::from(origin))?;
 
 			let event = match action {
 				IdentityDetailsAction::Updated(identifier, proof, _) => {
@@ -159,38 +163,38 @@ pub mod pallet {
 			Ok(())
 		}
 
-		// TODO: Replace with a SignedExtra.
-		#[pallet::call_index(1)]
-		#[pallet::weight(0)]
-		pub fn dispatch_as(
-			origin: OriginFor<T>,
-			identifier: T::Identifier,
-			proof: T::Proof,
-			call: Box<<T as Config>::RuntimeCall>,
-		) -> DispatchResult {
-			let submitter = ensure_signed(origin)?;
-			// TODO: Proper error handling
-			ensure!(T::DipCallOriginFilter::contains(&*call), Error::<T>::Dispatch);
-			let mut identity_entry = IdentityEntries::<T>::get(&identifier).ok_or(Error::<T>::IdentityNotFound)?;
-			let proof_verification_result = T::ProofVerifier::verify_proof_for_call_against_details(
-				&*call,
-				&identifier,
-				&submitter,
-				&mut identity_entry,
-				&proof,
-			)
-			.map_err(|_| Error::<T>::InvalidProof)?;
-			// Write the identity info to storage after it has optionally been updated by
-			// the `ProofVerifier`.
-			IdentityEntries::<T>::mutate(&identifier, |entry| *entry = Some(identity_entry));
-			let did_origin = DipOrigin {
-				identifier,
-				account_address: submitter,
-				details: proof_verification_result,
-			};
-			// TODO: Use dispatch info for weight calculation
-			let _ = call.dispatch(did_origin.into()).map_err(|_| Error::<T>::Dispatch)?;
-			Ok(())
-		}
+		// // TODO: Replace with a SignedExtra.
+		// #[pallet::call_index(1)]
+		// #[pallet::weight(0)]
+		// pub fn dispatch_as(
+		// 	origin: OriginFor<T>,
+		// 	identifier: T::Identifier,
+		// 	proof: T::Proof,
+		// 	call: Box<<T as Config>::RuntimeCall>,
+		// ) -> DispatchResult {
+		// 	let submitter = ensure_signed(origin)?;
+		// 	// TODO: Proper error handling
+		// 	ensure!(T::DipCallOriginFilter::contains(&*call), Error::<T>::Dispatch);
+		// 	let mut identity_entry = IdentityEntries::<T>::get(&identifier).ok_or(Error::<T>::IdentityNotFound)?;
+		// 	let proof_verification_result = T::ProofVerifier::verify_proof_for_call_against_details(
+		// 		&*call,
+		// 		&identifier,
+		// 		&submitter,
+		// 		&mut identity_entry,
+		// 		&proof,
+		// 	)
+		// 	.map_err(|_| Error::<T>::InvalidProof)?;
+		// 	// Write the identity info to storage after it has optionally been updated by
+		// 	// the `ProofVerifier`.
+		// 	IdentityEntries::<T>::mutate(&identifier, |entry| *entry = Some(identity_entry));
+		// 	let did_origin = DipOrigin {
+		// 		identifier,
+		// 		account_address: submitter,
+		// 		details: proof_verification_result,
+		// 	};
+		// 	// TODO: Use dispatch info for weight calculation
+		// 	let _ = call.dispatch(did_origin.into()).map_err(|_| Error::<T>::Dispatch)?;
+		// 	Ok(())
+		// }
 	}
 }
