@@ -1,13 +1,9 @@
+use crate::msa::MessageSourceId;
 use codec::{Encode, MaxEncodedLen};
-use crate::{
-	msa::MessageSourceId,
-};
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
 use sp_api::Decode;
-use sp_runtime::{
-	DispatchError,
-};
+use sp_runtime::DispatchError;
 
 /// A trait for checking that a target MSA can be staked to.
 pub trait TargetValidator {
