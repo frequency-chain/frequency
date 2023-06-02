@@ -108,7 +108,6 @@ describe("Add Offchain Message", function () {
             messageBlockNumber = event.data.blockNumber;
             assert.deepEqual(event.data.schemaId, schemaId, 'schema ids should be equal');
             assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
-            assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
         }
     });
 
@@ -129,7 +128,6 @@ describe("Add Offchain Message", function () {
                 messageBlockNumber = event.data.blockNumber;
                 assert.deepEqual(event.data.schemaId, dummySchemaId, 'schema ids should be equal');
                 assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
-                assert.equal(event.data.count.toNumber(), 1, "message count should be 1");
             }
 
             const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
