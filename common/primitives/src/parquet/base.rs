@@ -18,5 +18,5 @@ pub enum ParquetBaseType {
 	/// Encapsulates arrays
 	ByteArray,
 	/// Encapsulates fixed length arrays
-	FixedLengthByteArray,
+	FixedLenByteArray,
 }
