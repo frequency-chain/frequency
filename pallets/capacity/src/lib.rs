@@ -320,7 +320,7 @@ pub mod pallet {
 		/// The Era specified is too far in the past or is in the future
 		EraOutOfRange,
 		/// Rewards were already paid out for the specified Era range
-		StakingAccountIneligibleForPayout,
+		IneligibleForPayoutInEraRange,
 	}
 
 	#[pallet::hooks]
