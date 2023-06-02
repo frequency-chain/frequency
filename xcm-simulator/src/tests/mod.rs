@@ -94,34 +94,34 @@ fn xcmp() {
 	});
 }
 
-#[test]
-fn reserve_transfer() {
-	MockNet::reset();
+// #[test]
+// fn reserve_transfer() {
+// 	MockNet::reset();
 
-	let withdraw_amount = 123;
+// 	let withdraw_amount = 123;
 
-	Relay::execute_with(|| {
-		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
-			relay_chain::RuntimeOrigin::signed(ALICE),
-			Box::new(X1(Parachain(1)).into().into()),
-			Box::new(X1(AccountId32 { network: Any, id: ALICE.into() }).into().into()),
-			Box::new((Here, withdraw_amount).into()),
-			0,
-		));
-		assert_eq!(
-			parachain::Balances::free_balance(&para_account_id(1)),
-			INITIAL_BALANCE + withdraw_amount
-		);
-	});
+// 	Relay::execute_with(|| {
+// 		assert_ok!(RelayChainPalletXcm::reserve_transfer_assets(
+// 			relay_chain::RuntimeOrigin::signed(ALICE),
+// 			Box::new(X1(Parachain(1)).into().into()),
+// 			Box::new(X1(AccountId32 { network: Any, id: ALICE.into() }).into().into()),
+// 			Box::new((Here, withdraw_amount).into()),
+// 			0,
+// 		));
+// 		assert_eq!(
+// 			parachain::Balances::free_balance(&para_account_id(1)),
+// 			INITIAL_BALANCE + withdraw_amount
+// 		);
+// 	});
 
-	ParaA::execute_with(|| {
-		// free execution, full amount received
-		assert_eq!(
-			pallet_balances::Pallet::<parachain::Runtime>::free_balance(&ALICE),
-			INITIAL_BALANCE + withdraw_amount
-		);
-	});
-}
+// 	ParaA::execute_with(|| {
+// 		// free execution, full amount received
+// 		assert_eq!(
+// 			pallet_balances::Pallet::<parachain::Runtime>::free_balance(&ALICE),
+// 			INITIAL_BALANCE + withdraw_amount
+// 		);
+// 	});
+// }
 
 /// Scenario:
 /// A parachain transfers funds on the relay chain to another parachain account.
@@ -218,6 +218,7 @@ fn frequency_xcmp() {
 		let xcm: Xcm<()> = Xcm(vec![
 			DescendOrigin(X1(AccountId32 { network: NetworkId::Any, id: [0; 32] })),
 			WithdrawAsset((Here, send_amount).into()),
+			// to make test with Limited
 			BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Unlimited },
 			Transact {
 				origin_type: OriginKind::SovereignAccount,

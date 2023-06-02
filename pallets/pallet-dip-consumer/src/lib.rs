@@ -20,6 +20,13 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+
+#[cfg(test)]
+mod tests;
+
+#[cfg(test)]
+mod mock;
+
 pub mod identity;
 pub mod traits;
 
@@ -88,15 +95,15 @@ pub mod pallet {
 		// >;
 		/// The overarching runtime call type.
 		// type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = <Self as Config>::RuntimeOrigin>;
-		type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = Self::RuntimeOrigin>;
+		// type RuntimeCall: Parameter + Dispatchable<RuntimeOrigin = <Self as Config>::RuntimeOrigin>;
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		// The overarching runtime origin type.
 		// type RuntimeOrigin: From<Origin<Self>>
 		// 	+ From<<Self as frame_system::Config>::RuntimeOrigin>
 		// 	+ Into<Result<cumulus_pallet_xcm::Origin, <Self as Config>::RuntimeOrigin>>;
-		type Origin: From<<Self as frame_system::Config>::RuntimeOrigin>
-		+ Into<Result<CumulusOrigin, <Self as Config>::Origin>>;
+		// type RuntimeOrigin: From<<Self as frame_system::Config>::RuntimeOrigin>
+		// + Into<Result<CumulusOrigin, <Self as Config>::RuntimeOrigin>>;
 	}
 
 	#[pallet::pallet]
@@ -140,7 +147,8 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			action: IdentityDetailsAction<T::Identifier, T::ProofDigest>,
 		) -> DispatchResult {
-			ensure_sibling_para(<T as Config>::Origin::from(origin))?;
+			// ensure_sibling_para(<T as Config>::RuntimeOrigin::from(origin))?;
+			ensure_signed(origin)?;
 
 			let event = match action {
 				IdentityDetailsAction::Updated(identifier, proof, _) => {
