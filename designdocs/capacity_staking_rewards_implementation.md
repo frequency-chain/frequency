@@ -59,7 +59,7 @@ pub fn stake(
 ) -> DispatchResult {
     /// NEW BEHAVIOR:
     // if the account is new, save the new staking type
-    // if not new and staking type is different, Error::
+    // if not new and staking type is different, Error::CannotChangeStakingType
 }
 
 pub fn unstake(
@@ -82,6 +82,8 @@ pub fn unstake(
 }
 ```
 ### NEW: StakingRewardsProvider - Economic Model trait
+This one is most likely to change, however there are certain functions that will definitely be needed.
+The struct and method for claiming rewards is probably going to change, but the rewards system will still need to know the `reward_pool_size` and the `staking_reward_total` for a given staker.
 
 ```rust
 use std::hash::Hash;
@@ -116,13 +118,6 @@ pub trait StakingRewardsProvider {
     /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
     /// Errors: None
     fn validate_staking_reward_claim(account_id: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
-
-    /// Return whether `account_id` can claim a reward. Staking accounts may not claim a reward more than once
-    /// per RewardEra, may not claim rewards before a complete RewardEra has been staked, and may not claim more rewards past
-    /// the number of `MaxUnlockingChunks`.
-    /// Errors:
-    ///     NotAStakingAccount if account_id has no StakingAccountDetails in storage.
-    fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
 }
 ```
 
@@ -178,7 +173,7 @@ pub struct RewardPoolInfo<T: Config> {
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
-#### NEW: CurrentEra
+### NEW: CurrentEra
 Incremented, like CurrentEpoch, tracks the current RewardEra number.
 ```rust
 #[pallet::storage]
@@ -188,7 +183,7 @@ Incremented, like CurrentEpoch, tracks the current RewardEra number.
 pub type CurrentEra<T:Config> = StorageValue<_, T::RewardEra, ValueQuery>;
 ```
 
-#### NEW: Error enums
+### NEW: Error enums
 ```rust
 pub enum Error<T> {
     /// ...
@@ -241,7 +236,9 @@ pub enum Error<T> {
 2. **change_staking_target(origin, from, to, amount)**
 ```rust
 /// Change a staking account detail's target MSA Id to a new one.
-/// If Some(amount) is specified, that amount up to the total staking amount is retargeted.  Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking amount for the `from` target, the entire amount is retargeted.
+/// If Some(amount) is specified, that amount up to the total staking amount is retargeted.
+/// Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking
+/// amount for the `from` target, the entire amount is retargeted.
 /// If amount is None, ALL of the total staking amount for 'from' is changed to the new target MSA Id.
 /// No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
 /// Each call creates one chunk.
@@ -260,8 +257,18 @@ pub fn change_staking_target(
 );
 ```
 
+### NEW:  Capacity pallet helper function
+```rust
+/// Return whether `account_id` can claim a reward. Staking accounts may not claim a reward more than once
+/// per RewardEra, may not claim rewards before a complete RewardEra has been staked, and may not claim more rewards past
+/// the number of `MaxUnlockingChunks`.
+/// Errors:
+///     NotAStakingAccount if account_id has no StakingAccountDetails in storage.
+fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
+```
+
 ### NEW RPC
-There are no custom RPCs for the Capacity pallet, so that work will need to be done.
+There are no custom RPCs for the Capacity pallet, so that work will need to be done first.
 ```rust
 /// RPC access to the pallet function by the same name
 pub fn payout_eligible(account_id: AccountId) -> bool;
