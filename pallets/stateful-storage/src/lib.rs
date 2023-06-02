@@ -44,6 +44,7 @@
 #![allow(clippy::expect_used)]
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
