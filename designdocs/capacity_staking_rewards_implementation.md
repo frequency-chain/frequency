@@ -20,16 +20,17 @@ This document outlines how to implement the Staking for Rewards feature describe
 1. **Capacity**: the non-transferrable utility token which can be used only to pay for certain Frequency transactions.
 1. **Account**: a Frequency System Account controlled by a private key and addressed by a public key, having at least a minimum balance (currently 0.01 FRQCY).
 1. **Stake** (verb): to lock some amount of a token against transfer for a period of time in exchange for some reward.
-1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon.
+1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon. RewardEra is to distinguish it easily from Substrate's staking pallet Era.
 1. **Staking Reward**: a per-RewardEra share of a staking reward pool of FRQCY tokens for a given staking account.
 1. **Reward Pool**:  a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
 
 ## Staking Token Rewards
 
 ### StakingAccountDetails updates
-We add a new field, `last_rewarded_at`, to keep track of the last time rewards were claimed for this Staking Account.
+New fields are added. The field `last_rewarded_at` is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`.  This should be the default value also.
 `MaximumCapacity` is also the default value for `staking_type` and should map to 0.
+Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed targets for some amount of funds.
 ```rust
 pub struct StakingAccountDetails {
     pub active: BalanceOf<T>,
@@ -46,7 +47,7 @@ pub struct StakingAccountDetails {
 ```
 
 **Unstaking thaw period**
-We change the thaw period to begin at the first block of next Epoch instead of immediately.
+Changes the thaw period to begin at the first block of next RewardEra instead of immediately.
 
 ### Changes to extrinsics
 ```rust
@@ -125,9 +126,7 @@ pub trait StakingRewardsProvider {
 }
 ```
 
-The number of blocks for which Rewards from a RewardPool applies is called a `RewardEra`; this is to distinguish it from `Era` in the Substrate staking pallet; this way automatic imports don't accidentally pull in the wrong thing.
-
-### NEW: storage items, Config, Errors and related types
+### NEW: StakingType enum
 ```rust
 pub enum StakingType {
     /// Staking account targets Providers for capacity only, no token reward
@@ -136,7 +135,10 @@ pub enum StakingType {
     /// and token for the account holder
     Rewards,
 }
+```
 
+### NEW: Config items
+```rust
 pub trait Config: frame_system::Config {
     // ...
 
@@ -159,25 +161,35 @@ pub trait Config: frame_system::Config {
 
     type RewardsProvider: StakingRewardsProvider;
 };
+```
 
+### NEW: RewardPoolInfo
+This is the necessary information about the reward pool for a given Reward Era and how it's stored.
+```rust
 pub struct RewardPoolInfo<T: Config> {
     /// the total staked for rewards in the associated RewardEra
     total_staked_token: BalanceOf<T>,
     /// the remaining rewards balance to be claimed
     unclaimed_balance: BalanceOf<T>
 }
-
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
 /// Reward Pool history
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
+```
 
+#### NEW: CurrentEra
+Incremented, like CurrentEpoch, tracks the current RewardEra number.
+```rust
 #[pallet::storage]
 #[pallet::whitelist_storage]
 #[pallet::getter(fn get_current_era)]
 /// Similar to CurrentEpoch
 pub type CurrentEra<T:Config> = StorageValue<_, T::RewardEra, ValueQuery>;
+```
 
+#### NEW: Error enums
+```rust
 pub enum Error<T> {
     /// ...
     /// Staker tried to change StakingType on an existing account
@@ -189,42 +201,42 @@ pub enum Error<T> {
 }
 ```
 
-### New extrinsics
-1. *claim_staking_reward*
+### NEW Extrinsics
+1. *claim_staking_reward*, first version
     a. `claim_staking_reward(origin,proof,payload)`
-```rust
-/// TBD whether this is the form for claiming rewards.  This could be the form if calculations are
-/// done off chain and submitted for validation.
-/// Validates the reward claim. If validated, mints token and transfers to Origin.
-/// Errors:
-///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
-///     - StakingRewardClaimInvalid:  if validation of calculation fails
-///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-///     - EraOutOfRange: if one or both of the StakingRewardClaim eras are invalid
-/// `proof` - the Merkle proof for the reward claim
-#[pallet::call_index(n)]
-pub fn claim_staking_reward(
-    origin: OriginFor<T>,
-    proof: Hash,
-    payload: StakingRewardClaim<T>
-);
-```
-    b. `claim_staking_reward(origin, from_era, to_era)`
-```rust
-/// An alternative, depending on staking reward economic model. This could be the form if calculations are done on chain.
-/// from_era: if None, since last_reward_claimed_at
-/// to_era: if None, to CurrentEra - 1
-///  Errors:
-///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
-///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-///     - EraOutOfRange: if one or both of the eras specified are invalid
-#[pallet::call_index(n)]
-pub fn claim_staking_reward(
-    origin: OriginFor<T>,
-    from_era: Option<T::RewardEra>,
-    to_era: Option<T::RewardEra>
-);
-```
+    ```rust
+    /// TBD whether this is the form for claiming rewards.  This could be the form if calculations are
+    /// done off chain and submitted for validation.
+    /// Validates the reward claim. If validated, mints token and transfers to Origin.
+    /// Errors:
+    ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
+    ///     - StakingRewardClaimInvalid:  if validation of calculation fails
+    ///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
+    ///     - EraOutOfRange: if one or both of the StakingRewardClaim eras are invalid
+    /// `proof` - the Merkle proof for the reward claim
+    #[pallet::call_index(n)]
+    pub fn claim_staking_reward(
+        origin: OriginFor<T>,
+        proof: Hash,
+        payload: StakingRewardClaim<T>
+    );
+    ```
+    b. *claim_staking_reward*, alternate version
+    ```rust
+    /// An alternative, depending on staking reward economic model. This could be the form if calculations are done on chain.
+    /// from_era: if None, since last_reward_claimed_at
+    /// to_era: if None, to CurrentEra - 1
+    ///  Errors:
+    ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
+    ///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
+    ///     - EraOutOfRange: if one or both of the eras specified are invalid
+    #[pallet::call_index(n)]
+    pub fn claim_staking_reward(
+        origin: OriginFor<T>,
+        from_era: Option<T::RewardEra>,
+        to_era: Option<T::RewardEra>
+    );
+    ```
 
 2. **change_staking_target(origin, from, to, amount)**
 ```rust
@@ -248,7 +260,8 @@ pub fn change_staking_target(
 );
 ```
 
-### RPC
+### NEW RPC
+There are no custom RPCs for the Capacity pallet, so that work will need to be done.
 ```rust
 /// RPC access to the pallet function by the same name
 pub fn payout_eligible(account_id: AccountId) -> bool;
