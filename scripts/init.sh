@@ -70,7 +70,7 @@ start-frequency)
   ;;
 
 start-frequency-instant)
-  printf "\nBuilding Frequency with runtime instant sealing ...\n"
+  printf "\nBuilding Frequency without relay. Running with instant sealing ...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -100,7 +100,7 @@ start-frequency-instant)
   ;;
 
 start-frequency-interval)
-  printf "\nBuilding Frequency with runtime interval sealing ...\n"
+  printf "\nBuilding Frequency without relay.  Running with interval sealing ...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -130,7 +130,7 @@ start-frequency-interval)
   ;;
 
 start-frequency-native)
-  printf "\nBuilding Frequency with runtime instant sealing, native execution ...\n"
+  printf "\nBuilding Frequency without relay. Running with instant sealing, native execution ...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -160,7 +160,7 @@ start-frequency-native)
   ;;
 
 start-frequency-manual)
-  printf "\nBuilding frequency with runtime manual sealing ...\n"
+  printf "\nBuilding frequency without relay.  Running with manual sealing ...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
