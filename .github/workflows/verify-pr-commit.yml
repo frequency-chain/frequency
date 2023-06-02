@@ -211,16 +211,18 @@ jobs:
         uses: actions/checkout@v3
         # cargo doc requires a toolchain version ^nightly-2022-11-15 because of a bug that causes a panic
         # When the toolchain is updated to ^nightly-2023-06-01, this can be removed
-      - name: Setup tmate
-        uses: mxschmitt/action-tmate@53a5c23a925969671a6bb98ea70a4f650928ef93 
-      - name: rustup show
-        run: rustup show
-      - name: Install Rust Nightly-2023-06-01
-        run: whoami; which rustup; echo $PATH; rustup install nightly-2023-06-01
-      - name: Add Wasm Target to Rust Nightly-2023-06-01
-        run: rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
-      - name: Build Rust Docs
-        run: RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" rustup run nightly-2023-06-01 cargo doc --no-deps --features frequency
+      # - name: Setup tmate
+      #   uses: mxschmitt/action-tmate@53a5c23a925969671a6bb98ea70a4f650928ef93 
+      - name: Install Rust Nightly-2023-06-01 and Build Docs
+        run: |
+          rustup show
+          whoami
+          which rustup
+          echo $PATH
+          echo $HOME
+          rustup install nightly-2023-06-01
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
