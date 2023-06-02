@@ -468,7 +468,7 @@ pub mod pallet {
 		/// # Returns
 		///
 		/// * `PresumptiveSuffixesResponse` - The response containing the next available suffixes.
-		/// ```
+		///
 		pub fn get_next_suffixes(
 			base_handle: BaseHandle,
 			count: u16,

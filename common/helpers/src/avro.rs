@@ -57,7 +57,7 @@ pub fn translate_schema(serialized_schema: Vec<u8>) -> Result<Schema, AvroError>
 	}
 }
 
-/// Function to get the schema writer with default container as Vec<u8>
+/// Function to get the schema writer with default container as `Vec<u8>`
 ///
 /// # Examples
 /// ```
