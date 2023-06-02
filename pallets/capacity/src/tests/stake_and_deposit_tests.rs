@@ -1,15 +1,17 @@
 use super::{mock::*, testing_utils::*};
 use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetails};
 use common_primitives::{
-	capacity::{Nontransferable, StakingType, StakingType::MaximumCapacity},
+	capacity::{
+		Nontransferable, StakingType,
+		StakingType::{MaximumCapacity, ProviderBoost},
+	},
 	msa::MessageSourceId,
 };
-use frame_benchmarking::AnalysisChoice::Max;
 use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
 use sp_runtime::ArithmeticError;
 
 #[test]
-fn stake_works() {
+fn stake_max_capacity_works() {
 	new_test_ext().execute_with(|| {
 		let account = 200;
 		let target: MessageSourceId = 1;
@@ -44,6 +46,35 @@ fn stake_works() {
 			},
 			capacity_details
 		);
+
+		let events = staking_events();
+		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
+
+		assert_eq!(Balances::locks(&account)[0].amount, amount);
+		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+	});
+}
+
+#[test]
+fn stake_rewards_works() {
+	new_test_ext().execute_with(|| {
+		let account = 200;
+		let target: MessageSourceId = 1;
+		let amount = 50;
+		let capacity = 5;
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount, ProviderBoost));
+
+		// Check that StakingAccountLedger is updated.
+		let staking_account: StakingAccountDetails<Test> =
+			Capacity::get_staking_account_for(account).unwrap();
+
+		assert_eq!(staking_account.total, 50);
+		assert_eq!(staking_account.active, 50);
+		assert_eq!(staking_account.unlocking.len(), 0);
+		assert_eq!(staking_account.staking_type, ProviderBoost);
+		assert_eq!(staking_account.last_rewards_claimed_at, None);
+		assert_eq!(staking_account.stake_change_unlocking.len(), 0);
 
 		let events = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
@@ -331,7 +362,7 @@ fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 		let target: MessageSourceId = 1;
 		let amount = 0;
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
+			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
 			Error::<Test>::ZeroAmountNotAllowed
 		);
 	});
@@ -369,7 +400,7 @@ fn ensure_can_stake_errors_invalid_target() {
 		let amount = 1;
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
+			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
 			Error::<Test>::InvalidTarget
 		);
 	});
@@ -384,7 +415,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 		register_provider(target, String::from("Foo"));
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
+			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
 			Error::<Test>::InsufficientStakingAmount
 		);
 	});
@@ -400,7 +431,7 @@ fn ensure_can_stake_is_successful() {
 
 		let staking_details = StakingAccountDetails::<Test>::default();
 		assert_ok!(
-			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
+			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
 			(staking_details, BalanceOf::<Test>::from(10u64))
 		);
 	});
