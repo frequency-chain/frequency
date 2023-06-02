@@ -212,9 +212,9 @@ jobs:
         # cargo doc requires a toolchain version ^nightly-2022-11-15 because of a bug that causes a panic
         # When the toolchain is updated to ^nightly-2023-06-01, this can be removed
       - name: rustup show
-        run: rustup show; whoami; which rustup; echo $PATH
+        run: rustup show
       - name: Install Rust Nightly-2023-06-01
-        run: rustup install nightly-2023-06-01
+        run: whoami; which rustup; echo $PATH; rustup install nightly-2023-06-01
       - name: Add Wasm Target to Rust Nightly-2023-06-01
         run: rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
       - name: Build Rust Docs
