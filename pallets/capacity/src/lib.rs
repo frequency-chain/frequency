@@ -350,7 +350,8 @@ pub mod pallet {
 			let staker = ensure_signed(origin)?;
 
 			let (mut staking_account, actual_amount) =
-				Self::ensure_can_stake(&staker, target, amount, staking_type)?;
+				Self::ensure_can_stake(&staker, target, amount, &staking_type)?;
+			staking_account.staking_type = staking_type;
 
 			let capacity = Self::increase_stake_and_issue_capacity(
 				&staker,
@@ -460,7 +461,7 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
-		staking_type: StakingType,
+		staking_type: &StakingType,
 	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
 		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
@@ -470,7 +471,7 @@ impl<T: Config> Pallet<T> {
 		// if total > 0 the account exists already. Prevent the staking type from being changed.
 		if staking_account.total > Zero::zero() {
 			ensure!(
-				staking_account.staking_type == staking_type,
+				staking_account.staking_type == *staking_type,
 				Error::<T>::CannotChangeStakingType
 			);
 		}
