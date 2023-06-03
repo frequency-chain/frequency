@@ -219,6 +219,7 @@ jobs:
           whoami
           which rustup
           echo $PATH
+          export HOME="/root"
           echo $HOME
           rustup install nightly-2023-06-01
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
