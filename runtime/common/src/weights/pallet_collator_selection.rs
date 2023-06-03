@@ -105,7 +105,7 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	/// The range of component `r` is `[1, 50]`.
 	/// The range of component `c` is `[1, 50]`.
-	fn new_session(r: u32, c: u32, ) -> Weight {
+	fn new_session(_r: u32, c: u32, ) -> Weight {
 		Weight::from_ref_time(14_940_000 as u64)
 			// Standard Error: 262_369
 			.saturating_add(Weight::from_ref_time(10_479_826 as u64).saturating_mul(c as u64))
