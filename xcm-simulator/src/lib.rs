@@ -37,6 +37,10 @@ mod tests;
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
 pub const INITIAL_BALANCE: u128 = 2_000_000_000;
 
+pub fn alice_foreign_alias_account() -> sp_runtime::AccountId32 {
+	sp_runtime::AccountId32::new((FOREIGN_CHAIN_PREFIX_PARA_32, 1u32, &[0u8; 32], 1u8).using_encoded(blake2_256))
+}
+
 
 decl_test_parachain! {
 	pub struct ParaA {
@@ -67,8 +71,8 @@ decl_test_parachain! {
 			let mut t = frame_system::GenesisConfig::default().build_storage::<Runtime>().unwrap();
 
 
-			let alice_foreign_alias_account = (FOREIGN_CHAIN_PREFIX_PARA_32, 1u32, &[0u8; 32], 1u8).using_encoded(blake2_256);
-			pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE), (alice_foreign_alias_account.into(), INITIAL_BALANCE)] }
+			// let alice_foreign_alias_account = (FOREIGN_CHAIN_PREFIX_PARA_32, 1u32, &[0u8; 32], 1u8).using_encoded(blake2_256);
+			pallet_balances::GenesisConfig::<Runtime> { balances: vec![(ALICE, INITIAL_BALANCE), (para_account_id(1), INITIAL_BALANCE), (alice_foreign_alias_account().into(), INITIAL_BALANCE)] }
 				.assimilate_storage(&mut t)
 				.unwrap();
 

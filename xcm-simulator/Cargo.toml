@@ -54,6 +54,12 @@ rococo-runtime-constants = { git = "https://github.com/paritytech/polkadot", bra
 statemine-runtime = { git = "https://github.com/paritytech/cumulus", branch = "polkadot-v0.9.36" }
 frequency-runtime = { path = "../runtime/frequency" }
 
+# KILT
+
+pallet-dip-consumer = { path = "../pallets/pallet-dip-consumer", default-features = false }
+dip-support = { path = "../pallets/dip-support", default-features = false }
+
+
 [features]
 default = ["std"]
 std = [
@@ -72,5 +78,7 @@ std = [
 	"xcm-builder/std",
     "xcm-executor/std",
 	"xcm/std",
+	"pallet-dip-consumer/std",
+	"dip-support/std",
 ]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]

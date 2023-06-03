@@ -45,6 +45,7 @@ pub mod pallet {
 	use sp_std::boxed::Box;
 
 	use dip_support::IdentityDetailsAction;
+	use sp_std::if_std;
 
 	// use crate::{identity::IdentityDetails, traits::IdentityProofVerifier};
 	use crate::{identity::IdentityDetails };
@@ -165,6 +166,10 @@ pub mod pallet {
 					Ok::<_, Error<T>>(Event::<T>::IdentityInfoDeleted(identifier))
 				}
 			}?;
+
+			if_std! {
+				println!("----EVENT ----- {:?}", event.clone());
+			}
 
 			Self::deposit_event(event);
 

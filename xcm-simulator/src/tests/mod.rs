@@ -4,6 +4,10 @@ use codec::Encode;
 use frame_support::assert_ok;
 use xcm::latest::prelude::*;
 use xcm_simulator::TestExt;
+use dip_support::*; 
+// use sp_runtime::AccountId32;
+use sp_runtime::testing::H256;
+
 
 // Helper function for forming buy execution message
 fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
@@ -211,8 +215,8 @@ fn frequency_xcmp() {
 
 	let send_amount = 1000;
 
-	let remark = frequency::RuntimeCall::System(
-		frame_system::Call::<frequency::Runtime>::remark_with_event { remark: vec![1, 2, 3] },
+	let proccess_identity_call= frequency::RuntimeCall::DipConsumer(
+		pallet_dip_consumer::Call::<frequency::Runtime>::process_identity_action { action: IdentityDetailsAction::Updated([0; 32].into(), H256::zero(), ()) },
 	);
 	ParaA::execute_with(|| {
 		let xcm: Xcm<()> = Xcm(vec![
@@ -223,8 +227,9 @@ fn frequency_xcmp() {
 			Transact {
 				origin_type: OriginKind::SovereignAccount,
 				require_weight_at_most: INITIAL_BALANCE as u64,
-				call: remark.encode().into(),
+				call: proccess_identity_call.encode().into(),
 			},
+			RefundSurplus,
 		]);
 
 		assert_ok!(ParachainPalletXcm::send_xcm(Here, (Parent, Parachain(3)), xcm,));
@@ -243,14 +248,14 @@ fn frequency_xcmp() {
             xcms.len()
         );
 
-		// assert_eq!(
-		// 	frequency::Balances::free_balance(alice_aliase_account),
-		// 	INITIAL_BALANCE - send_amount
-		// );
-
+		assert_eq!(
+			frequency::Balances::free_balance(alice_foreign_alias_account()),
+			INITIAL_BALANCE - send_amount
+		);
+		
 		assert!(System::events().iter().any(|r| matches!(
 			r.event,
-			RuntimeEvent::System(frame_system::Event::Remarked { .. })
+			RuntimeEvent::DipConsumer(pallet_dip_consumer::Event::IdentityInfoUpdated { .. })
 		)));
 	
         System::reset_events();

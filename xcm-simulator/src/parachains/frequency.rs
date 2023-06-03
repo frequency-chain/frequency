@@ -23,6 +23,7 @@ use frame_support::{
 	weights::constants::RocksDbWeight,
 };
 use frame_system::EnsureRoot;
+use pallet_dip_consumer;
 
 pub use common_runtime::{
 	constants::{
@@ -246,6 +247,16 @@ construct_runtime!(
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>},
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Event<T>, Origin},
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin},
+		DipConsumer: pallet_dip_consumer::{Pallet, Call, Storage, Event<T>},
 		// Sudo: pallet_sudo = 40,
 	}
 );
+
+
+impl pallet_dip_consumer::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Identifier = AccountId;
+    type IdentityDetails = u128;
+    type Proof = ();
+    type ProofDigest = sp_core::H256;
+}
