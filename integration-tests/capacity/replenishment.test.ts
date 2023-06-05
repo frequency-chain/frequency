@@ -142,15 +142,15 @@ describe("Capacity Replenishment Testing: ", function () {
 
 async function drainCapacity(call, stakeProviderId: u64, stakeKeys: KeyringPair): Promise<bigint> {
   const totalCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-    // Figure out the cost per call in Capacity
-    await call.payWithCapacity(-1);
-    let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
-    const callCapacityCost = totalCapacity - remainingCapacity;
+  // Figure out the cost per call in Capacity
+  await call.payWithCapacity(-1);
+  let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
+  const callCapacityCost = totalCapacity - remainingCapacity;
 
-    // Run them out of funds, but don't flake just because it landed near an epoch boundary.
-    await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
-    const callsBeforeEmpty = Math.floor(Number(totalCapacity) / Number(callCapacityCost));
-    const nonce = await getNonce(stakeKeys);
-    await Promise.all(Array.from({ length: callsBeforeEmpty } , (_, k) => call.payWithCapacity(nonce + k)));
-    return callCapacityCost;
+  // Run them out of funds, but don't flake just because it landed near an epoch boundary.
+  await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
+  const callsBeforeEmpty = Math.floor(Number(totalCapacity) / Number(callCapacityCost));
+  const nonce = await getNonce(stakeKeys);
+  await Promise.all(Array.from({ length: callsBeforeEmpty }, (_, k) => call.payWithCapacity(nonce + k)));
+  return callCapacityCost;
 }
