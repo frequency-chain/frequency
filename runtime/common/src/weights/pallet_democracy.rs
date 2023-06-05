@@ -280,4 +280,23 @@ impl<T: frame_system::Config> pallet_democracy::WeightInfo for SubstrateWeight<T
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
+	// REVIEW: copilot
+	fn set_external_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_external_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn set_proposal_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_proposal_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn set_referendum_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
+	fn clear_referendum_metadata() -> Weight {
+		Weight::from_parts(0, 0)
+	}
 }

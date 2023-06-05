@@ -55,6 +55,7 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
+	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
 }
 
 impl frame_system::Config for Test {
