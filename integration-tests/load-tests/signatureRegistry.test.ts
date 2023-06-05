@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, devAccounts } from "../scaffolding/helpers";
+import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, devAccounts, getNonce } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "../scaffolding/rootHooks";
@@ -124,11 +124,6 @@ async function createBlock(wait: number = 300) {
 
 function getMsaFromKey(keys: KeyringPair): Promise<Option<u64>> {
     return ExtrinsicHelper.apiPromise.query.msa.publicKeyToMsaId(keys.address);
-}
-
-async function getNonce(keys: KeyringPair): Promise<number> {
-    const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
-    return nonce.toNumber();
 }
 
 async function createMsa(keys: KeyringPair): Promise<u64> {

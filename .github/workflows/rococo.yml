@@ -1,0 +1,56 @@
+name: Rococo Integration
+run-name: Rococo Integration Testing ${{github.event.inputs.release-version || github.ref_name}}
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+on:
+  workflow_dispatch:
+    inputs:
+      release-version:
+        description: "Test Release version (v#.#.#[-rc#])"
+        required: true
+
+env:
+  TAG_FROM_UI: ${{github.event.inputs.release-version}}
+
+jobs:
+  run-integration-tests:
+    name: Run Integration Tests
+    runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    steps:
+      - name: Validate
+        shell: bash
+        run: |
+          version=${{env.TAG_FROM_UI}}
+          echo "Release version entered in UI: $version"
+          regex='^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-rc[1-9]\d*)?$'
+          if [[ ! $version =~ $regex ]]; then
+            echo "ERROR: Entered version $version is not valid."
+            echo "Please use v#.#.#[-rc#] format."
+            exit 1
+          fi
+      - name: Check Out Repo
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          ref: ${{env.TAG_FROM_UI}}
+      - name: Set Env Vars
+        run: |
+          echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
+      - name: Set up NodeJs
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+          cache: "npm"
+          cache-dependency-path: integration-tests/package-lock.json
+      - name: Install Built api-augment
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
+        working-directory: integration-tests
+      - name: Run Integration Tests
+        working-directory: integration-tests
+        env:
+          CHAIN_ENVIRONMENT: rococo-testnet
+          WS_PROVIDER_URL: wss://rpc.rococo.frequency.xyz
+          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.ROCOCO_INTEGRATION_TEST_SEED_PHRASE }}
+        run: npm run test:relay

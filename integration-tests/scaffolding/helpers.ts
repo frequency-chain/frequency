@@ -160,8 +160,7 @@ export async function createDelegator(): Promise<[KeyringPair, u64]> {
   let keys = await createAndFundKeypair();
   let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
   const createMsa = ExtrinsicHelper.createMsa(keys);
-  await createMsa.fundOperation();
-  const [msaCreatedEvent, _] = await createMsa.signAndSend();
+  const [msaCreatedEvent, _] = await createMsa.fundAndSend();
 
   if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
     delegator_msa_id = msaCreatedEvent.data.msaId;
@@ -182,8 +181,7 @@ export async function createDelegatorAndDelegation(schemaId: u16, providerId: u6
   const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-  await grantDelegationOp.fundOperation();
-  await grantDelegationOp.signAndSend();
+  await grantDelegationOp.fundAndSend();
 
   return [keys, delegator_msa_id];
 }
@@ -214,8 +212,8 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
   Promise<u64> {
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
-  const default_funding_source = await getDefaultFundingSource();
-  await fundKeypair(default_funding_source.keys, keys, amount);
+  const defaultFundingSource = getDefaultFundingSource();
+  await fundKeypair(defaultFundingSource.keys, keys, amount);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
   assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
@@ -364,6 +362,11 @@ export function assertEvent(events: EventMap, eventName: string) {
 export async function getRemainingCapacity(providerId: u64): Promise<u128> {
   const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
   return capacityStaked.remainingCapacity;
+}
+
+export async function getNonce(keys: KeyringPair): Promise<number> {
+  const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
+  return nonce.toNumber();
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {

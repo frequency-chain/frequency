@@ -140,9 +140,8 @@ describe("📗 Stateful Pallet Storage", () => {
             let fake_schema_id = 999;
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
-            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await paginated_add_result_1.signAndSend();
+                await paginated_add_result_1.fundAndSend();
             }, {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
@@ -152,9 +151,8 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail call to remove page with invalid schema location", async function () {
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, page_id, 0);
-            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await paginated_add_result_1.signAndSend();
+                await paginated_add_result_1.fundAndSend();
             }, {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
@@ -165,9 +163,8 @@ describe("📗 Stateful Pallet Storage", () => {
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
-            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await paginated_add_result_1.signAndSend();
+                await paginated_add_result_1.fundAndSend();
             }, {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -176,9 +173,8 @@ describe("📗 Stateful Pallet Storage", () => {
 
         it("🛑 should fail call to remove page with stale target hash", async function () {
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
-            await paginated_add_result_1.fundOperation();
             await assert.rejects(async () => {
-                await paginated_add_result_1.signAndSend();
+                await paginated_add_result_1.fundAndSend();
             }, {
                 name: 'StalePageState',
                 section: 'statefulStorage',

@@ -13,6 +13,7 @@ import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, Paginated
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
+import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 
 export type ReleaseSchedule = {
     start: number;
@@ -121,7 +122,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     }
 
     public payWithCapacity(nonce?: number): Promise<ParsedEventResult> {
-        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, {nonce: nonce}).pipe(
+        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
@@ -138,16 +139,19 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         return call;
     }
 
-    public async fundOperation(source?: KeyringPair, nonce?: number): Promise<void> {
-        let default_funding_source = getDefaultFundingSource();
+    async fundOperation(source?: KeyringPair) {
+        source ||= getDefaultFundingSource().keys;
 
-        const amount = await this.getEstimatedTxFee();
-        await ExtrinsicHelper.transferFunds(source || default_funding_source.keys, this.keys, amount).signAndSend(nonce);
+        const [amount, accountInfo] = await Promise.all([this.getEstimatedTxFee(), ExtrinsicHelper.getAccountInfo(this.keys.address)]);
+        const freeBalance = BigInt(accountInfo.data.free.toString()) - EXISTENTIAL_DEPOSIT;
+        if (amount > freeBalance) {
+            await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
+        }
     }
 
-    public async fundAndSend(source?: KeyringPair, nonce?: number): Promise<ParsedEventResult> {
+    public async fundAndSend(source?: KeyringPair): Promise<ParsedEventResult> {
         await this.fundOperation(source);
-        return this.signAndSend(nonce);
+        return this.signAndSend();
     }
 
     private parseResult<ApiType extends ApiTypes = "rxjs", T extends AnyTuple = AnyTuple, N = unknown>(targetEvent?: AugmentedEvent<ApiType, T, N>) {
