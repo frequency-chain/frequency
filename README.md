@@ -17,7 +17,6 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 # Table of Contents
 
 - [Table of Contents](#table-of-contents)
-- [Security]
 - [Prerequisites](#prerequisites)
   - [Hardware](#hardware)
 - [Build](#build)
@@ -26,9 +25,9 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
   - [Remote Instance such as AWS EC2](#remote-instance-such-as-aws-ec2)
     - [Ubuntu](#ubuntu)
 - [Run](#run)
-  - [1. Collator Node without a Relay Chain](#1-collator-node-in-instantmanual-sealing-mode)
-    - [Instant Sealing](#instant-sealing)
+  - [1. Collator Node without a Relay Chain](#1-collator-node-without-a-relay-chain)
     - [Manual Sealing](#manual-sealing)
+    - [Instant Sealing](#instant-sealing)
     - [Interval Sealing](#interval-sealing)
   - [2. Collator Node with Local Relay Chain](#2-collator-node-with-local-relay-chain)
     - [Mixed Terminal/Docker](#mixed-terminaldocker)
@@ -38,8 +37,11 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
     - [Integration Tests](#integration-tests)
   - [Run Benchmarks](#run-benchmarks)
 - [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
-- [Verify Runtime](#verify-runtime)
-- [Local Runtime Upgrade](#local-runtime-upgrade)
+- [Runtime](#runtime)
+  - [Verify Runtime](#verify-runtime)
+  - [Local Runtime Upgrade](#local-runtime-upgrade)
+    - [Local Relay Chain](#local-relay-chain)
+    - [Standalone Chain (No Relay)](#standalone-chain-no-relay)
 - [Contributing](#contributing)
 - [Security Issue Reporting](#security-issue-reporting)
 - [Additional Resources](#additional-resources)
@@ -288,6 +290,13 @@ make benchmarks
 
 - Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
 - Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
+
+    _Note: if you get errors about the toolchain not being installed, you may need to install the nightly toolchain with `rustup toolchain install nightly-2023-06-01`_
+
+    _Note, if you get errors complaining about the wasm build, then you may need to install
+    the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01`
+    This is a work-around for a toolchain bug in `nightly-2022-11-15` which causes `cargo doc` to panic_
+
 - Alternatively, run `make format-lint` to run both at the same time.
 - Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 

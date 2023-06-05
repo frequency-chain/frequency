@@ -68,11 +68,13 @@ specs-rococo-local:
 format:
 	cargo fmt
 
+# cargo doc requires a toolchain version ^nightly-2022-11-15 because of a bug that causes a panic
+# When the toolchain is updated to ^nightly-2023-06-01, `rustup run nightly-2023-06-01` can be removed
 .PHONY: lint
 lint:
 	cargo fmt --check
 	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
-	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
+	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" rustup run nightly-2023-06-01 cargo doc --no-deps --features frequency
 
 lint-audit:
 	cargo deny check -c .cargo-deny.toml

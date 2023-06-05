@@ -1,6 +1,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
 #![allow(clippy::unnecessary_mut_passed)]
+#![allow(rustdoc::bare_urls)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
