@@ -213,7 +213,6 @@ jobs:
         # When the toolchain is updated to ^nightly-2023-06-01, this can be removed
       - name: Install Rust Nightly-2023-06-01 and Build Docs
         run: |
-          export HOME="/root"
           rustup install nightly-2023-06-01
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
           RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --features frequency
