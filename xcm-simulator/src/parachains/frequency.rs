@@ -20,7 +20,10 @@ use common_primitives::node::{AccountId, Balance, BlockNumber, Hash, Header, Ind
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{EitherOfDiverse, Everything, Nothing},
-	weights::constants::RocksDbWeight,
+	weights::{
+		constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_SECOND},
+		Weight,
+	},
 };
 use frame_system::EnsureRoot;
 use pallet_dip_consumer;
@@ -33,14 +36,12 @@ pub use common_runtime::{
 	fee::WeightToFee,
 };
 
+use crate::foreign_chain_alias_account::ForeignChainAliasAccount;
 pub use frequency_runtime::{
-	xcm_config::{
-		MaxInstructions, UnitWeightCost, FrequencyLocation
-	},
+	xcm_config::{FrequencyLocation, MaxInstructions, UnitWeightCost},
 	BalancesMaxLocks, BalancesMaxReserves, RuntimeBlockLength, RuntimeBlockWeights, Session,
 	Version,
 };
-use crate::foreign_chain_alias_account::ForeignChainAliasAccount;
 use pallet_xcm::{EnsureXcm, IsMajorityOfBody};
 use polkadot_parachain::primitives::Sibling;
 use polkadot_runtime_common::BlockHashCount;
@@ -49,8 +50,9 @@ use sp_runtime::traits::{AccountIdLookup, BlakeTwo256};
 use sp_std::prelude::*;
 use xcm::latest::prelude::*;
 use xcm_builder::{
-	CurrencyAdapter, EnsureXcmOrigin, FixedWeightBounds, IsConcrete, LocationInverter,
-	SiblingParachainAsNative, AllowTopLevelPaidExecutionFrom, SignedToAccountId32, UsingComponents, AccountId32Aliases, SovereignSignedViaLocation,
+	AccountId32Aliases, AllowTopLevelPaidExecutionFrom, CurrencyAdapter, EnsureXcmOrigin,
+	FixedWeightBounds, IsConcrete, LocationInverter, SiblingParachainAsNative, SignedToAccountId32,
+	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents,
 };
 use xcm_executor::{Config, XcmExecutor};
 
@@ -171,6 +173,12 @@ parameter_types! {
 	pub Ancestry: MultiLocation = Parachain(MsgQueue::parachain_id().into()).into();
 }
 
+parameter_types! {
+	// pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
+	pub const ReservedXcmpWeight: Weight = Weight::from_ref_time(100u64.saturating_div(4));
+	pub const ReservedDmpWeight: Weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND.saturating_div(4));
+}
+
 /// Type for specifying how a `MultiLocation` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
@@ -181,7 +189,6 @@ pub type LocationToAccountId = (
 	// AccountId32Aliases<RelayNetwork, AccountId>,
 	ForeignChainAliasAccount<AccountId>,
 );
-
 
 pub type AssetTransactors = (LocalAssetTransactor,);
 pub type LocalAssetTransactor =
@@ -195,9 +202,8 @@ pub type XcmOriginToTransactDispatchOrigin = (
 );
 pub type XcmRouter = crate::ParachainXcmRouter<MsgQueue>;
 
-pub type Barrier = (
-    WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, ConstU32<8>>,
-);
+pub type Barrier =
+	(TakeWeightCredit, WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, ConstU32<8>>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
@@ -209,9 +215,9 @@ impl xcm_executor::Config for XcmConfig {
 	type Barrier = Barrier;
 	/// used to convert the multilocation to an accountid to place assets in holding registry
 	type AssetTransactor = AssetTransactors;
-	/// 
+	///
 	type Trader = (UsingComponents<WeightToFee, FrequencyLocation, AccountId, Balances, ()>,);
-	
+
 	// used for in Transact instructor to convert to the correct origin.
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 
@@ -219,8 +225,6 @@ impl xcm_executor::Config for XcmConfig {
 	type IsTeleporter = ();
 
 	type LocationInverter = LocationInverter<Ancestry>;
-
-
 
 	type ResponseHandler = ();
 
@@ -252,11 +256,10 @@ construct_runtime!(
 	}
 );
 
-
 impl pallet_dip_consumer::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-    type Identifier = AccountId;
-    type IdentityDetails = u128;
-    type Proof = ();
-    type ProofDigest = sp_core::H256;
+	type RuntimeEvent = RuntimeEvent;
+	type Identifier = AccountId;
+	type IdentityDetails = u128;
+	type Proof = ();
+	type ProofDigest = sp_core::H256;
 }

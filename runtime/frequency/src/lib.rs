@@ -974,6 +974,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedDmpWeight = ();
 	type OutboundXcmpMessageSource = ();
 	type XcmpMessageHandler = ();
+	// update
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }

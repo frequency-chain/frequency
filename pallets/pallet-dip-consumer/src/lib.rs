@@ -143,7 +143,7 @@ pub mod pallet {
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(333)]
 		pub fn process_identity_action(
 			origin: OriginFor<T>,
 			action: IdentityDetailsAction<T::Identifier, T::ProofDigest>,
