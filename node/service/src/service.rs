@@ -216,7 +216,6 @@ async fn start_node_impl(
 		hwbench.clone(),
 	)
 	.await
-	// REVIEW: from cumulus
 	.map_err(|e| sc_service::Error::Application(Box::new(e) as Box<_>))?;
 
 	let block_announce_validator = BlockAnnounceValidator::new(relay_chain_interface.clone(), id);

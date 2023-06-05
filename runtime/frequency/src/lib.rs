@@ -679,9 +679,6 @@ impl pallet_timestamp::Config for Runtime {
 // the descriptions of these configs.
 impl pallet_authorship::Config for Runtime {
 	type FindAuthor = pallet_session::FindAccountFromAuthorIndex<Self, Aura>;
-	// REVIEW: Were these traits removed from the pallet?
-	//type UncleGenerations = AuthorshipUncleGenerations;
-	//type FilterUncle = ();
 	type EventHandler = (CollatorSelection,);
 }
 
@@ -1331,11 +1328,9 @@ impl_runtime_apis! {
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
 			TransactionPayment::query_fee_details(uxt, len)
 		}
-		// REVIEW: substrate
 		fn query_weight_to_fee(weight: Weight) -> Balance {
 			TransactionPayment::weight_to_fee(weight)
 		}
-		// REVIEW: substrate
 		fn query_length_to_fee(len: u32) -> Balance {
 			TransactionPayment::length_to_fee(len)
 		}
