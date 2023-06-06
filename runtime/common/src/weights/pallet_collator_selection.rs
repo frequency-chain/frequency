@@ -36,22 +36,22 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	// Proof: CollatorSelection Invulnerables (max_values: Some(1), max_size: Some(513), added: 1008, mode: MaxEncodedLen)
 	/// The range of component `b` is `[1, 16]`.
 	fn set_invulnerables(b: u32, ) -> Weight {
-		Weight::from_ref_time(11_789_817 as u64)
+		Weight::from_parts(11_789_817 as u64, 0)
 			// Standard Error: 10_423
-			.saturating_add(Weight::from_ref_time(3_409_624 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(3_409_624 as u64, 0).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(b as u64)))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection DesiredCandidates (r:0 w:1)
 	// Proof: CollatorSelection DesiredCandidates (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_desired_candidates() -> Weight {
-		Weight::from_ref_time(8_282_000 as u64)
+		Weight::from_parts(8_282_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection CandidacyBond (r:0 w:1)
 	// Proof: CollatorSelection CandidacyBond (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
 	fn set_candidacy_bond() -> Weight {
-		Weight::from_ref_time(6_769_000 as u64)
+		Weight::from_parts(6_769_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: CollatorSelection Candidates (r:1 w:1)
@@ -68,9 +68,9 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	// Proof: CollatorSelection LastAuthoredBlock (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
 	/// The range of component `c` is `[1, 49]`.
 	fn register_as_candidate(c: u32, ) -> Weight {
-		Weight::from_ref_time(43_023_052 as u64)
+		Weight::from_parts(43_023_052 as u64, 0)
 			// Standard Error: 3_610
-			.saturating_add(Weight::from_ref_time(265_573 as u64).saturating_mul(c as u64))
+			.saturating_add(Weight::from_parts(265_573 as u64, 0).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -80,9 +80,9 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	// Proof: CollatorSelection LastAuthoredBlock (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
 	/// The range of component `c` is `[2, 50]`.
 	fn leave_intent(c: u32, ) -> Weight {
-		Weight::from_ref_time(28_056_365 as u64)
+		Weight::from_parts(28_056_365 as u64, 0)
 			// Standard Error: 2_503
-			.saturating_add(Weight::from_ref_time(217_534 as u64).saturating_mul(c as u64))
+			.saturating_add(Weight::from_parts(217_534 as u64, 0).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -91,7 +91,7 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	// Storage: CollatorSelection LastAuthoredBlock (r:0 w:1)
 	// Proof: CollatorSelection LastAuthoredBlock (max_values: None, max_size: Some(44), added: 2519, mode: MaxEncodedLen)
 	fn note_author() -> Weight {
-		Weight::from_ref_time(31_702_000 as u64)
+		Weight::from_parts(31_702_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -106,9 +106,9 @@ impl<T: frame_system::Config> pallet_collator_selection::WeightInfo for Substrat
 	/// The range of component `r` is `[1, 50]`.
 	/// The range of component `c` is `[1, 50]`.
 	fn new_session(_r: u32, c: u32, ) -> Weight {
-		Weight::from_ref_time(16_467_000 as u64)
+		Weight::from_parts(16_467_000 as u64, 0)
 			// Standard Error: 315_567
-			.saturating_add(Weight::from_ref_time(12_250_934 as u64).saturating_mul(c as u64))
+			.saturating_add(Weight::from_parts(12_250_934 as u64, 0).saturating_mul(c as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(c as u64)))
 			.saturating_add(T::DbWeight::get().writes((1 as u64).saturating_mul(c as u64)))

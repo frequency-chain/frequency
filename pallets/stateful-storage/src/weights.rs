@@ -70,9 +70,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	fn apply_item_actions(s: u32, ) -> Weight {
-		Weight::from_ref_time(105_098_807 as u64)
+		Weight::from_parts(105_098_807 as u64, 0)
 			// Standard Error: 351
-			.saturating_add(Weight::from_ref_time(7_672 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(7_672 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -85,9 +85,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
-		Weight::from_ref_time(33_658_519 as u64)
+		Weight::from_parts(33_658_519 as u64, 0)
 			// Standard Error: 306
-			.saturating_add(Weight::from_ref_time(1_379 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(1_379 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -100,7 +100,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_ref_time(40_060_000 as u64)
+		Weight::from_parts(40_060_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -111,9 +111,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(161_000_655 as u64)
+		Weight::from_parts(161_000_655 as u64, 0)
 			// Standard Error: 441
-			.saturating_add(Weight::from_ref_time(13_414 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(13_414 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -124,9 +124,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn upsert_page_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(90_137_364 as u64)
+		Weight::from_parts(90_137_364 as u64, 0)
 			// Standard Error: 605
-			.saturating_add(Weight::from_ref_time(6_038 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(6_038 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -137,7 +137,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page_with_signature() -> Weight {
-		Weight::from_ref_time(92_099_000 as u64)
+		Weight::from_parts(92_099_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -154,9 +154,9 @@ impl WeightInfo for () {
 	// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	fn apply_item_actions(s: u32, ) -> Weight {
-		Weight::from_ref_time(105_098_807 as u64)
+		Weight::from_parts(105_098_807 as u64, 0)
 			// Standard Error: 351
-			.saturating_add(Weight::from_ref_time(7_672 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(7_672 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -169,9 +169,9 @@ impl WeightInfo for () {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn upsert_page(s: u32, ) -> Weight {
-		Weight::from_ref_time(33_658_519 as u64)
+		Weight::from_parts(33_658_519 as u64, 0)
 			// Standard Error: 306
-			.saturating_add(Weight::from_ref_time(1_379 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(1_379 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -184,7 +184,7 @@ impl WeightInfo for () {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_ref_time(40_060_000 as u64)
+		Weight::from_parts(40_060_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -195,9 +195,9 @@ impl WeightInfo for () {
 	// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(161_000_655 as u64)
+		Weight::from_parts(161_000_655 as u64, 0)
 			// Standard Error: 441
-			.saturating_add(Weight::from_ref_time(13_414 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(13_414 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -208,9 +208,9 @@ impl WeightInfo for () {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn upsert_page_with_signature(s: u32, ) -> Weight {
-		Weight::from_ref_time(90_137_364 as u64)
+		Weight::from_parts(90_137_364 as u64, 0)
 			// Standard Error: 605
-			.saturating_add(Weight::from_ref_time(6_038 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(6_038 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -221,7 +221,7 @@ impl WeightInfo for () {
 	// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page_with_signature() -> Weight {
-		Weight::from_ref_time(92_099_000 as u64)
+		Weight::from_parts(92_099_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

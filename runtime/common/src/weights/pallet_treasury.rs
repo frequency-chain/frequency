@@ -31,14 +31,14 @@ use sp_std::marker::PhantomData;
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T> {
 	fn spend() -> Weight {
-		Weight::from_ref_time(269_000 as u64)
+		Weight::from_parts(269_000 as u64, 0)
 	}
 	// Storage: Treasury ProposalCount (r:1 w:1)
 	// Proof: Treasury ProposalCount (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	// Storage: Treasury Proposals (r:0 w:1)
 	// Proof: Treasury Proposals (max_values: None, max_size: Some(108), added: 2583, mode: MaxEncodedLen)
 	fn propose_spend() -> Weight {
-		Weight::from_ref_time(23_622_000 as u64)
+		Weight::from_parts(23_622_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -47,7 +47,7 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Storage: System Account (r:1 w:1)
 	// Proof: System Account (max_values: None, max_size: Some(128), added: 2603, mode: MaxEncodedLen)
 	fn reject_proposal() -> Weight {
-		Weight::from_ref_time(25_724_000 as u64)
+		Weight::from_parts(25_724_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -57,16 +57,16 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(258), added: 753, mode: MaxEncodedLen)
 	/// The range of component `p` is `[0, 63]`.
 	fn approve_proposal(p: u32, ) -> Weight {
-		Weight::from_ref_time(10_076_110 as u64)
+		Weight::from_parts(10_076_110 as u64, 0)
 			// Standard Error: 1_302
-			.saturating_add(Weight::from_ref_time(103_337 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(103_337 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	// Storage: Treasury Approvals (r:1 w:1)
 	// Proof: Treasury Approvals (max_values: Some(1), max_size: Some(258), added: 753, mode: MaxEncodedLen)
 	fn remove_approval() -> Weight {
-		Weight::from_ref_time(6_371_000 as u64)
+		Weight::from_parts(6_371_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -80,9 +80,9 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 	// Proof: Treasury Proposals (max_values: None, max_size: Some(108), added: 2583, mode: MaxEncodedLen)
 	/// The range of component `p` is `[0, 64]`.
 	fn on_initialize_proposals(p: u32, ) -> Weight {
-		Weight::from_ref_time(34_482_288 as u64)
+		Weight::from_parts(34_482_288 as u64, 0)
 			// Standard Error: 41_262
-			.saturating_add(Weight::from_ref_time(35_921_557 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(35_921_557 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().reads((3 as u64).saturating_mul(p as u64)))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
