@@ -3,7 +3,7 @@ use frame_support::{
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
-use frame_system::{EnsureRoot};
+use frame_system::EnsureRoot;
 
 use common_primitives::node::{AccountId, Header};
 pub use common_runtime::constants::*;
