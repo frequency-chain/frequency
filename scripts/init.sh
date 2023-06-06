@@ -43,7 +43,7 @@ stop-frequency-docker)
 
 start-frequency)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --features frequency-rococo-local
+  cargo build --release --features frequency-rococo-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
