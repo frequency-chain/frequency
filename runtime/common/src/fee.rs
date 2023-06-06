@@ -30,6 +30,8 @@ impl WeightToFeePolynomial for WeightToFee {
 		// In Polkadot extrinsic base weight (smallest non-zero weight) is mapped to 1/10 CENT
 		let p = CENTS;
 		let q = 10 * Balance::from(ExtrinsicBaseWeight::get().ref_time());
+		// q  = 10 * 90,764,000  = 907_640_000
+		// 1_000_000
 		smallvec![WeightToFeeCoefficient {
 			degree: 1,
 			negative: false,

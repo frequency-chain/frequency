@@ -197,13 +197,13 @@ pub type LocalAssetTransactor =
 pub type XcmOriginToTransactDispatchOrigin = (
 	// RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
 	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+	// SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
 	// SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
 );
 pub type XcmRouter = crate::ParachainXcmRouter<MsgQueue>;
 
 pub type Barrier =
-	(TakeWeightCredit, WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, ConstU32<8>>);
+	(WithComputedOrigin<AllowTopLevelPaidExecutionFrom<Everything>, ConstU32<8>>);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {

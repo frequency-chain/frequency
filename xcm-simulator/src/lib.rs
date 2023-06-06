@@ -35,7 +35,7 @@ mod tests;
 
 
 pub const ALICE: sp_runtime::AccountId32 = sp_runtime::AccountId32::new([0u8; 32]);
-pub const INITIAL_BALANCE: u128 = 2_000_000_000;
+pub const INITIAL_BALANCE: u128 = 9_000_000_000;
 
 pub fn alice_foreign_alias_account() -> sp_runtime::AccountId32 {
 	sp_runtime::AccountId32::new((FOREIGN_CHAIN_PREFIX_PARA_32, 1u32, &[0u8; 32], 1u8).using_encoded(blake2_256))

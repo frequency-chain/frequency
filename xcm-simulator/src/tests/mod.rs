@@ -212,7 +212,7 @@ fn buy_execution<C>(fees: impl Into<MultiAsset>) -> Instruction<C> {
 fn frequency_xcmp() {
 	MockNet::reset();
 
-	let send_amount = 1000;
+	let send_amount = 6_000_000_000;
 
 	let proccess_identity_call = frequency::RuntimeCall::DipConsumer(pallet_dip_consumer::Call::<
 		frequency::Runtime,
@@ -224,9 +224,11 @@ fn frequency_xcmp() {
 			DescendOrigin(X1(AccountId32 { network: NetworkId::Any, id: [0; 32] })),
 			WithdrawAsset((Here, send_amount).into()),
 			// to make test with Limited
-			// BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Limited(0)},
-			BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Unlimited },
-			SetAppendix(Xcm(vec![RefundSurplus, 
+			// BuyExecution { fees: (Here, 7_000_000u128).into(), weight_limit: Limited(4000003333 * 2 * 1)},
+			BuyExecution { fees: (Here, 7_000_000u128).into(), weight_limit: Limited(4000003333)},
+			// BuyExecution { fees: (Here, INITIAL_BALANCE).into(), weight_limit: Unlimited },
+			// SetAppendix(Xcm(vec![RefundSurplus])),
+			// SetAppendix(Xcm(vec![RefundSurplus, 
 				// DepositAsset {
 				// 	max_assets: 1,
 				// 	assets: Wild(All),
@@ -235,12 +237,13 @@ fn frequency_xcmp() {
 				// 		interior: X1(AccountId32 { network: NetworkId::Any, id: [0; 32] }),
 				// 	}
 				// }
-			])),
+			// ])),
 			Transact {
 				origin_type: OriginKind::SovereignAccount,
-				require_weight_at_most: INITIAL_BALANCE as u64,
+				require_weight_at_most: 3333 as u64,
 				call: proccess_identity_call.encode().into(),
 			},
+			// RefundSurplus
 		]);
 
 		assert_ok!(ParachainPalletXcm::send_xcm(Here, (Parent, Parachain(3)), xcm,));
