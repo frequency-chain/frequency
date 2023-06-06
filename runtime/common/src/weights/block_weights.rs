@@ -1,3 +1,4 @@
+
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-06-06 (Y/M/D)
 //! HOSTNAME: `benchmark-runner-qpqf8-xgmvq`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
