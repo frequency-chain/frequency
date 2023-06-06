@@ -747,7 +747,6 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
-	// REVIEW: from substrate
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
@@ -761,7 +760,6 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type MaxMembers = TCMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
-	// REVIEW: from substrate
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 }
 
@@ -808,7 +806,6 @@ impl pallet_democracy::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
-	// REVIEW: from copilot
 	type SubmitOrigin = frame_system::EnsureSigned<AccountId>;
 
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
