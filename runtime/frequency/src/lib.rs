@@ -8,7 +8,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{
-	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
+	RelayNumberStrictlyIncreases, RelaychainDataProvider,
 };
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -660,7 +660,7 @@ impl pallet_time_release::Config for Runtime {
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
 	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
 }
