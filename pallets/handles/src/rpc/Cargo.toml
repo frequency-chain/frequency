@@ -25,7 +25,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 
 [dev-dependencies]
-tokio = { version = "1.24.1", features = ["macros", "time", "parking_lot"] }
+tokio = { version = "1.25.0", features = ["macros", "time", "parking_lot"] }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 
