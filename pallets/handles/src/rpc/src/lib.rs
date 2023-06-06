@@ -23,7 +23,7 @@ use jsonrpsee::{
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use std::sync::Arc;
 
 #[cfg(test)]
@@ -84,8 +84,8 @@ where
 {
 	fn get_handle_for_msa(&self, msa_id: MessageSourceId) -> RpcResult<Option<HandleResponse>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let result = api.get_handle_for_msa(&at, msa_id);
+		let at = self.client.info().best_hash;
+		let result = api.get_handle_for_msa(at, msa_id);
 		map_rpc_result(result)
 	}
 
@@ -95,25 +95,25 @@ where
 		count: Option<u16>,
 	) -> RpcResult<PresumptiveSuffixesResponse> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
+		let at = self.client.info().best_hash;
 		let base_handle: BaseHandle = base_handle
 			.into_bytes()
 			.try_into()
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;
 		let max_count = MAX_SUFFIXES_COUNT;
 		let count = count.unwrap_or(DEFAULT_SUFFIX_COUNT).min(max_count);
-		let suffixes_result = api.get_next_suffixes(&at, base_handle, count);
+		let suffixes_result = api.get_next_suffixes(at, base_handle, count);
 		map_rpc_result(suffixes_result)
 	}
 
 	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
+		let at = self.client.info().best_hash;
 		let handle: DisplayHandle = display_handle
 			.into_bytes()
 			.try_into()
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;
-		let result = api.get_msa_for_handle(&at, handle);
+		let result = api.get_msa_for_handle(at, handle);
 		map_rpc_result(result)
 	}
 }

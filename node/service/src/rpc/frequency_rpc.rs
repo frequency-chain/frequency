@@ -7,7 +7,7 @@
 )]
 
 use common_helpers::rpc::map_rpc_result;
-use common_primitives::{node::generic::BlockId, rpc::RpcEvent};
+use common_primitives::rpc::RpcEvent;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
@@ -48,6 +48,6 @@ where
 {
 	fn get_events(&self, at: <Block as BlockT>::Hash) -> RpcResult<Vec<RpcEvent>> {
 		let api = self.client.runtime_api();
-		return map_rpc_result(api.get_events(&BlockId::hash(at)))
+		return map_rpc_result(api.get_events(at))
 	}
 }

@@ -21,7 +21,7 @@ use jsonrpsee::{
 use pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT, DispatchError};
+use sp_runtime::{traits::Block as BlockT, DispatchError};
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
@@ -75,8 +75,8 @@ where
 		schema_id: SchemaId,
 	) -> RpcResult<Vec<PaginatedStorageResponse>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let api_result = api.get_paginated_storage(&at, msa_id, schema_id);
+		let at = self.client.info().best_hash;
+		let api_result = api.get_paginated_storage(at, msa_id, schema_id);
 		map_result(api_result)
 	}
 
@@ -86,8 +86,8 @@ where
 		schema_id: SchemaId,
 	) -> RpcResult<ItemizedStoragePageResponse> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let api_result = api.get_itemized_storage(&at, msa_id, schema_id);
+		let at = self.client.info().best_hash;
+		let api_result = api.get_itemized_storage(at, msa_id, schema_id);
 		map_result(api_result)
 	}
 }
