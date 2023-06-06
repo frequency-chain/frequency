@@ -84,8 +84,6 @@ pub mod weights;
 pub use types::*;
 pub use weights::*;
 
-pub mod migration;
-
 mod serde;
 
 #[frame_support::pallet]
