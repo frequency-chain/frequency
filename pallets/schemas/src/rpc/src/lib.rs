@@ -18,7 +18,7 @@ use jsonrpsee::{
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 use sp_std::vec::Vec;
 use std::sync::Arc;
 
@@ -95,8 +95,8 @@ where
 
 	fn get_by_schema_id(&self, schema_id: SchemaId) -> RpcResult<Option<SchemaResponse>> {
 		let api = self.client.runtime_api();
-		let at = BlockId::hash(self.client.info().best_hash);
-		let schema_api_result = api.get_by_schema_id(&at, schema_id);
+		let at = self.client.info().best_hash;
+		let schema_api_result = api.get_by_schema_id(at, schema_id);
 		map_rpc_result(schema_api_result)
 	}
 }

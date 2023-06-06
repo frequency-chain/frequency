@@ -54,7 +54,7 @@ pub fn frequency_dev_sealing(
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync: None,
+			warp_sync_params: None,
 		})?;
 
 	// Start off-chain workers if enabled
