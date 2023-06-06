@@ -71,7 +71,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn stake() -> Weight {
-		Weight::from_ref_time(38_081_000 as u64)
+		Weight::from_parts(38_081_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -80,7 +80,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn withdraw_unstaked() -> Weight {
-		Weight::from_ref_time(27_909_000 as u64)
+		Weight::from_parts(27_909_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -89,7 +89,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Capacity EpochLength (r:1 w:0)
 	// Proof: Capacity EpochLength (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn on_initialize() -> Weight {
-		Weight::from_ref_time(3_998_000 as u64)
+		Weight::from_parts(3_998_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -102,14 +102,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Capacity CapacityLedger (r:1 w:1)
 	// Proof: Capacity CapacityLedger (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
 	fn unstake() -> Weight {
-		Weight::from_ref_time(37_883_000 as u64)
+		Weight::from_parts(37_883_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Capacity EpochLength (r:0 w:1)
 	// Proof: Capacity EpochLength (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_epoch_length() -> Weight {
-		Weight::from_ref_time(6_847_000 as u64)
+		Weight::from_parts(6_847_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -127,7 +127,7 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn stake() -> Weight {
-		Weight::from_ref_time(38_081_000 as u64)
+		Weight::from_parts(38_081_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(5 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
@@ -136,7 +136,7 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn withdraw_unstaked() -> Weight {
-		Weight::from_ref_time(27_909_000 as u64)
+		Weight::from_parts(27_909_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -145,7 +145,7 @@ impl WeightInfo for () {
 	// Storage: Capacity EpochLength (r:1 w:0)
 	// Proof: Capacity EpochLength (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn on_initialize() -> Weight {
-		Weight::from_ref_time(3_998_000 as u64)
+		Weight::from_parts(3_998_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -158,14 +158,14 @@ impl WeightInfo for () {
 	// Storage: Capacity CapacityLedger (r:1 w:1)
 	// Proof: Capacity CapacityLedger (max_values: None, max_size: Some(68), added: 2543, mode: MaxEncodedLen)
 	fn unstake() -> Weight {
-		Weight::from_ref_time(37_883_000 as u64)
+		Weight::from_parts(37_883_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Capacity EpochLength (r:0 w:1)
 	// Proof: Capacity EpochLength (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_epoch_length() -> Weight {
-		Weight::from_ref_time(6_847_000 as u64)
+		Weight::from_parts(6_847_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }

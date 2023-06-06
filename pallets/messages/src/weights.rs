@@ -66,9 +66,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Messages Messages (r:1 w:1)
 	// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(166_790_243 as u64)
+		Weight::from_parts(166_790_243 as u64, 0)
 			// Standard Error: 42
-			.saturating_add(Weight::from_ref_time(1_553 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(1_553 as u64, 0).saturating_mul(n as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -79,7 +79,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Messages Messages (r:1 w:1)
 	// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(158_938_000 as u64)
+		Weight::from_parts(158_938_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -96,9 +96,9 @@ impl WeightInfo for () {
 	// Storage: Messages Messages (r:1 w:1)
 	// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
 	fn add_onchain_message(n: u32, ) -> Weight {
-		Weight::from_ref_time(166_790_243 as u64)
+		Weight::from_parts(166_790_243 as u64, 0)
 			// Standard Error: 42
-			.saturating_add(Weight::from_ref_time(1_553 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(1_553 as u64, 0).saturating_mul(n as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -109,7 +109,7 @@ impl WeightInfo for () {
 	// Storage: Messages Messages (r:1 w:1)
 	// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_ref_time(158_938_000 as u64)
+		Weight::from_parts(158_938_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

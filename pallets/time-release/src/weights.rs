@@ -63,7 +63,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: TimeRelease ReleaseSchedules (r:1 w:1)
 	// Proof: TimeRelease ReleaseSchedules (max_values: None, max_size: Some(1449), added: 3924, mode: MaxEncodedLen)
 	fn transfer() -> Weight {
-		Weight::from_ref_time(16_718_000 as u64)
+		Weight::from_parts(16_718_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -74,7 +74,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn claim(_i: u32, ) -> Weight {
-		Weight::from_ref_time(26_202_187 as u64)
+		Weight::from_parts(26_202_187 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -83,9 +83,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: TimeRelease ReleaseSchedules (r:0 w:1)
 	// Proof: TimeRelease ReleaseSchedules (max_values: None, max_size: Some(1449), added: 3924, mode: MaxEncodedLen)
 	fn update_release_schedules(i: u32, ) -> Weight {
-		Weight::from_ref_time(12_320_433 as u64)
+		Weight::from_parts(12_320_433 as u64, 0)
 			// Standard Error: 2_675
-			.saturating_add(Weight::from_ref_time(64_263 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(64_263 as u64, 0).saturating_mul(i as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -98,7 +98,7 @@ impl WeightInfo for () {
 	// Storage: TimeRelease ReleaseSchedules (r:1 w:1)
 	// Proof: TimeRelease ReleaseSchedules (max_values: None, max_size: Some(1449), added: 3924, mode: MaxEncodedLen)
 	fn transfer() -> Weight {
-		Weight::from_ref_time(16_718_000 as u64)
+		Weight::from_parts(16_718_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -109,7 +109,7 @@ impl WeightInfo for () {
 	// Storage: Balances Locks (r:1 w:1)
 	// Proof: Balances Locks (max_values: None, max_size: Some(1299), added: 3774, mode: MaxEncodedLen)
 	fn claim(_i: u32, ) -> Weight {
-		Weight::from_ref_time(26_202_187 as u64)
+		Weight::from_parts(26_202_187 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -118,9 +118,9 @@ impl WeightInfo for () {
 	// Storage: TimeRelease ReleaseSchedules (r:0 w:1)
 	// Proof: TimeRelease ReleaseSchedules (max_values: None, max_size: Some(1449), added: 3924, mode: MaxEncodedLen)
 	fn update_release_schedules(i: u32, ) -> Weight {
-		Weight::from_ref_time(12_320_433 as u64)
+		Weight::from_parts(12_320_433 as u64, 0)
 			// Standard Error: 2_675
-			.saturating_add(Weight::from_ref_time(64_263 as u64).saturating_mul(i as u64))
+			.saturating_add(Weight::from_parts(64_263 as u64, 0).saturating_mul(i as u64))
 			.saturating_add(RocksDbWeight::get().reads(1 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

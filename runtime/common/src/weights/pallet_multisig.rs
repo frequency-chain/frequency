@@ -32,20 +32,20 @@ pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T> {
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_threshold_1(z: u32, ) -> Weight {
-		Weight::from_ref_time(15_263_218 as u64)
+		Weight::from_parts(15_263_218 as u64, 0)
 			// Standard Error: 4
-			.saturating_add(Weight::from_ref_time(615 as u64).saturating_mul(z as u64))
+			.saturating_add(Weight::from_parts(615 as u64, 0).saturating_mul(z as u64))
 	}
 	// Storage: Multisig Multisigs (r:1 w:1)
 	// Proof: Multisig Multisigs (max_values: None, max_size: Some(3346), added: 5821, mode: MaxEncodedLen)
 	/// The range of component `s` is `[2, 100]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_create(s: u32, z: u32, ) -> Weight {
-		Weight::from_ref_time(37_073_713 as u64)
+		Weight::from_parts(37_073_713 as u64, 0)
 			// Standard Error: 7_547
-			.saturating_add(Weight::from_ref_time(52_332 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(52_332 as u64, 0).saturating_mul(s as u64))
 			// Standard Error: 73
-			.saturating_add(Weight::from_ref_time(1_684 as u64).saturating_mul(z as u64))
+			.saturating_add(Weight::from_parts(1_684 as u64, 0).saturating_mul(z as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -54,11 +54,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	/// The range of component `s` is `[3, 100]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_approve(s: u32, z: u32, ) -> Weight {
-		Weight::from_ref_time(20_500_499 as u64)
+		Weight::from_parts(20_500_499 as u64, 0)
 			// Standard Error: 2_460
-			.saturating_add(Weight::from_ref_time(103_916 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(103_916 as u64, 0).saturating_mul(s as u64))
 			// Standard Error: 24
-			.saturating_add(Weight::from_ref_time(1_761 as u64).saturating_mul(z as u64))
+			.saturating_add(Weight::from_parts(1_761 as u64, 0).saturating_mul(z as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -69,11 +69,11 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	/// The range of component `s` is `[2, 100]`.
 	/// The range of component `z` is `[0, 10000]`.
 	fn as_multi_complete(s: u32, z: u32, ) -> Weight {
-		Weight::from_ref_time(32_964_332 as u64)
+		Weight::from_parts(32_964_332 as u64, 0)
 			// Standard Error: 2_287
-			.saturating_add(Weight::from_ref_time(150_702 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(150_702 as u64, 0).saturating_mul(s as u64))
 			// Standard Error: 22
-			.saturating_add(Weight::from_ref_time(1_823 as u64).saturating_mul(z as u64))
+			.saturating_add(Weight::from_parts(1_823 as u64, 0).saturating_mul(z as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -81,9 +81,9 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	// Proof: Multisig Multisigs (max_values: None, max_size: Some(3346), added: 5821, mode: MaxEncodedLen)
 	/// The range of component `s` is `[2, 100]`.
 	fn approve_as_multi_create(s: u32, ) -> Weight {
-		Weight::from_ref_time(27_144_287 as u64)
+		Weight::from_parts(27_144_287 as u64, 0)
 			// Standard Error: 1_182
-			.saturating_add(Weight::from_ref_time(135_966 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(135_966 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -91,9 +91,9 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	// Proof: Multisig Multisigs (max_values: None, max_size: Some(3346), added: 5821, mode: MaxEncodedLen)
 	/// The range of component `s` is `[2, 100]`.
 	fn approve_as_multi_approve(s: u32, ) -> Weight {
-		Weight::from_ref_time(17_668_502 as u64)
+		Weight::from_parts(17_668_502 as u64, 0)
 			// Standard Error: 3_836
-			.saturating_add(Weight::from_ref_time(118_852 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(118_852 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -101,9 +101,9 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	// Proof: Multisig Multisigs (max_values: None, max_size: Some(3346), added: 5821, mode: MaxEncodedLen)
 	/// The range of component `s` is `[2, 100]`.
 	fn cancel_as_multi(s: u32, ) -> Weight {
-		Weight::from_ref_time(28_627_825 as u64)
+		Weight::from_parts(28_627_825 as u64, 0)
 			// Standard Error: 942
-			.saturating_add(Weight::from_ref_time(124_473 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(124_473 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}

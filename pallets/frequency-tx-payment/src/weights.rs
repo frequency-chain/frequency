@@ -58,23 +58,23 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	fn pay_with_capacity() -> Weight {
-		Weight::from_ref_time(3_604_000 as u64)
+		Weight::from_parts(3_604_000 as u64, 0)
 	}
 	fn pay_with_capacity_batch_all(n: u32, ) -> Weight {
-		Weight::from_ref_time(7_708_423 as u64)
+		Weight::from_parts(7_708_423 as u64, 0)
 			// Standard Error: 59_575
-			.saturating_add(Weight::from_ref_time(5_553_720 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(5_553_720 as u64, 0).saturating_mul(n as u64))
 	}
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	fn pay_with_capacity() -> Weight {
-		Weight::from_ref_time(3_604_000 as u64)
+		Weight::from_parts(3_604_000 as u64, 0)
 	}
 	fn pay_with_capacity_batch_all(n: u32, ) -> Weight {
-		Weight::from_ref_time(7_708_423 as u64)
+		Weight::from_parts(7_708_423 as u64, 0)
 			// Standard Error: 59_575
-			.saturating_add(Weight::from_ref_time(5_553_720 as u64).saturating_mul(n as u64))
+			.saturating_add(Weight::from_parts(5_553_720 as u64, 0).saturating_mul(n as u64))
 	}
 }

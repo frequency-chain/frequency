@@ -337,7 +337,7 @@ mod remove_sudo {
 
 		// TODO: correct weight?
 		fn weights_from(reads: u64, writes: u64) -> Weight {
-			Weight::from_ref_time(0u64)
+			Weight::from_parts(0u64, 0)
 				.saturating_add(RocksDbWeight::get().reads(reads))
 				.saturating_add(RocksDbWeight::get().writes(writes))
 		}

@@ -45,11 +45,11 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `n` is `[0, 10]`.
 	/// The range of component `p` is `[0, 25]`.
 	fn set_members(m: u32, _n: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(9_344_000 as u64)
+		Weight::from_parts(9_344_000 as u64, 0)
 			// Standard Error: 68_864
-			.saturating_add(Weight::from_ref_time(3_247_269 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(3_247_269 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 27_984
-			.saturating_add(Weight::from_ref_time(3_703_141 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(3_703_141 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().reads((1 as u64).saturating_mul(p as u64)))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
@@ -62,11 +62,11 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[1, 10]`.
 	fn execute(b: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(14_299_691 as u64)
+		Weight::from_parts(14_299_691 as u64, 0)
 			// Standard Error: 121
-			.saturating_add(Weight::from_ref_time(1_624 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(1_624 as u64, 0).saturating_mul(b as u64))
 			// Standard Error: 13_027
-			.saturating_add(Weight::from_ref_time(51_392 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(51_392 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 	}
 	// Storage: TechnicalCommittee Members (r:1 w:0)
@@ -78,11 +78,11 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `b` is `[2, 1024]`.
 	/// The range of component `m` is `[1, 10]`.
 	fn propose_execute(b: u32, m: u32, ) -> Weight {
-		Weight::from_ref_time(16_348_892 as u64)
+		Weight::from_parts(16_348_892 as u64, 0)
 			// Standard Error: 14
-			.saturating_add(Weight::from_ref_time(1_965 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(1_965 as u64, 0).saturating_mul(b as u64))
 			// Standard Error: 1_498
-			.saturating_add(Weight::from_ref_time(25_313 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(25_313 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 	}
 	// Storage: TechnicalCommittee Members (r:1 w:0)
@@ -102,13 +102,13 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[2, 10]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn propose_proposed(b: u32, m: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(23_274_508 as u64)
+		Weight::from_parts(23_274_508 as u64, 0)
 			// Standard Error: 54
-			.saturating_add(Weight::from_ref_time(2_647 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(2_647 as u64, 0).saturating_mul(b as u64))
 			// Standard Error: 6_461
-			.saturating_add(Weight::from_ref_time(160_950 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(160_950 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 2_254
-			.saturating_add(Weight::from_ref_time(298_616 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(298_616 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -119,9 +119,9 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[5, 10]`.
 	/// The range of component `m` is `[5, 10]`.
 	fn vote(m: u32, ) -> Weight {
-		Weight::from_ref_time(20_596_829 as u64)
+		Weight::from_parts(20_596_829 as u64, 0)
 			// Standard Error: 5_639
-			.saturating_add(Weight::from_ref_time(94_062 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(94_062 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -138,11 +138,11 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[4, 10]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn close_early_disapproved(m: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(24_201_845 as u64)
+		Weight::from_parts(24_201_845 as u64, 0)
 			// Standard Error: 6_830
-			.saturating_add(Weight::from_ref_time(193_759 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(193_759 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 1_821
-			.saturating_add(Weight::from_ref_time(271_291 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(271_291 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -161,13 +161,13 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[4, 10]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn close_early_approved(b: u32, m: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(33_237_369 as u64)
+		Weight::from_parts(33_237_369 as u64, 0)
 			// Standard Error: 116
-			.saturating_add(Weight::from_ref_time(2_880 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(2_880 as u64, 0).saturating_mul(b as u64))
 			// Standard Error: 17_928
-			.saturating_add(Weight::from_ref_time(110_343 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(110_343 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 4_796
-			.saturating_add(Weight::from_ref_time(516_025 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(516_025 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -186,11 +186,11 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[4, 10]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn close_disapproved(m: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(26_469_577 as u64)
+		Weight::from_parts(26_469_577 as u64, 0)
 			// Standard Error: 6_965
-			.saturating_add(Weight::from_ref_time(223_576 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(223_576 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 1_858
-			.saturating_add(Weight::from_ref_time(282_213 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(282_213 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -211,13 +211,13 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `m` is `[4, 10]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn close_approved(b: u32, m: u32, p: u32, ) -> Weight {
-		Weight::from_ref_time(39_106_895 as u64)
+		Weight::from_parts(39_106_895 as u64, 0)
 			// Standard Error: 73
-			.saturating_add(Weight::from_ref_time(2_291 as u64).saturating_mul(b as u64))
+			.saturating_add(Weight::from_parts(2_291 as u64, 0).saturating_mul(b as u64))
 			// Standard Error: 11_338
-			.saturating_add(Weight::from_ref_time(78_079 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(78_079 as u64, 0).saturating_mul(m as u64))
 			// Standard Error: 3_033
-			.saturating_add(Weight::from_ref_time(446_331 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(446_331 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(5 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -230,9 +230,9 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 	/// The range of component `p` is `[1, 25]`.
 	/// The range of component `p` is `[1, 25]`.
 	fn disapprove_proposal(p: u32, ) -> Weight {
-		Weight::from_ref_time(15_621_070 as u64)
+		Weight::from_parts(15_621_070 as u64, 0)
 			// Standard Error: 1_351
-			.saturating_add(Weight::from_ref_time(232_100 as u64).saturating_mul(p as u64))
+			.saturating_add(Weight::from_parts(232_100 as u64, 0).saturating_mul(p as u64))
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}

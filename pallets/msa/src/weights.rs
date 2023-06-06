@@ -74,7 +74,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn create() -> Weight {
-		Weight::from_ref_time(13_998_000 as u64)
+		Weight::from_parts(13_998_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
 	}
@@ -95,9 +95,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn create_sponsored_account_with_delegation(s: u32, ) -> Weight {
-		Weight::from_ref_time(122_696_595 as u64)
+		Weight::from_parts(122_696_595 as u64, 0)
 			// Standard Error: 25_277
-			.saturating_add(Weight::from_ref_time(153_239 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(153_239 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(10 as u64))
 			.saturating_add(T::DbWeight::get().writes(7 as u64))
 	}
@@ -106,7 +106,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	fn revoke_delegation_by_provider() -> Weight {
-		Weight::from_ref_time(17_718_000 as u64)
+		Weight::from_parts(17_718_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -119,7 +119,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn add_public_key_to_msa() -> Weight {
-		Weight::from_ref_time(175_511_000 as u64)
+		Weight::from_parts(175_511_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(8 as u64))
 			.saturating_add(T::DbWeight::get().writes(7 as u64))
 	}
@@ -128,7 +128,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn delete_msa_public_key() -> Weight {
-		Weight::from_ref_time(25_845_000 as u64)
+		Weight::from_parts(25_845_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -137,7 +137,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn retire_msa() -> Weight {
-		Weight::from_ref_time(21_640_000 as u64)
+		Weight::from_parts(21_640_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -154,9 +154,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn grant_delegation(s: u32, ) -> Weight {
-		Weight::from_ref_time(117_954_246 as u64)
+		Weight::from_parts(117_954_246 as u64, 0)
 			// Standard Error: 115_616
-			.saturating_add(Weight::from_ref_time(128_695 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(128_695 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(8 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -165,7 +165,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	fn revoke_delegation_by_delegator() -> Weight {
-		Weight::from_ref_time(17_925_000 as u64)
+		Weight::from_parts(17_925_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -174,7 +174,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
 	fn create_provider() -> Weight {
-		Weight::from_ref_time(14_333_000 as u64)
+		Weight::from_parts(14_333_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -183,7 +183,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
 	fn create_provider_via_governance() -> Weight {
-		Weight::from_ref_time(15_064_000 as u64)
+		Weight::from_parts(15_064_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -198,7 +198,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Council Voting (r:0 w:1)
 	// Proof Skipped: Council Voting (max_values: None, max_size: None, mode: Measured)
 	fn propose_to_be_provider() -> Weight {
-		Weight::from_ref_time(25_114_000 as u64)
+		Weight::from_parts(25_114_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
@@ -209,9 +209,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn revoke_schema_permissions(s: u32, ) -> Weight {
-		Weight::from_ref_time(22_619_140 as u64)
+		Weight::from_parts(22_619_140 as u64, 0)
 			// Standard Error: 7_132
-			.saturating_add(Weight::from_ref_time(148_016 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(148_016 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
@@ -226,7 +226,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn create() -> Weight {
-		Weight::from_ref_time(13_998_000 as u64)
+		Weight::from_parts(13_998_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(3 as u64))
 	}
@@ -247,9 +247,9 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn create_sponsored_account_with_delegation(s: u32, ) -> Weight {
-		Weight::from_ref_time(122_696_595 as u64)
+		Weight::from_parts(122_696_595 as u64, 0)
 			// Standard Error: 25_277
-			.saturating_add(Weight::from_ref_time(153_239 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(153_239 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(10 as u64))
 			.saturating_add(RocksDbWeight::get().writes(7 as u64))
 	}
@@ -258,7 +258,7 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	fn revoke_delegation_by_provider() -> Weight {
-		Weight::from_ref_time(17_718_000 as u64)
+		Weight::from_parts(17_718_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -271,7 +271,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn add_public_key_to_msa() -> Weight {
-		Weight::from_ref_time(175_511_000 as u64)
+		Weight::from_parts(175_511_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(8 as u64))
 			.saturating_add(RocksDbWeight::get().writes(7 as u64))
 	}
@@ -280,7 +280,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn delete_msa_public_key() -> Weight {
-		Weight::from_ref_time(25_845_000 as u64)
+		Weight::from_parts(25_845_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -289,7 +289,7 @@ impl WeightInfo for () {
 	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
 	// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn retire_msa() -> Weight {
-		Weight::from_ref_time(21_640_000 as u64)
+		Weight::from_parts(21_640_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -306,9 +306,9 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn grant_delegation(s: u32, ) -> Weight {
-		Weight::from_ref_time(117_954_246 as u64)
+		Weight::from_parts(117_954_246 as u64, 0)
 			// Standard Error: 115_616
-			.saturating_add(Weight::from_ref_time(128_695 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(128_695 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(8 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
@@ -317,7 +317,7 @@ impl WeightInfo for () {
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
 	// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	fn revoke_delegation_by_delegator() -> Weight {
-		Weight::from_ref_time(17_925_000 as u64)
+		Weight::from_parts(17_925_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -326,7 +326,7 @@ impl WeightInfo for () {
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
 	fn create_provider() -> Weight {
-		Weight::from_ref_time(14_333_000 as u64)
+		Weight::from_parts(14_333_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -335,7 +335,7 @@ impl WeightInfo for () {
 	// Storage: Msa ProviderToRegistryEntry (r:1 w:1)
 	// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
 	fn create_provider_via_governance() -> Weight {
-		Weight::from_ref_time(15_064_000 as u64)
+		Weight::from_parts(15_064_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
@@ -350,7 +350,7 @@ impl WeightInfo for () {
 	// Storage: Council Voting (r:0 w:1)
 	// Proof Skipped: Council Voting (max_values: None, max_size: None, mode: Measured)
 	fn propose_to_be_provider() -> Weight {
-		Weight::from_ref_time(25_114_000 as u64)
+		Weight::from_parts(25_114_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
@@ -361,9 +361,9 @@ impl WeightInfo for () {
 	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
 	// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
 	fn revoke_schema_permissions(s: u32, ) -> Weight {
-		Weight::from_ref_time(22_619_140 as u64)
+		Weight::from_parts(22_619_140 as u64, 0)
 			// Standard Error: 7_132
-			.saturating_add(Weight::from_ref_time(148_016 as u64).saturating_mul(s as u64))
+			.saturating_add(Weight::from_parts(148_016 as u64, 0).saturating_mul(s as u64))
 			.saturating_add(RocksDbWeight::get().reads(3 as u64))
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}

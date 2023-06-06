@@ -35,7 +35,7 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for SubstrateWeight<T> 
 	// Storage: Session KeyOwner (r:1 w:1)
 	// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
 	fn set_keys() -> Weight {
-		Weight::from_ref_time(16_319_000 as u64)
+		Weight::from_parts(16_319_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -44,7 +44,7 @@ impl<T: frame_system::Config> pallet_session::WeightInfo for SubstrateWeight<T> 
 	// Storage: Session KeyOwner (r:0 w:1)
 	// Proof Skipped: Session KeyOwner (max_values: None, max_size: None, mode: Measured)
 	fn purge_keys() -> Weight {
-		Weight::from_ref_time(12_277_000 as u64)
+		Weight::from_parts(12_277_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().reads(1 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}

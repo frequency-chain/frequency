@@ -66,9 +66,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:0 w:1)
 	// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(14_955_000 as u64)
+		Weight::from_parts(14_955_000 as u64, 0)
 			// Standard Error: 50
-			.saturating_add(Weight::from_ref_time(37_024 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(37_024 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -79,9 +79,9 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Schemas Schemas (r:0 w:1)
 	// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
 	fn create_schema_via_governance(m: u32, ) -> Weight {
-		Weight::from_ref_time(14_720_000 as u64)
+		Weight::from_parts(14_720_000 as u64, 0)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(37_001 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(37_001 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(2 as u64))
 			.saturating_add(T::DbWeight::get().writes(2 as u64))
 	}
@@ -96,16 +96,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	// Storage: Council Voting (r:0 w:1)
 	// Proof Skipped: Council Voting (max_values: None, max_size: None, mode: Measured)
 	fn propose_to_create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(9_943_722 as u64)
+		Weight::from_parts(9_943_722 as u64, 0)
 			// Standard Error: 38
-			.saturating_add(Weight::from_ref_time(4_274 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(4_274 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(T::DbWeight::get().reads(4 as u64))
 			.saturating_add(T::DbWeight::get().writes(4 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(6_915_000 as u64)
+		Weight::from_parts(6_915_000 as u64, 0)
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 }
@@ -119,9 +119,9 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:0 w:1)
 	// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
 	fn create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(14_955_000 as u64)
+		Weight::from_parts(14_955_000 as u64, 0)
 			// Standard Error: 50
-			.saturating_add(Weight::from_ref_time(37_024 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(37_024 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -132,9 +132,9 @@ impl WeightInfo for () {
 	// Storage: Schemas Schemas (r:0 w:1)
 	// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
 	fn create_schema_via_governance(m: u32, ) -> Weight {
-		Weight::from_ref_time(14_720_000 as u64)
+		Weight::from_parts(14_720_000 as u64, 0)
 			// Standard Error: 48
-			.saturating_add(Weight::from_ref_time(37_001 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(37_001 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(2 as u64))
 			.saturating_add(RocksDbWeight::get().writes(2 as u64))
 	}
@@ -149,16 +149,16 @@ impl WeightInfo for () {
 	// Storage: Council Voting (r:0 w:1)
 	// Proof Skipped: Council Voting (max_values: None, max_size: None, mode: Measured)
 	fn propose_to_create_schema(m: u32, ) -> Weight {
-		Weight::from_ref_time(9_943_722 as u64)
+		Weight::from_parts(9_943_722 as u64, 0)
 			// Standard Error: 38
-			.saturating_add(Weight::from_ref_time(4_274 as u64).saturating_mul(m as u64))
+			.saturating_add(Weight::from_parts(4_274 as u64, 0).saturating_mul(m as u64))
 			.saturating_add(RocksDbWeight::get().reads(4 as u64))
 			.saturating_add(RocksDbWeight::get().writes(4 as u64))
 	}
 	// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
 	// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
 	fn set_max_schema_model_bytes() -> Weight {
-		Weight::from_ref_time(6_915_000 as u64)
+		Weight::from_parts(6_915_000 as u64, 0)
 			.saturating_add(RocksDbWeight::get().writes(1 as u64))
 	}
 }
