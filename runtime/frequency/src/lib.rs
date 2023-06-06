@@ -789,6 +789,8 @@ impl pallet_democracy::Config for Runtime {
 
 	// See https://paritytech.github.io/substrate/master/pallet_democracy/index.html for
 	// the descriptions of these origins.
+	// See https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html for
+	// the definitions of these config traits.
 	/// A unanimous council can have the next scheduled referendum be a straight default-carries
 	/// (NTB) vote.
 	type ExternalDefaultOrigin = EitherOfDiverse<
@@ -806,6 +808,8 @@ impl pallet_democracy::Config for Runtime {
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
+	// Origin from which the new proposal can be made.
+	// The success variant is the account id of the depositor.
 	type SubmitOrigin = frame_system::EnsureSigned<AccountId>;
 
 	/// Two thirds of the technical committee can have an ExternalMajority/ExternalDefault vote
