@@ -28,7 +28,7 @@ use cumulus_relay_chain_interface::{RelayChainError, RelayChainInterface};
 // Substrate Imports
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::NativeElseWasmExecutor;
-use sc_network::NetworkService;
+use sc_network::{NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -283,8 +283,8 @@ async fn start_node_impl(
 	}
 
 	let announce_block = {
-		let network = network.clone();
-		Arc::new(move |hash, data| network.announce_block(hash, data))
+		let sync_service = sync_service.clone();
+		Arc::new(move |hash, data| sync_service.announce_block(hash, data))
 	};
 
 	let relay_chain_slot_duration = Duration::from_secs(6);
