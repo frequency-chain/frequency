@@ -37,7 +37,7 @@ pub struct StakingAccountDetails {
     pub total: BalanceOf<T>,
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
     /// The number of the last StakingEra that this account's rewards were claimed.
-    pub last_rewards_claimed_at: Option<T::StakingEra>, // NEW  None means never rewarded, Some(RewardEra) means last rewarded RewardEra.
+    pub last_rewards_claimed_at: Option<T::RewardEra>, // NEW  None means never rewarded, Some(RewardEra) means last rewarded RewardEra.
     /// What type of staking this account is doing
     pub staking_type: StakingType, // NEW
     /// staking amounts that have been retargeted are prevented from being retargeted again for the
@@ -94,15 +94,12 @@ pub struct StakingRewardClaim<T: Config> {
     /// The end state of the staking account if the operations are valid
     pub staking_account_end_state: StakingAccountDetails,
     /// The starting era for the claimed reward period, inclusive
-    pub from_era: AtLeast32BitUnsigned,
+    pub from_era: T::RewardEra,
     /// The ending era for the claimed reward period, inclusive
-    pub to_era: RewardEra,
+    pub to_era: T::RewardEra,
 }
 
-pub trait StakingRewardsProvider {
-    type Balance;
-    type AccountId;
-    type RewardEra;
+pub trait StakingRewardsProvider<T: Config> {
 
     /// Return the size of the reward pool for the given era, in token
     /// Errors:
@@ -112,12 +109,12 @@ pub trait StakingRewardsProvider {
     /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
     /// Errors:
     ///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current RewardEra.
-    fn staking_reward_total(account_id: AccountId, fromEra: RewardEra, toEra: RewardEra);
+    fn staking_reward_total(account_id: T::AccountId, fromEra: T::RewardEra, toEra: T::RewardEra);
 
     /// Validate a payout claim for `account_id`, using `proof` and the provided `payload` StakingRewardClaim.
     /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
     /// Errors: None
-    fn validate_staking_reward_claim(account_id: AccountIdOf<T>, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
+    fn validate_staking_reward_claim(account_id: T::AccountID, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
 }
 ```
 
@@ -173,14 +170,21 @@ pub struct RewardPoolInfo<T: Config> {
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
-### NEW: CurrentEra
-Incremented, like CurrentEpoch, tracks the current RewardEra number.
+### NEW: CurrentEra, RewardEraInfo
+Incremented, like CurrentEpoch, tracks the current RewardEra number and the block when it started.
 ```rust
 #[pallet::storage]
 #[pallet::whitelist_storage]
 #[pallet::getter(fn get_current_era)]
 /// Similar to CurrentEpoch
-pub type CurrentEra<T:Config> = StorageValue<_, T::RewardEra, ValueQuery>;
+pub type CurrentEraInfo<T:Config> = StorageValue<_, T::RewardEraInfo, ValueQuery>;
+
+pub struct RewardEraInfo<RewardEra, BlockNumber> {
+    /// the index of this era
+    pub current_era: RewardEra,
+    /// the starting block of this era
+    pub era_start: BlockNumber,
+}
 ```
 
 ### NEW: Error enums
