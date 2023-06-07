@@ -29,10 +29,10 @@ pub struct StakingAccountDetails<T: Config> {
 	/// What type of staking this account is doing
 	pub staking_type: StakingType,
 	/// The None or Some(number): never, or the last RewardEra that this account's rewards were claimed.
-	pub last_rewards_claimed_at: Option<RewardEra>,
+	pub last_rewards_claimed_at: Option<T::RewardEra>,
 	/// Chunks that have been retargeted within T::UnstakingThawPeriod
 	pub stake_change_unlocking:
-		BoundedVec<UnlockChunk<BalanceOf<T>, RewardEra>, T::MaxUnlockingChunks>,
+		BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>,
 }
 
 /// The type that is used to record a single request for a number of tokens to be unlocked.
@@ -260,9 +260,9 @@ pub struct StakingRewardClaim<T: Config> {
 	/// The end state of the staking account if the operations are valid
 	pub staking_account_end_state: StakingAccountDetails<T>,
 	/// The starting era for the claimed reward period, inclusive
-	pub from_era: RewardEra,
+	pub from_era: T::RewardEra,
 	/// The ending era for the claimed reward period, inclusive
-	pub to_era: RewardEra,
+	pub to_era: T::RewardEra,
 }
 
 /// A trait that provides the Economic Model for Provider Boosting.
@@ -270,15 +270,15 @@ pub trait StakingRewardsProvider<T: Config> {
 	/// Return the size of the reward pool for the given era, in token
 	/// Errors:
 	///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
-	fn reward_pool_size(era: RewardEra) -> BalanceOf<T>;
+	fn reward_pool_size(era: T::RewardEra) -> BalanceOf<T>;
 
 	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
 	/// Errors:
 	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
 	fn staking_reward_total(
-		account_id: AccountId,
-		from_era: RewardEra,
-		to_era: RewardEra,
+		account_id: T::AccountId,
+		from_era: T::RewardEra,
+		to_era: T::RewardEra,
 	) -> BalanceOf<T>;
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
@@ -301,6 +301,17 @@ pub trait StakingRewardsProvider<T: Config> {
 	///     - MaxUnlockingChunksExceeded
 	///     - All other conditions that would prevent a reward from being claimed return 'false'
 	fn payout_eligible(account_id: AccountId) -> bool;
+}
+
+/// The information needed to track a Reward Era
+#[derive(
+	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+pub struct RewardEraInfo<RewardEra, BlockNumber> {
+	/// the index of this era
+	pub current_era: RewardEra,
+	/// the starting block of this era
+	pub era_start: BlockNumber,
 }
 
 /// Needed data about a RewardPool for a given RewardEra.
