@@ -17,7 +17,7 @@ fn start_new_era_if_needed() {
 		system_run_to_block(19);
 		run_to_block(20);
 		current_era_info = CurrentEraInfo::<Test>::get();
-		assert_eq!(current_era_info.era_index, 3u32);
+        assert_eq!(current_era_info.era_index, 3u32);
 		assert_eq!(current_era_info.started_at, 20u32);
 	})
 }
