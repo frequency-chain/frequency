@@ -394,7 +394,15 @@ fn build_consensus(
 	task_manager: &TaskManager,
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
 	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
-	sync_oracle: Arc<NetworkService<Block, Hash>>,
+	sync_oracle: Arc<SyncingService<Block>>,
+	// sync_oracle: Arc<
+	// 	SyncingService<
+	// 		sp_runtime::generic::Block<
+	// 			common_primitives::node::Header,
+	// 			dyn sp_runtime::traits::Extrinsic,
+	// 		>,
+	// 	>,
+	// >,
 	keystore: SyncCryptoStorePtr,
 	force_authoring: bool,
 	id: ParaId,

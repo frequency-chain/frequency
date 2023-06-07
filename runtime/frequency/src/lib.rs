@@ -7,9 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{
-	RelayNumberStrictlyIncreases, RelaychainDataProvider,
-};
+use cumulus_pallet_parachain_system::{RelayNumberStrictlyIncreases, RelaychainDataProvider};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
