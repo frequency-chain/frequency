@@ -1,5 +1,6 @@
 pub mod capacity_details_tests;
 pub mod epochs_tests;
+mod eras_tests;
 pub mod mock;
 pub mod other_tests;
 pub mod replenishment_tests;
