@@ -99,8 +99,6 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
-pub mod migration;
-
 pub mod types;
 
 pub mod weights;
