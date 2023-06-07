@@ -70,7 +70,7 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::{capacity::StakingType, node::RewardEra};
+use common_primitives::capacity::StakingType;
 
 pub use pallet::*;
 pub use types::*;
@@ -231,6 +231,12 @@ pub mod pallet {
 	pub type EpochLength<T: Config> =
 		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 
+	/// Information for the current era
+	#[pallet::storage]
+	#[pallet::getter(fn get_current_era)]
+	pub type CurrentEraInfo<T: Config> =
+		StorageValue<_, RewardEraInfo<T::RewardEra, T::BlockNumber>, ValueQuery>;
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -328,6 +334,7 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(current: T::BlockNumber) -> Weight {
 			Self::start_new_epoch_if_needed(current)
+				.saturating_add(Self::start_new_reward_era_if_needed(current))
 		}
 	}
 
@@ -634,7 +641,23 @@ impl<T: Config> Pallet<T> {
 				.saturating_add(T::DbWeight::get().writes(2))
 		} else {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
-			T::DbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
+			T::DbWeight::get().reads(2).saturating_add(RocksDbWeight::get().writes(1))
+		}
+	}
+
+	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
+		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era();
+		if current_block.saturating_sub(current_era_info.era_start) >= T::EraLength::get().into() {
+			CurrentEraInfo::<T>::set(RewardEraInfo {
+				current_era: current_era_info.current_era.saturating_add(1u8.into()),
+				era_start: current_block,
+			});
+			// TODO: modify reads/writes as needed when RewardPoolInfo stuff is added
+			T::WeightInfo::on_initialize()
+				.saturating_add(T::DbWeight::get().reads(1))
+				.saturating_add(T::DbWeight::get().writes(1))
+		} else {
+			T::DbWeight::get().reads(2).saturating_add(RocksDbWeight::get().writes(1))
 		}
 	}
 
