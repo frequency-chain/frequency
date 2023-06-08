@@ -195,7 +195,7 @@ pub fn frequency_dev_sealing(
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,
 		config,
-		keystore: keystore_container.sync_keystore(),
+		keystore: keystore_container.keystore(),
 		backend,
 		network: network.clone(),
 		sync_service: sync_service.clone(),
