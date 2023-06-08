@@ -7,10 +7,7 @@ use frame_support::{
 use scale_info::TypeInfo;
 use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
-use common_primitives::{
-	capacity::StakingType,
-	node::{AccountId, Hash},
-};
+use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
@@ -267,18 +264,27 @@ pub struct StakingRewardClaim<T: Config> {
 
 /// A trait that provides the Economic Model for Provider Boosting.
 pub trait StakingRewardsProvider<T: Config> {
+	/// the AccountId this provider is using
+	type AccountId;
+
+	/// the range of blocks over which a Reward Pool is determined and rewards are paid out
+	type RewardEra;
+
+	///  The hasher to use for proofs
+	type Hash;
+
 	/// Return the size of the reward pool for the given era, in token
 	/// Errors:
 	///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
-	fn reward_pool_size(era: T::RewardEra) -> BalanceOf<T>;
+	fn reward_pool_size(era: Self::RewardEra) -> BalanceOf<T>;
 
 	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
 	/// Errors:
 	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
 	fn staking_reward_total(
-		account_id: T::AccountId,
-		from_era: T::RewardEra,
-		to_era: T::RewardEra,
+		account_id: Self::AccountId,
+		from_era: Self::RewardEra,
+		to_era: Self::RewardEra,
 	) -> BalanceOf<T>;
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
@@ -288,19 +294,10 @@ pub trait StakingRewardsProvider<T: Config> {
 	///     - MaxUnlockingChunksExceeded
 	///     - All other conditions that would prevent a reward from being claimed return 'false'
 	fn validate_staking_reward_claim(
-		account_id: AccountId,
-		proof: Hash,
+		account_id: Self::AccountId,
+		proof: Self::Hash,
 		payload: StakingRewardClaim<T>,
 	) -> bool;
-
-	/// Return whether `accountId` can claim a reward. Staking accounts may not claim a reward more than once
-	/// per Era, may not claim rewards before a complete Era has been staked, and may not claim more rewards past
-	/// the number of `MaxUnlockingChunks`.
-	/// Errors:
-	///     - NotAStakingAccount
-	///     - MaxUnlockingChunksExceeded
-	///     - All other conditions that would prevent a reward from being claimed return 'false'
-	fn payout_eligible(account_id: AccountId) -> bool;
 }
 
 /// The information needed to track a Reward Era

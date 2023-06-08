@@ -15,7 +15,8 @@ use sp_runtime::{
 	AccountId32, DispatchError, Perbill,
 };
 // use common_primitives::node::{Balance, Hash, RewardEra};
-use common_primitives::node::RewardEra;
+use crate::{BalanceOf, Config, StakingRewardClaim, StakingRewardsProvider};
+use common_primitives::node::{Balance, Hash, RewardEra};
 // use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -132,24 +133,37 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
-// pub struct TestStakingRewardsProvider {}
-// impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
-// 	fn reward_pool_size(era: RewardEra) -> BalanceOf<Test> {
-// 		Balance::from(10_000u64);
-// 	}
-//
-// 	fn staking_reward_total(account_id: AccountId, from_era: RewardEra, to_era: RewardEra) -> BalanceOf<Test> {
-// 		Balance::from(10u64)
-// 	}
-//
-// 	fn validate_staking_reward_claim(account_id: AccountId, proof: Hash, payload: StakingRewardClaim<Test>) -> bool {
-// 		true
-// 	}
-//
-// 	fn payout_eligible(account_id: AccountId) -> bool {
-// 		true
-// 	}
-// }
+// not used yet
+pub struct TestStakingRewardsProvider {}
+impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
+	type AccountId = u64;
+	type RewardEra = RewardEra;
+	type Hash = Hash;
+
+	fn reward_pool_size(era: Self::RewardEra) -> BalanceOf<Test> {
+		100_000u64
+	}
+
+	fn staking_reward_total(
+		account_id: Self::AccountId,
+		from_era: Self::RewardEra,
+		to_era: Self::RewardEra,
+	) -> BalanceOf<Test> {
+		if account_id > 2u64 {
+			10u64
+		} else {
+			1u64
+		}
+	}
+
+	fn validate_staking_reward_claim(
+		account_id: Self::AccountId,
+		proof: Self::Hash,
+		payload: StakingRewardClaim<Test>,
+	) -> bool {
+		true
+	}
+}
 
 // Needs parameter_types! for the Perbill
 parameter_types! {
@@ -175,7 +189,7 @@ impl pallet_capacity::Config for Test {
 	type RewardEra = u32;
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
-	// type RewardsProvider = TestStakingRewardsProvider;
+	type RewardsProvider = TestStakingRewardsProvider;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

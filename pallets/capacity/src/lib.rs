@@ -57,7 +57,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Saturating, Zero},
+	traits::{CheckedAdd, One, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
 use sp_std::ops::Mul;
@@ -70,7 +70,7 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::capacity::StakingType;
+use common_primitives::{capacity::StakingType, node::RewardEra};
 
 pub use pallet::*;
 pub use types::*;
@@ -164,6 +164,8 @@ pub mod pallet {
 			+ Copy
 			+ sp_std::hash::Hash
 			+ MaxEncodedLen
+			+ From<RewardEra>
+			+ Into<BalanceOf<Self>>
 			+ TypeInfo;
 
 		/// The number of blocks in a Staking Era
@@ -174,8 +176,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type StakingRewardsPastErasMax: Get<u32>;
 
-		// The StakingRewardsProvider used by this pallet in a given runtime
-		// type RewardsProvider: StakingRewardsProvider<Self>;
+		/// The StakingRewardsProvider used by this pallet in a given runtime
+		type RewardsProvider: StakingRewardsProvider<Self>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -578,8 +580,8 @@ impl<T: Config> Pallet<T> {
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let current_epoch: T::EpochNumber = Self::get_current_epoch();
-		let thaw_at =
-			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
+		let thaw_period = T::UnstakingThawPeriod::get();
+		let thaw_at = current_epoch.saturating_add(thaw_period.into());
 
 		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
 
@@ -736,5 +738,33 @@ impl<T: Config> Replenishable for Pallet<T> {
 			return capacity_details.can_replenish(Self::get_current_epoch())
 		}
 		false
+	}
+}
+
+impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
+	type AccountId = T::AccountId;
+	type RewardEra = T::RewardEra;
+	type Hash = T::Hash;
+
+	fn reward_pool_size(_era: T::RewardEra) -> BalanceOf<T> {
+		100_000u32.into()
+	}
+
+	fn staking_reward_total(
+		_account_id: T::AccountId,
+		from_era: T::RewardEra,
+		to_era: T::RewardEra,
+	) -> BalanceOf<T> {
+		let per_era = BalanceOf::<T>::one();
+		let num_eras = to_era.saturating_sub(from_era);
+		per_era.saturating_mul(num_eras.into())
+	}
+
+	fn validate_staking_reward_claim(
+		_account_id: T::AccountId,
+		_proof: T::Hash,
+		_payload: StakingRewardClaim<T>,
+	) -> bool {
+		true
 	}
 }
