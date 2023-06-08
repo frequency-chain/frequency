@@ -302,8 +302,8 @@ async fn start_node_impl(
 			&task_manager,
 			relay_chain_interface.clone(),
 			transaction_pool,
-			network,
-			params.keystore_container.sync_keystore(),
+			sync_service.clone(),
+			params.keystore_container.keystore(),
 			force_authoring,
 			id,
 		)?;
@@ -395,14 +395,6 @@ fn build_consensus(
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
 	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
 	sync_oracle: Arc<SyncingService<Block>>,
-	// sync_oracle: Arc<
-	// 	SyncingService<
-	// 		sp_runtime::generic::Block<
-	// 			common_primitives::node::Header,
-	// 			dyn sp_runtime::traits::Extrinsic,
-	// 		>,
-	// 	>,
-	// >,
 	keystore: SyncCryptoStorePtr,
 	force_authoring: bool,
 	id: ParaId,

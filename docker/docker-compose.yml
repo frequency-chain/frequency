@@ -4,7 +4,7 @@ version: "3"
 services:
   relay_alice:
     container_name: alice
-    image: "parity/polkadot:v0.9.40"
+    image: "parity/polkadot:v0.9.42"
     platform: linux/x86_64
     hostname: relay_alice
     ports:
@@ -35,7 +35,7 @@ services:
 
   relay_bob:
     container_name: bob
-    image: "parity/polkadot:v0.9.40"
+    image: "parity/polkadot:v0.9.42"
     platform: linux/x86_64
     hostname: relay_bob
     ports:
