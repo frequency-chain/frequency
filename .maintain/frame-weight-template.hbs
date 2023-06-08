@@ -99,7 +99,7 @@ impl WeightInfo for () {
 		Weight::from_parts({{underscore benchmark.base_weight}} as u64, 0)
 			{{#each benchmark.component_weight as |cw|}}
 			// Standard Error: {{underscore cw.error}}
-			.saturating_add(Weight::From_parts({{underscore cw.slope}} as u64, 0).saturating_mul({{cw.name}} as u64))
+			.saturating_add(Weight::from_parts({{underscore cw.slope}} as u64, 0).saturating_mul({{cw.name}} as u64))
 			{{/each}}
 			{{#if (ne benchmark.base_reads "0")}}
 			.saturating_add(RocksDbWeight::get().reads({{benchmark.base_reads}} as u64))
