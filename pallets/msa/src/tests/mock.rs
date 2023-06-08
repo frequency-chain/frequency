@@ -45,6 +45,8 @@ frame_support::construct_runtime!(
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
+// REVIEW: This is now the right type, but is the value correct?
+type MaxProposalWeight = frame_support::weights::constants::BlockExecutionWeight;
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -56,6 +58,7 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
 	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 impl frame_system::Config for Test {
@@ -333,7 +336,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
-	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as KeystorePtr));
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
 }

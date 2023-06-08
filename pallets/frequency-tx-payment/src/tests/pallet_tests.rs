@@ -572,11 +572,10 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with
 			let account_id_not_associated_with_msa = 10u64;
 
 			// This allows it not to fail on the requirement of an existential deposit.
-			assert_ok!(Balances::set_balance(
+			assert_ok!(Balances::force_set_balance(
 				RawOrigin::Root.into(),
 				account_id_not_associated_with_msa,
 				1u32.into(),
-				Zero::zero(),
 			));
 
 			let call: &<Test as Config>::RuntimeCall =
