@@ -4,6 +4,7 @@ mod eras_tests;
 pub mod mock;
 pub mod other_tests;
 pub mod replenishment_tests;
+mod rewards_provider_tests;
 pub mod stake_and_deposit_tests;
 pub mod staking_account_details_tests;
 pub mod staking_target_details_tests;
