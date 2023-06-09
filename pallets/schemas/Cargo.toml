@@ -43,7 +43,12 @@ pallet-collective = { git = "https://github.com/paritytech/substrate", default-f
 
 [features]
 default = ["std"]
-runtime-benchmarks = ["frame-benchmarking/runtime-benchmarks", "numtoa"]
+runtime-benchmarks = [
+  "frame-benchmarking/runtime-benchmarks",
+  "pallet-collective/runtime-benchmarks",
+  "common-primitives/runtime-benchmarks",
+  "numtoa",
+]
 std = [
   "codec/std",
   "scale-info/std",
