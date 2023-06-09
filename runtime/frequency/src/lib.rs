@@ -505,8 +505,7 @@ impl pallet_balances::Config for Runtime {
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
-	// REVIEW: from substrate
-	pub MaxProposalWeight: Weight = sp_runtime::Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
+	pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
@@ -556,7 +555,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-	type MaxProposalWeight = MaxProposalWeight;
+	type MaxProposalWeight = MaxCollectivesProposalWeight;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -570,7 +569,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
-	type MaxProposalWeight = MaxProposalWeight;
+	type MaxProposalWeight = MaxCollectivesProposalWeight;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
