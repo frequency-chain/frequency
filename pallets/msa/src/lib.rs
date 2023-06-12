@@ -610,13 +610,11 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given `new_key` to `msa_id` of the account signing `msa_owner_proof`, which must match the MSA in `add_key_payload`.
-		/// The `new_key` must sign the `add_key_payload` to authorize the addition.
-		///
-		/// # Remarks
-		/// * Origin can be same as msa owner.
-		/// * Signatures should be over the [`AddKeyData`] struct
-		///
+		/// Adds a new public key to an existing MSA account.  The MSA owner may want to add additional keys to their account to use their MSA on multiple
+		/// devices or to rotate keys for security purposes.  Depending on the intended use, the `origin` can be the account that own’s the MSA or the account
+		/// of a provider.  The new public key and existing MSA id are specified in `add_key_payload`.  Furthermore, proof of both the existing MSA and
+		/// new public key account ownership is provided by two signatures `msa_owner_proof` and `new_key_owner_proof`.
+\		///
 		/// # Events
 		/// * [`Event::PublicKeyAdded`]
 		///
