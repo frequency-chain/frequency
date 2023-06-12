@@ -610,12 +610,21 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a new public key to an existing MSA account.  The MSA owner may want to add additional keys to their account to use their MSA on multiple
-		/// devices or to rotate keys for security purposes.  Depending on the intended use, the `origin` can be the account that own’s the MSA or the account
-		/// of a provider.  The new public key and existing MSA id are specified in `add_key_payload`.  The proof of both the existing MSA and
-		/// new public key account ownership is provided by two signatures `msa_owner_proof` and `new_key_owner_proof`.  The `add_key_payload` has the absolute
-		/// block number when these two proofs expire and must be greater than the current block.  
-\		///
+		/// Adds a new public key to an existing Message Source Account (MSA). This functionality enables the MSA owner to manage multiple keys
+		/// for their account or rotate keys for enhanced security.
+		///
+		/// The `origin` parameter represents the account from which the function is called and can be either the MSA owner's account or a provider's account,
+		///  depending on the intended use.
+		///
+		/// The function requires two signatures: `msa_owner_proof` and `new_key_owner_proof`, which serve as proofs of ownership for the existing MSA
+		/// and the new public key account, respectively.
+		///
+		/// The necessary information for the key addition, such as the new public key and the MSA ID, is provided within the `add_key_payload` parameter.
+		/// Additionally, the `add_key_payload` includes an expiration block number for both proofs, ensuring they are valid and must be greater than
+		/// the current block.
+		///
+		/// By using this function, MSA owners can conveniently add new keys to their accounts, facilitating multi-device usage or key rotation for improved security.
+		///
 		/// # Events
 		/// * [`Event::PublicKeyAdded`]
 		///
