@@ -1,11 +1,11 @@
 //! Types for the Capacity Pallet
 use super::*;
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use frame_support::{
 	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, Zero};
 
 use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
@@ -273,10 +273,8 @@ pub trait StakingRewardsProvider<T: Config> {
 	///  The hasher to use for proofs
 	type Hash;
 
-	/// Return the size of the reward pool for the given era, in token
-	/// Errors:
-	///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current Era.
-	fn reward_pool_size(era: Self::RewardEra) -> BalanceOf<T>;
+	/// Calculate the size of the reward pool using the current economic model
+	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError>;
 
 	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
 	/// Errors:
@@ -285,7 +283,7 @@ pub trait StakingRewardsProvider<T: Config> {
 		account_id: Self::AccountId,
 		from_era: Self::RewardEra,
 		to_era: Self::RewardEra,
-	) -> BalanceOf<T>;
+	) -> Result<BalanceOf<T>, DispatchError>;
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
@@ -304,12 +302,25 @@ pub trait StakingRewardsProvider<T: Config> {
 #[derive(
 	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
-pub struct RewardEraInfo<RewardEra, BlockNumber> {
+pub struct RewardEraInfo<RewardEra, BlockNumber>
+where
+	RewardEra: AtLeast32BitUnsigned + EncodeLike,
+{
 	/// the index of this era
-	pub current_era: RewardEra,
+	pub era_index: RewardEra,
 	/// the starting block of this era
-	pub era_start: BlockNumber,
+	pub started_at: BlockNumber,
 }
 
 /// Needed data about a RewardPool for a given RewardEra.
-pub struct RewardPoolInfo {}
+#[derive(
+	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+pub struct RewardPoolInfo<Balance> {
+	/// the total staked for rewards in the associated RewardEra
+	pub total_staked_token: Balance,
+	/// the reward pool for this era
+	pub total_reward_pool: Balance,
+	/// the remaining rewards balance to be claimed
+	pub unclaimed_balance: Balance,
+}

@@ -140,19 +140,19 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type RewardEra = RewardEra;
 	type Hash = Hash;
 
-	fn reward_pool_size(era: Self::RewardEra) -> BalanceOf<Test> {
-		100_000u64
+	fn reward_pool_size() -> Result<BalanceOf<Test>, DispatchError> {
+		Ok(1000u64)
 	}
 
 	fn staking_reward_total(
 		account_id: Self::AccountId,
 		from_era: Self::RewardEra,
 		to_era: Self::RewardEra,
-	) -> BalanceOf<Test> {
+	) -> Result<BalanceOf<Test>, DispatchError> {
 		if account_id > 2u64 {
-			10u64
+			Ok(10u64)
 		} else {
-			1u64
+			Ok(1u64)
 		}
 	}
 
