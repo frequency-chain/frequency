@@ -101,10 +101,8 @@ pub struct StakingRewardClaim<T: Config> {
 
 pub trait StakingRewardsProvider<T: Config> {
 
-    /// Return the size of the reward pool for the given era, in token
-    /// Errors:
-    ///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current RewardEra.
-    fn reward_pool_size(era: EraOf<T>) -> BalanceOf<T>;
+    /// Calculate the size of the reward pool for the given era, in token
+    fn reward_pool_size() -> BalanceOf<T>;
 
     /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
     /// Errors:
@@ -159,14 +157,10 @@ pub trait Config: frame_system::Config {
 This is the necessary information about the reward pool for a given Reward Era and how it's stored.
 ```rust
 pub struct RewardPoolInfo<T: Config> {
-    /// the total staked for rewards in the associated RewardEra
-    total_staked_token: BalanceOf<T>,
-    /// the remaining rewards balance to be claimed
-    unclaimed_balance: BalanceOf<T>
 }
+/// Reward Pool history
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
-/// Reward Pool history
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 

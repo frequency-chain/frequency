@@ -70,7 +70,7 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::{capacity::StakingType, node::RewardEra};
+use common_primitives::capacity::StakingType;
 
 pub use pallet::*;
 pub use types::*;
@@ -92,6 +92,7 @@ const STAKING_ID: LockIdentifier = *b"netstkng";
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use codec::EncodeLike;
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
@@ -164,7 +165,7 @@ pub mod pallet {
 			+ Copy
 			+ sp_std::hash::Hash
 			+ MaxEncodedLen
-			+ From<RewardEra>
+			+ EncodeLike
 			+ Into<BalanceOf<Self>>
 			+ TypeInfo;
 
@@ -233,11 +234,17 @@ pub mod pallet {
 	pub type EpochLength<T: Config> =
 		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 
-	/// Information for the current era
+	/// Information about the current staking reward era.
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_era)]
 	pub type CurrentEraInfo<T: Config> =
 		StorageValue<_, RewardEraInfo<T::RewardEra, T::BlockNumber>, ValueQuery>;
+
+	/// Reward Pool history
+	#[pallet::storage]
+	#[pallet::getter(fn get_reward_pool_for_era)]
+	pub type StakingRewardPool<T: Config> =
+		StorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -649,10 +656,10 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
 		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era();
-		if current_block.saturating_sub(current_era_info.era_start) >= T::EraLength::get().into() {
+		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			CurrentEraInfo::<T>::set(RewardEraInfo {
-				current_era: current_era_info.current_era.saturating_add(1u8.into()),
-				era_start: current_block,
+				era_index: current_era_info.era_index.saturating_add(1u8.into()),
+				started_at: current_block,
 			});
 			// TODO: modify reads/writes as needed when RewardPoolInfo stuff is added
 			T::WeightInfo::on_initialize()
@@ -746,18 +753,34 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 	type RewardEra = T::RewardEra;
 	type Hash = T::Hash;
 
-	fn reward_pool_size(_era: T::RewardEra) -> BalanceOf<T> {
-		100_000u32.into()
+	// Calculate the size of the reward pool for the current era, based on current staked token
+	// and the other determined factors of the current economic model
+	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError> {
+		let current_era_info = CurrentEraInfo::<T>::get();
+		let current_staked =
+			StakingRewardPool::<T>::get(current_era_info.era_index).unwrap_or_default();
+		if current_staked.total_staked_token.is_zero() {
+			return Ok(BalanceOf::<T>::zero())
+		}
+		// TODO: why is .div not a fn?
+		Ok(current_staked.total_staked_token / BalanceOf::<T>::from(10u8))
 	}
 
+	// checks plus a reward calculation based on economic model for the era range
 	fn staking_reward_total(
 		_account_id: T::AccountId,
 		from_era: T::RewardEra,
 		to_era: T::RewardEra,
-	) -> BalanceOf<T> {
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let max_eras = T::RewardEra::from(T::StakingRewardsPastErasMax::get());
+		let era_range = from_era.saturating_sub(to_era);
+		ensure!(era_range.le(&max_eras), Error::<T>::EraOutOfRange);
+		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
+		let current_era_info = Self::get_current_era();
+		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
 		let per_era = BalanceOf::<T>::one();
 		let num_eras = to_era.saturating_sub(from_era);
-		per_era.saturating_mul(num_eras.into())
+		Ok(per_era.saturating_mul(num_eras.into()))
 	}
 
 	fn validate_staking_reward_claim(
