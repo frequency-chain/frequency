@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 );
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
-// the descriptions of these configs.2
+// the descriptions of these configs.
 
 parameter_types! {
 	pub MaxProposalWeight: frame_support::weights::Weight =

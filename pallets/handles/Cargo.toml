@@ -15,7 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = ["derive",] }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.2.0", default-features = false, features = ["derive",] }
+scale-info = { version = "2.5.0", default-features = false, features = ["derive",] }
 numtoa = "0.2.4"
 # Substrate
 frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.42" }
@@ -30,7 +30,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 handles-utils = { default-features = false, path = "src/handles-utils"}
 [dev-dependencies]
 env_logger = "0.10.0"
-pretty_assertions = "1"
+pretty_assertions = "1.2.1"
 serde = { version = "1.0", features = ["derive"] }
 sp-keystore = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 

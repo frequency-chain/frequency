@@ -30,7 +30,7 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-cid = { version = "0.10", default-features = false }
+cid = { version = "0.10.1", default-features = false }
 multibase = { version ="0.9", default-features = false }
 
 [dev-dependencies]

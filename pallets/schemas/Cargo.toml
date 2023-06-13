@@ -21,7 +21,7 @@ frame-benchmarking = { default-features = false, git = "https://github.com/parit
 frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 numtoa = { default-features = false, version = '0.2.4', optional = true }
-scale-info = { version = "2.2.0", default-features = false, features = [
+scale-info = { version = "2.5.0", default-features = false, features = [
   "derive",
 ] }
 serde_json = { version = "1.0.86", default-features = false, features = [

@@ -20,7 +20,7 @@ common-primitives = {default-features = false, path = "../../common/primitives"}
 frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/substrate", optional = true, branch = "polkadot-v0.9.42"}
 frame-support = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42"}
 frame-system = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42"}
-scale-info = {version = "2.2.0", default-features = false, features = [
+scale-info = {version = "2.5.0", default-features = false, features = [
   "derive",
 ]}
 sp-core = {default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42"}
