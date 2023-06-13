@@ -613,7 +613,7 @@ pub mod pallet {
 		/// Adds a new public key to an existing Message Source Account (MSA). This functionality enables the MSA owner to manage multiple keys
 		/// for their account or rotate keys for enhanced security.
 		///
-		/// The `origin` parameter represents the account from which the function is called and can be either the MSA owner's account or a provider's account,
+		/// The `origin` parameter represents the account from which the function is called and can be either the MSA owner's account or a delegated provider's account,
 		///  depending on the intended use.
 		///
 		/// The function requires two signatures: `msa_owner_proof` and `new_key_owner_proof`, which serve as proofs of ownership for the existing MSA
