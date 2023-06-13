@@ -177,9 +177,9 @@ With Schema Registry, different consumers of Frequency can evolve a given schema
 ## Additional Resources
 
 - [On chain message storage](./OnChainMessageStorage.md)
-- [Substrate storage](https://docs.substrate.io/v3/runtime/storage/)
-- [Substrate extrinsic](https://docs.substrate.io/v3/concepts/extrinsics/)
-- [Substrate custom rpc](https://docs.substrate.io/v3/runtime/custom-rpcs/)
+- [Substrate storage](https://docs.substrate.io/build/runtime-storage/)
+- [Substrate extrinsics](https://docs.substrate.io/learn/transaction-types)
+- [Substrate custom rpc](https://docs.substrate.io/build/remote-procedure-calls)
 - [Substrate sudo](https://www.shawntabrizi.com/substrate/the-sudo-story-in-substrate/)
 
 ## Additional Notes

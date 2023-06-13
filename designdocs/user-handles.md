@@ -218,6 +218,6 @@ Output
 
 ## Additional Notes
 
-* **Suffix generation**: The suffix generation algorithm will be based on a lazy sequence of suffixes. The algorithm will take a seed and generate a sequence of suffixes. The sequence will be generated lazily, i.e. the algorithm will generate a new suffix only when the previous suffix has been used. This will prevent the generation of a large number of suffixes that may not be used. [An Example of Fisher Yates, and Lazy Sequence Shuffling](https://github.com/Liberty30/magic-rs)
+* **Suffix generation**: The suffix generation algorithm will be based on a lazy sequence of suffixes. The algorithm will take a seed and generate a sequence of suffixes. The sequence will be generated lazily, i.e. the algorithm will generate a new suffix only when the previous suffix has been used. This will prevent the generation of a large number of suffixes that may not be used. [An Example of Fisher Yates, and Lazy Sequence Shuffling](https://github.com/AmplicaLabs/magic-rs)
 
 * **Suffix Range (min, max)**: Ideally we should enforce suffixes window to be of a minimum size, say 10k. This will prevent the generation of a large number of suffixes that may not be used, while keeping the performance in acceptable limits.
