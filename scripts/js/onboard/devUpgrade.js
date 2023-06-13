@@ -22,7 +22,7 @@ async function main() {
           throw err
         }
         const sudoCall = await api.tx.sudo
-            .sudo(api.tx.system.setCodeWithoutChecks(wasm))
+            .sudoUncheckedWeight(api.tx.system.setCodeWithoutChecks(wasm), {refTime: 1,})
             .signAndSend(sudo, (result) => {
                 console.log(`Current status is ${result.status}`);
                 if (result.status.isInBlock) {
