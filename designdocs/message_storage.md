@@ -18,7 +18,7 @@ that will allow us to store these messages on chain.
 
 ## Proposal
 Storing messages on chain using **BlockNumber** and **SchemaId** as main and secondary keys
-using [StorageDoubleMap](https://docs.substrate.io/rustdocs/latest/frame_support/storage/trait.StorageDoubleMap.html) data structure provided in Substrate.
+using [StorageDoubleMap](https://paritytech.github.io/substrate/master/frame_support/storage/trait.StorageDoubleMap.html) data structure provided in Substrate.
 
 ![Data-Page-3 drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/main_storage_type.png?raw=true)
 
@@ -112,7 +112,7 @@ from `StartingBlockNumber` until is reaches one of values from `EndBlockNumber` 
 - High read throughput for any query involving a specific block number
 - Built in Support for a flexible time-based retention policy per schema
 ### Risks
-1. Pre-defined maximum number of messages per block number enforced by [BoundedVec](https://docs.substrate.io/rustdocs/latest/frame_support/storage/bounded_vec/struct.BoundedVec.html) data type.
+1. Pre-defined maximum number of messages per block number enforced by [BoundedVec](https://crates.parity.io/frame_support/storage/bounded_vec/struct.BoundedVec.html) data type.
 2. Slow read throughput for sequential data access
 
 #### Mitigations
@@ -154,6 +154,6 @@ Having indexers on top of the chain will mitigate this issue but it will reduce 
 This is great in terms of garbage collection but it does not provide flexibility over retention period.
 ## Additional Resources
 
-* [Block Execution](https://docs.substrate.io/v3/concepts/execution/) Block execution details in Substrate.
-* [Substrate Storage Items](https://docs.substrate.io/v3/runtime/storage/) Storage Items details provided by Substrate.
-* [Off-Chain Features](https://docs.substrate.io/v3/concepts/off-chain-features/) Off-Chain features provided by Substrate.
+* [Transaction Lifecycle](https://docs.substrate.io/learn/transaction-lifecycle/) Transaction lifecycle details in Substrate.
+* [Substrate Runtime Storage](https://docs.substrate.io/build/runtime-storage/) Runtime Storage details provided by Substrate.
+* [Off-Chain Operations](https://docs.substrate.io/learn/offchain-operations/) Off-Chain operations provided by Substrate.
