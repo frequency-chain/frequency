@@ -20,4 +20,4 @@ hash=$(subwasm info --json $wasm_location | jq -r .blake2_256)
 
 cd scripts/js/onboard
 
-yarn && yarn upgrade-dev $ws_provider $sudo_secret $hash
+yarn && yarn upgrade-dev $ws_provider $sudo_secret $wasm_location
