@@ -623,8 +623,6 @@ pub mod pallet {
 		/// Additionally, the `add_key_payload` includes an expiration block number for both proofs, ensuring they are valid and must be greater than
 		/// the current block.
 		///
-		/// By using this function, MSA owners can conveniently add new keys to their accounts, facilitating multi-device usage or key rotation for improved security.
-		///
 		/// # Events
 		/// * [`Event::PublicKeyAdded`]
 		///
