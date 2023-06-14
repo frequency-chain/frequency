@@ -3,7 +3,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-06-14, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `benchmark-runner-qpqf8-nrqm7`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! HOSTNAME: `benchmark-runner-qpqf8-s8p9h`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
@@ -39,8 +39,8 @@ impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T
 		// Proof Size summary in bytes:
 		//  Measured:  `42`
 		//  Estimated: `1493`
-		// Minimum execution time: 6_540_000 picoseconds.
-		Weight::from_parts(6_722_000, 1493)
+		// Minimum execution time: 6_351_000 picoseconds.
+		Weight::from_parts(6_733_000, 1493)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -48,7 +48,7 @@ impl<T: frame_system::Config> pallet_timestamp::WeightInfo for SubstrateWeight<T
 		// Proof Size summary in bytes:
 		//  Measured:  `94`
 		//  Estimated: `0`
-		// Minimum execution time: 4_104_000 picoseconds.
-		Weight::from_parts(4_408_000, 0)
+		// Minimum execution time: 3_927_000 picoseconds.
+		Weight::from_parts(4_050_000, 0)
 	}
 }

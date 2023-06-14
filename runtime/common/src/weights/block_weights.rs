@@ -1,7 +1,23 @@
+// This file is part of Substrate.
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-06-14 (Y/M/D)
-//! HOSTNAME: `benchmark-runner-qpqf8-nrqm7`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! HOSTNAME: `benchmark-runner-qpqf8-s8p9h`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -18,6 +34,7 @@
 //   --chain=dev
 //   --warmup=10
 //   --repeat=100
+//   --header=./HEADER-APACHE2
 
 use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
@@ -27,17 +44,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 342_789, 533_107
-	///   Average:  352_283
-	///   Median:   347_980
-	///   Std-Dev:  19788.26
+	///   Min, Max: 332_140, 372_527
+	///   Average:  340_934
+	///   Median:   337_479
+	///   Std-Dev:  9121.06
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 386_797
-	///   95th: 366_524
-	///   75th: 351_338
+	///   99th: 369_889
+	///   95th: 364_558
+	///   75th: 343_597
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(352_283), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(340_934), 0);
 }
 
 #[cfg(test)]

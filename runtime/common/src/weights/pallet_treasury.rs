@@ -3,7 +3,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-06-14, STEPS: `50`, REPEAT: `20`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `benchmark-runner-qpqf8-nrqm7`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! HOSTNAME: `benchmark-runner-qpqf8-s8p9h`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
@@ -37,8 +37,8 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 207_000 picoseconds.
-		Weight::from_parts(270_000, 0)
+		// Minimum execution time: 204_000 picoseconds.
+		Weight::from_parts(245_000, 0)
 	}
 	/// Storage: Treasury ProposalCount (r:1 w:1)
 	/// Proof: Treasury ProposalCount (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
@@ -48,8 +48,8 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `146`
 		//  Estimated: `1489`
-		// Minimum execution time: 26_454_000 picoseconds.
-		Weight::from_parts(27_377_000, 1489)
+		// Minimum execution time: 26_402_000 picoseconds.
+		Weight::from_parts(27_176_000, 1489)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -61,8 +61,8 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `304`
 		//  Estimated: `3593`
-		// Minimum execution time: 28_626_000 picoseconds.
-		Weight::from_parts(29_373_000, 3593)
+		// Minimum execution time: 28_945_000 picoseconds.
+		Weight::from_parts(29_731_000, 3593)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -75,10 +75,10 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `317 + p * (12 ±0)`
 		//  Estimated: `3573`
-		// Minimum execution time: 8_139_000 picoseconds.
-		Weight::from_parts(10_068_625, 3573)
-			// Standard Error: 1_134
-			.saturating_add(Weight::from_parts(102_333, 0).saturating_mul(p.into()))
+		// Minimum execution time: 7_902_000 picoseconds.
+		Weight::from_parts(10_163_946, 3573)
+			// Standard Error: 1_265
+			.saturating_add(Weight::from_parts(107_602, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -88,8 +88,8 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `90`
 		//  Estimated: `1743`
-		// Minimum execution time: 6_398_000 picoseconds.
-		Weight::from_parts(6_504_000, 1743)
+		// Minimum execution time: 6_330_000 picoseconds.
+		Weight::from_parts(6_589_000, 1743)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -106,10 +106,10 @@ impl<T: frame_system::Config> pallet_treasury::WeightInfo for SubstrateWeight<T>
 		// Proof Size summary in bytes:
 		//  Measured:  `526 + p * (256 ±0)`
 		//  Estimated: `3593 + p * (5206 ±0)`
-		// Minimum execution time: 28_135_000 picoseconds.
-		Weight::from_parts(42_101_275, 3593)
-			// Standard Error: 18_335
-			.saturating_add(Weight::from_parts(40_608_178, 0).saturating_mul(p.into()))
+		// Minimum execution time: 28_544_000 picoseconds.
+		Weight::from_parts(40_773_550, 3593)
+			// Standard Error: 20_904
+			.saturating_add(Weight::from_parts(40_598_190, 0).saturating_mul(p.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().reads((3_u64).saturating_mul(p.into())))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
