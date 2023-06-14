@@ -10,7 +10,7 @@ repository = "https://github.com/libertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.1.5" }
+codec = { package = "parity-scale-codec", version = "3.2.2" }
 jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
 # Frequency crates
 pallet-stateful-storage-runtime-api = { path = "../runtime-api", default-features = false }

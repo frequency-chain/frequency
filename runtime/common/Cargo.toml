@@ -16,14 +16,14 @@ substrate-wasm-builder = { git = "https://github.com/paritytech/substrate", bran
 
 [dependencies]
 # Frequency
-codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
 	"derive",
 ] }
 common-primitives = { default-features = false, path = "../../common/primitives" }
-scale-info = { version = "2.2.0", default-features = false, features = [
+scale-info = { version = "2.5.0", default-features = false, features = [
 	"derive",
 ] }
-smallvec = "1.9.0"
+smallvec = "1.10.0"
 # Substrate
 frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }

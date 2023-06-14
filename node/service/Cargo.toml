@@ -9,16 +9,16 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.0.0"
 
 [dependencies]
-clap = { version = "4.0.29", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3.1.5" }
+clap = { version = "4.2.5", features = ["derive"] }
+codec = { package = "parity-scale-codec", version = "3.2.2" }
 derive_more = "0.99.17"
 futures = "0.3.25"
 hex = "0.4.3"
 hex-literal = "0.4.1"
 jsonrpsee = { version = "0.16.2", features = ["server"] }
 log = "0.4.17"
-serde = { version = "1.0.151", features = ["derive"] }
-tokio = { version = "1.24.1", features = ["macros", "time", "parking_lot"] }
+serde = { version = "1.0.163", features = ["derive"] }
+tokio = { version = "1.25.0", features = ["macros", "time", "parking_lot"] }
 
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
@@ -104,7 +104,7 @@ substrate-build-script-utils = { git = "https://github.com/paritytech/substrate"
 [dev-dependencies]
 substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
-scale-info = { version = "2.2.0", default-features = false, features = [
+scale-info = { version = "2.5.0", default-features = false, features = [
 "derive",
 ] }
 
