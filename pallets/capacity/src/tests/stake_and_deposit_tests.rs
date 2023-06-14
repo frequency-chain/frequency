@@ -2,7 +2,7 @@ use super::{mock::*, testing_utils::*};
 use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetails};
 use common_primitives::{
 	capacity::{
-		Nontransferable, StakingType,
+		Nontransferable,
 		StakingType::{MaximumCapacity, ProviderBoost},
 	},
 	msa::MessageSourceId,

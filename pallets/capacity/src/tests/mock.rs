@@ -1,7 +1,8 @@
 use crate as pallet_capacity;
 
+use crate::{BalanceOf, Config, StakingRewardClaim, StakingRewardsProvider};
 use common_primitives::{
-	node::{AccountId, Header, ProposalProvider},
+	node::{AccountId, Balance, Hash, Header, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
@@ -14,9 +15,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, DispatchError, Perbill,
 };
-// use common_primitives::node::{Balance, Hash, RewardEra};
-use common_primitives::node::RewardEra;
-// use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -136,24 +134,40 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
-// pub struct TestStakingRewardsProvider {}
-// impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
-// 	fn reward_pool_size(era: RewardEra) -> BalanceOf<Test> {
-// 		Balance::from(10_000u64);
-// 	}
-//
-// 	fn staking_reward_total(account_id: AccountId, from_era: RewardEra, to_era: RewardEra) -> BalanceOf<Test> {
-// 		Balance::from(10u64)
-// 	}
-//
-// 	fn validate_staking_reward_claim(account_id: AccountId, proof: Hash, payload: StakingRewardClaim<Test>) -> bool {
-// 		true
-// 	}
-//
-// 	fn payout_eligible(account_id: AccountId) -> bool {
-// 		true
-// 	}
-// }
+// not used yet
+pub struct TestStakingRewardsProvider {}
+
+type TestRewardEra = u32;
+
+impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
+	type AccountId = u64;
+	type RewardEra = TestRewardEra;
+	type Hash = Hash; // use what's in common_primitives::node
+
+	fn reward_pool_size() -> Result<BalanceOf<Test>, DispatchError> {
+		Ok(1000u64)
+	}
+
+	fn staking_reward_total(
+		account_id: Self::AccountId,
+		_from_era: Self::RewardEra,
+		_to_era: Self::RewardEra,
+	) -> Result<BalanceOf<Test>, DispatchError> {
+		if account_id > 2u64 {
+			Ok(10u64)
+		} else {
+			Ok(1u64)
+		}
+	}
+
+	fn validate_staking_reward_claim(
+		_account_id: Self::AccountId,
+		_proof: Self::Hash,
+		_payload: StakingRewardClaim<Test>,
+	) -> bool {
+		true
+	}
+}
 
 // Needs parameter_types! for the Perbill
 parameter_types! {
@@ -176,10 +190,10 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
-	type RewardEra = u32;
+	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
-	// type RewardsProvider = TestStakingRewardsProvider;
+	type RewardsProvider = TestStakingRewardsProvider;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
