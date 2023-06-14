@@ -1,6 +1,6 @@
 //! # Time-Release Module
 //!
-//! This pallet is a fork of the [ORML-vesting]( [vesting](https://github.com/open-web3-stack/open-runtime-module-library/tree/master/vesting)) polkadot-v0.9.40.
+//! This pallet is a fork of the [ORML-vesting]( [vesting](https://github.com/open-web3-stack/open-runtime-module-library/tree/master/vesting)) polkadot-v0.9.39.
 //!
 //! ## Overview
 //!
