@@ -34,7 +34,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 
 [dev-dependencies]
 env_logger = "0.10.0"
-pretty_assertions = "1.2.1"
+pretty_assertions = "1.3.0"
 sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 
 [features]

@@ -16,7 +16,7 @@ use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32, MultiSignature,
+	AccountId32, MultiSignature, Perbill,
 };
 
 pub use common_runtime::constants::*;
@@ -45,8 +45,11 @@ frame_support::construct_runtime!(
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
-// REVIEW: This is now the right type, but is the value correct?
-type MaxProposalWeight = frame_support::weights::constants::BlockExecutionWeight;
+parameter_types! {
+	pub MaxProposalWeight: frame_support::weights::Weight =
+		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+}
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;

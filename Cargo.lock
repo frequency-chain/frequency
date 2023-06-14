@@ -6441,6 +6441,7 @@ dependencies = [
  "pallet-handles",
  "pallet-schemas",
  "parity-scale-codec",
+ "pretty_assertions",
  "scale-info",
  "sp-core",
  "sp-io",

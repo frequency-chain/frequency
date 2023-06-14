@@ -36,6 +36,7 @@ pallet-handles = { path = "../handles", default-features = false }
 pallet-collective = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 sp-keystore = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 sp-keyring = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
+pretty_assertions = { version = "1.3.0"}
 
 [features]
 default = ["std"]
@@ -43,7 +44,8 @@ runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",
   "common-primitives/runtime-benchmarks",
-  "pallet-handles/runtime-benchmarks"
+  "pallet-handles/runtime-benchmarks",
+  "pallet-collective/runtime-benchmarks",
 ]
 std = [
   "codec/std",

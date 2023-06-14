@@ -4,6 +4,7 @@ use frame_support::{
 	traits::{ChangeMembers, Hash},
 };
 
+use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
 
 use crate::tests::mock::*;

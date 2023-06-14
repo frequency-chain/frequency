@@ -1,7 +1,6 @@
-
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-06-13 (Y/M/D)
-//! HOSTNAME: `benchmark-runner-qpqf8-zh55s`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! DATE: 2023-06-14 (Y/M/D)
+//! HOSTNAME: `Matthew-Orris-M2-Pro.local`, CPU: `<UNKNOWN>`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -9,7 +8,7 @@
 //! WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
-//   ./scripts/../target/release/frequency
+//   ./scripts/../target/bench-dev/frequency
 //   benchmark
 //   overhead
 //   --execution=wasm
@@ -27,17 +26,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 102_813, 110_045
-	///   Average:  103_658
-	///   Median:   103_458
-	///   Std-Dev:  1019.56
+	///   Min, Max: 85_847, 123_325
+	///   Average:  94_321
+	///   Median:   90_937
+	///   Std-Dev:  8182.4
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 108_641
-	///   95th: 104_722
-	///   75th: 103_738
+	///   99th: 119_640
+	///   95th: 116_359
+	///   75th: 94_195
 	pub const ExtrinsicBaseWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(103_658), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(94_321), 0);
 }
 
 #[cfg(test)]
