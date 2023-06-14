@@ -4,20 +4,16 @@ use crate::{
 	Config, CurrentEraInfo, Error, Event, RewardEraInfo, RewardPoolInfo, StakingAccountDetails,
 	StakingRewardClaim, StakingRewardPool, StakingRewardsProvider,
 };
-use frame_support::{assert_err, assert_ok};
+use frame_support::assert_err;
 
-use common_primitives::{
-	capacity::StakingType::MaximumCapacity,
-	node::{Hash, RewardEra},
-};
-use frame_support::traits::Get;
+use common_primitives::capacity::StakingType::MaximumCapacity;
 use sp_core::H256;
 
 #[test]
-fn test_basic_rewards_provider_trivial_test() {
+fn test_staking_reward_total_happy_path() {
 	new_test_ext().execute_with(|| {
+		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 11, started_at: 100 });
 		// this calls the implementation in the pallet
-		assert_eq!(Ok(100_000u64), Capacity::reward_pool_size());
 		assert_eq!(Ok(5u64), Capacity::staking_reward_total(1, 5u32, 10u32));
 		let proof = H256::random();
 		let payload: StakingRewardClaim<Test> = StakingRewardClaim {
@@ -31,9 +27,9 @@ fn test_basic_rewards_provider_trivial_test() {
 				stake_change_unlocking: Default::default(),
 			},
 			from_era: 1,
-			to_era: 2,
+			to_era: 5,
 		};
-		assert!(Capacity::validate_staking_reward_claim(1, proof, payload));
+		assert!(Capacity::validate_staking_reward_claim(4, proof, payload));
 	})
 }
 
@@ -47,18 +43,30 @@ fn test_payout_eligible() {
 
 #[test]
 fn test_reward_pool_size_happy_path() {
+	struct TestCase {
+		total_staked: u64,
+		expected_reward_pool: u64,
+	}
 	new_test_ext().execute_with(|| {
+		let test_cases: Vec<TestCase> = vec![
+			TestCase { total_staked: 0, expected_reward_pool: 0 },
+			TestCase { total_staked: 4, expected_reward_pool: 0 },
+			TestCase { total_staked: 10, expected_reward_pool: 1 },
+			TestCase { total_staked: 333, expected_reward_pool: 33 },
+		];
 		let era = 20u32;
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: era, started_at: 200u32 });
-		StakingRewardPool::<Test>::insert(
-			era,
-			RewardPoolInfo {
-				total_staked_token: 1_000u64,
-				total_reward_pool: 100u64,
-				unclaimed_balance: 1_000u64,
-			},
-		);
-		assert_eq!(Ok(100u64), Capacity::reward_pool_size());
+		for tc in test_cases {
+			StakingRewardPool::<Test>::insert(
+				era,
+				RewardPoolInfo {
+					total_staked_token: tc.total_staked,
+					total_reward_pool: 0u64,
+					unclaimed_balance: 0u64,
+				},
+			);
+			assert_eq!(Ok(tc.expected_reward_pool), Capacity::reward_pool_size());
+		}
 	})
 }
 

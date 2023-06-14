@@ -313,6 +313,10 @@ where
 }
 
 /// Needed data about a RewardPool for a given RewardEra.
+/// The total_reward_pool balance for the previous era is set when a new era starts,
+/// based on total staked token at the end of the previous era, and remains unchanged.
+/// The unclaimed_balance is initialized to total_reward_pool and deducted whenever a
+/// valid claim occurs.
 #[derive(
 	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]

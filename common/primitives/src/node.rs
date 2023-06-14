@@ -36,7 +36,7 @@ pub type Signature = MultiSignature;
 /// Index of a transaction in the chain.
 pub type Index = u32;
 
-/// the time period in blocks that Staking Rewards are based upon
+/// the type for the index of the Staking Reward time period
 pub type RewardEra = u64;
 
 /// A hash of some data used by the chain.
