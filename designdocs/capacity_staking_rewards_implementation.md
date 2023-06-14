@@ -23,6 +23,7 @@ This document outlines how to implement the Staking for Rewards feature describe
 1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon. RewardEra is to distinguish it easily from Substrate's staking pallet Era, or the index of said time period.
 1. **Staking Reward**: a per-RewardEra share of a staking reward pool of FRQCY tokens for a given staking account.
 1. **Reward Pool**:  a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
+1. **StakingRewardsProvider**: a trait that encapsulates the economic model for staking rewards, providing functionality for calculating the reward pool and staking rewards.
 
 ## Staking Token Rewards
 

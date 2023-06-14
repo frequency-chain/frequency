@@ -642,7 +642,7 @@ impl<T: Config> Pallet<T> {
 			Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
-			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
+			CurrentEpoch::<T>::set(current_epoch.saturating_add(One::one()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			T::WeightInfo::on_initialize()
 				.saturating_add(T::DbWeight::get().reads(1))
@@ -657,7 +657,7 @@ impl<T: Config> Pallet<T> {
 		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era();
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			CurrentEraInfo::<T>::set(RewardEraInfo {
-				era_index: current_era_info.era_index.saturating_add(1u8.into()),
+				era_index: current_era_info.era_index.saturating_add(One::one()),
 				started_at: current_block,
 			});
 			// TODO: modify reads/writes as needed when RewardPoolInfo stuff is added

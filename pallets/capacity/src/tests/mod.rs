@@ -1,7 +1,7 @@
 mod capacity_details_tests;
 mod epochs_tests;
 mod eras_tests;
-mod mock;
+pub mod mock;
 mod other_tests;
 mod replenishment_tests;
 mod rewards_provider_tests;
