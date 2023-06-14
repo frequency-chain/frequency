@@ -1,6 +1,7 @@
+
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-06-14 (Y/M/D)
-//! HOSTNAME: `Matthew-Orris-M2-Pro.local`, CPU: `<UNKNOWN>`
+//! HOSTNAME: `benchmark-runner-qpqf8-nrqm7`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -8,7 +9,7 @@
 //! WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
 
 // Executed Command:
-//   ./scripts/../target/bench-dev/frequency
+//   ./scripts/../target/release/frequency
 //   benchmark
 //   overhead
 //   --execution=wasm
@@ -26,17 +27,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 379_750, 1_704_875
-	///   Average:  589_030
-	///   Median:   400_958
-	///   Std-Dev:  327909.46
+	///   Min, Max: 342_789, 533_107
+	///   Average:  352_283
+	///   Median:   347_980
+	///   Std-Dev:  19788.26
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 1_474_208
-	///   95th: 1_235_416
-	///   75th: 721_833
+	///   99th: 386_797
+	///   95th: 366_524
+	///   75th: 351_338
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(589_030), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(352_283), 0);
 }
 
 #[cfg(test)]
