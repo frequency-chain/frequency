@@ -35,7 +35,7 @@
 //! * **Staker:** An account that stakes tokens to the Frequency network in exchange for Capacity.
 //! * **Target** A provider MSA account that receives Capacity.
 //! * **Epoch Period:** The length of an epoch in blocks, used for replenishment and thawing.
-//! * **Replenishable:**  The ability of a MSA account to be refilled with Capacity after an epoch period.
+//! * **Replenishable:**  The ability of a Provider MSA account to be refilled with Capacity after an epoch period.
 //!
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
