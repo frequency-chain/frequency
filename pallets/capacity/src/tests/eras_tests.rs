@@ -1,10 +1,8 @@
 use super::mock::*;
 use crate::{
 	tests::testing_utils::{run_to_block, system_run_to_block},
-	Config, CurrentEraInfo, Error, Event, RewardEraInfo,
+	CurrentEraInfo, RewardEraInfo,
 };
-
-use frame_support::traits::Get;
 
 #[test]
 fn start_new_era_if_needed() {

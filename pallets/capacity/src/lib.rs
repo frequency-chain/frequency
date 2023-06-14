@@ -57,7 +57,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, One, Saturating, Zero},
+	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
 use sp_std::ops::Mul;
@@ -755,6 +755,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 
 	// Calculate the size of the reward pool for the current era, based on current staked token
 	// and the other determined factors of the current economic model
+	// Currently set to 10% of total staked token.
 	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError> {
 		let current_era_info = CurrentEraInfo::<T>::get();
 		let current_staked =
@@ -762,11 +763,14 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		if current_staked.total_staked_token.is_zero() {
 			return Ok(BalanceOf::<T>::zero())
 		}
-		// TODO: why is .div not a fn?
-		Ok(current_staked.total_staked_token / BalanceOf::<T>::from(10u8))
+		Ok(current_staked
+			.total_staked_token
+			.checked_div(&BalanceOf::<T>::from(10u8))
+			.unwrap_or_default())
 	}
 
-	// checks plus a reward calculation based on economic model for the era range
+	// Performs range checks plus a reward calculation based on economic model for the era range
+	// Currently just rewards 1 unit per era for a valid range since there is no history storage
 	fn staking_reward_total(
 		_account_id: T::AccountId,
 		from_era: T::RewardEra,
