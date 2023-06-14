@@ -539,6 +539,7 @@ jobs:
             --no-prometheus \
             --ws-port $((9944)) \
             --reserved-only \
+            --no-hardware-benchmarks \
             --tmp \
             -- \
             --reserved-only \
@@ -554,6 +555,7 @@ jobs:
             --rpc-methods=Unsafe \
             --no-telemetry \
             --no-prometheus \
+            --no-hardware-benchmarks \
             --ws-port $((9946)) \
             --reserved-only \
             --tmp \
