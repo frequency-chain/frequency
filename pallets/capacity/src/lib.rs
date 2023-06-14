@@ -31,11 +31,11 @@
 //! - staking and, updating,
 //!
 //! ## Terminology
-//! * **Staker:** [insert description].
-//! * **Target** [insert description].
-//! * **Epoch Period:** [insert description here].
-//! * **Capacity:** [insert description here].
-//! * **Replenishable:** [insert description here].
+//! * **Capacity:** A refillable and non-transferable resource that can be used to pay for transactions on the network.
+//! * **Staker:** An account that stakes tokens to the Frequency network in exchange for Capacity.
+//! * **Target** A provider MSA account that receives Capacity.
+//! * **Epoch Period:** The length of an epoch in blocks, used for replenishment and thawing.
+//! * **Replenishable:**  The ability of a provider MSA account to be refilled with Capacity after an epoch period.
 //!
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
