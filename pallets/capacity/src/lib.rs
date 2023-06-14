@@ -354,7 +354,6 @@ pub mod pallet {
 		/// ### Errors
 		///
 		/// - Returns Error::ZeroAmountNotAllowed if the staker is attempting to stake a zero amount.
-
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
 		/// - Returns Error::CannotChangeStakingType if the staking account exists and staking_type is different
