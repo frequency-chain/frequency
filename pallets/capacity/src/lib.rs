@@ -57,7 +57,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, Saturating, Zero},
+	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
 use sp_std::ops::Mul;
@@ -92,6 +92,7 @@ const STAKING_ID: LockIdentifier = *b"netstkng";
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use codec::EncodeLike;
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
@@ -164,6 +165,8 @@ pub mod pallet {
 			+ Copy
 			+ sp_std::hash::Hash
 			+ MaxEncodedLen
+			+ EncodeLike
+			+ Into<BalanceOf<Self>>
 			+ TypeInfo;
 
 		/// The number of blocks in a Staking Era
@@ -174,8 +177,8 @@ pub mod pallet {
 		#[pallet::constant]
 		type StakingRewardsPastErasMax: Get<u32>;
 
-		// The StakingRewardsProvider used by this pallet in a given runtime
-		// type RewardsProvider: StakingRewardsProvider<Self>;
+		/// The StakingRewardsProvider used by this pallet in a given runtime
+		type RewardsProvider: StakingRewardsProvider<Self>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -231,11 +234,17 @@ pub mod pallet {
 	pub type EpochLength<T: Config> =
 		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 
-	/// Information for the current era
+	/// Information about the current staking reward era.
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_era)]
 	pub type CurrentEraInfo<T: Config> =
 		StorageValue<_, RewardEraInfo<T::RewardEra, T::BlockNumber>, ValueQuery>;
+
+	/// Reward Pool history
+	#[pallet::storage]
+	#[pallet::getter(fn get_reward_pool_for_era)]
+	pub type StakingRewardPool<T: Config> =
+		StorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -342,7 +351,6 @@ pub mod pallet {
 		/// ### Errors
 		///
 		/// - Returns Error::ZeroAmountNotAllowed if the staker is attempting to stake a zero amount.
-
 		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
 		/// - Returns Error::CannotChangeStakingType if the staking account exists and staking_type is different
@@ -575,8 +583,8 @@ impl<T: Config> Pallet<T> {
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let current_epoch: T::EpochNumber = Self::get_current_epoch();
-		let thaw_at =
-			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
+		let thaw_period = T::UnstakingThawPeriod::get();
+		let thaw_at = current_epoch.saturating_add(thaw_period.into());
 
 		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
 
@@ -631,7 +639,7 @@ impl<T: Config> Pallet<T> {
 			Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
-			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
+			CurrentEpoch::<T>::set(current_epoch.saturating_add(One::one()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			T::WeightInfo::on_initialize()
 				.saturating_add(T::DbWeight::get().reads(1))
@@ -644,10 +652,10 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
 		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era();
-		if current_block.saturating_sub(current_era_info.era_start) >= T::EraLength::get().into() {
+		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			CurrentEraInfo::<T>::set(RewardEraInfo {
-				current_era: current_era_info.current_era.saturating_add(1u8.into()),
-				era_start: current_block,
+				era_index: current_era_info.era_index.saturating_add(One::one()),
+				started_at: current_block,
 			});
 			// TODO: modify reads/writes as needed when RewardPoolInfo stuff is added
 			T::WeightInfo::on_initialize()
@@ -733,5 +741,53 @@ impl<T: Config> Replenishable for Pallet<T> {
 			return capacity_details.can_replenish(Self::get_current_epoch())
 		}
 		false
+	}
+}
+
+impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
+	type AccountId = T::AccountId;
+	type RewardEra = T::RewardEra;
+	type Hash = T::Hash;
+
+	// Calculate the size of the reward pool for the current era, based on current staked token
+	// and the other determined factors of the current economic model
+	// Currently set to 10% of total staked token.
+	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError> {
+		let current_era_info = CurrentEraInfo::<T>::get();
+		let current_staked =
+			StakingRewardPool::<T>::get(current_era_info.era_index).unwrap_or_default();
+		if current_staked.total_staked_token.is_zero() {
+			return Ok(BalanceOf::<T>::zero())
+		}
+		Ok(current_staked
+			.total_staked_token
+			.checked_div(&BalanceOf::<T>::from(10u8))
+			.unwrap_or_default())
+	}
+
+	// Performs range checks plus a reward calculation based on economic model for the era range
+	// Currently just rewards 1 unit per era for a valid range since there is no history storage
+	fn staking_reward_total(
+		_account_id: T::AccountId,
+		from_era: T::RewardEra,
+		to_era: T::RewardEra,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let max_eras = T::RewardEra::from(T::StakingRewardsPastErasMax::get());
+		let era_range = from_era.saturating_sub(to_era);
+		ensure!(era_range.le(&max_eras), Error::<T>::EraOutOfRange);
+		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
+		let current_era_info = Self::get_current_era();
+		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
+		let per_era = BalanceOf::<T>::one();
+		let num_eras = to_era.saturating_sub(from_era);
+		Ok(per_era.saturating_mul(num_eras.into()))
+	}
+
+	fn validate_staking_reward_claim(
+		_account_id: T::AccountId,
+		_proof: T::Hash,
+		_payload: StakingRewardClaim<T>,
+	) -> bool {
+		true
 	}
 }

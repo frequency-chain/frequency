@@ -224,6 +224,7 @@ impl pallet_capacity::Config for Test {
 	type RewardEra = u32;
 	type EraLength = ConstU32<5>;
 	type StakingRewardsPastErasMax = ConstU32<2>;
+	type RewardsProvider = Capacity;
 }
 
 use pallet_balances::Call as BalancesCall;

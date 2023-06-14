@@ -20,9 +20,10 @@ This document outlines how to implement the Staking for Rewards feature describe
 1. **Capacity**: the non-transferrable utility token which can be used only to pay for certain Frequency transactions.
 1. **Account**: a Frequency System Account controlled by a private key and addressed by a public key, having at least a minimum balance (currently 0.01 FRQCY).
 1. **Stake** (verb): to lock some amount of a token against transfer for a period of time in exchange for some reward.
-1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon. RewardEra is to distinguish it easily from Substrate's staking pallet Era.
+1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon. RewardEra is to distinguish it easily from Substrate's staking pallet Era, or the index of said time period.
 1. **Staking Reward**: a per-RewardEra share of a staking reward pool of FRQCY tokens for a given staking account.
 1. **Reward Pool**:  a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
+1. **StakingRewardsProvider**: a trait that encapsulates the economic model for staking rewards, providing functionality for calculating the reward pool and staking rewards.
 
 ## Staking Token Rewards
 
@@ -101,10 +102,8 @@ pub struct StakingRewardClaim<T: Config> {
 
 pub trait StakingRewardsProvider<T: Config> {
 
-    /// Return the size of the reward pool for the given era, in token
-    /// Errors:
-    ///     - EraOutOfRange when `era` is prior to the history retention limit, or greater than the current RewardEra.
-    fn reward_pool_size(era: EraOf<T>) -> BalanceOf<T>;
+    /// Calculate the size of the reward pool for the given era, in token
+    fn reward_pool_size() -> BalanceOf<T>;
 
     /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
     /// Errors:
@@ -159,14 +158,10 @@ pub trait Config: frame_system::Config {
 This is the necessary information about the reward pool for a given Reward Era and how it's stored.
 ```rust
 pub struct RewardPoolInfo<T: Config> {
-    /// the total staked for rewards in the associated RewardEra
-    total_staked_token: BalanceOf<T>,
-    /// the remaining rewards balance to be claimed
-    unclaimed_balance: BalanceOf<T>
 }
+/// Reward Pool history
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
-/// Reward Pool history
 pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
