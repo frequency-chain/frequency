@@ -111,9 +111,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    # This job intermittently fails on EKS runners and must be run on standalone until
-    # https://www.pivotaltracker.com/story/show/185045683 is resolved.
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     env:
       NETWORK: mainnet
@@ -203,8 +201,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    # Keeping this job on self-hosted always on runners due to memory error 137
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
