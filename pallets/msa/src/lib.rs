@@ -610,12 +610,17 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Adds a given `new_key` to `msa_id` of the account signing `msa_owner_proof`, which must match the MSA in `add_key_payload`.
-		/// The `new_key` must sign the `add_key_payload` to authorize the addition.
+		/// Adds a new public key to an existing Message Source Account (MSA). This functionality enables the MSA owner to manage multiple keys
+		/// for their account or rotate keys for enhanced security.
 		///
-		/// # Remarks
-		/// * Origin can be same as msa owner.
-		/// * Signatures should be over the [`AddKeyData`] struct
+		/// The `origin` parameter represents the account from which the function is called and can be either the MSA owner's account or a delegated provider's account,
+		/// depending on the intended use.
+		///
+		/// The function requires two signatures: `msa_owner_proof` and `new_key_owner_proof`, which serve as proofs of ownership for the existing MSA
+		/// and the new public key account, respectively.  This ensures that a new key cannot be added without permission of both the MSA owner and the owner of the new key.
+		///
+		/// The necessary information for the key addition, the new public key and the MSA ID, is contained in the `add_key_payload` parameter of type [AddKeyData].
+		/// It also contains an expiration block number for both proofs, ensuring they are valid and must be greater than the current block.
 		///
 		/// # Events
 		/// * [`Event::PublicKeyAdded`]
