@@ -1082,7 +1082,9 @@ impl<T: Config> Pallet<T> {
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 		let wrapped_payload = wrap_binary_data(payload);
+
 		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+
 		Ok(())
 	}
 
