@@ -78,7 +78,6 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
-// use common_primitives::capacity::StakingRewardsProvider;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::TryStateSelect;
 
@@ -411,7 +410,7 @@ impl pallet_capacity::Config for Runtime {
 	type RewardEra = RewardEra;
 	type EraLength = ConstU32<{ 14 * DAYS }>;
 	type StakingRewardsPastErasMax = ConstU32<26u32>; // 1 year
-												  // type RewardsProvider = StakingRewardsProvider;
+	type RewardsProvider = Capacity;
 }
 
 impl pallet_schemas::Config for Runtime {
