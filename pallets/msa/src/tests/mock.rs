@@ -16,7 +16,7 @@ use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32, MultiSignature,
+	AccountId32, MultiSignature, Perbill,
 };
 
 pub use common_runtime::constants::*;
@@ -45,6 +45,11 @@ frame_support::construct_runtime!(
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
+parameter_types! {
+	pub MaxProposalWeight: frame_support::weights::Weight =
+		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+}
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -56,6 +61,7 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
 	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 impl frame_system::Config for Test {
@@ -328,12 +334,12 @@ pub fn generate_test_signature() -> MultiSignature {
 
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
-	use sp_keystore::{testing::KeyStore, KeystoreExt, SyncCryptoStorePtr};
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
 	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
-	ext.register_extension(KeystoreExt(Arc::new(KeyStore::new()) as SyncCryptoStorePtr));
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
 }

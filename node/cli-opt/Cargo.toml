@@ -9,4 +9,4 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.0.0"
 
 [dependencies]
-clap = { version = "4.0.29", features = ["derive"] }
+clap = { version = "4.2.5", features = ["derive"] }

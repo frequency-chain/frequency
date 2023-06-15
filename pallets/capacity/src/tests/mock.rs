@@ -69,6 +69,10 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
 	type WeightInfo = ();
+	type FreezeIdentifier = ();
+	type HoldIdentifier = ();
+	type MaxFreezes = ConstU32<0>;
+	type MaxHolds = ConstU32<0>;
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;

@@ -121,7 +121,6 @@ pub mod pallet {
 
 	// Storage
 	#[pallet::pallet]
-	#[pallet::generate_store(pub (super) trait Store)]
 	pub struct Pallet<T>(_);
 
 	/// - Keys: k1: `CanonicalBase`, k2: `HandleSuffix`
