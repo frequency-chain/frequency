@@ -14,7 +14,7 @@ name = "frequency"
 path = "src/main.rs"
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.39" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 
 [dependencies]
 # Frequency Runtime

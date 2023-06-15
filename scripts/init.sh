@@ -239,8 +239,8 @@ onboard-frequency-rococo-local)
       genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-rococo-local")
       docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-rococo-local")
-      ./target/release/frequency export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
+      genesis=$(./target/debug/frequency export-genesis-state --chain="frequency-rococo-local")
+      ./target/debug/frequency export-genesis-wasm --chain="frequency-rococo-local" > $wasm_location
     fi
 
   echo "WASM path:" "${wasm_location}"

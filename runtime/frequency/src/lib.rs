@@ -7,9 +7,7 @@
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{
-	RelayNumberStrictlyIncreases, RelaychainBlockNumberProvider,
-};
+use cumulus_pallet_parachain_system::{RelayNumberStrictlyIncreases, RelaychainDataProvider};
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -251,7 +249,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 40,
+	spec_version: 41,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -265,7 +263,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 40,
+	spec_version: 41,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -464,7 +462,7 @@ impl pallet_time_release::Config for Runtime {
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
 	type MaxReleaseSchedules = MaxReleaseSchedules;
 	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-	type BlockNumberProvider = RelaychainBlockNumberProvider<Runtime>;
+	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
 }
@@ -498,11 +496,16 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
+	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
 	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
+	pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
@@ -552,6 +555,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxCollectivesProposalWeight;
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -565,6 +569,7 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxCollectivesProposalWeight;
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -1069,6 +1074,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+
+		fn metadata_versions() -> Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 

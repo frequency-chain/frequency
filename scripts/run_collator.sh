@@ -5,7 +5,7 @@
 
 set -e -o pipefail
 
-ctpc="${Frequency_BINARY_PATH:-./target/release/frequency}"
+ctpc="${Frequency_BINARY_PATH:-./target/debug/frequency}"
 
 if [ ! -x "$ctpc" ]; then
     echo "FATAL: $ctpc does not exist or is not executable"

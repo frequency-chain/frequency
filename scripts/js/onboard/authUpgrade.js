@@ -13,7 +13,7 @@ async function main() {
             `--- Submitting extrinsic to authorize rococo-2000 upgrade ---`
         );
         const sudoCall = await api.tx.sudo
-            .sudo(api.tx.parachainSystem.authorizeUpgrade(hash))
+            .sudo(api.tx.parachainSystem.authorizeUpgrade(hash, false))
             .signAndSend(sudo, (result) => {
                 console.log(`Current status is ${result.status}`);
                 if (result.status.isInBlock) {

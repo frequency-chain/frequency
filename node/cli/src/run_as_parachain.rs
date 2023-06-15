@@ -18,7 +18,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		let id = ParaId::from(para_id);
 
 		let parachain_account =
-			AccountIdConversion::<polkadot_primitives::v2::AccountId>::into_account_truncating(&id);
+			AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
 		let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
 		let block: Block = generate_genesis_block(&*config.chain_spec, state_version)

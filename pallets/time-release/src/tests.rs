@@ -4,7 +4,7 @@ use chrono::{DateTime, Days, Duration, TimeZone, Utc};
 use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Imbalance};
 use mock::*;
 use pallet_balances::{BalanceLock, Reasons};
-use sp_runtime::{traits::Dispatchable, SaturatedConversion};
+use sp_runtime::{traits::Dispatchable, SaturatedConversion, TokenError};
 
 #[test]
 fn time_release_from_chain_spec_works() {
@@ -157,7 +157,7 @@ fn transfer_fails_if_transfer_err() {
 			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 1u32, per_period: 100u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
-			pallet_balances::Error::<Test, _>::InsufficientBalance,
+			TokenError::FundsUnavailable
 		);
 	});
 }
@@ -202,19 +202,21 @@ fn claim_works() {
 
 		MockBlockNumberProvider::set(11);
 		// remain locked if not claimed
-		assert!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10).is_err());
+		assert!(
+			PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 10).is_err()
+		);
 		// unlocked after claiming
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
-		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
+		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 10));
 		// more are still locked
-		assert!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1).is_err());
+		assert!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 1).is_err());
 
 		MockBlockNumberProvider::set(21);
 		// claim more
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
-		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
+		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 10));
 		// all used up
 		assert_eq!(PalletBalances::free_balance(BOB), 0);
 
@@ -265,11 +267,11 @@ fn update_release_schedules_works() {
 
 		MockBlockNumberProvider::set(11);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 1).is_err());
+		assert!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 1).is_err());
 
 		MockBlockNumberProvider::set(21);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), ALICE, 10));
+		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 10));
 
 		// empty release schedules cleanup the storage and unlock the fund
 		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
@@ -286,7 +288,7 @@ fn update_release_schedules_works() {
 #[test]
 fn update_release_schedules_fails_if_unexpected_existing_locks() {
 	ExtBuilder::build().execute_with(|| {
-		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(ALICE), BOB, 1));
+		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(ALICE), BOB, 1));
 		PalletBalances::set_lock(*b"prelocks", &BOB, 0u64, WithdrawReasons::all());
 	});
 }
@@ -392,15 +394,23 @@ fn cliff_release_works() {
 			assert_eq!(PalletBalances::free_balance(BOB), VESTING_AMOUNT);
 			assert_eq!(PalletBalances::locks(&BOB), vec![balance_lock.clone()]);
 			assert_noop!(
-				PalletBalances::transfer(RuntimeOrigin::signed(BOB), CHARLIE, VESTING_AMOUNT),
-				pallet_balances::Error::<Test>::LiquidityRestrictions,
+				PalletBalances::transfer_allow_death(
+					RuntimeOrigin::signed(BOB),
+					CHARLIE,
+					VESTING_AMOUNT
+				),
+				TokenError::Frozen,
 			);
 		}
 
 		MockBlockNumberProvider::set(VESTING_PERIOD);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert!(PalletBalances::locks(&BOB).is_empty());
-		assert_ok!(PalletBalances::transfer(RuntimeOrigin::signed(BOB), CHARLIE, VESTING_AMOUNT));
+		assert_ok!(PalletBalances::transfer_allow_death(
+			RuntimeOrigin::signed(BOB),
+			CHARLIE,
+			VESTING_AMOUNT
+		));
 	});
 }
 
@@ -420,7 +430,7 @@ fn cliff_release_works() {
 /// - 8/24th of total (1/3rd of quarterly) on Feb 1st 2025 (Q2 Award)
 /// - 9/24th of total (2/3rd of quarterly) on Mar 1st 2025 (Q2 Award)
 #[test]
-fn alice_time_releaes_schedule() {
+fn alice_time_releases_schedule() {
 	ExtBuilder::build().execute_with(|| {
 		// First Unlock = ~ July 1, 2024
 		// Unlock monthly

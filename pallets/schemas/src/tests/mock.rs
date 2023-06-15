@@ -9,7 +9,7 @@ use common_primitives::node::{AccountId, Header};
 pub use common_runtime::constants::*;
 use pallet_collective;
 use smallvec::smallvec;
-use sp_core::{Encode, H256};
+use sp_core::{parameter_types, Encode, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	AccountId32, Perbill,
@@ -34,6 +34,12 @@ frame_support::construct_runtime!(
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
+
+parameter_types! {
+	pub MaxProposalWeight: frame_support::weights::Weight =
+		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+}
+
 type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
@@ -44,7 +50,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type MaxMembers = CouncilMaxMembers;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
-	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
+
+	type SetMembersOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxProposalWeight;
 }
 
 pub type MaxSchemaRegistrations = ConstU16<64_000>;

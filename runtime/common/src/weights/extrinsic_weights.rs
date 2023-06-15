@@ -1,6 +1,23 @@
+// This file is part of Substrate.
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// 	http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2023-06-06 (Y/M/D)
-//! HOSTNAME: `benchmark-runner-qpqf8-xgmvq`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! DATE: 2023-06-14 (Y/M/D)
+//! HOSTNAME: `benchmark-runner-qpqf8-s8p9h`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -17,6 +34,7 @@
 //   --chain=dev
 //   --warmup=10
 //   --repeat=100
+//   --header=./HEADER-APACHE2
 
 use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
@@ -26,17 +44,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 100_860, 110_696
-	///   Average:  101_631
-	///   Median:   101_308
-	///   Std-Dev:  1361.38
+	///   Min, Max: 102_963, 112_071
+	///   Average:  103_771
+	///   Median:   103_440
+	///   Std-Dev:  1391.64
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 109_311
-	///   95th: 102_382
-	///   75th: 101_593
+	///   99th: 112_053
+	///   95th: 104_993
+	///   75th: 103_707
 	pub const ExtrinsicBaseWeight: Weight =
-		Weight::from_ref_time(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(101_631));
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(103_771), 0);
 }
 
 #[cfg(test)]

@@ -13,31 +13,31 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.1.5", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
   "derive",
 ] }
 log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.2.0", default-features = false, features = [
+scale-info = { version = "2.5.0", default-features = false, features = [
   "derive",
 ] }
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.39" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
-frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
-sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.39" }
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.42" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-cid = { version = "0.10", default-features = false }
+cid = { version = "0.10.1", default-features = false }
 multibase = { version ="0.9", default-features = false }
 
 [dev-dependencies]
 common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
 rand = "0.8.5"
-pretty_assertions = "1"
+pretty_assertions = "1.3.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
