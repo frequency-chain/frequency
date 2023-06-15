@@ -526,42 +526,48 @@ jobs:
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
+      - name: Docker network
+        run: docker network create net-${{env.RELEASE_BRANCH_NAME}}
       - name: Start Test Node
         working-directory: ${{env.BIN_DIR}}
         run: |
-          ./${{env.TEST_BIN_FILENAME}} \
-            --chain=frequency-bench \
-            --rpc-external \
-            --rpc-cors=all \
-            --ws-external \
-            --rpc-methods=Unsafe \
-            --no-telemetry \
-            --no-prometheus \
-            --ws-port $((9944)) \
-            --reserved-only \
-            --no-hardware-benchmarks \
-            --tmp \
-            -- \
-            --reserved-only \
-            &
+          docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
+            -v `pwd`:/app \
+            --name test-node \
+            ubuntu:22.04 \
+            "/app/${{env.TEST_BIN_FILENAME}} \
+              --chain=frequency-bench \
+              --rpc-external \
+              --rpc-cors=all \
+              --ws-external \
+              --rpc-methods=Unsafe \
+              --no-telemetry \
+              --no-prometheus \
+              --reserved-only \
+              --no-hardware-benchmarks \
+              --tmp \
+              -- \
+              --reserved-only"
       - name: Start Reference Node
         working-directory: ${{env.BIN_DIR}}
         run: |
-          ./${{env.REF_BIN_FILENAME}} \
-            --chain=frequency-bench \
-            --rpc-external \
-            --rpc-cors=all \
-            --ws-external \
-            --rpc-methods=Unsafe \
-            --no-telemetry \
-            --no-prometheus \
-            --no-hardware-benchmarks \
-            --ws-port $((9946)) \
-            --reserved-only \
-            --tmp \
-            --  \
-            --reserved-only \
-            &
+          docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
+            -v `pwd`:/app \
+            --name ref-node \
+            ubuntu:22.04 \
+            "/app/${{env.REF_BIN_FILENAME}} \
+              --chain=frequency-bench \
+              --rpc-external \
+              --rpc-cors=all \
+              --ws-external \
+              --rpc-methods=Unsafe \
+              --no-telemetry \
+              --no-prometheus \
+              --reserved-only \
+              --no-hardware-benchmarks \
+              --tmp \
+              -- \
+              --reserved-only"
       - name: Prepare Output
         working-directory: ${{env.OUTPUT_DIR}}
         run: |
@@ -573,8 +579,9 @@ jobs:
           echo "Test version: $BIN_VERSION" >> ${{env.OUTPUT_FILENAME}}
           echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
       - name: Compare Metadata
+        timeout-minutes: 10
         run: |
-          CMD="docker run --pull always --network host jacogr/polkadot-js-tools:0.55.3 metadata ws://localhost:9946 ws://localhost:9944"
+          CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.55.3 metadata ws://ref-node:9944 ws://test-node:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
@@ -596,7 +603,9 @@ jobs:
         if: always()
         run: |
           echo "Attempting to kill all frequency processes..."
-          pkill -9 ${{env.FREQUENCY_PROCESS_NAME}}
+          docker stop ref-node || true
+          docker stop test-node || true
+          docker network rm net-${{env.RELEASE_BRANCH_NAME}}
 
   wait-for-all-builds:
     needs:
