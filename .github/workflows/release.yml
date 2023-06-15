@@ -535,7 +535,7 @@ jobs:
             -v `pwd`:/app \
             --name test-node \
             ubuntu:22.04 \
-            "/app/${{env.TEST_BIN_FILENAME}} \
+              /bin/sh -c "chmod +x /app/${{env.TEST_BIN_FILENAME}} && /app/${{env.TEST_BIN_FILENAME}} \
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
@@ -555,7 +555,7 @@ jobs:
             -v `pwd`:/app \
             --name ref-node \
             ubuntu:22.04 \
-            "/app/${{env.REF_BIN_FILENAME}} \
+              /bin/sh -c "chmod +x /app/${{env.REF_BIN_FILENAME}} && /app/${{env.REF_BIN_FILENAME}} \
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
