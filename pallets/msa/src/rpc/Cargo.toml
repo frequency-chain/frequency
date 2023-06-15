@@ -1,6 +1,6 @@
 [package]
 name = "pallet-msa-rpc"
-version = "0.0.0"
+version = "1.7.0-rc1+polkadot0.9.42"
 description = "A package that adds RPC to Msa pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
