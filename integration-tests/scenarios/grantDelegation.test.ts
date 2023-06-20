@@ -4,6 +4,8 @@ import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { createAndFundKeypair, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
+import { SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { firstValueFrom } from "rxjs";
 
 describe("Delegation Scenario Tests", function () {
     let keys: KeyringPair;
@@ -12,6 +14,7 @@ describe("Delegation Scenario Tests", function () {
     let providerKeys: KeyringPair;
     let otherProviderKeys: KeyringPair;
     let schemaId: u16;
+    let schemaId2: SchemaId;
     let providerId: u64;
     let otherProviderId: u64;
     let msaId: u64;
@@ -89,12 +92,19 @@ describe("Delegation Scenario Tests", function () {
                 },
             ]
         }, "AvroBinary", "OnChain");
-        const [createSchemaEvent] = await createSchemaOp.fundAndSend();
+        let [createSchemaEvent] = await createSchemaOp.fundAndSend();
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
-            schemaId = createSchemaEvent.data[1];
+            schemaId = createSchemaEvent.data.schemaId;
         }
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+
+        // Create a second schema
+        [createSchemaEvent] = await createSchemaOp.fundAndSend();
+        assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
+        if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+            schemaId2 = createSchemaEvent.data.schemaId;
+        }
     });
 
     describe("delegation grants", function () {
@@ -159,6 +169,36 @@ describe("Delegation Scenario Tests", function () {
             }
         });
 
+        it('initial granted schemas should be correct', async function () {
+            let schemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            assert.equal(schemaIds.isSome, true);
+            assert.deepEqual([schemaId], schemaIds.unwrap().toArray());
+        });
+
+        /// TODO: As of this writing there is no extrinsic available to ADD schema permissions to a grant.
+        ///       The only method available is `grantDelegation` which *overwrites* any existing list of
+        ///       schema permissions. If a "add_schema_permission" extrinsic becomes available, rewrite this test.
+        it('should grant additional schema permissions', async function() {
+            const payload = await generateDelegationPayload({
+                authorizedMsaId: providerId,
+                schemaIds: [schemaId2],
+            });
+            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+
+            const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+            const [grantDelegationEvent] = await grantDelegationOp.fundAndSend();
+            assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
+            if (grantDelegationEvent && grantDelegationOp.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
+                assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
+                assert.deepEqual(grantDelegationEvent.data.delegatorId, msaId, 'delegator IDs should match');
+            }
+            let grantedSchemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            // NOTE: As of this writing, this is a false pass. The returned array includes `schemaId`, but `schemaId` has actually been
+            //       revoked as of the current block, because of the way `grantDelegation` behaves. But we only get back an array of ids,
+            //       without the context of the block number at which they have been revoked (zero for not revoked)
+            assert.deepEqual([schemaId, schemaId2], grantedSchemaIds.unwrap().toArray());
+        })
+
     });
 
     describe("revoke schema permissions", function () {
@@ -190,6 +230,15 @@ describe("Delegation Scenario Tests", function () {
 
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [sid]);
             await assert.rejects(op.fundAndSend(), { name: 'SchemaNotGranted' });
+        });
+
+        it("should successfully revoke granted schema", async function () {
+            const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId]);
+            await assert.doesNotReject(op.fundAndSend());
+            let grantedSchemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            // NOTE: As of this writing, this test fails because the RPC only returns a list of SchemaIds present in the storage map for
+            //       the delegation, which includes revoked schema permissions.
+            assert.deepEqual([schemaId2], grantedSchemaIds.unwrap().toArray(), "granted schema permissions should not include revoked schema");
         });
     });
 
