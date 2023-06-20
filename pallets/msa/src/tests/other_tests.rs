@@ -24,6 +24,8 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 
+const BLOCK_ZERO: BlockNumber = 0;
+
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
 	provider_msa_id: u64,
