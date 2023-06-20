@@ -14,7 +14,7 @@ import {
   PaginatedUpsertSignaturePayload
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
-import {HandleResponse, MessageSourceId, PageHash} from "@frequency-chain/api-augment/interfaces";
+import {HandleResponse, MessageSourceId, PageHash, SchemaGrantResponse} from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";

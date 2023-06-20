@@ -170,18 +170,17 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it('initial granted schemas should be correct', async function () {
-            let schemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
-            assert.equal(schemaIds.isSome, true);
-            assert.deepEqual([schemaId], schemaIds.unwrap().toArray());
+            let schemaGrants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            assert.equal(schemaGrants.isSome, true);
+            const schemaIds = schemaGrants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
+            const expectedSchemaIds = [schemaId.toNumber()];
+            assert.deepStrictEqual(schemaIds, expectedSchemaIds, "granted schemas should equal initial set");
         });
 
-        /// TODO: As of this writing there is no extrinsic available to ADD schema permissions to a grant.
-        ///       The only method available is `grantDelegation` which *overwrites* any existing list of
-        ///       schema permissions. If a "add_schema_permission" extrinsic becomes available, rewrite this test.
         it('should grant additional schema permissions', async function() {
             const payload = await generateDelegationPayload({
                 authorizedMsaId: providerId,
-                schemaIds: [schemaId2],
+                schemaIds: [schemaId, schemaId2],
             });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
@@ -192,11 +191,10 @@ describe("Delegation Scenario Tests", function () {
                 assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
                 assert.deepEqual(grantDelegationEvent.data.delegatorId, msaId, 'delegator IDs should match');
             }
-            let grantedSchemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
-            // NOTE: As of this writing, this is a false pass. The returned array includes `schemaId`, but `schemaId` has actually been
-            //       revoked as of the current block, because of the way `grantDelegation` behaves. But we only get back an array of ids,
-            //       without the context of the block number at which they have been revoked (zero for not revoked)
-            assert.deepEqual([schemaId, schemaId2], grantedSchemaIds.unwrap().toArray());
+            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
+            const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
+            assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
         })
 
     });
@@ -233,12 +231,11 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it("should successfully revoke granted schema", async function () {
-            const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId]);
+            const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId2]);
             await assert.doesNotReject(op.fundAndSend());
-            let grantedSchemaIds = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
-            // NOTE: As of this writing, this test fails because the RPC only returns a list of SchemaIds present in the storage map for
-            //       the delegation, which includes revoked schema permissions.
-            assert.deepEqual([schemaId2], grantedSchemaIds.unwrap().toArray(), "granted schema permissions should not include revoked schema");
+            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
+            assert.deepEqual(grantedSchemaIds, [schemaId.toNumber()], "granted schema permissions should include only non-revoked schema permission");
         });
     });
 

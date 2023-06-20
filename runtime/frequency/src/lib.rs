@@ -1205,7 +1205,7 @@ impl_runtime_apis! {
 			}
 		}
 
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>> {
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>> {
 			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
 				Ok(x) => x,
 				Err(_) => None,

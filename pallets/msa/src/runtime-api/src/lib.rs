@@ -42,6 +42,6 @@ sp_api::decl_runtime_apis! {
 		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>;
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>;
 	}
 }

@@ -45,7 +45,7 @@ export default {
           type: "ProviderId",
         },
       ],
-      type: "Option<Vec<SchemaId>>",
+      type: "Option<Vec<SchemaGrantResponse>>",
     },
   },
   types: {
@@ -56,6 +56,10 @@ export default {
       key: "AccountId",
       msaId: "MessageSourceId",
     },
+    SchemaGrantResponse: {
+      schema_id: "SchemaId",
+      revoked_at: "BlockNumber",
+    }
   },
   runtime: {
     MsaRuntimeApi: [
@@ -101,6 +105,49 @@ export default {
           },
         },
         version: 1,
+      },
+      {
+        methods: {
+          has_delegation: {
+            description:
+              "Check to see if a delegation existed between the given delegator and provider at a given block",
+            params: [
+              {
+                name: "delegator_id",
+                type: "DelegatorId",
+              },
+              {
+                name: "provider_id",
+                type: "ProviderId",
+              },
+              {
+                name: "block_number",
+                type: "BlockNumber",
+              },
+              {
+                name: "schema_id",
+                type: "Option<SchemaId>",
+              },
+            ],
+            type: "bool",
+          },
+          get_granted_schemas_by_msa_id: {
+            description:
+              "Get the list of schema ids (if any) that exist in any delegation between the delegator and provider",
+            params: [
+              {
+                name: "delegator_id",
+                type: "DelegatorId",
+              },
+              {
+                name: "provider_id",
+                type: "ProviderId",
+              },
+            ],
+            type: "Option<Vec<SchemaGrantResponse>>",
+          },
+        },
+        version: 2,
       },
     ],
   },

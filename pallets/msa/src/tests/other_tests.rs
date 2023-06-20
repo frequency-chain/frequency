@@ -15,7 +15,10 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{Delegation, DelegatorId, ProviderId, ProviderRegistryEntry, SchemaGrantValidator},
+	msa::{
+		Delegation, DelegatorId, ProviderId, ProviderRegistryEntry, SchemaGrant,
+		SchemaGrantValidator,
+	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
@@ -475,8 +478,10 @@ pub fn schema_granted_success_rpc() {
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
-		let expected_schemas_granted = vec![1, 2];
-		let output_schemas: Vec<SchemaId> = schemas_granted.unwrap().unwrap();
+		let expected_schemas_granted =
+			vec![SchemaGrant::new(1, BLOCK_ZERO), SchemaGrant::new(2, BLOCK_ZERO)];
+		let output_schemas: Vec<SchemaGrant<SchemaId, BlockNumber>> =
+			schemas_granted.unwrap().unwrap();
 		assert_eq!(output_schemas, expected_schemas_granted);
 	})
 }

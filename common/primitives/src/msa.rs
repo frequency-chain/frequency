@@ -52,6 +52,33 @@ impl From<DelegatorId> for MessageSourceId {
 	}
 }
 
+/// RPC response for getting schema permission grants
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
+pub struct SchemaGrant<SchemaId, BlockNumber> {
+	/// SchemaId of schema for which permission is/was granted
+	pub schema_id: SchemaId,
+	/// Block number the permission was/will be revoked (0 = not revoked)
+	pub revoked_at: BlockNumber,
+}
+
+impl<SchemaId, BlockNumber> SchemaGrant<SchemaId, BlockNumber> {
+	/// Create a new SchemaGrant struct
+	pub fn new(schema_id: SchemaId, revoked_at: BlockNumber) -> Self {
+		SchemaGrant { schema_id, revoked_at }
+	}
+}
+
+impl<SchemaId, BlockNumber> PartialEq for SchemaGrant<SchemaId, BlockNumber>
+where
+	SchemaId: PartialEq,
+	BlockNumber: PartialEq,
+{
+	fn eq(&self, other: &Self) -> bool {
+		self.schema_id == other.schema_id && self.revoked_at == other.revoked_at
+	}
+}
+
 /// Struct for the information of the relationship between an MSA and a Provider
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
 #[scale_info(skip_type_params(MaxSchemaGrantsPerDelegation))]
