@@ -5,6 +5,7 @@ use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use sp_runtime::traits::Zero;
 use std::{sync::Arc, vec};
 use substrate_test_runtime_client::runtime::{AccountId, Block};
 
@@ -16,7 +17,6 @@ const SCHEMA_FOR_A: u16 = 1;
 const SCHEMA_FOR_A_AND_B: u16 = 2;
 const SCHEMA_FOR_B: u16 = 3;
 const NOT_EXIST_MSA: u64 = 100;
-const BLOCK_ZERO: BlockNumber = 0;
 
 sp_api::mock_impl_runtime_apis! {
 	impl MsaRuntimeApi<Block, AccountId> for TestRuntimeApi {
@@ -36,9 +36,9 @@ sp_api::mock_impl_runtime_apis! {
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>{
 			match (delegator, provider) {
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A, BLOCK_ZERO)]),
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BLOCK_ZERO)]),
-				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BLOCK_ZERO), SchemaGrant::new(SCHEMA_FOR_B, BLOCK_ZERO)]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
+				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]),
 				_ => None,
 			}
 		}
@@ -139,7 +139,7 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
-	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BLOCK_ZERO)], response);
+	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
 }
 
 #[tokio::test]
@@ -153,8 +153,8 @@ async fn get_granted_schemas_by_msa_id_with_none() {
 	let response = result.unwrap().unwrap();
 	assert_eq!(
 		vec![
-			SchemaGrant::new(SCHEMA_FOR_A_AND_B, BLOCK_ZERO),
-			SchemaGrant::new(SCHEMA_FOR_B, BLOCK_ZERO)
+			SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
+			SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
 		],
 		response
 	);

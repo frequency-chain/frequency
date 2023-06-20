@@ -5,7 +5,7 @@ use frame_support::{
 };
 
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{traits::Zero, MultiSignature};
 
 use crate::{
 	ensure,
@@ -23,8 +23,7 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 	utils::wrap_binary_data,
 };
-
-const BLOCK_ZERO: BlockNumber = 0;
+use pretty_assertions::assert_eq;
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
@@ -480,10 +479,42 @@ pub fn schema_granted_success_rpc() {
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
-		let expected_schemas_granted =
-			vec![SchemaGrant::new(1, BLOCK_ZERO), SchemaGrant::new(2, BLOCK_ZERO)];
+		let expected_schemas_granted = vec![
+			SchemaGrant::new(1, BlockNumber::zero()),
+			SchemaGrant::new(2, BlockNumber::zero()),
+		];
 		let output_schemas: Vec<SchemaGrant<SchemaId, BlockNumber>> =
 			schemas_granted.unwrap().unwrap();
+		assert_eq!(output_schemas, expected_schemas_granted);
+	})
+}
+
+#[test]
+pub fn schema_revoked_rpc() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(2);
+
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let mut schema_grants = vec![1, 2];
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+		let mut schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		let mut expected_schemas_granted = vec![
+			SchemaGrant::new(1, BlockNumber::zero()),
+			SchemaGrant::new(2, BlockNumber::zero()),
+		];
+		let mut output_schemas: Vec<SchemaGrant<SchemaId, BlockNumber>> =
+			schemas_granted.unwrap().unwrap();
+		assert_eq!(output_schemas, expected_schemas_granted);
+
+		// Now revoke a schema and check that it is reported correctly by the RPC
+		run_to_block(5);
+		schema_grants = vec![1];
+		assert_ok!(Msa::upsert_schema_permissions(provider, delegator, schema_grants));
+		schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		expected_schemas_granted =
+			vec![SchemaGrant::new(1, BlockNumber::zero()), SchemaGrant::new(2, 5)];
+		output_schemas = schemas_granted.unwrap().unwrap();
 		assert_eq!(output_schemas, expected_schemas_granted);
 	})
 }
