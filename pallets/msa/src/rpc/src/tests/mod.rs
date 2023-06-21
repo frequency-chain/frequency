@@ -5,6 +5,7 @@ use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use sp_runtime::traits::Zero;
 use std::{sync::Arc, vec};
 use substrate_test_runtime_client::runtime::{AccountId, Block};
 
@@ -33,11 +34,11 @@ sp_api::mock_impl_runtime_apis! {
 		}
 
 		/// Get the list of schema ids (if any) that exist in any delegation between the delegator and provider
-		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaId>>{
+		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>{
 			match (delegator, provider) {
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![SCHEMA_FOR_A]),
-				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SCHEMA_FOR_A_AND_B]),
-				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SCHEMA_FOR_A_AND_B, SCHEMA_FOR_B]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]),
+				(DELEGATE_A, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]),
+				(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B) => Some(vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]),
 				_ => None,
 			}
 		}
@@ -138,7 +139,7 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
-	assert_eq!(vec![SCHEMA_FOR_A], response);
+	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
 }
 
 #[tokio::test]
@@ -150,7 +151,13 @@ async fn get_granted_schemas_by_msa_id_with_none() {
 
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
-	assert_eq!(vec![SCHEMA_FOR_A_AND_B, SCHEMA_FOR_B], response);
+	assert_eq!(
+		vec![
+			SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
+			SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
+		],
+		response
+	);
 }
 
 #[tokio::test]

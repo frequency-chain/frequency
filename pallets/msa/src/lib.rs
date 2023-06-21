@@ -80,7 +80,8 @@ use common_primitives::{
 	capacity::TargetValidator,
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
-		ProviderLookup, ProviderRegistryEntry, SchemaGrantValidator, SignatureRegistryPointer,
+		ProviderLookup, ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
+		SignatureRegistryPointer,
 	},
 	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
@@ -1317,7 +1318,7 @@ impl<T: Config> Pallet<T> {
 	pub fn get_granted_schemas_by_msa_id(
 		delegator: DelegatorId,
 		provider: ProviderId,
-	) -> Result<Option<Vec<SchemaId>>, DispatchError> {
+	) -> Result<Option<Vec<SchemaGrant<SchemaId, T::BlockNumber>>>, DispatchError> {
 		let provider_info =
 			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 
@@ -1327,8 +1328,8 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let mut schema_list = Vec::new();
-		for (key, _) in schema_permissions {
-			schema_list.push(key);
+		for (schema_id, revoked_at) in schema_permissions {
+			schema_list.push(SchemaGrant { schema_id, revoked_at });
 		}
 		Ok(Some(schema_list))
 	}
