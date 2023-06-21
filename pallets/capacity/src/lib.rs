@@ -477,12 +477,22 @@ pub mod pallet {
 		/// - [`Error::InvalidTarget`] if `to` does not belong to a registered Provider.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::unstake())]
-		pub fn change_staking_target(origin: OriginFor<T>, from: MessageSourceId, to: MessageSourceId, amount: Option<BalanceOf<T>>) -> DispatchResult {
+		pub fn change_staking_target(
+			origin: OriginFor<T>,
+			from: MessageSourceId,
+			to: MessageSourceId,
+			amount: Option<BalanceOf<T>>,
+		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-			ensure!(StakingTargetLedger::<T>::contains_key(&staker, &from),
-				    Error::<T>::StakerTargetRelationshipNotFound);
+			ensure!(
+				StakingTargetLedger::<T>::contains_key(&staker, &from),
+				Error::<T>::StakerTargetRelationshipNotFound
+			);
 			if let Some(value) = amount {
-				ensure!(value > T::MinimumStakingAmount::get(),  Error::<T>::StakingAmountBelowMinimum);
+				ensure!(
+					value > T::MinimumStakingAmount::get(),
+					Error::<T>::StakingAmountBelowMinimum
+				);
 			}
 			ensure!(T::TargetValidator::validate(to), Error::<T>::InvalidTarget);
 			Self::do_retarget(&staker, &from, &to, &amount)
@@ -701,7 +711,12 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// performs the target change
-	pub fn do_retarget(staker: &T::AccountId, from_msa: &MessageSourceId, to_msa: &MessageSourceId, amount: &Option<BalanceOf<T>>) -> Result<(), DispatchError> {
+	pub fn do_retarget(
+		staker: &T::AccountId,
+		from_msa: &MessageSourceId,
+		to_msa: &MessageSourceId,
+		amount: &Option<BalanceOf<T>>,
+	) -> Result<(), DispatchError> {
 		// already validated staker has an account,
 		// already checked that msa of 'from' is targeted by the staker
 		// already checked that to_msa is valid

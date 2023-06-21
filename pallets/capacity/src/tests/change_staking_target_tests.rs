@@ -1,26 +1,22 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Config, Error, Event, StakingAccountDetails, StakingTargetDetails};
+use crate::{
+	BalanceOf, CapacityDetails, Config, Error, Event, StakingAccountDetails, StakingTargetDetails,
+};
 use common_primitives::{
 	capacity::{
-		Nontransferable,
+		Nontransferable, StakingType,
 		StakingType::{MaximumCapacity, ProviderBoost},
 	},
 	msa::MessageSourceId,
 };
 use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
 use sp_runtime::ArithmeticError;
-use common_primitives::capacity::StakingType;
 
 fn setup_provider(staker: u64, target: MessageSourceId, amount: u64) {
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(target, provider_name);
 	if amount > 0 {
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(staker),
-			target,
-			amount,
-			ProviderBoost
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount, ProviderBoost));
 	}
 }
 
@@ -34,7 +30,12 @@ fn test_change_staking_target_parametric_validity() {
 
 		let to_target: MessageSourceId = 2;
 		assert_noop!(
-			Capacity::change_staking_target(RuntimeOrigin::signed(account), from_target, to_target, Some(0)),
+			Capacity::change_staking_target(
+				RuntimeOrigin::signed(account),
+				from_target,
+				to_target,
+				Some(0)
+			),
 			Error::<Test>::StakerTargetRelationshipNotFound
 		);
 
@@ -46,18 +47,31 @@ fn test_change_staking_target_parametric_validity() {
 		));
 
 		assert_noop!(
-			Capacity::change_staking_target(RuntimeOrigin::signed(account), from_target, to_target, Some(0)),
+			Capacity::change_staking_target(
+				RuntimeOrigin::signed(account),
+				from_target,
+				to_target,
+				Some(0)
+			),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 
 		assert_noop!(
-			Capacity::change_staking_target(RuntimeOrigin::signed(account), from_target, to_target, None),
+			Capacity::change_staking_target(
+				RuntimeOrigin::signed(account),
+				from_target,
+				to_target,
+				None
+			),
 			Error::<Test>::InvalidTarget
 		);
 		setup_provider(account, to_target, 0);
 
-		assert_ok!(
-			Capacity::change_staking_target(RuntimeOrigin::signed(account), from_target, to_target, None)
-		);
+		assert_ok!(Capacity::change_staking_target(
+			RuntimeOrigin::signed(account),
+			from_target,
+			to_target,
+			None
+		));
 	});
 }

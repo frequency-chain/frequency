@@ -1,4 +1,5 @@
 mod capacity_details_tests;
+mod change_staking_target_tests;
 mod epochs_tests;
 mod eras_tests;
 pub mod mock;
@@ -12,4 +13,3 @@ mod testing_utils;
 mod unstaking_tests;
 mod withdraw_unstaked_tests;
 mod withdrawal_tests;
-mod change_staking_target_tests;

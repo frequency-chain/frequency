@@ -76,7 +76,7 @@ fn stake_rewards_works() {
 		assert_eq!(staking_account.last_rewards_claimed_at, None);
 		assert_eq!(staking_account.stake_change_unlocking.len(), 0);
 
-		let events  = staking_events();
+		let events = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
 		assert_eq!(Balances::locks(&account)[0].amount, amount);
