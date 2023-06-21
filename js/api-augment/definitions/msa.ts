@@ -59,7 +59,7 @@ export default {
     SchemaGrantResponse: {
       schema_id: "SchemaId",
       revoked_at: "BlockNumber",
-    }
+    },
   },
   runtime: {
     MsaRuntimeApi: [
