@@ -160,7 +160,7 @@ fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
 		));
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
-			Error::<Test>::AmountToUnstakeExceedsAmountStaked
+			Error::<Test>::InsufficientStakingBalance
 		);
 	});
 }

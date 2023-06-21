@@ -76,7 +76,7 @@ fn stake_rewards_works() {
 		assert_eq!(staking_account.last_rewards_claimed_at, None);
 		assert_eq!(staking_account.stake_change_unlocking.len(), 0);
 
-		let events = staking_events();
+		let events  = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
 		assert_eq!(Balances::locks(&account)[0].amount, amount);
@@ -106,7 +106,7 @@ fn stake_errors_insufficient_staking_amount_when_staking_below_minimum_staking_a
 		register_provider(target, String::from("Foo"));
 		assert_noop!(
 			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
-			Error::<Test>::InsufficientStakingAmount
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }
@@ -416,7 +416,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 
 		assert_noop!(
 			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
-			Error::<Test>::InsufficientStakingAmount
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }
