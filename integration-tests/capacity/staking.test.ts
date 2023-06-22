@@ -7,7 +7,7 @@ import {
     devAccounts, createKeys, createMsaAndProvider,
     stakeToProvider, CHAIN_ENVIRONMENT,
     getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
-    CENTS, DOLLARS, createAndFundKeypair
+    CENTS, DOLLARS, createAndFundKeypair, TokenPerCapacity
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
@@ -15,7 +15,7 @@ import { firstValueFrom } from "rxjs";
 describe("Capacity Staking Tests", function () {
     const accountBalance: bigint = 2n * DOLLARS;
     const tokenMinStake: bigint = 1n * CENTS;
-    let capacityMin: bigint = tokenMinStake / 50n;
+    let capacityMin: bigint = tokenMinStake / TokenPerCapacity;
 
     before(async function () {
         // Pallet config changes such as modifying the epoch length will
