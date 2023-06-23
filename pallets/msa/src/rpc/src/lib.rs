@@ -11,7 +11,7 @@
 use codec::Codec;
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{DelegatorId, ProviderId},
+	msa::{DelegatorId, ProviderId, SchemaGrant},
 	node::BlockNumber,
 	schema::SchemaId,
 };
@@ -52,7 +52,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 		&self,
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
-	) -> RpcResult<Option<Vec<SchemaId>>>;
+	) -> RpcResult<Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -123,7 +123,7 @@ where
 		&self,
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
-	) -> RpcResult<Option<Vec<SchemaId>>> {
+	) -> RpcResult<Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>> {
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
 		let runtime_api_result =
