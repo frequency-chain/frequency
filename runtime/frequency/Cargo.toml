@@ -85,6 +85,7 @@ polkadot-runtime-common = {git = "https://github.com/paritytech/polkadot", defau
 xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
 pallet-xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
 xcm-builder = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
 
 # Cumulus
 cumulus-pallet-aura-ext = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
@@ -92,6 +93,10 @@ cumulus-pallet-parachain-system = {git = "https://github.com/paritytech/cumulus"
 cumulus-pallet-session-benchmarking = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 cumulus-primitives-core = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 cumulus-primitives-timestamp = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
+# XCM
+cumulus-pallet-xcmp-queue = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
+cumulus-pallet-xcm = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
+cumulus-primitives-utility = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 
 pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
@@ -108,6 +113,8 @@ std = [
 	"cumulus-pallet-parachain-system/std",
 	"cumulus-primitives-core/std",
 	"cumulus-primitives-timestamp/std",
+	"cumulus-pallet-xcmp-queue/std",
+	"cumulus-pallet-xcm/std",
 	"frame-executive/std",
 	"frame-support/std",
 	"frame-system-rpc-runtime-api/std",
@@ -159,6 +166,7 @@ std = [
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"system-runtime-api/std",
+	"xcm-executor/std",
 ]
 runtime-benchmarks = [
 	"hex-literal",
@@ -188,6 +196,7 @@ runtime-benchmarks = [
 	"pallet-preimage/runtime-benchmarks",
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
+	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -220,6 +229,8 @@ try-runtime = [
 	"pallet-democracy/try-runtime",
 	"pallet-utility/try-runtime",
 	"pallet-xcm/try-runtime",
+	"cumulus-pallet-xcmp-queue/try-runtime",
+	"cumulus-pallet-xcm/try-runtime",
 ]
 frequency = ["common-runtime/frequency"]
 frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]

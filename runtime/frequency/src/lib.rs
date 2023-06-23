@@ -9,8 +9,13 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberStrictlyIncreases, RelaychainDataProvider};
 
+// XCM 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm_config;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use xcm_config::{RelayLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use xcm_executor::XcmExecutor;
 
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -792,6 +797,19 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
+		
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+impl cumulus_pallet_xcmp_queue::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+	type ChannelInfo = ParachainSystem;
+	type VersionWrapper = ();
+	type ExecuteOverweightOrigin = EnsureRoot<AccountId>;
+	type ControllerOrigin = EnsureRoot<AccountId>;
+	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
+	type WeightInfo = ();
+	type PriceForSiblingDelivery = ();
+}
 
 // See https://paritytech.github.io/substrate/master/pallet_session/index.html for
 // the descriptions of these configs.
@@ -1004,6 +1022,14 @@ construct_runtime!(
 
 		// FRQC Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+
+		// XCM
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 50,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Config, Origin} = 51,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 52,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
@@ -1375,3 +1401,9 @@ mod tests {
 		);
 	}
 }
+// TODO look into this
+// We allow root and the StakingAdmin to execute privileged collator selection operations.
+// pub type CollatorSelectionUpdateOrigin = EitherOfDiverse<
+// 	EnsureRoot<AccountId>,
+// 	EnsureXcm<IsVoiceOfBody<RelayLocation, StakingAdminBodyId>>,
+// >;

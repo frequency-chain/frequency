@@ -11,6 +11,9 @@ use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
 
+/// The default XCM version to set in genesis config.
+const SAFE_XCM_VERSION: u32 = xcm::prelude::XCM_VERSION;
+
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
 #[allow(clippy::unwrap_used)]
@@ -235,6 +238,9 @@ fn testnet_genesis(
 		technical_committee: TechnicalCommitteeConfig {
 			phantom: Default::default(),
 			members: technical_committee_members,
+		},
+		polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
+			safe_xcm_version: Some(SAFE_XCM_VERSION),
 		},
 	}
 }
