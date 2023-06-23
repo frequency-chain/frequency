@@ -1,0 +1,86 @@
+[package]
+name = "did"
+description = "Enables adding and removing decentralized identifiers (DIDs)."
+authors = ["KILT <info@kilt.io>"]
+edition = "2021"
+homepage = "https://kilt.io/"
+version = "0.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies]
+env_logger = "0.10.0"
+
+ctype = {path = "../ctype", default-features = false, features = ["mock"]}
+kilt-support = {path = "../support", default-features = false, features = ["mock", "try-runtime"]}
+
+frame-benchmarking = {git = "https://github.com/paritytech/substrate", default-features = false, features = ["std"], branch = "polkadot-v0.9.42"}
+pallet-balances = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+sp-keystore = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42", features = ["std"]}
+
+[dependencies]
+# External dependencies
+log = "0.4.17"
+
+
+# Internal dependencies
+kilt-support = {path = "../support", default-features = false }
+
+ctype = {path = "../ctype", default-features = false, optional = true}
+
+# Substrate dependencies
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+
+parity-scale-codec = {version = "3.2.2", default-features = false, features = ["derive"] }
+scale-info = {version = "2.5.0", default-features = false, features = [
+  "derive",
+]}
+
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+
+# Benchmarking dependencies
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.42" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.42" }
+sp-keystore = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42",  optional = true }
+
+[features]
+default = ["std"]
+mock = [
+  "ctype",
+  "pallet-balances",
+  "sp-keystore",
+]
+runtime-benchmarks = [
+  # "ctype/runtime-benchmarks", # enabling this results in an error that's impossible to link to this line.
+  "frame-benchmarking",
+  "pallet-balances/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "kilt-support/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+]
+std = [
+  "ctype/std",
+  "frame-support/std",
+  "frame-system/std",
+  "kilt-support/std",
+  "log/std",
+  "pallet-balances/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-keystore/std",
+  "sp-runtime/std",
+  "sp-std/std",
+]
+try-runtime = [
+  "frame-support/try-runtime",
+  "frame-system/try-runtime",
+  "kilt-support/try-runtime",
+]

@@ -4,9 +4,12 @@ members = [
   "node/cli",
   "node/service",
   "pallets/*",
+  "kilt/*",
   "runtime/*",
   "common/helpers",
 ]
+
+# exclude = ["pallets/kilt"]
 
 [profile.release]
 panic = "unwind"

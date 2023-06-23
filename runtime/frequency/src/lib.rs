@@ -17,6 +17,23 @@ use xcm_config::{RelayLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use xcm_executor::XcmExecutor;
 
+// Kilt
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+// pub type DidIdentifier = AccountId;
+
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+// pub use dip::*;
+
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+// pub mod dip;
+
+// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+// use pallet_dip_consumer::{DipOrigin, EnsureDipOrigin};
+// use did::KeyIdOf;
+// use dip_provider_runtime_template::Web3Name;
+// use kilt_dip_support::merkle::VerificationResult;
+// // use pallet_did_lookup::linkable_account::LinkableAccountId;
+
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
@@ -973,6 +990,25 @@ impl pallet_utility::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
+
+// // Kilt
+// impl pallet_did_lookup::Config for Runtime {
+// 	type Currency = Balances;
+// 	type Deposit = ConstU128<currency::DOLLARS>;
+// 	type DidIdentifier = DidIdentifier;
+// 	type EnsureOrigin = EnsureDipOrigin<
+// 		DidIdentifier,
+// 		AccountId,
+// 		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+// 	>;
+// 	type OriginSuccess = DipOrigin<
+// 		DidIdentifier,
+// 		AccountId,
+// 		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+// 	>;
+// 	type RuntimeEvent = RuntimeEvent;
+// 	type WeightInfo = ();
+// }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(

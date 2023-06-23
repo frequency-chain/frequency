@@ -1,0 +1,82 @@
+[package]
+name = "pallet-did-lookup"
+description = "Lookup the DID for a blockchain account."
+authors = ["KILT <info@kilt.io>"]
+edition = "2021"
+homepage = "https://kilt.io/"
+version = "0.0.0"
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dev-dependencies]
+env_logger = "0.10.0"
+kilt-support = {path = "../support", features = ["mock", "try-runtime"]}
+
+pallet-balances = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+sp-io = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+sp-keystore = {git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42", features = ["std"]}
+test-log = "0.2.11"
+
+[dependencies]
+# External dependencies
+base58 = {version = "0.2.0", default-features = false}
+blake2 = {version = "0.10.6", default-features = false}
+hex = {version = "0.4.3", default-features = false }
+libsecp256k1 = {version = "0.7", default-features = false, features = ["hmac"]}
+
+log = "0.4.17"
+
+parity-scale-codec = {version = "3.2.2", default-features = false, features = ["derive"] }
+scale-info = {version = "2.5.0", default-features = false, features = [
+  "derive",
+]}
+sha3 = {version = "0.10.0", default-features = false}
+
+# Internal dependencies
+kilt-support = {path = "../support", default-features = false}
+
+# Substrate dependencies
+sp-io = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+
+# Benchmarking dependencies
+frame-benchmarking = { git = "https://github.com/paritytech/substrate", default-features = false, optional = true, branch = "polkadot-v0.9.42" }
+
+# std dependencies
+
+serde = {version = "1.0", optional = true }
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+  "frame-benchmarking",
+  "kilt-support/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+]
+std = [
+  "blake2/std",
+  "frame-benchmarking?/std",
+  "frame-support/std",
+  "frame-system/std",
+  "hex/std",
+  "kilt-support/std",
+  "log/std",
+  "libsecp256k1/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "sha3/std",
+  "serde",
+  "sp-core/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+]
+try-runtime = ["frame-support/try-runtime", "frame-system/try-runtime", "kilt-support/try-runtime"]

@@ -1,0 +1,27 @@
+
+[package]
+authors = ["KILT <info@kilt.io>"]
+description = "Support types, traits, and functions for the KILT Decentralized Identity Provider (DIP) functionality."
+edition = "2021"
+homepage = "https://kilt.io/"
+name = "dip-support"
+# version = "1.11.0-dev"
+version = "0.0.0"
+
+[dependencies]
+# Parity dependencies
+parity-scale-codec = {version = "3.2.2", default-features = false, features = ["derive"] }
+scale-info = {version = "2.5.0", default-features = false, features = [
+  "derive",
+]}
+
+# Substrate dependencies
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+
+[features]
+default = ["std"]
+std = [
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "frame-support/std"
+]

@@ -1,0 +1,54 @@
+[package]
+authors = ["KILT <info@kilt.io>"]
+description = "Support types, traits, and functions for the KILT Decentralized Identity Provider (DIP) functionality as implemented by the KILT blockchain."
+name = "kilt-dip-support"
+edition = "2021"
+homepage = "https://kilt.io/"
+# version = "1.11.0-dev"
+version = "0.0.0"
+
+
+[dependencies]
+# Internal dependencies
+did = {path = "../did", default-features = false}
+dip-support = {path = "../dip-support", default-features = false }
+pallet-dip-consumer = {path = "../pallet-dip-consumer", default-features = false}
+pallet-dip-provider = {path = "../pallet-dip-provider", default-features = false }
+
+# Parity dependencies
+parity-scale-codec = {version = "3.2.2", default-features = false }
+scale-info = {version = "2.5.0", default-features = false, features = [
+  "derive",
+]}
+
+# Substrate dependencies
+frame-system = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-trie= { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.42" }
+
+# Polkadot dependencies
+xcm = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
+xcm-executor = { git = "https://github.com/paritytech/polkadot", default-features = false, branch = "release-v0.9.42" }
+
+[features]
+default = ["std"]
+std = [
+  "did/std",
+  "dip-support/std",
+  "pallet-dip-consumer/std",
+  "pallet-dip-provider/std",
+  "parity-scale-codec/std",
+  "scale-info/std",
+  "frame-system/std",
+  "frame-support/std",
+  "sp-runtime/std",
+  "sp-core/std",
+  "sp-trie/std",
+  "sp-std/std",
+  "xcm-executor/std",
+  "xcm/std"
+]
+runtime-benchmarks = []

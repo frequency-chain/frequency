@@ -101,6 +101,21 @@ cumulus-primitives-utility = {git = "https://github.com/paritytech/cumulus", def
 pallet-collator-selection = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 parachain-info = {git = "https://github.com/paritytech/cumulus", default-features = false, branch = "polkadot-v0.9.42"}
 
+# Kilt
+did = {path = "../../kilt/did", default-features = false }
+# ctype = {path = "../../kilt/ctype", default-features = false }
+kilt-dip-support = {path = "../../kilt/kilt-dip-support", default-features = false }
+dip-support = {path = "../../kilt/dip-support", default-features = false }
+kilt-support = {path = "../../kilt/support", default-features = false }
+pallet-dip-consumer = {path = "../../kilt/pallet-dip-consumer", default-features = false }
+pallet-did-lookup = {path = "../../kilt/pallet-did-lookup", default-features = false }
+pallet-dip-provider = {path = "../../kilt/pallet-dip-provider", default-features = false }
+pallet-web3-names = {path = "../../kilt/pallet-web3-names", default-features = false }
+
+# dip-provider-runtime-template = {git = "https://github.com/KILTprotocol/kilt-node", default-features = false, branch = "aa/dip"}
+
+
+
 [features]
 default = ["std"]
 std = [
@@ -167,6 +182,15 @@ std = [
 	"sp-version/std",
 	"system-runtime-api/std",
 	"xcm-executor/std",
+	"did/std",
+	"kilt-dip-support/std",
+	"dip-support/std",
+	"pallet-did-lookup/std",
+	"pallet-dip-consumer/std",
+	"kilt-support/std",
+	"pallet-dip-provider/std",
+	"pallet-web3-names/std",
+	# "ctype/std"
 ]
 runtime-benchmarks = [
 	"hex-literal",
@@ -197,6 +221,7 @@ runtime-benchmarks = [
 	"pallet-democracy/runtime-benchmarks",
 	"pallet-treasury/runtime-benchmarks",
 	"cumulus-pallet-xcmp-queue/runtime-benchmarks",
+	"pallet-dip-consumer/runtime-benchmarks",
 ]
 try-runtime = [
 	"cumulus-pallet-aura-ext/try-runtime",
@@ -231,6 +256,7 @@ try-runtime = [
 	"pallet-xcm/try-runtime",
 	"cumulus-pallet-xcmp-queue/try-runtime",
 	"cumulus-pallet-xcm/try-runtime",
+	"did/try-runtime",
 ]
 frequency = ["common-runtime/frequency"]
 frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]
