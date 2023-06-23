@@ -2,6 +2,11 @@ use super::{
 	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
 	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, WeightToFee, XcmpQueue,
 };
+
+// kilt
+use kilt_dip_support::xcm::{barriers::OkOrElseCheckForParachainProvider, origins::AccountIdJunctionAsParachain};
+
+
 use core::{marker::PhantomData, ops::ControlFlow};
 use frame_support::{
 	log, match_types, parameter_types,
@@ -59,6 +64,8 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
 /// biases the kind of local `Origin` it will become.
 pub type XcmOriginToTransactDispatchOrigin = (
+	// KILT
+	AccountIdJunctionAsParachain<ConstU32<2_000>, cumulus_pallet_xcm::Origin, RuntimeOrigin>,
 	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
@@ -157,6 +164,7 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		Ok(())
 	}
 }
+pub type KiltBarrier = OkOrElseCheckForParachainProvider<AllowTopLevelPaidExecutionFrom<Nothing>, ConstU32<2_000>>;
 
 pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,

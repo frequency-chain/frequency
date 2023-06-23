@@ -18,21 +18,27 @@ use xcm_config::{RelayLocation, XcmConfig, XcmOriginToTransactDispatchOrigin};
 use xcm_executor::XcmExecutor;
 
 // Kilt
-// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-// pub type DidIdentifier = AccountId;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+pub type DidIdentifier = AccountId32;
 
-// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-// pub use dip::*;
+pub mod dip;
 
-// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-// pub mod dip;
+use did::{DidRawOrigin, EnsureDidOrigin, KeyIdOf};
 
-// #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-// use pallet_dip_consumer::{DipOrigin, EnsureDipOrigin};
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+pub use dip::*;
+
+
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+use pallet_dip_consumer::{DipOrigin, EnsureDipOrigin};
 // use did::KeyIdOf;
 // use dip_provider_runtime_template::Web3Name;
-// use kilt_dip_support::merkle::VerificationResult;
-// // use pallet_did_lookup::linkable_account::LinkableAccountId;
+use kilt_dip_support::merkle::VerificationResult;
+use pallet_did_lookup::linkable_account::LinkableAccountId;
+use pallet_web3_names::web3_name::AsciiWeb3Name;
+
+pub type Web3Name = AsciiWeb3Name<Runtime>;
+pub type Hasher = BlakeTwo256;
 
 use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -41,6 +47,7 @@ use sp_runtime::{
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult,
+	AccountId32,
 };
 
 use codec::Encode;
@@ -61,7 +68,7 @@ use common_primitives::{
 };
 
 pub use common_runtime::{
-	constants::{currency::EXISTENTIAL_DEPOSIT, *},
+	constants::{currency::{EXISTENTIAL_DEPOSIT, DOLLARS}, *},
 	fee::WeightToFee,
 };
 
@@ -992,23 +999,36 @@ impl pallet_utility::Config for Runtime {
 }
 
 // // Kilt
-// impl pallet_did_lookup::Config for Runtime {
-// 	type Currency = Balances;
-// 	type Deposit = ConstU128<currency::DOLLARS>;
-// 	type DidIdentifier = DidIdentifier;
-// 	type EnsureOrigin = EnsureDipOrigin<
-// 		DidIdentifier,
-// 		AccountId,
-// 		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
-// 	>;
-// 	type OriginSuccess = DipOrigin<
-// 		DidIdentifier,
-// 		AccountId,
-// 		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
-// 	>;
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type WeightInfo = ();
-// }
+impl pallet_did_lookup::Config for Runtime {
+	type Currency = Balances;
+	type Deposit = ConstU128<DOLLARS>;
+	type DidIdentifier = DidIdentifier;
+	type EnsureOrigin = EnsureDipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+	>;
+	type OriginSuccess = DipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+	>;
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+}
+impl pallet_web3_names::Config for Runtime {
+	type BanOrigin = EnsureRoot<AccountId32>;
+	type Currency = Balances;
+	type Deposit = ConstU128<DOLLARS>;
+	type MaxNameLength = ConstU32<32>;
+	type MinNameLength = ConstU32<3>;
+	// type OriginSuccess = DidRawOrigin<AccountId32, DidIdentifier>;
+	// type OwnerOrigin = EnsureDidOrigin<DidIdentifier, AccountId32>;
+	type RuntimeEvent = RuntimeEvent;
+	type Web3Name = Web3Name;
+	type Web3NameOwner = DidIdentifier;
+	type WeightInfo = ();
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1075,6 +1095,10 @@ construct_runtime!(
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
+
+		Web3Names: pallet_web3_names::{Pallet, Call, Storage, Event<T>} = 70,
+		DidLookup: pallet_did_lookup::{Pallet, Call, Storage, Event<T>, Config<T>} = 71,
+		DipConsumer: pallet_dip_consumer::{Origin<T>, Call, Storage, Event<T>, } = 72
 	}
 );
 

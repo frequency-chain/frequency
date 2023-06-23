@@ -98,10 +98,10 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// The origin allowed to ban names.
 		type BanOrigin: EnsureOrigin<Self::RuntimeOrigin>;
-		/// The origin allowed to perform regular operations.
-		type OwnerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin, Success = Self::OriginSuccess>;
-		/// The type of origin after a successful origin check.
-		type OriginSuccess: CallSources<AccountIdOf<Self>, Web3NameOwnerOf<Self>>;
+		// /// The origin allowed to perform regular operations.
+		// type OwnerOrigin: EnsureOrigin<<Self as frame_system::Config>::RuntimeOrigin, Success = Self::OriginSuccess>;
+		// /// The type of origin after a successful origin check.
+		// type OriginSuccess: CallSources<AccountIdOf<Self>, Web3NameOwnerOf<Self>>;
 		/// The currency type to reserve and release deposits.
 		type Currency: ReservableCurrency<AccountIdOf<Self>>;
 		/// The amount of KILT to deposit to claim a name.
@@ -205,23 +205,23 @@ pub mod pallet {
 		///   check + origin check
 		/// - Writes: Names, Owner storage entries + currency deposit reserve
 		/// # </weight>
-		#[pallet::call_index(0)]
-		#[pallet::weight(<T as Config>::WeightInfo::claim(name.len().saturated_into()))]
-		pub fn claim(origin: OriginFor<T>, name: Web3NameInput<T>) -> DispatchResult {
-			let origin = T::OwnerOrigin::ensure_origin(origin)?;
-			let payer = origin.sender();
-			let owner = origin.subject();
+		// #[pallet::call_index(0)]
+		// #[pallet::weight(<T as Config>::WeightInfo::claim(name.len().saturated_into()))]
+		// pub fn claim(origin: OriginFor<T>, name: Web3NameInput<T>) -> DispatchResult {
+		// 	// let origin = T::OwnerOrigin::ensure_origin(origin)?;
+		// 	let payer = origin.sender();
+		// 	let owner = origin.subject();
 
-			let decoded_name = Self::check_claiming_preconditions(name, &owner, &payer)?;
+		// 	let decoded_name = Self::check_claiming_preconditions(name, &owner, &payer)?;
 
-			Self::register_name(decoded_name.clone(), owner.clone(), payer);
-			Self::deposit_event(Event::<T>::Web3NameClaimed {
-				owner,
-				name: decoded_name,
-			});
+		// 	Self::register_name(decoded_name.clone(), owner.clone(), payer);
+		// 	Self::deposit_event(Event::<T>::Web3NameClaimed {
+		// 		owner,
+		// 		name: decoded_name,
+		// 	});
 
-			Ok(())
-		}
+		// 	Ok(())
+		// }
 
 		/// Release the provided name from its owner.
 		///
@@ -235,22 +235,22 @@ pub mod pallet {
 		/// - Reads: Names storage entry + origin check
 		/// - Writes: Names, Owner storage entries + currency deposit release
 		/// # </weight>
-		#[pallet::call_index(1)]
-		#[pallet::weight(<T as Config>::WeightInfo::release_by_owner())]
-		pub fn release_by_owner(origin: OriginFor<T>) -> DispatchResult {
-			let origin = T::OwnerOrigin::ensure_origin(origin)?;
-			let owner = origin.subject();
+		// #[pallet::call_index(1)]
+		// #[pallet::weight(<T as Config>::WeightInfo::release_by_owner())]
+		// pub fn release_by_owner(origin: OriginFor<T>) -> DispatchResult {
+		// 	// let origin = T::OwnerOrigin::ensure_origin(origin)?;
+		// 	let owner = origin.subject();
 
-			let owned_name = Self::check_releasing_preconditions(&owner)?;
+		// 	let owned_name = Self::check_releasing_preconditions(&owner)?;
 
-			Self::unregister_name(&owned_name);
-			Self::deposit_event(Event::<T>::Web3NameReleased {
-				owner,
-				name: owned_name,
-			});
+		// 	Self::unregister_name(&owned_name);
+		// 	Self::deposit_event(Event::<T>::Web3NameReleased {
+		// 		owner,
+		// 		name: owned_name,
+		// 	});
 
-			Ok(())
-		}
+		// 	Ok(())
+		// }
 
 		/// Release the provided name from its owner.
 		///
@@ -347,16 +347,16 @@ pub mod pallet {
 		///
 		/// The subject of the call must be the owner of the web3name.
 		/// The sender of the call will be the new deposit owner.
-		#[pallet::call_index(5)]
-		#[pallet::weight(<T as Config>::WeightInfo::change_deposit_owner())]
-		pub fn change_deposit_owner(origin: OriginFor<T>) -> DispatchResult {
-			let source = <T as Config>::OwnerOrigin::ensure_origin(origin)?;
-			let w3n_owner = source.subject();
-			let name = Names::<T>::get(&w3n_owner).ok_or(Error::<T>::NotFound)?;
-			Web3NameStorageDepositCollector::<T>::change_deposit_owner(&name, source.sender())?;
+		// #[pallet::call_index(5)]
+		// #[pallet::weight(<T as Config>::WeightInfo::change_deposit_owner())]
+		// pub fn change_deposit_owner(origin: OriginFor<T>) -> DispatchResult {
+		// 	// let source = <T as Config>::OwnerOrigin::ensure_origin(origin)?;
+		// 	let w3n_owner = source.subject();
+		// 	let name = Names::<T>::get(&w3n_owner).ok_or(Error::<T>::NotFound)?;
+		// 	Web3NameStorageDepositCollector::<T>::change_deposit_owner(&name, source.sender())?;
 
-			Ok(())
-		}
+		// 	Ok(())
+		// }
 
 		/// Updates the deposit amount to the current deposit rate.
 		///

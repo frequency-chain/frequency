@@ -15,9 +15,9 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 // If you feel like getting in touch with us, you can do so at info@botlabs.org
-
 use did::{did_details::DidVerificationKey, DidVerificationKeyRelationship, KeyIdOf};
-use dip_provider_runtime_template::Web3Name;
+// use dip_provider_runtime_template::Web3Name;
+// use pallet_web3_names::web3_name::AsciiWeb3Name;
 use frame_support::traits::Contains;
 use kilt_dip_support::{
 	did::{DidSignatureAndCallVerifier, MerkleLeavesAndDidSignature, MerkleRevealedDidSignatureVerifier},
@@ -28,11 +28,12 @@ use kilt_dip_support::{
 use pallet_did_lookup::linkable_account::LinkableAccountId;
 use pallet_dip_consumer::traits::IdentityProofVerifier;
 use sp_std::vec::Vec;
+use sp_runtime::AccountId32;
 
-use crate::{AccountId, BlockNumber, DidIdentifier, Hash, Hasher, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin};
+use crate::{BlockNumber, DidIdentifier, Hash, Hasher, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, Web3Name};
 
 pub type MerkleProofVerifier =
-	DidMerkleProofVerifier<Hasher, AccountId, KeyIdOf<Runtime>, BlockNumber, u128, Web3Name, LinkableAccountId, 10, 10>;
+	DidMerkleProofVerifier<Hasher, AccountId32, KeyIdOf<Runtime>, BlockNumber, u128, Web3Name, LinkableAccountId, 10, 10>;
 pub type MerkleProofVerifierOutputOf<Call, Subject> =
 	<MerkleProofVerifier as IdentityProofVerifier<Call, Subject>>::VerificationResult;
 pub type MerkleDidSignatureVerifierOf<Call, Subject> = MerkleRevealedDidSignatureVerifier<
@@ -40,7 +41,7 @@ pub type MerkleDidSignatureVerifierOf<Call, Subject> = MerkleRevealedDidSignatur
 	BlockNumber,
 	Hash,
 	u128,
-	AccountId,
+	AccountId32,
 	MerkleProofVerifierOutputOf<Call, Subject>,
 	BlockNumberProvider<Runtime>,
 	// Signatures are valid for 50 blocks
