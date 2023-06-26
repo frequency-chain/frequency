@@ -74,7 +74,7 @@ describe("Capacity Transactions", function () {
         assertEvent(chainEvents2, "system.ExtrinsicFailed");
       });
 
-      describe.only("when capacity eligible transaction is from the msa pallet", async function () {
+      describe("when capacity eligible transaction is from the msa pallet", async function () {
         let delegatorKeys: KeyringPair;
         let payload: any = {};
         const stakedForMsa = 10n*DOLLARS
