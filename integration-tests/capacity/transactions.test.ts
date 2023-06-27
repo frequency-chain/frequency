@@ -19,7 +19,7 @@ import {
     getOrCreateParquetBroadcastSchema, getOrCreateAvroChatMessagePaginatedSchema, CHAIN_ENVIRONMENT
 } from "../scaffolding/helpers";
 
-describe.only("Capacity Transactions", function () {
+describe("Capacity Transactions", function () {
     const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 
   describe("pay_with_capacity", function () {
