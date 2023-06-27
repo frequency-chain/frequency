@@ -34,5 +34,6 @@ exports.mochaHooks = {
     },
     async afterAll() {
         await ExtrinsicHelper.api.disconnect();
+        await ExtrinsicHelper.apiPromise.disconnect();
     }
 }
