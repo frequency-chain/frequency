@@ -4,6 +4,9 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
+  pull_request:
+    branches:
+      - main
   push:
     tags:
       - "v[0-9]+.[0-9]+.[0-9]+" # ex. v1.0.0
@@ -25,319 +28,319 @@ env:
   RUST_TOOLCHAIN: "nightly-2022-11-15" # Match to /rust-toolchain.toml
 
 jobs:
-  validate-release-version:
-    name: Validate Release Version
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Validate
-        if: env.NEW_RELEASE_TAG_FROM_UI != ''
-        shell: bash
-        run: |
-          version=${{env.NEW_RELEASE_TAG_FROM_UI}}
-          echo "Release version entered in UI: $version"
-          regex='^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-rc[1-9]\d*)?$'
-          if [[ ! $version =~ $regex ]]; then
-            echo "ERROR: Entered version $version is not valid."
-            echo "Please use v#.#.#[-rc#] format."
-            exit 1
-          fi
+  # validate-release-version:
+  #   name: Validate Release Version
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Validate
+  #       if: env.NEW_RELEASE_TAG_FROM_UI != ''
+  #       shell: bash
+  #       run: |
+  #         version=${{env.NEW_RELEASE_TAG_FROM_UI}}
+  #         echo "Release version entered in UI: $version"
+  #         regex='^v(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(-rc[1-9]\d*)?$'
+  #         if [[ ! $version =~ $regex ]]; then
+  #           echo "ERROR: Entered version $version is not valid."
+  #           echo "Please use v#.#.#[-rc#] format."
+  #           exit 1
+  #         fi
 
-  create-release-branch:
-    needs: validate-release-version
-    name: Create Release Branch
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
-          fetch-depth: 0
-      - name: Create Release Branch?
-        id: create-release-branch
-        run: |
-          set -x
-          full_branch=remotes/origin/${{env.RELEASE_BRANCH_NAME}}
-          branch_hash=$(git rev-parse --verify --quiet $full_branch || echo "")
-          create_branch=$([ -z $branch_hash ] && echo 'true' || echo 'false')
-          echo "create_branch: $create_branch"
-          echo "create=$create_branch" >> $GITHUB_OUTPUT
-      - name: Create Release Branch
-        if: steps.create-release-branch.outputs.create == 'true'
-        run: |
-          git status -s
-          git checkout -b ${{env.RELEASE_BRANCH_NAME}}
-          git push origin ${{env.RELEASE_BRANCH_NAME}} -u
+  # create-release-branch:
+  #   needs: validate-release-version
+  #   name: Create Release Branch
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         token: ${{secrets.GHA_GIT_COMMIT || github.token}}
+  #         fetch-depth: 0
+  #     - name: Create Release Branch?
+  #       id: create-release-branch
+  #       run: |
+  #         set -x
+  #         full_branch=remotes/origin/${{env.RELEASE_BRANCH_NAME}}
+  #         branch_hash=$(git rev-parse --verify --quiet $full_branch || echo "")
+  #         create_branch=$([ -z $branch_hash ] && echo 'true' || echo 'false')
+  #         echo "create_branch: $create_branch"
+  #         echo "create=$create_branch" >> $GITHUB_OUTPUT
+  #     - name: Create Release Branch
+  #       if: steps.create-release-branch.outputs.create == 'true'
+  #       run: |
+  #         git status -s
+  #         git checkout -b ${{env.RELEASE_BRANCH_NAME}}
+  #         git push origin ${{env.RELEASE_BRANCH_NAME}} -u
 
-  run-all-benchmarks:
-    needs: create-release-branch
-    name: Run All Benchmarks
-    runs-on: [self-hosted, Linux, X64, benchmark]
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
-        with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Install Required Packages
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler libclang-dev clang cmake
-      - name: Install Rust Toolchain
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        # Match installation steps to CI base docker image
-        run: |
-          curl https://sh.rustup.rs -sSf | bash -s -- -y
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - name: Update Weights for All Pallets
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        run: |
-          rustup show
-          make benchmarks
-          git status -s
-          git diff
-      - name: Commit Updated Weights
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
-        with:
-          commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+  # run-all-benchmarks:
+  #   needs: create-release-branch
+  #   name: Run All Benchmarks
+  #   runs-on: [self-hosted, Linux, X64, benchmark]
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Full Release?
+  #       id: is-full-release
+  #       uses: ./.github/workflows/common/is-full-release
+  #       with:
+  #         version-tag: ${{env.NEW_RELEASE_TAG}}
+  #     - name: Install Required Packages
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt install -y protobuf-compiler libclang-dev clang cmake
+  #     - name: Install Rust Toolchain
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       # Match installation steps to CI base docker image
+  #       run: |
+  #         curl https://sh.rustup.rs -sSf | bash -s -- -y
+  #         echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+  #     - name: Update Weights for All Pallets
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       run: |
+  #         rustup show
+  #         make benchmarks
+  #         git status -s
+  #         git diff
+  #     - name: Commit Updated Weights
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+  #       with:
+  #         commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
+  #         commit_user_name: Frequency CI [bot]
+  #         commit_user_email: do-not-reply@users.noreply.github.com
+  #         commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
 
-  version-code:
-    needs: run-all-benchmarks
-    name: Version Code
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-          fetch-depth: 0
-      - name: Version Code
-        shell: bash
-        run: |
-          release_version=${{env.NEW_RELEASE_TAG}}
-          make version v=${release_version:1}
-      - name: Print Updated Version
-        run: |
-          git status
-          git diff
-      - name: Commit Updated Version
-        id: commit-updated-version
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
-        with:
-          commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
-      - name: Update Release Version Tag
-        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
-        with:
-          tag: ${{env.NEW_RELEASE_TAG}}
-          force_push_tag: true
-          message: "Release version tag"
-          commit_sha: ${{steps.commit-updated-version.outputs.commit_hash}}
+  # version-code:
+  #   needs: run-all-benchmarks
+  #   name: Version Code
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #         fetch-depth: 0
+  #     - name: Version Code
+  #       shell: bash
+  #       run: |
+  #         release_version=${{env.NEW_RELEASE_TAG}}
+  #         make version v=${release_version:1}
+  #     - name: Print Updated Version
+  #       run: |
+  #         git status
+  #         git diff
+  #     - name: Commit Updated Version
+  #       id: commit-updated-version
+  #       uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+  #       with:
+  #         commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
+  #         commit_user_name: Frequency CI [bot]
+  #         commit_user_email: do-not-reply@users.noreply.github.com
+  #         commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+  #     - name: Update Release Version Tag
+  #       uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
+  #       with:
+  #         tag: ${{env.NEW_RELEASE_TAG}}
+  #         force_push_tag: true
+  #         message: "Release version tag"
+  #         commit_sha: ${{steps.commit-updated-version.outputs.commit_hash}}
 
-  build-binaries:
-    needs: version-code
-    name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
-    strategy:
-      fail-fast: true
-      matrix:
-        # This job intermittently fails on EKS runners and must be run on standalone until
-        # https://www.pivotaltracker.com/story/show/185045683 is resolved.
-        # os: [[self-hosted, Linux, X64, testing, v2], [self-hosted, Linux, ARM64,  testing, v2]]
-        os: [[self-hosted, Linux, X64, testing, v2]]
-        network: [dev, local, rococo, mainnet]
-        include:
-          - network: dev
-            spec: frequency-no-relay
-            build-profile: release
-            release-file-name-prefix: frequency-dev
-          - network: local
-            spec: frequency-rococo-local
-            build-profile: release
-            release-file-name-prefix: frequency-rococo-local
-          - network: rococo
-            spec: frequency-rococo-testnet
-            build-profile: release
-            release-file-name-prefix: frequency-rococo
-          - network: mainnet
-            spec: frequency
-            build-profile: release
-            release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, testing, v2]
-            arch: amd64
-          # - os: [self-hosted, Linux, ARM64]
-          #   arch: arm64
-    runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Compile for ${{matrix.network}}
-        run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
-            --locked \
-            --features ${{matrix.spec}} \
-            --profile ${{matrix.build-profile}}
-      - name: Run Sanity Checks
-        run: |
-          file ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} && \
-            ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version
-      - name: Rename Binary
-        run: |
-          cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
-            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-      - name: Generate Binary Hash
-        working-directory: ${{env.BIN_DIR}}
-        run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
-      - name: Import GPG key
-        id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
-        with:
-          gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
-          passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
-          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707 # signing subkey
-      - name: Generate Binary Signature
-        working-directory: ${{env.BIN_DIR}}
-        run: gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
-      - name: Verify Binary
-        working-directory: ${{env.BIN_DIR}}
-        run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
-      - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: |
-            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
-            ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
-          if-no-files-found: error
+  # build-binaries:
+  #   needs: version-code
+  #   name: Build ${{matrix.arch}} Binary for ${{matrix.network}}
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       # This job intermittently fails on EKS runners and must be run on standalone until
+  #       # https://www.pivotaltracker.com/story/show/185045683 is resolved.
+  #       # os: [[self-hosted, Linux, X64, testing, v2], [self-hosted, Linux, ARM64,  testing, v2]]
+  #       os: [[self-hosted, Linux, X64, testing, v2]]
+  #       network: [dev, local, rococo, mainnet]
+  #       include:
+  #         - network: dev
+  #           spec: frequency-no-relay
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-dev
+  #         - network: local
+  #           spec: frequency-rococo-local
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-rococo-local
+  #         - network: rococo
+  #           spec: frequency-rococo-testnet
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-rococo
+  #         - network: mainnet
+  #           spec: frequency
+  #           build-profile: release
+  #           release-file-name-prefix: frequency
+  #         - os: [self-hosted, Linux, X64, testing, v2]
+  #           arch: amd64
+  #         # - os: [self-hosted, Linux, ARM64]
+  #         #   arch: arm64
+  #   runs-on: ${{matrix.os}}
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+  #         echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+  #         echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+  #     - name: Compile for ${{matrix.network}}
+  #       run: |
+  #         CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build \
+  #           --locked \
+  #           --features ${{matrix.spec}} \
+  #           --profile ${{matrix.build-profile}}
+  #     - name: Run Sanity Checks
+  #       run: |
+  #         file ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} && \
+  #           ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version
+  #     - name: Rename Binary
+  #       run: |
+  #         cp -p ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} \
+  #           ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+  #     - name: Generate Binary Hash
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
+  #     - name: Import GPG key
+  #       id: import-gpg
+  #       uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
+  #       with:
+  #         gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
+  #         passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
+  #         fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707 # signing subkey
+  #     - name: Generate Binary Signature
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
+  #     - name: Verify Binary
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
+  #     - name: Upload Artifacts
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: |
+  #           ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+  #           ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
+  #           ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
+  #         if-no-files-found: error
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host.
-  # See https://github.com/LibertyDSNP/frequency/issues/1543
-  build-runtimes:
-    needs: version-code
-    name: Build Runtime for ${{matrix.network}}
-    outputs:
-      runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
-      runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
-      runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
-    # env:
-    #   HOME: /root
-    strategy:
-      fail-fast: true
-      matrix:
-        network: [dev, rococo, mainnet]
-        include:
-          - network: dev
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency-dev_runtime
-            features: frequency-no-relay
-            wasm-core-version: frequency-rococo
-          - network: rococo
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency-rococo_runtime
-            features: frequency-rococo-testnet
-            wasm-core-version: frequency-rococo
-          - network: mainnet
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency_runtime
-            features: frequency
-            wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, testing, v2]
-    steps:
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y wget file build-essential
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Install Rust Toolchain
-        # Match installation steps to CI base docker image
-        run: |
-          curl https://sh.rustup.rs -sSf | bash -s -- -y
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - name: Extract Runtime Spec Version
-        run: |
-          echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
-            ${{matrix.runtime-dir}}/src/lib.rs)" >> $GITHUB_ENV
-      - name: Validate Extracted Version
-        shell: bash
-        run: |
-          echo "Runtime Spec Version: ${{env.RUNTIME_SPEC_VERSION}}"
-          [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
-            (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
-      - name: Set Env Vars
-        id: set-env-vars
-        run: |
-          echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
-          echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
-          release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
-          echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
-          echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
-      - name: Install srtool-cli
-        run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
-          srtool --version
-      - name: Build Deterministic WASM
-        run: |
-          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}}
-      - name: Rename WASM file
-        run: |
-          cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
-            ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
-      - name: Install Subwasm
-        run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
-          subwasm --version
-      - name: Test WASM file
-        run: |
-          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
-          subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
-            (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
-          if-no-files-found: error
+  # # Could not port this job to container because this creates docker-in-docker
+  # # situation and fails when srtool-ci container is trying to process files in
+  # # the mapped volume which don't exist on the host.
+  # # See https://github.com/LibertyDSNP/frequency/issues/1543
+  # build-runtimes:
+  #   needs: version-code
+  #   name: Build Runtime for ${{matrix.network}}
+  #   outputs:
+  #     runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
+  #     runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
+  #     runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
+  #   # env:
+  #   #   HOME: /root
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       network: [dev, rococo, mainnet]
+  #       include:
+  #         - network: dev
+  #           build-profile: release
+  #           package: frequency-runtime
+  #           runtime-dir: runtime/frequency
+  #           built-wasm-file-name-prefix: frequency_runtime
+  #           release-wasm-file-name-prefix: frequency-dev_runtime
+  #           features: frequency-no-relay
+  #           wasm-core-version: frequency-rococo
+  #         - network: rococo
+  #           build-profile: release
+  #           package: frequency-runtime
+  #           runtime-dir: runtime/frequency
+  #           built-wasm-file-name-prefix: frequency_runtime
+  #           release-wasm-file-name-prefix: frequency-rococo_runtime
+  #           features: frequency-rococo-testnet
+  #           wasm-core-version: frequency-rococo
+  #         - network: mainnet
+  #           build-profile: release
+  #           package: frequency-runtime
+  #           runtime-dir: runtime/frequency
+  #           built-wasm-file-name-prefix: frequency_runtime
+  #           release-wasm-file-name-prefix: frequency_runtime
+  #           features: frequency
+  #           wasm-core-version: frequency
+  #   runs-on: [self-hosted, Linux, X64, testing, v2]
+  #   steps:
+  #     - name: Install Required Packages
+  #       run: |
+  #         sudo apt-get update
+  #         sudo apt install -y wget file build-essential
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Install Rust Toolchain
+  #       # Match installation steps to CI base docker image
+  #       run: |
+  #         curl https://sh.rustup.rs -sSf | bash -s -- -y
+  #         echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+  #     - name: Extract Runtime Spec Version
+  #       run: |
+  #         echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
+  #           ${{matrix.runtime-dir}}/src/lib.rs)" >> $GITHUB_ENV
+  #     - name: Validate Extracted Version
+  #       shell: bash
+  #       run: |
+  #         echo "Runtime Spec Version: ${{env.RUNTIME_SPEC_VERSION}}"
+  #         [[ $RUNTIME_SPEC_VERSION == ?(-)+([0-9]) ]] || \
+  #           (echo "ERROR: \"${{env.RUNTIME_SPEC_VERSION}}\" is not a valid integer" && exit 1)
+  #     - name: Set Env Vars
+  #       id: set-env-vars
+  #       run: |
+  #         echo "WASM_DIR=${{matrix.runtime-dir}}/target/srtool/${{matrix.build-profile}}/wbuild/${{matrix.package}}" >> $GITHUB_ENV
+  #         echo "BUILT_WASM_FILENAME=${{matrix.built-wasm-file-name-prefix}}.compact.compressed.wasm" >> $GITHUB_ENV
+  #         release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
+  #         echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
+  #         echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
+  #     - name: Install srtool-cli
+  #       run: |
+  #         cargo install --git https://github.com/chevdor/srtool-cli
+  #         srtool --version
+  #     - name: Build Deterministic WASM
+  #       run: |
+  #         RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+  #           --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
+  #           --profile=${{matrix.build-profile}} \
+  #           --package=${{matrix.package}}
+  #     - name: Rename WASM file
+  #       run: |
+  #         cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
+  #           ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+  #     - name: Install Subwasm
+  #       run: |
+  #         cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+  #         subwasm --version
+  #     - name: Test WASM file
+  #       run: |
+  #         subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+  #         subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+  #           (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
+  #         if-no-files-found: error
 
   build-rust-developer-docs:
-    needs: version-code
+    #needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, testing, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
@@ -355,623 +358,616 @@ jobs:
           rustup install nightly-2023-06-01
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
           RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --features frequency
-      - name: Fix file permissions
-        shell: sh
-        run: |
-          chmod -c -R +rX "target/doc" |
-          while read line; do
-              echo "::warning title=Invalid file permissions automatically fixed::$line"
-          done
       - name: Upload Docs
         uses: actions/upload-pages-artifact@v1
         with:
           path: ./target/doc
 
-  build-js-api-augment:
-    needs: build-binaries
-    name: Build JS API Augment
-    env:
-      NETWORK: local
-      CHAIN_SPEC: frequency-rococo-local
-      BUILD_PROFILE: release
-      BIN_DIR: target/release
-      RELEASE_FILENAME_PREFIX: frequency-rococo-local
-      ARCH: amd64
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: js/api-augment/package-lock.json
-      - name: Install
-        run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
-        working-directory: js/api-augment
-      - name: Download Binaries
-        id: download-binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: List Downloaded Binaries
-        run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
-          chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
-      - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
-      - name: Build
-        run: npm run build
-        working-directory: js/api-augment
-      - name: Upload Dist Dir
-        uses: actions/upload-artifact@v3
-        with:
-          name: js-api-augment-${{github.run_id}}
-          path: js/api-augment/dist
-          if-no-files-found: error
+  # build-js-api-augment:
+  #   needs: build-binaries
+  #   name: Build JS API Augment
+  #   env:
+  #     NETWORK: local
+  #     CHAIN_SPEC: frequency-rococo-local
+  #     BUILD_PROFILE: release
+  #     BIN_DIR: target/release
+  #     RELEASE_FILENAME_PREFIX: frequency-rococo-local
+  #     ARCH: amd64
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
+  #         echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Set up NodeJs
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: "npm"
+  #         registry-url: "https://registry.npmjs.org"
+  #         cache-dependency-path: js/api-augment/package-lock.json
+  #     - name: Install
+  #       run: npm install # DO NOT use `npm ci` as we want the latest polkadot/api possible
+  #       working-directory: js/api-augment
+  #     - name: Download Binaries
+  #       id: download-binaries
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: .
+  #     - name: List Downloaded Binaries
+  #       run: |
+  #         download_dir=${{steps.download-binaries.outputs.download-path}}
+  #         echo "Download dir: $download_dir"
+  #         echo "Downloaded binaries: $(ls -l $download_dir)"
+  #     - name: Move Binary to Target Dir
+  #       run: |
+  #         mkdir -p ${{env.BIN_DIR}}
+  #         mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
+  #         chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
+  #     - name: Output Metadata
+  #       run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+  #     - name: Build
+  #       run: npm run build
+  #       working-directory: js/api-augment
+  #     - name: Upload Dist Dir
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: js-api-augment-${{github.run_id}}
+  #         path: js/api-augment/dist
+  #         if-no-files-found: error
 
-  test-version-matches-release:
-    needs: build-binaries
-    name: Test Version Matches Release
-    strategy:
-      fail-fast: true
-      matrix:
-        os: [ubuntu-20.04]
-        network: [mainnet]
-        include:
-          - network: mainnet
-            spec: frequency
-            build-profile: release
-            release-file-name-prefix: frequency
-          - os: ubuntu-20.04
-            arch: amd64
-    runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-          fetch-depth: 0
-      - name: Download Binaries
-        id: download-binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: List Downloaded Binaries
-        run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      - name: Testing Version Match
-        if: env.TEST_RUN != 'true'
-        shell: bash
-        run: |
-          EXPECTED_VERSION="${{env.NEW_RELEASE_TAG}}+polkadot$(make version-polkadot)"
-          ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
-          echo "Expected: ${EXPECTED_VERSION}"
-          echo "  Actual: ${ACTUAL_VERSION%-*}"
-          [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
+  # test-version-matches-release:
+  #   needs: build-binaries
+  #   name: Test Version Matches Release
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       os: [ubuntu-20.04]
+  #       network: [mainnet]
+  #       include:
+  #         - network: mainnet
+  #           spec: frequency
+  #           build-profile: release
+  #           release-file-name-prefix: frequency
+  #         - os: ubuntu-20.04
+  #           arch: amd64
+  #   runs-on: ${{matrix.os}}
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+  #         echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+  #         echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #         fetch-depth: 0
+  #     - name: Download Binaries
+  #       id: download-binaries
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: .
+  #     - name: List Downloaded Binaries
+  #       run: |
+  #         download_dir=${{steps.download-binaries.outputs.download-path}}
+  #         echo "Download dir: $download_dir"
+  #         echo "Downloaded binaries: $(ls -l $download_dir)"
+  #     - name: Move Binary to Target Dir
+  #       run: |
+  #         mkdir -p ${{env.BIN_DIR}}
+  #         mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #         chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #     - name: Testing Version Match
+  #       if: env.TEST_RUN != 'true'
+  #       shell: bash
+  #       run: |
+  #         EXPECTED_VERSION="${{env.NEW_RELEASE_TAG}}+polkadot$(make version-polkadot)"
+  #         ACTUAL_VERSION="v$(${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}} --version | cut -d " " -f 2)"
+  #         echo "Expected: ${EXPECTED_VERSION}"
+  #         echo "  Actual: ${ACTUAL_VERSION%-*}"
+  #         [[ ${ACTUAL_VERSION%-*} == ${EXPECTED_VERSION} ]]
 
-  # Could not port this job to container because the reference node will be started in a
-  # parallel container to the job polkadot-js-tools container and the latter will not
-  # be able to connect to the former without runner supporting DinD mode first.
-  # See https://github.com/LibertyDSNP/frequency/issues/1543
-  compare-metadata:
-    needs: build-binaries
-    name: Compare Metadata
-    runs-on: ubuntu-20.04
-    env:
-      BIN_DIR: target/release
-      BIN_FILENAME: frequency.amd64
-      TEST_BIN_FILENAME: frequency.amd64
-      TEST_DOWNLOAD_DIR: download-test
-      REF_BIN_FILENAME: frequency-ref.amd64
-      REF_DOWNLOAD_DIR: download-ref
-      OUTPUT_DIR: target/release
-      FREQUENCY_PROCESS_NAME: frequency
-    steps:
-      - name: Set Env Vars
-        run: |
-          export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
-          echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-          fetch-depth: 0
-      - name: Get Previous Full Release Version
-        id: get-previous-full-release-version
-        uses: ./.github/workflows/common/get-previous-full-release-version
-        with:
-          full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
-      - name: Fetch Reference Binary
-        uses: robinraju/release-downloader@efa4cd07bd0195e6cc65e9e30c251b49ce4d3e51
-        with:
-          tag: ${{steps.get-previous-full-release-version.outputs.version}}
-          fileName: ${{env.BIN_FILENAME}}
-          out-file-path: ${{env.REF_DOWNLOAD_DIR}}
-      - name: Download Test Binary
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: ${{env.TEST_DOWNLOAD_DIR}}
-      - name: Rename and Move Binaries
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.REF_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.REF_BIN_FILENAME}}
-          mv ${{env.TEST_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
-      - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          chmod 755 $TEST_BIN_FILENAME
-          chmod 755 $REF_BIN_FILENAME
-      - name: Docker network
-        run: docker network create net-${{env.RELEASE_BRANCH_NAME}}
-      - name: Start Test Node
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
-            -v `pwd`:/app \
-            --name test-node \
-            ubuntu:22.04 \
-              /bin/sh -c "chmod +x /app/${{env.TEST_BIN_FILENAME}} && /app/${{env.TEST_BIN_FILENAME}} \
-              --chain=frequency-bench \
-              --rpc-external \
-              --rpc-cors=all \
-              --ws-external \
-              --rpc-methods=Unsafe \
-              --no-telemetry \
-              --no-prometheus \
-              --reserved-only \
-              --no-hardware-benchmarks \
-              --tmp \
-              -- \
-              --reserved-only"
-      - name: Start Reference Node
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
-            -v `pwd`:/app \
-            --name ref-node \
-            ubuntu:22.04 \
-              /bin/sh -c "chmod +x /app/${{env.REF_BIN_FILENAME}} && /app/${{env.REF_BIN_FILENAME}} \
-              --chain=frequency-bench \
-              --rpc-external \
-              --rpc-cors=all \
-              --ws-external \
-              --rpc-methods=Unsafe \
-              --no-telemetry \
-              --no-prometheus \
-              --reserved-only \
-              --no-hardware-benchmarks \
-              --tmp \
-              -- \
-              --reserved-only"
-      - name: Prepare Output
-        working-directory: ${{env.OUTPUT_DIR}}
-        run: |
-          REF_VERSION=$(./${{env.REF_BIN_FILENAME}} --version)
-          BIN_VERSION=$(./${{env.TEST_BIN_FILENAME}} --version)
-          echo "Metadata comparison against previous full release:" >> ${{env.OUTPUT_FILENAME}}
-          echo "Date: $(date)" >> ${{env.OUTPUT_FILENAME}}
-          echo "Ref. version: $REF_VERSION" >> ${{env.OUTPUT_FILENAME}}
-          echo "Test version: $BIN_VERSION" >> ${{env.OUTPUT_FILENAME}}
-          echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
-      - name: Compare Metadata
-        timeout-minutes: 10
-        run: |
-          CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.55.3 metadata ws://ref-node:9944 ws://test-node:9944"
-          echo -e "Running:\n$CMD"
-          $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
-          sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
-          cat ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}} | egrep -n -i ''
-          SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}})
-          echo -e $SUMMARY
-          echo -e $SUMMARY >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
-      - name: Show Result
-        working-directory: ${{env.OUTPUT_DIR}}
-        run: |
-          cat ${{env.OUTPUT_FILENAME}}
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
-          if-no-files-found: error
-      - name: Stop Local Nodes
-        if: always()
-        run: |
-          echo "Attempting to kill all frequency processes..."
-          docker stop ref-node || true
-          docker stop test-node || true
-          docker network rm net-${{env.RELEASE_BRANCH_NAME}}
+  # # Could not port this job to container because the reference node will be started in a
+  # # parallel container to the job polkadot-js-tools container and the latter will not
+  # # be able to connect to the former without runner supporting DinD mode first.
+  # # See https://github.com/LibertyDSNP/frequency/issues/1543
+  # compare-metadata:
+  #   needs: build-binaries
+  #   name: Compare Metadata
+  #   runs-on: ubuntu-20.04
+  #   env:
+  #     BIN_DIR: target/release
+  #     BIN_FILENAME: frequency.amd64
+  #     TEST_BIN_FILENAME: frequency.amd64
+  #     TEST_DOWNLOAD_DIR: download-test
+  #     REF_BIN_FILENAME: frequency-ref.amd64
+  #     REF_DOWNLOAD_DIR: download-ref
+  #     OUTPUT_DIR: target/release
+  #     FREQUENCY_PROCESS_NAME: frequency
+  #   steps:
+  #     - name: Set Env Vars
+  #       run: |
+  #         export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
+  #         echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #         fetch-depth: 0
+  #     - name: Get Previous Full Release Version
+  #       id: get-previous-full-release-version
+  #       uses: ./.github/workflows/common/get-previous-full-release-version
+  #       with:
+  #         full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
+  #     - name: Fetch Reference Binary
+  #       uses: robinraju/release-downloader@efa4cd07bd0195e6cc65e9e30c251b49ce4d3e51
+  #       with:
+  #         tag: ${{steps.get-previous-full-release-version.outputs.version}}
+  #         fileName: ${{env.BIN_FILENAME}}
+  #         out-file-path: ${{env.REF_DOWNLOAD_DIR}}
+  #     - name: Download Test Binary
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: ${{env.TEST_DOWNLOAD_DIR}}
+  #     - name: Rename and Move Binaries
+  #       run: |
+  #         mkdir -p ${{env.BIN_DIR}}
+  #         mv ${{env.REF_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.REF_BIN_FILENAME}}
+  #         mv ${{env.TEST_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
+  #     - name: Set Binary Permissions
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: |
+  #         chmod 755 $TEST_BIN_FILENAME
+  #         chmod 755 $REF_BIN_FILENAME
+  #     - name: Docker network
+  #       run: docker network create net-${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Start Test Node
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: |
+  #         docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
+  #           -v `pwd`:/app \
+  #           --name test-node \
+  #           ubuntu:22.04 \
+  #             /bin/sh -c "chmod +x /app/${{env.TEST_BIN_FILENAME}} && /app/${{env.TEST_BIN_FILENAME}} \
+  #             --chain=frequency-bench \
+  #             --rpc-external \
+  #             --rpc-cors=all \
+  #             --ws-external \
+  #             --rpc-methods=Unsafe \
+  #             --no-telemetry \
+  #             --no-prometheus \
+  #             --reserved-only \
+  #             --no-hardware-benchmarks \
+  #             --tmp \
+  #             -- \
+  #             --reserved-only"
+  #     - name: Start Reference Node
+  #       working-directory: ${{env.BIN_DIR}}
+  #       run: |
+  #         docker run -d --rm --net=net-${{env.RELEASE_BRANCH_NAME}} \
+  #           -v `pwd`:/app \
+  #           --name ref-node \
+  #           ubuntu:22.04 \
+  #             /bin/sh -c "chmod +x /app/${{env.REF_BIN_FILENAME}} && /app/${{env.REF_BIN_FILENAME}} \
+  #             --chain=frequency-bench \
+  #             --rpc-external \
+  #             --rpc-cors=all \
+  #             --ws-external \
+  #             --rpc-methods=Unsafe \
+  #             --no-telemetry \
+  #             --no-prometheus \
+  #             --reserved-only \
+  #             --no-hardware-benchmarks \
+  #             --tmp \
+  #             -- \
+  #             --reserved-only"
+  #     - name: Prepare Output
+  #       working-directory: ${{env.OUTPUT_DIR}}
+  #       run: |
+  #         REF_VERSION=$(./${{env.REF_BIN_FILENAME}} --version)
+  #         BIN_VERSION=$(./${{env.TEST_BIN_FILENAME}} --version)
+  #         echo "Metadata comparison against previous full release:" >> ${{env.OUTPUT_FILENAME}}
+  #         echo "Date: $(date)" >> ${{env.OUTPUT_FILENAME}}
+  #         echo "Ref. version: $REF_VERSION" >> ${{env.OUTPUT_FILENAME}}
+  #         echo "Test version: $BIN_VERSION" >> ${{env.OUTPUT_FILENAME}}
+  #         echo "----------------------------------------------------------------------" >> ${{env.OUTPUT_FILENAME}}
+  #     - name: Compare Metadata
+  #       timeout-minutes: 10
+  #       run: |
+  #         CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.55.3 metadata ws://ref-node:9944 ws://test-node:9944"
+  #         echo -e "Running:\n$CMD"
+  #         $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+  #         sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+  #         cat ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}} | egrep -n -i ''
+  #         SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}})
+  #         echo -e $SUMMARY
+  #         echo -e $SUMMARY >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+  #     - name: Show Result
+  #       working-directory: ${{env.OUTPUT_DIR}}
+  #       run: |
+  #         cat ${{env.OUTPUT_FILENAME}}
+  #     - name: Upload Artifact
+  #       uses: actions/upload-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+  #         if-no-files-found: error
+  #     - name: Stop Local Nodes
+  #       if: always()
+  #       run: |
+  #         echo "Attempting to kill all frequency processes..."
+  #         docker stop ref-node || true
+  #         docker stop test-node || true
+  #         docker network rm net-${{env.RELEASE_BRANCH_NAME}}
 
   wait-for-all-builds:
     needs:
       [
-        build-binaries,
-        build-runtimes,
-        compare-metadata,
-        test-version-matches-release,
+        #build-binaries,
+        #build-runtimes,
+        #compare-metadata,
+        #test-version-matches-release,
         build-rust-developer-docs,
-        build-js-api-augment,
+        #build-js-api-augment,
       ]
     name: Wait for All Builds to Finish
     runs-on: ubuntu-20.04
-    outputs:
-      runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
-      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
-      runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
+    #outputs:
+      #runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
+      #runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
+      #runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
     steps:
       - name: Proceed Forward
         run: echo "All build jobs have finished, proceeding with the release"
 
-  release-artifacts:
-    needs: wait-for-all-builds
-    name: Release Built Artifacts
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-          fetch-depth: 0
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
-        with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Get Previous Full Release Version
-        id: get-previous-full-release-version
-        uses: ./.github/workflows/common/get-previous-full-release-version
-        with:
-          full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
-      - name: Set Env Vars
-        run: |
-          echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
-      - name: Install Tera CLI
-        run: |
-          cargo install --git https://github.com/chevdor/tera-cli
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - name: Verify Tera CLI Install
-        run: |
-          which tera
-          tera --version
-      - name: Build Changelog
-        id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@f7dd0f5932037ca4fff56395ffb04837fd97851a
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
-        with:
-          fromTag: ${{env.PREVIOUS_RELEASE_TAG}}
-          toTag: ${{env.NEW_RELEASE_TAG}}
-          configurationJson: |
-            {
-              "categories": [
-                {
-                  "title": "### Major Changes|n|",
-                  "labels": ["change/major"]
-                }
-              ],
-              "template": "#{{CHANGELOG}}|n||n|### Uncategorized Changes|n||n| #{{UNCATEGORIZED}}",
-              "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
-              "empty_template": "- No changes",
-              "transformers": [
-                {
-                  "pattern": "- (.*)",
-                  "target": "- $1|n|"
-                }
-              ]
-            }
-      - name: Sanitize Changelog
-        id: sanitize-changelog
-        shell: bash
-        run: |
-          changelog='${{steps.build-changelog.outputs.changelog}}'
-          echo "-------------------------------------------------"
-          clean="${changelog//[\`\[\]$'\n']/}"
-          echo "sanitized: $clean"
-          echo "sanitized=$clean" >> $GITHUB_OUTPUT
-      - name: Get Polkadot Version
-        id: polkadot-version
-        run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
-      - name: Download Artifacts
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: /tmp
-      - name: List Downloaded Artifacts
-        working-directory: /tmp
-        run: |
-          ls -la
-      - name: Install subwasm
-        run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
-          subwasm --version
-      - name: Get Runtimes Info
-        id: get-runtimes-info
-        working-directory: /tmp
-        # Do NOT produce the dev version. That doesn't need to be part of the release notes, just in the artifacts
-        run: |
-          runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
-          runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
-          runtime_filename_mainnet=${{needs.wait-for-all-builds.outputs.runtime_filename_mainnet}}
-          runtime_info_mainnet=$(subwasm info $runtime_filename_mainnet | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
-      - name: Generate Release Notes
-        working-directory: tools/ci/release-notes
-        run: |
-          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
-            '${{steps.sanitize-changelog.outputs.sanitized}}' \
-            '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
-            '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
-            > release-notes.md
-      - name: Publish Release Candidate on GitHub
-        if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-        with:
-          name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
-          prerelease: true
-          body_path: tools/ci/release-notes/release-notes.md
-          tag_name: ${{env.NEW_RELEASE_TAG}}
-          files: |
-            /tmp/frequency*.*
-            /tmp/metadata-compare-*
-      - name: Publish Full Release on GitHub
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
-        with:
-          body_path: tools/ci/release-notes/release-notes.md
-          tag_name: ${{env.NEW_RELEASE_TAG}}
-          files: |
-            /tmp/frequency*.*
-            /tmp/metadata-compare-*
-      - name: Get Latest Commit
-        id: get-latest-commit
-        run: |
-          set -x
-          latest_commit_sha=$(git rev-parse HEAD)
-          echo "sha=$latest_commit_sha" >> $GITHUB_OUTPUT
-      - name: Update Git Latest Tag
-        if: |
-          steps.is-full-release.outputs.is-full-release == 'true' &&
-          env.TEST_RUN != 'true'
-        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
-        with:
-          commit_sha: ${{steps.get-latest-commit.outputs.sha}}
-          tag: ${{env.LATEST_FULL_RELEASE_TAG}}
-          force_push_tag: true
-          message: Latest full release
-      - name: Dispatch Auto-signer Workflow
-        if: env.TEST_RUN != 'true'
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
-          script: |
-            await github.rest.actions.createWorkflowDispatch({
-              owner: 'LibertyDSNP',
-              repo: 'metadata-portal',
-              workflow_id: 'auto-sign.yml',
-              ref: 'main'
-            })
+  # release-artifacts:
+  #   needs: wait-for-all-builds
+  #   name: Release Built Artifacts
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #         fetch-depth: 0
+  #     - name: Full Release?
+  #       id: is-full-release
+  #       uses: ./.github/workflows/common/is-full-release
+  #       with:
+  #         version-tag: ${{env.NEW_RELEASE_TAG}}
+  #     - name: Get Previous Full Release Version
+  #       id: get-previous-full-release-version
+  #       uses: ./.github/workflows/common/get-previous-full-release-version
+  #       with:
+  #         full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
+  #     - name: Install Tera CLI
+  #       run: |
+  #         cargo install --git https://github.com/chevdor/tera-cli
+  #         echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+  #     - name: Verify Tera CLI Install
+  #       run: |
+  #         which tera
+  #         tera --version
+  #     - name: Build Changelog
+  #       id: build-changelog
+  #       uses: mikepenz/release-changelog-builder-action@f7dd0f5932037ca4fff56395ffb04837fd97851a
+  #       env:
+  #         GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+  #       with:
+  #         fromTag: ${{env.PREVIOUS_RELEASE_TAG}}
+  #         toTag: ${{env.NEW_RELEASE_TAG}}
+  #         configurationJson: |
+  #           {
+  #             "categories": [
+  #               {
+  #                 "title": "### Major Changes|n|",
+  #                 "labels": ["change/major"]
+  #               }
+  #             ],
+  #             "template": "#{{CHANGELOG}}|n||n|### Uncategorized Changes|n||n| #{{UNCATEGORIZED}}",
+  #             "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
+  #             "empty_template": "- No changes",
+  #             "transformers": [
+  #               {
+  #                 "pattern": "- (.*)",
+  #                 "target": "- $1|n|"
+  #               }
+  #             ]
+  #           }
+  #     - name: Sanitize Changelog
+  #       id: sanitize-changelog
+  #       shell: bash
+  #       run: |
+  #         changelog='${{steps.build-changelog.outputs.changelog}}'
+  #         echo "-------------------------------------------------"
+  #         clean="${changelog//[\`\[\]$'\n']/}"
+  #         echo "sanitized: $clean"
+  #         echo "sanitized=$clean" >> $GITHUB_OUTPUT
+  #     - name: Get Polkadot Version
+  #       id: polkadot-version
+  #       run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
+  #     - name: Download Artifacts
+  #       id: download
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: /tmp
+  #     - name: List Downloaded Artifacts
+  #       working-directory: /tmp
+  #       run: |
+  #         ls -la
+  #     - name: Install subwasm
+  #       run: |
+  #         cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+  #         subwasm --version
+  #     - name: Get Runtimes Info
+  #       id: get-runtimes-info
+  #       working-directory: /tmp
+  #       # Do NOT produce the dev version. That doesn't need to be part of the release notes, just in the artifacts
+  #       run: |
+  #         runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
+  #         runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
+  #         echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
+  #         runtime_filename_mainnet=${{needs.wait-for-all-builds.outputs.runtime_filename_mainnet}}
+  #         runtime_info_mainnet=$(subwasm info $runtime_filename_mainnet | sed -Ez '$ s/\n+$//' | tr '\n' '|')
+  #         echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
+  #     - name: Generate Release Notes
+  #       working-directory: tools/ci/release-notes
+  #       run: |
+  #         ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
+  #           '${{steps.sanitize-changelog.outputs.sanitized}}' \
+  #           '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
+  #           '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
+  #           > release-notes.md
+  #     - name: Publish Release Candidate on GitHub
+  #       if: steps.is-full-release.outputs.is-full-release != 'true'
+  #       uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+  #       with:
+  #         name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
+  #         prerelease: true
+  #         body_path: tools/ci/release-notes/release-notes.md
+  #         tag_name: ${{env.NEW_RELEASE_TAG}}
+  #         files: |
+  #           /tmp/frequency*.*
+  #           /tmp/metadata-compare-*
+  #     - name: Publish Full Release on GitHub
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+  #       with:
+  #         body_path: tools/ci/release-notes/release-notes.md
+  #         tag_name: ${{env.NEW_RELEASE_TAG}}
+  #         files: |
+  #           /tmp/frequency*.*
+  #           /tmp/metadata-compare-*
+  #     - name: Get Latest Commit
+  #       id: get-latest-commit
+  #       run: |
+  #         set -x
+  #         latest_commit_sha=$(git rev-parse HEAD)
+  #         echo "sha=$latest_commit_sha" >> $GITHUB_OUTPUT
+  #     - name: Update Git Latest Tag
+  #       if: |
+  #         steps.is-full-release.outputs.is-full-release == 'true' &&
+  #         env.TEST_RUN != 'true'
+  #       uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
+  #       with:
+  #         commit_sha: ${{steps.get-latest-commit.outputs.sha}}
+  #         tag: ${{env.LATEST_FULL_RELEASE_TAG}}
+  #         force_push_tag: true
+  #         message: Latest full release
+  #     - name: Dispatch Auto-signer Workflow
+  #       if: env.TEST_RUN != 'true'
+  #       uses: actions/github-script@v6
+  #       with:
+  #         github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
+  #         script: |
+  #           await github.rest.actions.createWorkflowDispatch({
+  #             owner: 'LibertyDSNP',
+  #             repo: 'metadata-portal',
+  #             workflow_id: 'auto-sign.yml',
+  #             ref: 'main'
+  #           })
 
-  release-node-images:
-    needs: wait-for-all-builds
-    name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
-    strategy:
-      fail-fast: true
-      matrix:
-        arch: [amd64]
-        network: [rococo, mainnet]
-        include:
-          - network: rococo
-            build-profile: release
-            release-file-name-prefix: frequency-rococo
-          - network: mainnet
-            build-profile: release
-            release-file-name-prefix: frequency
-          - arch: amd64
-            docker-platform: linux/amd64
-    env:
-      DOCKER_HUB_PROFILE: frequencychain
-      IMAGE_NAME: parachain-node
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
-        with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Download Binaries
-        id: download-binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: List Downloaded Binaries
-        run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: ${{matrix.arch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-      - name: Build and Push Parachain Image
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
-          push: ${{env.TEST_RUN != 'true'}}
-          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
-      - name: Update DockerHub Latest Tag
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
-          push: ${{env.TEST_RUN != 'true'}}
-          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
-      - name: Update DockerHub Description
-        if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-          repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}
-          readme-filepath: docker/${{env.IMAGE_NAME}}-${{matrix.network}}.overview.md
+  # release-node-images:
+  #   needs: wait-for-all-builds
+  #   name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       arch: [amd64]
+  #       network: [rococo, mainnet]
+  #       include:
+  #         - network: rococo
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-rococo
+  #         - network: mainnet
+  #           build-profile: release
+  #           release-file-name-prefix: frequency
+  #         - arch: amd64
+  #           docker-platform: linux/amd64
+  #   env:
+  #     DOCKER_HUB_PROFILE: frequencychain
+  #     IMAGE_NAME: parachain-node
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+  #         echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+  #         echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Full Release?
+  #       id: is-full-release
+  #       uses: ./.github/workflows/common/is-full-release
+  #       with:
+  #         version-tag: ${{env.NEW_RELEASE_TAG}}
+  #     - name: Download Binaries
+  #       id: download-binaries
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: .
+  #     - name: List Downloaded Binaries
+  #       run: |
+  #         download_dir=${{steps.download-binaries.outputs.download-path}}
+  #         echo "Download dir: $download_dir"
+  #         echo "Downloaded binaries: $(ls -l $download_dir)"
+  #     - name: Move Binary to Target Dir
+  #       run: |
+  #         mkdir -p ${{env.BIN_DIR}}
+  #         mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #         chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
+  #       with:
+  #         platforms: ${{matrix.arch}}
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v2
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v2
+  #       with:
+  #         username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+  #         password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+  #     - name: Build and Push Parachain Image
+  #       uses: docker/build-push-action@v4
+  #       with:
+  #         context: .
+  #         platforms: ${{matrix.docker-platform}}
+  #         push: ${{env.TEST_RUN != 'true'}}
+  #         file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+  #         tags: |
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
+  #     - name: Update DockerHub Latest Tag
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       uses: docker/build-push-action@v4
+  #       with:
+  #         context: .
+  #         platforms: ${{matrix.docker-platform}}
+  #         push: ${{env.TEST_RUN != 'true'}}
+  #         file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+  #         tags: |
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
+  #     - name: Update DockerHub Description
+  #       if: env.TEST_RUN != 'true'
+  #       uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
+  #       with:
+  #         username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+  #         password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+  #         repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}
+  #         readme-filepath: docker/${{env.IMAGE_NAME}}-${{matrix.network}}.overview.md
 
-  release-dev-images:
-    needs: wait-for-all-builds
-    name: Release Dev Docker Image for ${{matrix.node}}
-    strategy:
-      fail-fast: true
-      matrix:
-        arch: [amd64]
-        node: [collator-node-local, instant-seal-node]
-        include:
-          - node: collator-node-local
-            network: local
-            build-profile: release
-            release-file-name-prefix: frequency-rococo-local
-          - node: instant-seal-node
-            network: dev
-            build-profile: release
-            release-file-name-prefix: frequency-dev
-          - arch: amd64
-            build-profile: release
-            docker-platform: linux/amd64
-    env:
-      DOCKER_HUB_PROFILE: frequencychain
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Set Env Vars
-        run: |
-          echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
-          echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
-        with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Download Binaries
-        id: download-binaries
-        uses: actions/download-artifact@v3
-        with:
-          name: artifacts-${{github.run_id}}
-          path: .
-      - name: List Downloaded Binaries
-        run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: ${{matrix.arch}}
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-      - name: Build and Push Dev Image
-        # if: env.TEST_RUN != 'true'
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
-          push: ${{env.TEST_RUN != 'true'}}
-          file: ./docker/${{matrix.node}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
-      - name: Update DockerHub Latest Tag
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v4
-        with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
-          push: ${{env.TEST_RUN != 'true'}}
-          file: ./docker/${{matrix.node}}.dockerfile
-          tags: |
-            ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
-      - name: Update DockerHub Description
-        if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
-        with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
-          repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
-          readme-filepath: docker/${{matrix.node}}.overview.md
+  # release-dev-images:
+  #   needs: wait-for-all-builds
+  #   name: Release Dev Docker Image for ${{matrix.node}}
+  #   strategy:
+  #     fail-fast: true
+  #     matrix:
+  #       arch: [amd64]
+  #       node: [collator-node-local, instant-seal-node]
+  #       include:
+  #         - node: collator-node-local
+  #           network: local
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-rococo-local
+  #         - node: instant-seal-node
+  #           network: dev
+  #           build-profile: release
+  #           release-file-name-prefix: frequency-dev
+  #         - arch: amd64
+  #           build-profile: release
+  #           docker-platform: linux/amd64
+  #   env:
+  #     DOCKER_HUB_PROFILE: frequencychain
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Set Env Vars
+  #       run: |
+  #         echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
+  #         echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
+  #         echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Full Release?
+  #       id: is-full-release
+  #       uses: ./.github/workflows/common/is-full-release
+  #       with:
+  #         version-tag: ${{env.NEW_RELEASE_TAG}}
+  #     - name: Download Binaries
+  #       id: download-binaries
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: artifacts-${{github.run_id}}
+  #         path: .
+  #     - name: List Downloaded Binaries
+  #       run: |
+  #         download_dir=${{steps.download-binaries.outputs.download-path}}
+  #         echo "Download dir: $download_dir"
+  #         echo "Downloaded binaries: $(ls -l $download_dir)"
+  #     - name: Move Binary to Target Dir
+  #       run: |
+  #         mkdir -p ${{env.BIN_DIR}}
+  #         mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #         chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+  #     - name: Set up QEMU
+  #       uses: docker/setup-qemu-action@v2
+  #       with:
+  #         platforms: ${{matrix.arch}}
+  #     - name: Set up Docker Buildx
+  #       uses: docker/setup-buildx-action@v2
+  #     - name: Login to DockerHub
+  #       uses: docker/login-action@v2
+  #       with:
+  #         username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+  #         password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+  #     - name: Build and Push Dev Image
+  #       # if: env.TEST_RUN != 'true'
+  #       uses: docker/build-push-action@v4
+  #       with:
+  #         context: .
+  #         platforms: ${{matrix.docker-platform}}
+  #         push: ${{env.TEST_RUN != 'true'}}
+  #         file: ./docker/${{matrix.node}}.dockerfile
+  #         tags: |
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
+  #     - name: Update DockerHub Latest Tag
+  #       if: steps.is-full-release.outputs.is-full-release == 'true'
+  #       uses: docker/build-push-action@v4
+  #       with:
+  #         context: .
+  #         platforms: ${{matrix.docker-platform}}
+  #         push: ${{env.TEST_RUN != 'true'}}
+  #         file: ./docker/${{matrix.node}}.dockerfile
+  #         tags: |
+  #           ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
+  #     - name: Update DockerHub Description
+  #       if: env.TEST_RUN != 'true'
+  #       uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
+  #       with:
+  #         username: ${{secrets.DOCKERHUB_USERNAME_FC}}
+  #         password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+  #         repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
+  #         readme-filepath: docker/${{matrix.node}}.overview.md
 
   # Published to https://libertydsnp.github.io/frequency/
   release-rust-developer-docs:
@@ -992,36 +988,36 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v2
 
-  release-js-api-augment:
-    needs: wait-for-all-builds
-    name: Release JS API Augment
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v3
-        with:
-          ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Set up NodeJs
-        uses: actions/setup-node@v3
-        with:
-          node-version: 16
-          cache: "npm"
-          registry-url: "https://registry.npmjs.org"
-          cache-dependency-path: js/api-augment/package-lock.json
-      - name: Download Dist Dir
-        id: download
-        uses: actions/download-artifact@v3
-        with:
-          name: js-api-augment-${{github.run_id}}
-          path: js/api-augment/dist
-      - name: Version Package
-        if: env.TEST_RUN != 'true'
-        run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
-        working-directory: js/api-augment/dist
-      - name: Release on NPM @latest
-        if: env.TEST_RUN != 'true'
-        run: npm publish --tag latest --access public
-        working-directory: ./js/api-augment/dist
-        env:
-          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+  # release-js-api-augment:
+  #   needs: wait-for-all-builds
+  #   name: Release JS API Augment
+  #   runs-on: ubuntu-20.04
+  #   container: ghcr.io/libertydsnp/frequency/ci-base-image
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{env.RELEASE_BRANCH_NAME}}
+  #     - name: Set up NodeJs
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 16
+  #         cache: "npm"
+  #         registry-url: "https://registry.npmjs.org"
+  #         cache-dependency-path: js/api-augment/package-lock.json
+  #     - name: Download Dist Dir
+  #       id: download
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: js-api-augment-${{github.run_id}}
+  #         path: js/api-augment/dist
+  #     - name: Version Package
+  #       if: env.TEST_RUN != 'true'
+  #       run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
+  #       working-directory: js/api-augment/dist
+  #     - name: Release on NPM @latest
+  #       if: env.TEST_RUN != 'true'
+  #       run: npm publish --tag latest --access public
+  #       working-directory: ./js/api-augment/dist
+  #       env:
+  #         NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
