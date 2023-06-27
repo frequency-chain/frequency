@@ -354,7 +354,7 @@ jobs:
         run: |
           rustup install nightly-2023-06-01
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --features frequency
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
         run: |
