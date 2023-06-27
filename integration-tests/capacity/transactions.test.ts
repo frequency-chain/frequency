@@ -5,7 +5,7 @@ import { Codec } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
-import { AddKeyData, AddProviderPayload, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import {AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import { loadIpfs, getBases } from "../messages/loadIPFS";
 import { firstValueFrom } from "rxjs";
 import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
@@ -19,26 +19,21 @@ import {
     getOrCreateParquetBroadcastSchema, getOrCreateAvroChatMessagePaginatedSchema, CHAIN_ENVIRONMENT
 } from "../scaffolding/helpers";
 
-describe("Capacity Transactions", function () {
-    const FUNDS_AMOUNT: bigint = 25n * DOLLARS;
+describe.only("Capacity Transactions", function () {
+    const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 
   describe("pay_with_capacity", function () {
     describe("when caller has a Capacity account", async function () {
-      let capacityKeys: KeyringPair;
-      let capacityProvider: u64;
       let schemaId: u16;
       const amountStaked = 2n * DOLLARS;
 
       before(async function () {
-        capacityKeys = createKeys("CapacityKeys");
-        capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
         schemaId = await getOrCreateGraphChangeSchema();
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
       });
 
-      async function assertAddNewKey(addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
+      async function assertAddNewKey(capacityKeys: KeyringPair, addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
         const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", addKeyPayload);
         const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
         const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
@@ -48,7 +43,18 @@ describe("Capacity Transactions", function () {
         assertEvent(chainEvents, "msa.PublicKeyAdded");
       }
 
+      function getCapacityFee(chainEvents: EventMap): bigint {
+        if (chainEvents["capacity.CapacityWithdrawn"] &&
+          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"]))
+        {
+          return chainEvents["capacity.CapacityWithdrawn"].data.amount.toBigInt();
+        }
+        return 0n;
+      }
+
       it("fails when a provider makes an eligible extrinsic call using non-funded control key", async function () {
+        const capacityKeys = createKeys("CapacityKeysNSF");
+        const capacityProvider = await createMsaAndProvider(capacityKeys, "CapProvNSF", FUNDS_AMOUNT);
         // this will first fund 'capacityKeys' before staking
         await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
 
@@ -58,7 +64,7 @@ describe("Capacity Transactions", function () {
         const addKeyPayload: AddKeyData = await generateAddKeyPayload(
           { msaId: capacityProvider, newPublicKey: newPublicKey }
         );
-        await assertAddNewKey(addKeyPayload, newControlKeypair);
+        await assertAddNewKey(capacityKeys, addKeyPayload, newControlKeypair);
 
         // attempt a capacity transaction using the new unfunded key: claimHandle
         const handle = "test_handle";
@@ -70,16 +76,22 @@ describe("Capacity Transactions", function () {
         };
         const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
         const claimHandle = ExtrinsicHelper.claimHandle(newControlKeypair, claimHandlePayload);
-        const [_bar, chainEvents2] = await claimHandle.payWithCapacity();
-        assertEvent(chainEvents2, "system.ExtrinsicFailed");
+        await assert.rejects(claimHandle.payWithCapacity(), {
+          name: "RpcError", message:
+            "1010: Invalid Transaction: Custom error: 3"
+        });
       });
 
       describe("when capacity eligible transaction is from the msa pallet", async function () {
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
         let delegatorKeys: KeyringPair;
         let payload: any = {};
-        const stakedForMsa = 10n*DOLLARS
+        const stakedForMsa = 15n*DOLLARS
 
         before(async function() {
+          capacityKeys = createKeys("CapacityKeys");
+          capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
           await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, stakedForMsa));
         })
 
@@ -150,19 +162,14 @@ describe("Capacity Transactions", function () {
           assertEvent(chainEvents, "capacity.CapacityWithdrawn");
           assertEvent(chainEvents, "msa.DelegationGranted");
 
-          let fee: u128 = {} as u128;
-          if (chainEvents["capacity.CapacityWithdrawn"] &&
-              ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"]))
-          {
-              fee = chainEvents["capacity.CapacityWithdrawn"].data.amount;
-          }
+          let fee = getCapacityFee(chainEvents);
           // assumning no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
-          const maximumExpectedRemaining = stakedForMsa/TokenPerCapacity - fee.toBigInt();
+          const maximumExpectedRemaining = stakedForMsa/TokenPerCapacity - fee
 
           let remaining = capacityStaked.remainingCapacity.toBigInt();
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
-          assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / TokenPerCapacity);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
+          assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / TokenPerCapacity);
         });
       });
 
@@ -175,6 +182,13 @@ describe("Capacity Transactions", function () {
         }
 
         let starting_block: number;
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
+
+        before(async function() {
+          capacityKeys = createKeys("CapacityKeys");
+          capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+        })
 
         beforeEach(async function () {
           starting_block = (await firstValueFrom(ExtrinsicHelper.api.rpc.chain.getHeader())).number.toNumber();
@@ -226,6 +240,13 @@ describe("Capacity Transactions", function () {
       describe("when capacity eligible transaction is from the StatefulStorage pallet", async function () {
         let delegatorKeys: KeyringPair;
         let delegatorProviderId: u64;
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
+
+        before(async function() {
+          capacityKeys = createKeys("CapacityKeys");
+          capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+        })
         beforeEach(async function () {
           await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
         });
@@ -364,6 +385,13 @@ describe("Capacity Transactions", function () {
       });
 
       describe("when capacity eligible transaction is from the handles pallet", async function () {
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
+
+        before(async function() {
+          capacityKeys = createKeys("CapacityKeys");
+          capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+        })
         it("successfully pays with Capacity for eligible transaction - claimHandle", async function () {
           await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, amountStaked));
 
@@ -386,6 +414,8 @@ describe("Capacity Transactions", function () {
       // When a user attempts to pay for a non-capacity transaction with Capacity,
       // it should error and drop the transaction from the transaction-pool.
       it("fails to pay with Capacity for a non-capacity transaction", async function () {
+        const capacityKeys = createKeys("CapacityKeys");
+        const capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
         const nonCapacityTxn = ExtrinsicHelper.stake(capacityKeys, capacityProvider, 1n * CENTS);
         await assert.rejects(nonCapacityTxn.payWithCapacity(), {
           name: "RpcError", message:
@@ -397,6 +427,8 @@ describe("Capacity Transactions", function () {
       // and is NOT eligible to replenish Capacity, it should error and be dropped
       // from the transaction pool.
       it("fails to pay for a transaction with empty capacity", async function () {
+        const capacityKeys = createKeys("CapKeysEmpty");
+        const capacityProvider = await createMsaAndProvider(capacityKeys, "CapProvEmpty", FUNDS_AMOUNT);
         let noCapacityKeys = createKeys("noCapacityKeys");
         let _providerId = await createMsaAndProvider(noCapacityKeys, "NoCapProvider");
 
@@ -418,6 +450,8 @@ describe("Capacity Transactions", function () {
 
       // *All keys should have at least an EXISTENTIAL_DEPOSIT = 1M.
       it("fails to pay for transaction when key does has not met the min deposit", async function () {
+        const capacityKeys = createKeys("CapKeysUnder");
+        const capacityProvider = await createMsaAndProvider(capacityKeys, "CapProvUnder", FUNDS_AMOUNT);
         const noTokensKeys = createKeys("noTokensKeys");
         const delegatorKeys = await createAndFundKeypair(2n * DOLLARS, "delegatorKeys");
 
