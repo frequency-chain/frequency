@@ -124,7 +124,7 @@ where
 pub mod barriers {
 	use super::*;
 
-	use frame_support::{ensure, traits::ProcessMessageError};
+	use frame_support::{log, ensure, traits::ProcessMessageError};
 	use xcm::v3::{Instruction, Junction::Parachain, ParentThen};
 	use xcm_executor::traits::ShouldExecute;
 
@@ -189,7 +189,8 @@ pub mod barriers {
 			_weight_credit: &mut Weight,
 		) -> Result<(), ProcessMessageError> {
 			#[cfg(feature = "std")]
-			println!(
+			log::trace!(
+				target: "xcm::barriers",
 				"AllowParachainProviderAsSubaccount::should_execute(origin = {:?}, instructions = {:?}",
 				origin, instructions
 			);

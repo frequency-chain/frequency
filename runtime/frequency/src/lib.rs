@@ -813,7 +813,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type DmpMessageHandler = ();
 	type ReservedDmpWeight = ();
 	type OutboundXcmpMessageSource = ();
-	type XcmpMessageHandler = ();
+	type XcmpMessageHandler = XcmpQueue;
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberStrictlyIncreases;
 }
@@ -1098,7 +1098,7 @@ construct_runtime!(
 
 		Web3Names: pallet_web3_names::{Pallet, Call, Storage, Event<T>} = 70,
 		DidLookup: pallet_did_lookup::{Pallet, Call, Storage, Event<T>, Config<T>} = 71,
-		DipConsumer: pallet_dip_consumer::{Origin<T>, Call, Storage, Event<T>, } = 72
+		DipConsumer: pallet_dip_consumer::{Pallet, Origin<T>, Call, Storage, Event<T>, } = 72
 	}
 );
 

@@ -4,7 +4,7 @@ use super::{
 };
 
 // kilt
-use kilt_dip_support::xcm::{barriers::OkOrElseCheckForParachainProvider, origins::AccountIdJunctionAsParachain};
+use kilt_dip_support::xcm::{barriers::{OkOrElseCheckForParachainProvider, AllowParachainProviderAsSubaccount}, origins::AccountIdJunctionAsParachain};
 
 
 use core::{marker::PhantomData, ops::ControlFlow};
@@ -24,11 +24,16 @@ use xcm_builder::{
 	NativeAsset, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SignedToAccountId32,
 	SovereignSignedViaLocation, TakeWeightCredit, UsingComponents, WithComputedOrigin,
+	Account32Hash,
 };
 use xcm_executor::{traits::ShouldExecute, XcmExecutor};
 
 parameter_types! {
+	// rm
 	pub const RelayLocation: MultiLocation = MultiLocation::parent();
+	pub const HereLocation: MultiLocation = MultiLocation::here();
+	pub const NoneNetworkId: Option<NetworkId> = None;
+	// rm
 	pub const RelayNetwork: Option<NetworkId> = None;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	pub UniversalLocation: InteriorMultiLocation = Parachain(ParachainInfo::parachain_id().into()).into();
@@ -43,7 +48,9 @@ pub type LocationToAccountId = (
 	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<RelayNetwork, AccountId>,
+	AccountId32Aliases<NoneNetworkId, AccountId>,
+	// Kilt
+	Account32Hash<NoneNetworkId, AccountId>,
 );
 
 /// Means for transacting assets on this chain.
@@ -51,7 +58,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 	// Use this currency:
 	Balances,
 	// Use this currency when it is a fungible asset matching the given location or name:
-	IsConcrete<RelayLocation>,
+	IsConcrete<HereLocation>,
 	// Do a simple punn to convert an AccountId32 MultiLocation into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
@@ -65,7 +72,7 @@ pub type LocalAssetTransactor = CurrencyAdapter<
 /// biases the kind of local `Origin` it will become.
 pub type XcmOriginToTransactDispatchOrigin = (
 	// KILT
-	AccountIdJunctionAsParachain<ConstU32<2_000>, cumulus_pallet_xcm::Origin, RuntimeOrigin>,
+	AccountIdJunctionAsParachain<ProviderParaId, cumulus_pallet_xcm::Origin, RuntimeOrigin>,
 	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
 	// foreign chains who want to have a local sovereign account on this chain which they control.
@@ -95,6 +102,10 @@ match_types! {
 		MultiLocation { parents: 1, interior: Here } |
 		MultiLocation { parents: 1, interior: X1(Plurality { id: BodyId::Executive, .. }) }
 	};
+}
+
+parameter_types! {
+	pub const ProviderParaId: u32 = 3000;
 }
 
 //TODO: move DenyThenTry to polkadot's xcm module.
@@ -164,14 +175,17 @@ impl ShouldExecute for DenyReserveTransferToRelayChain {
 		Ok(())
 	}
 }
-pub type KiltBarrier = OkOrElseCheckForParachainProvider<AllowTopLevelPaidExecutionFrom<Nothing>, ConstU32<2_000>>;
+pub type KiltBarrier = OkOrElseCheckForParachainProvider<AllowTopLevelPaidExecutionFrom<Nothing>, ProviderParaId>;
 
 pub type Barrier = DenyThenTry<
 	DenyReserveTransferToRelayChain,
 	(
 		TakeWeightCredit,
+		// kilt
+		AllowParachainProviderAsSubaccount<ProviderParaId>,
 		WithComputedOrigin<
 			(
+				// limit it to kilt
 				AllowTopLevelPaidExecutionFrom<Everything>,
 				AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 				// ^^^ Parent and its exec plurality get free execution
@@ -195,7 +209,7 @@ impl xcm_executor::Config for XcmConfig {
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+		UsingComponents<WeightToFee, HereLocation, AccountId, Balances, ToAuthor<Runtime>>;
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -237,6 +251,7 @@ impl pallet_xcm::Config for Runtime {
 	// ^ Disable dispatchable execute on the XCM pallet.
 	// Needs to be `Everything` for local testing.
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+	// maybe upgrade this
 	type XcmTeleportFilter = Everything;
 	type XcmReserveTransferFilter = Nothing;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;

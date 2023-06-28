@@ -9,7 +9,7 @@ members = [
   "common/helpers",
 ]
 
-# exclude = ["pallets/kilt"]
+exclude = ["temp/*"]
 
 [profile.release]
 panic = "unwind"

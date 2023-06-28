@@ -1,0 +1,86 @@
+[relaychain]
+default_command = "./bin/polkadot-release-9.42"
+chain = "rococo-local"
+default_args = [ "-lparachain=debug", "--log=trace" ]
+
+  [[relaychain.nodes]]
+  name = "alice"
+  validator = true
+  ws_port = 9900
+
+  [[relaychain.nodes]]
+  name = "bob"
+  validator = true
+
+  [[relaychain.nodes]]
+  name = "charlie"
+  validator = true
+  
+  [[relaychain.nodes]]
+  name = "Dave"
+  validator = true
+  
+[[parachains]]
+id = 3000
+add_to_genesis = true
+cumulus_based = true
+chain = "dev"
+
+  [[parachains.collators]]
+  name = "kilt-provider-bob-collator01"
+  command = "./bin/dip-provider-node-template-b-dd0410d2"
+  args = ["--log=trace"]
+  ws_port = 9940
+
+# [[parachains]]
+# id = 4000
+# add_to_genesis = true
+# cumulus_based = true
+# chain = "dev"
+
+#   [[parachains.collators]]
+#   name = "kilt-consumer-collator01"
+#   command = "./bin/dip-consumer-node-template-dip"
+#   ws_port = 9950
+#   args = ["-lparachain=debug", "--log=dip::consumer=trace"]
+
+[[parachains]]
+id = 5000
+add_to_genesis = true
+cumulus_based = true
+chain = "frequency-rococo-local"
+
+  [[parachains.collators]]
+  name = "frequency-collator01"
+  command = "./target/release/frequency"
+  ws_port = 9960
+  args = ["-lparachain=debug", "--log=xcm=trace"]
+
+[types.Header]
+number = "u64"
+parent_hash = "Hash"
+post_state = "Hash"
+
+# [[hrmp_channels]]
+# sender = 3000
+# recipient = 4000
+# max_capacity = 8
+# max_message_size = 8000
+
+# [[hrmp_channels]]
+# sender = 4000
+# recipient = 3000
+# max_capacity = 8
+# max_message_size = 8000
+
+[[hrmp_channels]]
+sender = 3000
+recipient = 5000
+max_capacity = 8
+max_message_size = 8000
+
+[[hrmp_channels]]
+sender = 5000
+recipient = 3000
+max_capacity = 8
+max_message_size = 8000

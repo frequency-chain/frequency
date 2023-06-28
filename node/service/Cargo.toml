@@ -100,6 +100,9 @@ pallet-handles-rpc = { path = "../../pallets/handles/src/rpc" }
 pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api" }
 system-runtime-api = { path = "../../runtime/system-runtime-api" }
 
+# Kilt
+pallet-did-lookup = {path = "../../kilt/pallet-did-lookup"}
+
 [build-dependencies]
 substrate-build-script-utils = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 

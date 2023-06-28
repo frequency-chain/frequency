@@ -3394,6 +3394,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-did-lookup",
  "pallet-handles-rpc",
  "pallet-handles-runtime-api",
  "pallet-messages-rpc",
