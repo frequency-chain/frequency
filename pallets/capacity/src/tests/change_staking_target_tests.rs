@@ -34,7 +34,7 @@ fn test_change_staking_target_parametric_validity() {
 				RuntimeOrigin::signed(account),
 				from_target,
 				to_target,
-				Some(0)
+				0
 			),
 			Error::<Test>::StakerTargetRelationshipNotFound
 		);
@@ -51,7 +51,7 @@ fn test_change_staking_target_parametric_validity() {
 				RuntimeOrigin::signed(account),
 				from_target,
 				to_target,
-				Some(0)
+				0
 			),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
@@ -61,7 +61,7 @@ fn test_change_staking_target_parametric_validity() {
 				RuntimeOrigin::signed(account),
 				from_target,
 				to_target,
-				None
+				12
 			),
 			Error::<Test>::InvalidTarget
 		);
@@ -71,7 +71,7 @@ fn test_change_staking_target_parametric_validity() {
 			RuntimeOrigin::signed(account),
 			from_target,
 			to_target,
-			None
+			from_amount
 		));
 	});
 }

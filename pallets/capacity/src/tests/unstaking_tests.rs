@@ -2,7 +2,7 @@ use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
 use common_primitives::{capacity::StakingType::MaximumCapacity, msa::MessageSourceId};
-use frame_support::{assert_noop, assert_ok, traits::Get};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
 
@@ -181,3 +181,45 @@ fn unstake_errors_not_a_staking_account() {
 		);
 	});
 }
+
+#[test]
+fn set_capacity_for_deletes_staker_target_details_if_amount_is_zero() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let target2: MessageSourceId = 2;
+		// minimum amount + 1 so it doesn't zero out the balance when we unstake
+		let staking_amount = 11;
+
+		register_provider(target, String::from("Test Target"));
+		register_provider(target2, String::from("Test Target2"));
+
+		// stake to both of them so we still have a staking balance overall
+		assert_ok!(Capacity::stake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			staking_amount,
+			MaximumCapacity
+		));
+		assert_ok!(Capacity::stake(
+			RuntimeOrigin::signed(token_account),
+			target2,
+			staking_amount,
+			MaximumCapacity
+		));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(token_account), target, staking_amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, 1),
+			Error::<Test>::StakerTargetRelationshipNotFound
+		);
+	})
+}
+
+#[test]
+fn do_retarget_happy_path_with_some() {
+	// reduces from_msa capacity, amount by provided amount/expected capacity
+	// adds capacity/amount to to_msa
+}
+
+#[test]
+fn do_retarget_happy_path_with_none_retargets_all_capacity() {}
