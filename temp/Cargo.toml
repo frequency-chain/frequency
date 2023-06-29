@@ -1,0 +1,20 @@
+[package]
+name = "temp"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[workspace]
+
+[dependencies]
+codec = {package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
+  "derive",
+]}
+xcm = { git = "https://github.com/paritytech/polkadot", features = ["std"], branch = "release-v0.9.42" }
+sp-io = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+sp-core = { git = "https://github.com/paritytech/substrate", features = ["std"], branch = "polkadot-v0.9.42" }
+xcm-builder = { git = "https://github.com/paritytech/polkadot", features = ["std"], branch = "release-v0.9.42" }
+common-primitives = { features = ["std"], path = "../common/primitives" }
+hex = { version = "0.4.3"}
+ss58-registry = "1.40.0"
+# ss58 = "0.3.0"
