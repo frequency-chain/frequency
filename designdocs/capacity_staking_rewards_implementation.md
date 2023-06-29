@@ -233,17 +233,15 @@ pub enum Error<T> {
     ```
 
 2. **change_staking_target(origin, from, to, amount)**
-Changes a staking account detail's target MSA Id to a new one.
-If `Some(x)` is specified, that amount is retargeted.
+Changes a staking account detail's target MSA Id to a new one by `amount`
 Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking  amount for the `from` target, the entire amount is retargeted.
-If amount is `None`, ALL of the total staking amount for `from` is changed to the new target MSA Id.
 No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
 Each call creates one chunk.
 
 ```rust
 /// Errors:
 ///    - NotAStakingAccount if `origin` has nothing staked
-///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
+:///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
 ///    - StakerTargetRelationshipNotFound` if `from` is not a target for Origin's staking account.
 ///    - StakingAmountBelowMinimum if amount to retarget is below the minimum staking amount.
 ///    - InsufficientStakingBalance if amount to retarget exceeds what the staker has targeted to the `from` MSA Id.
@@ -253,7 +251,7 @@ pub fn change_staking_target(
     origin: OriginFor<T>,
     from: MessageSourceId,
     to: MessageSourceId,
-    amount: Option<BalanceOf<T>>
+    amount: BalanceOf<T>
 );
 ```
 
