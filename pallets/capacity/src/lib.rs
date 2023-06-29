@@ -469,10 +469,9 @@ pub mod pallet {
 		/// Does not affect unstaking process or additional stake amounts.
 		/// ### Errors
 		/// - [`Error::MaxUnlockingChunksExceeded`] if `stake_change_unlocking_chunks` == `T::MaxUnlockingChunks`
-		/// - [`Error:: NotAStakingAccount`] if `origin` has nothing staked
 		/// - [`Error::StakerTargetRelationshipNotFound`] if `from` is not a target for Origin's staking account.
-		/// - [`Error::StakingAmountBelowMinimum`] if `amount` to retarget is Some(x) and `x` is below the minimum staking amount.
-		/// - [`Error::InsufficientStakingBalance`] if `amount` to retarget is Some(x) and `x` exceeds what the staker has targeted to `from` MSA Id.
+		/// - [`Error::StakingAmountBelowMinimum`] if `amount` to retarget is below the minimum staking amount.
+		/// - [`Error::InsufficientStakingBalance`] if `amount` to retarget exceeds what the staker has targeted to `from` MSA Id.
 		/// - [`Error::InvalidTarget`] if `to` does not belong to a registered Provider.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::unstake())]
@@ -487,7 +486,10 @@ pub mod pallet {
 				StakingTargetLedger::<T>::contains_key(&staker, &from),
 				Error::<T>::StakerTargetRelationshipNotFound
 			);
-			ensure!(amount > T::MinimumStakingAmount::get(), Error::<T>::StakingAmountBelowMinimum);
+			ensure!(
+				amount >= T::MinimumStakingAmount::get(),
+				Error::<T>::StakingAmountBelowMinimum
+			);
 			ensure!(T::TargetValidator::validate(to), Error::<T>::InvalidTarget);
 			Self::do_retarget(&staker, &from, &to, &amount)
 		}
@@ -617,16 +619,23 @@ impl<T: Config> Pallet<T> {
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
 
-		let current_epoch: T::EpochNumber = Self::get_current_epoch();
-		let thaw_period = T::UnstakingThawPeriod::get();
-		let thaw_at = current_epoch.saturating_add(thaw_period.into());
-
-		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
+		let unstake_result = staking_account.withdraw(amount, Self::get_thaw_at_epoch())?;
 
 		Self::set_staking_account(&unstaker, &staking_account);
 
 		Ok(unstake_result)
 	}
+
+	fn get_thaw_at_epoch() -> <T as Config>::EpochNumber {
+		let current_epoch: T::EpochNumber = Self::get_current_epoch();
+		let thaw_period = T::UnstakingThawPeriod::get();
+		current_epoch.saturating_add(thaw_period.into())
+	}
+
+	// fn get_thaw_at_reward_era() -> <T as Config>::RewardEra {
+	// 	let current_era: T::RewardEra = Self::get_current_era().era_index;
+	// 	current_era.saturating_add(10u32.into())
+	// }
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
 	fn reduce_capacity(
@@ -634,8 +643,23 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
+		let mut staking_account: StakingAccountDetails<T> =
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+		ensure!(
+			staking_account
+				.stake_change_unlocking
+				.len()
+				.lt(&(T::MaxUnlockingChunks::get() as usize)),
+			Error::<T>::MaxUnlockingChunksExceeded
+		);
+
 		let mut staking_target_details = Self::get_target_for(&unstaker, &target)
 			.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
+
+		ensure!(amount.le(&staking_target_details.amount), Error::<T>::InsufficientStakingBalance);
+
+		// TODO: update unlock chunks for staking account
+
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
@@ -649,6 +673,7 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
+		Self::set_staking_account(unstaker, &staking_account);
 
 		Ok(capacity_to_withdraw)
 	}

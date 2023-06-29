@@ -2,7 +2,7 @@ use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
 use common_primitives::{capacity::StakingType::MaximumCapacity, msa::MessageSourceId};
-use frame_support::{assert_err, assert_noop, assert_ok, traits::Get};
+use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
 

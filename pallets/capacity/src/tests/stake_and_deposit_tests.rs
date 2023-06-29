@@ -119,7 +119,7 @@ fn stake_errors_zero_amount_not_allowed() {
 		let amount = 0;
 		assert_noop!(
 			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
-			Error::<Test>::ZeroAmountNotAllowed
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }
@@ -363,7 +363,7 @@ fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 		let amount = 0;
 		assert_noop!(
 			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
-			Error::<Test>::ZeroAmountNotAllowed
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }

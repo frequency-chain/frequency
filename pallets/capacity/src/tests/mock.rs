@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
-use crate::{BalanceOf, Config, StakingRewardClaim, StakingRewardsProvider};
+use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
 use common_primitives::{
-	node::{AccountId, Balance, Hash, Header, ProposalProvider},
+	node::{AccountId, Hash, Header, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{

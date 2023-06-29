@@ -129,6 +129,12 @@ impl<T: Config> StakingAccountDetails<T> {
 		self.active = active;
 		Ok(actual_unstaked)
 	}
+
+	/// update unlock chunks; remove those that have expired and add the new one
+	// TODO: implement
+	pub fn update_stake_change_unlocking(_amount: BalanceOf<T>, _thaw_at: T::RewardEra) {
+		()
+	}
 }
 
 impl<T: Config> Default for StakingAccountDetails<T> {
