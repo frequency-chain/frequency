@@ -720,14 +720,17 @@ impl<T: Config> Pallet<T> {
 		// already checked that to_msa is valid
 		// already validated amount is > minimum
 
-		let amount_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
+		let capacity_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
 
-		let capacity = Self::capacity_generated(amount_withdrawn);
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
-		to_msa_target.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
+		to_msa_target
+			.deposit(*amount, capacity_withdrawn)
+			.ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(to_msa).unwrap_or_default();
-		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
+		capacity_details
+			.deposit(amount, &capacity_withdrawn)
+			.ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_target_details_for(staker, *to_msa, to_msa_target);
 		Self::set_capacity_for(*to_msa, capacity_details);
