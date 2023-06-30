@@ -194,6 +194,7 @@ impl pallet_capacity::Config for Test {
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
 	type RewardsProvider = TestStakingRewardsProvider;
+	type ChangeStakingTargetThawEras = ConstU32<5>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

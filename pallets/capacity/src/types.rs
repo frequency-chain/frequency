@@ -65,7 +65,7 @@ impl<T: Config> StakingAccountDetails<T> {
 
 	#[cfg(any(feature = "runtime-benchmarks", test))]
 	#[allow(clippy::unwrap_used)]
-	///  tmp fn for testing only
+	///  For testing and benchmarks only!
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.
 	/// returns true on success, false on failure (?)
@@ -101,6 +101,37 @@ impl<T: Config> StakingAccountDetails<T> {
 		total_reaped
 	}
 
+	#[cfg(any(feature = "runtime-benchmarks", test))]
+	#[allow(clippy::unwrap_used)]
+	/// for testing and benchmarks only!
+	/// set stake_change_unlocking chunks with (balance, thaw_at).  does not check that the unlock chunks
+	/// don't exceed total.
+	/// returns true on success, false on failure (?)
+	pub fn set_stake_change_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
+			.into_iter()
+			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
+			.collect();
+		self.unlocking = BoundedVec::try_from(result).unwrap();
+		self.unlocking.len() == chunks.len()
+	}
+
+	/// update unlock chunks; remove those that have expired and add the new one
+	// this doesn't affect staking amount, just controls how often a staker may retarget
+	pub fn update_stake_change_unlocking(
+		&mut self,
+		new_chunk_amount: &BalanceOf<T>,
+		thaw_at: &T::RewardEra,
+		current_era: &T::RewardEra,
+	) -> Result<(), DispatchError> {
+		self.stake_change_unlocking.retain(|chunk| current_era.lt(&chunk.thaw_at));
+		let unlock_chunk = UnlockChunk { value: *new_chunk_amount, thaw_at: *thaw_at };
+		self.stake_change_unlocking
+			.try_push(unlock_chunk)
+			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+		Ok(())
+	}
+
 	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
 	pub fn withdraw(
 		&mut self,
@@ -128,12 +159,6 @@ impl<T: Config> StakingAccountDetails<T> {
 
 		self.active = active;
 		Ok(actual_unstaked)
-	}
-
-	/// update unlock chunks; remove those that have expired and add the new one
-	// TODO: implement
-	pub fn update_stake_change_unlocking(_amount: BalanceOf<T>, _thaw_at: T::RewardEra) {
-		()
 	}
 }
 

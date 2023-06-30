@@ -179,6 +179,12 @@ pub mod pallet {
 
 		/// The StakingRewardsProvider used by this pallet in a given runtime
 		type RewardsProvider: StakingRewardsProvider<Self>;
+
+		/// After calling change_staking_target, the thaw period  for the created
+		/// thaw chunk to expire. If the staker has called change_staking_target MaxUnlockingChunks
+		/// times, then at least one of the chunks must have expired before the next call
+		/// will succeed.
+		type ChangeStakingTargetThawEras: Get<u32>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -429,6 +435,7 @@ pub mod pallet {
 			requested_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let unstaker = ensure_signed(origin)?;
+			Self::ensure_can_unstake(&unstaker)?;
 
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
@@ -483,7 +490,10 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-			ensure!(Self::get_staking_account_for(&staker).is_some(), Error::<T>::StakingAccountNotFound);
+			ensure!(
+				StakingAccountLedger::<T>::contains_key(&staker),
+				Error::<T>::StakingAccountNotFound
+			);
 			ensure!(
 				StakingTargetLedger::<T>::contains_key(&staker, &from),
 				Error::<T>::StakerTargetRelationshipNotFound
@@ -634,10 +644,15 @@ impl<T: Config> Pallet<T> {
 		current_epoch.saturating_add(thaw_period.into())
 	}
 
-	// fn get_thaw_at_reward_era() -> <T as Config>::RewardEra {
-	// 	let current_era: T::RewardEra = Self::get_current_era().era_index;
-	// 	current_era.saturating_add(10u32.into())
-	// }
+	fn ensure_can_unstake(unstaker: &T::AccountId) -> Result<(), DispatchError> {
+		let staking_account: StakingAccountDetails<T> =
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+		ensure!(
+			staking_account.unlocking.len().lt(&(T::MaxUnlockingChunks::get() as usize)),
+			Error::<T>::MaxUnlockingChunksExceeded
+		);
+		Ok(())
+	}
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
 	fn reduce_capacity(
@@ -645,16 +660,6 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let mut staking_account: StakingAccountDetails<T> =
-			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
-		ensure!(
-			staking_account
-				.stake_change_unlocking
-				.len()
-				.lt(&(T::MaxUnlockingChunks::get() as usize)),
-			Error::<T>::MaxUnlockingChunksExceeded
-		);
-
 		let mut staking_target_details = Self::get_target_for(&unstaker, &target)
 			.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
 
@@ -675,7 +680,8 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
-		Self::set_staking_account(unstaker, &staking_account);
+		// I think this is an extra write we don't need to do since it's not changed in here
+		// Self::set_staking_account(unstaker, &staking_account);
 
 		Ok(capacity_to_withdraw)
 	}
@@ -735,18 +741,33 @@ impl<T: Config> Pallet<T> {
 		false
 	}
 
+	/// adds a new chunk to StakingAccountDetails.stake_change_unlocking.  The
+	/// call `update_stake_change_unlocking` garbage-collects thawed chunks before adding the new one.
+	fn add_change_staking_target_unlock_chunk(
+		staker: &T::AccountId,
+		amount: &BalanceOf<T>,
+	) -> Result<(), DispatchError> {
+		let mut staking_account_details: StakingAccountDetails<T> =
+			Self::get_staking_account_for(staker).ok_or(Error::<T>::StakingAccountNotFound)?;
+
+		let current_era: T::RewardEra = Self::get_current_era().era_index;
+		let thaw_at = current_era.saturating_add(T::ChangeStakingTargetThawEras::get().into());
+		staking_account_details.update_stake_change_unlocking(amount, &thaw_at, &current_era)?;
+		Self::set_staking_account(staker, &staking_account_details);
+		Ok(())
+	}
+
 	/// performs the target change
+	// already validated staker has an account,
+	// already checked that msa of 'from' is targeted by the staker
+	// already checked that to_msa is valid
+	// already validated amount is > minimum
 	pub fn do_retarget(
 		staker: &T::AccountId,
 		from_msa: &MessageSourceId,
 		to_msa: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(), DispatchError> {
-		// already validated staker has an account,
-		// already checked that msa of 'from' is targeted by the staker
-		// already checked that to_msa is valid
-		// already validated amount is > minimum
-
 		let capacity_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
 
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
@@ -761,7 +782,7 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_target_details_for(staker, *to_msa, to_msa_target);
 		Self::set_capacity_for(*to_msa, capacity_details);
-		Ok(())
+		Self::add_change_staking_target_unlock_chunk(staker, amount)
 	}
 }
 
