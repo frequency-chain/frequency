@@ -195,8 +195,8 @@ where
 	/// Completely refill all available capacity.
 	/// To be called lazily when a Capacity message is sent in a new epoch.
 	pub fn replenish_all(&mut self, current_epoch: &EpochNumber) {
-		let replenish_by = self.total_capacity_issued.saturating_sub(self.remaining_capacity);
-		self.replenish_by_amount(replenish_by, current_epoch);
+		self.remaining_capacity = self.total_capacity_issued;
+		self.last_replenished_epoch = current_epoch.clone();
 	}
 
 	/// Replenish remaining capacity by the provided amount and
