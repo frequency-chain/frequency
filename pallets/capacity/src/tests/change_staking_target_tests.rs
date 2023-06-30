@@ -6,6 +6,7 @@ use common_primitives::{
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
+// staker is unused unless amount > 0
 fn setup_provider(staker: u64, target: MessageSourceId, amount: u64) {
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(target, provider_name);
@@ -64,7 +65,7 @@ fn do_retarget_happy_path() {
 		setup_provider(staker, to_msa, to_amount);
 
 		// retarget half the stake to to_msa
-		Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount);
+		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount));
 
 		let expected_from_details: TestCapacityDetails = CapacityDetails {
 			remaining_capacity: 1,
@@ -116,7 +117,7 @@ fn do_retarget_deletes_staking_account_if_zero_balance() {
 			MaximumCapacity
 		));
 
-		Capacity::do_retarget(&staker, &from_msa, &to_msa, &amount);
+		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &amount));
 
 		let expected_from_details: TestCapacityDetails = CapacityDetails {
 			remaining_capacity: 1,
@@ -148,15 +149,15 @@ fn do_retarget_deletes_staking_account_if_zero_balance() {
 }
 
 #[test]
-fn change_staking_target_errors_if_amount_too_low() {
+fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 	new_test_ext().execute_with(|| {
 		let staker = 200u64;
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
 
 		let max_chunks: u32 = <Test as Config>::MaxUnlockingChunks::get();
-		let staking_amount = (max_chunks + 2u32) * 10u32;
-		setup_provider(staker, from_msa, staking_amount.into());
+		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
+		setup_provider(staker, from_msa, staking_amount);
 		setup_provider(staker, to_msa, 10);
 
 		let retarget_amount = 10u64;
@@ -169,85 +170,96 @@ fn change_staking_target_errors_if_amount_too_low() {
 			));
 		}
 
-		struct TestCase {
-			retarget_amount: u64,
-			expected_err: Error<Test>,
-		}
-		let test_cases: Vec<TestCase> = vec![
-			TestCase { retarget_amount: 0, expected_err: Error::<Test>::StakingAmountBelowMinimum },
-			TestCase { retarget_amount: 1, expected_err: Error::<Test>::StakingAmountBelowMinimum },
-			TestCase {
-				retarget_amount: 999,
-				expected_err: Error::<Test>::InsufficientStakingBalance,
-			},
-			// TestCase { retarget_amount, expected_err: Error::<Test>::MaxUnlockingChunksExceeded },
-		];
-		for tc in test_cases {
-			assert_noop!(
-				Capacity::change_staking_target(
-					RuntimeOrigin::signed(staker),
-					from_msa,
-					to_msa,
-					tc.retarget_amount
-				),
-				tc.expected_err
-			);
-		}
+		assert_noop!(
+			Capacity::change_staking_target(
+				RuntimeOrigin::signed(staker),
+				from_msa,
+				to_msa,
+				retarget_amount
+			),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
 	});
+}
+
+#[test]
+fn change_staking_target_garbage_collects_thawed_chunks() {
+	new_test_ext().execute_with(|| {})
 }
 
 #[test]
 fn change_staking_target_parametric_validity() {
 	new_test_ext().execute_with(|| {
-		let account = 200u64;
-		let from_target: MessageSourceId = 1;
-		let from_amount = 10u64;
-		setup_provider(account, from_target, 0);
-
-		let to_target: MessageSourceId = 2;
-		assert_noop!(
-			Capacity::change_staking_target(
-				RuntimeOrigin::signed(account),
-				from_target,
-				to_target,
-				0
-			),
-			Error::<Test>::StakerTargetRelationshipNotFound
-		);
+		let from_account = 200u64;
+		let from_account_not_staking = 100u64;
+		let from_target_not_staked: MessageSourceId = 1;
+		let staked_amount = 10u64;
+		let to_target_not_provider: MessageSourceId = 2;
+		let to_target: MessageSourceId = 4;
+		let from_target: MessageSourceId = 3;
+		setup_provider(from_account, from_target_not_staked, 0);
+		setup_provider(from_account, from_target, staked_amount);
+		setup_provider(from_account, to_target, staked_amount);
 
 		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
+			RuntimeOrigin::signed(from_account),
 			from_target,
-			from_amount,
+			staked_amount,
 			ProviderBoost
 		));
 
-		assert_noop!(
-			Capacity::change_staking_target(
-				RuntimeOrigin::signed(account),
-				from_target,
-				to_target,
-				0
-			),
-			Error::<Test>::StakingAmountBelowMinimum
-		);
+		struct TestCase {
+			from_account: u64,
+			from_target: MessageSourceId,
+			to_target: MessageSourceId,
+			retarget_amount: u64,
+			expected_err: Error<Test>,
+		}
+		let test_cases: Vec<TestCase> = vec![
+			// from is a provider but account is not staking to it
+			TestCase { from_account,
+				from_target: from_target_not_staked, to_target, retarget_amount: staked_amount,
+				       expected_err: Error::<Test>::StakerTargetRelationshipNotFound },
+			// from_account is not staking at all.
+			TestCase { from_account: from_account_not_staking,
+				from_target: from_target_not_staked, to_target, retarget_amount: staked_amount,
+				       expected_err: Error::<Test>::StakingAccountNotFound },
+			// from and to providers are valid, but zero amount too small
+			TestCase { from_account,
+				from_target, to_target, retarget_amount: 0,
+				expected_err: Error::<Test>::StakingAmountBelowMinimum },
+			// nonzero amount below minimum is still too small (?)
+			TestCase { from_account,
+				from_target, to_target, retarget_amount: 9,
+				expected_err: Error::<Test>::StakingAmountBelowMinimum },
+			// account is staked with from-target, but to-target is not a provider
+			TestCase { from_account,
+				from_target, to_target: to_target_not_provider, retarget_amount: staked_amount,
+				expected_err: Error::<Test>::InvalidTarget },
+			// account doesn't have enough staked to make the transfer
+			TestCase { from_account,
+				from_target, to_target, retarget_amount: 999,
+				expected_err: Error::<Test>::InsufficientStakingBalance,
+			},
+		];
 
-		assert_noop!(
-			Capacity::change_staking_target(
-				RuntimeOrigin::signed(account),
-				from_target,
-				to_target,
-				12
-			),
-			Error::<Test>::InvalidTarget
-		);
-		setup_provider(account, to_target, 0);
+		for tc in test_cases {
+			assert_noop!(
+				Capacity::change_staking_target(
+					RuntimeOrigin::signed(tc.from_account),
+					tc.from_target,
+					tc.to_target,
+					tc.retarget_amount,
+				),
+				tc.expected_err
+			);
+		}
 
 		assert_ok!(Capacity::change_staking_target(
-			RuntimeOrigin::signed(account),
+			RuntimeOrigin::signed(from_account),
 			from_target,
 			to_target,
-			from_amount
+			staked_amount
 		));
 	});
 }

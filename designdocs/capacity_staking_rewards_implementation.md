@@ -240,9 +240,8 @@ Each call creates one chunk.
 
 ```rust
 /// Errors:
-///    - NotAStakingAccount if `origin` has nothing staked
-:///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
-///    - StakerTargetRelationshipNotFound` if `from` is not a target for Origin's staking account.
+///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
+///    - StakerTargetRelationshipNotFound` if `from` is not a staking target for Origin. This also covers when account's MSA is not staking anything at all or account has no MSA
 ///    - StakingAmountBelowMinimum if amount to retarget is below the minimum staking amount.
 ///    - InsufficientStakingBalance if amount to retarget exceeds what the staker has targeted to the `from` MSA Id.
 ///    - InvalidTarget if `to` is not a Registered Provider.
