@@ -231,12 +231,13 @@ pub enum Error<T> {
         to_era: Option<T::RewardEra>
     );
     ```
+    Both emit events `StakingRewardClaimed` with the parameters of the extrinsic.
 
 2. **change_staking_target(origin, from, to, amount)**
 Changes a staking account detail's target MSA Id to a new one by `amount`
 Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking  amount for the `from` target, the entire amount is retargeted.
 No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
-Each call creates one chunk.
+Each call creates one chunk.  Emits a `CapacityTargetChanged` event with the parameters of the extrinsic.
 
 ```rust
 /// Errors:

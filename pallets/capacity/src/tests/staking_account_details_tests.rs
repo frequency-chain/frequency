@@ -186,7 +186,6 @@ fn impl_update_stake_change_unlocking_bound() {
 
 #[test]
 fn impl_update_stake_change_unlocking_cleanup() {
-	use frame_support::traits::Get;
 	new_test_ext().execute_with(|| {
 		let mut staking_account: StakingAccountDetails<Test> = StakingAccountDetails {
 			active: 150,

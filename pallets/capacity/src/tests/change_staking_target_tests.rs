@@ -1,6 +1,6 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, RewardEraInfo,
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RewardEraInfo,
 	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
 };
 use common_primitives::{
@@ -148,6 +148,32 @@ fn do_retarget_deletes_staking_account_if_zero_balance() {
 			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
+	})
+}
+
+#[test]
+fn change_staking_starget_emits_event_on_success() {
+	new_test_ext().execute_with(|| {
+		let staker = 200u64;
+		let from_msa: MessageSourceId = 1;
+		let from_amount = 20u64;
+		let to_amount = from_amount / 2;
+		let to_msa: MessageSourceId = 2;
+		setup_provider(staker, from_msa, from_amount);
+		setup_provider(staker, to_msa, to_amount);
+
+		assert_ok!(Capacity::change_staking_target(
+			RuntimeOrigin::signed(staker),
+			from_msa,
+			to_msa,
+			to_amount
+		));
+		let events = staking_events();
+
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::CapacityTargetChanged { account: staker, from_msa, to_msa, amount: to_amount }
+		);
 	})
 }
 

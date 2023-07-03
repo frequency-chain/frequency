@@ -301,6 +301,17 @@ pub mod pallet {
 			/// The amount of Capacity withdrawn from MSA.
 			amount: BalanceOf<T>,
 		},
+		/// The target of a staked amount was changed to a new MessageSourceId
+		CapacityTargetChanged {
+			/// The account that retargeted the staking amount
+			account: T::AccountId,
+			/// The Provider MSA that the staking amount is taken from
+			from_msa: MessageSourceId,
+			/// The Provider MSA that the staking amount is retargeted to
+			to_msa: MessageSourceId,
+			/// The amount in token that was retargeted
+			amount: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -503,7 +514,14 @@ pub mod pallet {
 				Error::<T>::StakingAmountBelowMinimum
 			);
 			ensure!(T::TargetValidator::validate(to), Error::<T>::InvalidTarget);
-			Self::do_retarget(&staker, &from, &to, &amount)
+			Self::do_retarget(&staker, &from, &to, &amount)?;
+			Self::deposit_event(Event::CapacityTargetChanged {
+				account: staker,
+				from_msa: from,
+				to_msa: to,
+				amount,
+			});
+			Ok(())
 		}
 	}
 }
