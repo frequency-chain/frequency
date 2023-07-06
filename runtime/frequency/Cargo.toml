@@ -190,6 +190,7 @@ std = [
 	"kilt-support/std",
 	"pallet-dip-provider/std",
 	"pallet-web3-names/std",
+	"xcm-builder/std",
 	# "ctype/std"
 ]
 runtime-benchmarks = [

@@ -1015,24 +1015,6 @@ impl pallet_utility::Config for Runtime {
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
 
-// // Kilt
-impl pallet_did_lookup::Config for Runtime {
-	type Currency = Balances;
-	type Deposit = ConstU128<DOLLARS>;
-	type DidIdentifier = DidIdentifier;
-	type EnsureOrigin = EnsureDipOrigin<
-		DidIdentifier,
-		AccountId32,
-		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
-	>;
-	type OriginSuccess = DipOrigin<
-		DidIdentifier,
-		AccountId32,
-		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
-	>;
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-}
 impl pallet_web3_names::Config for Runtime {
 	type BanOrigin = EnsureRoot<AccountId32>;
 	type Currency = Balances;
@@ -1114,7 +1096,6 @@ construct_runtime!(
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 
 		Web3Names: pallet_web3_names::{Pallet, Call, Storage, Event<T>} = 70,
-		DidLookup: pallet_did_lookup::{Pallet, Call, Storage, Event<T>, Config<T>} = 71,
 		DipConsumer: pallet_dip_consumer::{Pallet, Origin<T>, Call, Storage, Event<T>, } = 72
 	}
 );

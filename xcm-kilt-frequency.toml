@@ -52,6 +52,7 @@ chain = "frequency-rococo-local"
 
   [[parachains.collators]]
   name = "frequency-collator01"
+  # command = "./target/debug/frequency"
   command = "./target/release/frequency"
   ws_port = 9960
   args = ["-lparachain=debug", "--log=xcm=trace", "--log=msa::xcm"]

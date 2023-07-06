@@ -32,6 +32,7 @@ use pallet_did_lookup::linkable_account::LinkableAccountId;
 use pallet_dip_consumer::traits::IdentityProofVerifier;
 use sp_runtime::AccountId32;
 use sp_std::vec::Vec;
+use pallet_msa;
 
 use crate::{
 	BlockNumber, DidIdentifier, Hash, Hasher, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
@@ -94,7 +95,6 @@ impl Contains<RuntimeCall> for PreliminaryDipOriginFilter {
 		matches!(
 			t,
 			RuntimeCall::Msa { .. } |
-				RuntimeCall::DidLookup { .. } |
 				RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
 				RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
 				RuntimeCall::Utility(pallet_utility::Call::force_batch { .. })
@@ -107,7 +107,6 @@ fn derive_verification_key_relationship(
 ) -> Option<DidVerificationKeyRelationship> {
 	match call {
 		RuntimeCall::Msa { .. } => Some(DidVerificationKeyRelationship::Authentication),
-		RuntimeCall::DidLookup { .. } => Some(DidVerificationKeyRelationship::Authentication),
 		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) =>
 			single_key_relationship(calls.iter()).ok(),
 		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) =>
@@ -146,7 +145,7 @@ impl DidDipOriginFilter<RuntimeCall> for DipCallFilter {
 	type OriginInfo = (DidVerificationKey, DidVerificationKeyRelationship);
 	type Success = ();
 
-	// Accepts only a DipOrigin for the DidLookup pallet calls.
+	// Accepts only a DipOrigin for the msa pallet calls.
 	fn check_call_origin_info(
 		call: &RuntimeCall,
 		info: &Self::OriginInfo,
@@ -168,10 +167,10 @@ mod dip_call_origin_filter_tests {
 
 	#[test]
 	fn test_key_relationship_derivation() {
-		// Can call DidLookup functions with an authentication key
-		let did_lookup_call = RuntimeCall::DidLookup(pallet_did_lookup::Call::associate_sender {});
+		// Can call Msa did associate functions with an authentication key
+		let associate_msa_did_call = RuntimeCall::Msa(pallet_msa::Call::associate_did_msa {});
 		assert_eq!(
-			single_key_relationship(vec![did_lookup_call].iter()),
+			single_key_relationship(vec![associate_msa_did_call].iter()),
 			Ok(DidVerificationKeyRelationship::Authentication)
 		);
 		// Can't call System functions with a DID key (hence a DIP origin)
@@ -181,23 +180,23 @@ mod dip_call_origin_filter_tests {
 		let empty_batch_call =
 			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
 		assert_err!(single_key_relationship(vec![empty_batch_call].iter()), ());
-		// Can call batch with a DipLookup with an authentication key
-		let did_lookup_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {
-			calls: vec![pallet_did_lookup::Call::associate_sender {}.into()],
+		// Can call batch with a Msa associate_did_msa with an authentication key
+		let msa_associate_did_msa_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {
+			calls: vec![pallet_msa::Call::associate_did_msa {}.into()],
 		});
 		assert_eq!(
-			single_key_relationship(vec![did_lookup_batch_call].iter()),
+			single_key_relationship(vec![msa_associate_did_msa_batch_call].iter()),
 			Ok(DidVerificationKeyRelationship::Authentication)
 		);
 		// Can't call a batch with different required keys
-		let did_lookup_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {
+		let msa_associate_did_msa_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {
 			calls: vec![
 				// Authentication key
-				pallet_did_lookup::Call::associate_sender {}.into(),
+				pallet_msa::Call::associate_did_msa {}.into(),
 				// No key
 				frame_system::Call::remark { remark: vec![] }.into(),
 			],
 		});
-		assert_err!(single_key_relationship(vec![did_lookup_batch_call].iter()), ());
+		assert_err!(single_key_relationship(vec![msa_associate_did_msa_batch_call].iter()), ());
 	}
 }
