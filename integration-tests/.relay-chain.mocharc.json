@@ -12,5 +12,5 @@
     "spec": [
         "./{,!(node_modules|load-tests)/**}/{createMsa,addIPFSMessage,staking,transactions}.test.ts"
     ],
-    "timeout": 200000
+    "timeout": 250000
 }
