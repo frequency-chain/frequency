@@ -17,6 +17,14 @@ describe("Capacity Staking Tests", function () {
     const tokenMinStake: bigint = 1n * CENTS;
     let capacityMin: bigint = tokenMinStake / 50n;
 
+    // The frozen balance is initialized and tracked throughout the staking end to end tests
+    // to accommodate for the fact that withdrawing unstaked token tests are not executed
+    // against a relay chain. Since the length of time to wait for an epoch period to roll over could
+    // potentially be hours / days, that test is skipped. Therefore, we must track the frozen balance
+    // so that tests against it can pass regardless if withdrawing (the frozen balance decreasing)
+    // has happened or not.
+    let trackedFrozenBalance: bigint = 0n;
+
     before(async function () {
         // Pallet config changes such as modifying the epoch length will
         // only be modified when running tests against a Frequency node built
@@ -47,6 +55,7 @@ describe("Capacity Staking Tests", function () {
             assert.equal(capacityStaked.remainingCapacity, capacityMin, `expected capacityLedger.remainingCapacity = 1CENT, got ${capacityStaked.remainingCapacity}`);
             assert.equal(capacityStaked.totalTokensStaked, tokenMinStake, `expected capacityLedger.totalTokensStaked = 1CENT, got ${capacityStaked.totalTokensStaked}`);
             assert.equal(capacityStaked.totalCapacityIssued, capacityMin, `expected capacityLedger.totalCapacityIssued = 1CENT, got ${capacityStaked.totalCapacityIssued}`);
+            trackedFrozenBalance += tokenMinStake;
         });
 
         it("successfully unstakes the minimum amount", async function () {
@@ -84,7 +93,7 @@ describe("Capacity Staking Tests", function () {
 
             if (withdrawEvent && ExtrinsicHelper.api.events.capacity.StakeWithdrawn.is(withdrawEvent)) {
                 let amount = withdrawEvent.data.amount;
-                assert.equal(amount, 1n * CENTS, "should return a StakeWithdrawn event with 1M amount");
+                assert.equal(amount, tokenMinStake, "should return a StakeWithdrawn event with 1M amount");
             }
 
             // Confirm that the tokens were unstaked in the stakeKeys account using the query API
@@ -96,13 +105,12 @@ describe("Capacity Staking Tests", function () {
             assert.equal(capacityStaked.remainingCapacity, 0, "should return a capacityLedger with 0 remainingCapacity");
             assert.equal(capacityStaked.totalTokensStaked, 0, "should return a capacityLedger with 0 total tokens staked");
             assert.equal(capacityStaked.totalCapacityIssued, 0, "should return a capacityLedger with 0 capacity issued");
+
+            trackedFrozenBalance -= tokenMinStake;
         });
         describe("when staking to multiple times", async function () {
             describe("and targeting same provider", async function () {
                 it("successfully increases the amount that was targeted to provider", async function () {
-                  // get the current account info
-                   let oldStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
-
                     await assert.doesNotReject(stakeToProvider(stakeKeys, stakeProviderId, tokenMinStake));
 
                     const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
@@ -112,13 +120,14 @@ describe("Capacity Staking Tests", function () {
                         `expected capacityStaked.totalTokensStaked = ${tokenMinStake}, got ${capacityStaked.totalTokensStaked}`);
                     assert.equal(capacityStaked.totalCapacityIssued, capacityMin,
                         `expected capacityStaked.totalCapacityIssued = ${capacityMin}, got ${capacityStaked.totalCapacityIssued}`);
+                    trackedFrozenBalance += tokenMinStake;
 
                     // Confirm that the tokens were staked in the stakeKeys account using the query API
                     const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
 
                     let increasedFrozen: bigint = stakedAcctInfo.data.frozen.toBigInt();
 
-                    assert.equal(increasedFrozen, tokenMinStake, `expected frozen=${tokenMinStake}, got ${increasedFrozen}`)
+                    assert.equal(increasedFrozen, trackedFrozenBalance, `expected frozen=${tokenMinStake}, got ${increasedFrozen}`)
 
                 });
 
