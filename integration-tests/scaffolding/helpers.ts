@@ -230,7 +230,7 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
 
 // Stakes the given amount of tokens from the given keys to the given provider
 export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
-  const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
+  const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake, 'MaximumCapacity');
   const [stakeEvent] = await stakeOp.fundAndSend();
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 

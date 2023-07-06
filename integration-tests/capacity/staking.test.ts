@@ -199,7 +199,7 @@ describe("Capacity Staking Tests", function () {
             const stakeAmount = 10n * CENTS;
             const stakeKeys = await createAndFundKeypair(stakeAmount, "StakeKeys");
 
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount);
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount, 'MaximumCapacity');
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
         });
     });
@@ -210,7 +210,7 @@ describe("Capacity Staking Tests", function () {
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", 150n * CENTS);
             let stakeAmount = 1500n;
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount);
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount, 'MaximumCapacity');
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InsufficientStakingAmount" });
         });
     });
@@ -220,7 +220,7 @@ describe("Capacity Staking Tests", function () {
             let stakingKeys = createKeys("stakingKeys");
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", );
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0);
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0, 'MaximumCapacity');
             await assert.rejects(failStakeObj.fundAndSend(), { name: "ZeroAmountNotAllowed" });
         });
     });
@@ -231,7 +231,7 @@ describe("Capacity Staking Tests", function () {
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys");
             let stakingAmount = 1n * DOLLARS;
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount, 'MaximumCapacity');
             await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
         });
     });
@@ -273,7 +273,7 @@ describe("Capacity Staking Tests", function () {
                 let stakingKeys: KeyringPair = createKeys("stakingKeys");
                 let providerId: u64 = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
 
-                const stakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, tokenMinStake);
+                const stakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, tokenMinStake, 'MaximumCapacity');
                 const [stakeEvent] = await stakeObj.fundAndSend();
                 assert.notEqual(stakeEvent, undefined, "should return a Stake event");
 
