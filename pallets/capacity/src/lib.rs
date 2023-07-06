@@ -683,8 +683,6 @@ impl<T: Config> Pallet<T> {
 
 		ensure!(amount.le(&staking_target_details.amount), Error::<T>::InsufficientStakingBalance);
 
-		// TODO: update unlock chunks for staking account
-
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
@@ -698,8 +696,6 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
-		// I think this is an extra write we don't need to do since it's not changed in here
-		// Self::set_staking_account(unstaker, &staking_account);
 
 		Ok(capacity_to_withdraw)
 	}
