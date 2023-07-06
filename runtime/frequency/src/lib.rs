@@ -23,19 +23,20 @@ pub type DidIdentifier = AccountId32;
 
 pub mod dip;
 
-use did::{DidRawOrigin, EnsureDidOrigin, KeyIdOf};
+// from did dep - use did::KeyIdOf;
+pub type KeyIdOf<T> = <T as frame_system::Config>::Hash;
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub use dip::*;
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use pallet_dip_consumer::{DipOrigin, EnsureDipOrigin};
-// use did::KeyIdOf;
-// use dip_provider_runtime_template::Web3Name;
 use kilt_dip_support::merkle::VerificationResult;
+// move the LinkableAccountId to more common library
 use pallet_did_lookup::linkable_account::LinkableAccountId;
 use pallet_web3_names::web3_name::AsciiWeb3Name;
 
+// Get rid of the Runtime dependency.
 pub type Web3Name = AsciiWeb3Name<Runtime>;
 pub type Hasher = BlakeTwo256;
 
@@ -1021,8 +1022,6 @@ impl pallet_web3_names::Config for Runtime {
 	type Deposit = ConstU128<DOLLARS>;
 	type MaxNameLength = ConstU32<32>;
 	type MinNameLength = ConstU32<3>;
-	// type OriginSuccess = DidRawOrigin<AccountId32, DidIdentifier>;
-	// type OwnerOrigin = EnsureDidOrigin<DidIdentifier, AccountId32>;
 	type RuntimeEvent = RuntimeEvent;
 	type Web3Name = Web3Name;
 	type Web3NameOwner = DidIdentifier;
