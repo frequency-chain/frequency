@@ -54,7 +54,7 @@ chain = "frequency-rococo-local"
   name = "frequency-collator01"
   command = "./target/release/frequency"
   ws_port = 9960
-  args = ["-lparachain=debug", "--log=xcm=trace"]
+  args = ["-lparachain=debug", "--log=xcm=trace", "--log=msa::xcm"]
 
 [types.Header]
 number = "u64"

@@ -20,20 +20,35 @@ use did::{did_details::DidVerificationKey, DidVerificationKeyRelationship, KeyId
 // use pallet_web3_names::web3_name::AsciiWeb3Name;
 use frame_support::traits::Contains;
 use kilt_dip_support::{
-	did::{DidSignatureAndCallVerifier, MerkleLeavesAndDidSignature, MerkleRevealedDidSignatureVerifier},
+	did::{
+		DidSignatureAndCallVerifier, MerkleLeavesAndDidSignature,
+		MerkleRevealedDidSignatureVerifier,
+	},
 	merkle::{DidMerkleProofVerifier, MerkleProof, ProofLeaf},
 	traits::{BlockNumberProvider, DidDipOriginFilter, GenesisProvider},
 	MerkleProofAndDidSignatureVerifier,
 };
 use pallet_did_lookup::linkable_account::LinkableAccountId;
 use pallet_dip_consumer::traits::IdentityProofVerifier;
-use sp_std::vec::Vec;
 use sp_runtime::AccountId32;
+use sp_std::vec::Vec;
 
-use crate::{BlockNumber, DidIdentifier, Hash, Hasher, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, Web3Name};
+use crate::{
+	BlockNumber, DidIdentifier, Hash, Hasher, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin,
+	Web3Name,
+};
 
-pub type MerkleProofVerifier =
-	DidMerkleProofVerifier<Hasher, AccountId32, KeyIdOf<Runtime>, BlockNumber, u128, Web3Name, LinkableAccountId, 10, 10>;
+pub type MerkleProofVerifier = DidMerkleProofVerifier<
+	Hasher,
+	AccountId32,
+	KeyIdOf<Runtime>,
+	BlockNumber,
+	u128,
+	Web3Name,
+	LinkableAccountId,
+	10,
+	10,
+>;
 pub type MerkleProofVerifierOutputOf<Call, Subject> =
 	<MerkleProofVerifier as IdentityProofVerifier<Call, Subject>>::VerificationResult;
 pub type MerkleDidSignatureVerifierOf<Call, Subject> = MerkleRevealedDidSignatureVerifier<
@@ -62,7 +77,10 @@ impl pallet_dip_consumer::Config for Runtime {
 	type ProofVerifier = MerkleProofAndDidSignatureVerifier<
 		BlockNumber,
 		MerkleProofVerifier,
-		DidSignatureAndCallVerifier<MerkleDidSignatureVerifierOf<RuntimeCall, DidIdentifier>, DipCallFilter>,
+		DidSignatureAndCallVerifier<
+			MerkleDidSignatureVerifierOf<RuntimeCall, DidIdentifier>,
+			DipCallFilter,
+		>,
 	>;
 	type RuntimeCall = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
@@ -75,20 +93,27 @@ impl Contains<RuntimeCall> for PreliminaryDipOriginFilter {
 	fn contains(t: &RuntimeCall) -> bool {
 		matches!(
 			t,
-			RuntimeCall::DidLookup { .. }
-				| RuntimeCall::Utility(pallet_utility::Call::batch { .. })
-				| RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
-				| RuntimeCall::Utility(pallet_utility::Call::force_batch { .. })
+			RuntimeCall::Msa { .. } |
+				RuntimeCall::DidLookup { .. } |
+				RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
+				RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
+				RuntimeCall::Utility(pallet_utility::Call::force_batch { .. })
 		)
 	}
 }
 
-fn derive_verification_key_relationship(call: &RuntimeCall) -> Option<DidVerificationKeyRelationship> {
+fn derive_verification_key_relationship(
+	call: &RuntimeCall,
+) -> Option<DidVerificationKeyRelationship> {
 	match call {
+		RuntimeCall::Msa { .. } => Some(DidVerificationKeyRelationship::Authentication),
 		RuntimeCall::DidLookup { .. } => Some(DidVerificationKeyRelationship::Authentication),
-		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) => single_key_relationship(calls.iter()).ok(),
-		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) => single_key_relationship(calls.iter()).ok(),
-		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) => single_key_relationship(calls.iter()).ok(),
+		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) =>
+			single_key_relationship(calls.iter()).ok(),
+		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) =>
+			single_key_relationship(calls.iter()).ok(),
+		RuntimeCall::Utility(pallet_utility::Call::force_batch { calls }) =>
+			single_key_relationship(calls.iter()).ok(),
 		_ => None,
 	}
 }
@@ -100,19 +125,18 @@ fn single_key_relationship<'a>(
 	calls: impl Iterator<Item = &'a RuntimeCall>,
 ) -> Result<DidVerificationKeyRelationship, ()> {
 	let mut calls = calls.peekable();
-	let first_call_relationship = calls
-		.peek()
-		.and_then(|k| derive_verification_key_relationship(k))
-		.ok_or(())?;
-	calls
-		.map(derive_verification_key_relationship)
-		.try_fold(first_call_relationship, |acc, next| {
+	let first_call_relationship =
+		calls.peek().and_then(|k| derive_verification_key_relationship(k)).ok_or(())?;
+	calls.map(derive_verification_key_relationship).try_fold(
+		first_call_relationship,
+		|acc, next| {
 			if next == Some(acc) {
 				Ok(acc)
 			} else {
 				Err(())
 			}
-		})
+		},
+	)
 }
 
 pub struct DipCallFilter;
@@ -123,7 +147,10 @@ impl DidDipOriginFilter<RuntimeCall> for DipCallFilter {
 	type Success = ();
 
 	// Accepts only a DipOrigin for the DidLookup pallet calls.
-	fn check_call_origin_info(call: &RuntimeCall, info: &Self::OriginInfo) -> Result<Self::Success, Self::Error> {
+	fn check_call_origin_info(
+		call: &RuntimeCall,
+		info: &Self::OriginInfo,
+	) -> Result<Self::Success, Self::Error> {
 		let key_relationship = single_key_relationship([call].into_iter())?;
 		if info.1 == key_relationship {
 			Ok(())
@@ -151,7 +178,8 @@ mod dip_call_origin_filter_tests {
 		let system_call = RuntimeCall::System(frame_system::Call::remark { remark: vec![] });
 		assert_err!(single_key_relationship(vec![system_call].iter()), ());
 		// Can't call empty batch with a DID key
-		let empty_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
+		let empty_batch_call =
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { calls: vec![] });
 		assert_err!(single_key_relationship(vec![empty_batch_call].iter()), ());
 		// Can call batch with a DipLookup with an authentication key
 		let did_lookup_batch_call = RuntimeCall::Utility(pallet_utility::Call::batch_all {

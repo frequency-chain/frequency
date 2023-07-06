@@ -94,6 +94,9 @@ pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
+// KILT
+use kilt_support::traits::CallSources;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -107,6 +110,10 @@ pub mod weights;
 pub mod pallet {
 
 	use super::*;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	/// a type for Did identifier
+	pub type DidIdentifier = AccountId32;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -155,6 +162,17 @@ pub mod pallet {
 
 		/// The Council proposal provider interface
 		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
+
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		/// The origin that can associate accounts to itself.
+		type EnsureDidOrigin: EnsureOrigin<
+			<Self as frame_system::Config>::RuntimeOrigin,
+			Success = Self::OriginDidSuccess,
+		>;
+
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		/// The information that is returned by the origin check.
+		type OriginDidSuccess: CallSources<Self::AccountId, DidIdentifier>;
 	}
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -250,6 +268,12 @@ pub mod pallet {
 	#[pallet::getter(fn get_payload_signature_pointer)]
 	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
 		StorageValue<_, SignatureRegistryPointer<T::BlockNumber>>;
+
+	/// DID to MSA storage
+	#[pallet::storage]
+	#[pallet::getter(fn get_msa_by_did)]
+	pub(super) type DidToMsa<T: Config> =
+		StorageMap<_, Twox64Concat, DidIdentifier, MessageSourceId, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -884,6 +908,28 @@ pub mod pallet {
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
+			Ok(())
+		}
+
+		/// Associate MSA to DID
+		#[pallet::call_index(13)]
+		#[pallet::weight(0)]
+		pub fn associate_did_msa(origin: OriginFor<T>) -> DispatchResult {
+			log::trace!(target: "msa::xcm","extrinsic associate_id_msa called");
+			let source = T::EnsureDidOrigin::ensure_origin(origin)?;
+			let did = source.subject();
+			let sender = source.sender();
+			log::trace!(target: "msa::xcm","did : {:?}", did);
+			log::trace!(target: "msa::xcm","sender : {:?}", sender);
+			let msa_id = Self::ensure_valid_msa_key(&sender)?;
+			log::trace!(target: "msa::xcm","sender : {:?}", msa_id);
+
+			DidToMsa::<T>::try_mutate(did, |maybe_msa| -> DispatchResult {
+				*maybe_msa = Some(msa_id);
+
+				Ok(())
+			});
+
 			Ok(())
 		}
 	}

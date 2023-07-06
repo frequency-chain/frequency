@@ -28,6 +28,8 @@ sp-runtime = { default-features = false, git = "https://github.com/paritytech/su
 sp-std = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.42" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
+#Kilt
+kilt-support = {path = "../../kilt/support", default-features = false}
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }

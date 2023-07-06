@@ -9,7 +9,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberStrictlyIncreases, RelaychainDataProvider};
 
-// XCM 
+// XCM
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub mod xcm_config;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -28,7 +28,6 @@ use did::{DidRawOrigin, EnsureDidOrigin, KeyIdOf};
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 pub use dip::*;
 
-
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use pallet_dip_consumer::{DipOrigin, EnsureDipOrigin};
 // use did::KeyIdOf;
@@ -46,8 +45,7 @@ use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
 	transaction_validity::{TransactionSource, TransactionValidity},
-	ApplyExtrinsicResult,
-	AccountId32,
+	AccountId32, ApplyExtrinsicResult,
 };
 
 use codec::Encode;
@@ -68,7 +66,10 @@ use common_primitives::{
 };
 
 pub use common_runtime::{
-	constants::{currency::{EXISTENTIAL_DEPOSIT, DOLLARS}, *},
+	constants::{
+		currency::{DOLLARS, EXISTENTIAL_DEPOSIT},
+		*,
+	},
 	fee::WeightToFee,
 };
 
@@ -423,6 +424,22 @@ impl pallet_msa::Config for Runtime {
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	// did origin
+	type EnsureDidOrigin = EnsureDipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+	>;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	// did origin success
+	type OriginDidSuccess = DipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
 	>;
 }
 
@@ -821,7 +838,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 impl parachain_info::Config for Runtime {}
 
 impl cumulus_pallet_aura_ext::Config for Runtime {}
-		
+
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
