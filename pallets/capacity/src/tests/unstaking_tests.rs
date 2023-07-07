@@ -53,7 +53,7 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<BalanceOf<Test>> {
+			StakingTargetDetails::<Test> {
 				amount: BalanceOf::<Test>::from(60u64),
 				capacity: BalanceOf::<Test>::from(6u64),
 			}
@@ -197,7 +197,7 @@ fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
-			Error::<Test>::AmountToUnstakeExceedsAmountStaked
+			Error::<Test>::InsufficientStakingBalance
 		);
 	});
 }
