@@ -1,6 +1,7 @@
 use super::mock::*;
 use crate::*;
-use frame_support::assert_err;
+use common_primitives::node::{BlockNumber, RewardEra};
+use frame_support::{assert_err, assert_ok, traits::Get};
 use sp_core::bounded::BoundedVec;
 
 type UnlockBVec<T> = BoundedVec<
@@ -145,5 +146,71 @@ fn impl_staking_account_details_get_stakable_amount_for() {
 
 		// When staking an amount above account free balance. It stakes all of the free balance.
 		assert_eq!(staking_account.get_stakable_amount_for(&account, 200), 190);
+	});
+}
+
+#[test]
+fn impl_update_stake_change_unlocking_bound() {
+	new_test_ext().execute_with(|| {
+		let mut staking_account: StakingAccountDetails<Test> = StakingAccountDetails {
+			active: 150,
+			total: 150,
+			unlocking: Default::default(),
+			staking_type: StakingType::MaximumCapacity,
+			last_rewards_claimed_at: None,
+			stake_change_unlocking: Default::default(),
+		};
+		let current_era_info: RewardEraInfo<RewardEra, BlockNumber> =
+			RewardEraInfo { era_index: 20, started_at: 100 };
+		let new_chunk_amount: u64 = 10;
+		let thaw_at: u32 = 25;
+		CurrentEraInfo::<Test>::set(current_era_info.clone());
+		let max_chunks = <Test as Config>::MaxUnlockingChunks::get();
+		for i in 0..max_chunks {
+			assert_ok!(staking_account.update_stake_change_unlocking(
+				&(new_chunk_amount + (i as u64)),
+				&thaw_at,
+				&current_era_info.era_index
+			));
+		}
+		assert_err!(
+			staking_account.update_stake_change_unlocking(
+				&new_chunk_amount,
+				&thaw_at,
+				&current_era_info.era_index
+			),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
+	})
+}
+
+#[test]
+fn impl_update_stake_change_unlocking_cleanup() {
+	new_test_ext().execute_with(|| {
+		let mut staking_account: StakingAccountDetails<Test> = StakingAccountDetails {
+			active: 150,
+			total: 150,
+			unlocking: Default::default(),
+			staking_type: StakingType::MaximumCapacity,
+			last_rewards_claimed_at: None,
+			stake_change_unlocking: Default::default(),
+		};
+		let new_chunk_amount = 10u64;
+		let thaw_at = 25u32;
+		let era_index = 20u32;
+		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index, started_at: 100 });
+		assert_ok!(staking_account.update_stake_change_unlocking(
+			&new_chunk_amount,
+			&thaw_at,
+			&era_index
+		));
+
+		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: thaw_at, started_at: 100 });
+		assert_ok!(staking_account.update_stake_change_unlocking(
+			&new_chunk_amount,
+			&thaw_at,
+			&thaw_at
+		));
+		assert_eq!(1, staking_account.stake_change_unlocking.len());
 	});
 }

@@ -513,7 +513,7 @@ describe("Capacity Transactions", function () {
       it("fails to pay with Capacity for a non-capacity transaction", async function () {
         const capacityKeys = createKeys("CapacityKeys");
         const capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-        const nonCapacityTxn = ExtrinsicHelper.stake(capacityKeys, capacityProvider, 1n * CENTS);
+        const nonCapacityTxn = ExtrinsicHelper.stake(capacityKeys, capacityProvider, 1n * CENTS, 'MaximumCapacity');
         await assert.rejects(nonCapacityTxn.payWithCapacity(), {
           name: "RpcError", message:
             "1010: Invalid Transaction: Custom error: 0"
