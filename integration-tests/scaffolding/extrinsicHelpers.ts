@@ -377,7 +377,7 @@ export class ExtrinsicHelper {
     }
 
     public static changeStakingTarget(keys: KeyringPair, fromMsa: any, toMsa: any, amount: any): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.changeStakingTarget(fromMsa, toMsa, amount), keys, ExtrinsicHelper.api.events.capacity.CapacityTargetChanged);
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.changeStakingTarget(fromMsa, toMsa, amount), keys, ExtrinsicHelper.api.events.capacity.StakingTargetChanged);
     }
 
     public static payWithCapacityBatchAll(keys: KeyringPair, calls: any): Extrinsic {

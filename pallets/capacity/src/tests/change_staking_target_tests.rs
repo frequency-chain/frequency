@@ -19,40 +19,7 @@ fn setup_provider(staker: u64, target: MessageSourceId, amount: u64) {
 }
 
 type TestCapacityDetails = CapacityDetails<BalanceOf<Test>, u32>;
-type TestTargetDetails = StakingTargetDetails<BalanceOf<Test>>;
-
-#[test]
-fn set_capacity_for_deletes_staking_target_details_if_amount_is_zero() {
-	new_test_ext().execute_with(|| {
-		let token_account = 200;
-		let target: MessageSourceId = 1;
-		let target2: MessageSourceId = 2;
-		// minimum amount + 1 so it doesn't zero out the balance when we unstake
-		let staking_amount = 11;
-
-		register_provider(target, String::from("Test Target"));
-		register_provider(target2, String::from("Test Target2"));
-
-		// stake to both of them so we still have a staking balance overall
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target,
-			staking_amount,
-			MaximumCapacity
-		));
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target2,
-			staking_amount,
-			MaximumCapacity
-		));
-		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(token_account), target, staking_amount));
-		assert_noop!(
-			Capacity::unstake(RuntimeOrigin::signed(token_account), target, 1),
-			Error::<Test>::StakerTargetRelationshipNotFound
-		);
-	})
-}
+type TestTargetDetails = StakingTargetDetails<Test>;
 
 #[test]
 fn do_retarget_happy_path() {
@@ -102,7 +69,7 @@ fn do_retarget_happy_path() {
 }
 
 #[test]
-fn do_retarget_deletes_staking_account_if_zero_balance() {
+fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 	new_test_ext().execute_with(|| {
 		let staker = 200u64;
 		let from_msa: MessageSourceId = 1;
@@ -148,6 +115,8 @@ fn do_retarget_deletes_staking_account_if_zero_balance() {
 			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
+
+		assert!(Capacity::get_target_for(staker, from_msa).is_none());
 	})
 }
 
@@ -172,7 +141,7 @@ fn change_staking_starget_emits_event_on_success() {
 
 		assert_eq!(
 			events.last().unwrap(),
-			&Event::CapacityTargetChanged { account: staker, from_msa, to_msa, amount: to_amount }
+			&Event::StakingTargetChanged { account: staker, from_msa, to_msa, amount: to_amount }
 		);
 	})
 }

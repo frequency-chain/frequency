@@ -206,7 +206,7 @@ pub mod pallet {
 		T::AccountId,
 		Twox64Concat,
 		MessageSourceId,
-		StakingTargetDetails<BalanceOf<T>>,
+		StakingTargetDetails<T>,
 	>;
 
 	/// Storage for target Capacity usage.
@@ -302,7 +302,7 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		},
 		/// The target of a staked amount was changed to a new MessageSourceId
-		CapacityTargetChanged {
+		StakingTargetChanged {
 			/// The account that retargeted the staking amount
 			account: T::AccountId,
 			/// The Provider MSA that the staking amount is taken from
@@ -514,8 +514,10 @@ pub mod pallet {
 				Error::<T>::StakingAmountBelowMinimum
 			);
 			ensure!(T::TargetValidator::validate(to), Error::<T>::InvalidTarget);
+
 			Self::do_retarget(&staker, &from, &to, &amount)?;
-			Self::deposit_event(Event::CapacityTargetChanged {
+
+			Self::deposit_event(Event::StakingTargetChanged {
 				account: staker,
 				from_msa: from,
 				to_msa: to,
@@ -623,7 +625,7 @@ impl<T: Config> Pallet<T> {
 	fn set_target_details_for(
 		staker: &T::AccountId,
 		target: MessageSourceId,
-		target_details: StakingTargetDetails<BalanceOf<T>>,
+		target_details: StakingTargetDetails<T>,
 	) {
 		if target_details.amount.is_zero() {
 			StakingTargetLedger::<T>::remove(staker, target);
@@ -673,6 +675,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.
+	/// If withdrawing `amount` would take the StakingTargetDetails below the minimum staking amount,
+	/// the entire amount is transferred and the record will be deleted. CapacityDetails will not
+	/// be checked.
 	fn reduce_capacity(
 		unstaker: &T::AccountId,
 		target: MessageSourceId,
@@ -691,8 +696,11 @@ impl<T: Config> Pallet<T> {
 			capacity_details.total_tokens_staked,
 			capacity_details.total_capacity_issued,
 		);
-		staking_target_details.withdraw(amount, capacity_to_withdraw);
-		capacity_details.withdraw(capacity_to_withdraw, amount);
+		// this call will return an amount > than requested if the resulting StakingTargetDetails balance
+		// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
+		let (actual_amount, actual_capacity) =
+			staking_target_details.withdraw(amount, capacity_to_withdraw);
+		capacity_details.withdraw(actual_capacity, actual_amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
@@ -771,11 +779,8 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	/// performs the target change
-	// already validated staker has an account,
-	// already checked that msa of 'from' is targeted by the staker
-	// already checked that to_msa is valid
-	// already validated amount is > minimum
+	/// Performs the work of withdrawing the requested amount from the old staker-provider target details, and
+	/// from the Provider's capacity details, and depositing it into the new staker-provider target details.
 	pub fn do_retarget(
 		staker: &T::AccountId,
 		from_msa: &MessageSourceId,
