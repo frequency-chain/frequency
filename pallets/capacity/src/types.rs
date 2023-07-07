@@ -65,7 +65,7 @@ impl<T: Config> StakingAccountDetails<T> {
 
 	#[cfg(any(feature = "runtime-benchmarks", test))]
 	#[allow(clippy::unwrap_used)]
-	///  tmp fn for testing only
+	///  For testing and benchmarks only!
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.
 	/// returns true on success, false on failure (?)
@@ -99,6 +99,37 @@ impl<T: Config> StakingAccountDetails<T> {
 			}
 		});
 		total_reaped
+	}
+
+	#[cfg(any(feature = "runtime-benchmarks", test))]
+	#[allow(clippy::unwrap_used)]
+	/// for testing and benchmarks only!
+	/// set stake_change_unlocking chunks with (balance, thaw_at).  does not check that the unlock chunks
+	/// don't exceed total.
+	/// returns true on success, false on failure (?)
+	pub fn set_stake_change_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
+			.into_iter()
+			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
+			.collect();
+		self.unlocking = BoundedVec::try_from(result).unwrap();
+		self.unlocking.len() == chunks.len()
+	}
+
+	/// update unlock chunks; remove those that have expired and add the new one
+	// this doesn't affect staking amount, just controls how often a staker may retarget
+	pub fn update_stake_change_unlocking(
+		&mut self,
+		new_chunk_amount: &BalanceOf<T>,
+		thaw_at: &T::RewardEra,
+		current_era: &T::RewardEra,
+	) -> Result<(), DispatchError> {
+		self.stake_change_unlocking.retain(|chunk| current_era.lt(&chunk.thaw_at));
+		let unlock_chunk = UnlockChunk { value: *new_chunk_amount, thaw_at: *thaw_at };
+		self.stake_change_unlocking
+			.try_push(unlock_chunk)
+			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+		Ok(())
 	}
 
 	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
@@ -146,17 +177,24 @@ impl<T: Config> Default for StakingAccountDetails<T> {
 
 /// Details about the total token amount targeted to an MSA.
 /// The Capacity that the target will receive.
-#[derive(PartialEq, Eq, Default, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct StakingTargetDetails<Balance> {
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct StakingTargetDetails<T: Config> {
 	/// The total amount of tokens that have been targeted to the MSA.
-	pub amount: Balance,
+	pub amount: BalanceOf<T>,
 	/// The total Capacity that an MSA received.
-	pub capacity: Balance,
+	pub capacity: BalanceOf<T>,
 }
 
-impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
+impl<T: Config> Default for StakingTargetDetails<T> {
+	fn default() -> Self {
+		Self { amount: Zero::zero(), capacity: Zero::zero() }
+	}
+}
+
+impl<T: Config> StakingTargetDetails<T> {
 	/// Increase an MSA target Staking total and Capacity amount.
-	pub fn deposit(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
+	pub fn deposit(&mut self, amount: BalanceOf<T>, capacity: BalanceOf<T>) -> Option<()> {
 		self.amount = amount.checked_add(&self.amount)?;
 		self.capacity = capacity.checked_add(&self.capacity)?;
 
@@ -164,9 +202,23 @@ impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
 	}
 
 	/// Decrease an MSA target Staking total and Capacity amount.
-	pub fn withdraw(&mut self, amount: Balance, capacity: Balance) {
+	/// If the amount would put you below the minimum, zero out the amount.
+	/// Return the actual amounts withdrawn.
+	pub fn withdraw(
+		&mut self,
+		amount: BalanceOf<T>,
+		capacity: BalanceOf<T>,
+	) -> (BalanceOf<T>, BalanceOf<T>) {
+		let entire_amount = self.amount;
+		let entire_capacity = self.capacity;
 		self.amount = self.amount.saturating_sub(amount);
-		self.capacity = self.capacity.saturating_sub(capacity);
+		if self.amount.lt(&T::MinimumStakingAmount::get()) {
+			*self = Self::default();
+			return (entire_amount, entire_capacity)
+		} else {
+			self.capacity = self.capacity.saturating_sub(capacity);
+		}
+		(amount, capacity)
 	}
 }
 

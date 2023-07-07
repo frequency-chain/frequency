@@ -1,4 +1,5 @@
 mod capacity_details_tests;
+mod change_staking_target_tests;
 mod epochs_tests;
 mod eras_tests;
 pub mod mock;

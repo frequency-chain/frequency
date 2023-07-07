@@ -16,6 +16,33 @@ pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static s
 	let name = Vec::from(name).try_into().expect("error");
 	assert_ok!(T::BenchmarkHelper::create(target_id, name));
 }
+
+#[allow(clippy::expect_used)]
+pub fn setup_provider_stake<T: Config>(
+	staker: &T::AccountId,
+	target_id: &MessageSourceId,
+	amount: u32,
+) {
+	let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(amount.into());
+	let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
+
+	// will add the amount to the account if it exists.
+	let mut staking_account: StakingAccountDetails<T> =
+		Capacity::get_staking_account_for(staker).unwrap_or_default();
+
+	let mut target_details = StakingTargetDetails::<T>::default();
+	let mut capacity_details =
+		CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
+
+	staking_account.deposit(staking_amount);
+	target_details.deposit(staking_amount, capacity_amount);
+	capacity_details.deposit(&staking_amount, &capacity_amount);
+
+	Capacity::<T>::set_staking_account(staker, &staking_account);
+	Capacity::<T>::set_target_details_for(staker, *target_id, target_details);
+	Capacity::<T>::set_capacity_for(*target_id, capacity_details);
+}
+
 pub fn create_funded_account<T: Config>(
 	string: &'static str,
 	n: u32,
@@ -92,7 +119,7 @@ benchmarks! {
 		let block_number = 4u32;
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
-		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
+		let mut target_details = StakingTargetDetails::<T>::default();
 		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
 		staking_account.deposit(staking_amount);
@@ -114,6 +141,30 @@ benchmarks! {
 	verify {
 		assert_eq!(Capacity::<T>::get_epoch_length(), 9u32.into());
 		assert_last_event::<T>(Event::<T>::EpochLengthUpdated {blocks: epoch_length}.into());
+	}
+
+	change_staking_target {
+		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
+		let from_msa = 33;
+		let to_msa = 34;
+		// amount in addition to minimum
+		let from_msa_amount = 32u32;
+		let to_msa_amount = 1u32;
+
+		register_provider::<T>(from_msa, "frommsa");
+		register_provider::<T>(to_msa, "tomsa");
+		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount);
+		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount);
+		let restake_amount = 11u32;
+
+	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount.into())
+	verify {
+		assert_last_event::<T>(Event::<T>::StakingTargetChanged {
+			account: caller,
+			from_msa,
+			to_msa,
+			amount: restake_amount.into()
+		}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
