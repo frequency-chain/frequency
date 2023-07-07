@@ -231,28 +231,27 @@ pub enum Error<T> {
         to_era: Option<T::RewardEra>
     );
     ```
+    Both emit events `StakingRewardClaimed` with the parameters of the extrinsic.
 
 2. **change_staking_target(origin, from, to, amount)**
+Changes a staking account detail's target MSA Id to a new one by `amount`
+Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking  amount for the `from` target, the entire amount is retargeted.
+No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
+Each call creates one chunk.  Emits a `StakingTargetChanged` event with the parameters of the extrinsic.
+
 ```rust
-/// Change a staking account detail's target MSA Id to a new one.
-/// If Some(amount) is specified, that amount up to the total staking amount is retargeted.
-/// Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking
-/// amount for the `from` target, the entire amount is retargeted.
-/// If amount is None, ALL of the total staking amount for 'from' is changed to the new target MSA Id.
-/// No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
-/// Each call creates one chunk.
 /// Errors:
-///    - NotAStakingAccount if origin has no StakingAccount associated with the target
-///    - pallet_msa::Error::ProviderNotRegistered if 'to' MSA Id does not exist or is not a Provider
 ///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
-///    - ZeroAmountNotAllowed if `amount` is zero
-///    - InsufficientStakingAmount if `amount` to transfer to the new target is below the minimum staking amount.
+///    - StakerTargetRelationshipNotFound` if `from` is not a staking target for Origin. This also covers when account's MSA is not staking anything at all or account has no MSA
+///    - StakingAmountBelowMinimum if amount to retarget is below the minimum staking amount.
+///    - InsufficientStakingBalance if amount to retarget exceeds what the staker has targeted to the `from` MSA Id.
+///    - InvalidTarget if `to` is not a Registered Provider.
 #[pallet:call_index(n+1)] // n = current call index in the pallet
 pub fn change_staking_target(
     origin: OriginFor<T>,
     from: MessageSourceId,
     to: MessageSourceId,
-    amount: Option<BalanceOf<T>>
+    amount: BalanceOf<T>
 );
 ```
 

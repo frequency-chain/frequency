@@ -63,7 +63,7 @@ fn impl_withdraw_errors_insufficient_balance() {
 
 		assert_noop!(
 			Capacity::deduct(target_msa_id, 20u32.into()),
-			Error::<Test>::InsufficientBalance
+			Error::<Test>::InsufficientCapacityBalance
 		);
 
 		let mut capacity_details =
