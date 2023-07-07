@@ -383,4 +383,6 @@ parameter_types! {
 	pub const CapacityPerToken: Perbill = Perbill::from_percent(2);
 }
 
+pub type CapacityChangeStakingTargetThawEras = ConstU32<5>;
+
 // -end- Capacity Pallet ---

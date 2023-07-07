@@ -54,6 +54,7 @@ pub trait WeightInfo {
 	fn on_initialize() -> Weight;
 	fn unstake() -> Weight;
 	fn set_epoch_length() -> Weight;
+	fn change_staking_target() -> Weight;
 }
 
 /// Weights for pallet_capacity using the Substrate node and recommended hardware.
@@ -139,6 +140,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(6_550_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+
+	/// Storage:
+	/// Proof:
+	fn change_staking_target() -> Weight {
+		Weight::from_parts(1_000_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -221,6 +229,13 @@ impl WeightInfo for () {
 		//  Estimated: `0`
 		// Minimum execution time: 6_361_000 picoseconds.
 		Weight::from_parts(6_550_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	/// Storage:
+	/// Proof:
+	fn change_staking_target() -> Weight {
+		Weight::from_parts(1_000_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

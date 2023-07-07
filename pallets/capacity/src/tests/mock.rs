@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
-use crate::{BalanceOf, Config, StakingRewardClaim, StakingRewardsProvider};
+use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
 use common_primitives::{
-	node::{AccountId, Balance, Hash, Header, ProposalProvider},
+	node::{AccountId, Hash, Header, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
@@ -190,6 +190,7 @@ impl pallet_capacity::Config for Test {
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
 	type RewardsProvider = TestStakingRewardsProvider;
+	type ChangeStakingTargetThawEras = ConstU32<5>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
