@@ -13,9 +13,14 @@ import {
 import { firstValueFrom } from "rxjs";
 import { MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 
-describe("change_staking_target tests", () => {
+describe.only("change_staking_target tests", () => {
   const tokenMinStake: bigint = 1n * CENTS;
   const capacityMin: bigint = tokenMinStake / 50n;
+
+  const unusedMsaId = async () => {
+    const maxMsaId = (await ExtrinsicHelper.getCurrentMsaIdentifierMaximum()).toNumber();
+    return maxMsaId + 99;
+  }
 
   before(async () => {
     if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
@@ -40,7 +45,7 @@ describe("change_staking_target tests", () => {
   it("fails if 'to' is not a Provider", async () => {
     const providerBalance = 2n * DOLLARS;
     const stakeKeys = createKeys("staker");
-    const notAProvider = 999;
+    const notAProvider = await unusedMsaId();
     const oldProvider = await createMsaAndProvider(stakeKeys, "Provider1", providerBalance);
     await assert.doesNotReject(stakeToProvider(stakeKeys, oldProvider, tokenMinStake*3n));
     const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake);
