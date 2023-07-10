@@ -184,6 +184,7 @@ function run_benchmark() {
   --execution=wasm \
   --heap-pages=4096 \
   --wasm-execution=compiled \
+  --additional-trie-layers=20 \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
