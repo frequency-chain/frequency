@@ -751,6 +751,14 @@ fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() 
 				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
 				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
 				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
 			];
 			assert_noop!(
 				FrequencyTxPayment::pay_with_capacity_batch_all(
