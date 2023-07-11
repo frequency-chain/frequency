@@ -45,10 +45,10 @@ export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signa
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
 }
 
-export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffset?: number): Promise<AddProviderPayload> {
+export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffset: number = 100, blockNumber?: number): Promise<AddProviderPayload> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
-    expiration = (await getBlockNumber()) + (expirationOffset || 5);
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
   }
 
   return {
@@ -73,10 +73,10 @@ export async function generateAddKeyPayload(payloadInputs: AddKeyData, expiratio
   }
 }
 
-export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset?: number): Promise<ItemizedSignaturePayload> {
+export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<ItemizedSignaturePayload> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
-    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
   }
 
   return {
@@ -85,10 +85,10 @@ export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSi
   }
 }
 
-export async function generatePaginatedUpsertSignaturePayload(payloadInputs: PaginatedUpsertSignaturePayload, expirationOffset?: number): Promise<PaginatedUpsertSignaturePayload> {
+export async function generatePaginatedUpsertSignaturePayload(payloadInputs: PaginatedUpsertSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedUpsertSignaturePayload> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
-    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
   }
 
   return {
@@ -97,10 +97,10 @@ export async function generatePaginatedUpsertSignaturePayload(payloadInputs: Pag
   }
 }
 
-export async function generatePaginatedDeleteSignaturePayload(payloadInputs: PaginatedDeleteSignaturePayload, expirationOffset?: number): Promise<PaginatedDeleteSignaturePayload> {
+export async function generatePaginatedDeleteSignaturePayload(payloadInputs: PaginatedDeleteSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedDeleteSignaturePayload> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
-    expiration = (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + (expirationOffset || 5);
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
   }
 
   return {
