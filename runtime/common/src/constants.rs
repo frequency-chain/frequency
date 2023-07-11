@@ -225,7 +225,7 @@ pub type TransactionByteFee = ConstU128<{ 10 * currency::MILLICENTS }>;
 // -end- Transaction Payment Pallet ---
 
 // --- Frequency Transaction Payment Pallet ---
-pub type MaximumCapacityBatchLength = ConstU8<2>;
+pub type MaximumCapacityBatchLength = ConstU8<10>;
 // -end- Frequency Transaction Payment Pallet ---
 
 // --- Session Pallet ---
