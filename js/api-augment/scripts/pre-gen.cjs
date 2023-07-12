@@ -22,4 +22,4 @@ files.forEach(file => {
 
 // Pipe over the exports into the interfaces
 const definitionsExportFile = path.join(interfacePath, "definitions.ts");
-fs.writeFileSync(definitionsExportFile, `export * from "../definitions";\n`);
+fs.writeFileSync(definitionsExportFile, `export * from "../definitions/index.js";\n`);
