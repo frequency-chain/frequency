@@ -1,5 +1,5 @@
 import assert from "assert";
-import { options } from "../index";
+import { options } from "../index.js";
 import { ApiPromise } from "@polkadot/api";
 import { MockProvider } from "@polkadot/rpc-provider/mock";
 import { TypeRegistry } from "@polkadot/types";
