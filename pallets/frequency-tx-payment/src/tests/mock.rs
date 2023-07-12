@@ -103,7 +103,7 @@ impl pallet_balances::Config for Test {
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
-pub type MaximumCapacityBatchLength = ConstU8<2>;
+pub type MaximumCapacityBatchLength = ConstU8<10>;
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
