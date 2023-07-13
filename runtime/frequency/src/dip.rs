@@ -107,6 +107,7 @@ fn derive_verification_key_relationship(
 ) -> Option<DidVerificationKeyRelationship> {
 	match call {
 		RuntimeCall::Msa { .. } => Some(DidVerificationKeyRelationship::Authentication),
+		RuntimeCall::Handles { .. } => Some(DidVerificationKeyRelationship::Authentication),
 		RuntimeCall::Utility(pallet_utility::Call::batch { calls }) =>
 			single_key_relationship(calls.iter()).ok(),
 		RuntimeCall::Utility(pallet_utility::Call::batch_all { calls }) =>

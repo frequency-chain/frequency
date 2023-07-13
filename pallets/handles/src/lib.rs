@@ -53,6 +53,8 @@ use handles_utils::{
 	},
 };
 
+use kilt_support::traits::CallSources;
+
 #[cfg(test)]
 mod tests;
 
@@ -88,6 +90,11 @@ impl<T: Config> HandleProvider for Pallet<T> {
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	/// a type for Did identifier
+	pub type DidIdentifier = AccountId32;
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -117,6 +124,17 @@ pub mod pallet {
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		/// The origin that can associate accounts to itself.
+		type EnsureDidOrigin: EnsureOrigin<
+			<Self as frame_system::Config>::RuntimeOrigin,
+			Success = Self::OriginDidSuccess,
+		>;
+
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		/// The information that is returned by the origin check.
+		type OriginDidSuccess: CallSources<Self::AccountId, DidIdentifier>;
 	}
 
 	// Storage
@@ -420,6 +438,57 @@ pub mod pallet {
 			let display_handle = Self::do_retire_handle(msa_id)?;
 
 			Self::deposit_event(Event::HandleRetired { msa_id, handle: display_handle });
+			Ok(())
+		}
+
+		/// Claims a handle for a caller's MSA (Message Source Account) based on the provided payload.
+		/// This function performs several validations before claiming the handle, including checking
+		/// the size of the base_handle, ensuring the caller has an MSA associated with DID,
+		/// and finally calling the internal `do_claim_handle` function
+		/// to claim the handle.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the caller.
+		/// * `payload` - The payload containing the information needed to claim the handle.
+		///
+		/// # Errors
+		///
+		/// This function may return an error as part of `DispatchResult` if any of the following
+		/// validations fail:
+		///
+		/// * [`Error::InvalidHandleByteLength`] - The base_handle size exceeds the maximum allowed size.
+		/// * [`Error::InvalidMessageSourceAccount`] - The caller does not have a valid  `MessageSourceId`.
+		///
+		/// # Events
+		/// * [`Event::HandleClaimed`]
+		///
+		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
+		pub fn claim_handle_for_did(
+			origin: OriginFor<T>,
+			payload: ClaimHandlePayload<T::BlockNumber>,
+		) -> DispatchResult {
+			let source = T::EnsureDidOrigin::ensure_origin(origin)?;
+			let did: DidIdentifier = source.subject();
+
+			// Validation: Check for base_handle size to address potential panic condition
+			ensure!(
+				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+
+			// Validation: caller must already have a MSA id 
+			let msa_id = T::MsaInfoProvider::ensure_valid_msa_did(&did)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// DONT NEED THIS dispatch_as does this
+			// // Validation: The signature is within the mortality window
+			// Self::verify_signature_mortality(payload.expiration.into())?;
+
+			let display_handle = Self::do_claim_handle(msa_id, payload)?;
+
+			Self::deposit_event(Event::HandleClaimed { msa_id, handle: display_handle.clone() });
 			Ok(())
 		}
 	}

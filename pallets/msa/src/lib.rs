@@ -431,6 +431,9 @@ pub mod pallet {
 
 		/// Attempted to add a new signature to a corrupt signature registry
 		SignatureRegistryCorrupted,
+
+		/// An operation was attempted with an unknown DID
+		NoDidExists,
 	}
 
 	#[pallet::call]
@@ -1423,6 +1426,12 @@ impl<T: Config> Pallet<T> {
 		let msa_id = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(msa_id)
 	}
+	
+	/// Retrieve MSA Id associated with `DID` or return `NoDidExists`
+	pub fn ensure_valid_msa_did(key: &AccountId32) -> Result<MessageSourceId, DispatchError> {
+		let msa_id = Self::get_msa_by_did(key).ok_or(Error::<T>::NoDidExists)?;
+		Ok(msa_id)
+	}
 
 	/// Get a list of Schema Ids that a provider has been granted access to
 	///
@@ -1601,6 +1610,10 @@ impl<T: Config> MsaValidator for Pallet<T> {
 
 	fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
 		Self::ensure_valid_msa_key(key)
+	}
+	
+	fn ensure_valid_msa_did(did: &DidIdentifier) -> Result<MessageSourceId, DispatchError> {
+		Self::ensure_valid_msa_did(&did)
 	}
 }
 

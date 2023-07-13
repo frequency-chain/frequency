@@ -784,6 +784,7 @@ impl pallet_transaction_payment::Config for Runtime {
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
+use pallet_dip_consumer::Call as DipConsumerCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
 pub struct CapacityEligibleCalls;
@@ -795,6 +796,10 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 				capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()
 			),
 			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
+			// TODO: update
+			RuntimeCall::DipConsumer(DipConsumerCall::dispatch_as { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_public_key_to_msa()),
+			// TODO: update
+			RuntimeCall::Msa(MsaCall::create_sponsored_msa_with_did {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
 			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
 			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
 			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
@@ -805,6 +810,8 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
 			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
+			// TODO: update
+			RuntimeCall::Handles(HandlesCall::claim_handle_for_did { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			_ => None,
 		}
 	}
@@ -997,6 +1004,22 @@ impl pallet_handles::Config for Runtime {
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	// did origin
+	type EnsureDidOrigin = EnsureDipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+	>;
+
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	// did origin success
+	type OriginDidSuccess = DipOrigin<
+		DidIdentifier,
+		AccountId32,
+		VerificationResult<KeyIdOf<Runtime>, BlockNumber, Web3Name, LinkableAccountId, 10, 10>,
+	>;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for

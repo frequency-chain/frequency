@@ -28,6 +28,10 @@ sp-std = { git = "https://github.com/paritytech/substrate", default-features = f
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 handles-utils = { default-features = false, path = "src/handles-utils"}
+
+#Kilt
+kilt-support = {path = "../../kilt/support", default-features = false}
+
 [dev-dependencies]
 env_logger = "0.10.0"
 pretty_assertions = "1.3.0"

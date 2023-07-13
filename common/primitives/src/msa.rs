@@ -11,6 +11,8 @@ use sp_runtime::{
 };
 use sp_std::prelude::Vec;
 
+use sp_core::crypto::AccountId32;
+
 pub use crate::schema::SchemaId;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
@@ -206,6 +208,12 @@ pub trait MsaValidator {
 	/// Check that a key is associated to an MSA and returns key information.
 	/// Returns a [`DispatchError`] if there is no MSA associated with the key
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError>;
+
+	/// Check that a DID is associated to an MSA and returns key information.
+	/// Returns a [`DispatchError`] if there is no MSA associated with the key
+	fn ensure_valid_msa_did(did: &AccountId32) -> Result<MessageSourceId, DispatchError> { 
+		Ok(MessageSourceId::from(0u32))
+	}
 }
 
 /// A behavior that allows for looking up delegator-provider relationships
