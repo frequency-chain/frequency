@@ -148,14 +148,15 @@ impl<
 		proof: &Self::Proof,
 	) -> Result<Self::VerificationResult, Self::Error> {
 		let block_number = BlockNumberProvider::get();
-		let is_signature_fresh =
-			if let Some(blocks_ago_from_now) = block_number.checked_sub(&proof.did_signature.block_number) {
-				// False if the signature is too old.
-				blocks_ago_from_now.into() <= SIGNATURE_VALIDITY
-			} else {
-				// Signature generated at a future time, not possible to verify.
-				false
-			};
+		let is_signature_fresh = if let Some(blocks_ago_from_now) =
+			block_number.checked_sub(&proof.did_signature.block_number)
+		{
+			// False if the signature is too old.
+			blocks_ago_from_now.into() <= SIGNATURE_VALIDITY
+		} else {
+			// Signature generated at a future time, not possible to verify.
+			false
+		};
 
 		ensure!(is_signature_fresh, ());
 		let encoded_payload = (
@@ -245,11 +246,7 @@ impl<OutputA, OutputB, OutputC> From<(OutputA, OutputB, OutputC)>
 	for CombinedIdentityResult<OutputA, OutputB, OutputC>
 {
 	fn from(value: (OutputA, OutputB, OutputC)) -> Self {
-		Self {
-			a: value.0,
-			b: value.1,
-			c: value.2,
-		}
+		Self { a: value.0, b: value.1, c: value.2 }
 	}
 }
 
@@ -259,11 +256,7 @@ where
 	OutputC: Default,
 {
 	pub fn from_a(a: OutputA) -> Self {
-		Self {
-			a,
-			b: OutputB::default(),
-			c: OutputC::default(),
-		}
+		Self { a, b: OutputB::default(), c: OutputC::default() }
 	}
 }
 
@@ -273,11 +266,7 @@ where
 	OutputC: Default,
 {
 	pub fn from_b(b: OutputB) -> Self {
-		Self {
-			a: OutputA::default(),
-			b,
-			c: OutputC::default(),
-		}
+		Self { a: OutputA::default(), b, c: OutputC::default() }
 	}
 }
 
@@ -287,11 +276,7 @@ where
 	OutputB: Default,
 {
 	pub fn from_c(c: OutputC) -> Self {
-		Self {
-			a: OutputA::default(),
-			b: OutputB::default(),
-			c,
-		}
+		Self { a: OutputA::default(), b: OutputB::default(), c }
 	}
 }
 
@@ -305,22 +290,16 @@ where
 {
 	// TODO: Proper error handling
 	type Error = ();
-	type Success = CombinedIdentityResult<Option<A::Success>, Option<B::Success>, Option<C::Success>>;
+	type Success =
+		CombinedIdentityResult<Option<A::Success>, Option<B::Success>, Option<C::Success>>;
 
 	fn retrieve(identifier: &Identifier) -> Result<Option<Self::Success>, Self::Error> {
-		match (
-			A::retrieve(identifier),
-			B::retrieve(identifier),
-			C::retrieve(identifier),
-		) {
+		match (A::retrieve(identifier), B::retrieve(identifier), C::retrieve(identifier)) {
 			// If no details is returned, return None for the whole result
 			(Ok(None), Ok(None), Ok(None)) => Ok(None),
 			// Otherwise, return `Some` or `None` depending on each result
-			(Ok(ok_a), Ok(ok_b), Ok(ok_c)) => Ok(Some(CombinedIdentityResult {
-				a: ok_a,
-				b: ok_b,
-				c: ok_c,
-			})),
+			(Ok(ok_a), Ok(ok_b), Ok(ok_c)) =>
+				Ok(Some(CombinedIdentityResult { a: ok_a, b: ok_b, c: ok_c })),
 			// If any of them returns an `Err`, return an `Err`
 			_ => Err(()),
 		}

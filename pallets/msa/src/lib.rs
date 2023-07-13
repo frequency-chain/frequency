@@ -333,6 +333,14 @@ pub mod pallet {
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
 		},
+		/// Associate Msa with Did
+		MsaDidPaired {
+			/// The MSA for the Event
+			msa_id: MessageSourceId,
+
+			/// The Did added to the MSA
+			did: DidIdentifier,
+		},
 	}
 
 	#[pallet::error]
@@ -932,6 +940,50 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Create MSA with DID
+		#[pallet::call_index(14)]
+		#[pallet::weight(0)]
+		pub fn create_sponsored_msa_with_did(
+			origin: OriginFor<T>,
+			add_provider_payload: AddProvider,
+		) -> DispatchResult {
+			let source = T::EnsureDidOrigin::ensure_origin(origin)?;
+			let did: DidIdentifier = source.subject();
+			let provider_key = source.sender();
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+
+			ensure!(
+				add_provider_payload.authorized_msa_id == provider_msa_id,
+				Error::<T>::UnauthorizedProvider
+			);
+
+			// Verify that the provider is a registered provider
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+
+			let new_delegator_msa_id = Self::create_msa_and_associate_did(&did)?;
+
+			Self::add_provider(
+				ProviderId(provider_msa_id),
+				DelegatorId(new_delegator_msa_id),
+				add_provider_payload.schema_ids,
+			)?;
+
+			Self::deposit_event(Event::MsaDidPaired {
+				msa_id: new_delegator_msa_id,
+				did: did,
+			});
+
+			Self::deposit_event(Event::DelegationGranted {
+				delegator_id: DelegatorId(new_delegator_msa_id),
+				provider_id: ProviderId(provider_msa_id),
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -955,6 +1007,23 @@ impl<T: Config> Pallet<T> {
 		let _ = Self::set_msa_identifier(next_msa_id);
 
 		Ok((next_msa_id, key))
+	}
+
+	/// Create the account for the `Did`
+	///
+	/// # Errors
+	/// * [`Error::MsaIdOverflow`]
+	pub fn create_msa_and_associate_did(did: &DidIdentifier) -> Result<MessageSourceId, DispatchError> {
+		let next_msa_id = Self::get_next_msa_id()?;
+		let _ = Self::set_msa_identifier(next_msa_id);
+
+		DidToMsa::<T>::try_mutate(&did, |maybe_msa| -> DispatchResult {
+			*maybe_msa = Some(next_msa_id);
+
+			Ok(())
+		});
+
+		Ok(next_msa_id)
 	}
 
 	/// Generate the next MSA Id
