@@ -111,7 +111,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     env:
       NETWORK: mainnet
@@ -185,7 +185,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -201,7 +201,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -218,7 +218,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -230,7 +230,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -247,7 +247,7 @@ jobs:
     name: Calculate Code Coverage
     # This job currently fails on EKS runners and must be run on standalone until
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, build, v1]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -302,7 +302,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     steps:
       - name: Install Required Packages
         run: |

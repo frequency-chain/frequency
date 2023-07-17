@@ -153,10 +153,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # This job intermittently fails on EKS runners and must be run on standalone until
-        # https://www.pivotaltracker.com/story/show/185045683 is resolved.
-        # os: [[self-hosted, Linux, X64, testing, v2], [self-hosted, Linux, ARM64,  testing, v2]]
-        os: [[self-hosted, Linux, X64, testing, v2]]
+        # os: [[self-hosted, Linux, X64, build, v2], [self-hosted, Linux, ARM64,  build, v2]]
+        os: [[self-hosted, Linux, X64, build, v2]]
         network: [dev, local, rococo, mainnet]
         include:
           - network: dev
@@ -175,7 +173,7 @@ jobs:
             spec: frequency
             build-profile: release
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, testing, v2]
+          - os: [self-hosted, Linux, X64, build, v2]
             arch: amd64
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
@@ -273,7 +271,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     steps:
       - name: Install Required Packages
         run: |
@@ -339,7 +337,7 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
