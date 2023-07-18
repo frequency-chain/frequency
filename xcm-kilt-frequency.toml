@@ -28,7 +28,8 @@ chain = "dev"
 
   [[parachains.collators]]
   name = "kilt-provider-bob-collator01"
-  command = "./bin/dip-provider-node-template-b-dd0410d2"
+  # command = "./bin/dip-provider-node-template-b-dd0410d2"
+  command = "./bin/dip-provider-node-template-branch-5ead14e9c5"
   args = ["--log=trace"]
   ws_port = 9940
 

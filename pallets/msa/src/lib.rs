@@ -949,7 +949,8 @@ pub mod pallet {
 		#[pallet::weight(0)]
 		pub fn create_sponsored_msa_with_did(
 			origin: OriginFor<T>,
-			add_provider_payload: AddProvider,
+			authorized_msa_id: MessageSourceId,
+			schema_ids: Vec<SchemaId>,
 		) -> DispatchResult {
 			let source = T::EnsureDidOrigin::ensure_origin(origin)?;
 			let did: DidIdentifier = source.subject();
@@ -957,7 +958,7 @@ pub mod pallet {
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
 
 			ensure!(
-				add_provider_payload.authorized_msa_id == provider_msa_id,
+				authorized_msa_id == provider_msa_id,
 				Error::<T>::UnauthorizedProvider
 			);
 
@@ -972,7 +973,7 @@ pub mod pallet {
 			Self::add_provider(
 				ProviderId(provider_msa_id),
 				DelegatorId(new_delegator_msa_id),
-				add_provider_payload.schema_ids,
+				schema_ids,
 			)?;
 
 			Self::deposit_event(Event::MsaDidPaired {
