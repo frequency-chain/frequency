@@ -27,7 +27,7 @@ jobs:
 
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
-    runs-on: [self-hosted, Linux, X64, testing, v2]
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
@@ -66,7 +66,7 @@ jobs:
     name: Merge - Calculate Code Coverage
     # This job currently fails on EKS runners and must be run on standalone until
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
-    runs-on: [self-hosted, Linux, X64, build]
+    runs-on: [self-hosted, Linux, X64, build, v1]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
