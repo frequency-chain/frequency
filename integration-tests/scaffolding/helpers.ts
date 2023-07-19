@@ -10,7 +10,7 @@ import {
   AddProviderPayload,
   EventMap,
   ExtrinsicHelper,
-  ItemizedSignaturePayload, PaginatedDeleteSignaturePayload,
+  ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
   PaginatedUpsertSignaturePayload
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
@@ -74,6 +74,18 @@ export async function generateAddKeyPayload(payloadInputs: AddKeyData, expiratio
 }
 
 export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<ItemizedSignaturePayload> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
+}
+
+export async function generateItemizedSignaturePayloadV2(payloadInputs: ItemizedSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<ItemizedSignaturePayloadV2> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
     expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
