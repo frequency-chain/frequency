@@ -328,7 +328,6 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Warning: This is `deprecated`. please use `apply_item_actions_with_signature_v2` instead
 		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
 		/// This is treated as a transaction so either all actions succeed or none will be executed.
@@ -341,6 +340,8 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
 			Pallet::<T>::sum_add_actions_bytes(&payload.actions)
 		))]
+		#[allow(deprecated)]
+		#[deprecated(note = "please use `apply_item_actions_with_signature_v2` instead")]
 		pub fn apply_item_actions_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
