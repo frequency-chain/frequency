@@ -85,6 +85,7 @@ pub enum PageError {
 	PageSizeOverflow,
 }
 
+/// Warning: This struct is `deprecated`. please use `ItemizedSignaturePayloadV2` instead
 /// Payload containing all necessary fields to verify Itemized related signatures
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
@@ -93,6 +94,28 @@ pub struct ItemizedSignaturePayload<T: Config> {
 	#[codec(compact)]
 	pub msa_id: MessageSourceId,
 
+	/// Schema id of this storage
+	#[codec(compact)]
+	pub schema_id: SchemaId,
+
+	/// Hash of targeted page to avoid race conditions
+	#[codec(compact)]
+	pub target_hash: PageHash,
+
+	/// The block number at which the signed proof will expire
+	pub expiration: T::BlockNumber,
+
+	/// Actions to apply to storage from possible: [`ItemAction`]
+	pub actions: BoundedVec<
+		ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
+		<T as Config>::MaxItemizedActionsCount,
+	>,
+}
+
+/// Payload containing all necessary fields to verify Itemized related signatures
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct ItemizedSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
 	#[codec(compact)]
 	pub schema_id: SchemaId,

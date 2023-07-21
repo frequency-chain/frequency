@@ -4,8 +4,12 @@ import assert from "assert";
 import {
   createDelegator,
   createProviderKeysAndId,
-  generateItemizedSignaturePayload, generatePaginatedDeleteSignaturePayload, generatePaginatedUpsertSignaturePayload,
-  getCurrentItemizedHash, getCurrentPaginatedHash,
+  generateItemizedSignaturePayload,
+  generateItemizedSignaturePayloadV2,
+  generatePaginatedDeleteSignaturePayload,
+  generatePaginatedUpsertSignaturePayload,
+  getCurrentItemizedHash,
+  getCurrentPaginatedHash,
   signPayloadSr25519
 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
@@ -79,6 +83,37 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
         });
         const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayload", payload);
         let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
+        const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend();
+        assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+        assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+        assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+      }).timeout(10000);
+
+      it("should be able to call applyItemizedActionWithSignatureV2 and apply actions", async function () {
+
+        // Add and update actions
+        let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+
+        const add_action = {
+          "Add": payload_1
+        }
+
+        let payload_2 = new Bytes(ExtrinsicHelper.api.registry, "Hello World Again From Frequency");
+
+        const update_action = {
+          "Add": payload_2
+        }
+
+        const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+
+        let add_actions = [add_action, update_action];
+        const payload = await generateItemizedSignaturePayloadV2({
+          targetHash: target_hash,
+          schemaId: itemizedSchemaId,
+          actions: add_actions,
+        });
+        const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayloadV2", payload);
+        let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
         const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend();
         assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
         assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");

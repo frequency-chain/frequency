@@ -10,13 +10,34 @@ import { loadIpfs, getBases } from "../messages/loadIPFS";
 import { firstValueFrom } from "rxjs";
 import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import {
-    createKeys, createAndFundKeypair, createMsaAndProvider,
-    generateDelegationPayload, getBlockNumber, signPayloadSr25519, stakeToProvider, fundKeypair,
-    generateAddKeyPayload, CENTS, DOLLARS, getOrCreateGraphChangeSchema, getDefaultFundingSource,
-    TokenPerCapacity, Sr25519Signature, assertEvent, getCurrentItemizedHash, getCurrentPaginatedHash,
-    generateItemizedSignaturePayload, createDelegator, generatePaginatedUpsertSignaturePayload,
-    generatePaginatedDeleteSignaturePayload, getOrCreateDummySchema, getOrCreateAvroChatMessageItemizedSchema,
-    getOrCreateParquetBroadcastSchema, getOrCreateAvroChatMessagePaginatedSchema, CHAIN_ENVIRONMENT
+  createKeys,
+  createAndFundKeypair,
+  createMsaAndProvider,
+  generateDelegationPayload,
+  getBlockNumber,
+  signPayloadSr25519,
+  stakeToProvider,
+  fundKeypair,
+  generateAddKeyPayload,
+  CENTS,
+  DOLLARS,
+  getOrCreateGraphChangeSchema,
+  getDefaultFundingSource,
+  TokenPerCapacity,
+  Sr25519Signature,
+  assertEvent,
+  getCurrentItemizedHash,
+  getCurrentPaginatedHash,
+  generateItemizedSignaturePayload,
+  createDelegator,
+  generatePaginatedUpsertSignaturePayload,
+  generatePaginatedDeleteSignaturePayload,
+  getOrCreateDummySchema,
+  getOrCreateAvroChatMessageItemizedSchema,
+  getOrCreateParquetBroadcastSchema,
+  getOrCreateAvroChatMessagePaginatedSchema,
+  CHAIN_ENVIRONMENT,
+  generateItemizedSignaturePayloadV2
 } from "../scaffolding/helpers";
 
 describe("Capacity Transactions", function () {
@@ -330,6 +351,42 @@ describe("Capacity Transactions", function () {
           });
           const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayload", payload);
           let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
+          const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.payWithCapacity();
+          assertEvent(chainEvents, "system.ExtrinsicSuccess");
+          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+          assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
+        });
+
+        it("successfully pays with Capacity for eligible transaction - applyItemActionsWithSignatureV2", async function () {
+          // Create a schema for Itemized PayloadLocation
+          let itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema();
+
+          // Create a MSA for the delegator
+          [delegatorKeys, delegatorProviderId] = await createDelegator();
+          assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
+          assert.notEqual(delegatorProviderId, undefined, "setup should populate msa_id");
+
+          // Add and update actions
+          let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
+          const add_action = {
+            "Add": payload_1
+          }
+
+          let payload_2 = new Bytes(ExtrinsicHelper.api.registry, "Hello World Again From Frequency");
+          const update_action = {
+            "Add": payload_2
+          }
+
+          const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedSchemaId);
+
+          let add_actions = [add_action, update_action];
+          const payload = await generateItemizedSignaturePayloadV2({
+            targetHash: target_hash,
+            schemaId: itemizedSchemaId,
+            actions: add_actions,
+          });
+          const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayloadV2", payload);
+          let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
           const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.payWithCapacity();
           assertEvent(chainEvents, "system.ExtrinsicSuccess");
           assertEvent(chainEvents, "capacity.CapacityWithdrawn");

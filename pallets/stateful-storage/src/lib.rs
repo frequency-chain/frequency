@@ -340,6 +340,8 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
 			Pallet::<T>::sum_add_actions_bytes(&payload.actions)
 		))]
+		#[allow(deprecated)]
+		#[deprecated(note = "please use `apply_item_actions_with_signature_v2` instead")]
 		pub fn apply_item_actions_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -447,6 +449,49 @@ pub mod pallet {
 				payload.schema_id,
 				payload.page_id,
 				payload.target_hash,
+			)?;
+			Ok(())
+		}
+
+		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
+		/// This is treated as a transaction so either all actions succeed or none will be executed.
+		///
+		/// # Events
+		/// * [`Event::ItemizedPageUpdated`]
+		/// * [`Event::ItemizedPageDeleted`]
+		///
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
+		Pallet::<T>::sum_add_actions_bytes(&payload.actions)
+		))]
+		pub fn apply_item_actions_with_signature_v2(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: ItemizedSignaturePayloadV2<T>,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+
+			let is_pruning = payload.actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
+			Self::check_payload_expiration(
+				frame_system::Pallet::<T>::block_number(),
+				payload.expiration,
+			)?;
+			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Itemized,
+				true,
+				is_pruning,
+			)?;
+			Self::update_itemized(
+				state_owner_msa_id,
+				payload.schema_id,
+				payload.target_hash,
+				payload.actions,
 			)?;
 			Ok(())
 		}
