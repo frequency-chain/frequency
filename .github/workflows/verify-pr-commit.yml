@@ -9,6 +9,8 @@ on:
       - "*-development" # Feature Branches should suffix with -development
 env:
   BIN_DIR: target/release
+  PR_LABEL_METADATA_CHANGED: metadata-changed
+  PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
 
 jobs:
   changes:
@@ -52,6 +54,24 @@ jobs:
               - 'integration-tests/**/*.{ts,json}'
             ci-docker-image:
               - 'tools/ci/docker/ci-base-image.dockerfile'
+
+  clear-metadata-labels:
+    name: Clear Metadata Labels
+    runs-on: ubuntu-20.04
+    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    steps:
+      - name: Clear Metadata Changed Label
+        if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        with:
+          labels: |
+            ${{env.PR_LABEL_METADATA_CHANGED}}
+      - name: Clear Metadata Version Not Incremented Label
+        if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED)
+        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        with:
+          labels: |
+            ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -540,8 +560,6 @@ jobs:
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image
-    env:
-      GITHUB_PR_LABEL: metadata-mismatch
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
@@ -576,30 +594,44 @@ jobs:
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
           ./$TEST_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
-          match=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
+          matches=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
           echo "Metadata matches?: $match"
-          echo "metadata_match=$match" >> $GITHUB_OUTPUT
-      - name: Assign Metadata Mismatch Label
-        if: steps.compare-metadata.outputs.metadata_match != 'true'
+          echo "metadata_matches=$matches" >> $GITHUB_OUTPUT
+      - name: Assign Metadata Changed Label
+        if: steps.compare-metadata.outputs.metadata_matches != 'true'
         uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf
         with:
-          labels: ${{env.GITHUB_PR_LABEL}}
+          labels: ${{env.PR_LABEL_METADATA_CHANGED}}
       - name: Check Spec Version
-        if: steps.compare-metadata.outputs.metadata_match != 'true'
+        if: steps.compare-metadata.outputs.metadata_matches != 'true'
+        id: check-spec-version
         working-directory: ${{env.BIN_DIR}}
         run: |
+          set -x
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
           spec_version=$(./$TEST_BIN_FILENAME export-runtime-version | jq -r .specVersion)
-          [ $spec_version -gt $spec_version_ref ] || \
-            (echo "ERROR: When metadata is updated, the new spec version \($spec_version\) \
-            must be greater than the latest version on main \($spec_version_ref\)" && exit 1)
-      - name: Remove Metadata Mismatch Label
+          incremented=$([ $spec_version -gt $spec_version_ref ] && echo 'true' || echo 'false')
+          echo "spec_version_ref=$spec_version_ref" >> $GITHUB_OUTPUT
+          echo "spec_version=$spec_version" >> $GITHUB_OUTPUT
+          echo "metadata_version_incremented=$incremented" >> $GITHUB_OUTPUT
+      - name: Assign Metadata Version Not Incremented Label
         if: |
-          (steps.compare-metadata.outputs.metadata_match == 'true') &&
-            contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+          (steps.compare-metadata.outputs.metadata_matches != 'true') &&
+            (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
+        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf
         with:
-          labels: ${{env.GITHUB_PR_LABEL}}
+          labels: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
+      - name: Fail CI
+        if: |
+          (steps.compare-metadata.outputs.metadata_matches != 'true') &&
+            (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          spec_version=${{steps.check-spec-version.outputs.spec_version}}
+          spec_version_ref=${{steps.check-spec-version.outputs.spec_version_ref}}
+          echo "ERROR: When metadata is updated, the new spec version ($spec_version)\
+            must be greater than the latest version on main branch ($spec_version_ref)"
+          exit 1
 
   run-integration-tests:
     if: needs.changes.outputs.run-integration-tests == 'true'
@@ -756,19 +788,6 @@ jobs:
             echo "No, do not need to run benchmarks."
             echo "run=false" >> $GITHUB_OUTPUT
           fi
-
-  clear-metadata-mismatch-label:
-    name: Clear Metadata Mismatch Label
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
-    env:
-      GITHUB_PR_LABEL: metadata-mismatch
-    steps:
-      - name: Clear Metadata Mismatch Label
-        if: contains(github.event.pull_request.labels.*.name, env.GITHUB_PR_LABEL)
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
-        with:
-          labels: ${{env.GITHUB_PR_LABEL}}
 
   run-benchmarks:
     if: github.repository == 'LibertyDSNP/frequency' &&
