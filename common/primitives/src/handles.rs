@@ -47,12 +47,14 @@ pub struct ClaimHandlePayload<BlockNumber> {
 	pub base_handle: Vec<u8>,
 	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
+	/// Old handle (specified when changing handles instead of claiming a new one)
+	pub old_handle: Option<Vec<u8>>,
 }
 
 impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 	/// Create a new ClaimHandlePayload
 	pub fn new(base_handle: Vec<u8>, expiration: BlockNumber) -> Self {
-		ClaimHandlePayload { base_handle, expiration }
+		ClaimHandlePayload { base_handle, expiration, old_handle: None }
 	}
 }
 

@@ -87,6 +87,7 @@ impl<T: Config> HandleProvider for Pallet<T> {
 
 #[frame_support::pallet]
 pub mod pallet {
+
 	use super::*;
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -191,6 +192,8 @@ pub mod pallet {
 		HandleWithinMortalityPeriod,
 		/// The handle is invalid
 		InvalidHandle,
+		/// Old handle is not owned by the MSA owner
+		HandleNotOwnedByMSA,
 	}
 
 	#[pallet::event]
@@ -202,6 +205,15 @@ pub mod pallet {
 			msa_id: MessageSourceId,
 			/// UTF-8 string in bytes of the display handle
 			handle: Vec<u8>,
+		},
+		/// Deposited when a handle is changed. [MSA id, display handle and old display handle in UTF-8 bytes]
+		HandleChanged {
+			/// MSA id of handle owner
+			msa_id: MessageSourceId,
+			/// UTF-8 string in bytes of the display handle
+			handle: Vec<u8>,
+			/// UTF-8 string in bytes of the old display handle
+			old_handle: Vec<u8>,
 		},
 		/// Deposited when a handle is retired. [MSA id, display handle in UTF-8 bytes]
 		HandleRetired {
@@ -345,7 +357,7 @@ pub mod pallet {
 		/// * `origin` - The origin of the caller.
 		/// * `msa_owner_key` - The public key of the MSA owner.
 		/// * `proof` - The multi-signature proof for the payload.
-		/// * `payload` - The payload containing the information needed to claim the handle.
+		/// * `payload` - The payload containing the information needed to claim a new or change an existing handle.
 		///
 		/// # Errors
 		///
@@ -358,6 +370,7 @@ pub mod pallet {
 		///
 		/// # Events
 		/// * [`Event::HandleClaimed`]
+		/// * [`Event::HandleChanged`]
 		///
 
 		#[pallet::call_index(0)]
@@ -376,6 +389,14 @@ pub mod pallet {
 				Error::<T>::InvalidHandleByteLength
 			);
 
+			// Validation: Check for old_handle size (if supplied) to address potential panic condition
+			if let Some(old_handle) = payload.clone().old_handle {
+				ensure!(
+					old_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+					Error::<T>::InvalidHandleByteLength
+				);
+			}
+
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
@@ -386,9 +407,37 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
 
-			let display_handle = Self::do_claim_handle(msa_id, payload)?;
+			// Validations for changing handle
+			if let Some(old_handle) = payload.clone().old_handle {
+				// Validation: caller must own the old handle if specified so compare them
+				if let Some((current_display_handle, _)) = Self::get_display_name_for_msa_id(msa_id)
+				{
+					if old_handle != current_display_handle.to_vec() {
+						return Err(Error::<T>::HandleNotOwnedByMSA.into())
+					}
 
-			Self::deposit_event(Event::HandleClaimed { msa_id, handle: display_handle.clone() });
+					// Retire old handle
+					Self::do_retire_handle(msa_id)?;
+				} else {
+					return Err(Error::<T>::MSAHandleDoesNotExist.into())
+				}
+			}
+
+			let display_handle = Self::do_claim_handle(msa_id, payload.clone())?;
+
+			if let Some(old_handle) = payload.clone().old_handle {
+				Self::deposit_event(Event::HandleChanged {
+					msa_id,
+					handle: display_handle.clone(),
+					old_handle,
+				});
+			} else {
+				Self::deposit_event(Event::HandleClaimed {
+					msa_id,
+					handle: display_handle.clone(),
+				});
+			}
+
 			Ok(())
 		}
 
@@ -417,7 +466,7 @@ pub mod pallet {
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let display_handle = Self::do_retire_handle(msa_id)?;
+			let display_handle: Vec<u8> = Self::do_retire_handle(msa_id)?;
 
 			Self::deposit_event(Event::HandleRetired { msa_id, handle: display_handle });
 			Ok(())
