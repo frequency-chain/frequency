@@ -200,7 +200,7 @@ fn test_ensure_msa_cannot_retire_if_handle_exists() {
 		let claim_payload = ClaimHandlePayload::<<Test as frame_system::Config>::BlockNumber> {
 			base_handle: "hello".into(),
 			expiration: 2,
-			old_handle: None
+			old_handle: None,
 		};
 
 		assert_ok!(pallet_handles::Pallet::<Test>::do_claim_handle(msa_id, claim_payload));
