@@ -298,7 +298,7 @@ make benchmarks
     This is a work-around for a toolchain bug in `nightly-2022-11-15` which causes `cargo doc` to panic_
 
 - Alternatively, run `make format-lint` to run both at the same time.
-- Run `cargo-deny` to audit Cargo.lock files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
+- Run `cargo-deny` to audit `Cargo.lock` files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
 # Runtime
 
