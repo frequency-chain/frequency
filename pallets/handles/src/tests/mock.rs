@@ -18,6 +18,14 @@ use sp_runtime::{
 	MultiSignature,
 };
 
+use handles_utils::{
+	converter::{convert_to_canonical, split_display_name, HANDLE_DELIMITER},
+	suffix::generate_unique_suffixes,
+	validator::{
+		consists_of_supported_unicode_character_sets, contains_blocked_characters,
+		is_reserved_handle,
+	},
+};
 pub const INVALID_MSA_ID: MessageSourceId = 100;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -163,4 +171,34 @@ pub fn get_signed_claims_payload(
 	let proof: MultiSignature = account.sign(&encoded_payload).into();
 
 	(payload, proof)
+}
+
+/// Creates a full display handle by combining a base handle string with a suffix generated
+/// from an index into the suffix sequence.
+///
+/// # Arguments
+///
+/// * `base_handle_str` - The base handle string.
+/// * `suffix_sequence_index` - The index into the suffix sequence.
+///
+/// # Returns
+///
+/// * `DisplayHandle` - The full display handle.
+///
+pub fn create_full_handle_for_index(
+	base_handle_str: &str,
+	suffix_sequence_index: SequenceIndex,
+) -> Vec<u8> {
+	// Convert base handle into a canonical base
+	let canonical_handle_str = convert_to_canonical(&base_handle_str);
+
+	// Generate suffix from index into the suffix sequence
+	let suffix = Handles::generate_suffix_for_canonical_handle(
+		&canonical_handle_str,
+		suffix_sequence_index as usize,
+	)
+	.unwrap_or_default();
+
+	let display_handle = Handles::build_full_display_handle(base_handle_str, suffix).unwrap();
+	display_handle.into_inner()
 }

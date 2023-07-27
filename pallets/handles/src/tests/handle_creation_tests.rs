@@ -6,35 +6,7 @@ use handles_utils::converter::convert_to_canonical;
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
 
-/// Creates a full display handle by combining a base handle string with a suffix generated
-/// from an index into the suffix sequence.
-///
-/// # Arguments
-///
-/// * `base_handle_str` - The base handle string.
-/// * `suffix_sequence_index` - The index into the suffix sequence.
-///
-/// # Returns
-///
-/// * `DisplayHandle` - The full display handle.
-///
-fn create_full_handle_for_index(
-	base_handle_str: &str,
-	suffix_sequence_index: SequenceIndex,
-) -> Vec<u8> {
-	// Convert base handle into a canonical base
-	let canonical_handle_str = convert_to_canonical(&base_handle_str);
 
-	// Generate suffix from index into the suffix sequence
-	let suffix = Handles::generate_suffix_for_canonical_handle(
-		&canonical_handle_str,
-		suffix_sequence_index as usize,
-	)
-	.unwrap_or_default();
-
-	let display_handle = Handles::build_full_display_handle(base_handle_str, suffix).unwrap();
-	display_handle.into_inner()
-}
 
 struct TestCase<T> {
 	handle: &'static str,
