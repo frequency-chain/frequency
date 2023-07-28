@@ -20,7 +20,7 @@
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
 //! DATE: 2023-07-28, STEPS: `20`, REPEAT: `10`, LOW RANGE: `[]`, HIGH RANGE: `[]`
 //! WORST CASE MAP SIZE: `1000000`
-//! HOSTNAME: `Robert-La-Ferla-MacBook-Pro.local`, CPU: `<UNKNOWN>`
+//! HOSTNAME: `benchmark-runner-44wtw-b9572`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //! EXECUTION: Some(Wasm), WASM-EXECUTION: Compiled, CHAIN: Some("frequency-bench"), DB CACHE: 1024
 
 // Executed Command:
@@ -71,10 +71,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `191`
 		//  Estimated: `12434`
-		// Minimum execution time: 51_000_000 picoseconds.
-		Weight::from_parts(51_673_348, 12434)
-			// Standard Error: 7_565
-			.saturating_add(Weight::from_parts(88_124, 0).saturating_mul(b.into()))
+		// Minimum execution time: 83_385_000 picoseconds.
+		Weight::from_parts(85_563_974, 12434)
+			// Standard Error: 14_428
+			.saturating_add(Weight::from_parts(105_821, 0).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -91,10 +91,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `297 + b * (1 ±0)`
 		//  Estimated: `12434`
-		// Minimum execution time: 60_000_000 picoseconds.
-		Weight::from_parts(60_517_145, 12434)
-			// Standard Error: 5_082
-			.saturating_add(Weight::from_parts(123_928, 0).saturating_mul(b.into()))
+		// Minimum execution time: 94_642_000 picoseconds.
+		Weight::from_parts(96_221_224, 12434)
+			// Standard Error: 9_682
+			.saturating_add(Weight::from_parts(193_495, 0).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -108,8 +108,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `306`
 		//  Estimated: `12434`
-		// Minimum execution time: 15_000_000 picoseconds.
-		Weight::from_parts(15_000_000, 12434)
+		// Minimum execution time: 23_197_000 picoseconds.
+		Weight::from_parts(23_888_000, 12434)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -130,10 +130,10 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `191`
 		//  Estimated: `12434`
-		// Minimum execution time: 51_000_000 picoseconds.
-		Weight::from_parts(51_673_348, 12434)
-			// Standard Error: 7_565
-			.saturating_add(Weight::from_parts(88_124, 0).saturating_mul(b.into()))
+		// Minimum execution time: 83_385_000 picoseconds.
+		Weight::from_parts(85_563_974, 12434)
+			// Standard Error: 14_428
+			.saturating_add(Weight::from_parts(105_821, 0).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -150,10 +150,10 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `297 + b * (1 ±0)`
 		//  Estimated: `12434`
-		// Minimum execution time: 60_000_000 picoseconds.
-		Weight::from_parts(60_517_145, 12434)
-			// Standard Error: 5_082
-			.saturating_add(Weight::from_parts(123_928, 0).saturating_mul(b.into()))
+		// Minimum execution time: 94_642_000 picoseconds.
+		Weight::from_parts(96_221_224, 12434)
+			// Standard Error: 9_682
+			.saturating_add(Weight::from_parts(193_495, 0).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -167,8 +167,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `306`
 		//  Estimated: `12434`
-		// Minimum execution time: 15_000_000 picoseconds.
-		Weight::from_parts(15_000_000, 12434)
+		// Minimum execution time: 23_197_000 picoseconds.
+		Weight::from_parts(23_888_000, 12434)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
