@@ -51,7 +51,7 @@ use core::marker::PhantomData;
 /// Weight functions needed for pallet_handles.
 pub trait WeightInfo {
 	fn claim_handle(b: u32, ) -> Weight;
-	fn change_handle(b: u32,) -> Weight;
+	fn change_handle(b: u32, ) -> Weight;
 	fn retire_handle() -> Weight;
 }
 
@@ -67,12 +67,14 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
 	/// The range of component `b` is `[3, 30]`.
-	fn claim_handle(_b: u32, ) -> Weight {
+	fn claim_handle(b: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `191`
 		//  Estimated: `12434`
 		// Minimum execution time: 51_000_000 picoseconds.
-		Weight::from_parts(58_142_120, 12434)
+		Weight::from_parts(51_673_348, 12434)
+			// Standard Error: 7_565
+			.saturating_add(Weight::from_parts(88_124, 0).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -84,12 +86,15 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Handles CanonicalBaseHandleToSuffixIndex (max_values: None, max_size: Some(53), added: 2528, mode: MaxEncodedLen)
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:2)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
-	fn change_handle(_b: u32,) -> Weight {
+	/// The range of component `b` is `[3, 30]`.
+	fn change_handle(b: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `334`
+		//  Measured:  `297 + b * (1 ±0)`
 		//  Estimated: `12434`
-		// Minimum execution time: 63_000_000 picoseconds.
-		Weight::from_parts(65_000_000, 12434)
+		// Minimum execution time: 60_000_000 picoseconds.
+		Weight::from_parts(60_517_145, 12434)
+			// Standard Error: 5_082
+			.saturating_add(Weight::from_parts(123_928, 0).saturating_mul(b.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -103,7 +108,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `306`
 		//  Estimated: `12434`
-		// Minimum execution time: 14_000_000 picoseconds.
+		// Minimum execution time: 15_000_000 picoseconds.
 		Weight::from_parts(15_000_000, 12434)
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
@@ -121,12 +126,14 @@ impl WeightInfo for () {
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
 	/// The range of component `b` is `[3, 30]`.
-	fn claim_handle(_b: u32, ) -> Weight {
+	fn claim_handle(b: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `191`
 		//  Estimated: `12434`
 		// Minimum execution time: 51_000_000 picoseconds.
-		Weight::from_parts(58_142_120, 12434)
+		Weight::from_parts(51_673_348, 12434)
+			// Standard Error: 7_565
+			.saturating_add(Weight::from_parts(88_124, 0).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(3_u64))
 	}
@@ -138,12 +145,15 @@ impl WeightInfo for () {
 	/// Proof: Handles CanonicalBaseHandleToSuffixIndex (max_values: None, max_size: Some(53), added: 2528, mode: MaxEncodedLen)
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:2)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
-	fn change_handle(_b: u32,) -> Weight {
+	/// The range of component `b` is `[3, 30]`.
+	fn change_handle(b: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `334`
+		//  Measured:  `297 + b * (1 ±0)`
 		//  Estimated: `12434`
-		// Minimum execution time: 63_000_000 picoseconds.
-		Weight::from_parts(65_000_000, 12434)
+		// Minimum execution time: 60_000_000 picoseconds.
+		Weight::from_parts(60_517_145, 12434)
+			// Standard Error: 5_082
+			.saturating_add(Weight::from_parts(123_928, 0).saturating_mul(b.into()))
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
@@ -157,7 +167,7 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `306`
 		//  Estimated: `12434`
-		// Minimum execution time: 14_000_000 picoseconds.
+		// Minimum execution time: 15_000_000 picoseconds.
 		Weight::from_parts(15_000_000, 12434)
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
