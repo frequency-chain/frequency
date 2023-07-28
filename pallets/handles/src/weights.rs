@@ -51,7 +51,7 @@ use core::marker::PhantomData;
 /// Weight functions needed for pallet_handles.
 pub trait WeightInfo {
 	fn claim_handle(b: u32, ) -> Weight;
-	fn change_handle() -> Weight;
+	fn change_handle(b: u32,) -> Weight;
 	fn retire_handle() -> Weight;
 }
 
@@ -84,7 +84,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: Handles CanonicalBaseHandleToSuffixIndex (max_values: None, max_size: Some(53), added: 2528, mode: MaxEncodedLen)
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:2)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
-	fn change_handle() -> Weight {
+	fn change_handle(_b: u32,) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `334`
 		//  Estimated: `12434`
@@ -138,7 +138,7 @@ impl WeightInfo for () {
 	/// Proof: Handles CanonicalBaseHandleToSuffixIndex (max_values: None, max_size: Some(53), added: 2528, mode: MaxEncodedLen)
 	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:2)
 	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
-	fn change_handle() -> Weight {
+	fn change_handle(_b: u32,) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `334`
 		//  Estimated: `12434`
