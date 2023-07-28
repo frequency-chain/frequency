@@ -1,12 +1,9 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::{handles::SequenceIndex, msa::MessageSourceId};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
-use handles_utils::converter::convert_to_canonical;
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
-
-
 
 struct TestCase<T> {
 	handle: &'static str,

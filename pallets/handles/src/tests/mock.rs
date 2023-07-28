@@ -18,14 +18,7 @@ use sp_runtime::{
 	MultiSignature,
 };
 
-use handles_utils::{
-	converter::{convert_to_canonical, split_display_name, HANDLE_DELIMITER},
-	suffix::generate_unique_suffixes,
-	validator::{
-		consists_of_supported_unicode_character_sets, contains_blocked_characters,
-		is_reserved_handle,
-	},
-};
+use handles_utils::converter::convert_to_canonical;
 pub const INVALID_MSA_ID: MessageSourceId = 100;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -159,7 +152,7 @@ pub fn run_to_block(n: u32) {
 	}
 }
 
-// Create a signed claims payload
+// Create a signed claim handle payload
 pub fn get_signed_claims_payload(
 	account: &sr25519::Pair,
 	handle: Vec<u8>,

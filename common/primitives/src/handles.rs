@@ -56,24 +56,6 @@ impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 	}
 }
 
-/// Change handle payload
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
-pub struct ChangeHandlePayload<BlockNumber> {
-	/// The new desired base handle
-	pub base_handle: Vec<u8>,
-	/// The old full handle including suffix (specified when changing handles instead of claiming a new one)
-	pub old_handle: Option<Vec<u8>>,
-	/// The block number at which the proof for grant_delegation expires.
-	pub expiration: BlockNumber,
-}
-
-impl<BlockNumber> ChangeHandlePayload<BlockNumber> {
-	/// Create a new ClaimHandlePayloadV2
-	pub fn new(base_handle: Vec<u8>, old_handle: Option<Vec<u8>>, expiration: BlockNumber) -> Self {
-		ChangeHandlePayload { base_handle, old_handle, expiration }
-	}
-}
-
 /// RPC Response form for a Handle
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]

@@ -192,8 +192,6 @@ pub mod pallet {
 		HandleWithinMortalityPeriod,
 		/// The handle is invalid
 		InvalidHandle,
-		/// Old handle is not owned by the MSA owner
-		HandleNotOwnedByMSA,
 	}
 
 	#[pallet::event]
@@ -429,7 +427,7 @@ pub mod pallet {
 		/// This function performs several validations before claiming the handle, including checking
 		/// the size of the base_handle, ensuring the caller have valid MSA keys,
 		/// verifying the payload signature, and finally calling the internal `do_retire_handle` and `do_claim_handle` functions
-		/// to retire the old handle and claim the new one.
+		/// to retire the current handle and claim the new one.
 		///
 		/// # Arguments
 		///
@@ -457,7 +455,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			msa_owner_key: T::AccountId,
 			proof: MultiSignature,
-			payload: ChangeHandlePayload<T::BlockNumber>,
+			payload: ClaimHandlePayload<T::BlockNumber>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -466,14 +464,6 @@ pub mod pallet {
 				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
 			);
-
-			// Validation: Check for old_handle size (if supplied) to address potential panic condition
-			if let Some(old_handle) = payload.clone().old_handle {
-				ensure!(
-					old_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
-					Error::<T>::InvalidHandleByteLength
-				);
-			}
 
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
@@ -485,27 +475,14 @@ pub mod pallet {
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
 
-			// Validations for changing handle
-			if let Some(old_handle) = payload.clone().old_handle {
-				// Validation: caller must own the old handle if specified so compare them
-				if let Some((current_display_handle, _)) = Self::get_display_name_for_msa_id(msa_id)
-				{
-					if old_handle != current_display_handle.to_vec() {
-						return Err(Error::<T>::HandleNotOwnedByMSA.into())
-					}
+			// Get existing handle to retire
+			Self::get_display_name_for_msa_id(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
 
-					// Retire old handle
-					Self::do_retire_handle(msa_id)?;
-					Self::deposit_event(Event::HandleRetired { msa_id, handle: old_handle });
-				} else {
-					return Err(Error::<T>::MSAHandleDoesNotExist.into())
-				}
-			}
+			// Retire old handle
+			let old_display_handle: Vec<u8> = Self::do_retire_handle(msa_id)?;
+			Self::deposit_event(Event::HandleRetired { msa_id, handle: old_display_handle });
 
-			let claim_payload =
-				ClaimHandlePayload::new(payload.base_handle.clone(), payload.expiration);
-
-			let display_handle = Self::do_claim_handle(msa_id, claim_payload.clone())?;
+			let display_handle = Self::do_claim_handle(msa_id, payload.clone())?;
 
 			Self::deposit_event(Event::HandleClaimed { msa_id, handle: display_handle.clone() });
 
