@@ -46,11 +46,14 @@ fn change_handle_no_handle() {
 		let expiry = 100;
 		let (payload, proof) =
 			get_signed_claims_payload(&alice, handle.as_bytes().to_vec(), expiry);
-		assert_err!(Handles::change_handle(
-			RuntimeOrigin::signed(alice.public().into()),
-			alice.public().into(),
-			proof,
-			payload
-		), Error::<Test>::MSAHandleDoesNotExist);
+		assert_err!(
+			Handles::change_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::MSAHandleDoesNotExist
+		);
 	});
 }
