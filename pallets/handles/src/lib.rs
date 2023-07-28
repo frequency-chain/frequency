@@ -450,7 +450,7 @@ pub mod pallet {
 		/// * [`Event::HandleClaimed`]
 		///
 		#[pallet::call_index(2)]
-		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
+		#[pallet::weight(T::WeightInfo::change_handle(payload.base_handle.len() as u32))]
 		pub fn change_handle(
 			origin: OriginFor<T>,
 			msa_owner_key: T::AccountId,
