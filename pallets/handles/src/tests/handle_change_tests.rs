@@ -33,5 +33,7 @@ fn change_handle_happy_path() {
 			proof,
 			payload
 		));
+		let changed_handle = create_full_handle_for_index(new_handle, 0);
+		System::assert_last_event(Event::HandleClaimed { msa_id, handle: changed_handle }.into());
 	});
 }
