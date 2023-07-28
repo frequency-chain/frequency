@@ -72,13 +72,13 @@ benchmarks! {
 	}
 
 	change_handle {
-		// claim a handle
-		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-2;
+		// claim a handle to be changed
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
-		let (payload, proof, key, delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public, b);
+		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
+		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof.clone(), payload.clone()));
 
 	}: _(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload)
 	verify {
@@ -87,7 +87,7 @@ benchmarks! {
 	}
 
 	retire_handle {
-		// claim a handle
+		// claim a handle to be retired
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
