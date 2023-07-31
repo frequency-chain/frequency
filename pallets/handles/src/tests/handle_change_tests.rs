@@ -60,3 +60,13 @@ fn change_handle_no_handle() {
 		);
 	});
 }
+
+#[test]
+fn test_max_handle_length() {
+	new_test_ext().execute_with(|| {
+		let handle_str =
+			"MySuperDuperLongUserHandleWithoutAnOldOneThatExceedsTheMaximumLimitByAMile";
+		let handle = handle_str.as_bytes().to_vec();
+		assert_err!(Handles::verify_handle_length(handle), Error::<Test>::InvalidHandleByteLength);
+	});
+}
