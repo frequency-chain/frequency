@@ -8,6 +8,7 @@ use common_primitives::{
 };
 use frame_support::pallet_prelude::*;
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_core::bounded::BoundedVec;
 use sp_std::{
 	cmp::*,
@@ -48,6 +49,7 @@ pub trait ItemizedOperations<T: Config> {
 	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
 }
 /// Defines the actions that can be applied to an Itemized storage
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
 #[scale_info(skip_type_params(DataSize))]
 #[codec(mel_bound(DataSize: MaxEncodedLen))]
