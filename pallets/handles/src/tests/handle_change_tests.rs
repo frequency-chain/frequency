@@ -11,8 +11,7 @@ fn change_handle_happy_path() {
 		let handle = handle_str.as_bytes().to_vec();
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiry = 100;
-		let (payload, proof) =
-			get_signed_claims_payload(&alice, handle.clone(), expiry);
+		let (payload, proof) = get_signed_claims_payload(&alice, handle.clone(), expiry);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -23,7 +22,9 @@ fn change_handle_happy_path() {
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
 		let full_handle = create_full_handle_for_index(handle_str, 0);
-		System::assert_last_event(Event::HandleClaimed { msa_id, handle: full_handle.clone() }.into());
+		System::assert_last_event(
+			Event::HandleClaimed { msa_id, handle: full_handle.clone() }.into(),
+		);
 
 		let new_handle = "MyNewHandle";
 		let (payload, proof) =
