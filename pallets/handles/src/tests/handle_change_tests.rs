@@ -7,11 +7,12 @@ use sp_core::{sr25519, Encode, Pair};
 #[test]
 fn change_handle_happy_path() {
 	new_test_ext().execute_with(|| {
-		let handle = "MyHandle";
+		let handle_str = "MyHandle";
+		let handle = handle_str.as_bytes().to_vec();
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
 		let expiry = 100;
 		let (payload, proof) =
-			get_signed_claims_payload(&alice, handle.as_bytes().to_vec(), expiry);
+			get_signed_claims_payload(&alice, handle.clone(), expiry);
 		assert_ok!(Handles::claim_handle(
 			RuntimeOrigin::signed(alice.public().into()),
 			alice.public().into(),
@@ -21,8 +22,8 @@ fn change_handle_happy_path() {
 
 		// Confirm that HandleClaimed event was deposited
 		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
-		let full_handle = create_full_handle_for_index(handle, 0);
-		System::assert_last_event(Event::HandleClaimed { msa_id, handle: full_handle }.into());
+		let full_handle = create_full_handle_for_index(handle_str, 0);
+		System::assert_last_event(Event::HandleClaimed { msa_id, handle: full_handle.clone() }.into());
 
 		let new_handle = "MyNewHandle";
 		let (payload, proof) =
@@ -34,6 +35,7 @@ fn change_handle_happy_path() {
 			payload
 		));
 		let changed_handle = create_full_handle_for_index(new_handle, 0);
+		System::assert_has_event(Event::HandleRetired { msa_id, handle: full_handle }.into());
 		System::assert_last_event(Event::HandleClaimed { msa_id, handle: changed_handle }.into());
 	});
 }
