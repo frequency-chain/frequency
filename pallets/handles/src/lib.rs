@@ -298,7 +298,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Verifies user handle size to address potential panic condition
+		/// Verifies max user handle size in bytes to address potential panic condition
 		///
 		/// # Arguments
 		///
