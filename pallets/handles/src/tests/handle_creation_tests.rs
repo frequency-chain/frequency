@@ -1,7 +1,7 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::msa::MessageSourceId;
-use frame_support::{assert_noop, assert_ok, dispatch::DispatchResult};
+use common_primitives::{handles::HANDLE_BASE_BYTES_MAX, msa::MessageSourceId};
+use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
 
@@ -335,5 +335,25 @@ fn claim_handle_with_max_bytes_should_get_correct_display_handle() {
 			Handles::get_msa_id_for_handle(display_handle_vec.try_into().unwrap());
 		assert!(msa_id_from_state.is_some());
 		assert_eq!(msa_id_from_state.unwrap(), msa_id);
+	});
+}
+
+#[test]
+fn test_verify_handle_length() {
+	new_test_ext().execute_with(|| {
+		// Max bytes handle is ok
+		let handle_str: String =
+			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX) as usize).collect();
+		let handle = handle_str.as_bytes().to_vec();
+		assert_ok!(Handles::verify_max_handle_byte_length(handle));
+
+		// However, max bytes handle plus 1 is not ok
+		let handle_str: String =
+			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX + 1) as usize).collect();
+		let handle = handle_str.as_bytes().to_vec();
+		assert_err!(
+			Handles::verify_max_handle_byte_length(handle),
+			Error::<Test>::InvalidHandleByteLength
+		);
 	});
 }

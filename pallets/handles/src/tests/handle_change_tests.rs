@@ -1,6 +1,6 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::{handles::HANDLE_BASE_BYTES_MAX, msa::MessageSourceId};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_err, assert_ok};
 use sp_core::{sr25519, Encode, Pair};
 
@@ -58,22 +58,5 @@ fn change_handle_no_handle() {
 			),
 			Error::<Test>::MSAHandleDoesNotExist
 		);
-	});
-}
-
-#[test]
-fn test_max_handle_length_in_bytes() {
-	new_test_ext().execute_with(|| {
-		// Max bytes handle is ok
-		let handle_str: String =
-			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX) as usize).collect();
-		let handle = handle_str.as_bytes().to_vec();
-		assert_ok!(Handles::verify_handle_length(handle));
-
-		// However, max bytes handle plus 1 is not ok
-		let handle_str: String =
-			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX + 1) as usize).collect();
-		let handle = handle_str.as_bytes().to_vec();
-		assert_err!(Handles::verify_handle_length(handle), Error::<Test>::InvalidHandleByteLength);
 	});
 }

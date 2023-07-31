@@ -306,7 +306,7 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::InvalidHandleByteLength`]
-		pub fn verify_handle_length(handle: Vec<u8>) -> DispatchResult {
+		pub fn verify_max_handle_byte_length(handle: Vec<u8>) -> DispatchResult {
 			ensure!(
 				handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
 				Error::<T>::InvalidHandleByteLength
@@ -387,7 +387,7 @@ pub mod pallet {
 			let _ = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
-			Self::verify_handle_length(payload.base_handle.clone())?;
+			Self::verify_max_handle_byte_length(payload.base_handle.clone())?;
 
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
@@ -473,7 +473,7 @@ pub mod pallet {
 			let _ = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
-			Self::verify_handle_length(payload.base_handle.clone())?;
+			Self::verify_max_handle_byte_length(payload.base_handle.clone())?;
 
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
