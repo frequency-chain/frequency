@@ -438,7 +438,7 @@ pub mod pallet {
 
 		/// Changes the handle for a caller's MSA (Message Source Account) based on the provided payload.
 		/// This function performs several validations before claiming the handle, including checking
-		/// the size of the base_handle, ensuring the caller have valid MSA keys,
+		/// the size of the base_handle, ensuring the caller has valid MSA keys,
 		/// verifying the payload signature, and finally calling the internal `do_retire_handle` and `do_claim_handle` functions
 		/// to retire the current handle and claim the new one.
 		///
