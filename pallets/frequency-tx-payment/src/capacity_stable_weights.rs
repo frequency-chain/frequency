@@ -72,6 +72,7 @@ pub trait WeightInfo {
 	fn delete_page_with_signature() -> Weight;
 	// Handles
 	fn claim_handle(b: u32) -> Weight;
+	fn change_handle(b: u32) -> Weight;
 }
 
 // Update test as well to ensure static weight values `tests/stable_weights_test.rs`
@@ -214,5 +215,17 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(104_522 as u64, 0).saturating_mul(b as u64))
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(3 as u64))
+	}
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Storage: Handles MSAIdToDisplayName (r:1 w:1)
+	/// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
+	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:2)
+	/// The range of component `b` is `[3, 30]`.
+	fn change_handle(b: u32, ) -> Weight {
+		Weight::from_parts(96_221_224, 12434)
+			// Standard Error: 9_682
+			.saturating_add(Weight::from_parts(193_495, 0).saturating_mul(b.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }

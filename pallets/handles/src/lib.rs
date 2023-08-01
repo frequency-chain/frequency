@@ -87,6 +87,7 @@ impl<T: Config> HandleProvider for Pallet<T> {
 
 #[frame_support::pallet]
 pub mod pallet {
+
 	use super::*;
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -297,6 +298,22 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Verifies max user handle size in bytes to address potential panic condition
+		///
+		/// # Arguments
+		///
+		/// * `handle` - The user handle.
+		///
+		/// # Errors
+		/// * [`Error::InvalidHandleByteLength`]
+		pub fn verify_max_handle_byte_length(handle: Vec<u8>) -> DispatchResult {
+			ensure!(
+				handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
+				Error::<T>::InvalidHandleByteLength
+			);
+			Ok(())
+		}
+
 		/// The furthest in the future a mortality_block value is allowed
 		/// to be for current_block
 		/// This is calculated to be past the risk of a replay attack
@@ -345,7 +362,7 @@ pub mod pallet {
 		/// * `origin` - The origin of the caller.
 		/// * `msa_owner_key` - The public key of the MSA owner.
 		/// * `proof` - The multi-signature proof for the payload.
-		/// * `payload` - The payload containing the information needed to claim the handle.
+		/// * `payload` - The payload containing the information needed to claim a new handle.
 		///
 		/// # Errors
 		///
@@ -359,7 +376,6 @@ pub mod pallet {
 		/// # Events
 		/// * [`Event::HandleClaimed`]
 		///
-
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::claim_handle(payload.base_handle.len() as u32))]
 		pub fn claim_handle(
@@ -371,10 +387,7 @@ pub mod pallet {
 			let _ = ensure_signed(origin)?;
 
 			// Validation: Check for base_handle size to address potential panic condition
-			ensure!(
-				payload.base_handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleByteLength
-			);
+			Self::verify_max_handle_byte_length(payload.base_handle.clone())?;
 
 			// Validation: caller must already have a MSA id
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
@@ -417,9 +430,72 @@ pub mod pallet {
 			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
-			let display_handle = Self::do_retire_handle(msa_id)?;
+			let display_handle: Vec<u8> = Self::do_retire_handle(msa_id)?;
 
 			Self::deposit_event(Event::HandleRetired { msa_id, handle: display_handle });
+			Ok(())
+		}
+
+		/// Changes the handle for a caller's MSA (Message Source Account) based on the provided payload.
+		/// This function performs several validations before claiming the handle, including checking
+		/// the size of the base_handle, ensuring the caller has valid MSA keys,
+		/// verifying the payload signature, and finally calling the internal `do_retire_handle` and `do_claim_handle` functions
+		/// to retire the current handle and claim the new one.
+		///
+		/// # Arguments
+		///
+		/// * `origin` - The origin of the caller.
+		/// * `msa_owner_key` - The public key of the MSA owner.
+		/// * `proof` - The multi-signature proof for the payload.
+		/// * `payload` - The payload containing the information needed to change an existing handle.
+		///
+		/// # Errors
+		///
+		/// This function may return an error as part of `DispatchResult` if any of the following
+		/// validations fail:
+		///
+		/// * [`Error::InvalidHandleByteLength`] - The base_handle size exceeds the maximum allowed size.
+		/// * [`Error::InvalidMessageSourceAccount`] - The caller does not have a valid  `MessageSourceId`.
+		/// * [`Error::InvalidSignature`] - The payload signature verification fails.
+		///
+		/// # Events
+		/// * [`Event::HandleRetired`]
+		/// * [`Event::HandleClaimed`]
+		///
+		#[pallet::call_index(2)]
+		#[pallet::weight(T::WeightInfo::change_handle(payload.base_handle.len() as u32))]
+		pub fn change_handle(
+			origin: OriginFor<T>,
+			msa_owner_key: T::AccountId,
+			proof: MultiSignature,
+			payload: ClaimHandlePayload<T::BlockNumber>,
+		) -> DispatchResult {
+			let _ = ensure_signed(origin)?;
+
+			// Validation: Check for base_handle size to address potential panic condition
+			Self::verify_max_handle_byte_length(payload.base_handle.clone())?;
+
+			// Validation: caller must already have a MSA id
+			let msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&msa_owner_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+
+			// Validation: The signature is within the mortality window
+			Self::verify_signature_mortality(payload.expiration.into())?;
+
+			// Validation: Verify the payload was signed
+			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
+
+			// Get existing handle to retire
+			Self::get_display_name_for_msa_id(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
+
+			// Retire old handle
+			let old_display_handle: Vec<u8> = Self::do_retire_handle(msa_id)?;
+			Self::deposit_event(Event::HandleRetired { msa_id, handle: old_display_handle });
+
+			let display_handle = Self::do_claim_handle(msa_id, payload.clone())?;
+
+			Self::deposit_event(Event::HandleClaimed { msa_id, handle: display_handle.clone() });
+
 			Ok(())
 		}
 	}
