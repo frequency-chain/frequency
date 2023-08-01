@@ -340,6 +340,7 @@ fn apply_item_actions_with_valid_input_and_empty_items_should_remove_storage() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -374,6 +375,7 @@ fn apply_item_actions_with_signature_having_wrong_signature_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -408,6 +410,7 @@ fn apply_item_actions_with_signature_having_too_far_expiration_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_expired_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -443,6 +446,7 @@ fn apply_item_actions_with_signature_having_expired_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_correct_input_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -496,6 +500,7 @@ fn apply_item_actions_with_signature_having_correct_input_should_work() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_non_existing_msa_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -530,6 +535,7 @@ fn apply_item_actions_with_signature_having_non_existing_msa_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_wrong_msa_in_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -564,6 +570,7 @@ fn apply_item_actions_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -597,6 +604,7 @@ fn apply_item_actions_with_signature_having_invalid_schema_id_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -630,6 +638,7 @@ fn apply_item_actions_with_signature_having_invalid_schema_location_should_fail(
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_remove_storage() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -700,6 +709,7 @@ fn apply_item_actions_with_signature_having_valid_input_and_empty_items_should_r
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_corrupted_state_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -775,6 +785,7 @@ fn apply_item_actions_on_signature_schema_fails() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn apply_item_actions_with_signature_having_page_with_stale_hash_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange

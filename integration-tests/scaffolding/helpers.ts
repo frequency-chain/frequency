@@ -11,7 +11,7 @@ import {
   EventMap,
   ExtrinsicHelper,
   ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
-  PaginatedUpsertSignaturePayload
+  PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
 } from "./extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 import {HandleResponse, MessageSourceId, PageHash, SchemaGrantResponse} from "@frequency-chain/api-augment/interfaces";
@@ -109,7 +109,31 @@ export async function generatePaginatedUpsertSignaturePayload(payloadInputs: Pag
   }
 }
 
+export async function generatePaginatedUpsertSignaturePayloadV2(payloadInputs: PaginatedUpsertSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedUpsertSignaturePayloadV2> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
+}
+
 export async function generatePaginatedDeleteSignaturePayload(payloadInputs: PaginatedDeleteSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedDeleteSignaturePayload> {
+  let { expiration, ...payload } = payloadInputs;
+  if (!expiration) {
+    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
+  }
+
+  return {
+    expiration,
+    ...payload,
+  }
+}
+
+export async function generatePaginatedDeleteSignaturePayloadV2(payloadInputs: PaginatedDeleteSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedDeleteSignaturePayloadV2> {
   let { expiration, ...payload } = payloadInputs;
   if (!expiration) {
     expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;

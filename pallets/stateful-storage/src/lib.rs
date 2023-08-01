@@ -380,6 +380,8 @@ pub mod pallet {
 		///
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
+		#[allow(deprecated)]
+		#[deprecated(note = "please use `upsert_page_with_signature_v2` instead")]
 		pub fn upsert_page_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -421,6 +423,8 @@ pub mod pallet {
 		///
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
+		#[allow(deprecated)]
+		#[deprecated(note = "please use `delete_page_with_signature_v2` instead")]
 		pub fn delete_page_with_signature(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -492,6 +496,89 @@ pub mod pallet {
 				payload.schema_id,
 				payload.target_hash,
 				payload.actions,
+			)?;
+			Ok(())
+		}
+
+		/// Creates or updates an Paginated storage with new payload that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageUpdated`]
+		///
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
+		pub fn upsert_page_with_signature_v2(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: PaginatedUpsertSignaturePayloadV2<T>,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+			ensure!(
+				payload.page_id <= T::MaxPaginatedPageId::get(),
+				Error::<T>::PageIdExceedsMaxAllowed
+			);
+			Self::check_payload_expiration(
+				frame_system::Pallet::<T>::block_number(),
+				payload.expiration,
+			)?;
+			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Paginated,
+				true,
+				false,
+			)?;
+			Self::update_paginated(
+				state_owner_msa_id,
+				payload.schema_id,
+				payload.page_id,
+				payload.target_hash,
+				PaginatedPage::<T>::from(payload.payload),
+			)?;
+			Ok(())
+		}
+
+		/// Deletes a Paginated storage that requires signature
+		/// since the signature of delegator is checked there is no need for delegation validation
+		///
+		/// # Events
+		/// * [`Event::PaginatedPageDeleted`]
+		///
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
+		pub fn delete_page_with_signature_v2(
+			origin: OriginFor<T>,
+			delegator_key: T::AccountId,
+			proof: MultiSignature,
+			payload: PaginatedDeleteSignaturePayloadV2<T>,
+		) -> DispatchResult {
+			ensure_signed(origin)?;
+			ensure!(
+				payload.page_id <= T::MaxPaginatedPageId::get(),
+				Error::<T>::PageIdExceedsMaxAllowed
+			);
+			Self::check_payload_expiration(
+				frame_system::Pallet::<T>::block_number(),
+				payload.expiration,
+			)?;
+			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
+				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
+			Self::check_schema_for_write(
+				payload.schema_id,
+				PayloadLocation::Paginated,
+				true,
+				true,
+			)?;
+			Self::delete_paginated(
+				state_owner_msa_id,
+				payload.schema_id,
+				payload.page_id,
+				payload.target_hash,
 			)?;
 			Ok(())
 		}

@@ -6,8 +6,8 @@ import {
   createProviderKeysAndId,
   generateItemizedSignaturePayload,
   generateItemizedSignaturePayloadV2,
-  generatePaginatedDeleteSignaturePayload,
-  generatePaginatedUpsertSignaturePayload,
+  generatePaginatedDeleteSignaturePayload, generatePaginatedDeleteSignaturePayloadV2,
+  generatePaginatedUpsertSignaturePayload, generatePaginatedUpsertSignaturePayloadV2,
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
   signPayloadSr25519
@@ -151,7 +151,45 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
         pageId: page_id,
       });
       const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayload", deletePayload);
-      let remove_result = ExtrinsicHelper.removePageWithSignature(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
+      let remove_result = ExtrinsicHelper.deletePageWithSignature(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
+      const [pageRemove, chainEvents2] = await remove_result.fundAndSend();
+      assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+      assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+      assert.notEqual(pageRemove, undefined, "should have returned a event");
+
+      // no pages should exist
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
+      assert.notEqual(result, undefined, "should have returned a valid response");
+      assert.equal(result.length, 0, "should returned no paginated pages");
+    }).timeout(10000);
+
+    it("should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully", async function () {
+      let page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      // Add and update actions
+      let target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const upsertPayload = await generatePaginatedUpsertSignaturePayloadV2({
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+        payload: new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency"),
+      });
+      const upsertPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedUpsertSignaturePayloadV2", upsertPayload);
+      let upsert_result = ExtrinsicHelper.upsertPageWithSignatureV2(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, upsertPayloadData), upsertPayload);
+      const [pageUpdateEvent, chainEvents1] = await upsert_result.fundAndSend();
+      assert.notEqual(chainEvents1["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
+      assert.notEqual(chainEvents1["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
+      assert.notEqual(pageUpdateEvent, undefined, "should have returned a PalletStatefulStoragePaginatedPageUpdate event");
+
+      // Remove the page
+      target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const deletePayload = await generatePaginatedDeleteSignaturePayloadV2({
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+      });
+      const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayloadV2", deletePayload);
+      let remove_result = ExtrinsicHelper.deletePageWithSignatureV2(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
       const [pageRemove, chainEvents2] = await remove_result.fundAndSend();
       assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
       assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
