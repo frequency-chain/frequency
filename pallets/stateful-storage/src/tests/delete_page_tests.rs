@@ -214,6 +214,7 @@ fn delete_existing_page_succeeds() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_page_id_out_of_bounds_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -246,6 +247,7 @@ fn delete_page_with_signature_having_page_id_out_of_bounds_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_expired_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -280,6 +282,7 @@ fn delete_page_with_signature_having_expired_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_out_of_window_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -313,6 +316,7 @@ fn delete_page_with_signature_having_out_of_window_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_wrong_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -346,6 +350,7 @@ fn delete_page_with_signature_having_wrong_signature_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_non_existing_msa_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -379,6 +384,7 @@ fn delete_page_with_signature_having_non_existing_msa_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -412,6 +418,7 @@ fn delete_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -444,6 +451,7 @@ fn delete_page_with_signature_having_invalid_schema_id_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -476,6 +484,7 @@ fn delete_page_with_signature_having_invalid_schema_location_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_invalid_hash_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -518,6 +527,7 @@ fn delete_page_with_signature_having_invalid_hash_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_with_non_existing_page_should_noop() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -550,6 +560,7 @@ fn delete_page_with_signature_with_non_existing_page_should_noop() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn delete_page_with_signature_having_valid_inputs_should_remove_page() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -640,4 +651,354 @@ fn delete_page_fails_for_append_only() {
 			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_page_id_out_of_bounds_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = (<Test as Config>::MaxPaginatedPageId::get() + 1).into();
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::PageIdExceedsMaxAllowed
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_expired_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let block_number = 10;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		System::set_block_number(block_number);
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofHasExpired
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_out_of_window_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let mortality_window: u32 = <Test as Config>::MortalityWindowSize::get();
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: (mortality_window + 1).into(),
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofNotYetValid
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_wrong_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let (signature_key, _) = sr25519::Pair::generate();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = signature_key.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidSignature
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_non_existing_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let pair = get_invalid_msa_signature_account(); // hardcoded key that returns None Msa
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_invalid_schema_id_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = INVALID_SCHEMA_ID;
+		let page_id = 1;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_invalid_schema_location_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = ITEMIZED_SCHEMA;
+		let page_id = 1;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_invalid_hash_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (msa_id, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		assert_ok!(StatefulStoragePallet::upsert_page(
+			RuntimeOrigin::signed(caller_1.clone()),
+			msa_id,
+			schema_id,
+			page_id,
+			NONEXISTENT_PAGE_HASH,
+			payload.into(),
+		));
+
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::StalePageState
+		)
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_with_non_existing_page_should_noop() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_storage_noop!(assert_eq!(
+			StatefulStoragePallet::delete_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Ok(())
+		));
+	})
+}
+
+#[test]
+fn delete_page_with_signature_v2_having_valid_inputs_should_remove_page() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (msa_id, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1;
+		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&(schema_id, page_id),
+			&page,
+		);
+
+		let payload = PaginatedDeleteSignaturePayloadV2 {
+			target_hash: page.get_hash(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_ok!(StatefulStoragePallet::delete_page_with_signature_v2(
+			RuntimeOrigin::signed(caller_1),
+			delegator_key.into(),
+			owner_signature,
+			payload
+		));
+
+		// assert
+		let removed_page: Option<PaginatedPage<Test>> =
+			StatefulChildTree::<<Test as Config>::KeyHasher>::try_read(
+				&msa_id,
+				PALLET_STORAGE_PREFIX,
+				PAGINATED_STORAGE_PREFIX,
+				&(schema_id, page_id),
+			)
+			.unwrap();
+		assert!(removed_page.is_none());
+		System::assert_last_event(
+			StatefulEvent::PaginatedPageDeleted {
+				msa_id,
+				schema_id,
+				page_id,
+				prev_content_hash: page.get_hash(),
+			}
+			.into(),
+		);
+	})
 }

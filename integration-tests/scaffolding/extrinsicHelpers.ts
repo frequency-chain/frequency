@@ -27,7 +27,9 @@ export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[], exp
 export type ItemizedSignaturePayload = { msaId?: u64; schemaId?: u16, targetHash?: u32, expiration?: any; actions?: any; }
 export type ItemizedSignaturePayloadV2 = { schemaId?: u16, targetHash?: u32, expiration?: any; actions?: any; }
 export type PaginatedUpsertSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; payload?: any; }
+export type PaginatedUpsertSignaturePayloadV2 = { schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; payload?: any; }
 export type PaginatedDeleteSignaturePayload = { msaId?: u64; schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; }
+export type PaginatedDeleteSignaturePayloadV2 = { schemaId?: u16, pageId?: u16, targetHash?: u32, expiration?: any; }
 
 export class EventError extends Error {
     name: string = '';
@@ -315,16 +317,24 @@ export class ExtrinsicHelper {
       return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
-  public static applyItemActionsWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayloadV2): Extrinsic {
-    return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
-  }
+    public static applyItemActionsWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayloadV2): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    }
 
-    public static removePageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayload): Extrinsic {
+    public static deletePageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayload): Extrinsic {
       return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
+    }
+
+    public static deletePageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayloadV2): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
     public static upsertPageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayload): Extrinsic {
       return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    }
+
+    public static upsertPageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayloadV2): Extrinsic {
+      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
     public static getItemizedStorage(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {

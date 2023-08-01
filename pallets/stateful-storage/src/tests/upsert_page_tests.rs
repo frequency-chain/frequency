@@ -294,6 +294,7 @@ fn upsert_existing_page_modifies_page() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_page_id_out_of_bounds_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -328,6 +329,7 @@ fn upsert_page_with_signature_having_page_id_out_of_bounds_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_expired_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -364,6 +366,7 @@ fn upsert_page_with_signature_having_expired_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_out_of_window_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -399,6 +402,7 @@ fn upsert_page_with_signature_having_out_of_window_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_wrong_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -434,6 +438,7 @@ fn upsert_page_with_signature_having_wrong_signature_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_non_existing_msa_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -469,6 +474,7 @@ fn upsert_page_with_signature_having_non_existing_msa_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -504,6 +510,7 @@ fn upsert_page_with_signature_having_wrong_msa_in_payload_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_invalid_schema_id_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -538,6 +545,7 @@ fn upsert_page_with_signature_having_invalid_schema_id_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_invalid_schema_location_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -572,6 +580,7 @@ fn upsert_page_with_signature_having_invalid_schema_location_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_invalid_hash_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -606,6 +615,7 @@ fn upsert_page_with_signature_having_invalid_hash_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn upsert_page_with_signature_having_valid_inputs_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -683,4 +693,326 @@ fn insert_page_fails_for_signature_schema() {
 			Error::<Test>::UnsupportedOperationForSchema
 		);
 	});
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_page_id_out_of_bounds_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = (<Test as Config>::MaxPaginatedPageId::get() + 1).into();
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::PageIdExceedsMaxAllowed
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_expired_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let block_number = 10;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: block_number,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		System::set_block_number(block_number);
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofHasExpired
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_out_of_window_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let mortality_window: u32 = <Test as Config>::MortalityWindowSize::get();
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: (mortality_window + 1).into(),
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::ProofNotYetValid
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_wrong_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let (signature_key, _) = sr25519::Pair::generate();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = signature_key.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidSignature
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_non_existing_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let pair = get_invalid_msa_signature_account(); // hardcoded key that returns None Msa
+		let delegator_key = pair.public();
+		let schema_id = UNDELEGATED_PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidMessageSourceAccount
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_invalid_schema_id_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = INVALID_SCHEMA_ID;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::InvalidSchemaId
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_invalid_schema_location_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = ITEMIZED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::SchemaPayloadLocationMismatch
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_invalid_hash_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (_, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default() + 1, // any non default hash value
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_err!(
+			StatefulStoragePallet::upsert_page_with_signature_v2(
+				RuntimeOrigin::signed(caller_1),
+				delegator_key.into(),
+				owner_signature,
+				payload
+			),
+			Error::<Test>::StalePageState
+		)
+	})
+}
+
+#[test]
+fn upsert_page_with_signature_v2_having_valid_inputs_should_work() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let caller_1 = test_public(1);
+		let (msa_id, pair) = get_signature_account();
+		let delegator_key = pair.public();
+		let schema_id = PAGINATED_SCHEMA;
+		let page_id = 1;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(Some(100));
+		let page: PaginatedPage<Test> = payload.clone().into();
+		let payload = PaginatedUpsertSignaturePayloadV2 {
+			payload,
+			target_hash: PageHash::default(),
+			expiration: 10,
+			schema_id,
+			page_id,
+		};
+		let encode_data_new_key_data = wrap_binary_data(payload.encode());
+		let owner_signature: MultiSignature = pair.sign(&encode_data_new_key_data).into();
+
+		// act
+		assert_ok!(StatefulStoragePallet::upsert_page_with_signature_v2(
+			RuntimeOrigin::signed(caller_1),
+			delegator_key.into(),
+			owner_signature,
+			payload
+		));
+
+		// assert
+		let keys = (schema_id, page_id);
+		let new_page: PaginatedPage<Test> = <StatefulChildTree>::try_read(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&keys,
+		)
+		.expect("new page could not be read")
+		.expect("new page is empty");
+		assert_eq!(page.data, new_page.data, "new page contents incorrect");
+		assert_eq!(new_page.nonce, 1, "new page nonce incorrect");
+		System::assert_last_event(
+			StatefulEvent::PaginatedPageUpdated {
+				msa_id,
+				schema_id,
+				page_id,
+				prev_content_hash: PageHash::default(),
+				curr_content_hash: new_page.get_hash(),
+			}
+			.into(),
+		);
+	})
 }
