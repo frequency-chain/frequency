@@ -37,7 +37,9 @@ import {
   getOrCreateParquetBroadcastSchema,
   getOrCreateAvroChatMessagePaginatedSchema,
   CHAIN_ENVIRONMENT,
-  generateItemizedSignaturePayloadV2
+  generateItemizedSignaturePayloadV2,
+  generatePaginatedUpsertSignaturePayloadV2,
+  generatePaginatedDeleteSignaturePayloadV2
 } from "../scaffolding/helpers";
 
 describe("Capacity Transactions", function () {
@@ -428,7 +430,52 @@ describe("Capacity Transactions", function () {
             pageId: page_id,
           });
           const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayload", deletePayload);
-          let remove_result = ExtrinsicHelper.removePageWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
+          let remove_result = ExtrinsicHelper.deletePageWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
+          const [pageRemove, chainEvents2] = await remove_result.payWithCapacity();
+          assertEvent(chainEvents2, "system.ExtrinsicSuccess");
+          assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
+          assert.notEqual(pageRemove, undefined, "should have returned a event");
+
+          // no pages should exist
+          const result = await ExtrinsicHelper.getPaginatedStorage(delegatorProviderId, paginatedSchemaId);
+          assert.notEqual(result, undefined, "should have returned a valid response");
+          assert.equal(result.length, 0, "should returned no paginated pages");
+        });
+
+        it("successfully pays with Capacity for eligible transaction - upsertPageWithSignatureV2; deletePageWithSignatureV2", async function () {
+          let paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema();
+
+          // Create a MSA for the delegator
+          [delegatorKeys, delegatorProviderId] = await createDelegator();
+          assert.notEqual(delegatorKeys, undefined, "setup should populate delegator_key");
+          assert.notEqual(delegatorProviderId, undefined, "setup should populate msa_id");
+
+          let page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+          // Add and update actions
+          let target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
+          const upsertPayload = await generatePaginatedUpsertSignaturePayloadV2({
+            targetHash: target_hash,
+            schemaId: paginatedSchemaId,
+            pageId: page_id,
+            payload: new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency"),
+          });
+          const upsertPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedUpsertSignaturePayloadV2", upsertPayload);
+          let upsert_result = ExtrinsicHelper.upsertPageWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, upsertPayloadData), upsertPayload);
+          const [pageUpdateEvent, chainEvents1] = await upsert_result.payWithCapacity();
+          assertEvent(chainEvents1, "system.ExtrinsicSuccess");
+          assertEvent(chainEvents1, "capacity.CapacityWithdrawn");
+          assert.notEqual(pageUpdateEvent, undefined, "should have returned a PalletStatefulStoragePaginatedPageUpdate event");
+
+          // Remove the page
+          target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
+          const deletePayload = await generatePaginatedDeleteSignaturePayloadV2({
+            targetHash: target_hash,
+            schemaId: paginatedSchemaId,
+            pageId: page_id,
+          });
+          const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayloadV2", deletePayload);
+          let remove_result = ExtrinsicHelper.deletePageWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
           const [pageRemove, chainEvents2] = await remove_result.payWithCapacity();
           assertEvent(chainEvents2, "system.ExtrinsicSuccess");
           assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
