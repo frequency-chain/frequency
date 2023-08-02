@@ -7,7 +7,7 @@ license = "Apache-2.0"
 name = "common-primitives"
 publish = false
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.0.0"
+version = "1.7.2+polkadot0.9.42"
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
