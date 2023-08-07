@@ -41,23 +41,30 @@ fn test_contains_blocked_characters_negative() {
 #[test]
 fn test_consists_of_supported_unicode_character_sets_happy_path() {
 	let strings_containing_characters_in_supported_unicode_character_sets = Vec::from([
-		"John",                  // Basic Latin
-		"Álvaro",               // Latin-1 Supplement
-		"가영",                // Hangul Syllables
-		"가나다",             // Hangul Syllables
-		"アキラ",             // Katakana
-		"あいこ",             // Hiragana
-		"李明",                // CJK Unified Ideographs
-		"严勇",                // CJK Unified Ideographs
-		"龍",                   // CJK Unified Ideographs
-		"অমিত",          // Bengali
-		"आरव",             // Devanagari
-		"Александр",    // Cyrillic
-		"Αλέξανδρος",  // Greek and Coptic
-		"Ἀναξαγόρας", // Greek Extended
-		"กัญญา",       // Thai
-		"عمر",                // Arabic
-		"דָּנִיֵּאל",  // Hewbrew
+		"John",                                                             // Basic Latin
+		"Álvaro",                                                          // Latin-1 Supplement
+		"가영",                                                           // Hangul Syllables
+		"가나다",                                                        // Hangul Syllables
+		"アキラ",                                                        // Katakana
+		"あいこ",                                                        // Hiragana
+		"李明",                                                           // CJK Unified Ideographs
+		"严勇",                                                           // CJK Unified Ideographs
+		"龍",                                                              // CJK Unified Ideographs
+		"অমিত",                                                     // Bengali
+		"आरव",                                                        // Devanagari
+		"Александр",                                               // Cyrillic
+		"Αλέξανδρος",                                             // Greek and Coptic
+		"Ἀναξαγόρας",                                            // Greek Extended
+		"กัญญา",                                                  // Thai
+		"ابجدهوزحطيكلمنسعفصقرشتثخذضظغءعمر", // Arabic
+		"דָּנִיֵּאלאבּבגּגדּדהווּוֹזחטי ִיכּךּכךלמםנןסעפּףּפףצץקרשׁשׂתּת", // Hewbrew
+		"AaĄąBbCcĆćDdEeĘęFfGgHhIiJjKkLlŁłMmNnŃńOoÓóRrSsŚśYyZzŹźŻż", // Polish
+		"ÄäÖöÜüẞß",                                                // German
+		"AÁBCČDĎEÉĚFGHChIÍJKLMNŇOÓPQRŘSŠTŤUÚŮVWXYÝZŽaábcčdďeéěfghchiíjklmnňoópqrřsštťuúůvwxyýzž", // Czech
+		"αιαιαιᾳειειηιῃοιοιυιυιωιῳαυαυᾹυᾱυευευηυηυουουωυωυγγγγγκγκγξγξγχγχμπμπντντΖζΤΖτζ", // Greek
+		"ÅåÄäÖö",                                                     // Swedish
+		"ÅåÄäÖöŠšŽž",                                             // Finnish
+		"ÆæØøÅå",                                                     // Danish
 	]);
 
 	for string in strings_containing_characters_in_supported_unicode_character_sets {
