@@ -3,7 +3,7 @@
 use core::ops::RangeInclusive;
 
 /// Character that are allowed.
-pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 20] = [
+pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 21] = [
 	0x0020..=0x007F, // Basic Latin
 	0x0080..=0x00FF, // Latin-1 Supplement
 	0x0100..=0x017F, // Latin Extended-A
@@ -16,6 +16,7 @@ pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 20] = [
 	0x0980..=0x09FF, // Bengali
 	0x0E00..=0x0E7F, // Thai
 	0x1100..=0x11FF, // Hangul Jamo
+	0x1E00..=0x1EFF, // Latin Extended Additional
 	0x1F00..=0x1FFF, // Greek Extended
 	0x3040..=0x309F, // Hiragana
 	0x30A0..=0x30FF, // Katakana
