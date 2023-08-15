@@ -34,6 +34,8 @@ pub fn frequency_dev_sealing(
 	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
+	let net_config: sc_network::config::FullNetworkConfiguration =
+		sc_network::config::FullNetworkConfiguration::new(&config.network);
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -49,6 +51,7 @@ pub fn frequency_dev_sealing(
 	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
+			net_config,
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),

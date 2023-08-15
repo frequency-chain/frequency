@@ -7,7 +7,7 @@ A "collator node" is a Frequency parachain node that is actively collating (aka 
 ### Quick Run
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
+docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
 ```
 
 
@@ -16,7 +16,7 @@ docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-
 If running in manual sealing mode or to form empty blocks in instant sealing mode, the `engine_createBlock` RPC can be used:
 
 ```sh
-curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
+curl http://localhost:9944 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
     "jsonrpc":"2.0", \
     "id":1, \
     "method":"engine_createBlock", \
@@ -36,7 +36,7 @@ curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d  
 Note: Docker `--rm` removes the volume when stopped.
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
+docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
 ```
 
 ## Overriding Arguments
@@ -49,9 +49,9 @@ docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-
 ### Run
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node:<version.tag> -- --manual-seal
+docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node:<version.tag> -- --manual-seal
 ```
 
 | **Node**                |             **Ports**             | **Explorer URL**                                                                          |
 | ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
-| Frequency Local-Only Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| Frequency Local-Only Node | ws and rpc :`9944`, p2p:`3033`  | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |

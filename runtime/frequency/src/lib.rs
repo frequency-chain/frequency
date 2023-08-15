@@ -945,6 +945,7 @@ impl pallet_handles::Config for Runtime {
 impl pallet_sudo::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = weights::pallet_sudo::SubstrateWeight<Runtime>;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_utility/index.html for

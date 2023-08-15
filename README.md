@@ -159,7 +159,7 @@ This option runs just one collator node without the need for a relay chain.
 a. Blocks can be triggered by calling the `engine_createBlock` RPC
 
 ```sh
-curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
+curl http://localhost:9944 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
     "jsonrpc":"2.0", \
     "id":1, \
     "method":"engine_createBlock", \
@@ -186,14 +186,14 @@ make start
 Also available as a Docker image: [`frequencychain/instant-seal-node`](https://hub.docker.com/r/frequencychain/instant-seal-node)
 
 ```sh
-docker run --rm -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/instant-seal-node
+docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node
 ```
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
 | **Node**                |             **Ports**             | **Explorer URL**                                                                          |
 | ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
-| Frequency Collator Node | ws:`9944`, rpc`:9933`, p2p:`3033` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| Frequency Collator Node | ws and rpc:`9944`, p2p:`3033`     | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
 
 ### Interval Sealing
@@ -263,9 +263,9 @@ make stop-frequency-docker
 
 | **Node**             | **Ports**                           | **Explorer URL**                                                                          |
 | -------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| Frequency Relay Node | ws:`9944`, rpc`:9933`, p2p:`30333`  | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
-| Alice Relay Node     | ws:`:9946`, rpc`:9935`, p2p:`30335` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
-| Bob Relay Node       | ws:`:9947`, rpc`:9936`, p2p:`30336` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
+| Frequency Relay Node | ws and rpc: `9944`, p2p:`30333`     | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| Alice Relay Node     | ws and rpc: `9946`, p2p:`30335`     | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
+| Bob Relay Node       | ws and rpc: `9947`, p2p:`30336`     | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
 
 ## Run Tests
 

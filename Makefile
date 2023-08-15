@@ -38,7 +38,7 @@ stop-frequency-docker:
 
 .PHONY: local-block
 local-block:
-	curl http://localhost:9933 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
+	curl http://localhost:9944 -H "Content-Type:application/json;charset=utf-8" -d   '{ \
 		"jsonrpc":"2.0", \
 		"id":1, \
 		"method":"engine_createBlock", \
@@ -116,6 +116,7 @@ benchmarks-pallet_multisig \
 benchmarks-pallet_preimage \
 benchmarks-pallet_scheduler \
 benchmarks-pallet_session \
+benchmarks-pallet_sudo \
 benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility
@@ -137,6 +138,7 @@ benchmarks-pallet_multisig-local \
 benchmarks-pallet_preimage-local \
 benchmarks-pallet_scheduler-local \
 benchmarks-pallet_session-local \
+benchmarks-pallet_sudo-local \
 benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local

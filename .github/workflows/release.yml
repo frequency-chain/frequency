@@ -544,7 +544,6 @@ jobs:
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
-              --ws-external \
               --rpc-methods=Unsafe \
               --no-telemetry \
               --no-prometheus \
@@ -564,7 +563,6 @@ jobs:
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
-              --ws-external \
               --rpc-methods=Unsafe \
               --no-telemetry \
               --no-prometheus \

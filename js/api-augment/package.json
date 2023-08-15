@@ -22,7 +22,7 @@
     "prebuild": "npm run generate",
     "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
     "postbuild": "npm run package",
-    "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9933 -o ./metadata.json",
+    "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9944 -o ./metadata.json",
     "generate:defs": "node --loader ts-node/esm node_modules/.bin/polkadot-types-from-defs --package @frequency-chain/api-augment --input ./interfaces --endpoint ./metadata.json",
     "generate:meta": "node --loader ts-node/esm node_modules/.bin/polkadot-types-from-chain --package @frequency-chain/api-augment --endpoint ./metadata.json --output ./interfaces",
     "test": "mocha --require ts-node/register  ./test/**/*.test.ts",
