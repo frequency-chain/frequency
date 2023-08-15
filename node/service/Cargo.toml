@@ -96,6 +96,8 @@ pallet-stateful-storage-rpc = { path = "../../pallets/stateful-storage/src/rpc" 
 pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api" }
 pallet-handles-rpc = { path = "../../pallets/handles/src/rpc" }
 pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api" }
+pallet-frequency-tx-payment-rpc = { path = "../../pallets/frequency-tx-payment/src/rpc" }
+pallet-frequency-tx-payment-runtime-api = { path = "../../pallets/frequency-tx-payment/src/runtime-api" }
 system-runtime-api = { path = "../../runtime/system-runtime-api" }
 
 [build-dependencies]

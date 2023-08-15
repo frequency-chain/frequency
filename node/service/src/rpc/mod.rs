@@ -67,6 +67,9 @@ where
 
 	// Frequency RPCs
 	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
+	use pallet_frequency_tx_payment_rpc::{
+		CapacityTransactionPaymentApiServer, CapacityTransactionPaymentHandler,
+	};
 	use pallet_handles_rpc::{HandlesApiServer, HandlesHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
@@ -83,6 +86,7 @@ where
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
+	module.merge(CapacityTransactionPaymentHandler::new(client.clone()).into_rpc())?;
 	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(

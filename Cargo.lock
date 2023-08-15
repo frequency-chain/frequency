@@ -3269,6 +3269,8 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-frequency-tx-payment-rpc",
+ "pallet-frequency-tx-payment-runtime-api",
  "pallet-handles-rpc",
  "pallet-handles-runtime-api",
  "pallet-messages-rpc",
@@ -6250,6 +6252,40 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-frequency-tx-payment-rpc"
+version = "0.0.0"
+dependencies = [
+ "common-helpers",
+ "common-primitives",
+ "jsonrpsee",
+ "pallet-frequency-tx-payment-runtime-api",
+ "parity-scale-codec",
+ "rayon",
+ "sc-client-api",
+ "sp-api",
+ "sp-blockchain",
+ "sp-core",
+ "sp-rpc",
+ "sp-runtime",
+ "sp-std",
+ "sp-weights",
+ "substrate-test-runtime-client",
+ "tokio",
+]
+
+[[package]]
+name = "pallet-frequency-tx-payment-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "frame-support",
+ "pallet-transaction-payment",
+ "parity-scale-codec",
+ "sp-api",
  "sp-std",
 ]
 
