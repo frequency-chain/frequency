@@ -67,6 +67,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 common-runtime = { path = "../common", default-features = false }
 pallet-capacity = {path = "../../pallets/capacity", default-features = false}
 pallet-frequency-tx-payment = {path = "../../pallets/frequency-tx-payment", default-features = false}
+pallet-frequency-tx-payment-runtime-api = {path = "../../pallets/frequency-tx-payment/src/runtime-api", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }

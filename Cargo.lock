@@ -3195,6 +3195,7 @@ dependencies = [
  "pallet-collective",
  "pallet-democracy",
  "pallet-frequency-tx-payment",
+ "pallet-frequency-tx-payment-runtime-api",
  "pallet-handles",
  "pallet-handles-runtime-api",
  "pallet-messages",
