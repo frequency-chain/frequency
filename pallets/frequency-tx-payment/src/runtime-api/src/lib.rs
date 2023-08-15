@@ -20,7 +20,7 @@ use codec::Codec;
 use frame_support::sp_runtime;
 use sp_runtime::traits::MaybeDisplay;
 
-pub use pallet_transaction_payment::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
+pub use pallet_transaction_payment::{FeeDetails, InclusionFee};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

@@ -28,7 +28,7 @@ use jsonrpsee::{
 		ErrorObject,
 	},
 };
-use pallet_frequency_tx_payment_runtime_api::{FeeDetails, InclusionFee, RuntimeDispatchInfo};
+use pallet_frequency_tx_payment_runtime_api::{FeeDetails, InclusionFee};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
@@ -39,7 +39,7 @@ pub use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentApi a
 
 /// CapacityTransactionPayment RPC methods.
 #[rpc(client, server)]
-pub trait CapacityTransactionPaymentApi<BlockHash, ResponseType> {
+pub trait CapacityPaymentApi<BlockHash, Balance> {
 	/// Query the capcity fee details for a given extrinsic.
 	#[method(name = "capacity_queryFeeDetails")]
 	fn query_capacity_fee_details(
@@ -50,13 +50,13 @@ pub trait CapacityTransactionPaymentApi<BlockHash, ResponseType> {
 }
 
 /// Provides RPC methods to query a dispatchable's class, weight and fee.
-pub struct CapacityTransactionPaymentHandler<C, P> {
+pub struct CapacityPaymentHandler<C, P> {
 	/// Shared reference to the client.
 	client: Arc<C>,
 	_marker: std::marker::PhantomData<P>,
 }
 
-impl<C, P> CapacityTransactionPaymentHandler<C, P> {
+impl<C, P> CapacityPaymentHandler<C, P> {
 	/// Creates a new instance of the TransactionPayment Rpc helper.
 	pub fn new(client: Arc<C>) -> Self {
 		Self { client, _marker: Default::default() }
@@ -81,11 +81,8 @@ impl From<Error> for i32 {
 }
 
 #[async_trait]
-impl<C, Block, Balance>
-	CapacityTransactionPaymentApiServer<
-		<Block as BlockT>::Hash,
-		RuntimeDispatchInfo<Balance, sp_weights::Weight>,
-	> for CapacityTransactionPaymentHandler<C, Block>
+impl<C, Block, Balance> CapacityPaymentApiServer<<Block as BlockT>::Hash, Balance>
+	for CapacityPaymentHandler<C, Block>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static + ProvideRuntimeApi<Block> + HeaderBackend<Block>,

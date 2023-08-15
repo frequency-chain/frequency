@@ -1165,6 +1165,15 @@ impl_runtime_apis! {
 		}
 	}
 
+	impl pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentApi<Block, Balance> for Runtime {
+		fn query_capacity_fee_details(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) -> pallet_transaction_payment::FeeDetails<Balance> {
+			FrequencyTxPayment::query_capacity_fee_details(uxt, len)
+		}
+	}
+
 	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
