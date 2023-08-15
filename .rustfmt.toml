@@ -21,3 +21,11 @@ spaces_around_ranges = false
 trailing_comma = "Vertical"
 trailing_semicolon = false
 use_field_init_shorthand = true
+
+# Unstable (nightly-only)
+# imports_granularity = "Crate"
+# reorder_imports = true
+# spaces_around_ranges = false
+# binop_separator = "Back"
+# match_arm_blocks = false
+# reorder_impl_items = false

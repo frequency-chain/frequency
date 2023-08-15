@@ -22,7 +22,7 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
+// #![feature(rustdoc_missing_doc_code_examples)]
 
 use codec::{Decode, Encode};
 use frame_support::{
