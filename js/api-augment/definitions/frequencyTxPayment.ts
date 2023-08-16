@@ -20,12 +20,6 @@ export default {
             inclusion_fee: "Option<InclusionFee>",
             tip: "Balance",
         },
-        InclusionFee: {
-            base_fee: "Balance",
-            len_fee: "Balance",
-            adjusted_weight_fee: "Balance",
-        },
-        Balance: "u128",
     },
     runtime: {
         CapacityTransactionPaymentRuntimeApi:[
