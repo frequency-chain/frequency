@@ -7,11 +7,10 @@ Frequency parachain node which connects to the Mainnet network.
 Start full chain node that connects to Mainnet network:
 
 ```sh
-docker run -p 9944:9944 -p 9933:9933 -p 30333:30333 frequencychain/parachain-node-mainnet:<version.tag> \
+docker run -p 9944:9944 -p 30333:30333 frequencychain/parachain-node-mainnet:<version.tag> \
     --base-path=/chain-data \
     --rpc-external \
     --rpc-cors=all \
-    --ws-external \
     --rpc-methods=safe
 ```
 

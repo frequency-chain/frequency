@@ -60,11 +60,9 @@ start-frequency)
     --execution=wasm \
     --force-authoring \
     --port $((30333)) \
-    --rpc-port $((9933)) \
-    --ws-port $((9944)) \
+    --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
   ;;
@@ -90,11 +88,9 @@ start-frequency-instant)
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
-    --rpc-port $((9933)) \
-    --ws-port $((9944)) \
+    --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --tmp
   ;;
@@ -120,11 +116,9 @@ start-frequency-interval)
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
-    --rpc-port $((9933)) \
-    --ws-port $((9944)) \
+    --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --tmp
   ;;
@@ -150,11 +144,9 @@ start-frequency-native)
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
-    --rpc-port $((9933)) \
-    --ws-port $((9944)) \
+    --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --tmp
   ;;
@@ -185,11 +177,9 @@ start-frequency-manual)
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
-    --rpc-port $((9933)) \
-    --ws-port $((9944)) \
+    --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --tmp
   ;;
@@ -199,11 +189,9 @@ start-frequency-container)
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
   frequency_default_port=$((30333))
-  frequency_default_rpc_port=$((9933))
-  frequency_default_ws_port=$((9944))
+  frequency_default_rpc_port=$((9944))
   frequency_port="${Frequency_PORT:-$frequency_default_port}"
   frequency_rpc_port="${Frequency_RPC_PORT:-$frequency_default_rpc_port}"
-  frequency_ws_port="${Frequency_WS_PORT:-$frequency_default_ws_port}"
 
   ./scripts/run_collator.sh \
     --chain="frequency-rococo-local" --alice \
@@ -213,10 +201,8 @@ start-frequency-container)
     --force-authoring \
     --port "${frequency_port}" \
     --rpc-port "${frequency_rpc_port}" \
-    --ws-port "${frequency_ws_port}" \
     --rpc-external \
     --rpc-cors all \
-    --ws-external \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
   ;;

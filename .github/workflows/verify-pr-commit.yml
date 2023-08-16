@@ -226,13 +226,10 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v3
-        # cargo doc requires a toolchain version ^nightly-2022-11-15 because of a bug that causes a panic
-        # When the toolchain is updated to ^nightly-2023-06-01, this can be removed
       - name: Build Docs
         run: |
-          rustup install nightly-2023-06-01
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --features frequency
+          rustup target add wasm32-unknown-unknown
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
@@ -680,11 +677,9 @@ jobs:
             --no-telemetry \
             --no-prometheus \
             --port $((30333)) \
-            --rpc-port $((9933)) \
-            --ws-port $((9944)) \
+            --rpc-port $((9944)) \
             --rpc-external \
             --rpc-cors all \
-            --ws-external \
             --rpc-methods=Unsafe \
             --tmp \
             &

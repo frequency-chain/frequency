@@ -39,10 +39,10 @@ HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
 
 VOLUME ["/data"]
 
-# 9933 p2p port
 # 9944 rpc port
-# 30333 ws port
-EXPOSE 9933 9944 30333
+# 30333 p2p port
+# 9615 for Telemetry (prometheus)
+EXPOSE 9944 30333 9615
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/bin/bash", "./scripts/init.sh", "start-frequency-container"]
