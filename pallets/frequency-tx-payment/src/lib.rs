@@ -33,7 +33,7 @@ use frame_support::{
 	DefaultNoBound,
 };
 use frame_system::pallet_prelude::*;
-use pallet_transaction_payment::OnChargeTransaction;
+use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, PostDispatchInfoOf, SignedExtension, Zero},
@@ -271,6 +271,38 @@ impl<T: Config> Pallet<T> {
 		fee
 	}
 
+	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.
+	/// # Arguments
+	/// * `length` - The length of the transaction.
+	/// * `weight` - The weight of the transaction.
+	///
+	/// # Returns
+	/// `FeeDetails` - The fee details for the transaction.
+	pub fn compute_capacity_fee_details<
+		Extrinsic: sp_runtime::traits::Extrinsic + GetDispatchInfo,
+	>(
+		unchecked_extrinsic: Extrinsic,
+		len: u32,
+	) -> FeeDetails<BalanceOf<T>> {
+		let extrinsic_weight = unchecked_extrinsic.get_dispatch_info().weight;
+		let weight_fee = Self::weight_to_fee(extrinsic_weight);
+
+		let len_fee = Self::length_to_fee(len);
+		let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
+
+		let adjusted_weight_fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
+		let tip = Zero::zero();
+
+		if unchecked_extrinsic.is_signed().unwrap_or(false) {
+			FeeDetails {
+				inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
+				tip,
+			}
+		} else {
+			// Unsigned extrinsics have no inclusion fee.
+			FeeDetails { inclusion_fee: None, tip }
+		}
+	}
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.
 	pub fn length_to_fee(length: u32) -> BalanceOf<T> {
 		T::LengthToFee::weight_to_fee(&Weight::from_parts(length as u64, 0))

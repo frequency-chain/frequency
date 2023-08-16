@@ -27,10 +27,10 @@ pub use pallet_transaction_payment::{FeeDetails, InclusionFee};
 sp_api::decl_runtime_apis! {
 	/// Runtime Version for Frequency Payment
 	#[api_version(1)]
-	pub trait CapacityTransactionPaymentApi<Balance> where
+	pub trait CapacityTransactionPaymentRuntimeApi<Balance> where
 		Balance: Codec + MaybeDisplay,
 	{
 		/// Query the capacity fee details for a given extrinsic.
-		fn query_capacity_fee_details(uxt: Block::Extrinsic, len: u32) -> FeeDetails<Balance>;
+		fn compute_capacity_fee(uxt: Block::Extrinsic, len: u32) -> FeeDetails<Balance>;
 	}
 }

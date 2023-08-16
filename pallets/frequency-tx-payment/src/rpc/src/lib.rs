@@ -35,14 +35,14 @@ use sp_core::Bytes;
 use sp_rpc::number::NumberOrHex;
 use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
-pub use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentApi as CapacityTransactionPaymentRuntimeApi;
+pub use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRuntimeApi;
 
 /// CapacityTransactionPayment RPC methods.
 #[rpc(client, server)]
 pub trait CapacityPaymentApi<BlockHash, Balance> {
 	/// Query the capcity fee details for a given extrinsic.
-	#[method(name = "capacity_queryFeeDetails")]
-	fn query_capacity_fee_details(
+	#[method(name = "capacity_computeCapacityFeeDetails")]
+	fn compute_capacity_fee_details(
 		&self,
 		encoded_xt: Bytes,
 		at: Option<BlockHash>,
@@ -89,7 +89,7 @@ where
 	C::Api: CapacityTransactionPaymentRuntimeApi<Block, Balance>,
 	Balance: Codec + MaybeDisplay + Copy + TryInto<NumberOrHex> + Send + Sync + 'static,
 {
-	fn query_capacity_fee_details(
+	fn compute_capacity_fee_details(
 		&self,
 		encoded_xt: Bytes,
 		at: Option<Block::Hash>,
@@ -106,14 +106,13 @@ where
 				Some(format!("{:?}", e)),
 			))
 		})?;
-		let fee_details =
-			api.query_capacity_fee_details(at_hash, uxt, encoded_len).map_err(|e| {
-				CallError::Custom(ErrorObject::owned(
-					Error::RuntimeError.into(),
-					"Unable to query capacity fee details.",
-					Some(e.to_string()),
-				))
-			})?;
+		let fee_details = api.compute_capacity_fee(at_hash, uxt, encoded_len).map_err(|e| {
+			CallError::Custom(ErrorObject::owned(
+				Error::RuntimeError.into(),
+				"Unable to query capacity fee details.",
+				Some(e.to_string()),
+			))
+		})?;
 
 		let try_into_rpc_balance = |value: Balance| {
 			value.try_into().map_err(|_| {

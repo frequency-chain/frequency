@@ -1165,12 +1165,12 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentApi<Block, Balance> for Runtime {
-		fn query_capacity_fee_details(
+	impl pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRuntimeApi<Block, Balance> for Runtime {
+		fn compute_capacity_fee(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
 		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			FrequencyTxPayment::query_capacity_fee_details(uxt, len)
+			FrequencyTxPayment::compute_capacity_fee_details(uxt, len)
 		}
 	}
 
