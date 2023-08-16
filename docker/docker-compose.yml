@@ -10,7 +10,6 @@ services:
     ports:
       - "30335:30335" # p2p port
       - "9946:9944" # ws and rpc port
-      - "9615:9615" # telemetry (prometheus)
     volumes:
       - type: bind
         source: ../resources/rococo-local.json
@@ -39,7 +38,6 @@ services:
     ports:
       - "30336:30336" # p2p port
       - "9947:9944" # ws and rpc port
-      - "9615:9615" # telemetry (prometheus)
     volumes:
       - type: bind
         source: ../resources/rococo-local.json
