@@ -114,7 +114,6 @@ benchmarks-pallet_multisig \
 benchmarks-pallet_preimage \
 benchmarks-pallet_scheduler \
 benchmarks-pallet_session \
-benchmarks-pallet_sudo \
 benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility
@@ -136,7 +135,6 @@ benchmarks-pallet_multisig-local \
 benchmarks-pallet_preimage-local \
 benchmarks-pallet_scheduler-local \
 benchmarks-pallet_session-local \
-benchmarks-pallet_sudo-local \
 benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local

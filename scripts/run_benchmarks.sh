@@ -15,7 +15,6 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_preimage \
   pallet_scheduler \
   pallet_session \
-  pallet_sudo \
   pallet_timestamp \
   pallet_treasury \
   pallet_utility \

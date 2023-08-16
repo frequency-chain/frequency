@@ -26,8 +26,9 @@ COPY --chown=frequency target/release/frequency ./frequency/
 RUN chmod +x ./frequency/frequency
 
 # 9944 for RPC call
-# 30333 for Websocket
-EXPOSE 9944 30333
+# 30333 for p2p
+# 9615 for Telemetry (prometheus)
+EXPOSE 9944 30333 9615
 
 VOLUME ["/data"]
 
