@@ -37,6 +37,9 @@ use sp_runtime::traits::{Block as BlockT, MaybeDisplay};
 
 pub use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRuntimeApi;
 
+#[cfg(test)]
+mod tests;
+
 /// CapacityTransactionPayment RPC methods.
 #[rpc(client, server)]
 pub trait CapacityPaymentApi<BlockHash, Balance> {
