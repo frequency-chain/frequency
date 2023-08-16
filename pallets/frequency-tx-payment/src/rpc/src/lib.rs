@@ -41,7 +41,7 @@ pub use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRunti
 #[rpc(client, server)]
 pub trait CapacityPaymentApi<BlockHash, Balance> {
 	/// Query the capcity fee details for a given extrinsic.
-	#[method(name = "capacity_computeCapacityFeeDetails")]
+	#[method(name = "frequencyTxPayment_computeCapacityFeeDetails")]
 	fn compute_capacity_fee_details(
 		&self,
 		encoded_xt: Bytes,

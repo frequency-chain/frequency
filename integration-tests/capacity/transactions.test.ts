@@ -8,7 +8,7 @@ import assert from "assert";
 import {AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import { loadIpfs, getBases } from "../messages/loadIPFS";
 import { firstValueFrom } from "rxjs";
-import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
+import { SchemaId, MessageResponse, CapacityFeeDetails } from "@frequency-chain/api-augment/interfaces";
 import {
   createKeys,
   createAndFundKeypair,
@@ -757,6 +757,20 @@ describe("Capacity Transactions", function () {
         await assert.rejects(payWithCapacityBatchAllOp.signAndSend(), {
           name: "InvalidHandleByteLength"
         });
+      });
+
+      it("Returns `FeeDetails` when requesting capacity cost of a transaction", async function () {
+        const addProviderPayload = await generateDelegationPayload({...defaultPayload});
+        const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+        let delegatorKeys = createKeys("delegatorKeys");
+        const tx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+          delegatorKeys.publicKey,
+          signPayloadSr25519(delegatorKeys, addProviderData),
+          addProviderPayload
+        );
+        const feeDetails: CapacityFeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+        assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+        assert.notEqual(feeDetails.inclusion_fee, undefined, "should have returned a partialFee");
       });
     });
   });
