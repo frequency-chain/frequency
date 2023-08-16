@@ -291,11 +291,8 @@ make benchmarks
 - Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
 - Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 
-    _Note: if you get errors about the toolchain not being installed, you may need to install the nightly toolchain with `rustup toolchain install nightly-2023-06-01`_
-
     _Note, if you get errors complaining about the wasm build, then you may need to install
-    the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01`
-    This is a work-around for a toolchain bug in `nightly-2022-11-15` which causes `cargo doc` to panic_
+    the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
 
 - Alternatively, run `make format-lint` to run both at the same time.
 - Run `cargo-deny` to audit `Cargo.lock` files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)

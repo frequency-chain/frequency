@@ -15,7 +15,6 @@ rustflags = [
 	"-Dclippy::correctness",
 	# Clippy individual lints
 	"-Aclippy::if_same_then_else",
-	"-Aclippy::clone_double_ref",
 	"-Aclippy::zero_prefixed_literal",
 	"-Aclippy::type_complexity",
 	"-Aclippy::nonminimal_bool",
@@ -33,6 +32,7 @@ rustflags = [
 	"-Aclippy::needless_option_as_deref",
 	"-Aclippy::derivable_impls",
 	"-Aclippy::bool_assert_comparison",
+	"-Asuspicious_double_ref_op",
 	# Built-in lint groups
 	"-Dnonstandard-style",
 	"-Dunused",
