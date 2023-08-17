@@ -1,4 +1,7 @@
 //! Frequency CLI library.
+
+// File originally from https://github.com/paritytech/cumulus/blob/master/parachain-template/node/src/cli.rs
+
 use crate::{ExportMetadataCmd, ExportRuntimeVersionCmd};
 use std::path::PathBuf;
 
