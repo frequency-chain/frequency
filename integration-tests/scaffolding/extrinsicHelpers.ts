@@ -231,7 +231,7 @@ export class ExtrinsicHelper {
 
     /** Balance Extrinsics */
     public static transferFunds(keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transfer(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAllowDeath(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
     /** Schema Extrinsics */
