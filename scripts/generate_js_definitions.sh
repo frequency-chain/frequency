@@ -12,7 +12,7 @@ echo -e "${STEP_COLOR}Checking to see if Frequency is running...${NC}"
 echo ""
 echo -e "${MESSAGE}Is Frequency running?${NC}"
 
-PID=$(lsof -i tcp:9933 | grep frequency | grep -v grep | xargs | awk '{print $2}')
+PID=$(lsof -i tcp:9944 | grep frequency | grep -v grep | xargs | awk '{print $2}')
 
 if [ -z "$PID" ]
 then

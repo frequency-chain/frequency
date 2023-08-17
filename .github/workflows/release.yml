@@ -22,7 +22,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "nightly-2022-11-15" # Match to /rust-toolchain.toml
+  RUST_TOOLCHAIN: "nightly-2023-05-22" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
@@ -346,13 +346,10 @@ jobs:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
         uses: actions/configure-pages@v3
-      # cargo doc requires a toolchain version ^nightly-2022-11-15 because of a bug that causes a panic
-      # When the toolchain is updated to ^nightly-2023-06-01, this can be removed
       - name: Build Docs
         run: |
-          rustup install nightly-2023-06-01
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-06-01
-          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2023-06-01 doc --no-deps --workspace --features frequency
+          rustup target add wasm32-unknown-unknown
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
         run: |
@@ -544,7 +541,6 @@ jobs:
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
-              --ws-external \
               --rpc-methods=Unsafe \
               --no-telemetry \
               --no-prometheus \
@@ -564,7 +560,6 @@ jobs:
               --chain=frequency-bench \
               --rpc-external \
               --rpc-cors=all \
-              --ws-external \
               --rpc-methods=Unsafe \
               --no-telemetry \
               --no-prometheus \

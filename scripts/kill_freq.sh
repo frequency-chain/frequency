@@ -2,7 +2,7 @@
 
 set -e
 
-PID=$(lsof -i tcp:9933 | grep frequency | xargs | awk '{print $2}')
+PID=$(lsof -i tcp:9944 | grep frequency | xargs | awk '{print $2}')
 
 if [ -n "${PID}" ]
 then

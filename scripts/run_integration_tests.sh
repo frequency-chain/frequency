@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 function get_frequency_pid () {
-    lsof -i tcp:9933 | grep frequency | xargs | awk '{print $2}'
+    lsof -i tcp:9944 | grep frequency | xargs | awk '{print $2}'
 }
 
 function cleanup () {
