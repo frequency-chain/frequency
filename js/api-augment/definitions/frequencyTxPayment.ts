@@ -12,14 +12,10 @@ export default {
           type: "Option<BlockHash>",
         },
       ],
-      type: "CapacityFeeDetails",
+      type: "FeeDetails",
     },
   },
   types: {
-    CapacityFeeDetails: {
-      inclusion_fee: "Option<InclusionFee>",
-      tip: "Balance",
-    },
   },
   runtime: {
     CapacityTransactionPaymentRuntimeApi: [
@@ -37,7 +33,7 @@ export default {
                 type: "Option<BlockHash>",
               },
             ],
-            type: "CapacityFeeDetails",
+            type: "FeeDetails",
           },
         },
       },
