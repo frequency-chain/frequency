@@ -283,8 +283,12 @@ impl<T: Config> Pallet<T> {
 	>(
 		unchecked_extrinsic: Extrinsic,
 		len: u32,
-	) -> FeeDetails<BalanceOf<T>> {
-		let extrinsic_weight = unchecked_extrinsic.get_dispatch_info().weight;
+	) -> FeeDetails<BalanceOf<T>>
+	where
+		<T as pallet::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+	{
+		let dispatch_info = <Extrinsic as GetDispatchInfo>::get_dispatch_info(&unchecked_extrinsic);
+		let extrinsic_weight = dispatch_info.weight;
 		let weight_fee = Self::weight_to_fee(extrinsic_weight);
 
 		let len_fee = Self::length_to_fee(len);
