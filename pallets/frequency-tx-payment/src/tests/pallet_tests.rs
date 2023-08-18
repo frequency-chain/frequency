@@ -857,6 +857,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		.execute_with(|| {
 			let fee = FrequencyTxPayment::compute_capacity_fee_details(xt, len);
 			assert!(fee.inclusion_fee.is_some());
+			assert!(fee.inclusion_fee.unwrap().adjusted_weight_fee > 0);
 			assert!(fee.tip == 0);
 		});
 }
