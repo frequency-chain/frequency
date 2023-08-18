@@ -80,42 +80,74 @@ pub trait WeightInfo {
 /// Weights for pallet_msa using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
-	// Storage: Msa PayloadSignatureBucketCount (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
-	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
-	// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
-	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
-	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
+	/// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	/// Proof: Msa PayloadSignatureRegistryList (max_values: Some(50000), max_size: Some(144), added: 2124, mode: MaxEncodedLen)
+	/// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
+	/// Proof: Msa PayloadSignatureRegistryPointer (max_values: Some(1), max_size: Some(140), added: 635, mode: MaxEncodedLen)
+	/// Storage: Msa PublicKeyToMsaId (r:2 w:1)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
+	/// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
+	/// Storage: Msa CurrentMsaIdentifierMaximum (r:1 w:1)
+	/// Proof: Msa CurrentMsaIdentifierMaximum (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
+	/// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
+	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// The range of component `s` is `[0, 30]`.
 	fn create_sponsored_account_with_delegation(s: u32) -> Weight {
-		Weight::from_parts(100_556_500 as u64, 0)
-			// Standard Error: 19_778
-			.saturating_add(Weight::from_parts(120_447 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(9 as u64))
-			.saturating_add(T::DbWeight::get().writes(6 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `1393`
+		//  Estimated: `14946`
+		// Minimum execution time: 119_554_000 picoseconds.
+		Weight::from_parts(124_216_637, 14946)
+			// Standard Error: 26_556
+			.saturating_add(Weight::from_parts(129_688, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(10_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
-	// Storage: Msa PayloadSignatureBucketCount (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistry (r:2 w:2)
-	// Storage: Msa PublicKeyToMsaId (r:2 w:1)
-	// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
+	/// Storage: Msa PayloadSignatureRegistryList (r:4 w:4)
+	/// Proof: Msa PayloadSignatureRegistryList (max_values: Some(50000), max_size: Some(144), added: 2124, mode: MaxEncodedLen)
+	/// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
+	/// Proof: Msa PayloadSignatureRegistryPointer (max_values: Some(1), max_size: Some(140), added: 635, mode: MaxEncodedLen)
+	/// Storage: Msa PublicKeyToMsaId (r:2 w:1)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa PublicKeyCountForMsaId (r:1 w:1)
+	/// Proof: Msa PublicKeyCountForMsaId (max_values: None, max_size: Some(17), added: 2492, mode: MaxEncodedLen)
 	fn add_public_key_to_msa() -> Weight {
-		Weight::from_parts(147_786_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(6 as u64))
-			.saturating_add(T::DbWeight::get().writes(5 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `1654`
+		//  Estimated: `18396`
+		// Minimum execution time: 184_446_000 picoseconds.
+		Weight::from_parts(188_662_000, 18396)
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
-	// Storage: Msa PayloadSignatureBucketCount (r:1 w:1)
-	// Storage: Msa PayloadSignatureRegistry (r:1 w:1)
-	// Storage: Msa PublicKeyToMsaId (r:2 w:0)
-	// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
-	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
+	/// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
+	/// Proof: Msa PayloadSignatureRegistryList (max_values: Some(50000), max_size: Some(144), added: 2124, mode: MaxEncodedLen)
+	/// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
+	/// Proof: Msa PayloadSignatureRegistryPointer (max_values: Some(1), max_size: Some(140), added: 635, mode: MaxEncodedLen)
+	/// Storage: Msa PublicKeyToMsaId (r:2 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa ProviderToRegistryEntry (r:1 w:0)
+	/// Proof: Msa ProviderToRegistryEntry (max_values: None, max_size: Some(33), added: 2508, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
+	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// The range of component `s` is `[0, 30]`.
 	fn grant_delegation(s: u32) -> Weight {
-		Weight::from_parts(94_743_045 as u64, 0)
-			// Standard Error: 19_748
-			.saturating_add(Weight::from_parts(125_241 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(7 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `1447`
+		//  Estimated: `14946`
+		// Minimum execution time: 115_100_000 picoseconds.
+		Weight::from_parts(120_342_076, 14946)
+			// Standard Error: 35_029
+			.saturating_add(Weight::from_parts(34_990, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
@@ -127,94 +159,168 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3 as u64))
 			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: Messages Messages (r:1 w:1)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: Messages Messages (r:1 w:1)
+	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
+	/// The range of component `n` is `[0, 51199]`.
 	fn add_onchain_message(n: u32) -> Weight {
-		Weight::from_parts(139_432_286 as u64, 0)
-			// Standard Error: 43
-			.saturating_add(Weight::from_parts(1_441 as u64, 0).saturating_mul(n as u64))
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `46773`
+		//  Estimated: `59148`
+		// Minimum execution time: 180_329_000 picoseconds.
+		Weight::from_parts(179_112_822, 59148)
+			// Standard Error: 52
+			.saturating_add(Weight::from_parts(1_852, 0).saturating_mul(n.into()))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Messages Messages (r:1 w:1)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Messages Messages (r:1 w:1)
+	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
 	fn add_ipfs_message() -> Weight {
-		Weight::from_parts(131_669_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `36289`
+		//  Estimated: `48664`
+		// Minimum execution time: 169_213_000 picoseconds.
+		Weight::from_parts(174_485_000, 48664)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `s` is `[1, 5121]`.
 	fn apply_item_actions(s: u32) -> Weight {
-		Weight::from_parts(66_026_301 as u64, 0)
-			// Standard Error: 161
-			.saturating_add(Weight::from_parts(2_145 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `33370`
+		//  Estimated: `45745`
+		// Minimum execution time: 107_769_000 picoseconds.
+		Weight::from_parts(105_222_871, 45745)
+			// Standard Error: 361
+			.saturating_add(Weight::from_parts(8_115, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// The range of component `s` is `[1, 1024]`.
 	fn upsert_page(s: u32) -> Weight {
-		Weight::from_parts(23_029_186 as u64, 0)
-			// Standard Error: 53
-			.saturating_add(Weight::from_parts(339 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `416`
+		//  Estimated: `12791`
+		// Minimum execution time: 31_259_000 picoseconds.
+		Weight::from_parts(32_661_101, 12791)
+			// Standard Error: 203
+			.saturating_add(Weight::from_parts(786, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
+	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
+	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page() -> Weight {
-		Weight::from_parts(26_000_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(4 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `1575`
+		//  Estimated: `13950`
+		// Minimum execution time: 37_460_000 picoseconds.
+		Weight::from_parts(39_471_000, 13950)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: unknown [0xbd1557c8db6bd8599a811a7175fbc2fc6400] (r:1 w:1)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `s` is `[1, 5121]`.
 	fn apply_item_actions_with_signature(s: u32) -> Weight {
-		Weight::from_parts(105_921_191 as u64, 0)
-			// Standard Error: 267
-			.saturating_add(Weight::from_parts(6_150 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `33377`
+		//  Estimated: `45752`
+		// Minimum execution time: 175_937_000 picoseconds.
+		Weight::from_parts(169_857_770, 45752)
+			// Standard Error: 561
+			.saturating_add(Weight::from_parts(15_494, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// The range of component `s` is `[1, 1024]`.
 	fn upsert_page_with_signature(s: u32) -> Weight {
-		Weight::from_parts(61_324_707 as u64, 0)
-			// Standard Error: 249
-			.saturating_add(Weight::from_parts(4_406 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `349`
+		//  Estimated: `12724`
+		// Minimum execution time: 87_687_000 picoseconds.
+		Weight::from_parts(91_158_457, 12724)
+			// Standard Error: 668
+			.saturating_add(Weight::from_parts(7_009, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Schemas Schemas (r:1 w:0)
-	// Storage: unknown [0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1] (r:1 w:1)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Schemas Schemas (r:1 w:0)
+	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	fn delete_page_with_signature() -> Weight {
-		Weight::from_parts(65_000_000 as u64, 0)
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `1508`
+		//  Estimated: `13883`
+		// Minimum execution time: 89_775_000 picoseconds.
+		Weight::from_parts(92_238_000, 13883)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Handles MSAIdToDisplayName (r:1 w:1)
-	// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
-	// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
+	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
+	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
+	/// Storage: Handles MSAIdToDisplayName (r:1 w:1)
+	/// Proof: Handles MSAIdToDisplayName (max_values: None, max_size: Some(59), added: 2534, mode: MaxEncodedLen)
+	/// Storage: Handles CanonicalBaseHandleToSuffixIndex (r:1 w:1)
+	/// Proof: Handles CanonicalBaseHandleToSuffixIndex (max_values: None, max_size: Some(53), added: 2528, mode: MaxEncodedLen)
+	/// Storage: Handles CanonicalBaseHandleAndSuffixToMSAId (r:0 w:1)
+	/// Proof: Handles CanonicalBaseHandleAndSuffixToMSAId (max_values: None, max_size: Some(67), added: 2542, mode: MaxEncodedLen)
+	/// The range of component `b` is `[3, 30]`.
 	fn claim_handle(b: u32) -> Weight {
-		Weight::from_parts(90_537_753 as u64, 0)
-			// Standard Error: 27_078
-			.saturating_add(Weight::from_parts(104_522 as u64, 0).saturating_mul(b as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(3 as u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `191`
+		//  Estimated: `12434`
+		// Minimum execution time: 83_385_000 picoseconds.
+		Weight::from_parts(85_563_974, 12434)
+			// Standard Error: 14_428
+			.saturating_add(Weight::from_parts(105_821, 0).saturating_mul(b.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Storage: Handles MSAIdToDisplayName (r:1 w:1)
