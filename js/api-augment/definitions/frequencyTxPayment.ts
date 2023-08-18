@@ -15,8 +15,7 @@ export default {
       type: "FeeDetails",
     },
   },
-  types: {
-  },
+  types: {},
   runtime: {
     CapacityTransactionPaymentRuntimeApi: [
       {
