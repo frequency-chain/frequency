@@ -101,7 +101,6 @@ where
 		let at_hash = at.unwrap_or_else(|| self.client.info().best_hash);
 
 		let encoded_len = encoded_xt.len() as u32;
-
 		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
 			CallError::Custom(ErrorObject::owned(
 				Error::DecodeError.into(),
