@@ -8,7 +8,7 @@ import assert from "assert";
 import {AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import { loadIpfs, getBases } from "../messages/loadIPFS";
 import { firstValueFrom } from "rxjs";
-import { SchemaId, MessageResponse, CapacityFeeDetails } from "@frequency-chain/api-augment/interfaces";
+import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import {
   createKeys,
   createAndFundKeypair,
@@ -41,6 +41,7 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2
 } from "../scaffolding/helpers";
+import { FeeDetails } from "@polkadot/types/interfaces";
 
 describe("Capacity Transactions", function () {
     const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -768,9 +769,9 @@ describe("Capacity Transactions", function () {
           signPayloadSr25519(delegatorKeys, addProviderData),
           addProviderPayload
         );
-        const feeDetails: CapacityFeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+        const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
         assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
-        assert.notEqual(feeDetails.inclusion_fee, undefined, "should have returned a partialFee");
+        assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       });
     });
   });
