@@ -10,16 +10,16 @@ fn test_weights_are_stable() {
 			(
 				"create_sponsored_account_with_delegation",
 				SubstrateWeight::<Test>::create_sponsored_account_with_delegation(100),
-				137185437,
+				136951617,
 				14946,
 			),
 			(
 				"add_public_key_to_msa",
 				SubstrateWeight::<Test>::add_public_key_to_msa(),
-				188662000,
+				177629000,
 				18396,
 			),
-			("grant_delegation", SubstrateWeight::<Test>::grant_delegation(100), 123841076, 14946),
+			("grant_delegation", SubstrateWeight::<Test>::grant_delegation(100), 135218313, 14946),
 			(
 				"grant_schema_permissions",
 				SubstrateWeight::<Test>::grant_schema_permissions(100),
@@ -29,38 +29,38 @@ fn test_weights_are_stable() {
 			(
 				"add_onchain_message",
 				SubstrateWeight::<Test>::add_onchain_message(100),
-				179298022,
+				174216930,
 				59148,
 			),
-			("add_ipfs_message", SubstrateWeight::<Test>::add_ipfs_message(), 174485000, 48664),
+			("add_ipfs_message", SubstrateWeight::<Test>::add_ipfs_message(), 159242000, 48664),
 			(
 				"apply_item_actions",
 				SubstrateWeight::<Test>::apply_item_actions(100),
-				106034371,
+				104869590,
 				45745,
 			),
-			("upsert_page", SubstrateWeight::<Test>::upsert_page(100), 32739701, 12791),
-			("delete_page", SubstrateWeight::<Test>::delete_page(), 39471000, 13950),
+			("upsert_page", SubstrateWeight::<Test>::upsert_page(100), 32356581, 12791),
+			("delete_page", SubstrateWeight::<Test>::delete_page(), 37792000, 13950),
 			(
 				"apply_item_actions_with_signature",
 				SubstrateWeight::<Test>::apply_item_actions_with_signature(100),
-				171407170,
+				160314012,
 				45752,
 			),
 			(
 				"upsert_page_with_signature",
 				SubstrateWeight::<Test>::upsert_page_with_signature(100),
-				91859357,
+				88433059,
 				12724,
 			),
 			(
 				"delete_page_with_signature",
 				SubstrateWeight::<Test>::delete_page_with_signature(),
-				92238000,
+				90631000,
 				13883,
 			),
-			("claim_handle", SubstrateWeight::<Test>::claim_handle(100), 96146074, 12434),
-			("change_handle", SubstrateWeight::<Test>::change_handle(100), 115570724, 12434),
+			("claim_handle", SubstrateWeight::<Test>::claim_handle(100), 471207676, 12434),
+			("change_handle", SubstrateWeight::<Test>::change_handle(100), 591959864, 12434),
 		];
 		for t in table {
 			assert_eq!(t.1, Weight::from_parts(t.2, t.3), "{}", t.0);
