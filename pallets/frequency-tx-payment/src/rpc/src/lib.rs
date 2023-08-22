@@ -112,7 +112,7 @@ where
 			CallError::Custom(ErrorObject::owned(
 				Error::RuntimeError.into(),
 				"Unable to query capacity fee details.",
-				Some(e.to_string()),
+				Some(format!("{:?}", e)),
 			))
 		})?;
 
@@ -127,7 +127,7 @@ where
 		};
 
 		Ok(FeeDetails {
-			inclusion_fee: if let Some(inclusion_fee) = fee_details.inclusion_fee {
+			inclusion_fee: if let Some(inclusion_fee) = fee_details.unwrap().inclusion_fee {
 				Some(InclusionFee {
 					base_fee: try_into_rpc_balance(inclusion_fee.base_fee)?,
 					len_fee: try_into_rpc_balance(inclusion_fee.len_fee)?,

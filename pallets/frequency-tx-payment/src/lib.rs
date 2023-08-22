@@ -189,6 +189,9 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The maximum amount of requested batched calls was exceeded
 		BatchedCallAmountExceedsMaximum,
+
+		/// Unsupported capacity call
+		UnsupportedCapacityCall,
 	}
 
 	#[pallet::call]
@@ -278,33 +281,26 @@ impl<T: Config> Pallet<T> {
 	///
 	/// # Returns
 	/// `FeeDetails` - The fee details for the transaction.
-	pub fn compute_capacity_fee_details<
-		Extrinsic: sp_runtime::traits::Extrinsic + GetDispatchInfo,
-	>(
-		unchecked_extrinsic: Extrinsic,
+	pub fn compute_capacity_fee_details(
+		runtime_call: &<T as Config>::RuntimeCall,
 		len: u32,
-	) -> FeeDetails<BalanceOf<T>>
-	where
-		<T as pallet::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
-	{
-		let dispatch_info = <Extrinsic as GetDispatchInfo>::get_dispatch_info(&unchecked_extrinsic);
-		let extrinsic_weight = dispatch_info.weight;
-		let weight_fee = Self::weight_to_fee(extrinsic_weight);
+	) -> Result<FeeDetails<BalanceOf<T>>, DispatchError> {
+		let extrinsic_weight = T::CapacityCalls::get_stable_weight(runtime_call);
+		if let Some(weight) = extrinsic_weight {
+			let weight_fee = Self::weight_to_fee(weight);
 
-		let len_fee = Self::length_to_fee(len);
-		let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
+			let len_fee = Self::length_to_fee(len);
+			let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
 
-		let adjusted_weight_fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
-		let tip = Zero::zero();
+			let adjusted_weight_fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
+			let tip = Zero::zero();
 
-		if unchecked_extrinsic.is_signed().unwrap_or(false) {
-			FeeDetails {
+			Ok(FeeDetails {
 				inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
 				tip,
-			}
+			})
 		} else {
-			// Unsigned extrinsics have no inclusion fee.
-			FeeDetails { inclusion_fee: None, tip }
+			Err(Error::<T>::UnsupportedCapacityCall.into())
 		}
 	}
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.

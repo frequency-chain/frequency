@@ -31,6 +31,6 @@ sp_api::decl_runtime_apis! {
 		Balance: Codec + MaybeDisplay,
 	{
 		/// Query the capacity fee details for a given extrinsic.
-		fn compute_capacity_fee(uxt: Block::Extrinsic, len: u32) -> FeeDetails<Balance>;
+		fn compute_capacity_fee(uxt: Block::Extrinsic, len: u32) -> Result<FeeDetails<Balance>, sp_runtime::DispatchError>;
 	}
 }

@@ -1171,8 +1171,8 @@ impl_runtime_apis! {
 		fn compute_capacity_fee(
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
-		) -> pallet_transaction_payment::FeeDetails<Balance> {
-			FrequencyTxPayment::compute_capacity_fee_details(uxt, len)
+		) -> Result<pallet_transaction_payment::FeeDetails<Balance>, DispatchError> {
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, len)
 		}
 	}
 

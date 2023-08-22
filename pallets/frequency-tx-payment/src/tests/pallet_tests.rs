@@ -831,7 +831,7 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			let fee = FrequencyTxPayment::compute_capacity_fee_details(xt, len);
+			let fee = FrequencyTxPayment::compute_capacity_fee_details(call, len).unwrap();
 			assert!(fee.inclusion_fee.is_some());
 			assert!(fee.tip == 0);
 		});
@@ -855,9 +855,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			let fee = FrequencyTxPayment::compute_capacity_fee_details(xt, len);
-			assert!(fee.inclusion_fee.is_some());
-			assert!(fee.inclusion_fee.unwrap().adjusted_weight_fee > 0);
-			assert!(fee.tip == 0);
+			let fee_res = FrequencyTxPayment::compute_capacity_fee_details(call, len);
+			assert!(fee_res.is_err());
 		});
 }
