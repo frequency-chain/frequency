@@ -190,7 +190,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			// capacity_balance = free_balance - base_weight(CAPACITY_EXTRINSIC_BASE_WEIGHT)
 			//   - extrinsic_weight(11) * WeightToFee(1)
 			//   - TransactionByteFee(1)* len(10) = 80
-			assert_eq!(Capacity::balance(1), 1_000_000_000 - 90_764_000 - 11 - 10);
+			assert_eq!(Capacity::balance(1), 1_000_000_000 - 105_455_000 - 11 - 10);
 
 			let post_info: PostDispatchInfo =
 				PostDispatchInfo { actual_weight: None, pays_fee: Default::default() };
@@ -204,7 +204,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			));
 
 			// Checking balance was not modified after post-dispatch.
-			assert_eq!(Capacity::balance(1), 1_000_000_000 - 90_764_000 - 11 - 10);
+			assert_eq!(Capacity::balance(1), 1_000_000_000 - 105_455_000 - 11 - 10);
 		});
 }
 
@@ -293,7 +293,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 			//   + TransactionByteFee(1)* len(10) = CAPACITY_EXTRINSIC_BASE_WEIGHT + 21
 			let res = charge_tx_payment.withdraw_fee(&who, call, &info, len);
 			assert_ok!(&res);
-			assert_eq!(res.unwrap().0, 90_764_000 + 21);
+			assert_eq!(res.unwrap().0, 105_455_000 + 21);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
 				true
@@ -328,7 +328,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 			//   + TransactionByteFee(1)* len(10) = 20
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0,
-				(90_764_000 + 21u64)
+				(105_455_000 + 21u64)
 			);
 			assert_eq!(
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
@@ -629,7 +629,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: total_capacity_issued.saturating_sub(90_764_000 + 21),
+					remaining_capacity: total_capacity_issued.saturating_sub(105_455_000 + 21),
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch: current_epoch,
@@ -676,7 +676,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			assert_eq!(
 				actual_capacity,
 				CapacityDetails {
-					remaining_capacity: 2_700_000_000.saturating_sub(90_764_000 + 21),
+					remaining_capacity: 2_700_000_000.saturating_sub(105_455_000 + 21),
 					total_tokens_staked,
 					total_capacity_issued,
 					last_replenished_epoch,
@@ -702,7 +702,7 @@ fn compute_capacity_fee_successful() {
 				<Test as Config>::CapacityCalls::get_stable_weight(call).unwrap(),
 			);
 
-			assert_eq!(fee, 90_764_000 + 21);
+			assert_eq!(fee, 105_455_000 + 21);
 		});
 }
 
