@@ -89,7 +89,10 @@ ignore = [
     # There is no suitable replacement for mach and the mach2 crate has not been vetted.
     "RUSTSEC-2020-0168",
     # ed25519-dalek does not have a release for the changed apis yet
-    "RUSTSEC-2022-0093"
+    "RUSTSEC-2022-0093",
+    # There is a possibility of DOS attack in webpki certification validation
+    # https://github.com/briansmith/webpki/issues/69
+    "RUSTSEC-2023-0052"
 ]
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories
