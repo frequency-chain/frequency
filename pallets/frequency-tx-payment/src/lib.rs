@@ -189,9 +189,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The maximum amount of requested batched calls was exceeded
 		BatchedCallAmountExceedsMaximum,
-
-		/// Unsupported capacity call
-		UnsupportedCapacityCall,
 	}
 
 	#[pallet::call]
@@ -284,7 +281,7 @@ impl<T: Config> Pallet<T> {
 	pub fn compute_capacity_fee_details(
 		runtime_call: &<T as Config>::RuntimeCall,
 		len: u32,
-	) -> Result<FeeDetails<BalanceOf<T>>, DispatchError> {
+	) -> FeeDetails<BalanceOf<T>> {
 		let extrinsic_weight = T::CapacityCalls::get_stable_weight(runtime_call);
 		if let Some(weight) = extrinsic_weight {
 			let weight_fee = Self::weight_to_fee(weight);
@@ -295,12 +292,12 @@ impl<T: Config> Pallet<T> {
 			let adjusted_weight_fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
 			let tip = Zero::zero();
 
-			Ok(FeeDetails {
+			FeeDetails {
 				inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
 				tip,
-			})
+			}
 		} else {
-			Err(Error::<T>::UnsupportedCapacityCall.into())
+			FeeDetails { inclusion_fee: None, tip: Zero::zero() }
 		}
 	}
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.

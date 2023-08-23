@@ -772,6 +772,7 @@ describe("Capacity Transactions", function () {
         const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
         assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
         assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
+        assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
       });
     });
   });
