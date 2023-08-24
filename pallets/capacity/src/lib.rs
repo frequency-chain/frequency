@@ -402,7 +402,7 @@ pub mod pallet {
 		/// ### Errors
 		/// - Returns `Error::MaxEpochLengthExceeded` if `length` is greater than T::MaxEpochLength.
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::unstake())]
+		#[pallet::weight(T::WeightInfo::set_epoch_length())]
 		pub fn set_epoch_length(origin: OriginFor<T>, length: T::BlockNumber) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(length <= T::MaxEpochLength::get(), Error::<T>::MaxEpochLengthExceeded);

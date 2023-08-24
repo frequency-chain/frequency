@@ -21,12 +21,6 @@ fn test_weights_are_stable() {
 			),
 			("grant_delegation", SubstrateWeight::<Test>::grant_delegation(100), 135218313, 14946),
 			(
-				"grant_schema_permissions",
-				SubstrateWeight::<Test>::grant_schema_permissions(100),
-				33071573,
-				0,
-			),
-			(
 				"add_onchain_message",
 				SubstrateWeight::<Test>::add_onchain_message(100),
 				174216930,
