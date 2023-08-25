@@ -730,6 +730,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
@@ -759,6 +760,19 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
 			_ => None,
+		}
+	}
+
+	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
+		match outer_call {
+			RuntimeCall::FrequencyTxPayment(FrequencyPaymentCall::pay_with_capacity {
+				call,
+				..
+			}) => return Some(vec![call]),
+			RuntimeCall::FrequencyTxPayment(
+				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
+			) => return Some(calls.iter().collect()),
+			_ => Some(vec![outer_call]),
 		}
 	}
 }
@@ -1184,7 +1198,7 @@ impl_runtime_apis! {
 					Weight::zero()
 				}
 			};
-			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, dispatch_weight, len)
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &dispatch_weight, len)
 		}
 	}
 

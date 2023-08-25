@@ -231,8 +231,13 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
 		match call {
 			RuntimeCall::Balances(BalancesCall::transfer { .. }) => Some(Weight::from_parts(11, 0)),
+			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
 			_ => None,
 		}
+	}
+
+	fn get_inner_calls(_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
+		return Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
 	}
 }
 

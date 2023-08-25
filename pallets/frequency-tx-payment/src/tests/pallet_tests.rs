@@ -833,7 +833,7 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 		.build()
 		.execute_with(|| {
 			let fee =
-				FrequencyTxPayment::compute_capacity_fee_details(call, dispatch_info.weight, len);
+				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
 			assert!(fee.inclusion_fee.is_some());
 			assert!(fee.tip == 0);
 		});
@@ -844,7 +844,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 	let balance_factor = 10;
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
-			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 })),
+			call: Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {})),
 		});
 	let origin = 111111;
 	let extra = ();
@@ -860,7 +860,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		.build()
 		.execute_with(|| {
 			let fee_res =
-				FrequencyTxPayment::compute_capacity_fee_details(call, dispatch_info.weight, len);
-			assert!(fee_res.inclusion_fee.is_none());
+				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
+			assert!(fee_res.inclusion_fee.is_some());
 		});
 }
