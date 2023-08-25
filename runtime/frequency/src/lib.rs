@@ -1172,7 +1172,19 @@ impl_runtime_apis! {
 			uxt: <Block as BlockT>::Extrinsic,
 			len: u32,
 		) ->pallet_transaction_payment::FeeDetails<Balance> {
-			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, len)
+
+			// if the call is wrapped in a batch, we need to get the weight of the outer call
+			// and use that to compute the fee with the inner call's stable weight(s)
+			let dispatch_weight = match &uxt.function {
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
+					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).weight
+				},
+				_ => {
+					Weight::zero()
+				}
+			};
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, dispatch_weight, len)
 		}
 	}
 

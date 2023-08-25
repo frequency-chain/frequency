@@ -825,13 +825,15 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 	let xt = TestXt::new(call.clone(), Some((origin, extra)));
 	let ext = xt.encode();
 	let len = ext.len() as u32;
+	let dispatch_info = call.get_dispatch_info();
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			let fee = FrequencyTxPayment::compute_capacity_fee_details(call, len);
+			let fee =
+				FrequencyTxPayment::compute_capacity_fee_details(call, dispatch_info.weight, len);
 			assert!(fee.inclusion_fee.is_some());
 			assert!(fee.tip == 0);
 		});
@@ -849,13 +851,16 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 	let xt = TestXt::new(call.clone(), Some((origin, extra)));
 	let ext = xt.encode();
 	let len = ext.len() as u32;
+	let dispatch_info = call.get_dispatch_info();
+	assert!(!dispatch_info.weight.is_zero());
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			let fee_res = FrequencyTxPayment::compute_capacity_fee_details(call, len);
+			let fee_res =
+				FrequencyTxPayment::compute_capacity_fee_details(call, dispatch_info.weight, len);
 			assert!(fee_res.inclusion_fee.is_none());
 		});
 }

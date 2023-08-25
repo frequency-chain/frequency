@@ -280,11 +280,13 @@ impl<T: Config> Pallet<T> {
 	/// `FeeDetails` - The fee details for the transaction.
 	pub fn compute_capacity_fee_details(
 		runtime_call: &<T as Config>::RuntimeCall,
+		dispatch_weight: Weight,
 		len: u32,
 	) -> FeeDetails<BalanceOf<T>> {
 		let extrinsic_weight = T::CapacityCalls::get_stable_weight(runtime_call);
 		if let Some(weight) = extrinsic_weight {
-			let weight_fee = Self::weight_to_fee(weight);
+			let total_call_weight = weight.saturating_add(dispatch_weight);
+			let weight_fee = Self::weight_to_fee(total_call_weight);
 
 			let len_fee = Self::length_to_fee(len);
 			let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
