@@ -40,7 +40,6 @@ pub trait WeightInfo {
 	fn create_sponsored_account_with_delegation(s: u32) -> Weight;
 	fn add_public_key_to_msa() -> Weight;
 	fn grant_delegation(s: u32) -> Weight;
-	fn grant_schema_permissions(s: u32) -> Weight;
 	// Messages
 	fn add_onchain_message(n: u32) -> Weight;
 	fn add_ipfs_message() -> Weight;
@@ -131,16 +130,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(192_710, 0).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
-	}
-	// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:1)
-	// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:0)
-	fn grant_schema_permissions(s: u32) -> Weight {
-		Weight::from_parts(26_682_873 as u64, 0)
-			// Standard Error: 7_236
-			.saturating_add(Weight::from_parts(63_887 as u64, 0).saturating_mul(s as u64))
-			.saturating_add(T::DbWeight::get().reads(3 as u64))
-			.saturating_add(T::DbWeight::get().writes(1 as u64))
 	}
 	/// Storage: Schemas Schemas (r:1 w:0)
 	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
