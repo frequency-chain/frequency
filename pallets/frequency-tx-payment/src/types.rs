@@ -1,3 +1,5 @@
+use sp_std::vec::Vec;
+
 /// Gets stable weights for a capacity Call
 pub trait GetStableWeight<RuntimeCall, Weight> {
 	/// Get stable weights for Call
