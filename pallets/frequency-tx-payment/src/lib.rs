@@ -288,12 +288,14 @@ impl<T: Config> Pallet<T> {
 
 		let mut calls_weight_sum = Weight::zero();
 		for inner_call in calls {
-			let call_weight = T::CapacityCalls::get_stable_weight(&inner_call)
-				.expect("Call is not capacity eligible.");
+			let call_weight = T::CapacityCalls::get_stable_weight(&inner_call).unwrap_or_default();
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
 
-		if let Some(weight) = calls_weight_sum.checked_add(dispatch_weight) {
+		let fees = FeeDetails { inclusion_fee: None, tip: Zero::zero() };
+		if calls_weight_sum.is_zero() {
+			return fees
+		} else if let Some(weight) = calls_weight_sum.checked_add(dispatch_weight) {
 			let weight_fee = Self::weight_to_fee(weight);
 			let len_fee = Self::length_to_fee(len);
 			let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
@@ -306,7 +308,7 @@ impl<T: Config> Pallet<T> {
 				tip,
 			}
 		} else {
-			FeeDetails { inclusion_fee: None, tip: Zero::zero() }
+			fees
 		}
 	}
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.

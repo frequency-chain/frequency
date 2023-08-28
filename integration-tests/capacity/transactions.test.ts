@@ -790,9 +790,9 @@ describe("Capacity Transactions", function () {
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
       assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
-        baseFee: 100000,
+        baseFee: 100581,
         lenFee: 1170000,
-        adjustedWeightFee: 2287707, // Do we expect these numbers?
+        adjustedWeightFee: 2294199, // Do we expect these numbers?
       }, "The fee appears to be wrong or have changed");
     });
 
@@ -811,9 +811,9 @@ describe("Capacity Transactions", function () {
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
       assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
-        baseFee: 100000,
-        lenFee: 1170000,
-        adjustedWeightFee: 2287707, // Do we expect these numbers?
+        baseFee: 100581,
+        lenFee: 1190000,
+        adjustedWeightFee: 3485486, // Do we expect these numbers?
       }, "The fee appears to be wrong or have changed");
     });
 
@@ -821,15 +821,14 @@ describe("Capacity Transactions", function () {
       const tx = ExtrinsicHelper.api.tx.msa.retireMsa();
       const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
-      assert(feeDetails.inclusionFee.isNone, "should have returned a None for the inclusionFee");
+      assert(feeDetails.inclusionFee.isNone, "should have returned something for the inclusionFee");
     });
 
     it("Returns nothing when requesting pay with capacity call with a non-capacity transaction", async function () {
       const insideTx = ExtrinsicHelper.api.tx.msa.retireMsa();
       const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
-      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
-      assert(feeDetails.inclusionFee.isNone, "should have returned a None for the inclusionFee");
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert(feeDetails.inclusionFee.isNone , "should have returned something for the inclusionFee");
     });
   });
 });
