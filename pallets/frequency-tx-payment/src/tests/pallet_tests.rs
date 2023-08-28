@@ -6,7 +6,7 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo,
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
-use sp_runtime::transaction_validity::TransactionValidityError;
+use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
@@ -812,5 +812,55 @@ fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
 			let token_balance_after_call = Balances::free_balance(origin);
 
 			assert_eq!(token_balance_before_call, token_balance_after_call);
+		});
+}
+
+#[test]
+fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
+	let balance_factor = 10;
+	let call: &<Test as Config>::RuntimeCall =
+		&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+	let origin = 111111;
+	let extra = ();
+	let xt = TestXt::new(call.clone(), Some((origin, extra)));
+	let ext = xt.encode();
+	let len = ext.len() as u32;
+	let dispatch_info = call.get_dispatch_info();
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let fee =
+				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
+			assert!(fee.inclusion_fee.is_some());
+			assert!(fee.tip == 0);
+		});
+}
+
+#[test]
+fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
+	let balance_factor = 10;
+	let call: &<Test as Config>::RuntimeCall =
+		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
+			call: Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {})),
+		});
+	let origin = 111111;
+	let extra = ();
+	let xt = TestXt::new(call.clone(), Some((origin, extra)));
+	let ext = xt.encode();
+	let len = ext.len() as u32;
+	let dispatch_info = call.get_dispatch_info();
+	assert!(!dispatch_info.weight.is_zero());
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let fee_res =
+				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
+			assert!(fee_res.inclusion_fee.is_some());
 		});
 }

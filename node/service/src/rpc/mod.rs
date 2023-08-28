@@ -52,6 +52,7 @@ where
 		+ Sync
 		+ 'static,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
+	C::Api: pallet_frequency_tx_payment_rpc::CapacityTransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: BlockBuilder<Block>,
 	C::Api: pallet_messages_runtime_api::MessagesRuntimeApi<Block>,
@@ -67,6 +68,7 @@ where
 
 	// Frequency RPCs
 	use frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
+	use pallet_frequency_tx_payment_rpc::{CapacityPaymentApiServer, CapacityPaymentHandler};
 	use pallet_handles_rpc::{HandlesApiServer, HandlesHandler};
 	use pallet_messages_rpc::{MessagesApiServer, MessagesHandler};
 	use pallet_msa_rpc::{MsaApiServer, MsaHandler};
@@ -83,6 +85,7 @@ where
 	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
+	module.merge(CapacityPaymentHandler::new(client.clone()).into_rpc())?;
 	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(

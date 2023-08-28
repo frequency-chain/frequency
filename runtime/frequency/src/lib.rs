@@ -249,7 +249,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 49,
+	spec_version: 50,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -263,7 +263,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 49,
+	spec_version: 50,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -730,6 +730,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
@@ -759,6 +760,19 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
 			_ => None,
+		}
+	}
+
+	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
+		match outer_call {
+			RuntimeCall::FrequencyTxPayment(FrequencyPaymentCall::pay_with_capacity {
+				call,
+				..
+			}) => return Some(vec![call]),
+			RuntimeCall::FrequencyTxPayment(
+				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
+			) => return Some(calls.iter().collect()),
+			_ => Some(vec![outer_call]),
 		}
 	}
 }
@@ -1164,6 +1178,27 @@ impl_runtime_apis! {
 		}
 		fn query_length_to_fee(len: u32) -> Balance {
 			TransactionPayment::length_to_fee(len)
+		}
+	}
+
+	impl pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRuntimeApi<Block, Balance> for Runtime {
+		fn compute_capacity_fee(
+			uxt: <Block as BlockT>::Extrinsic,
+			len: u32,
+		) ->pallet_transaction_payment::FeeDetails<Balance> {
+
+			// if the call is wrapped in a batch, we need to get the weight of the outer call
+			// and use that to compute the fee with the inner call's stable weight(s)
+			let dispatch_weight = match &uxt.function {
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
+				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
+					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).weight
+				},
+				_ => {
+					Weight::zero()
+				}
+			};
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &dispatch_weight, len)
 		}
 	}
 

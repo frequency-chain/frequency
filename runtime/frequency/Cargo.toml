@@ -67,6 +67,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 common-runtime = { path = "../common", default-features = false }
 pallet-capacity = {path = "../../pallets/capacity", default-features = false}
 pallet-frequency-tx-payment = {path = "../../pallets/frequency-tx-payment", default-features = false}
+pallet-frequency-tx-payment-runtime-api = {path = "../../pallets/frequency-tx-payment/src/runtime-api", default-features = false}
 pallet-messages = { path = "../../pallets/messages", default-features = false }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api", default-features = false }
 pallet-msa = { path = "../../pallets/msa", default-features = false }
@@ -110,11 +111,11 @@ std = [
 	"pallet-aura/std",
 	"pallet-authorship/std",
 	"pallet-balances/std",
-  "pallet-capacity/std",
+  	"pallet-capacity/std",
 	"pallet-collective/std",
 	"pallet-democracy/std",
 	"pallet-collator-selection/std",
-  "pallet-frequency-tx-payment/std",
+  	"pallet-frequency-tx-payment/std",
 	"pallet-scheduler/std",
 	"pallet-session/std",
 	"pallet-sudo/std",
@@ -135,6 +136,7 @@ std = [
 	"pallet-schemas-runtime-api/std",
 	"pallet-stateful-storage/std",
 	"pallet-stateful-storage-runtime-api/std",
+	"pallet-frequency-tx-payment-runtime-api/std",
 	"pallet-utility/std",
 	"parachain-info/std",
 	"polkadot-parachain/std",
@@ -162,9 +164,9 @@ runtime-benchmarks = [
 	"frame-system-benchmarking/runtime-benchmarks",
 	"pallet-time-release/runtime-benchmarks",
 	"pallet-balances/runtime-benchmarks",
-  "pallet-capacity/runtime-benchmarks",
+  	"pallet-capacity/runtime-benchmarks",
 	"pallet-collator-selection/runtime-benchmarks",
-  "pallet-frequency-tx-payment/runtime-benchmarks",
+  	"pallet-frequency-tx-payment/runtime-benchmarks",
 	"pallet-scheduler/runtime-benchmarks",
 	"pallet-timestamp/runtime-benchmarks",
 	"pallet-multisig/runtime-benchmarks",
@@ -190,9 +192,9 @@ try-runtime = [
 	"pallet-aura/try-runtime",
 	"pallet-authorship/try-runtime",
 	"pallet-balances/try-runtime",
-  "pallet-capacity/try-runtime",
+  	"pallet-capacity/try-runtime",
 	"pallet-collator-selection/try-runtime",
-  "pallet-frequency-tx-payment/try-runtime",
+  	"pallet-frequency-tx-payment/try-runtime",
 	"pallet-session/try-runtime",
 	"pallet-sudo/try-runtime",
 	"pallet-multisig/try-runtime",

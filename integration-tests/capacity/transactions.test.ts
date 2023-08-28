@@ -41,6 +41,7 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2
 } from "../scaffolding/helpers";
+import { FeeDetails } from "@polkadot/types/interfaces";
 
 describe("Capacity Transactions", function () {
     const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -655,7 +656,6 @@ describe("Capacity Transactions", function () {
   });
 
   describe("pay_with_capacity_batch_all", function () {
-    describe("when caller has a Capacity account", async function () {
       let capacityProviderKeys: KeyringPair;
       let capacityProvider: u64;
       let schemaId: u16;
@@ -758,6 +758,77 @@ describe("Capacity Transactions", function () {
           name: "InvalidHandleByteLength"
         });
       });
+    });
+
+  describe("Capacity RPC", function () {
+    let capacityProviderKeys: KeyringPair;
+    let capacityProvider: u64;
+    let schemaId: u16;
+    let defaultPayload: AddProviderPayload;
+    const amountStaked = 9n * DOLLARS;
+
+    beforeEach(async function () {
+      capacityProviderKeys = createKeys("CapacityProviderKeys");
+      capacityProvider = await createMsaAndProvider(capacityProviderKeys, "CapacityProvider", FUNDS_AMOUNT);
+      defaultPayload = {
+        authorizedMsaId: capacityProvider,
+        schemaIds: [schemaId],
+      }
+    });
+
+    it("Returns `FeeDetails` when requesting capacity cost of a transaction", async function () {
+      const addProviderPayload = await generateDelegationPayload({...defaultPayload});
+      const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+      let delegatorKeys = createKeys("delegatorKeys");
+      const tx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+        delegatorKeys.publicKey,
+        signPayloadSr25519(delegatorKeys, addProviderData),
+        addProviderPayload
+      );
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
+      assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
+      assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
+        baseFee: 100581,
+        lenFee: 1170000,
+        adjustedWeightFee: 2294199, // Do we expect these numbers?
+      }, "The fee appears to be wrong or have changed");
+    });
+
+    it("Returns `FeeDetails` when requesting capacity cost of a transaction when wrapped in payWithCapacity", async function () {
+      const addProviderPayload = await generateDelegationPayload({...defaultPayload});
+      const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+      let delegatorKeys = createKeys("delegatorKeys");
+      const insideTx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+        delegatorKeys.publicKey,
+        signPayloadSr25519(delegatorKeys, addProviderData),
+        addProviderPayload
+      );
+      const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
+      assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
+      assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
+        baseFee: 100581,
+        lenFee: 1190000,
+        adjustedWeightFee: 3485486, // Do we expect these numbers?
+      }, "The fee appears to be wrong or have changed");
+    });
+
+    it("Returns nothing when requesting capacity cost of a non-capacity transaction", async function () {
+      const tx = ExtrinsicHelper.api.tx.msa.retireMsa();
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert(feeDetails.inclusionFee.isNone, "should have returned something for the inclusionFee");
+    });
+
+    it("Returns nothing when requesting pay with capacity call with a non-capacity transaction", async function () {
+      const insideTx = ExtrinsicHelper.api.tx.msa.retireMsa();
+      const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert(feeDetails.inclusionFee.isNone , "should have returned something for the inclusionFee");
     });
   });
 });
