@@ -292,24 +292,23 @@ impl<T: Config> Pallet<T> {
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
 
-		let fees = FeeDetails { inclusion_fee: None, tip: Zero::zero() };
-		if calls_weight_sum.is_zero() {
-			return fees
-		} else if let Some(weight) = calls_weight_sum.checked_add(dispatch_weight) {
-			let weight_fee = Self::weight_to_fee(weight);
-			let len_fee = Self::length_to_fee(len);
-			let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
+		let mut fees = FeeDetails { inclusion_fee: None, tip: Zero::zero() };
+		if !calls_weight_sum.is_zero() {
+			if let Some(weight) = calls_weight_sum.checked_add(dispatch_weight) {
+				let weight_fee = Self::weight_to_fee(weight);
+				let len_fee = Self::length_to_fee(len);
+				let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
 
-			let adjusted_weight_fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
-			let tip = Zero::zero();
-
-			FeeDetails {
-				inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
-				tip,
+				let adjusted_weight_fee =
+					base_fee.saturating_add(weight_fee).saturating_add(len_fee);
+				let tip = Zero::zero();
+				fees = FeeDetails {
+					inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
+					tip,
+				};
 			}
-		} else {
-			fees
 		}
+		fees
 	}
 	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.
 	pub fn length_to_fee(length: u32) -> BalanceOf<T> {
