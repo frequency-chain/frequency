@@ -760,7 +760,7 @@ describe("Capacity Transactions", function () {
       });
     });
 
-  describe.only("Capacity RPC", function () {
+  describe("Capacity RPC", function () {
     let capacityProviderKeys: KeyringPair;
     let capacityProvider: u64;
     let schemaId: u16;
