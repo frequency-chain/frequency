@@ -249,7 +249,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 50,
+	spec_version: 51,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -263,7 +263,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 50,
+	spec_version: 51,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -607,9 +607,9 @@ impl pallet_democracy::Config for Runtime {
 		frame_system::EnsureRoot<AccountId>,
 	>;
 
-	/// A super-majority of 3/5ths can have the next scheduled referendum be a straight majority-carries vote.
+	/// A simple-majority of 50% + 1 can have the next scheduled referendum be a straight majority-carries vote.
 	type ExternalMajorityOrigin = EitherOfDiverse<
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 		frame_system::EnsureRoot<AccountId>,
 	>;
 	/// A straight majority (at least 50%) of the council can decide what their next motion is.
