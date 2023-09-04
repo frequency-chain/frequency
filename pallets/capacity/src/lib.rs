@@ -276,8 +276,6 @@ pub mod pallet {
 		UnstakedAmountIsZero,
 		/// Amount to unstake is greater than the amount staked.
 		AmountToUnstakeExceedsAmountStaked,
-		/// Attempting to unstake from a target that has not been staked to.
-		StakingAccountNotFound,
 		/// Attempting to get a staker / target relationship that does not exist.
 		StakerTargetRelationshipNotFound,
 		/// Attempting to get the target's capacity that does not exist.
