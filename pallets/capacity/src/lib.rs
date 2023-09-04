@@ -267,7 +267,7 @@ pub mod pallet {
 		InsufficientStakingAmount,
 		/// Staker is attempting to stake a zero amount.
 		ZeroAmountNotAllowed,
-		/// Origin has no Staking Account
+		/// This AccountId does not have a staking account.
 		NotAStakingAccount,
 		/// No staked value is available for withdrawal; either nothing is being unstaked,
 		/// or nothing has passed the thaw period.
