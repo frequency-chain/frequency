@@ -16,7 +16,7 @@ jobs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check for Changed Files
         uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50
         id: filter
@@ -31,7 +31,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-rococo-local -- export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
@@ -70,7 +70,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
@@ -85,7 +85,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
