@@ -154,7 +154,7 @@ fn unstake_errors_not_a_staking_account() {
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
-			Error::<Test>::StakingAccountNotFound
+			Error::<Test>::NotAStakingAccount
 		);
 	});
 }
