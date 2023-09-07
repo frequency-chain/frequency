@@ -267,7 +267,7 @@ pub mod pallet {
 		InsufficientStakingAmount,
 		/// Staker is attempting to stake a zero amount.
 		ZeroAmountNotAllowed,
-		/// Origin has no Staking Account
+		/// This AccountId does not have a staking account.
 		NotAStakingAccount,
 		/// No staked value is available for withdrawal; either nothing is being unstaked,
 		/// or nothing has passed the thaw period.
@@ -276,8 +276,6 @@ pub mod pallet {
 		UnstakedAmountIsZero,
 		/// Amount to unstake is greater than the amount staked.
 		AmountToUnstakeExceedsAmountStaked,
-		/// Attempting to unstake from a target that has not been staked to.
-		StakingAccountNotFound,
 		/// Attempting to get a staker / target relationship that does not exist.
 		StakerTargetRelationshipNotFound,
 		/// Attempting to get the target's capacity that does not exist.
@@ -521,7 +519,7 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		let mut staking_account =
-			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::StakingAccountNotFound)?;
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let current_epoch: T::EpochNumber = Self::get_current_epoch();
