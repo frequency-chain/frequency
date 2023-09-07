@@ -13,7 +13,7 @@ jobs:
       - name: Timestamp
         run: date
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.TRACKING_GIT_BRANCH}}
           token: ${{secrets.GHA_RECORD_POLKADOT_RELEASE}}

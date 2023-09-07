@@ -50,7 +50,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
@@ -76,7 +76,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, benchmark]
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -118,7 +118,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -140,7 +140,7 @@ jobs:
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
       - name: Update Release Version Tag
-        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
+        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
           tag: ${{env.NEW_RELEASE_TAG}}
           force_push_tag: true
@@ -181,7 +181,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set Env Vars
@@ -208,7 +208,7 @@ jobs:
         run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
       - name: Import GPG key
         id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@111c56156bcc6918c056dbef52164cfa583dc549
+        uses: crazy-max/ghaction-import-gpg@d6f3f49f3345e29369fe57596a3ca8f94c4d2ca7
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
@@ -278,7 +278,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y wget file build-essential
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Install Rust Toolchain
@@ -341,7 +341,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
@@ -380,7 +380,7 @@ jobs:
           echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -445,7 +445,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -498,7 +498,7 @@ jobs:
           export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
           echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -634,7 +634,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -661,7 +661,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@f7dd0f5932037ca4fff56395ffb04837fd97851a
+        uses: mikepenz/release-changelog-builder-action@713885393e391b4ce984457280aba0d24fbf0c87
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
@@ -760,7 +760,7 @@ jobs:
         if: |
           steps.is-full-release.outputs.is-full-release == 'true' &&
           env.TEST_RUN != 'true'
-        uses: rickstaa/action-create-tag@84c90e6ba79b47b5147dcb11ff25d6a0e06238ba
+        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
           commit_sha: ${{steps.get-latest-commit.outputs.sha}}
           tag: ${{env.LATEST_FULL_RELEASE_TAG}}
@@ -808,7 +808,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -902,7 +902,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -992,7 +992,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
