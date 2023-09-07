@@ -357,3 +357,18 @@ fn test_verify_handle_length() {
 		);
 	});
 }
+
+#[test]
+fn test_validate_handle() {
+	new_test_ext().execute_with(|| {
+		let good_handle: String = String::from("MyBonny");
+		assert_eq!(Handles::validate_handle(good_handle.as_bytes().to_vec()), true);
+
+		let too_long_handle: String =
+			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX + 1) as usize).collect();
+		assert_eq!(Handles::validate_handle(too_long_handle.as_bytes().to_vec()), false);
+
+		let handle_with_emoji = format_args!("John{}", '\u{1F600}').to_string();
+		assert_eq!(Handles::validate_handle(handle_with_emoji.as_bytes().to_vec()), false);
+	})
+}

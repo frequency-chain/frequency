@@ -1276,6 +1276,9 @@ impl_runtime_apis! {
 		fn get_msa_for_handle(display_handle: DisplayHandle) -> Option<MessageSourceId> {
 			Handles::get_msa_id_for_handle(display_handle)
 		}
+		fn validate_handle(base_handle: BaseHandle) -> bool {
+			Handles::validate_handle(base_handle.to_vec())
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]

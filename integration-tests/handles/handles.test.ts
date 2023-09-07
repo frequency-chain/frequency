@@ -7,6 +7,7 @@ import {MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 import {ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import {Bytes, u16} from "@polkadot/types";
 import {getBlockNumber} from "../scaffolding/helpers";
+import {awaitEvents} from "@chainsafe/libp2p-gossipsub/dist/test/utils/events";
 
 describe("🤝 Handles", () => {
     let msa_id: MessageSourceId;
@@ -145,4 +146,13 @@ describe("🤝 Handles", () => {
             assert.deepEqual(resp_suffixes_number, suffixes_expected, "suffixes should be equal to suffixes_expected");
         });
     });
+
+    describe("validateHandle basic test", () => {
+      it.only('returns true for good handle, and false for bad handle', async () => {``
+        let res = await ExtrinsicHelper.validateHandle("Bobby Tables");
+        assert(res);
+        res = await ExtrinsicHelper.validateHandle("Bobbay😀😀")
+        assert(!res);
+      });
+    })
 });

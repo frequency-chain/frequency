@@ -1,6 +1,7 @@
 use crate::validator::{
 	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
 };
+use std::fmt::Error;
 
 #[test]
 fn test_is_reserved_handle_happy_path() {
@@ -89,4 +90,16 @@ fn test_confusables_map_does_not_contain_keys_in_unsupported_character_sets() {
 	for key in CONFUSABLES.keys() {
 		assert!(consists_of_supported_unicode_character_sets(&key.to_string()));
 	}
+}
+
+fn return_some_result(return_err: bool) -> Result<string, Error> {
+	if return_err {
+		return Error::new("foo!")
+	}
+	Ok("bar")
+}
+
+#[test]
+fn test_result_stuff() {
+	let res1 = return_some_result(true).or_else(false);
 }

@@ -1,11 +1,11 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Compact, u128, u16, u32, u64, Vec, Option, Bytes } from "@polkadot/types";
+import {Compact, u128, u16, u32, u64, Vec, Option, Bytes, bool} from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import { devAccounts, getBlockNumber, log, getDefaultFundingSource, Sr25519Signature} from "./helpers";
+import { getBlockNumber, log, getDefaultFundingSource, Sr25519Signature} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -371,6 +371,11 @@ export class ExtrinsicHelper {
     public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
         let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
         return firstValueFrom(suffixes);
+    }
+
+    public static validateHandle(base_handle: string): Promise<bool> {
+      let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
+      return firstValueFrom(validationResult);
     }
 
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {

@@ -34,6 +34,16 @@ export default {
       ],
       type: "PresumptiveSuffixesResponse",
     },
+    validateHandle: {
+      description: "Check whether the supplied handle passes all the checks performed by claim_handle call.",
+      params: [
+        {
+          name: "base_handle",
+          type: "String",
+        },
+      ],
+      type: "bool",
+    },
   },
   types: {
     HandleSuffix: "u16",

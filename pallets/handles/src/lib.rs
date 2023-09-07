@@ -659,7 +659,7 @@ pub mod pallet {
 		}
 
 		/// Checks that handle base string is valid
-		fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
+		pub fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
 			// Convert base handle to UTF-8 string slice while validating.
 			let base_handle_str =
 				String::from_utf8(base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
@@ -746,6 +746,26 @@ pub mod pallet {
 			CanonicalBaseHandleAndSuffixToMSAId::<T>::remove(canonical_base, suffix_num);
 
 			Ok(display_name_str.as_bytes().to_vec())
+		}
+
+		/// Checks whether the supplied handle passes all the checks performed by a
+		/// claim_handle call.
+		/// # Returns
+		/// * true if it is valid or false if invalid
+		pub fn validate_handle(handle: Vec<u8>) -> bool {
+			return match Self::validate_base_handle(handle) {
+				Ok(base_handle_str) => {
+					// Convert base handle into a canonical base
+					let (canonical_handle_str, _) =
+						Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+
+					return Self::validate_canonical_handle_contains_characters_in_supported_ranges(
+						&canonical_handle_str,
+					)
+					.is_ok()
+				},
+				_ => false,
+			}
 		}
 
 		/// Converts a base handle to a canonical base.

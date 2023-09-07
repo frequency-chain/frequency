@@ -43,5 +43,8 @@ sp_api::decl_runtime_apis! {
 
 		/// Retrieve msa for a particular handle
 		fn get_msa_for_handle(display_handle: DisplayHandle) -> Option<MessageSourceId>;
+
+		/// Check if a handle is valid
+		fn validate_handle(base_handle: BaseHandle) -> bool;
 	}
 }
