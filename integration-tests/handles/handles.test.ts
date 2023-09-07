@@ -148,7 +148,7 @@ describe("🤝 Handles", () => {
     });
 
     describe("validateHandle basic test", () => {
-      it.only('returns true for good handle, and false for bad handle', async () => {``
+      it('returns true for good handle, and false for bad handle', async () => {``
         let res = await ExtrinsicHelper.validateHandle("Bobby Tables");
         assert(res);
         res = await ExtrinsicHelper.validateHandle("Bobbay😀😀")

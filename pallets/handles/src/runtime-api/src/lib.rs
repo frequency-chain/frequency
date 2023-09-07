@@ -26,13 +26,13 @@ use common_primitives::{
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
 
-	/// Runtime Version for Stateful Storage
+	/// Runtime Version for Handles
 	/// - MUST be incremented if anything changes
 	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(1)]
+	#[api_version(2)]
 
-	/// Runtime APIs for [Stateful Storage](../pallet_stateful_storage/index.html)
+	/// Runtime APIs for [Handles](../pallet_handles/index.html)
 	pub trait HandlesRuntimeApi
 	{
 		/// Retrieve handle for a particular msa

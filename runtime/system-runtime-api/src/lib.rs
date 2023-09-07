@@ -11,8 +11,7 @@
 )]
 
 //! Runtime API definition for additional Frequency RPCs
-//!
-//! This api must be implemented by the node runtime.
+//! This api must be implemented by the n//!ode runtime.
 //! Runtime APIs Provide:
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
