@@ -1,7 +1,7 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import {Compact, u128, u16, u32, u64, Vec, Option, Bytes, bool} from "@polkadot/types";
+import {Compact, u128, u16, u32, u64, Vec, Option, Bytes, bool, Bool} from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
@@ -373,7 +373,7 @@ export class ExtrinsicHelper {
         return firstValueFrom(suffixes);
     }
 
-    public static validateHandle(base_handle: string): Promise<bool> {
+    public static validateHandle(base_handle: string): Promise<Bool> {
       let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
       return firstValueFrom(validationResult);
     }
