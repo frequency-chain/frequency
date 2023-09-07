@@ -25,7 +25,7 @@ jobs:
       ci-docker-image: ${{steps.filter.outputs.ci-docker-image}}
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check for Changed Files
         uses: dorny/paths-filter@4512585405083f25c027a35db413c2b3b9006d50
         id: filter
@@ -137,7 +137,7 @@ jobs:
       NETWORK: mainnet
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{matrix.git_branch}}
       - name: Set Env Vars
@@ -181,7 +181,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set Up Cargo Deny
         run: |
           cargo install --force cargo-deny
@@ -197,7 +197,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check
         run: cargo fmt --check
 
@@ -209,7 +209,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Lint
         run: |
           SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
@@ -225,7 +225,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown
@@ -239,7 +239,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -251,7 +251,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Init Git
         run: |
           git config --global --add safe.directory /__w/frequency/frequency
@@ -268,7 +268,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
@@ -326,7 +326,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Install Rust Toolchain
         # Match installation steps to CI base docker image
         run: |
@@ -391,7 +391,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
           echo "BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
@@ -450,7 +450,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
           echo "BUILT_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
@@ -504,7 +504,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
         with:
@@ -528,7 +528,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
@@ -559,7 +559,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set Env Vars
@@ -638,7 +638,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set Env Vars
@@ -762,7 +762,7 @@ jobs:
       pallets: ${{steps.run-benchmarks.outputs.pallets}}
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{github.event.pull_request.head.sha}}
       - name: Run Benchmarks?
@@ -796,7 +796,7 @@ jobs:
           echo "Running benchmarks..."
           echo "Pallets: ${{needs.should-run-benchmarks.outputs.pallets}}"
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           ref: ${{github.event.pull_request.head.sha}}

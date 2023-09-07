@@ -50,7 +50,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
@@ -76,7 +76,7 @@ jobs:
     runs-on: [self-hosted, Linux, X64, benchmark]
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -118,7 +118,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -181,7 +181,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set Env Vars
@@ -278,7 +278,7 @@ jobs:
           sudo apt-get update
           sudo apt install -y wget file build-essential
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Install Rust Toolchain
@@ -341,7 +341,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
@@ -380,7 +380,7 @@ jobs:
           echo "BIN_DIR=target/${{env.BUILD_PROFILE}}" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{env.RELEASE_FILENAME_PREFIX}}.${{env.ARCH}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
@@ -445,7 +445,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -498,7 +498,7 @@ jobs:
           export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
           echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -634,7 +634,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
           fetch-depth: 0
@@ -808,7 +808,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -902,7 +902,7 @@ jobs:
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Full Release?
@@ -992,7 +992,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
