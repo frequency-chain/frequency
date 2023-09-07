@@ -7,7 +7,6 @@ import {MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 import {ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
 import {Bytes, u16} from "@polkadot/types";
 import {getBlockNumber} from "../scaffolding/helpers";
-import {awaitEvents} from "@chainsafe/libp2p-gossipsub/dist/test/utils/events";
 
 describe("🤝 Handles", () => {
     let msa_id: MessageSourceId;

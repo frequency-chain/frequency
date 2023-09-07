@@ -659,7 +659,7 @@ pub mod pallet {
 		}
 
 		/// Checks that handle base string is valid
-		pub fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
+		fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
 			// Convert base handle to UTF-8 string slice while validating.
 			let base_handle_str =
 				String::from_utf8(base_handle).map_err(|_| Error::<T>::InvalidHandleEncoding)?;
