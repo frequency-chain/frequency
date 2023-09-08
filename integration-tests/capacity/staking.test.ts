@@ -266,7 +266,7 @@ describe("Capacity Staking Tests", function () {
         describe("when account has not staked", async function () {
             it("errors with StakingAccountNotFound", async function () {
                 const failUnstakeObj = ExtrinsicHelper.unstake(unstakeKeys, providerId, tokenMinStake);
-                await assert.rejects(failUnstakeObj.fundAndSend(), { name: "StakingAccountNotFound" });
+                await assert.rejects(failUnstakeObj.fundAndSend(), { name: "NotAStakingAccount" });
             });
         });
     });
