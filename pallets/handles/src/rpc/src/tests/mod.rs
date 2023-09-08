@@ -2,7 +2,6 @@ mod rpc_mock;
 
 use super::*;
 use rpc_mock::*;
-use std::intrinsics::type_id;
 
 use common_primitives::handles::{BaseHandle, DisplayHandle, PresumptiveSuffixesResponse};
 use pallet_handles_runtime_api::HandlesRuntimeApi;
@@ -36,7 +35,7 @@ sp_api::mock_impl_runtime_apis! {
 			Some(VALID_MSA_ID)
 		}
 
-		fn validate_handle(base_handle: BaseHandle) -> bool {
+		fn validate_handle(_base_handle: BaseHandle) -> bool {
 			true
 		}
 	}
