@@ -249,7 +249,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 52,
+	spec_version: 53,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -263,7 +263,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 52,
+	spec_version: 53,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1275,6 +1275,9 @@ impl_runtime_apis! {
 
 		fn get_msa_for_handle(display_handle: DisplayHandle) -> Option<MessageSourceId> {
 			Handles::get_msa_id_for_handle(display_handle)
+		}
+		fn validate_handle(base_handle: BaseHandle) -> bool {
+			Handles::validate_handle(base_handle.to_vec())
 		}
 	}
 

@@ -145,4 +145,15 @@ describe("🤝 Handles", () => {
             assert.deepEqual(resp_suffixes_number, suffixes_expected, "suffixes should be equal to suffixes_expected");
         });
     });
+
+    describe("validateHandle basic test", () => {
+      it('returns true for good handle, and false for bad handle', async () => {
+        let res = await ExtrinsicHelper.validateHandle("Robert`DROP TABLE STUDENTS;--");
+        assert.equal(res.toHuman(), false);
+        res = await ExtrinsicHelper.validateHandle("Little Bobby Tables")
+        assert.equal(res.toHuman(), true);
+        res = await ExtrinsicHelper.validateHandle("Bobbay😀😀")
+        assert.equal(res.toHuman(), false);
+      });
+    })
 });

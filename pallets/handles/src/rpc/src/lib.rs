@@ -47,6 +47,10 @@ pub trait HandlesApi<BlockHash> {
 	/// retrieve `MessageSourceId` for a given handle
 	#[method(name = "handles_getMsaForHandle")]
 	fn get_msa_for_handle(&self, display_handle: String) -> RpcResult<Option<MessageSourceId>>;
+
+	/// validate a handle
+	#[method(name = "handles_validateHandle")]
+	fn validate_handle(&self, base_handle: String) -> RpcResult<bool>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -114,6 +118,14 @@ where
 			.try_into()
 			.map_err(|_| HandlesRpcError::InvalidHandle)?;
 		let result = api.get_msa_for_handle(at, handle);
+		map_rpc_result(result)
+	}
+
+	fn validate_handle(&self, base_handle: String) -> RpcResult<bool> {
+		let api = self.client.runtime_api();
+		let at = self.client.info().best_hash;
+		let base_handle: BaseHandle = base_handle.into_bytes().try_into().unwrap_or_default();
+		let result = api.validate_handle(at, base_handle);
 		map_rpc_result(result)
 	}
 }

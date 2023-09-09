@@ -34,6 +34,10 @@ sp_api::mock_impl_runtime_apis! {
 		fn get_msa_for_handle(_display_handle: DisplayHandle) -> Option<MessageSourceId>{
 			Some(VALID_MSA_ID)
 		}
+
+		fn validate_handle(_base_handle: BaseHandle) -> bool {
+			true
+		}
 	}
 }
 
