@@ -58,7 +58,7 @@ benchmarks! {
 
 	claim_handle {
 		// claim a handle
-		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-2;
+		let b in HANDLE_BYTES_MIN .. HANDLE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key, delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public, b);
@@ -73,7 +73,7 @@ benchmarks! {
 
 	change_handle {
 		// claim a handle to be changed
-		let b in HANDLE_BASE_BYTES_MIN .. HANDLE_BASE_BYTES_MAX-2;
+		let b in HANDLE_BYTES_MIN .. HANDLE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
