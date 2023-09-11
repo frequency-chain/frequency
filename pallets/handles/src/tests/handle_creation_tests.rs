@@ -1,6 +1,6 @@
 use crate::{tests::mock::*, Error, Event};
 use codec::Decode;
-use common_primitives::{handles::HANDLE_BASE_BYTES_MAX, msa::MessageSourceId};
+use common_primitives::{handles::HANDLE_BYTES_MAX, msa::MessageSourceId};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
@@ -203,6 +203,26 @@ fn claim_handle_invalid_length_too_short() {
 }
 
 #[test]
+fn claim_handle_canonical_invalid_length_too_short() {
+	// Try to claim a 1 character handle which is under the character limit
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, "a         b".as_bytes().to_vec(), expiration);
+		assert_noop!(
+			Handles::claim_handle(
+				RuntimeOrigin::signed(alice.public().into()),
+				alice.public().into(),
+				proof,
+				payload
+			),
+			Error::<Test>::InvalidHandleCharacterLength
+		);
+	});
+}
+
+#[test]
 fn claim_handle_invalid_byte_length() {
 	// Try to claim a character handle which is over the byte limit but under the character limit
 	// ℂн𝔸RℒℰᏕ𝔇𝔸𐒴𑣯1𝒩𝓐𑣯𝔸R𝔻Ꮥ is 19 characters but 61 bytes
@@ -342,14 +362,13 @@ fn claim_handle_with_max_bytes_should_get_correct_display_handle() {
 fn test_verify_handle_length() {
 	new_test_ext().execute_with(|| {
 		// Max bytes handle is ok
-		let handle_str: String =
-			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX) as usize).collect();
+		let handle_str: String = std::iter::repeat('*').take((HANDLE_BYTES_MAX) as usize).collect();
 		let handle = handle_str.as_bytes().to_vec();
 		assert_ok!(Handles::verify_max_handle_byte_length(handle));
 
 		// However, max bytes handle plus 1 is not ok
 		let handle_str: String =
-			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX + 1) as usize).collect();
+			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
 		let handle = handle_str.as_bytes().to_vec();
 		assert_err!(
 			Handles::verify_max_handle_byte_length(handle),
@@ -365,7 +384,7 @@ fn test_validate_handle() {
 		assert_eq!(Handles::validate_handle(good_handle.as_bytes().to_vec()), true);
 
 		let too_long_handle: String =
-			std::iter::repeat('*').take((HANDLE_BASE_BYTES_MAX + 1) as usize).collect();
+			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
 		assert_eq!(Handles::validate_handle(too_long_handle.as_bytes().to_vec()), false);
 
 		let handle_with_emoji = format_args!("John{}", '\u{1F600}').to_string();

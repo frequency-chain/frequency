@@ -8,14 +8,14 @@ use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 use sp_std::vec::Vec;
 
-/// The minimum base handle (not including suffix or delimiter) length in characters
-pub const HANDLE_BASE_CHARS_MIN: u32 = 3;
-/// The minimum base handle (not including suffix or delimiter) length in bytes
-pub const HANDLE_BASE_BYTES_MIN: u32 = 1 * HANDLE_BASE_CHARS_MIN;
-/// The maximum base handle (not including suffix or delimiter) length in characters
-pub const HANDLE_BASE_CHARS_MAX: u32 = 20;
-/// The maximum base handle (not including suffix or delimiter) length in bytes
-pub const HANDLE_BASE_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
+/// The minimum base and canonical handle (not including suffix or delimiter) length in characters
+pub const HANDLE_CHARS_MIN: u32 = 3;
+/// The minimum base and canonical handle (not including suffix or delimiter) length in bytes
+pub const HANDLE_BYTES_MIN: u32 = 1 * HANDLE_CHARS_MIN;
+/// The maximum base and canonical handle (not including suffix or delimiter) length in characters
+pub const HANDLE_CHARS_MAX: u32 = 20;
+/// The maximum base and canonical handle (not including suffix or delimiter) length in bytes
+pub const HANDLE_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
 /// The maximum number of digits in a suffix
 pub const SUFFIX_MAX_DIGITS: usize = 5; // The max value of a HandleSuffix (u16) is 65535 which is 5 digits.
 /// The maximum count of suffixes allowed to be requested at once
@@ -23,14 +23,14 @@ pub const MAX_SUFFIXES_COUNT: u16 = 100;
 /// The default count of suffixes to request if none is provided
 pub const DEFAULT_SUFFIX_COUNT: u16 = 1;
 /// A generic handle type  (base, canonical, or display)
-type Handle = BoundedVec<u8, ConstU32<HANDLE_BASE_BYTES_MAX>>;
+type Handle = BoundedVec<u8, ConstU32<HANDLE_BYTES_MAX>>;
 /// A base handle, which is chosen by the user
 pub type BaseHandle = Handle;
 /// A canonical base, which is a reduced/translated version of the base handle
 pub type CanonicalBase = Handle;
 /// A display handle, which is a base handle with suffix separated by a delimiter
 pub type DisplayHandle =
-	BoundedVec<u8, ConstU32<{ HANDLE_BASE_BYTES_MAX + SUFFIX_MAX_DIGITS as u32 + 1u32 }>>;
+	BoundedVec<u8, ConstU32<{ HANDLE_BYTES_MAX + SUFFIX_MAX_DIGITS as u32 + 1u32 }>>;
 /// The handle suffix
 pub type HandleSuffix = u16;
 

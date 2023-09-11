@@ -307,10 +307,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`Error::InvalidHandleByteLength`]
 		pub fn verify_max_handle_byte_length(handle: Vec<u8>) -> DispatchResult {
-			ensure!(
-				handle.len() as u32 <= HANDLE_BASE_BYTES_MAX,
-				Error::<T>::InvalidHandleByteLength
-			);
+			ensure!(handle.len() as u32 <= HANDLE_BYTES_MAX, Error::<T>::InvalidHandleByteLength);
 			Ok(())
 		}
 
@@ -629,6 +626,8 @@ pub mod pallet {
 				&canonical_handle_str,
 			)?;
 
+			Self::validate_canonical_handle_length(&canonical_handle_str)?;
+
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())?;
@@ -670,7 +669,7 @@ pub mod pallet {
 
 			// Validation: `BaseHandle` character length must be within range
 			ensure!(
-				len >= HANDLE_BASE_CHARS_MIN && len <= HANDLE_BASE_CHARS_MAX,
+				len >= HANDLE_CHARS_MIN && len <= HANDLE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
@@ -689,6 +688,17 @@ pub mod pallet {
 			ensure!(
 				consists_of_supported_unicode_character_sets(&base_handle_str),
 				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
+			);
+			Ok(())
+		}
+
+		fn validate_canonical_handle_length(canonical_handle_str: &str) -> DispatchResult {
+			let len = canonical_handle_str.chars().count() as u32;
+
+			// Validation: `Canonical` character length must be within range
+			ensure!(
+				len >= HANDLE_CHARS_MIN && len <= HANDLE_CHARS_MAX,
+				Error::<T>::InvalidHandleCharacterLength
 			);
 			Ok(())
 		}

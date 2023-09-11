@@ -112,6 +112,18 @@ fn test_convert_to_canonical_combining_marks_reduce_to_the_same_canonical_form()
 }
 
 #[test]
+fn test_convert_to_canonical_handles_whitespace() {
+	let all_spaces = String::from("         ");
+
+	let canonical_all_spaces = convert_to_canonical(&all_spaces);
+	assert_eq!(canonical_all_spaces, String::from(""));
+
+	let has_spaces = String::from("    hello world     ");
+	let canonical_has_spaces = convert_to_canonical(&has_spaces);
+	assert_eq!(canonical_has_spaces, String::from("he110w0r1d"));
+}
+
+#[test]
 fn test_split_display_name_success() {
 	assert_eq!(split_display_name("hello.123"), Some((String::from("hello"), 123u16)));
 	assert_eq!(split_display_name("hello.0"), Some((String::from("hello"), 0)));
