@@ -37,7 +37,8 @@ where
 	) -> Result<Self::Balance, TransactionValidityError> {
 		ensure!(
 			Curr::free_balance(key) >= Curr::minimum_balance(),
-			ChargeFrqTransactionPaymentError::BelowMinDeposit.into()
+			//ChargeFrqTransactionPaymentError::BelowMinDeposit.into()
+			TransactionValidityError::Invalid(InvalidTransaction::Payment)
 		);
 
 		let msa_id = Msa::ensure_valid_msa_key(key)
@@ -46,7 +47,8 @@ where
 		if T::Capacity::can_replenish(msa_id) {
 			ensure!(
 				T::Capacity::replenish_all_for(msa_id).is_ok(),
-				ChargeFrqTransactionPaymentError::TargetCapacityNotFound.into()
+				//ChargeFrqTransactionPaymentError::TargetCapacityNotFound.into()
+				TransactionValidityError::Invalid(InvalidTransaction::Payment)
 			);
 		}
 
