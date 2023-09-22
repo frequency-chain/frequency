@@ -478,7 +478,7 @@ jobs:
         with:
           platforms: "amd64"
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build collator image in instant seal mode
         env:
           IMAGE_NAME: instant-seal-node
@@ -510,7 +510,7 @@ jobs:
         with:
           platforms: "amd64"
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
       - name: Build CI image
         env:
           IMAGE_PATH: tools/ci/docker
