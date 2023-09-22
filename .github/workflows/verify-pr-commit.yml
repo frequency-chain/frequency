@@ -474,7 +474,7 @@ jobs:
         run: |
           chmod 755 ${{env.DOCKER_BIN_FILENAME}}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: "amd64"
       - name: Set up Docker Buildx
@@ -506,7 +506,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: "amd64"
       - name: Set up Docker Buildx
