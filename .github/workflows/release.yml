@@ -833,7 +833,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{matrix.arch}}
       - name: Set up Docker Buildx
@@ -927,7 +927,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
+        uses: docker/setup-qemu-action@v3
         with:
           platforms: ${{matrix.arch}}
       - name: Set up Docker Buildx
