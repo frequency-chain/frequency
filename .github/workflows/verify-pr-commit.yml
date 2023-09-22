@@ -482,7 +482,7 @@ jobs:
       - name: Build collator image in instant seal mode
         env:
           IMAGE_NAME: instant-seal-node
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
@@ -490,7 +490,7 @@ jobs:
       - name: Build collator image for local relay chain
         env:
           IMAGE_NAME: collator-node-local
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
@@ -515,7 +515,7 @@ jobs:
         env:
           IMAGE_PATH: tools/ci/docker
           IMAGE_NAME: ci-base-image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: false
