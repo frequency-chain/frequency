@@ -844,7 +844,7 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Parachain Image
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -854,7 +854,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -939,7 +939,7 @@ jobs:
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
       - name: Build and Push Dev Image
         # if: env.TEST_RUN != 'true'
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -949,7 +949,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
