@@ -102,7 +102,7 @@ describe("Capacity Transactions", function () {
         const claimHandle = ExtrinsicHelper.claimHandle(newControlKeypair, claimHandlePayload);
         await assert.rejects(claimHandle.payWithCapacity(), {
           name: "RpcError", message:
-            "1010: Invalid Transaction: Custom error: 3"
+            "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
         });
       });
 
@@ -589,7 +589,7 @@ describe("Capacity Transactions", function () {
 
         await assert.rejects(grantDelegationOp.payWithCapacity(), {
           name: 'RpcError',
-          message: /Custom error: 3/,
+          message: /1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low/,
         })
       });
     });

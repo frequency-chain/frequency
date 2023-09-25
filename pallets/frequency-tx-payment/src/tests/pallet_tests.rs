@@ -552,10 +552,7 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_does_not_have_the_requ
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
 
-			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
-				ChargeFrqTransactionPaymentError::BelowMinDeposit as u8,
-			));
-
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Payment);
 			assert_withdraw_fee_result(account_id, call, Some(expected_err));
 		});
 }
