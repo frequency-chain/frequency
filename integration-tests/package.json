@@ -2,6 +2,7 @@
     "name": "frequency-integration-tests",
     "version": "1.0.0",
     "description": "Integration tests for the Frequency project",
+    "type": "module",
     "scripts": {
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
@@ -17,6 +18,7 @@
     "license": "Apache-2.0",
     "dependencies": {
         "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
+        "@helia/unixfs": "^1.4.2",
         "@polkadot/api": "10.9.1",
         "@polkadot/types": "10.9.1",
         "@polkadot/util": "12.5.1",

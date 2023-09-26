@@ -1,12 +1,12 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { Bytes, u64, u16, u128 } from "@polkadot/types";
+import { Bytes, u64, u16 } from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
 import {AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
-import { loadIpfs, getBases } from "../messages/loadIPFS";
+import { base64 } from 'multiformats/bases/base64';
 import { firstValueFrom } from "rxjs";
 import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import {
@@ -42,6 +42,7 @@ import {
   generatePaginatedDeleteSignaturePayloadV2
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
+import { ipfsCid } from "../messages/ipfs";
 
 describe("Capacity Transactions", function () {
     const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -223,21 +224,12 @@ describe("Capacity Transactions", function () {
           let schemaId = await getOrCreateParquetBroadcastSchema();
           const ipfs_payload_data = "This is a test of Frequency.";
           const ipfs_payload_len = ipfs_payload_data.length + 1;
-          let ipfs_node: any;
-          let ipfs_cid_64: string;
-          ipfs_node = await loadIpfs();
-          const {base64, base32} = await getBases();
-          const file = await ipfs_node.add({path: 'integration_test.txt', content: ipfs_payload_data}, {
-            cidVersion: 1,
-            onlyHash: true
-          });
-          ipfs_cid_64 = file.cid.toString(base64);
+          const ipfs_cid_64 = (await ipfsCid(ipfs_payload_data, './integration_test.txt')).toString(base64);
           const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, schemaId, ipfs_cid_64, ipfs_payload_len);
 
           const [_, chainEvents] = await call.payWithCapacity();
           assertEvent(chainEvents, "capacity.CapacityWithdrawn");
           assertEvent(chainEvents, "messages.MessagesStored");
-          await ipfs_node.stop();
         });
 
         it("successfully pays with Capacity for eligible transaction - addOnchainMessage", async function () {
