@@ -379,3 +379,33 @@ pub fn ensure_valid_schema_grant_errors_delegation_revoked_when_delegation_relat
 		);
 	});
 }
+
+#[test]
+pub fn ensure_delegation_revocation_reflects_in_schema_permissions() {
+	new_test_ext().execute_with(|| {
+		// Set the schemas counts so that it passes validation.
+		set_schema_count::<Test>(2);
+
+		// Create delegation relationship.
+		let provider = ProviderId(1);
+		let delegator = DelegatorId(2);
+		let schema_grants = vec![1, 2];
+
+		// Create delegation relationship.
+		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
+
+		// Move forward to block 6.
+		System::set_block_number(System::block_number() + 5);
+
+		// Revoke delegation relationship at block 6.
+		assert_ok!(Msa::revoke_provider(provider, delegator));
+
+		let grants_result = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		assert!(grants_result.is_ok());
+		let grants_option = grants_result.unwrap();
+		assert!(grants_option.is_some());
+		let grants = grants_option.unwrap();
+		assert!(grants[0].revoked_at == 6);
+		assert!(grants[1].revoked_at == 6);
+	});
+}
