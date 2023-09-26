@@ -802,7 +802,7 @@ jobs:
           ref: ${{github.event.pull_request.head.sha}}
       - name: Get Current Job Log URL
         id: jobs
-        uses: Tiryoh/gha-jobid-action@603885a199c331cc2f828bcebeb1c4a275f4d6e1
+        uses: Tiryoh/gha-jobid-action@20caeb4d0b3bb798032fffd362747d4d5d58b976
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           job_name: "Run Benchmarks"
