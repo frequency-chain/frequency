@@ -6,6 +6,10 @@ export let EXISTENTIAL_DEPOSIT: bigint;
 
 export const mochaHooks = {
     async beforeAll() {
+
+        // Default Timeout of 10 seconds
+        this.timeout(10_000);
+
         await ExtrinsicHelper.initialize();
 
         if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
