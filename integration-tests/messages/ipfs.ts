@@ -3,7 +3,7 @@ import { createHelia } from 'helia';
 
 export async function ipfsCid(content: string, path: string) {
   // create a Helia node
-  const helia = await createHelia();
+  const helia = await createHelia({ start: false });
 
   // create a filesystem on top of Helia, in this case it's UnixFS
   const fs = unixfs(helia);
