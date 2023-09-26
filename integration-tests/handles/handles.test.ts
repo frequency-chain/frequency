@@ -1,12 +1,12 @@
 //  Handles test suite
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createDelegator} from "../scaffolding/helpers";
-import {KeyringPair} from "@polkadot/keyring/types";
-import {MessageSourceId} from "@frequency-chain/api-augment/interfaces";
-import {ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
-import {Bytes, u16} from "@polkadot/types";
-import {getBlockNumber} from "../scaffolding/helpers";
+import { createDelegator, hasRelayChain } from "../scaffolding/helpers";
+import { KeyringPair } from "@polkadot/keyring/types";
+import { MessageSourceId } from "@frequency-chain/api-augment/interfaces";
+import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
+import { Bytes } from "@polkadot/types";
+import { getBlockNumber } from "../scaffolding/helpers";
 
 describe("🤝 Handles", () => {
     let msa_id: MessageSourceId;
@@ -40,6 +40,10 @@ describe("🤝 Handles", () => {
 
     describe("@Retire Handle", () => {
         it("should be able to retire a handle", async function () {
+            if (hasRelayChain()) {
+                this.timeout(250_000 + 12 * 20 * 1000);
+            }
+
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
@@ -64,9 +68,9 @@ describe("🤝 Handles", () => {
     });
 
     describe("@Alt Path: Claim Handle with possible presumptive suffix/RPC test", () => {
-       /// Check chain to getNextSuffixesForHandle
+        /// Check chain to getNextSuffixesForHandle
 
-         it("should be able to claim a handle and check suffix (=suffix_assumed if avaiable on chain)", async function () {
+        it("should be able to claim a handle and check suffix (=suffix_assumed if available on chain)", async function () {
             const handle = "test1";
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
             /// Get presumptive suffix from chain (rpc)
@@ -109,11 +113,14 @@ describe("🤝 Handles", () => {
             }
             let msa_from_handle = msa_option.unwrap();
             assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
-         });
+        });
     });
 
     describe("👇 Negative Test: Early retire handle", () => {
         it("should not be able to retire a handle before expiration", async function () {
+            if (hasRelayChain()) {
+                this.timeout(250_000 + 12 * 10 * 1000);
+            }
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
@@ -137,7 +144,7 @@ describe("🤝 Handles", () => {
         });
     });
 
-    describe("Suffixes Intergrity Check", () => {
+    describe("Suffixes Integrity Check", () => {
         it("should return same suffixes for `abcdefg` from chain as hardcoded", async function () {
             let suffixes = await ExtrinsicHelper.getNextSuffixesForHandle("abcdefg", 10);
             let suffixes_expected = [23, 65, 16, 53, 25, 75, 29, 26, 10, 87];
@@ -147,13 +154,13 @@ describe("🤝 Handles", () => {
     });
 
     describe("validateHandle basic test", () => {
-      it('returns true for good handle, and false for bad handle', async () => {
-        let res = await ExtrinsicHelper.validateHandle("Robert`DROP TABLE STUDENTS;--");
-        assert.equal(res.toHuman(), false);
-        res = await ExtrinsicHelper.validateHandle("Little Bobby Tables")
-        assert.equal(res.toHuman(), true);
-        res = await ExtrinsicHelper.validateHandle("Bobbay😀😀")
-        assert.equal(res.toHuman(), false);
-      });
+        it('returns true for good handle, and false for bad handle', async () => {
+            let res = await ExtrinsicHelper.validateHandle("Robert`DROP TABLE STUDENTS;--");
+            assert.equal(res.toHuman(), false);
+            res = await ExtrinsicHelper.validateHandle("Little Bobby Tables")
+            assert.equal(res.toHuman(), true);
+            res = await ExtrinsicHelper.validateHandle("Bobbay😀😀")
+            assert.equal(res.toHuman(), false);
+        });
     })
 });
