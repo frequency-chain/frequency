@@ -1334,7 +1334,7 @@ impl<T: Config> Pallet<T> {
 			{
 				schema_list.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
 			} else {
-    			    schema_list.push(SchemaGrant { schema_id, revoked_at });
+				schema_list.push(SchemaGrant { schema_id, revoked_at });
 			}
 		}
 		Ok(Some(schema_list))
