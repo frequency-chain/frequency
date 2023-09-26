@@ -1329,13 +1329,13 @@ impl<T: Config> Pallet<T> {
 
 		let mut schema_list = Vec::new();
 		for (schema_id, revoked_at) in schema_permissions {
-			let mut actual_revoked_at = revoked_at;
 			if provider_info.revoked_at > T::BlockNumber::zero() &&
 				(revoked_at > provider_info.revoked_at || revoked_at == T::BlockNumber::zero())
 			{
-				actual_revoked_at = provider_info.revoked_at;
+				schema_list.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
+			} else {
+    			    schema_list.push(SchemaGrant { schema_id, revoked_at });
 			}
-			schema_list.push(SchemaGrant { schema_id, revoked_at: actual_revoked_at });
 		}
 		Ok(Some(schema_list))
 	}
