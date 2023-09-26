@@ -85,7 +85,7 @@ describe("Capacity Staking Tests", function () {
 
             // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
             let newEpochBlock = await getNextEpochBlock();
-            await ExtrinsicHelper.run_to_block(newEpochBlock + TEST_EPOCH_LENGTH + 1);
+            await ExtrinsicHelper.runToBlock(newEpochBlock + TEST_EPOCH_LENGTH + 1);
 
             const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
             const [withdrawEvent] = await withdrawObj.fundAndSend();

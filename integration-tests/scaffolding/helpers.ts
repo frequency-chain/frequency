@@ -159,6 +159,11 @@ export function getDefaultFundingSource() {
   return process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET ? rococoAccounts[0] : devAccounts[0];
 }
 
+export function hasRelayChain() {
+  return process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_LOCAL
+    || process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET
+}
+
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }

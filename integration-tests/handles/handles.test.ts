@@ -51,7 +51,7 @@ describe("🤝 Handles", () => {
             assert.notEqual(full_handle_state.canonical_base, undefined, "canonical_base should not be undefined");
             assert.notEqual(full_handle_state.base_handle, undefined, "base_handle should not be undefined");
             let currentBlock = await getBlockNumber();
-            await ExtrinsicHelper.run_to_block(currentBlock + 20);
+            await ExtrinsicHelper.runToBlock(currentBlock + 20);
 
             const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
             const [event] = await retireHandle.fundAndSend();
@@ -125,7 +125,7 @@ describe("🤝 Handles", () => {
             assert.notEqual(suffix, 0, "suffix should not be 0");
 
             let currentBlock = await getBlockNumber();
-            await ExtrinsicHelper.run_to_block(currentBlock + 10);
+            await ExtrinsicHelper.runToBlock(currentBlock + 10);
             try {
                 const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
                 const [event] = await retireHandle.fundAndSend();

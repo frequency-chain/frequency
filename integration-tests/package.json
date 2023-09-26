@@ -7,8 +7,8 @@
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
         "test": "mocha",
-        "test:load": "mocha --config .load-test.mocharc.js",
         "test:relay": "mocha --config .relay-chain.mocharc.json",
+        "test:load": "mocha --config .load-test.mocharc.json",
         "format": "tsc --noEmit --pretty",
         "lint": "tsc --noEmit --pretty",
         "preinstall": "echo \"NOTICE: Integration tests REQUIRE ../js/api-augment to have been built and packaged\""
