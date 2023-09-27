@@ -4,7 +4,7 @@
     "compilerOptions": {
         "allowSyntheticDefaultImports": true,
         "esModuleInterop": true,
-        "module": "CommonJS",
+        "module": "esnext",
         "moduleResolution": "node",
         "noImplicitAny": false,
         "noImplicitThis": false,
@@ -17,6 +17,10 @@
         "typeRoots": [
             "node_modules/@types"
         ]
+    },
+    "ts-node": {
+        "esm": true,
+        "experimentalSpecifierResolution": "node"
     },
     "include": ["./**/*.ts"],
     "exclude": ["node_modules/**", "./dist/**"]

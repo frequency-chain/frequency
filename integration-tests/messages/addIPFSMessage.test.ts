@@ -1,13 +1,16 @@
 import "@frequency-chain/api-augment";
 import { KeyringPair } from "@polkadot/keyring/types";
+import { base64 } from 'multiformats/bases/base64';
+import { base32 } from 'multiformats/bases/base32';
+import { CID } from 'multiformats/cid'
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
 import { CHAIN_ENVIRONMENT, createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16, u32 } from "@polkadot/types";
-import { loadIpfs, getBases } from "./loadIPFS";
 import { firstValueFrom } from "rxjs";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
+import { ipfsCid } from "./ipfs";
 
 describe("Add Offchain Message", function () {
     // Increase global timeout to allow for the IPFS node startup when
@@ -24,18 +27,16 @@ describe("Add Offchain Message", function () {
 
     let ipfs_cid_64: string;
     let ipfs_cid_32: string;
-    let ipfs_node: any;
     const ipfs_payload_data = "This is a test of Frequency.";
     const ipfs_payload_len = ipfs_payload_data.length + 1;
     let starting_block: number;
 
     before(async function () {
         starting_block = (await firstValueFrom(ExtrinsicHelper.api.rpc.chain.getHeader())).number.toNumber();
-        ipfs_node = await loadIpfs();
-        const { base64, base32 } = await getBases();
-        const file = await ipfs_node.add({ path: 'integration_test.txt', content: ipfs_payload_data }, { cidVersion: 1, onlyHash: true });
-        ipfs_cid_64 = file.cid.toString(base64);
-        ipfs_cid_32 = file.cid.toString(base32);
+
+        const cid = await ipfsCid(ipfs_payload_data, './integration_test.txt');
+        ipfs_cid_64 = cid.toString(base64);
+        ipfs_cid_32 = cid.toString(base32);
 
         keys = await createAndFundKeypair();
 
@@ -93,8 +94,8 @@ describe("Add Offchain Message", function () {
     });
 
     it("should fail if CID is CIDv0 (UnsupportedCidVersion)", async function () {
-        const file = await ipfs_node.add({ path: 'integration_test.txt', content: ipfs_payload_data }, { cidVersion: 0 });
-        const cidV0 = file.cid.toString();
+        const cid = await ipfsCid(ipfs_payload_data, './integration_test.txt');
+        const cidV0 = CID.createV0(cid.multihash as any).toString();
         const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, cidV0, ipfs_payload_len);
         await assert.rejects(f.fundAndSend(), { name: "UnsupportedCidVersion" });
     });
@@ -141,9 +142,5 @@ describe("Add Offchain Message", function () {
             const response: MessageResponse = get.content[get.content.length - 1];
             assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
         });
-    });
-
-    after(async function() {
-        ipfs_node.stop();
     });
 });

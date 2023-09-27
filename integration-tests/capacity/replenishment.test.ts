@@ -48,7 +48,7 @@ describe("Capacity Replenishment Testing: ", function () {
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // confirm that we start with a full tank
-      await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
+      await ExtrinsicHelper.runToBlock(await getNextEpochBlock());
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
       assert.equal(expectedCapacity, remainingCapacity, "Our expected capacity from staking is wrong");
 
@@ -61,7 +61,7 @@ describe("Capacity Replenishment Testing: ", function () {
       // one more txn to deplete capacity more so this current remaining is different from when
       // we submitted the first message.
       await call.payWithCapacity(-1);
-      await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
+      await ExtrinsicHelper.runToBlock(await getNextEpochBlock());
 
       // this should cause capacity to be refilled and then deducted by the cost of one message.
       await call.payWithCapacity(-1);
@@ -118,7 +118,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
       // go to next epoch
       let nextEpochBlock = await getNextEpochBlock();
-      await ExtrinsicHelper.run_to_block(nextEpochBlock);
+      await ExtrinsicHelper.runToBlock(nextEpochBlock);
 
       let remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
       // double check we still do not have enough to send another message
@@ -148,7 +148,7 @@ async function drainCapacity(call, stakeProviderId: u64, stakeKeys: KeyringPair)
   const callCapacityCost = totalCapacity - remainingCapacity;
 
   // Run them out of funds, but don't flake just because it landed near an epoch boundary.
-  await ExtrinsicHelper.run_to_block(await getNextEpochBlock());
+  await ExtrinsicHelper.runToBlock(await getNextEpochBlock());
   const callsBeforeEmpty = Math.floor(Number(totalCapacity) / Number(callCapacityCost));
   const nonce = await getNonce(stakeKeys);
   await Promise.all(Array.from({ length: callsBeforeEmpty }, (_, k) => call.payWithCapacity(nonce + k)));

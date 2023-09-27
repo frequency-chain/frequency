@@ -4,8 +4,9 @@ import { CHAIN_ENVIRONMENT, devAccounts, rococoAccounts } from "./helpers";
 
 export let EXISTENTIAL_DEPOSIT: bigint;
 
-exports.mochaHooks = {
+export const mochaHooks = {
     async beforeAll() {
+
         await ExtrinsicHelper.initialize();
 
         if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {

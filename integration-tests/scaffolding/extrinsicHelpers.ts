@@ -5,7 +5,7 @@ import {Compact, u128, u16, u32, u64, Vec, Option, Bool} from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import { getBlockNumber, log, getDefaultFundingSource, Sr25519Signature} from "./helpers";
+import { getBlockNumber, log, getDefaultFundingSource, Sr25519Signature, hasRelayChain} from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -414,14 +414,15 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.utility.forceBatch(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
-    public static async mine() {
-      await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
-    }
-
-    public static async run_to_block(blockNumber: number) {
+    public static async runToBlock(blockNumber: number) {
       let currentBlock = await getBlockNumber();
       while (currentBlock < blockNumber) {
-        await ExtrinsicHelper.mine();
+        // In Rococo, just wait
+        if (hasRelayChain()) {
+            await new Promise((r) => setTimeout(r, 4_000));
+        } else {
+            await ExtrinsicHelper.createBlock();
+        }
         currentBlock = await getBlockNumber();
       }
     }

@@ -81,8 +81,6 @@ ignore = [
     # Substrate dependency deprecation
     #   See https://github.com/paritytech/substrate/issues/12430
     "RUSTSEC-2021-0139",
-    # Substrate dependency. Does not effect WASM and dependencies do not appear to use effected functions
-    "RUSTSEC-2020-0071",
     # Substrate depednency
     #    Windows issue, does not effect Frequency
     "RUSTSEC-2021-0145",
@@ -90,9 +88,6 @@ ignore = [
     "RUSTSEC-2020-0168",
     # ed25519-dalek does not have a release for the changed apis yet
     "RUSTSEC-2022-0093",
-    # There is a possibility of DOS attack in webpki certification validation
-    # https://github.com/briansmith/webpki/issues/69
-    "RUSTSEC-2023-0052"
 ]
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories
