@@ -726,11 +726,15 @@ jobs:
           echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
       - name: Generate Release Notes
         working-directory: tools/ci/release-notes
+        env:
+          CHANGELOG: ${{steps.sanitize-changelog.outputs.sanitized}}
+          RUNTIME_INFO_TESTNET: ${{steps.get-runtimes-info.outputs.runtime_info_rococo}}
+          RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
         run: |
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
-            '${{steps.sanitize-changelog.outputs.sanitized}}' \
-            '${{steps.get-runtimes-info.outputs.runtime_info_rococo}}' \
-            '${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}' \
+            "${CHANGELOG}" \
+            "${RUNTIME_INFO_TESTNET}" \
+            "${RUNTIME_INFO_MAINNET}" \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
