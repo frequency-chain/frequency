@@ -689,10 +689,11 @@ jobs:
       - name: Sanitize Changelog
         id: sanitize-changelog
         shell: bash
+        env:
+          CHANGELOG: ${{steps.build-changelog.outputs.changelog}}
         run: |
-          changelog='${{steps.build-changelog.outputs.changelog}}'
           echo "-------------------------------------------------"
-          clean="${changelog//[\`\[\]$'\n']/}"
+          clean="${CHANGELOG//[\`\[\]$'\n']/}"
           echo "sanitized: $clean"
           echo "sanitized=$clean" >> $GITHUB_OUTPUT
       - name: Get Polkadot Version
