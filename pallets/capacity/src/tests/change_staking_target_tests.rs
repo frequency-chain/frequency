@@ -266,7 +266,7 @@ fn change_staking_target_test_parametric_validity() {
 				from_target,
 				to_target,
 				retarget_amount: staked_amount,
-				expected_err: Error::<Test>::StakingAccountNotFound,
+				expected_err: Error::<Test>::NotAStakingAccount,
 			},
 			// // from and to providers are valid, but zero amount too small
 			TestCase {
