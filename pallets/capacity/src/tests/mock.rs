@@ -15,6 +15,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill,
 };
+use sp_std::ops::Mul;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -161,6 +162,10 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		_payload: StakingRewardClaim<Test>,
 	) -> bool {
 		true
+	}
+
+	fn capacity_boost(amount: BalanceOf<Test>) -> BalanceOf<Test> {
+		Perbill::from_percent(5u32).mul(amount)
 	}
 }
 
