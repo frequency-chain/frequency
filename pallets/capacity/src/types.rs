@@ -348,6 +348,10 @@ pub trait StakingRewardsProvider<T: Config> {
 		proof: Self::Hash,
 		payload: StakingRewardClaim<T>,
 	) -> bool;
+
+	/// Return the boost factor in capacity per token staked.
+	/// This factor is > 0 and < 1 token
+	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
 }
 
 /// The information needed to track a Reward Era

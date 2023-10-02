@@ -581,6 +581,7 @@ impl<T: Config> Pallet<T> {
 	) -> Result<BalanceOf<T>, DispatchError> {
 		staking_account.deposit(amount).ok_or(ArithmeticError::Overflow)?;
 
+		// TODO: alter depending on staking type
 		let capacity = Self::capacity_generated(amount);
 		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
 		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
@@ -706,7 +707,7 @@ impl<T: Config> Pallet<T> {
 		Ok(capacity_to_withdraw)
 	}
 
-	/// Calculates Capacity generated for given FRQCY
+	/// Calculates Capacity generated for given FRQCY regardless of staking type
 	fn capacity_generated(amount: BalanceOf<T>) -> BalanceOf<T> {
 		let cpt = T::CapacityPerToken::get();
 		cpt.mul(amount).into()
@@ -829,7 +830,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		Ok(())
 	}
 
-	/// Increase all totals for the MSA's CapacityDetails.
+	/// Increase all totals for the MSA's CapacityDetails. (unused)
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
@@ -918,5 +919,11 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		_payload: StakingRewardClaim<T>,
 	) -> bool {
 		true
+	}
+
+	/// How much, as a percentage of staked token, to boost a targeted Provider when
+	/// staking.
+	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T> {
+		Perbill::from_percent(5u32).mul(amount)
 	}
 }
