@@ -29,7 +29,7 @@ pub trait Nontransferable {
 	/// Reduce Capacity of an MSA account by amount.
 	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError>;
 
-	/// Increase Capacity of an MSA account by an amount.
+	/// Increase Capacity of an MSA account by an amount. (unused)
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError>;
 }
 
