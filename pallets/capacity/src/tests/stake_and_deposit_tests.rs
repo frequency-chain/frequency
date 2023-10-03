@@ -362,7 +362,7 @@ fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 		let target: MessageSourceId = 1;
 		let amount = 0;
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
+			Capacity::ensure_can_stake(&account, &target, &amount, &MaximumCapacity),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
@@ -384,8 +384,8 @@ fn increase_stake_and_issue_capacity_errors_with_overflow() {
 			Capacity::increase_stake_and_issue_capacity(
 				&staker,
 				&mut staking_account,
-				target,
-				overflow_amount
+				&target,
+				&overflow_amount
 			),
 			ArithmeticError::Overflow
 		);
@@ -400,7 +400,7 @@ fn ensure_can_stake_errors_invalid_target() {
 		let amount = 1;
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
+			Capacity::ensure_can_stake(&account, &target, &amount, &MaximumCapacity),
 			Error::<Test>::InvalidTarget
 		);
 	});
@@ -415,7 +415,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 		register_provider(target, String::from("Foo"));
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
+			Capacity::ensure_can_stake(&account, &target, &amount, &MaximumCapacity),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
@@ -431,7 +431,7 @@ fn ensure_can_stake_is_successful() {
 
 		let staking_details = StakingAccountDetails::<Test>::default();
 		assert_ok!(
-			Capacity::ensure_can_stake(&account, target, amount, &MaximumCapacity),
+			Capacity::ensure_can_stake(&account, &target, &amount, &MaximumCapacity),
 			(staking_details, BalanceOf::<Test>::from(10u64))
 		);
 	});
@@ -448,8 +448,8 @@ fn increase_stake_and_issue_capacity_is_successful() {
 		assert_ok!(Capacity::increase_stake_and_issue_capacity(
 			&staker,
 			&mut staking_account,
-			target,
-			amount
+			&target,
+			&amount
 		));
 
 		assert_eq!(staking_account.total, amount);
@@ -482,7 +482,7 @@ fn impl_deposit_is_successful() {
 			1u32,
 		);
 
-		assert_ok!(Capacity::deposit(target_msa_id, 5u32.into()),);
+		assert_ok!(Capacity::deposit(target_msa_id, 5u32.into(), 1u32.into()));
 	});
 }
 
@@ -491,8 +491,9 @@ fn impl_deposit_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
 		let amount = BalanceOf::<Test>::from(10u32);
+		let capacity_amount = BalanceOf::<Test>::from(2u32);
 		assert_noop!(
-			Capacity::deposit(target_msa_id, amount),
+			Capacity::deposit(target_msa_id, amount, capacity_amount),
 			Error::<Test>::TargetCapacityNotFound
 		);
 	});
