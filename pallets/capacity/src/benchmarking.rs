@@ -39,8 +39,8 @@ pub fn setup_provider_stake<T: Config>(
 	capacity_details.deposit(&staking_amount, &capacity_amount);
 
 	Capacity::<T>::set_staking_account(staker, &staking_account);
-	Capacity::<T>::set_target_details_for(staker, *target_id, target_details);
-	Capacity::<T>::set_capacity_for(*target_id, capacity_details);
+	Capacity::<T>::set_target_details_for(staker, target_id, &target_details);
+	Capacity::<T>::set_capacity_for(target_id, &capacity_details);
 }
 
 pub fn create_funded_account<T: Config>(
@@ -127,8 +127,8 @@ benchmarks! {
 		capacity_details.deposit(&staking_amount, &capacity_amount);
 
 		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
-		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
-		Capacity::<T>::set_capacity_for(target, capacity_details);
+		Capacity::<T>::set_target_details_for(&caller.clone(), &target, &target_details);
+		Capacity::<T>::set_capacity_for(&target, &capacity_details);
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
 	verify {
