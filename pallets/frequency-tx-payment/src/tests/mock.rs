@@ -362,5 +362,5 @@ fn create_capacity_for(target: MessageSourceId, amount: u64) {
 	let mut capacity_details = Capacity::get_capacity_for(target).unwrap_or_default();
 	let capacity: u64 = amount / (TEST_TOKEN_PER_CAPACITY as u64);
 	capacity_details.deposit(&amount, &capacity).unwrap();
-	Capacity::set_capacity_for(target, capacity_details);
+	Capacity::set_capacity_for(&target, &capacity_details);
 }

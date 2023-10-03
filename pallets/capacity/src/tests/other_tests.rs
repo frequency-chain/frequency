@@ -96,7 +96,7 @@ fn set_target_details_is_successful() {
 		target_details.amount = 10;
 		target_details.capacity = 10;
 
-		Capacity::set_target_details_for(&staker, target, target_details);
+		Capacity::set_target_details_for(&staker, &target, &target_details);
 
 		let stored_target_details = Capacity::get_target_for(&staker, target).unwrap();
 
@@ -120,7 +120,7 @@ fn set_capacity_details_is_successful() {
 				last_replenished_epoch: 1u32,
 			};
 
-		Capacity::set_capacity_for(target, capacity_details);
+		Capacity::set_capacity_for(&target, &capacity_details);
 
 		let stored_capacity_details = Capacity::get_capacity_for(target).unwrap();
 
