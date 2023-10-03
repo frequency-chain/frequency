@@ -4,17 +4,25 @@ use crate::{
 	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
 };
 use common_primitives::{
-	capacity::StakingType::{MaximumCapacity, ProviderBoost},
+	capacity::{
+		StakingType,
+		StakingType::{MaximumCapacity, ProviderBoost},
+	},
 	msa::MessageSourceId,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
-fn setup_provider(staker: u64, target: MessageSourceId, amount: u64) {
+fn setup_provider(staker: &u64, target: &MessageSourceId, amount: &u64) {
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
-	register_provider(target, provider_name);
-	if amount > 0 {
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount, ProviderBoost));
+	register_provider(*target, provider_name);
+	if amount.gt(&0u64) {
+		assert_ok!(Capacity::stake(
+			RuntimeOrigin::signed(staker.clone()),
+			*target,
+			*amount,
+			ProviderBoost
+		));
 	}
 }
 
@@ -29,8 +37,8 @@ fn do_retarget_happy_path() {
 		let from_amount = 20u64;
 		let to_amount = from_amount / 2;
 		let to_msa: MessageSourceId = 2;
-		setup_provider(staker, from_msa, from_amount);
-		setup_provider(staker, to_msa, to_amount);
+		setup_provider(&staker, &from_msa, &from_amount);
+		setup_provider(&staker, &to_msa, &to_amount);
 
 		// retarget half the stake to to_msa
 		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount));
@@ -56,13 +64,19 @@ fn do_retarget_happy_path() {
 		let to_capacity_details = Capacity::get_capacity_for(to_msa).unwrap();
 		assert_eq!(to_capacity_details, expected_to_details);
 
-		let expected_from_target_details: TestTargetDetails =
-			StakingTargetDetails { amount: 10, capacity: 1 };
+		let expected_from_target_details: TestTargetDetails = StakingTargetDetails {
+			amount: 10,
+			capacity: 1,
+			staking_type: StakingType::MaximumCapacity,
+		};
 		let from_target_details = Capacity::get_target_for(staker, from_msa).unwrap();
 		assert_eq!(from_target_details, expected_from_target_details);
 
-		let expected_to_target_details: TestTargetDetails =
-			StakingTargetDetails { amount: 20, capacity: 2 };
+		let expected_to_target_details: TestTargetDetails = StakingTargetDetails {
+			amount: 20,
+			capacity: 2,
+			staking_type: StakingType::MaximumCapacity,
+		};
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
 	})
@@ -75,8 +89,8 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
 		let amount = 10u64;
-		setup_provider(staker, from_msa, amount);
-		setup_provider(staker, to_msa, amount);
+		setup_provider(&staker, &from_msa, &amount);
+		setup_provider(&staker, &to_msa, &amount);
 
 		// stake additional to provider from another Msa, doesn't matter which type.
 		// total staked to from_msa is now 22u64.
@@ -111,8 +125,11 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 
 		assert!(Capacity::get_target_for(staker, from_msa).is_none());
 
-		let expected_to_target_details: TestTargetDetails =
-			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
+		let expected_to_target_details: TestTargetDetails = StakingTargetDetails {
+			amount: 2 * amount,
+			capacity: 2,
+			staking_type: StakingType::MaximumCapacity,
+		};
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
 
@@ -128,8 +145,8 @@ fn change_staking_starget_emits_event_on_success() {
 		let from_amount = 20u64;
 		let to_amount = from_amount / 2;
 		let to_msa: MessageSourceId = 2;
-		setup_provider(staker, from_msa, from_amount);
-		setup_provider(staker, to_msa, to_amount);
+		setup_provider(&staker, &from_msa, &from_amount);
+		setup_provider(&staker, &to_msa, &to_amount);
 
 		assert_ok!(Capacity::change_staking_target(
 			RuntimeOrigin::signed(staker),
@@ -155,8 +172,8 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 
 		let max_chunks: u32 = <Test as Config>::MaxUnlockingChunks::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
-		setup_provider(staker, from_msa, staking_amount);
-		setup_provider(staker, to_msa, 10);
+		setup_provider(&staker, &from_msa, &staking_amount);
+		setup_provider(&staker, &to_msa, &10u64);
 
 		let retarget_amount = 10u64;
 		for _i in 0..(max_chunks) {
@@ -187,8 +204,8 @@ fn change_staking_target_garbage_collects_thawed_chunks() {
 		let staking_account = 200u64;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
-		setup_provider(staking_account, from_target, staked_amount);
-		setup_provider(staking_account, to_target, staked_amount);
+		setup_provider(&staking_account, &from_target, &staked_amount);
+		setup_provider(&staking_account, &to_target, &staked_amount);
 
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 20, started_at: 100 });
 		let max_chunks = <Test as Config>::MaxUnlockingChunks::get();
@@ -233,9 +250,9 @@ fn change_staking_target_test_parametric_validity() {
 		let to_target_not_provider: MessageSourceId = 2;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
-		setup_provider(from_account, from_target_not_staked, 0);
-		setup_provider(from_account, from_target, staked_amount);
-		setup_provider(from_account, to_target, staked_amount);
+		setup_provider(&from_account, &from_target_not_staked, &0u64);
+		setup_provider(&from_account, &from_target, &staked_amount);
+		setup_provider(&from_account, &to_target, &staked_amount);
 
 		assert_ok!(Capacity::stake(
 			RuntimeOrigin::signed(from_account),
@@ -268,7 +285,7 @@ fn change_staking_target_test_parametric_validity() {
 				retarget_amount: staked_amount,
 				expected_err: Error::<Test>::NotAStakingAccount,
 			},
-			// // from and to providers are valid, but zero amount too small
+			// from and to providers are valid, but zero amount too small
 			TestCase {
 				from_account,
 				from_target,
@@ -276,7 +293,7 @@ fn change_staking_target_test_parametric_validity() {
 				retarget_amount: 0,
 				expected_err: Error::<Test>::StakingAmountBelowMinimum,
 			},
-			// // nonzero amount below minimum is still too small
+			// nonzero amount below minimum is still too small
 			TestCase {
 				from_account,
 				from_target,
@@ -284,7 +301,7 @@ fn change_staking_target_test_parametric_validity() {
 				retarget_amount: 9,
 				expected_err: Error::<Test>::StakingAmountBelowMinimum,
 			},
-			// // account is staked with from-target, but to-target is not a provider
+			// account is staked with from-target, but to-target is not a provider
 			TestCase {
 				from_account,
 				from_target,
