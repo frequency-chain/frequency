@@ -9,7 +9,11 @@ fn impl_staking_target_details_increase_by() {
 
 	assert_eq!(
 		staking_target,
-		StakingTargetDetails::<Test> { amount: BalanceOf::<Test>::from(10u64), capacity: 10 }
+		StakingTargetDetails::<Test> {
+			amount: BalanceOf::<Test>::from(10u64),
+			capacity: 10,
+			staking_type: StakingType::MaximumCapacity,
+		}
 	)
 }
 
@@ -18,6 +22,7 @@ fn staking_target_details_withdraw_reduces_staking_and_capacity_amounts() {
 	let mut staking_target_details = StakingTargetDetails::<Test> {
 		amount: BalanceOf::<Test>::from(25u64),
 		capacity: BalanceOf::<Test>::from(30u64),
+		staking_type: StakingType::MaximumCapacity,
 	};
 	staking_target_details.withdraw(10, 10);
 
@@ -26,6 +31,7 @@ fn staking_target_details_withdraw_reduces_staking_and_capacity_amounts() {
 		StakingTargetDetails::<Test> {
 			amount: BalanceOf::<Test>::from(15u64),
 			capacity: BalanceOf::<Test>::from(20u64),
+			staking_type: StakingType::MaximumCapacity,
 		}
 	)
 }
@@ -35,6 +41,7 @@ fn staking_target_details_withdraw_reduces_to_zero_if_balance_is_below_minimum()
 	let mut staking_target_details = StakingTargetDetails::<Test> {
 		amount: BalanceOf::<Test>::from(10u64),
 		capacity: BalanceOf::<Test>::from(20u64),
+		staking_type: StakingType::MaximumCapacity,
 	};
 	staking_target_details.withdraw(8, 16);
 	assert_eq!(staking_target_details, StakingTargetDetails::<Test>::default());

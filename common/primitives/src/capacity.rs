@@ -20,17 +20,22 @@ impl TargetValidator for () {
 
 /// A trait for Non-transferable asset.
 pub trait Nontransferable {
-	/// Scalar type for representing balance of an account.
+	/// Scalar type for representing staked token and capacity balances.
 	type Balance: Balance;
 
-	/// The balance Capacity for an MSA account.
+	/// The balance Capacity for an MSA.
 	fn balance(msa_id: MessageSourceId) -> Self::Balance;
 
-	/// Reduce Capacity of an MSA account by amount.
-	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError>;
+	/// Reduce Capacity of an MSA by amount.
+	fn deduct(msa_id: MessageSourceId, capacity_amount: Self::Balance)
+		-> Result<(), DispatchError>;
 
-	/// Increase Capacity of an MSA account by an amount. (unused)
-	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError>;
+	/// Increase Staked Token + Capacity amounts of an MSA. (unused)
+	fn deposit(
+		msa_id: MessageSourceId,
+		token_amount: Self::Balance,
+		capacity_amount: Self::Balance,
+	) -> Result<(), DispatchError>;
 }
 
 /// A trait for replenishing Capacity.
