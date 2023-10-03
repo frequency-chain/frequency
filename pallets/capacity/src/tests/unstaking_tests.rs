@@ -1,7 +1,10 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
-use common_primitives::{capacity::StakingType::MaximumCapacity, msa::MessageSourceId};
+use common_primitives::{
+	capacity::{StakingType, StakingType::MaximumCapacity},
+	msa::MessageSourceId,
+};
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
@@ -58,6 +61,7 @@ fn unstake_happy_path() {
 			StakingTargetDetails::<Test> {
 				amount: BalanceOf::<Test>::from(60u64),
 				capacity: BalanceOf::<Test>::from(6u64),
+				staking_type: StakingType::MaximumCapacity,
 			}
 		);
 

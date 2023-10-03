@@ -184,11 +184,17 @@ pub struct StakingTargetDetails<T: Config> {
 	pub amount: BalanceOf<T>,
 	/// The total Capacity that an MSA received.
 	pub capacity: BalanceOf<T>,
+	/// The type of staking, which determines ultimate capacity per staked token.
+	pub staking_type: StakingType,
 }
 
 impl<T: Config> Default for StakingTargetDetails<T> {
 	fn default() -> Self {
-		Self { amount: Zero::zero(), capacity: Zero::zero() }
+		Self {
+			amount: Zero::zero(),
+			capacity: Zero::zero(),
+			staking_type: StakingType::MaximumCapacity,
+		}
 	}
 }
 

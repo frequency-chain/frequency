@@ -382,14 +382,14 @@ pub mod pallet {
 			let staker = ensure_signed(origin)?;
 
 			let (mut staking_account, actual_amount) =
-				Self::ensure_can_stake(&staker, target, amount, &staking_type)?;
+				Self::ensure_can_stake(&staker, &target, &amount, &staking_type)?;
 			staking_account.staking_type = staking_type;
 
 			let capacity = Self::increase_stake_and_issue_capacity(
 				&staker,
 				&mut staking_account,
-				target,
-				actual_amount,
+				&target,
+				&actual_amount,
 			)?;
 
 			Self::deposit_event(Event::Staked {
@@ -537,12 +537,12 @@ impl<T: Config> Pallet<T> {
 	///
 	fn ensure_can_stake(
 		staker: &T::AccountId,
-		target: MessageSourceId,
-		amount: BalanceOf<T>,
+		target: &MessageSourceId,
+		amount: &BalanceOf<T>,
 		staking_type: &StakingType,
 	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
-		ensure!(amount > Zero::zero(), Error::<T>::StakingAmountBelowMinimum);
-		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
+		ensure!(amount > &Zero::zero(), Error::<T>::StakingAmountBelowMinimum);
+		ensure!(T::TargetValidator::validate(*target), Error::<T>::InvalidTarget);
 
 		let staking_account: StakingAccountDetails<T> =
 			Self::get_staking_account_for(&staker).unwrap_or_default();
@@ -554,7 +554,7 @@ impl<T: Config> Pallet<T> {
 			);
 		}
 
-		let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
+		let stakable_amount = staking_account.get_stakable_amount_for(&staker, *amount);
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
 
@@ -576,22 +576,22 @@ impl<T: Config> Pallet<T> {
 	fn increase_stake_and_issue_capacity(
 		staker: &T::AccountId,
 		staking_account: &mut StakingAccountDetails<T>,
-		target: MessageSourceId,
-		amount: BalanceOf<T>,
+		target: &MessageSourceId,
+		amount: &BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		staking_account.deposit(amount).ok_or(ArithmeticError::Overflow)?;
+		staking_account.deposit(*amount).ok_or(ArithmeticError::Overflow)?;
 
-		// TODO: alter depending on staking type
-		let capacity = Self::capacity_generated(amount);
-		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
-		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
+		// TODO: StakingType
+		let capacity = Self::capacity_generated(*amount);
+		let mut target_details = Self::get_target_for(staker, target).unwrap_or_default();
+		target_details.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
-		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
+		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
-		Self::set_staking_account(&staker, staking_account);
-		Self::set_target_details_for(&staker, target, target_details);
-		Self::set_capacity_for(target, capacity_details);
+		Self::set_staking_account(staker, staking_account);
+		Self::set_target_details_for(staker, target, &target_details);
+		Self::set_capacity_for(target, &capacity_details);
 
 		Ok(capacity)
 	}
@@ -623,8 +623,8 @@ impl<T: Config> Pallet<T> {
 	/// Sets target account details.
 	fn set_target_details_for(
 		staker: &T::AccountId,
-		target: MessageSourceId,
-		target_details: StakingTargetDetails<T>,
+		target: &MessageSourceId,
+		target_details: &StakingTargetDetails<T>,
 	) {
 		if target_details.amount.is_zero() {
 			StakingTargetLedger::<T>::remove(staker, target);
@@ -635,8 +635,8 @@ impl<T: Config> Pallet<T> {
 
 	/// Sets targets Capacity.
 	pub fn set_capacity_for(
-		target: MessageSourceId,
-		capacity_details: CapacityDetails<BalanceOf<T>, T::EpochNumber>,
+		target: &MessageSourceId,
+		capacity_details: &CapacityDetails<BalanceOf<T>, T::EpochNumber>,
 	) {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
@@ -677,6 +677,7 @@ impl<T: Config> Pallet<T> {
 	/// If withdrawing `amount` would take the StakingTargetDetails below the minimum staking amount,
 	/// the entire amount is transferred and the record will be deleted. CapacityDetails will not
 	/// be checked.
+	/// Capacity reduction amount also depends on staking type.
 	fn reduce_capacity(
 		unstaker: &T::AccountId,
 		target: MessageSourceId,
@@ -690,6 +691,7 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
+		// TODO: StakingType
 		let capacity_to_withdraw = Self::calculate_capacity_reduction(
 			amount,
 			capacity_details.total_tokens_staked,
@@ -701,8 +703,8 @@ impl<T: Config> Pallet<T> {
 			staking_target_details.withdraw(amount, capacity_to_withdraw);
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
-		Self::set_capacity_for(target, capacity_details);
-		Self::set_target_details_for(unstaker, target, staking_target_details);
+		Self::set_capacity_for(&target, &capacity_details);
+		Self::set_target_details_for(unstaker, &target, &staking_target_details);
 
 		Ok(capacity_to_withdraw)
 	}
@@ -786,6 +788,7 @@ impl<T: Config> Pallet<T> {
 		to_msa: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(), DispatchError> {
+		// TODO: fix reduce_capacity signature
 		let capacity_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
 
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
@@ -798,12 +801,14 @@ impl<T: Config> Pallet<T> {
 			.deposit(amount, &capacity_withdrawn)
 			.ok_or(ArithmeticError::Overflow)?;
 
-		Self::set_target_details_for(staker, *to_msa, to_msa_target);
-		Self::set_capacity_for(*to_msa, capacity_details);
+		Self::set_target_details_for(staker, to_msa, &to_msa_target);
+		Self::set_capacity_for(to_msa, &capacity_details);
 		Self::add_change_staking_target_unlock_chunk(staker, amount)
 	}
 }
 
+/// Nontransferable functions are intended for capacity spend and recharge.
+/// Implementations of Nontransferable MUST NOT be concerned with StakingType.
 impl<T: Config> Nontransferable for Pallet<T> {
 	type Balance = BalanceOf<T>;
 
@@ -815,27 +820,37 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		}
 	}
 
-	/// Spend capacity: reduce remaining capacity by the given amount
-	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+	/// Spend capacity: reduce remaining (i.e. available to spend on messages)
+	/// capacity by the given capacity_amount
+	fn deduct(
+		msa_id: MessageSourceId,
+		capacity_amount: Self::Balance,
+	) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
 		capacity_details
-			.deduct_capacity_by_amount(amount)
+			.deduct_capacity_by_amount(capacity_amount)
 			.map_err(|_| Error::<T>::InsufficientCapacityBalance)?;
 
-		Self::set_capacity_for(msa_id, capacity_details);
+		Self::set_capacity_for(&msa_id, &capacity_details);
 
-		Self::deposit_event(Event::CapacityWithdrawn { msa_id, amount });
+		Self::deposit_event(Event::CapacityWithdrawn { msa_id, amount: capacity_amount });
 		Ok(())
 	}
 
-	/// Increase all totals for the MSA's CapacityDetails. (unused)
-	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
+	/// Increase all totals for the MSA's CapacityDetails.
+	/// Capacity increase relative to token amount must be calculated in advance.
+	fn deposit(
+		msa_id: MessageSourceId,
+		token_amount: Self::Balance,
+		capacity_amount: Self::Balance,
+	) -> Result<(), DispatchError> {
 		let mut capacity_details =
 			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
-		capacity_details.deposit(&amount, &Self::capacity_generated(amount));
-		Self::set_capacity_for(msa_id, capacity_details);
+		capacity_details.deposit(&token_amount, &capacity_amount);
+		Self::set_capacity_for(&msa_id, &capacity_details);
+		// TODO: deposit CapacityDeposited event, new event
 		Ok(())
 	}
 }
@@ -849,13 +864,14 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 		capacity_details.replenish_all(&Self::get_current_epoch());
 
-		Self::set_capacity_for(msa_id, capacity_details);
+		Self::set_capacity_for(&msa_id, &capacity_details);
 
 		Ok(())
 	}
 
 	/// Change: now calls new fn replenish_by_amount on the capacity_details,
-	/// which does what this (actually Self::deposit) used to do
+	/// which does what this (actually Self::deposit) used to do.
+	/// Currently unused.
 	fn replenish_by_amount(
 		msa_id: MessageSourceId,
 		amount: Self::Balance,
@@ -921,8 +937,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		true
 	}
 
-	/// How much, as a percentage of staked token, to boost a targeted Provider when
-	/// staking.
+	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T> {
 		Perbill::from_percent(5u32).mul(amount)
 	}
