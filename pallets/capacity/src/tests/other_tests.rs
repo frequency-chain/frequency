@@ -96,7 +96,7 @@ fn set_target_details_is_successful() {
 		target_details.amount = 10;
 		target_details.capacity = 10;
 
-		Capacity::set_target_details_for(&staker, target, target_details);
+		Capacity::set_target_details_for(&staker, &target, &target_details);
 
 		let stored_target_details = Capacity::get_target_for(&staker, target).unwrap();
 
@@ -120,7 +120,7 @@ fn set_capacity_details_is_successful() {
 				last_replenished_epoch: 1u32,
 			};
 
-		Capacity::set_capacity_for(target, capacity_details);
+		Capacity::set_capacity_for(&target, &capacity_details);
 
 		let stored_capacity_details = Capacity::get_capacity_for(target).unwrap();
 
@@ -193,13 +193,13 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 fn impl_balance_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = 10u32;
-		let total_available_amount = 10u32;
+		let remaining_amount = 10u64;
+		let total_available_amount = 10u64;
 
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
-			remaining_amount.into(),
-			total_available_amount.into(),
+			remaining_amount,
+			total_available_amount,
 			1u32,
 		);
 
