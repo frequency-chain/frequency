@@ -75,6 +75,7 @@ use common_primitives::capacity::StakingType;
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
+
 pub mod types;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -89,6 +90,7 @@ type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 const STAKING_ID: LockIdentifier = *b"netstkng";
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -383,13 +385,13 @@ pub mod pallet {
 
 			let (mut staking_account, actual_amount) =
 				Self::ensure_can_stake(&staker, &target, &amount, &staking_type)?;
-			staking_account.staking_type = staking_type;
 
 			let capacity = Self::increase_stake_and_issue_capacity(
 				&staker,
 				&mut staking_account,
 				&target,
 				&actual_amount,
+				&staking_type,
 			)?;
 
 			Self::deposit_event(Event::Staked {
@@ -578,11 +580,16 @@ impl<T: Config> Pallet<T> {
 		staking_account: &mut StakingAccountDetails<T>,
 		target: &MessageSourceId,
 		amount: &BalanceOf<T>,
+		staking_type: &StakingType,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		staking_account.deposit(*amount).ok_or(ArithmeticError::Overflow)?;
 
-		// TODO: StakingType
-		let capacity = Self::capacity_generated(*amount);
+		let capacity = if staking_type.eq(&StakingType::ProviderBoost) {
+			Self::capacity_generated(T::RewardsProvider::capacity_boost(*amount))
+		} else {
+			Self::capacity_generated(*amount)
+		};
+
 		let mut target_details = Self::get_target_for(staker, target).unwrap_or_default();
 		target_details.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
@@ -691,12 +698,20 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		// TODO: StakingType
-		let capacity_to_withdraw = Self::calculate_capacity_reduction(
-			amount,
-			capacity_details.total_tokens_staked,
-			capacity_details.total_capacity_issued,
-		);
+		let capacity_to_withdraw =
+			if staking_target_details.staking_type.eq(&StakingType::ProviderBoost) {
+				Self::calculate_capacity_reduction(
+					T::RewardsProvider::capacity_boost(amount),
+					capacity_details.total_tokens_staked,
+					capacity_details.total_capacity_issued,
+				)
+			} else {
+				Self::calculate_capacity_reduction(
+					amount,
+					capacity_details.total_tokens_staked,
+					capacity_details.total_capacity_issued,
+				)
+			};
 		// this call will return an amount > than requested if the resulting StakingTargetDetails balance
 		// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 		let (actual_amount, actual_capacity) =
@@ -788,7 +803,6 @@ impl<T: Config> Pallet<T> {
 		to_msa: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(), DispatchError> {
-		// TODO: fix reduce_capacity signature
 		let capacity_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
 
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
@@ -839,8 +853,9 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		Ok(())
 	}
 
-	/// Increase all totals for the MSA's CapacityDetails.
-	/// Capacity increase relative to token amount must be calculated in advance.
+	/// Increase all totals for the MSA's CapacityDetails. Currently unused.
+	/// Capacity increase relative to token amount must be calculated in advance;
+	/// this knows nothing about StakingType!
 	fn deposit(
 		msa_id: MessageSourceId,
 		token_amount: Self::Balance,
@@ -897,7 +912,6 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 
 	// Calculate the size of the reward pool for the current era, based on current staked token
 	// and the other determined factors of the current economic model
-	// Currently set to 10% of total staked token.
 	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError> {
 		let current_era_info = CurrentEraInfo::<T>::get();
 		let current_staked =
@@ -905,6 +919,8 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		if current_staked.total_staked_token.is_zero() {
 			return Ok(BalanceOf::<T>::zero())
 		}
+
+		// For now reward pool size is set to 10% of total staked token
 		Ok(current_staked
 			.total_staked_token
 			.checked_div(&BalanceOf::<T>::from(10u8))
@@ -912,7 +928,6 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 	}
 
 	// Performs range checks plus a reward calculation based on economic model for the era range
-	// Currently just rewards 1 unit per era for a valid range since there is no history storage
 	fn staking_reward_total(
 		_account_id: T::AccountId,
 		from_era: T::RewardEra,
@@ -924,7 +939,10 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
 		let current_era_info = Self::get_current_era();
 		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
+
+		// For now rewards 1 unit per era for a valid range since there is no history storage
 		let per_era = BalanceOf::<T>::one();
+
 		let num_eras = to_era.saturating_sub(from_era);
 		Ok(per_era.saturating_mul(num_eras.into()))
 	}
