@@ -51,7 +51,8 @@ fn test_reward_pool_size_happy_path() {
 			TestCase { total_staked: 0, expected_reward_pool: 0 },
 			TestCase { total_staked: 4, expected_reward_pool: 0 },
 			TestCase { total_staked: 10, expected_reward_pool: 1 },
-			TestCase { total_staked: 333, expected_reward_pool: 33 },
+			TestCase { total_staked: 3333333, expected_reward_pool: 333333 },
+			TestCase { total_staked: 66666666, expected_reward_pool: 666666 },
 		];
 		let era = 20u32;
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: era, started_at: 200u32 });
