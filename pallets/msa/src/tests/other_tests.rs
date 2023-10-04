@@ -4,6 +4,8 @@ use frame_support::{
 	BoundedBTreeMap,
 };
 
+use frame_system::pallet_prelude::BlockNumberFor;
+
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::{traits::Zero, MultiSignature};
 
@@ -601,14 +603,14 @@ fn delegation_default_trait_impl() {
 	new_test_ext().execute_with(|| {
 		let delegation: Delegation<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		> = Default::default();
 
 		let expected = Delegation {
 			schema_permissions: BoundedBTreeMap::<
 				SchemaId,
-				<Test as frame_system::Config>::BlockNumber,
+				BlockNumberFor<Test>,
 				<Test as Config>::MaxSchemaGrantsPerDelegation,
 			>::default(),
 			revoked_at: Default::default(),

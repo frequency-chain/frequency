@@ -4,7 +4,6 @@ use common_primitives::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
-	node::Header,
 	schema::*,
 };
 
@@ -17,12 +16,11 @@ use frame_system as system;
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	DispatchError,
+	BuildStorage, DispatchError,
 };
 use std::fmt::Formatter;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
 pub const IPFS_SCHEMA_ID: SchemaId = 50;
@@ -35,12 +33,9 @@ pub const DUMMY_CID_BASE64: &[u8; 49] = b"mAVUSIIHV/4xQ+PHYKfE/mphmzPEr4Ydxk+tkK
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		MessagesPallet: pallet_messages::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -52,13 +47,12 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
+	type Block = Block;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
@@ -77,10 +71,10 @@ pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
 parameter_types! {
-	// Max payload size was picked specifically to be large enough to accomodate
-	// a CIDv1 using SHA2-256, but too small to accomodate CIDv1 w/SHA2-512.
+	// Max payload size was picked specifically to be large enough to accommodate
+	// a CIDv1 using SHA2-256, but too small to accommodate CIDv1 w/SHA2-512.
 	// This is purely so that we can test the error condition. Real world configuration
-	// should have this set large enough to accomodate the largest possible CID.
+	// should have this set large enough to accommodate the largest possible CID.
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
 	pub const MaxMessagePayloadSizeBytes: u32 = 73;
@@ -229,7 +223,7 @@ impl pallet_messages::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext

@@ -9,14 +9,16 @@ use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
+
+use futures::FutureExt;
 use sc_service::{Configuration, TaskManager};
-use sc_transaction_pool_api::TransactionPool;
+use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
 use sp_api::{ProvideRuntimeApi, TransactionFor};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::{sync::Arc, task::Poll};
+use std::task::Poll;
 
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
@@ -62,23 +64,26 @@ pub fn frequency_dev_sealing(
 
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
-		let offchain_workers = Arc::new(sc_offchain::OffchainWorkers::new_with_options(
-			client.clone(),
-			sc_offchain::OffchainWorkerOptions { enable_http_requests: false },
-		));
+		let offchain_workers =
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				is_validator: config.role.is_authority(),
+				keystore: Some(keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				enable_http_requests: false,
+				custom_extensions: |_| vec![],
+			});
 
 		// Spawn a task to handle off-chain notifications.
 		// This task is responsible for processing off-chain events or data for the blockchain.
 		task_manager.spawn_handle().spawn(
-			"offchain-notifications",
-			None,
-			sc_offchain::notification_future(
-				config.role.is_authority(),
-				client.clone(),
-				offchain_workers,
-				task_manager.spawn_handle(),
-				network.clone(),
-			),
+			"offchain-workers-runner",
+			"offchain-work",
+			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
 		);
 	}
 

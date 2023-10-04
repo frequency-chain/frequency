@@ -23,7 +23,7 @@ pub struct AddKeyData<T: Config> {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// The block number at which the signed proof for add_public_key_to_msa expires.
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 	/// The public key to be added.
 	pub new_public_key: T::AccountId,
 }
@@ -74,7 +74,7 @@ pub trait PermittedDelegationSchemas<T: Config> {
 	fn try_get_mut_schemas(
 		&mut self,
 		schema_ids: Vec<SchemaId>,
-		block_number: T::BlockNumber,
+		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
 		for schema_id in schema_ids.into_iter() {
 			self.try_get_mut_schema(schema_id, block_number)?;
@@ -86,13 +86,13 @@ pub trait PermittedDelegationSchemas<T: Config> {
 	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,
-		block_number: T::BlockNumber,
+		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError>;
 }
 
 /// Implementation of SchemaPermission trait on Delegation type.
 impl<T: Config> PermittedDelegationSchemas<T>
-	for Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>
+	for Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>
 {
 	/// Attempt to insert a new schema. Dispatches error when the max allowed schemas are exceeded.
 	fn try_insert_schema(&mut self, schema_id: SchemaId) -> Result<(), DispatchError> {
@@ -106,7 +106,7 @@ impl<T: Config> PermittedDelegationSchemas<T>
 	fn try_get_mut_schema(
 		&mut self,
 		schema_id: SchemaId,
-		block_number: T::BlockNumber,
+		block_number: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
 		let schema = self
 			.schema_permissions

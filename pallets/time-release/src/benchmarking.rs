@@ -5,15 +5,14 @@ use crate::Pallet as TimeReleasePallet;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account, whitelisted_caller};
 use frame_support::traits::{Currency, Imbalance};
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::{traits::TrailingZeroInput, SaturatedConversion};
 use sp_std::prelude::*;
 
 pub const DOLLARS: u32 = 10u32.saturating_pow(8u32);
 
-type BlockNumberOf<T> = <T as frame_system::Config>::BlockNumber;
 pub use crate::types::ReleaseSchedule;
-pub type Schedule<T> = ReleaseSchedule<BlockNumberOf<T>, BalanceOf<T>>;
+pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 const SEED: u32 = 0;
 

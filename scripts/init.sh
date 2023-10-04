@@ -57,7 +57,6 @@ start-frequency)
     --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
-    --execution=wasm \
     --force-authoring \
     --port $((30333)) \
     --rpc-port $((9944)) \
@@ -84,7 +83,6 @@ start-frequency-instant)
     -lruntime=debug \
     --sealing=instant \
     --wasm-execution=compiled \
-    --execution=wasm \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
@@ -112,35 +110,6 @@ start-frequency-interval)
     -lruntime=debug \
     --sealing=interval \
     --wasm-execution=compiled \
-    --execution=wasm \
-    --no-telemetry \
-    --no-prometheus \
-    --port $((30333)) \
-    --rpc-port $((9944)) \
-    --rpc-external \
-    --rpc-cors all \
-    --rpc-methods=Unsafe \
-    --tmp
-  ;;
-
-start-frequency-native)
-  printf "\nBuilding Frequency without relay. Running with instant sealing, native execution ...\n"
-  cargo build --features frequency-no-relay
-
-  parachain_dir=$base_dir/parachain/${para_id}
-  mkdir -p $parachain_dir;
-
-  if [ "$2" == "purge" ]; then
-    echo "purging parachain..."
-    rm -rf $parachain_dir
-  fi
-
-  ./target/debug/frequency \
-    --dev \
-    -lruntime=debug \
-    --sealing=instant \
-    --wasm-execution=compiled \
-    --execution=native \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
@@ -173,7 +142,6 @@ start-frequency-manual)
     -lruntime=debug \
     --sealing=manual \
     --wasm-execution=compiled \
-    --execution=wasm \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
@@ -197,7 +165,6 @@ start-frequency-container)
     --chain="frequency-rococo-local" --alice \
     --base-path=$parachain_dir/data \
     --wasm-execution=compiled \
-    --execution=wasm \
     --force-authoring \
     --port "${frequency_port}" \
     --rpc-port "${frequency_rpc_port}" \
@@ -250,8 +217,7 @@ upgrade-frequency-rococo-local)
   # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
   cargo build \
     --package frequency-runtime \
-    --features frequency-rococo-local \
-    -Z unstable-options
+    --features frequency-rococo-local
 
   wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 
@@ -269,8 +235,7 @@ upgrade-frequency-no-relay)
   # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
   cargo build \
     --package frequency-runtime \
-    --features frequency-no-relay \
-    -Z unstable-options
+    --features frequency-no-relay
 
   wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 

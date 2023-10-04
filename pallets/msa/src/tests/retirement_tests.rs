@@ -1,5 +1,6 @@
 use frame_support::{assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction};
 
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -197,7 +198,7 @@ fn test_ensure_msa_cannot_retire_if_handle_exists() {
 		// Add two accounts to the MSA
 		assert_ok!(Msa::add_key(msa_id, &test_account_1, EMPTY_FUNCTION));
 
-		let claim_payload = ClaimHandlePayload::<<Test as frame_system::Config>::BlockNumber> {
+		let claim_payload = ClaimHandlePayload::<BlockNumberFor<Test>> {
 			base_handle: "hello".into(),
 			expiration: 2,
 		};

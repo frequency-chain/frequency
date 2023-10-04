@@ -180,7 +180,7 @@ benchmarks! {
 		let num_of_existing_items = (T::MaxItemizedPageSizeBytes::get() / T::MaxItemizedBlobSizeBytes::get()) / 2;
 		let delete_actions = T::MaxItemizedActionsCount::get() - num_of_items;
 		let key = (schema_id,);
-		let expiration = <T as frame_system::Config>::BlockNumber::from(10u32);
+		let expiration = BlockNumberFor::<T>::from(10u32);
 
 		let delegator_account_public = SignerId::generate_pair(Some(constants::BENCHMARK_SIGNATURE_ACCOUNT_SEED.as_bytes().to_vec()));
 		let delegator_account = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
@@ -234,7 +234,7 @@ benchmarks! {
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; s as usize];
 		let schema_key = schema_id.encode().to_vec();
-		let expiration = <T as frame_system::Config>::BlockNumber::from(10u32);
+		let expiration = BlockNumberFor::<T>::from(10u32);
 
 		let delegator_account_public = SignerId::generate_pair(Some(constants::BENCHMARK_SIGNATURE_ACCOUNT_SEED.as_bytes().to_vec()));
 		let delegator_account = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
@@ -268,7 +268,7 @@ benchmarks! {
 		let page_id: PageId = 1;
 		let caller: T::AccountId = whitelisted_caller();
 		let payload = vec![0u8; T::MaxPaginatedPageSizeBytes::get() as usize];
-		let expiration = <T as frame_system::Config>::BlockNumber::from(10u32);
+		let expiration = BlockNumberFor::<T>::from(10u32);
 
 		let delegator_account_public = SignerId::generate_pair(Some(constants::BENCHMARK_SIGNATURE_ACCOUNT_SEED.as_bytes().to_vec()));
 		let delegator_account = T::AccountId::decode(&mut &delegator_account_public.encode()[..]).unwrap();

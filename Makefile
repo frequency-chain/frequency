@@ -11,9 +11,6 @@ clean:
 start:
 	./scripts/init.sh start-frequency-instant
 
-start-native:
-	./scripts/init.sh start-frequency-native
-
 start-relay:
 	./scripts/init.sh start-relay-chain
 
@@ -66,13 +63,13 @@ specs-rococo-local:
 
 .PHONY: format
 format:
-	cargo fmt
+	cargo +nightly-2023-07-13 fmt
 
 .PHONY: lint
 lint:
-	cargo fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
-	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
+	cargo +nightly-2023-07-13 fmt --check
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
+	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
 
 lint-audit:
 	cargo deny check -c .cargo-deny.toml
@@ -81,7 +78,7 @@ lint-audit:
 format-lint: format lint
 
 .PHONY: ci-local
-ci-local: check lint lint-audit test e2e
+ci-local: check lint lint-audit test e2e-tests
 
 .PHONY: upgrade
 upgrade-local:
