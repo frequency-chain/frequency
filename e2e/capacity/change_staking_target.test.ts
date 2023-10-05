@@ -13,7 +13,7 @@ import {
 import { firstValueFrom } from "rxjs";
 import { MessageSourceId} from "@frequency-chain/api-augment/interfaces";
 
-describe.only("change_staking_target tests", () => {
+describe("change_staking_target tests", () => {
   const tokenMinStake: bigint = 1n * CENTS;
   const capacityMin: bigint = tokenMinStake / 50n;
 
