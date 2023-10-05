@@ -15,7 +15,6 @@ fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_u
 		active: BalanceOf::<Test>::from(15u64),
 		total: BalanceOf::<Test>::from(15u64),
 		unlocking: BoundedVec::default(),
-		staking_type: StakingType::MaximumCapacity,
 		last_rewards_claimed_at: None,
 		stake_change_unlocking: BoundedVec::default(),
 	};
@@ -29,7 +28,6 @@ fn staking_account_details_withdraw_reduces_active_staking_balance_and_creates_u
 			active: BalanceOf::<Test>::from(12u64),
 			total: BalanceOf::<Test>::from(15u64),
 			unlocking: expected_chunks,
-			staking_type: StakingType::MaximumCapacity,
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: BoundedVec::default(),
 		}
@@ -42,7 +40,6 @@ fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
 		active: BalanceOf::<Test>::from(10u64),
 		total: BalanceOf::<Test>::from(10u64),
 		unlocking: BoundedVec::default(),
-		staking_type: StakingType::MaximumCapacity,
 		last_rewards_claimed_at: None,
 		stake_change_unlocking: BoundedVec::default(),
 	};
@@ -65,7 +62,6 @@ fn staking_account_details_withdraw_returns_err_when_too_many_chunks() {
 		active: BalanceOf::<Test>::from(10u64),
 		total: BalanceOf::<Test>::from(10u64),
 		unlocking: maximum_chunks,
-		staking_type: StakingType::MaximumCapacity,
 		last_rewards_claimed_at: None,
 		stake_change_unlocking: BoundedVec::default(),
 	};
@@ -110,7 +106,6 @@ fn impl_staking_account_details_increase_by() {
 			active: BalanceOf::<Test>::from(10u64),
 			total: BalanceOf::<Test>::from(10u64),
 			unlocking: BoundedVec::default(),
-			staking_type: StakingType::MaximumCapacity,
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: BoundedVec::default(),
 		}
@@ -125,7 +120,6 @@ fn impl_staking_account_details_default() {
 			active: BalanceOf::<Test>::zero(),
 			total: BalanceOf::<Test>::zero(),
 			unlocking: BoundedVec::default(),
-			staking_type: StakingType::MaximumCapacity,
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: BoundedVec::default(),
 		},
@@ -156,7 +150,6 @@ fn impl_update_stake_change_unlocking_bound() {
 			active: 150,
 			total: 150,
 			unlocking: Default::default(),
-			staking_type: StakingType::MaximumCapacity,
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: Default::default(),
 		};
@@ -191,7 +184,6 @@ fn impl_update_stake_change_unlocking_cleanup() {
 			active: 150,
 			total: 150,
 			unlocking: Default::default(),
-			staking_type: StakingType::MaximumCapacity,
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: Default::default(),
 		};
