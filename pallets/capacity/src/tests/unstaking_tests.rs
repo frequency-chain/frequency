@@ -47,7 +47,6 @@ fn unstake_happy_path() {
 				active: BalanceOf::<Test>::from(60u64),
 				total: BalanceOf::<Test>::from(staking_amount),
 				unlocking: expected_unlocking_chunks,
-				staking_type: MaximumCapacity,
 				last_rewards_claimed_at: None,
 				stake_change_unlocking: BoundedVec::default(),
 			},

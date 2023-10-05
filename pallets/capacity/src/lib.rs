@@ -354,6 +354,8 @@ pub mod pallet {
 		EraOutOfRange,
 		/// Rewards were already paid out for the specified Era range
 		IneligibleForPayoutInEraRange,
+		/// Attempted to retarget but from and to Provider MSA Ids were the same
+		CannotRetargetToSameProvider,
 	}
 
 	#[pallet::hooks]
@@ -501,21 +503,23 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-			ensure!(
-				StakingAccountLedger::<T>::contains_key(&staker),
-				Error::<T>::NotAStakingAccount
-			);
-			ensure!(
-				StakingTargetLedger::<T>::contains_key(&staker, &from),
-				Error::<T>::StakerTargetRelationshipNotFound
-			);
+
+			ensure!(from.ne(&to), Error::<T>::CannotRetargetToSameProvider);
 			ensure!(
 				amount >= T::MinimumStakingAmount::get(),
 				Error::<T>::StakingAmountBelowMinimum
 			);
+			ensure!(
+				StakingAccountLedger::<T>::contains_key(&staker),
+				Error::<T>::NotAStakingAccount
+			);
+
+			let current_target = Self::get_target_for(&staker, &from)
+				.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
+
 			ensure!(T::TargetValidator::validate(to), Error::<T>::InvalidTarget);
 
-			Self::do_retarget(&staker, &from, &to, &amount)?;
+			Self::do_retarget(&staker, &from, &to, &amount, &current_target.staking_type)?;
 
 			Self::deposit_event(Event::StakingTargetChanged {
 				account: staker,
@@ -548,10 +552,13 @@ impl<T: Config> Pallet<T> {
 
 		let staking_account: StakingAccountDetails<T> =
 			Self::get_staking_account_for(&staker).unwrap_or_default();
+
+		let staking_target: StakingTargetDetails<T> =
+			Self::get_target_for(&staker, target).unwrap_or_default();
 		// if total > 0 the account exists already. Prevent the staking type from being changed.
-		if staking_account.total > Zero::zero() {
+		if staking_target.amount > Zero::zero() {
 			ensure!(
-				staking_account.staking_type == *staking_type,
+				staking_target.staking_type == *staking_type,
 				Error::<T>::CannotChangeStakingType
 			);
 		}
@@ -592,6 +599,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut target_details = Self::get_target_for(staker, target).unwrap_or_default();
 		target_details.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
+		target_details.staking_type = staking_type.clone();
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
@@ -700,11 +708,8 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw =
 			if staking_target_details.staking_type.eq(&StakingType::ProviderBoost) {
-				Self::calculate_capacity_reduction(
-					T::RewardsProvider::capacity_boost(amount),
-					capacity_details.total_tokens_staked,
-					capacity_details.total_capacity_issued,
-				)
+				Perbill::from_rational(amount, staking_target_details.amount)
+					.mul_ceil(staking_target_details.capacity)
 			} else {
 				Self::calculate_capacity_reduction(
 					amount,
@@ -716,6 +721,7 @@ impl<T: Config> Pallet<T> {
 		// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 		let (actual_amount, actual_capacity) =
 			staking_target_details.withdraw(amount, capacity_to_withdraw);
+
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
 		Self::set_capacity_for(&target, &capacity_details);
@@ -730,7 +736,8 @@ impl<T: Config> Pallet<T> {
 		cpt.mul(amount).into()
 	}
 
-	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked.
+	/// Determine the capacity reduction when given total_capacity, unstaking_amount, and total_amount_staked,
+	/// based on ratios
 	fn calculate_capacity_reduction(
 		unstaking_amount: BalanceOf<T>,
 		total_amount_staked: BalanceOf<T>,
@@ -802,6 +809,7 @@ impl<T: Config> Pallet<T> {
 		from_msa: &MessageSourceId,
 		to_msa: &MessageSourceId,
 		amount: &BalanceOf<T>,
+		staking_type: &StakingType,
 	) -> Result<(), DispatchError> {
 		let capacity_withdrawn = Self::reduce_capacity(staker, *from_msa, *amount)?;
 
@@ -809,6 +817,11 @@ impl<T: Config> Pallet<T> {
 		to_msa_target
 			.deposit(*amount, capacity_withdrawn)
 			.ok_or(ArithmeticError::Overflow)?;
+
+		// TODO:  document
+		// if someone wants to switch staking type they must unstake completely and restake regardless of
+		// whether it is with an existing or new provider.
+		to_msa_target.staking_type = staking_type.clone();
 
 		let mut capacity_details = Self::get_capacity_for(to_msa).unwrap_or_default();
 		capacity_details
