@@ -43,8 +43,15 @@ pub struct StakingAccountDetails {
     pub staking_type: StakingType, // NEW
     /// staking amounts that have been retargeted are prevented from being retargeted again for the
     /// configured Thawing Period number of blocks.
-    pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, EraOf<T>>, T::MaxUnlockingChunks> // NEW
+    pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>, // NEW
+    /// total staked amounts for each past era, up to StakingRewardsPastErasMax eras.
+    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>, // NEW
 }
+
+pub struct StakingHistory<Balance, RewardEra> {
+    total_staked: Balance,
+    reward_era: RewardEra,
+} 
 ```
 
 **Unstaking thaw period**
@@ -157,8 +164,15 @@ pub trait Config: frame_system::Config {
 ### NEW: RewardPoolInfo
 This is the necessary information about the reward pool for a given Reward Era and how it's stored.
 ```rust
-pub struct RewardPoolInfo<T: Config> {
+pub struct RewardPoolInfo<Balance> {
+    /// the total staked for rewards in the associated RewardEra
+    pub total_staked_token: Balance,
+    /// the reward pool for this era
+    pub total_reward_pool: Balance,
+    /// the remaining rewards balance to be claimed
+    pub unclaimed_balance: Balance,
 }
+
 /// Reward Pool history
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
@@ -265,10 +279,22 @@ pub fn change_staking_target(
 fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
 ```
 
-### NEW RPC
+### NEW RPCS
 There are no custom RPCs for the Capacity pallet, so that work will need to be done first.
 ```rust
-/// RPC access to the pallet function by the same name
-pub fn payout_eligible(account_id: AccountId) -> bool;
-```
+pub struct UnclaimedRewardInfo {
+    /// The Reward Era for which this reward was earned
+    reward_era: RewardEra,
+    /// An ISO8701 string, UTC, estimated using current block time, and the number of blocks between
+    /// the current block and the block when this era's RewardPoolInfo would be removed from StakingRewardPool history 
+    expires_at: string,
+    /// The amount staked in this era
+    staked_amount: BalanceOf<T>,
+    /// The amount in token of the reward (only if it can be calculated using only on chain data)
+    earned_amount: BalanceOf<T>
+}
 
+/// Check what unclaimed rewards origin has and how long they have left to claim them
+/// If no unclaimed rewards, returns empty list.
+fn check_for_unclaimed_rewards(origin: OriginFor<T>) -> Vec<UnclaimedRewardInfo>;
+```
