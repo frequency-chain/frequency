@@ -5,7 +5,6 @@ use crate::{
 };
 use frame_support::assert_err;
 
-use common_primitives::capacity::StakingType::MaximumCapacity;
 use sp_core::H256;
 
 #[test]
@@ -21,7 +20,6 @@ fn test_staking_reward_total_happy_path() {
 				active: 1,
 				total: 1,
 				unlocking: Default::default(),
-				staking_type: MaximumCapacity,
 				last_rewards_claimed_at: None,
 				stake_change_unlocking: Default::default(),
 			},
@@ -52,7 +50,7 @@ fn test_reward_pool_size_happy_path() {
 			TestCase { total_staked: 4, expected_reward_pool: 0 },
 			TestCase { total_staked: 10, expected_reward_pool: 1 },
 			TestCase { total_staked: 3333333, expected_reward_pool: 333333 },
-			TestCase { total_staked: 66666666, expected_reward_pool: 666666 },
+			TestCase { total_staked: 66666666, expected_reward_pool: 6666666 },
 		];
 		let era = 20u32;
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: era, started_at: 200u32 });
