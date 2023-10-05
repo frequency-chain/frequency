@@ -58,10 +58,10 @@ fn stake_max_capacity_works() {
 #[test]
 fn stake_rewards_works() {
 	new_test_ext().execute_with(|| {
-		let account = 200;
+		let account = 600;
 		let target: MessageSourceId = 1;
-		let amount = 50;
-		let capacity = 5;
+		let amount = 200;
+		let capacity = 1;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount, ProviderBoost));
 
@@ -69,10 +69,9 @@ fn stake_rewards_works() {
 		let staking_account: StakingAccountDetails<Test> =
 			Capacity::get_staking_account_for(account).unwrap();
 
-		assert_eq!(staking_account.total, 50);
-		assert_eq!(staking_account.active, 50);
+		assert_eq!(staking_account.total, 200);
+		assert_eq!(staking_account.active, 200);
 		assert_eq!(staking_account.unlocking.len(), 0);
-		assert_eq!(staking_account.staking_type, ProviderBoost);
 		assert_eq!(staking_account.last_rewards_claimed_at, None);
 		assert_eq!(staking_account.stake_change_unlocking.len(), 0);
 
@@ -81,6 +80,10 @@ fn stake_rewards_works() {
 
 		assert_eq!(Balances::locks(&account)[0].amount, amount);
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+
+		let target_details = Capacity::get_target_for(account, target).unwrap();
+		assert_eq!(target_details.amount, amount);
+		assert_eq!(target_details.staking_type, ProviderBoost);
 	});
 }
 

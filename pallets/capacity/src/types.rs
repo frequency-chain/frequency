@@ -23,8 +23,6 @@ pub struct StakingAccountDetails<T: Config> {
 	pub total: BalanceOf<T>,
 	/// Unstaked balances that are thawing or awaiting withdrawal.
 	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
-	/// What type of staking this account is doing
-	pub staking_type: StakingType,
 	/// The None or Some(number): never, or the last RewardEra that this account's rewards were claimed.
 	pub last_rewards_claimed_at: Option<T::RewardEra>,
 	/// Chunks that have been retargeted within T::UnstakingThawPeriod
@@ -169,7 +167,6 @@ impl<T: Config> Default for StakingAccountDetails<T> {
 			total: Zero::zero(),
 			unlocking: BoundedVec::default(),
 			last_rewards_claimed_at: None,
-			staking_type: StakingType::MaximumCapacity,
 			stake_change_unlocking: BoundedVec::default(),
 		}
 	}
