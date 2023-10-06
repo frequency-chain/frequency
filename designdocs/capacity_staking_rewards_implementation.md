@@ -105,8 +105,12 @@ pub fn unstake(
 }
 ```
 ### NEW: StakingRewardsProvider - Economic Model trait
-This one is most likely to change, however there are certain functions that will definitely be needed.
-The struct and method for claiming rewards is probably going to change, but the rewards system will still need to know the `reward_pool_size` and the `staking_reward_total` for a given staker.
+This one is not yet determined, however there are certain functions that will definitely be needed.
+The struct and method for claiming rewards is probably going to change.
+The rewards system will still need to know the `reward_pool_size`.
+The `staking_reward_total` for a given staker may not be calculable depending on the complexity of the economic rewards model. 
+It's possible that it would be calculated via some app with access to the staker's wallet, and submitted as a proof
+with a payload.  In that case the `validate_staking_reward_claim` is more likely to be part of the trait.
 
 ```rust
 use std::hash::Hash;
@@ -130,6 +134,7 @@ pub trait StakingRewardsProvider<T: Config> {
     /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
     /// Errors:
     ///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current RewardEra.
+    /// May not be possible depending on economic model complexity.
     fn staking_reward_total(account_id: T::AccountId, fromEra: T::RewardEra, toEra: T::RewardEra);
 
     /// Validate a payout claim for `account_id`, using `proof` and the provided `payload` StakingRewardClaim.
@@ -146,7 +151,7 @@ pub enum StakingType {
     MaximizedCapacity,
     /// Staking account targets Providers and splits reward between capacity to the Provider
     /// and token for the account holder
-    Rewards,
+    ProviderBoost,
 }
 ```
 
@@ -177,10 +182,17 @@ pub trait Config: frame_system::Config {
 ```
 
 ### NEW: RewardPoolInfo
-This is the necessary information about the reward pool for a given Reward Era and how it's stored.
+Information about the reward pool for a given Reward Era and how it's stored.
 ```rust
-pub struct RewardPoolInfo<T: Config> {
+pub struct RewardPoolInfo<Balance> {
+    /// the total staked for rewards in the associated RewardEra
+    pub total_staked_token: Balance,
+    /// the reward pool for this era
+    pub total_reward_pool: Balance,
+    /// the remaining rewards balance to be claimed
+    pub unclaimed_balance: Balance,
 }
+
 /// Reward Pool history
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
@@ -208,7 +220,7 @@ pub struct RewardEraInfo<RewardEra, BlockNumber> {
 ```rust
 pub enum Error<T> {
     /// ...
-    /// Staker tried to change StakingType on an existing account
+    /// Staker tried to change StakingType on an existing staker-target relationship
     CannotChangeStakingType,
     /// The Era specified is too far in the past or is in the future
     EraOutOfRange,
@@ -287,10 +299,26 @@ pub fn change_staking_target(
 fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
 ```
 
-### NEW RPC
+### NEW RPCS
 There are no custom RPCs for the Capacity pallet, so that work will need to be done first.
-```rust
-/// RPC access to the pallet function by the same name
-pub fn payout_eligible(account_id: AccountId) -> bool;
-```
 
+The form of this will depend on whether the rewards calculation for an individual account is done by the node or externally
+with a submitted proof.  If externally, then unclaimed rewards would not include an earned amount.
+
+```rust
+pub struct UnclaimedRewardInfo {
+    /// The Reward Era for which this reward was earned
+    reward_era: RewardEra,
+    /// An ISO8701 string, UTC, estimated using current block time, and the number of blocks between
+    /// the current block and the block when this era's RewardPoolInfo would be removed from StakingRewardPool history 
+    expires_at: string,
+    /// The amount staked in this era
+    staked_amount: BalanceOf<T>,
+    /// The amount in token of the reward (only if it can be calculated using only on chain data)
+    earned_amount: BalanceOf<T>
+}
+
+/// Check what unclaimed rewards origin has and how long they have left to claim them
+/// If no unclaimed rewards, returns empty list.
+fn check_for_unclaimed_rewards(origin: OriginFor<T>) -> Vec<UnclaimedRewardInfo>;
+```
