@@ -8,13 +8,16 @@ import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { Bytes } from "@polkadot/types";
 import { getBlockNumber } from "../scaffolding/helpers";
 import { hasRelayChain } from "../scaffolding/env";
+import { getFundingSource } from "../scaffolding/funding";
 
 describe("🤝 Handles", () => {
+    const fundingSource = getFundingSource("handles");
+
     let msa_id: MessageSourceId;
     let msaOwnerKeys: KeyringPair;
     before(async function () {
         // Create a MSA for the delegator
-        [msaOwnerKeys, msa_id] = await createDelegator();
+        [msaOwnerKeys, msa_id] = await createDelegator(fundingSource);
         assert.notEqual(msaOwnerKeys, undefined, "setup should populate delegator_key");
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
@@ -30,7 +33,7 @@ describe("🤝 Handles", () => {
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
-            const [event] = await claimHandle.fundAndSend();
+            const [event] = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
             if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
                 let handle = event.data.handle.toString();
@@ -59,7 +62,7 @@ describe("🤝 Handles", () => {
             await ExtrinsicHelper.runToBlock(currentBlock + 20);
 
             const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
-            const [event] = await retireHandle.fundAndSend();
+            const [event] = await retireHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "retireHandle should return an event");
             if (event && retireHandle.api.events.handles.HandleRetired.is(event)) {
                 let handle = event.data.handle.toString();
@@ -89,7 +92,7 @@ describe("🤝 Handles", () => {
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
-            const [event] = await claimHandle.fundAndSend();
+            const [event] = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
             if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
                 let handle = event.data.handle.toString();
@@ -136,7 +139,7 @@ describe("🤝 Handles", () => {
             await ExtrinsicHelper.runToBlock(currentBlock + 10);
             try {
                 const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
-                const [event] = await retireHandle.fundAndSend();
+                const [event] = await retireHandle.fundAndSend(fundingSource);
                 assert.equal(event, undefined, "retireHandle should not return an event");
             }
             catch (e) {

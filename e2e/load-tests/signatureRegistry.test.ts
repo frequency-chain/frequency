@@ -1,11 +1,11 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, getNonce, getFundingSource } from "../scaffolding/helpers";
+import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, getNonce, getExistentialDeposit } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { EXISTENTIAL_DEPOSIT } from "../scaffolding/rootHooks";
 import { firstValueFrom } from "rxjs";
 import { u64, Option } from "@polkadot/types";
+import { getFundingSource } from "../scaffolding/funding";
 
 interface GeneratedMsa {
     id: u64;
@@ -14,6 +14,7 @@ interface GeneratedMsa {
 }
 
 describe("MSA Initializer Load Tests", function () {
+    const fundingSource = getFundingSource("load-signature-registry");
 
     beforeEach(async function () {
         await createBlock();
@@ -82,13 +83,14 @@ async function checkKeys(startingNumber: number, keysToTest: KeyringPair[]) {
 async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
     // Make sure we are not on an edge
     const createBlockEvery = count === 300 ? 290 : 300;
+    const fundingSource = getFundingSource("load-signature-registry");
 
     // Create and fund the control keys
     let controlKeyPromises: Array<Promise<KeyringPair>> = [];
-    const devAccount = getFundingSource().keys;
-    let devAccountNonce = await getNonce(devAccount);
+    let devAccountNonce = await getNonce(fundingSource);
+    const ed = await getExistentialDeposit();
     for (let i = 0; i < count; i++) {
-        controlKeyPromises.push(createAndFundKeypair(100n * 10n * EXISTENTIAL_DEPOSIT, undefined, devAccount, devAccountNonce++));
+        controlKeyPromises.push(createAndFundKeypair(fundingSource, 100n * 10n * ed, undefined, devAccountNonce++));
         if (i > 0 && i % createBlockEvery === 0) await createBlock(100);
     }
     await createBlock();

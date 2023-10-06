@@ -4,8 +4,6 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { firstValueFrom } from "rxjs";
 import { env } from "./env";
 
-export let keyring: Keyring;
-
 export async function connect(providerUrl?: string | string[] | undefined): Promise<ApiRx> {
     const provider = new WsProvider(providerUrl || env.providerUrl);
     const apiObservable = ApiRx.create({ provider, ...options });
@@ -18,6 +16,8 @@ export async function connectPromise(providerUrl?: string | string[] | undefined
     await api.isReady;
     return api;
 }
+
+let keyring: Keyring;
 
 export function createKeys(uri: string): KeyringPair {
     if (!keyring) {

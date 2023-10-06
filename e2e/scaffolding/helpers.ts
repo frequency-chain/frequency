@@ -13,7 +13,6 @@ import {
   ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
   PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
 } from "./extrinsicHelpers";
-import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 import { HandleResponse, MessageSourceId, PageHash, SchemaGrantResponse } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
@@ -51,6 +50,13 @@ export async function generateDelegationPayload(payloadInputs: AddProviderPayloa
 
 export async function getBlockNumber(): Promise<number> {
   return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
+}
+
+
+let cacheED: null | bigint = null;
+export async function getExistentialDeposit(): Promise<bigint> {
+  if (cacheED !== null) return cacheED;
+  return cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt();
 }
 
 export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 100, blockNumber?: number): Promise<AddKeyData> {
@@ -147,37 +153,14 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
-export function getFundingSource() {
-  if (isTestnet()) {
-    const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
-
-    if (seed_phrase === undefined) {
-      console.error("FUNDING_ACCOUNT_SEED_PHRASE must not be undefined when CHAIN_ENVIRONMENT is \"rococo\"");
-      process.exit(1);
-    }
-
-    return {
-      uri: "RococoTestRunnerAccount",
-      keys: createKeys(seed_phrase),
-    };
-  }
-
-  return {
-    uri: "//Alice",
-    keys: createKeys("//Alice"),
-  };
-}
-
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(amount = EXISTENTIAL_DEPOSIT, keyName?: string, source?: KeyringPair, nonce?: number): Promise<KeyringPair> {
-  const default_funding_source = getFundingSource();
+export async function createAndFundKeypair(source: KeyringPair, amount: bigint | undefined = undefined, keyName?: string, nonce?: number): Promise<KeyringPair> {
   const keypair = createKeys(keyName);
 
-  // Transfer funds from source (usually pre-funded dev account) to new account
-  await fundKeypair((source || default_funding_source.keys), keypair, amount, nonce);
+  await fundKeypair(source, keypair, amount || await getExistentialDeposit(), nonce);
 
   return keypair;
 }
@@ -188,24 +171,24 @@ export function log(...args: any[]) {
   }
 }
 
-export async function createProviderKeysAndId(): Promise<[KeyringPair, u64]> {
-  let providerKeys = await createAndFundKeypair();
+export async function createProviderKeysAndId(source: KeyringPair): Promise<[KeyringPair, u64]> {
+  let providerKeys = await createAndFundKeypair(source);
   let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
   let providerId = new u64(ExtrinsicHelper.api.registry, 0)
-  await createProviderMsaOp.fundAndSend();
+  await createProviderMsaOp.fundAndSend(source);
   let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
-  let [providerEvent] = await createProviderOp.fundAndSend();
+  let [providerEvent] = await createProviderOp.fundAndSend(source);
   if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
     providerId = providerEvent.data.providerId;
   }
   return [providerKeys, providerId];
 }
 
-export async function createDelegator(): Promise<[KeyringPair, u64]> {
-  let keys = await createAndFundKeypair();
+export async function createDelegator(source: KeyringPair): Promise<[KeyringPair, u64]> {
+  let keys = await createAndFundKeypair(source);
   let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
   const createMsa = ExtrinsicHelper.createMsa(keys);
-  const [msaCreatedEvent, _] = await createMsa.fundAndSend();
+  const [msaCreatedEvent, _] = await createMsa.fundAndSend(source);
 
   if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
     delegator_msa_id = msaCreatedEvent.data.msaId;
@@ -214,9 +197,9 @@ export async function createDelegator(): Promise<[KeyringPair, u64]> {
   return [keys, delegator_msa_id];
 }
 
-export async function createDelegatorAndDelegation(schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
+export async function createDelegatorAndDelegation(source: KeyringPair, schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa
-  const [keys, delegator_msa_id] = await createDelegator();
+  const [keys, delegator_msa_id] = await createDelegator(source);
 
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
@@ -226,7 +209,7 @@ export async function createDelegatorAndDelegation(schemaId: u16, providerId: u6
   const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-  await grantDelegationOp.fundAndSend();
+  await grantDelegationOp.fundAndSend(source);
 
   return [keys, delegator_msa_id];
 }
@@ -253,18 +236,17 @@ export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<H
 
 // Creates an MSA and a provider for the given keys
 // Returns the MSA Id of the provider
-export async function createMsaAndProvider(keys: KeyringPair, providerName: string, amount = EXISTENTIAL_DEPOSIT):
+export async function createMsaAndProvider(source: KeyringPair, keys: KeyringPair, providerName: string, amount: bigint | undefined = undefined):
   Promise<u64> {
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
-  const defaultFundingSource = getFundingSource();
-  await fundKeypair(defaultFundingSource.keys, keys, amount);
+  await fundKeypair(source, keys, amount || (await getExistentialDeposit()));
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const [MsaCreatedEvent] = await createMsaOp.fundAndSend();
+  const [MsaCreatedEvent] = await createMsaOp.fundAndSend(source);
   assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
 
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
-  const [ProviderCreatedEvent] = await createProviderOp.fundAndSend();
+  const [ProviderCreatedEvent] = await createProviderOp.fundAndSend(source);
   assert.notEqual(ProviderCreatedEvent, undefined, 'createMsaAndProvider: should have returned ProviderCreated event');
 
   if (ProviderCreatedEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(ProviderCreatedEvent)) {
@@ -274,9 +256,9 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
 }
 
 // Stakes the given amount of tokens from the given keys to the given provider
-export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
-  const [stakeEvent] = await stakeOp.fundAndSend();
+  const [stakeEvent] = await stakeOp.fundAndSend(source);
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
   if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {
@@ -313,14 +295,14 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
-export async function getOrCreateGraphChangeSchema(): Promise<u16> {
+export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<u16> {
   if (isTestnet()) {
     const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
     return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
     const [createSchemaEvent, eventMap] = await ExtrinsicHelper
-      .createSchema(getFundingSource().keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
-      .fundAndSend();
+      .createSchema(source, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
+      .fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
       return createSchemaEvent.data.schemaId;
@@ -330,13 +312,13 @@ export async function getOrCreateGraphChangeSchema(): Promise<u16> {
   }
 }
 
-export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
+export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Promise<u16> {
   if (isTestnet()) {
     const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
     return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
   } else {
-    const createSchema = ExtrinsicHelper.createSchema(getFundingSource().keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-    let [event] = await createSchema.fundAndSend();
+    const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, "Parquet", "IPFS");
+    let [event] = await createSchema.fundAndSend(source);
     if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
       return event.data.schemaId;
     } else {
@@ -345,18 +327,18 @@ export async function getOrCreateParquetBroadcastSchema(): Promise<u16> {
   }
 }
 
-export async function getOrCreateDummySchema(): Promise<u16> {
+export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> {
   if (isTestnet()) {
     const ROCOCO_DUMMY_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 52);
     return ROCOCO_DUMMY_SCHEMA_ID;
   } else {
     const createDummySchema = ExtrinsicHelper.createSchema(
-      getFundingSource().keys,
+      source,
       { type: "record", name: "Dummy on-chain schema", fields: [] },
       "AvroBinary",
       "OnChain"
     );
-    const [dummySchemaEvent] = await createDummySchema.fundAndSend();
+    const [dummySchemaEvent] = await createDummySchema.fundAndSend(source);
     if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
       return dummySchemaEvent.data.schemaId;
     } else {
@@ -365,15 +347,15 @@ export async function getOrCreateDummySchema(): Promise<u16> {
   }
 }
 
-export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> {
+export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringPair): Promise<u16> {
   if (isTestnet()) {
     const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
     return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
   } else {
     let schemaId: u16;
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(getFundingSource().keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-    const [event] = await createSchema.fundAndSend();
+    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+    const [event] = await createSchema.fundAndSend(source);
     if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
       return event.data.schemaId;
     } else {
@@ -382,15 +364,15 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(): Promise<u16> 
   }
 }
 
-export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
+export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPair): Promise<u16> {
   if (isTestnet()) {
     const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
     return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
   } else {
     let schemaId: u16;
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(getFundingSource().keys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
-    const [event] = await createSchema.fundAndSend();
+    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+    const [event] = await createSchema.fundAndSend(source);
     if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
       return event.data.schemaId;
     } else {

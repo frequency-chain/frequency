@@ -5,21 +5,24 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u64 } from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
+import { getFundingSource } from "../scaffolding/funding";
 
 describe("Create Accounts", function () {
+    const fundingSource = getFundingSource("msa-create-msa");
+
     let keys: KeyringPair;
     let msaId: u64;
     let authorizedKeys: KeyringPair[] = [];
 
     before(async function () {
-        keys = await createAndFundKeypair();
+        keys = await createAndFundKeypair(fundingSource);
     });
 
     describe("createMsa", function () {
 
         it("should successfully create an MSA account", async function () {
             const f = ExtrinsicHelper.createMsa(keys);
-            const [msaCreatedEvent, chainEvents] = await f.fundAndSend();
+            const [msaCreatedEvent, chainEvents] = await f.fundAndSend(fundingSource);
 
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(msaCreatedEvent, undefined, "should have returned  an MsaCreated event");
@@ -32,7 +35,7 @@ describe("Create Accounts", function () {
 
         it("should fail to create an MSA for a keypair already associated with an MSA", async function () {
             const op = ExtrinsicHelper.createMsa(keys);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'KeyAlreadyRegistered',
             });
         });
@@ -48,7 +51,7 @@ describe("Create Accounts", function () {
         let addKeyData: Codec;
 
         before(async function () {
-            authorizedKeys.push(await createAndFundKeypair());
+            authorizedKeys.push(await createAndFundKeypair(fundingSource));
             badKeys = createKeys();
             defaultPayload.msaId = msaId;
             defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
@@ -63,7 +66,7 @@ describe("Create Accounts", function () {
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             badSig = signPayloadSr25519(badKeys, addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(keys, badSig, newSig, payload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'MsaOwnershipInvalidSignature',
             });
         })
@@ -73,18 +76,18 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(keys, addKeyData);
             badSig = signPayloadSr25519(badKeys, addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, badSig, payload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'NewKeyOwnershipInvalidSignature',
             });
         });
 
         it("should fail to add public key if origin does not have an MSA (NoKeyExists)", async function () {
-            const newOriginKeys = await createAndFundKeypair();
+            const newOriginKeys = await createAndFundKeypair(fundingSource);
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
             ownerSig = signPayloadSr25519(newOriginKeys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(newOriginKeys, ownerSig, newSig, payload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'NoKeyExists',
             });
         })
@@ -98,7 +101,7 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'NotMsaOwner',
             });
         });
@@ -112,7 +115,7 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'ProofHasExpired',
             });
         })
@@ -127,7 +130,7 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(keys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, newPayload);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'ProofNotYetValid',
             });
         })
@@ -139,10 +142,10 @@ describe("Create Accounts", function () {
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-            const [publicKeyEvents] = await addPublicKeyOp.fundAndSend();
+            const [publicKeyEvents] = await addPublicKeyOp.fundAndSend(fundingSource);
 
             assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
-            await assert.rejects(addPublicKeyOp.fundAndSend(), { name: 'SignatureAlreadySubmitted' }, "should reject sending the same signed payload twiced");
+            await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), { name: 'SignatureAlreadySubmitted' }, "should reject sending the same signed payload twiced");
         });
 
         it("should fail if attempting to add the same key more than once (KeyAlreadyRegistered)", async function () {
@@ -152,7 +155,7 @@ describe("Create Accounts", function () {
             const newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-            await assert.rejects(addPublicKeyOp.fundAndSend(), {
+            await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), {
                 name: 'KeyAlreadyRegistered',
             })
         });
@@ -167,7 +170,7 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             newSig = signPayloadSr25519(additionalKeys, addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(authorizedKeys[0], ownerSig, newSig, newPayload);
-            const [event] = await op.fundAndSend();
+            const [event] = await op.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, 'should have added public key');
             authorizedKeys.push(additionalKeys);
         });
@@ -177,17 +180,17 @@ describe("Create Accounts", function () {
         let providerKeys: KeyringPair;
 
         before(async function () {
-            providerKeys = await createAndFundKeypair();
+            providerKeys = await createAndFundKeypair(fundingSource);
             const createMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-            await createMsaOp.fundAndSend();
+            await createMsaOp.fundAndSend(fundingSource);
 
             const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'Test Provider');
-            await createProviderOp.fundAndSend();
+            await createProviderOp.fundAndSend(fundingSource);
         });
 
         it("should disallow retiring MSA belonging to a provider", async function () {
             const retireOp = ExtrinsicHelper.retireMsa(providerKeys);
-            await assert.rejects(retireOp.fundAndSend(), {
+            await assert.rejects(retireOp.fundAndSend(fundingSource), {
                 name: 'RpcError',
                 message: /Custom error: 2/,
             });
@@ -195,7 +198,7 @@ describe("Create Accounts", function () {
 
         it("should disallow retiring an MSA with more than one key authorized", async function () {
             const retireOp = ExtrinsicHelper.retireMsa(keys);
-            await assert.rejects(retireOp.fundAndSend(), {
+            await assert.rejects(retireOp.fundAndSend(fundingSource), {
                 name: 'RpcError',
                 message: /Custom error: 3/,
             });
@@ -203,7 +206,7 @@ describe("Create Accounts", function () {
 
         it("should fail to delete public key for self", async function () {
             const op = ExtrinsicHelper.deletePublicKey(keys, keys.publicKey);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'RpcError',
                 message: /Custom error: 4/,
             });
@@ -211,7 +214,7 @@ describe("Create Accounts", function () {
 
         it("should fail to delete key if not authorized for key's MSA", async function () {
             const op = ExtrinsicHelper.deletePublicKey(providerKeys, keys.publicKey);
-            await assert.rejects(op.fundAndSend(), {
+            await assert.rejects(op.fundAndSend(fundingSource), {
                 name: 'RpcError',
                 message: /Custom error: 5/,
             });
@@ -222,7 +225,7 @@ describe("Create Accounts", function () {
         it("should delete all other authorized keys", async function () {
             for (const key of authorizedKeys) {
                 const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
-                const [event] = await op.fundAndSend();
+                const [event] = await op.fundAndSend(fundingSource);
                 assert.notEqual(event, undefined, "should have returned PublicKeyDeleted event");
             };
             authorizedKeys = [];
@@ -230,7 +233,7 @@ describe("Create Accounts", function () {
 
         it("should allow retiring MSA after additional keys have been deleted", async function () {
             const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
-            const [event, eventMap] = await retireMsaOp.fundAndSend();
+            const [event, eventMap] = await retireMsaOp.fundAndSend(fundingSource);
 
             assert.notEqual(eventMap["msa.PublicKeyDeleted"], undefined, 'should have deleted public key (retired)');
             assert.notEqual(event, undefined, 'should have retired msa');

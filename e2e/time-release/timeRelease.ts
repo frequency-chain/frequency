@@ -3,7 +3,7 @@ import assert from "assert";
 import { createAndFundKeypair } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper, ReleaseSchedule } from "../scaffolding/extrinsicHelpers";
-import { getFundingSource } from "../scaffolding/helpers";
+import { getFundingSource } from "../scaffolding/funding";
 
 const DOLLARS: number = 100000000; // 100_000_000
 
@@ -33,14 +33,14 @@ export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedu
 
 describe("TimeRelease", function () {
     let vesterKeys: KeyringPair;
+    const sourceKey: KeyringPair = getFundingSource("time-release");
 
     before(async function () {
-        vesterKeys = await createAndFundKeypair();
+        vesterKeys = await createAndFundKeypair(sourceKey);
     });
 
     describe("vested transfer and claim flow", function () {
         it("creates a vested transfer", async function () {
-            let sourceKey: KeyringPair = getFundingSource().keys;
             let amount = 100000n * BigInt(DOLLARS);
             let schedule: ReleaseSchedule = calculateReleaseSchedule(amount);
 

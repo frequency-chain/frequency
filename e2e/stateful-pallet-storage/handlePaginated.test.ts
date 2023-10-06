@@ -7,8 +7,11 @@ import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, PageId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { Bytes, u16, u32, u64 } from "@polkadot/types";
+import { getFundingSource } from "../scaffolding/funding";
 
 describe("📗 Stateful Pallet Storage", () => {
+    const fundingSource = getFundingSource("stateful-storage-handle-paginated");
+
     let schemaId: SchemaId;
     let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
@@ -17,20 +20,20 @@ describe("📗 Stateful Pallet Storage", () => {
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId();
+        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Paginated PayloadLocation
         const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-        const [event] = await createSchema.fundAndSend();
+        const [event] = await createSchema.fundAndSend(fundingSource);
         if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
             schemaId = event.data.schemaId;
         }
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const [event2] = await createSchema2.fundAndSend();
+        const [event2] = await createSchema2.fundAndSend(fundingSource);
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
             schemaId_unsupported = event2.data.schemaId;
@@ -38,7 +41,7 @@ describe("📗 Stateful Pallet Storage", () => {
         }
 
         // Create a MSA for the delegator and delegate to the provider
-        [, msa_id] = await createDelegatorAndDelegation(schemaId, providerId, providerKeys);
+        [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
     });
 
@@ -51,7 +54,7 @@ describe("📗 Stateful Pallet Storage", () => {
             // Add and update actions
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, target_hash);
-            const [pageUpdateEvent1, chainEvents] = await paginated_add_result_1.fundAndSend();
+            const [pageUpdateEvent1, chainEvents] = await paginated_add_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
@@ -60,7 +63,7 @@ describe("📗 Stateful Pallet Storage", () => {
             page_id = 1;
             target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_add_result_2 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, target_hash);
-            const [pageUpdateEvent2, chainEvents2] = await paginated_add_result_2.fundAndSend();
+            const [pageUpdateEvent2, chainEvents2] = await paginated_add_result_2.fundAndSend(fundingSource);
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent2, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
@@ -68,7 +71,7 @@ describe("📗 Stateful Pallet Storage", () => {
             // Remove the second page
             target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_remove_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, page_id, target_hash);
-            const [pageRemove, chainEvents3] = await paginated_remove_result_1.fundAndSend();
+            const [pageRemove, chainEvents3] = await paginated_remove_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents3["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents3["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageRemove, undefined, "should have returned a event");
@@ -82,7 +85,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, page_id, payload_1, target_hash);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
@@ -96,7 +99,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId_unsupported, msa_id, page_id, payload_1, target_hash);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
@@ -112,7 +115,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, page_id, payload_1, target_hash);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -126,7 +129,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, 0);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'StalePageState',
                 section: 'statefulStorage',
@@ -141,7 +144,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
@@ -152,7 +155,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, page_id, 0);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
@@ -164,7 +167,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -174,7 +177,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail call to remove page with stale target hash", async function () {
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
             await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend();
+                await paginated_add_result_1.fundAndSend(fundingSource);
             }, {
                 name: 'StalePageState',
                 section: 'statefulStorage',

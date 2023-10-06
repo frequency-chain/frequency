@@ -18,25 +18,31 @@ import {
   assertEvent,
   getRemainingCapacity,
   getNonce,
-  getFundingSource
 } from "../scaffolding/helpers";
+import { getFundingSource, getSudo } from "../scaffolding/funding";
+import { isTestnet } from "../scaffolding/env";
 
 describe("Capacity Replenishment Testing: ", function () {
   let schemaId: u16;
+  const fundingSource = getFundingSource("capacity-replenishment");
 
 
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
-    const stakeProviderId = await createMsaAndProvider(stakeKeys, "ReplProv", 50n * DOLLARS);
+    const stakeProviderId = await createMsaAndProvider(fundingSource, stakeKeys, "ReplProv", 50n * DOLLARS);
     assert.notEqual(stakeProviderId, 0, "stakeProviderId should not be zero");
-    await stakeToProvider(stakeKeys, stakeProviderId, stakingAmount);
+    await stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakingAmount);
     return [stakeKeys, stakeProviderId];
   }
 
 
   before(async function () {
-    await setEpochLength(getFundingSource().keys, TEST_EPOCH_LENGTH);
-    schemaId = await getOrCreateGraphChangeSchema();
+    // Replenishment requires SUDO
+    if (isTestnet()) this.skip();
+
+    const sudo = getSudo().keys;
+    await setEpochLength(sudo, TEST_EPOCH_LENGTH);
+    schemaId = await getOrCreateGraphChangeSchema(fundingSource);
   });
 
   describe("Capacity is replenished", function () {
@@ -100,8 +106,8 @@ describe("Capacity Replenishment Testing: ", function () {
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", providerStakeAmt);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(getFundingSource().keys, userKeys, 5n * DOLLARS);
-      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
+      await fundKeypair(fundingSource, userKeys, 5n * DOLLARS);
+      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend(fundingSource);
       assertEvent(events, 'system.ExtrinsicSuccess');
 
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
@@ -125,7 +131,7 @@ describe("Capacity Replenishment Testing: ", function () {
       assert(remainingCapacity < callCapacityCost);
 
       // user stakes tiny additional amount
-      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend();
+      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend(fundingSource);
       assertEvent(events, 'capacity.Staked');
 
       // provider can now send a message

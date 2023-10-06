@@ -3,14 +3,17 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { createAndFundKeypair } from "../scaffolding/helpers";
 import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
+import { getFundingSource } from "../scaffolding/funding";
 
 describe("Utility Batch Filtering", function () {
     let sender: KeyringPair;
     let recipient: KeyringPair;
 
+    const fundingSource = getFundingSource("misc-util-batch");
+
     before(async function () {
-        sender = await createAndFundKeypair();
-        recipient = await createAndFundKeypair();
+        sender = await createAndFundKeypair(fundingSource);
+        recipient = await createAndFundKeypair(fundingSource);
     });
 
     it("should successfully execute ✅ batch with allowed calls", async function () {
@@ -20,7 +23,7 @@ describe("Utility Batch Filtering", function () {
         goodBatch.push(ExtrinsicHelper.api.tx.system.remark("Hello From Batch"))
         goodBatch.push(ExtrinsicHelper.api.tx.msa.create())
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, goodBatch);
-        const [event, eventMap] = await batch.fundAndSend();
+        const [event, eventMap] = await batch.fundAndSend(fundingSource);
         assert.notEqual(event, undefined, "should return an event");
         assert.notEqual(eventMap, undefined, "should return an eventMap");
     });
@@ -39,7 +42,7 @@ describe("Utility Batch Filtering", function () {
         // batchAll
         const batchAll = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         try {
-            await batchAll.fundAndSend();
+            await batchAll.fundAndSend(fundingSource);
         } catch (err) {
             error = err;
             assert.notEqual(error, undefined, " batchAll should return an error");
@@ -57,7 +60,7 @@ describe("Utility Batch Filtering", function () {
 
         // batch
         const batch = ExtrinsicHelper.executeUtilityBatch(sender, badBatch);
-        let [ok, eventMap] = await batch.fundAndSend();
+        let [ok, eventMap] = await batch.fundAndSend(fundingSource);
         assert.equal(ok, undefined, "should not return an ok event");
         assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
         assert.notEqual(eventMap["utility.BatchInterrupted"], undefined, "should return a batch interrupted event");
@@ -73,7 +76,7 @@ describe("Utility Batch Filtering", function () {
 
         // forceBatch
         const forceBatch = ExtrinsicHelper.executeUtilityForceBatch(sender, badBatch);
-        let [ok, eventMap] = await forceBatch.fundAndSend();
+        let [ok, eventMap] = await forceBatch.fundAndSend(fundingSource);
         assert.equal(ok, undefined, "should not return an ok event");
         assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
         assert.notEqual(eventMap["utility.BatchCompletedWithErrors"], undefined, "should return a batch completed with error event");
@@ -86,7 +89,7 @@ describe("Utility Batch Filtering", function () {
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         let error: any;
         try {
-            await batch.fundAndSend();
+            await batch.fundAndSend(fundingSource);
         } catch (err) {
             error = err;
             assert.notEqual(error, undefined, "should return an error");
@@ -101,7 +104,7 @@ describe("Utility Batch Filtering", function () {
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         let error: any;
         try {
-            await batch.fundAndSend();
+            await batch.fundAndSend(fundingSource);
         } catch (err) {
             error = err;
             assert.notEqual(error, undefined, "should return an error");
@@ -116,7 +119,7 @@ describe("Utility Batch Filtering", function () {
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, badBatch);
         let error: any;
         try {
-            await batch.fundAndSend();
+            await batch.fundAndSend(fundingSource);
         } catch (err) {
             error = err;
             assert.notEqual(error, undefined, "should return an error");
@@ -134,7 +137,7 @@ describe("Utility Batch Filtering", function () {
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, nestedBatch);
         let error: any;
         try {
-            await batch.fundAndSend();
+            await batch.fundAndSend(fundingSource);
         } catch (err) {
             error = err;
             assert.notEqual(error, undefined, "should return an error");

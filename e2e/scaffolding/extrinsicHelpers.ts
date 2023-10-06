@@ -5,7 +5,7 @@ import {Compact, u128, u16, u32, u64, Vec, Option, Bool} from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import { getBlockNumber, log, getFundingSource, Sr25519Signature } from "./helpers";
+import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -13,8 +13,8 @@ import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, Paginated
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
-import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
 import { hasRelayChain } from "./env";
+import { getFundingSource } from "./funding";
 
 export type ReleaseSchedule = {
     start: number;
@@ -143,17 +143,15 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         return call;
     }
 
-    async fundOperation(source?: KeyringPair) {
-        source ||= getFundingSource().keys;
-
+    async fundOperation(source: KeyringPair) {
         const [amount, accountInfo] = await Promise.all([this.getEstimatedTxFee(), ExtrinsicHelper.getAccountInfo(this.keys.address)]);
-        const freeBalance = BigInt(accountInfo.data.free.toString()) - EXISTENTIAL_DEPOSIT;
+        const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
         if (amount > freeBalance) {
             await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
         }
     }
 
-    public async fundAndSend(source?: KeyringPair): Promise<ParsedEventResult> {
+    public async fundAndSend(source: KeyringPair): Promise<ParsedEventResult> {
         await this.fundOperation(source);
         return this.signAndSend();
     }
@@ -233,6 +231,10 @@ export class ExtrinsicHelper {
     /** Balance Extrinsics */
     public static transferFunds(keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAllowDeath(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
+    }
+
+    public static emptyAccount(keys: KeyringPair, dest: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest.address, false), keys, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
     /** Schema Extrinsics */

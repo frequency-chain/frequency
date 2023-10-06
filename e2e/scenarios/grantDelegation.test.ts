@@ -6,9 +6,11 @@ import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/e
 import { createAndFundKeypair, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { firstValueFrom } from "rxjs";
-import { BlockNumber } from "@polkadot/types/interfaces";
+import { getFundingSource } from "../scaffolding/funding";
 
 describe("Delegation Scenario Tests", function () {
+    const fundingSource = getFundingSource("scenarios-grant-delegation");
+
     let keys: KeyringPair;
     let otherMsaKeys: KeyringPair;
     let noMsaKeys: KeyringPair;
@@ -22,39 +24,39 @@ describe("Delegation Scenario Tests", function () {
     let otherMsaId: u64;
 
     before(async function () {
-        noMsaKeys = await createAndFundKeypair();
+        noMsaKeys = await createAndFundKeypair(fundingSource);
 
-        keys = await createAndFundKeypair();
+        keys = await createAndFundKeypair(fundingSource);
         const createMsaOp = ExtrinsicHelper.createMsa(keys);
-        let [msaCreatedEvent] = await createMsaOp.fundAndSend();
+        let [msaCreatedEvent] = await createMsaOp.fundAndSend(fundingSource);
         if (msaCreatedEvent && createMsaOp.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
             msaId = msaCreatedEvent.data.msaId;
         }
         assert.notEqual(msaId, undefined, 'setup should populate msaId');
 
-        otherMsaKeys = await createAndFundKeypair();
-        [msaCreatedEvent] = await ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend();
+        otherMsaKeys = await createAndFundKeypair(fundingSource);
+        [msaCreatedEvent] = await ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource);
         if (msaCreatedEvent && createMsaOp.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
             otherMsaId = msaCreatedEvent.data.msaId;
         }
         assert.notEqual(otherMsaId, undefined, 'setup should populate otherMsaId');
 
-        providerKeys = await createAndFundKeypair();
+        providerKeys = await createAndFundKeypair(fundingSource);
         let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-        await createProviderMsaOp.fundAndSend();
+        await createProviderMsaOp.fundAndSend(fundingSource);
         let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "MyPoster");
-        let [providerEvent] = await createProviderOp.fundAndSend();
+        let [providerEvent] = await createProviderOp.fundAndSend(fundingSource);
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
             providerId = providerEvent.data.providerId;
         }
         assert.notEqual(providerId, undefined, "setup should populate providerId");
 
-        otherProviderKeys = await createAndFundKeypair();
+        otherProviderKeys = await createAndFundKeypair(fundingSource);
         createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
-        await createProviderMsaOp.fundAndSend();
+        await createProviderMsaOp.fundAndSend(fundingSource);
         createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, "MyPoster");
-        [providerEvent] = await createProviderOp.fundAndSend();
+        [providerEvent] = await createProviderOp.fundAndSend(fundingSource);
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
             otherProviderId = providerEvent.data.providerId;
@@ -93,7 +95,7 @@ describe("Delegation Scenario Tests", function () {
                 },
             ]
         }, "AvroBinary", "OnChain");
-        let [createSchemaEvent] = await createSchemaOp.fundAndSend();
+        let [createSchemaEvent] = await createSchemaOp.fundAndSend(fundingSource);
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
             schemaId = createSchemaEvent.data.schemaId;
@@ -101,7 +103,7 @@ describe("Delegation Scenario Tests", function () {
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
 
         // Create a second schema
-        [createSchemaEvent] = await createSchemaOp.fundAndSend();
+        [createSchemaEvent] = await createSchemaOp.fundAndSend(fundingSource);
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
             schemaId2 = createSchemaEvent.data.schemaId;
@@ -118,7 +120,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(providerKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.fundAndSend(), { name: 'AddProviderSignatureVerificationFailed' });
+            await assert.rejects(grantDelegationOp.fundAndSend(fundingSource), { name: 'AddProviderSignatureVerificationFailed' });
         });
 
         it("should fail to delegate to self (InvalidSelfProvider)", async function () {
@@ -129,7 +131,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(providerKeys, providerKeys, signPayloadSr25519(providerKeys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.fundAndSend(), { name: 'InvalidSelfProvider' });
+            await assert.rejects(grantDelegationOp.fundAndSend(fundingSource), { name: 'InvalidSelfProvider' });
         });
 
         it("should fail to grant delegation to an MSA that is not a registered provider (ProviderNotRegistered)", async function () {
@@ -140,7 +142,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, otherMsaKeys, signPayloadSr25519(keys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.fundAndSend(), { name: 'ProviderNotRegistered' });
+            await assert.rejects(grantDelegationOp.fundAndSend(fundingSource), { name: 'ProviderNotRegistered' });
         });
 
         it("should fail to grant delegation if ID in payload does not match origin (UnauthorizedDelegator)", async function () {
@@ -151,7 +153,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-            await assert.rejects(grantDelegationOp.fundAndSend(), { name: 'UnauthorizedDelegator' });
+            await assert.rejects(grantDelegationOp.fundAndSend(fundingSource), { name: 'UnauthorizedDelegator' });
         });
 
         it("should grant a delegation to a provider", async function () {
@@ -162,7 +164,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-            const [grantDelegationEvent] = await grantDelegationOp.fundAndSend();
+            const [grantDelegationEvent] = await grantDelegationOp.fundAndSend(fundingSource);
             assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
             if (grantDelegationEvent && grantDelegationOp.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
                 assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
@@ -186,7 +188,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-            const [grantDelegationEvent] = await grantDelegationOp.fundAndSend();
+            const [grantDelegationEvent] = await grantDelegationOp.fundAndSend(fundingSource);
             assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
             if (grantDelegationEvent && grantDelegationOp.api.events.msa.DelegationGranted.is(grantDelegationEvent)) {
                 assert.deepEqual(grantDelegationEvent.data.providerId, providerId, 'provider IDs should match');
@@ -202,14 +204,14 @@ describe("Delegation Scenario Tests", function () {
 
     describe("revoke schema permissions", function () {
         it("should fail to revoke schema permissions from non-MSA (NoKeyExists)", async function () {
-            const nonMsaKeys = await createAndFundKeypair();
+            const nonMsaKeys = await createAndFundKeypair(fundingSource);
             const op = ExtrinsicHelper.revokeSchemaPermissions(nonMsaKeys, providerId, [schemaId]);
-            await assert.rejects(op.fundAndSend(), { name: 'NoKeyExists' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'NoKeyExists' });
         });
 
         it("should fail to revoke schema permissions from a provider for which no delegation exists (DelegationNotFound)", async function () {
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, otherProviderId, [schemaId]);
-            await assert.rejects(op.fundAndSend(), { name: 'DelegationNotFound' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'DelegationNotFound' });
         })
 
         it("should fail to revoke schema permission which was never granted (SchemaNotGranted)", async function () {
@@ -220,7 +222,7 @@ describe("Delegation Scenario Tests", function () {
             }
 
             const sop = ExtrinsicHelper.createSchema(keys, schema, "AvroBinary", "OnChain");
-            const [sevent] = await sop.fundAndSend();
+            const [sevent] = await sop.fundAndSend(fundingSource);
             let sid: u16 | undefined;
             if (!!sevent && sop.api.events.schemas.SchemaCreated.is(sevent)) {
                 sid = sevent.data[1];
@@ -228,12 +230,12 @@ describe("Delegation Scenario Tests", function () {
             assert.notEqual(sid, undefined, "should have created schema");
 
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [sid]);
-            await assert.rejects(op.fundAndSend(), { name: 'SchemaNotGranted' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'SchemaNotGranted' });
         });
 
         it("should successfully revoke granted schema", async function () {
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId2]);
-            await assert.doesNotReject(op.fundAndSend());
+            await assert.doesNotReject(op.fundAndSend(fundingSource));
             let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
             const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             assert.deepEqual(grantedSchemaIds, [schemaId.toNumber()], "granted schema permissions should include only non-revoked schema permission");
@@ -242,14 +244,14 @@ describe("Delegation Scenario Tests", function () {
 
     describe("revoke delegations", function () {
         it("should fail to revoke a delegation if no MSA exists (InvalidMsaKey)", async function () {
-            const nonMsaKeys = await createAndFundKeypair();
+            const nonMsaKeys = await createAndFundKeypair(fundingSource);
             const op = ExtrinsicHelper.revokeDelegationByDelegator(nonMsaKeys, providerId);
-            await assert.rejects(op.fundAndSend(), { name: 'RpcError', message: /Custom error: 1$/ });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 1$/ });
         });
 
         it("should revoke a delegation by delegator", async function () {
             const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            const [revokeDelegationEvent] = await revokeDelegationOp.fundAndSend();
+            const [revokeDelegationEvent] = await revokeDelegationOp.fundAndSend(fundingSource);
             assert.notEqual(revokeDelegationEvent, undefined, "should have returned DelegationRevoked event");
             if (!!revokeDelegationEvent && revokeDelegationOp.api.events.msa.DelegationRevoked.is(revokeDelegationEvent)) {
                 assert.deepEqual(revokeDelegationEvent.data.providerId, providerId, 'provider ids should be equal');
@@ -259,12 +261,12 @@ describe("Delegation Scenario Tests", function () {
 
         it("should fail to revoke a delegation that has already been revoked (InvalidDelegation)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            await assert.rejects(op.fundAndSend(), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         it("should fail to revoke delegation where no delegation exists (DelegationNotFound)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, otherProviderId);
-            await assert.rejects(op.fundAndSend(), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         describe('Successful revocation', () => {
@@ -287,7 +289,7 @@ describe("Delegation Scenario Tests", function () {
                 const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
                 const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(newKeys, providerKeys, signPayloadSr25519(newKeys, addProviderData), payload);
-                const [msaEvent] = await op.fundAndSend();
+                const [msaEvent] = await op.fundAndSend(fundingSource);
                 msaId = (msaEvent && op.api.events.msa.MsaCreated.is(msaEvent) ? msaEvent.data.msaId : undefined);
                 assert.notEqual(msaId, undefined, 'should have returned an MSA');
             });
@@ -301,9 +303,16 @@ describe("Delegation Scenario Tests", function () {
                 })
             })
 
-            it("should revoke a delegation by provider", async () => {
-              await revokeDelegationByProvider(msaId)
-            })
+            it("should revoke a delegation by provider", async function () {
+                const op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
+                const [revokeEvent] = await op.fundAndSend(fundingSource);
+                assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
+                if (revokeEvent && op.api.events.msa.DelegationRevoked.is(revokeEvent)) {
+                    assert.deepEqual(revokeEvent.data.delegatorId, msaId, 'delegator ids should match');
+                    assert.deepEqual(revokeEvent.data.providerId, providerId, 'provider ids should match');
+                }
+                revokedAtBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toBigInt()
+            });
 
             it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
@@ -319,12 +328,12 @@ describe("Delegation Scenario Tests", function () {
               const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
               const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
               const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, addProviderData), payload);
-              const [msaEvent] = await op.fundAndSend();
+              const [msaEvent] = await op.fundAndSend(fundingSource);
               const newMsaId = (msaEvent && op.api.events.msa.MsaCreated.is(msaEvent) ? msaEvent.data.msaId : undefined);
               assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
               await revokeDelegationByProvider(newMsaId);
               const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-              const [retireMsaEvent] = await retireMsaOp.fundAndSend();
+              const [retireMsaEvent] = await retireMsaOp.fundAndSend(fundingSource);
               assert.notEqual(retireMsaEvent, undefined, "should have returned MsaRetired event");
               if (!!retireMsaEvent && retireMsaOp.api.events.msa.MsaRetired.is(retireMsaEvent)) {
                 assert.deepEqual(retireMsaEvent.data.msaId, newMsaId, 'msaId should be equal');
@@ -336,11 +345,11 @@ describe("Delegation Scenario Tests", function () {
             const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
             const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(delegatorKeys, providerKeys, signPayloadSr25519(delegatorKeys, addProviderData), payload);
-            const [msaEvent] = await op.fundAndSend();
+            const [msaEvent] = await op.fundAndSend(fundingSource);
             const newMsaId = (msaEvent && op.api.events.msa.MsaCreated.is(msaEvent) ? msaEvent.data.msaId : undefined);
             assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
             const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-            await assert.rejects(retireMsaOp.fundAndSend(), { name: 'RpcError', message: /Custom error: 6$/ });
+            await assert.rejects(retireMsaOp.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 6$/ });
           });
         });
     });
@@ -351,7 +360,7 @@ describe("Delegation Scenario Tests", function () {
         let defaultPayload: AddProviderPayload;
 
         before(async function () {
-            sponsorKeys = await createAndFundKeypair();
+            sponsorKeys = await createAndFundKeypair(fundingSource);
             defaultPayload = {
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],
@@ -363,7 +372,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'UnauthorizedProvider' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'UnauthorizedProvider' });
         });
 
         it("should fail to create delegated account if payload signature cannot be verified (InvalidSignature)", async function () {
@@ -371,7 +380,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), { ...payload, ...defaultPayload });
-            await assert.rejects(op.fundAndSend(), { name: 'InvalidSignature' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'InvalidSignature' });
         });
 
         it("should fail to create delegated account if no MSA exists for origin (NoKeyExists)", async function () {
@@ -379,7 +388,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, noMsaKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'NoKeyExists' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'NoKeyExists' });
         });
 
         it("should fail to create delegated account if MSA already exists for delegator (KeyAlreadyRegistered)", async function () {
@@ -387,7 +396,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'KeyAlreadyRegistered' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'KeyAlreadyRegistered' });
         })
 
         it("should fail to create delegated account if provider is not registered (ProviderNotRegistered)", async function () {
@@ -395,7 +404,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(keys, otherMsaKeys, signPayloadSr25519(keys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'ProviderNotRegistered' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'ProviderNotRegistered' });
         })
 
         it("should fail to create delegated account if provider if payload proof is too far in the future (ProofNotYetValid)", async function () {
@@ -403,7 +412,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'ProofNotYetValid' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'ProofNotYetValid' });
         })
 
         it("should fail to create delegated account if provider if payload proof has expired (ProofHasExpired))", async function () {
@@ -411,7 +420,7 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
-            await assert.rejects(op.fundAndSend(), { name: 'ProofHasExpired' });
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'ProofHasExpired' });
         })
 
         it("should successfully create a delegated account", async function () {
@@ -419,10 +428,10 @@ describe("Delegation Scenario Tests", function () {
             const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
 
             op = ExtrinsicHelper.createSponsoredAccountWithDelegation(sponsorKeys, providerKeys, signPayloadSr25519(sponsorKeys, addProviderData), payload);
-            const [event, eventMap] = await op.fundAndSend();
+            const [event, eventMap] = await op.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, 'should have returned MsaCreated event');
             assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
-            await assert.rejects(op.fundAndSend(), { name: 'SignatureAlreadySubmitted' }, "should reject double submission");
+            await assert.rejects(op.fundAndSend(fundingSource), { name: 'SignatureAlreadySubmitted' }, "should reject double submission");
         })
     })
 })

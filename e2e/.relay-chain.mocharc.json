@@ -3,9 +3,9 @@
     "extension": [
         "ts"
     ],
-    "parallel": false,
+    "parallel": true,
     "require": [
-        "scaffolding/rootHooks.ts",
+        "scaffolding/globalHooks.ts",
         "scaffolding/extrinsicHelpers.ts"
     ],
     "loader": "ts-node/esm",
