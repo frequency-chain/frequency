@@ -1,21 +1,22 @@
-use codec::{Decode, Encode};
+use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
 };
 use frame_support::{traits::Get, BoundedVec};
 use multibase::Base;
 use scale_info::TypeInfo;
-use sp_std::prelude::*;
+use sp_std::{fmt::Debug, prelude::*};
 
 /// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
 pub type OffchainPayloadType = (Vec<u8>, u32);
 
 /// A single message type definition.
-#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxDataSize))]
+#[codec(mel_bound(MaxDataSize: MaxEncodedLen))]
 pub struct Message<MaxDataSize>
 where
-	MaxDataSize: Get<u32>,
+	MaxDataSize: Get<u32> + Debug,
 {
 	///  Data structured by the associated schema's model.
 	pub payload: BoundedVec<u8, MaxDataSize>,
@@ -32,7 +33,7 @@ where
 
 impl<MaxDataSize> Message<MaxDataSize>
 where
-	MaxDataSize: Get<u32>,
+	MaxDataSize: Get<u32> + Debug,
 {
 	/// Helper function to handle response type [`MessageResponse`] depending on the Payload Location (on chain or IPFS)
 	pub fn map_to_response(

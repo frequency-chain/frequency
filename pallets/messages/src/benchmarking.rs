@@ -23,7 +23,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let payload = Vec::from(
 		"{'fromId': 123, 'content': '232323', 'fromId': 123, 'content': '232323'}".as_bytes(),
 	);
-	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+	let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
 	MessagesPallet::<T>::add_message(
 		provider_id.into(),
@@ -40,7 +40,7 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let payload =
 		Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
 	let provider_id = ProviderId(1);
-	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+	let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
 
 	MessagesPallet::<T>::add_message(
@@ -64,7 +64,7 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 
 benchmarks! {
 	add_onchain_message {
-		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
+		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
 		let schema_id = 1;

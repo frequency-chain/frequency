@@ -58,37 +58,37 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
 	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	/// Storage: Messages Messages (r:1 w:1)
-	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Messages Messages (max_values: None, max_size: Some(358561024), added: 358563499, mode: MaxEncodedLen)
 	/// The range of component `n` is `[0, 51199]`.
 	fn add_onchain_message(n: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `46773`
-		//  Estimated: `59148`
+		//  Estimated: `358573399`
 		// Minimum execution time: 180_329_000 picoseconds.
-		Weight::from_parts(179_112_822, 59148)
+		Weight::from_parts(179_112_822, 358573399)
 			// Standard Error: 52
 			.saturating_add(Weight::from_parts(1_852, 0).saturating_mul(n.into()))
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
 	/// Storage: Messages Messages (r:1 w:1)
-	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Messages Messages (max_values: None, max_size: Some(358561024), added: 358563499, mode: MaxEncodedLen)
 	fn add_ipfs_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `36289`
-		//  Estimated: `48664`
+		//  Estimated: `358573399`
 		// Minimum execution time: 169_213_000 picoseconds.
-		Weight::from_parts(174_485_000, 48664)
+		Weight::from_parts(174_485_000, 358573399)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -97,37 +97,37 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
 	/// Storage: Msa DelegatorAndProviderToDelegation (r:1 w:0)
 	/// Proof: Msa DelegatorAndProviderToDelegation (max_values: None, max_size: Some(217), added: 2692, mode: MaxEncodedLen)
 	/// Storage: Messages Messages (r:1 w:1)
-	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Messages Messages (max_values: None, max_size: Some(358561024), added: 358563499, mode: MaxEncodedLen)
 	/// The range of component `n` is `[0, 51199]`.
 	fn add_onchain_message(n: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `46773`
-		//  Estimated: `59148`
+		//  Estimated: `358573399`
 		// Minimum execution time: 180_329_000 picoseconds.
-		Weight::from_parts(179_112_822, 59148)
+		Weight::from_parts(179_112_822, 358573399)
 			// Standard Error: 52
 			.saturating_add(Weight::from_parts(1_852, 0).saturating_mul(n.into()))
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
 	/// Storage: Messages Messages (r:1 w:1)
-	/// Proof Skipped: Messages Messages (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Messages Messages (max_values: None, max_size: Some(358561024), added: 358563499, mode: MaxEncodedLen)
 	fn add_ipfs_message() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `36289`
-		//  Estimated: `48664`
+		//  Estimated: `358573399`
 		// Minimum execution time: 169_213_000 picoseconds.
-		Weight::from_parts(174_485_000, 48664)
+		Weight::from_parts(174_485_000, 358573399)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}

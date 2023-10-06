@@ -60,36 +60,36 @@ pub trait WeightInfo {
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
-	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
 	/// Storage: Schemas Schemas (r:0 w:1)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// The range of component `m` is `[16, 65499]`.
 	fn create_schema(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
-		//  Estimated: `10531`
+		//  Estimated: `10399`
 		// Minimum execution time: 14_864_000 picoseconds.
-		Weight::from_parts(15_061_000, 10531)
+		Weight::from_parts(15_061_000, 10399)
 			// Standard Error: 60
 			.saturating_add(Weight::from_parts(39_004, 0).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
-	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
 	/// Storage: Schemas Schemas (r:0 w:1)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// The range of component `m` is `[16, 65499]`.
 	fn create_schema_via_governance(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
-		//  Estimated: `10531`
+		//  Estimated: `10399`
 		// Minimum execution time: 14_778_000 picoseconds.
-		Weight::from_parts(14_885_000, 10531)
+		Weight::from_parts(14_885_000, 10399)
 			// Standard Error: 61
 			.saturating_add(Weight::from_parts(38_923, 0).saturating_mul(m.into()))
 			.saturating_add(T::DbWeight::get().reads(2_u64))
@@ -118,7 +118,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_max_schema_model_bytes() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -132,36 +132,36 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 // For backwards compatibility and tests
 impl WeightInfo for () {
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
-	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
 	/// Storage: Schemas Schemas (r:0 w:1)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// The range of component `m` is `[16, 65499]`.
 	fn create_schema(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
-		//  Estimated: `10531`
+		//  Estimated: `10399`
 		// Minimum execution time: 14_864_000 picoseconds.
-		Weight::from_parts(15_061_000, 10531)
+		Weight::from_parts(15_061_000, 10399)
 			// Standard Error: 60
 			.saturating_add(Weight::from_parts(39_004, 0).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
 	}
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:1 w:0)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	/// Storage: Schemas CurrentSchemaIdentifierMaximum (r:1 w:1)
-	/// Proof Skipped: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas CurrentSchemaIdentifierMaximum (max_values: Some(1), max_size: Some(2), added: 497, mode: MaxEncodedLen)
 	/// Storage: Schemas Schemas (r:0 w:1)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
+	/// Proof: Schemas Schemas (max_values: None, max_size: Some(65518), added: 67993, mode: MaxEncodedLen)
 	/// The range of component `m` is `[16, 65499]`.
 	fn create_schema_via_governance(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
-		//  Estimated: `10531`
+		//  Estimated: `10399`
 		// Minimum execution time: 14_778_000 picoseconds.
-		Weight::from_parts(14_885_000, 10531)
+		Weight::from_parts(14_885_000, 10399)
 			// Standard Error: 61
 			.saturating_add(Weight::from_parts(38_923, 0).saturating_mul(m.into()))
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
@@ -190,7 +190,7 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
 	}
 	/// Storage: Schemas GovernanceSchemaModelMaxBytes (r:0 w:1)
-	/// Proof Skipped: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: None, mode: Measured)
+	/// Proof: Schemas GovernanceSchemaModelMaxBytes (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
 	fn set_max_schema_model_bytes() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`

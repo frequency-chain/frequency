@@ -891,7 +891,7 @@ impl pallet_messages::Config for Runtime {
 	// The maximum number of messages per block
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	// The maximum message payload in bytes
-	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]

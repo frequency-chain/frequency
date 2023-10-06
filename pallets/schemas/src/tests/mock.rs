@@ -1,3 +1,4 @@
+use codec::MaxEncodedLen;
 use frame_support::{
 	dispatch::DispatchError,
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
@@ -38,6 +39,15 @@ frame_support::construct_runtime!(
 parameter_types! {
 	pub MaxProposalWeight: frame_support::weights::Weight =
 		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+	pub const SchemaModelMaxBytesBoundedVecLimit :u32 = 65_500;
+}
+impl Encode for SchemaModelMaxBytesBoundedVecLimit {}
+
+impl MaxEncodedLen for SchemaModelMaxBytesBoundedVecLimit {
+	fn max_encoded_len() -> usize {
+		usize::try_from(SchemasMaxBytesBoundedVecLimit::get())
+			.expect("usize is smaller than SchemasMaxBytesBoundedVecLimit")
+	}
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -106,7 +116,7 @@ impl pallet_schemas::Config for Test {
 	type MinSchemaModelSizeBytes = ConstU32<8>;
 	// a very high limit on incoming schema size, expected to be much higher than what
 	// is actually allowed.
-	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<65_500>;
+	type SchemaModelMaxBytesBoundedVecLimit = SchemaModelMaxBytesBoundedVecLimit;
 	type MaxSchemaRegistrations = MaxSchemaRegistrations;
 	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type
