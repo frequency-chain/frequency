@@ -398,7 +398,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
@@ -686,7 +686,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: "npm"
           cache-dependency-path: integration-tests/package-lock.json
       - name: Install Built api-augment
