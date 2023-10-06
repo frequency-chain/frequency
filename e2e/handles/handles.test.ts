@@ -1,12 +1,13 @@
 //  Handles test suite
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createDelegator, hasRelayChain } from "../scaffolding/helpers";
+import { createDelegator } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { MessageSourceId } from "@frequency-chain/api-augment/interfaces";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { Bytes } from "@polkadot/types";
 import { getBlockNumber } from "../scaffolding/helpers";
+import { hasRelayChain } from "../scaffolding/env";
 
 describe("🤝 Handles", () => {
     let msa_id: MessageSourceId;

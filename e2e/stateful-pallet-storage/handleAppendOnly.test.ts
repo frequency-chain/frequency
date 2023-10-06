@@ -3,7 +3,7 @@ import "@frequency-chain/api-augment";
 import assert from "assert";
 import {
   createDelegatorAndDelegation,
-  createProviderKeysAndId, devAccounts,
+  createProviderKeysAndId, getFundingSource,
   getCurrentItemizedHash,
 } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
@@ -21,7 +21,7 @@ describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
 
     before(async function () {
         // Using Alice as sudoKey
-        sudoKey = devAccounts[0].keys;
+        sudoKey = getFundingSource().keys;
 
         // Create a provider for the MSA, the provider will be used to grant delegation
         [providerKeys, providerId] = await createProviderKeysAndId();

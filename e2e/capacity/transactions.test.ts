@@ -22,7 +22,7 @@ import {
   CENTS,
   DOLLARS,
   getOrCreateGraphChangeSchema,
-  getDefaultFundingSource,
+  getFundingSource,
   TokenPerCapacity,
   Sr25519Signature,
   assertEvent,
@@ -36,13 +36,13 @@ import {
   getOrCreateAvroChatMessageItemizedSchema,
   getOrCreateParquetBroadcastSchema,
   getOrCreateAvroChatMessagePaginatedSchema,
-  CHAIN_ENVIRONMENT,
   generateItemizedSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
+import { isDev } from "../scaffolding/env";
 
 describe("Capacity Transactions", function () {
   const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -165,8 +165,8 @@ describe("Capacity Transactions", function () {
         });
 
         it("successfully pays with Capacity for eligible transaction - grantDelegation", async function () {
-          const default_funding_source = getDefaultFundingSource();
-          await fundKeypair(default_funding_source.keys, delegatorKeys, 10n * CENTS);
+          const defaultFundingSource = getFundingSource();
+          await fundKeypair(defaultFundingSource.keys, delegatorKeys, 10n * CENTS);
 
           let [_unused1, MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
           assertEvent(MsaCreatedEvent, "msa.MsaCreated");
@@ -201,7 +201,7 @@ describe("Capacity Transactions", function () {
         // Increase global timeout to allow for the IPFS node startup when
         // the Frequency node is built for development. Running against a live
         // chain doesn't bump into this problem because the timeouts are higher.
-        if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
+        if (isDev()) {
           this.timeout(5000);
         }
 

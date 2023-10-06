@@ -4,7 +4,6 @@ import { u16, u64 } from "@polkadot/types"
 import assert from "assert";
 import { Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
-  devAccounts,
   createKeys,
   createMsaAndProvider,
   stakeToProvider,
@@ -18,7 +17,8 @@ import {
   TokenPerCapacity,
   assertEvent,
   getRemainingCapacity,
-  getNonce
+  getNonce,
+  getFundingSource
 } from "../scaffolding/helpers";
 
 describe("Capacity Replenishment Testing: ", function () {
@@ -35,7 +35,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
 
   before(async function () {
-    await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+    await setEpochLength(getFundingSource().keys, TEST_EPOCH_LENGTH);
     schemaId = await getOrCreateGraphChangeSchema();
   });
 
@@ -100,7 +100,7 @@ describe("Capacity Replenishment Testing: ", function () {
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider("TinyStake", providerStakeAmt);
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
-      await fundKeypair(devAccounts[0].keys, userKeys, 5n * DOLLARS);
+      await fundKeypair(getFundingSource().keys, userKeys, 5n * DOLLARS);
       let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
 

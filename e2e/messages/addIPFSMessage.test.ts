@@ -5,18 +5,19 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid'
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { CHAIN_ENVIRONMENT, createAndFundKeypair } from "../scaffolding/helpers";
+import { createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16, u32 } from "@polkadot/types";
 import { firstValueFrom } from "rxjs";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import { ipfsCid } from "./ipfs";
+import { isDev } from "../scaffolding/env";
 
 describe("Add Offchain Message", function () {
     // Increase global timeout to allow for the IPFS node startup when
     // the test chain validation is "instant_finality". Running against a live
     // chain doesn't bump into this problem because the timeouts are higher.
-    if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
+    if (isDev()) {
         this.timeout(5000);
     }
 

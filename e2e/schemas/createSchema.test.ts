@@ -5,7 +5,7 @@ import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "./fixtures/avroGraphChangeSchemaType";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createKeys, createAndFundKeypair, devAccounts, assertExtrinsicSuccess } from "../scaffolding/helpers";
+import { createKeys, createAndFundKeypair, assertExtrinsicSuccess, getFundingSource } from "../scaffolding/helpers";
 import { u16 } from "@polkadot/types";
 
 describe("#createSchema", function () {
@@ -15,7 +15,7 @@ describe("#createSchema", function () {
 
     before(async function () {
         // Using Alice as sudo key
-        sudoKey = devAccounts[0].keys;
+        sudoKey = getFundingSource().keys;
         keys = await createAndFundKeypair();
         accountWithNoFunds = createKeys();
     });

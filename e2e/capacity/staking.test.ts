@@ -4,13 +4,14 @@ import { u64, } from "@polkadot/types";
 import assert from "assert";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
-    devAccounts, createKeys, createMsaAndProvider,
-    stakeToProvider, CHAIN_ENVIRONMENT,
+    createKeys, createMsaAndProvider,
+    stakeToProvider,
     getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
-    CENTS, DOLLARS, createAndFundKeypair
+    CENTS, DOLLARS, createAndFundKeypair, getFundingSource
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
+import { hasRelayChain, isDev } from "../scaffolding/env";
 
 describe("Capacity Staking Tests", function () {
     const accountBalance: bigint = 2n * DOLLARS;
@@ -29,8 +30,8 @@ describe("Capacity Staking Tests", function () {
         // Pallet config changes such as modifying the epoch length will
         // only be modified when running tests against a Frequency node built
         // for development.
-        if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.DEVELOPMENT) {
-            await setEpochLength(devAccounts[0].keys, TEST_EPOCH_LENGTH);
+        if (isDev()) {
+            await setEpochLength(getFundingSource().keys, TEST_EPOCH_LENGTH);
         }
     });
 
@@ -81,7 +82,7 @@ describe("Capacity Staking Tests", function () {
             // Withdrawing unstaked token will only be executed against a Frequency
             // node built for development due to the long length of time it would
             // take to wait for an epoch period to roll over.
-            if (process.env.CHAIN_ENVIRONMENT !== CHAIN_ENVIRONMENT.DEVELOPMENT) this.skip();
+            if (!isDev()) this.skip();
 
             // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
             let newEpochBlock = await getNextEpochBlock();
@@ -274,8 +275,7 @@ describe("Capacity Staking Tests", function () {
     describe("withdraw_unstaked()", async function () {
         describe("when attempting to call withdrawUnstake before first calling unstake", async function () {
             it("errors with NoUnstakedTokensAvailable", async function () {
-                if (process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_LOCAL ||
-                    process.env.CHAIN_ENVIRONMENT === CHAIN_ENVIRONMENT.ROCOCO_TESTNET) {
+                if (hasRelayChain()) {
                     this.timeout(250000);
                 }
 

@@ -1,6 +1,6 @@
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, devAccounts, getNonce } from "../scaffolding/helpers";
+import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, getNonce, getFundingSource } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { EXISTENTIAL_DEPOSIT } from "../scaffolding/rootHooks";
@@ -85,7 +85,7 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
 
     // Create and fund the control keys
     let controlKeyPromises: Array<Promise<KeyringPair>> = [];
-    const devAccount = devAccounts[0].keys;
+    const devAccount = getFundingSource().keys;
     let devAccountNonce = await getNonce(devAccount);
     for (let i = 0; i < count; i++) {
         controlKeyPromises.push(createAndFundKeypair(100n * 10n * EXISTENTIAL_DEPOSIT, undefined, devAccount, devAccountNonce++));

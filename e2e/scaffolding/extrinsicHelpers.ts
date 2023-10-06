@@ -5,7 +5,7 @@ import {Compact, u128, u16, u32, u64, Vec, Option, Bool} from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
-import { getBlockNumber, log, getDefaultFundingSource, Sr25519Signature, hasRelayChain} from "./helpers";
+import { getBlockNumber, log, getFundingSource, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
 import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -14,6 +14,7 @@ import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
 import { EXISTENTIAL_DEPOSIT } from "./rootHooks";
+import { hasRelayChain } from "./env";
 
 export type ReleaseSchedule = {
     start: number;
@@ -143,7 +144,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
     }
 
     async fundOperation(source?: KeyringPair) {
-        source ||= getDefaultFundingSource().keys;
+        source ||= getFundingSource().keys;
 
         const [amount, accountInfo] = await Promise.all([this.getEstimatedTxFee(), ExtrinsicHelper.getAccountInfo(this.keys.address)]);
         const freeBalance = BigInt(accountInfo.data.free.toString()) - EXISTENTIAL_DEPOSIT;
