@@ -40,6 +40,27 @@ export function getSudo() {
 
   return {
     uri: "//Alice",
-    keys: createKeys("//Alice"),
+    keys: keyring.addFromUri("//Alice"),
+  };
+}
+
+export function getRootFundingSource() {
+  if (isTestnet()) {
+    const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
+
+    if (seed_phrase === undefined) {
+      console.error("FUNDING_ACCOUNT_SEED_PHRASE must not be undefined when CHAIN_ENVIRONMENT is \"rococo\"");
+      process.exit(1);
+    }
+
+    return {
+      uri: "RococoTestRunnerAccount",
+      keys: createKeys(seed_phrase),
+    };
+  }
+
+  return {
+    uri: "//Alice",
+    keys: keyring.addFromUri("//Alice"),
   };
 }

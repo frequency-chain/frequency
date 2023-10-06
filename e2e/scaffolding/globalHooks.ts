@@ -1,31 +1,10 @@
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { isTestnet } from "./env";
 import { ExtrinsicHelper } from "./extrinsicHelpers";
-import { fundingSources, getFundingSource } from "./funding";
-import { createKeys, getNonce } from "./helpers";
+import { fundingSources, getFundingSource, getRootFundingSource } from "./funding";
+import { getNonce } from "./helpers";
 
-const SOURCE_AMOUNT = 100n * 100_000_000n; // 100 * 1 UNIT
-
-function getRootFundingSource() {
-  if (isTestnet()) {
-    const seed_phrase = process.env.FUNDING_ACCOUNT_SEED_PHRASE;
-
-    if (seed_phrase === undefined) {
-      console.error("FUNDING_ACCOUNT_SEED_PHRASE must not be undefined when CHAIN_ENVIRONMENT is \"rococo\"");
-      process.exit(1);
-    }
-
-    return {
-      uri: "RococoTestRunnerAccount",
-      keys: createKeys(seed_phrase),
-    };
-  }
-
-  return {
-    uri: "//Alice",
-    keys: createKeys("//Alice"),
-  };
-}
+const SOURCE_AMOUNT = 100_000_000_000_000n;
 
 async function fundAllSources() {
   const root = getRootFundingSource().keys;
@@ -43,15 +22,17 @@ async function drainAllSources() {
 }
 
 export async function mochaGlobalSetup() {
-  console.log('Global Setup');
+  console.log('Global Setup Start');
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize();
   await fundAllSources();
+  console.log('Global Setup Complete');
 }
 
 export async function mochaGlobalTeardown() {
-  console.log('Global Teardown');
+  console.log('Global Teardown Start');
   await drainAllSources();
   await ExtrinsicHelper.api.disconnect();
   await ExtrinsicHelper.apiPromise.disconnect();
+  console.log('Global Teardown Complete');
 }

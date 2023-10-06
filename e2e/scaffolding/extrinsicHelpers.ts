@@ -229,12 +229,12 @@ export class ExtrinsicHelper {
     }
 
     /** Balance Extrinsics */
-    public static transferFunds(keys: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAllowDeath(dest.address, amount), keys, ExtrinsicHelper.api.events.balances.Transfer);
+    public static transferFunds(source: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferKeepAlive(dest.address, amount), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
-    public static emptyAccount(keys: KeyringPair, dest: KeyringPair): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest.address, false), keys, ExtrinsicHelper.api.events.balances.Transfer);
+    public static emptyAccount(source: KeyringPair, dest: KeyringPair): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest.address, false), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
     /** Schema Extrinsics */
