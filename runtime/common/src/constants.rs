@@ -103,8 +103,7 @@ impl Encode for SchemasMaxBytesBoundedVecLimit {}
 
 impl MaxEncodedLen for SchemasMaxBytesBoundedVecLimit {
 	fn max_encoded_len() -> usize {
-		usize::try_from(SchemasMaxBytesBoundedVecLimit::get())
-			.expect("usize is smaller than SchemasMaxBytesBoundedVecLimit")
+		SchemasMaxBytesBoundedVecLimit::get() as usize
 	}
 }
 // -end- Schemas Pallet ---
@@ -294,8 +293,7 @@ impl Encode for MessagesMaxPayloadSizeBytes {}
 
 impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 	fn max_encoded_len() -> usize {
-		usize::try_from(MessagesMaxPayloadSizeBytes::get())
-			.expect("usize is smaller than MessagesMaxPayloadSizeBytes")
+		MessagesMaxPayloadSizeBytes::get() as usize
 	}
 }
 // -end- Messages Pallet ---
