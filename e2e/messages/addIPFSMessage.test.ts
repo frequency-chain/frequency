@@ -34,7 +34,7 @@ describe("Add Offchain Message", function () {
     before(async function () {
         starting_block = (await firstValueFrom(ExtrinsicHelper.api.rpc.chain.getHeader())).number.toNumber();
 
-        const cid = await ipfsCid(ipfs_payload_data, './integration_test.txt');
+        const cid = await ipfsCid(ipfs_payload_data, './e2e_test.txt');
         ipfs_cid_64 = cid.toString(base64);
         ipfs_cid_32 = cid.toString(base32);
 
@@ -94,7 +94,7 @@ describe("Add Offchain Message", function () {
     });
 
     it("should fail if CID is CIDv0 (UnsupportedCidVersion)", async function () {
-        const cid = await ipfsCid(ipfs_payload_data, './integration_test.txt');
+        const cid = await ipfsCid(ipfs_payload_data, './e2e_test.txt');
         const cidV0 = CID.createV0(cid.multihash as any).toString();
         const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, cidV0, ipfs_payload_len);
         await assert.rejects(f.fundAndSend(), { name: "UnsupportedCidVersion" });

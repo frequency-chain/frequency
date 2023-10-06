@@ -1,7 +1,7 @@
 {
-    "name": "frequency-integration-tests",
+    "name": "frequency-e2e-tests",
     "version": "1.0.0",
-    "description": "Integration tests for the Frequency project",
+    "description": "End to end tests for the Frequency project",
     "type": "module",
     "scripts": {
         "clean": "rm -Rf dist",
@@ -11,7 +11,7 @@
         "test:load": "mocha --config .load-test.mocharc.json",
         "format": "tsc --noEmit --pretty",
         "lint": "tsc --noEmit --pretty",
-        "preinstall": "echo \"NOTICE: Integration tests REQUIRE ../js/api-augment to have been built and packaged\""
+        "preinstall": "echo \"NOTICE: E2E tests REQUIRE ../js/api-augment to have been built and packaged\""
     },
     "keywords": [],
     "author": "",

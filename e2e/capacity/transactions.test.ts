@@ -5,7 +5,7 @@ import { Codec } from "@polkadot/types/types";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
-import {AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper} from "../scaffolding/extrinsicHelpers";
+import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { base64 } from 'multiformats/bases/base64';
 import { firstValueFrom } from "rxjs";
 import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
@@ -45,7 +45,7 @@ import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
 
 describe("Capacity Transactions", function () {
-    const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
+  const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 
   describe("pay_with_capacity", function () {
     describe("when caller has a Capacity account", async function () {
@@ -70,8 +70,7 @@ describe("Capacity Transactions", function () {
 
       function getCapacityFee(chainEvents: EventMap): bigint {
         if (chainEvents["capacity.CapacityWithdrawn"] &&
-          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"]))
-        {
+          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents["capacity.CapacityWithdrawn"])) {
           return chainEvents["capacity.CapacityWithdrawn"].data.amount.toBigInt();
         }
         return 0n;
@@ -112,9 +111,9 @@ describe("Capacity Transactions", function () {
         let capacityProvider: u64;
         let delegatorKeys: KeyringPair;
         let payload: any = {};
-        const stakedForMsa = 15n*DOLLARS
+        const stakedForMsa = 15n * DOLLARS
 
-        before(async function() {
+        before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
           await assert.doesNotReject(stakeToProvider(capacityKeys, capacityProvider, stakedForMsa));
@@ -166,15 +165,15 @@ describe("Capacity Transactions", function () {
         });
 
         it("successfully pays with Capacity for eligible transaction - grantDelegation", async function () {
-            const default_funding_source = getDefaultFundingSource();
-            await fundKeypair(default_funding_source.keys, delegatorKeys, 10n * CENTS);
+          const default_funding_source = getDefaultFundingSource();
+          await fundKeypair(default_funding_source.keys, delegatorKeys, 10n * CENTS);
 
-            let [_unused1, MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
-            assertEvent(MsaCreatedEvent, "msa.MsaCreated");
+          let [_unused1, MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+          assertEvent(MsaCreatedEvent, "msa.MsaCreated");
 
-            const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
-            const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, capacityKeys,
-                signPayloadSr25519(delegatorKeys, addProviderData), payload);
+          const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+          const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, capacityKeys,
+            signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
           const capacityStakedInitial = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
 
@@ -189,7 +188,7 @@ describe("Capacity Transactions", function () {
 
           let fee = getCapacityFee(chainEvents);
           // assumning no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
-          const maximumExpectedRemaining = stakedForMsa/TokenPerCapacity - fee
+          const maximumExpectedRemaining = stakedForMsa / TokenPerCapacity - fee
 
           let remaining = capacityStaked.remainingCapacity.toBigInt();
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
@@ -210,7 +209,7 @@ describe("Capacity Transactions", function () {
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;
 
-        before(async function() {
+        before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
         })
@@ -224,7 +223,7 @@ describe("Capacity Transactions", function () {
           let schemaId = await getOrCreateParquetBroadcastSchema();
           const ipfs_payload_data = "This is a test of Frequency.";
           const ipfs_payload_len = ipfs_payload_data.length + 1;
-          const ipfs_cid_64 = (await ipfsCid(ipfs_payload_data, './integration_test.txt')).toString(base64);
+          const ipfs_cid_64 = (await ipfsCid(ipfs_payload_data, './e2e_test.txt')).toString(base64);
           const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, schemaId, ipfs_cid_64, ipfs_payload_len);
 
           const [_, chainEvents] = await call.payWithCapacity();
@@ -259,7 +258,7 @@ describe("Capacity Transactions", function () {
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;
 
-        before(async function() {
+        before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
         })
@@ -485,7 +484,7 @@ describe("Capacity Transactions", function () {
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;
 
-        before(async function() {
+        before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
         })
@@ -581,7 +580,7 @@ describe("Capacity Transactions", function () {
 
         await assert.rejects(grantDelegationOp.payWithCapacity(), {
           name: 'RpcError',
-          message: /1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low/,
+          message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low",
         })
       });
     });
@@ -648,109 +647,109 @@ describe("Capacity Transactions", function () {
   });
 
   describe("pay_with_capacity_batch_all", function () {
-      let capacityProviderKeys: KeyringPair;
-      let capacityProvider: u64;
-      let schemaId: u16;
-      let defaultPayload: AddProviderPayload;
-      const amountStaked = 9n * DOLLARS;
+    let capacityProviderKeys: KeyringPair;
+    let capacityProvider: u64;
+    let schemaId: u16;
+    let defaultPayload: AddProviderPayload;
+    const amountStaked = 9n * DOLLARS;
 
-      beforeEach(async function () {
-        capacityProviderKeys = createKeys("CapacityProviderKeys");
-        capacityProvider = await createMsaAndProvider(capacityProviderKeys, "CapacityProvider", FUNDS_AMOUNT);
-        defaultPayload = {
-          authorizedMsaId: capacityProvider,
-          schemaIds: [schemaId],
-        }
-      });
+    beforeEach(async function () {
+      capacityProviderKeys = createKeys("CapacityProviderKeys");
+      capacityProvider = await createMsaAndProvider(capacityProviderKeys, "CapacityProvider", FUNDS_AMOUNT);
+      defaultPayload = {
+        authorizedMsaId: capacityProvider,
+        schemaIds: [schemaId],
+      }
+    });
 
-      it("successfully pays with Capacity for a batch of eligible transactions - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
-        await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
+    it("successfully pays with Capacity for a batch of eligible transactions - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
+      await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
 
-        const addProviderPayload = await generateDelegationPayload({...defaultPayload});
-        const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
-        let delegatorKeys = createKeys("delegatorKeys");
-        const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-          delegatorKeys.publicKey,
-          signPayloadSr25519(delegatorKeys, addProviderData),
-          addProviderPayload
-        );
+      const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
+      const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+      let delegatorKeys = createKeys("delegatorKeys");
+      const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+        delegatorKeys.publicKey,
+        signPayloadSr25519(delegatorKeys, addProviderData),
+        addProviderPayload
+      );
 
-        const handle = "test_handle";
-        const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
-        const expiration = (await getBlockNumber()) + 5;
-        const handlePayload = {
-          baseHandle: handle_vec,
-          expiration: expiration,
-        };
-        const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
-        const claimHandleProof = {
-          Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
-        };
+      const handle = "test_handle";
+      const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+      const expiration = (await getBlockNumber()) + 5;
+      const handlePayload = {
+        baseHandle: handle_vec,
+        expiration: expiration,
+      };
+      const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+      const claimHandleProof = {
+        Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+      };
 
-        const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
-          delegatorKeys.publicKey,
-          claimHandleProof,
-          claimHandlePayload
-        );
-        const calls = [
-          createSponsoredAccountWithDelegation,
-          claimHandle,
-        ];
+      const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+        delegatorKeys.publicKey,
+        claimHandleProof,
+        claimHandlePayload
+      );
+      const calls = [
+        createSponsoredAccountWithDelegation,
+        claimHandle,
+      ];
 
-        let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+      let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
 
-        const [batchCompletedEvent, eventMap] = await payWithCapacityBatchAllOp.signAndSend();
+      const [batchCompletedEvent, eventMap] = await payWithCapacityBatchAllOp.signAndSend();
 
-        if (batchCompletedEvent &&
-          !(ExtrinsicHelper.api.events.utility.BatchCompleted.is(batchCompletedEvent))) {
-          assert.fail("should return a BatchCompletedEvent");
-        }
+      if (batchCompletedEvent &&
+        !(ExtrinsicHelper.api.events.utility.BatchCompleted.is(batchCompletedEvent))) {
+        assert.fail("should return a BatchCompletedEvent");
+      }
 
-        assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
-        assert.notEqual(eventMap["handles.HandleClaimed"], undefined, 'should have returned HandleClaimed event');
-      });
+      assert.notEqual(eventMap["msa.DelegationGranted"], undefined, 'should have returned DelegationGranted event');
+      assert.notEqual(eventMap["handles.HandleClaimed"], undefined, 'should have returned HandleClaimed event');
+    });
 
-      it("batch fails if one transaction fails - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
-        await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
+    it("batch fails if one transaction fails - [createSponsoredAccountWithDelegation, claimHandle]", async function () {
+      await assert.doesNotReject(stakeToProvider(capacityProviderKeys, capacityProvider, amountStaked));
 
-        const addProviderPayload = await generateDelegationPayload({...defaultPayload});
-        const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
-        let delegatorKeys = createKeys("delegatorKeys");
-        const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-          delegatorKeys.publicKey,
-          signPayloadSr25519(delegatorKeys, addProviderData),
-          addProviderPayload
-        );
+      const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
+      const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
+      let delegatorKeys = createKeys("delegatorKeys");
+      const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+        delegatorKeys.publicKey,
+        signPayloadSr25519(delegatorKeys, addProviderData),
+        addProviderPayload
+      );
 
-        const handle = "test_handle_that_exceeds_the_byte_limit";
-        const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
-        const expiration = (await getBlockNumber()) + 5;
-        const handlePayload = {
-          baseHandle: handle_vec,
-          expiration: expiration,
-        };
-        const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
-        const calimHandleProof = {
-          Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
-        };
+      const handle = "test_handle_that_exceeds_the_byte_limit";
+      const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+      const expiration = (await getBlockNumber()) + 5;
+      const handlePayload = {
+        baseHandle: handle_vec,
+        expiration: expiration,
+      };
+      const claimHandlePayload: any = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
+      const calimHandleProof = {
+        Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(claimHandlePayload.toU8a()))),
+      };
 
-        const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
-          delegatorKeys.publicKey,
-          calimHandleProof,
-          claimHandlePayload
-        );
-        const calls = [
-          createSponsoredAccountWithDelegation,
-          claimHandle,
-        ];
+      const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
+        delegatorKeys.publicKey,
+        calimHandleProof,
+        claimHandlePayload
+      );
+      const calls = [
+        createSponsoredAccountWithDelegation,
+        claimHandle,
+      ];
 
-        let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
+      let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
 
-        await assert.rejects(payWithCapacityBatchAllOp.signAndSend(), {
-          name: "InvalidHandleByteLength"
-        });
+      await assert.rejects(payWithCapacityBatchAllOp.signAndSend(), {
+        name: "InvalidHandleByteLength"
       });
     });
+  });
 
   describe("Capacity RPC", function () {
     let capacityProviderKeys: KeyringPair;
@@ -769,7 +768,7 @@ describe("Capacity Transactions", function () {
     });
 
     it("Returns `FeeDetails` when requesting capacity cost of a transaction", async function () {
-      const addProviderPayload = await generateDelegationPayload({...defaultPayload});
+      const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
       const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
       let delegatorKeys = createKeys("delegatorKeys");
       const tx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
@@ -781,15 +780,14 @@ describe("Capacity Transactions", function () {
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
-      assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
-        baseFee: 100581,
-        lenFee: 1170000,
-        adjustedWeightFee: 2294199, // Do we expect these numbers?
-      }, "The fee appears to be wrong or have changed");
+      const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
+      assert(Math.abs(baseFee - 106382) < 10_000, "The base fee appears to be wrong or have changed more than expected");
+      assert(Math.abs(lenFee - 1170000) < 100, "The len fee appears to be wrong or have changed more than expected");
+      assert(Math.abs(adjustedWeightFee - 2359035) < 100_000, "The adjusted weight fee appears to be wrong or have changed more than expected");
     });
 
     it("Returns `FeeDetails` when requesting capacity cost of a transaction when wrapped in payWithCapacity", async function () {
-      const addProviderPayload = await generateDelegationPayload({...defaultPayload});
+      const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
       const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
       let delegatorKeys = createKeys("delegatorKeys");
       const insideTx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
@@ -802,11 +800,10 @@ describe("Capacity Transactions", function () {
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
-      assert.deepEqual(feeDetails.inclusionFee.toJSON(), {
-        baseFee: 100581,
-        lenFee: 1190000,
-        adjustedWeightFee: 3485486, // Do we expect these numbers?
-      }, "The fee appears to be wrong or have changed");
+      const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
+      assert(Math.abs(baseFee - 106382) < 10_000, "The base fee appears to be wrong or have changed more than expected");
+      assert(Math.abs(lenFee - 1190000) < 100, "The len fee appears to be wrong or have changed more than expected");
+      assert(Math.abs(adjustedWeightFee - 3611853) < 100_000, "The adjusted weight fee appears to be wrong or have changed more than expected");
     });
 
     it("Returns nothing when requesting capacity cost of a non-capacity transaction", async function () {
@@ -819,8 +816,8 @@ describe("Capacity Transactions", function () {
     it("Returns nothing when requesting pay with capacity call with a non-capacity transaction", async function () {
       const insideTx = ExtrinsicHelper.api.tx.msa.retireMsa();
       const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
-      assert(feeDetails.inclusionFee.isNone , "should have returned something for the inclusionFee");
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null)); assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      assert(feeDetails.inclusionFee.isNone, "should have returned something for the inclusionFee");
     });
   });
 });

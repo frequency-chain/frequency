@@ -1,4 +1,4 @@
-// Integration tests for pallets/stateful-pallet-storage/handleItemizedWithSignature.ts
+// E2E tests for pallets/stateful-pallet-storage/handleItemizedWithSignature.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import {

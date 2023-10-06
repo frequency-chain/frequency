@@ -81,7 +81,7 @@ lint-audit:
 format-lint: format lint
 
 .PHONY: ci-local
-ci-local: check lint lint-audit test integration-test
+ci-local: check lint lint-audit test e2e
 
 .PHONY: upgrade
 upgrade-local:
@@ -233,23 +233,23 @@ build-mainnet-release:
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
-integration-test:
-	./scripts/run_integration_tests.sh
+e2e-tests:
+	./scripts/run_e2e_tests.sh
 
-integration-test-only:
-	./scripts/run_integration_tests.sh -s
+e2e-tests-only:
+	./scripts/run_e2e_tests.sh -s
 
-integration-test-load:
-	./scripts/run_integration_tests.sh load
+e2e-tests-load:
+	./scripts/run_e2e_tests.sh load
 
-integration-test-load-only:
-	./scripts/run_integration_tests.sh -s load
+e2e-tests-load-only:
+	./scripts/run_e2e_tests.sh -s load
 
-integration-test-rococo:
-	./scripts/run_integration_tests.sh -c rococo_testnet
+e2e-tests-rococo:
+	./scripts/run_e2e_tests.sh -c rococo_testnet
 
-integration-test-rococo-local:
-	./scripts/run_integration_tests.sh -c rococo_local
+e2e-tests-rococo-local:
+	./scripts/run_e2e_tests.sh -c rococo_local
 
 .PHONY: try-runtime
 try-runtime:

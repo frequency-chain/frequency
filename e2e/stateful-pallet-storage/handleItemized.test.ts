@@ -1,4 +1,4 @@
-// Integration tests for pallets/stateful-pallet-storage/handleItemized.ts
+// E2E tests for pallets/stateful-pallet-storage/handleItemized.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import {createDelegatorAndDelegation, createProviderKeysAndId, getCurrentItemizedHash} from "../scaffolding/helpers";

@@ -22,7 +22,7 @@ function cleanup () {
                 kill -9 ${PID}
                 echo "Frequency has been killed. 💀"
             else
-                echo "Frequency was not started by integration-test."
+                echo "Frequency was not started by this script."
             fi
             ;;
     esac
@@ -80,7 +80,7 @@ case "${CHAIN}" in
     ;;
 esac
 
-echo "The integration test output will be logged on this console"
+echo "The E2E test output will be logged on this console"
 
 echo "The Frequency node output will be logged to the file frequency.log."
 echo "You can 'tail -f frequency.log' in another terminal to see both side-by-side."
@@ -94,7 +94,7 @@ else
     if [ "${CHAIN_ENVIRONMENT}" = "rococo-local" ]
     then
         echo "Frequency is not running."
-        echo "The intended use case of running integration tests with a chain environment"
+        echo "The intended use case of running E2E tests with a chain environment"
         echo "of \"rococo-local\" is to run the tests against a locally running Frequency"
         echo "chain with locally running Polkadot relay nodes."
         exit 1
@@ -151,7 +151,7 @@ else
 fi
 
 
-cd integration-tests
+cd e2e
 echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
 npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
 npm install

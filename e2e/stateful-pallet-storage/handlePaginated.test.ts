@@ -1,4 +1,4 @@
-// Integration tests for pallets/stateful-pallet-storage/handlepaginated.ts
+// E2E tests for pallets/stateful-pallet-storage/handlepaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";

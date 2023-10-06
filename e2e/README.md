@@ -1,11 +1,11 @@
-Running Integration Tests
+Running E2E Tests
 =========================
 
 To run all tests (and automatically start up a Frequency node):
 
-`make integration-test`
+`make e2e-tests`
 
-To run all tests (after starting up a Frequency node): 
+To run all tests (after starting up a Frequency node):
 
 `npm run test`
 
@@ -17,7 +17,7 @@ Note: this is for the "createMsa" tests
 
 See below for running load tests.
 
-Notes on Integration Testing
+Notes on E2E Testing
 ============================
 
 1. Avoid using anonymous arrow functions for test blocks (`describe`, `it`, `before`, etc).
@@ -79,7 +79,7 @@ The tests in that folder are NOT run with a normal test run.
 It is configured to run in manual sealing mode only. To run the tests, do the following:
 
 ```
-make integration-load-test
+make e2e-tests-load
 ```
 
 That make command does approximately the following:
@@ -91,6 +91,6 @@ make start-manual
 
 2. Run tests
 ```
-cd integration-tests
+cd e2e
 npm run test:load
 ```

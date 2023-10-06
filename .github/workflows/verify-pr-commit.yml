@@ -21,7 +21,7 @@ jobs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
       cargo-lock: ${{steps.filter.outputs.cargo-lock}}
-      run-integration-tests: ${{steps.filter.outputs.run-integration-tests}}
+      run-e2e: ${{steps.filter.outputs.run-e2e}}
       ci-docker-image: ${{steps.filter.outputs.ci-docker-image}}
     steps:
       - name: Check Out Repo
@@ -44,14 +44,14 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
-              - 'integration-tests/**/*.{ts,json}'
+              - 'e2e/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
-            run-integration-tests:
+            run-e2e:
               - '**/*.rs'
               - '**/Cargo.toml'
-              - 'integration-tests/**/*.{ts,json}'
+              - 'e2e/**/*.{ts,json}'
             ci-docker-image:
               - 'tools/ci/docker/ci-base-image.dockerfile'
 
@@ -630,10 +630,10 @@ jobs:
             must be greater than the latest version on main branch ($spec_version_ref)"
           exit 1
 
-  run-integration-tests:
-    if: needs.changes.outputs.run-integration-tests == 'true'
+  run-e2e:
+    if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
-    name: Run Integration Tests
+    name: Run E2E Tests
     runs-on: ubuntu-20.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
@@ -688,15 +688,15 @@ jobs:
         with:
           node-version: 18
           cache: "npm"
-          cache-dependency-path: integration-tests/package-lock.json
+          cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment
         run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
-        working-directory: integration-tests
+        working-directory: e2e
       - name: Install NPM Modules
         run: npm ci
-        working-directory: integration-tests
-      - name: Run Integration Tests
-        working-directory: integration-tests
+        working-directory: e2e
+      - name: Run E2E Tests
+        working-directory: e2e
         env:
           CHAIN_ENVIRONMENT: dev
           WS_PROVIDER_URL: ws://127.0.0.1:9944
