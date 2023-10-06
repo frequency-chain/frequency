@@ -31,7 +31,7 @@ This document outlines how to implement the Staking for Rewards feature describe
 New fields are added. The field `last_rewarded_at` is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`.  This should be the default value also.
 `MaximumCapacity` is also the default value for `staking_type` and should map to 0.
-Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed targets for some amount of funds.
+Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed targets for some amount of funds.  This is to prevent retarget spamming.
 ```rust
 pub struct StakingAccountDetails {
     pub active: BalanceOf<T>,
@@ -39,11 +39,33 @@ pub struct StakingAccountDetails {
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
     /// The number of the last StakingEra that this account's rewards were claimed.
     pub last_rewards_claimed_at: Option<T::RewardEra>, // NEW  None means never rewarded, Some(RewardEra) means last rewarded RewardEra.
-    /// What type of staking this account is doing
-    pub staking_type: StakingType, // NEW
     /// staking amounts that have been retargeted are prevented from being retargeted again for the
     /// configured Thawing Period number of blocks.
-    pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, EraOf<T>>, T::MaxUnlockingChunks> // NEW
+    pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>, // NEW
+    /// total staked amounts for each past era, up to StakingRewardsPastErasMax eras.
+    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>, // NEW
+}
+
+/// A per-reward-era record for StakingAccount total_staked amount.
+pub struct StakingHistory<Balance, RewardEra> {
+    total_staked: Balance,
+    reward_era: RewardEra,
+}
+```
+
+### StakingTargetDetails updates
+A new field is added to indicate the type of staking the Account holder is doing in relation to this target.
+
+```rust
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct StakingTargetDetails<T: Config> {
+	/// The total amount of tokens that have been targeted to the MSA.
+	pub amount: BalanceOf<T>,
+	/// The total Capacity that an MSA received.
+	pub capacity: BalanceOf<T>,
+	/// The type of staking, which determines ultimate capacity per staked token.
+	pub staking_type: StakingType, // NEW
 }
 ```
 
