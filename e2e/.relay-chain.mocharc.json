@@ -6,6 +6,7 @@
     "parallel": true,
     "require": [
         "scaffolding/globalHooks.ts",
+        "scaffolding/rootHooks.ts",
         "scaffolding/extrinsicHelpers.ts"
     ],
     "loader": "ts-node/esm",

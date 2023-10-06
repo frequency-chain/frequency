@@ -1,5 +1,4 @@
 import { cryptoWaitReady } from "@polkadot/util-crypto";
-import { isTestnet } from "./env";
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { fundingSources, getFundingSource, getRootFundingSource } from "./funding";
 import { getNonce } from "./helpers";
