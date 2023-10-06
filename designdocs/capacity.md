@@ -313,7 +313,7 @@ Storage to record how many tokens were targeted to an MSA.
 /// Storage to record how many tokens were targeted to an MSA.
 #[pallet::storage]
 pub type StakingTargetLedger<T: Config> =
-  StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, MessageSourceId, StakingTargetDetails<T::Balance>>;
+  StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, MessageSourceId, StakingTargetDetails<T>;
 ```
 
 Storage for target Capacity usage.
@@ -342,11 +342,11 @@ The type used for storing information about the targeted MSA that received Capac
 ```rust
 /// Details about the total token amount targeted to an MSA.
 /// The Capacity that the target will receive.
-pub struct StakingTargetDetails<Balance> {
+pub struct StakingTargetDetails<T: Config> {
   /// The total amount of tokens that have been targeted to the MSA.
-  pub amount: Balance,
+  pub amount: BalanceOf<T>,
   /// The total Capacity that an MSA received.
-  pub capacity: Balance,
+  pub capacity: BalanceOf<T>,
 }
 
 ```
