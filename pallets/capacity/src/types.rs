@@ -330,7 +330,7 @@ pub trait StakingRewardsProvider<T: Config> {
 	type Hash;
 
 	/// Calculate the size of the reward pool using the current economic model
-	fn reward_pool_size() -> Result<BalanceOf<T>, DispatchError>;
+	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
 	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
 	/// Errors:
@@ -343,7 +343,7 @@ pub trait StakingRewardsProvider<T: Config> {
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
-	/// Errors:
+	/// Errors::
 	///     - NotAStakingAccount
 	///     - MaxUnlockingChunksExceeded
 	///     - All other conditions that would prevent a reward from being claimed return 'false'
@@ -360,7 +360,7 @@ pub trait StakingRewardsProvider<T: Config> {
 
 /// The information needed to track a Reward Era
 #[derive(
-	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	PartialEq, Eq, Clone, Copy, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 pub struct RewardEraInfo<RewardEra, BlockNumber>
 where
