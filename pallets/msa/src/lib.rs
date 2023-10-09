@@ -800,9 +800,10 @@ pub mod pallet {
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 		///  (1) They own the MSA
-		///  (2) There is only one account key
-		///  (3) The MSA is not a registered provider.
-		///  (4) The user has already deleted all delegations to providers
+		///  (2) The MSA is not a registered provider.
+		///  (3) They retire their user handle (if they have one)
+		///  (4) There is only one account key
+		///  (5) The user has already deleted all delegations to providers
 		///
 		/// This does not currently remove any messages related to the MSA.
 		///
