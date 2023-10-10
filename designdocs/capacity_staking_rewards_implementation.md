@@ -1,4 +1,17 @@
 # Capacity Staking Rewards Implementation
+
+## Overview
+Staking Capacity for rewards is a new feature which allows token holders to stake FRQCY and split the staking 
+rewards with a  Provider they choose. The Provider receives a small reward in Capacity 
+(which is periodically replenished), and the staker receives a periodic return in FRQCY token.
+The amount of Capacity that the Provider would receive in such case is a fraction of what they would get from a
+`MaximumCapacity` stake.
+
+The period of Capacity replenishment - the `Epoch` - and the period of token reward - the `RewardEra`- are different. 
+Epochs much necessarily be much shorter than rewards because Capacity replenishment needs to be multiple times a day to meet the needs of a high traffic network, and to allow Providers the ability to delay transactions to a time of day with lower network activity if necessary. 
+Reward eras need to be on a much longer scale, such as every two weeks, because there are  potentially orders of magnitude more stakers, and calculating rewards is computationally more intensive than updating Capacity balances for the comparatively few Providers.
+In addition, this lets the chain to store Reward history for much longer rather than forcing people to have to take steps to claim rewards.
+
 The proposed feature is a design for staking FRQCY token in exchange for Capacity and/or FRQCY.
 It is specific to the Frequency Substrate parachain.
 It consists of enhancements to the capacity pallet, needed traits and their implementations, and needed runtime configuration.
@@ -6,23 +19,24 @@ It consists of enhancements to the capacity pallet, needed traits and their impl
 This does _not_ outline the economic model for Staking Rewards (also known as "Provider Boosting"); it describes the economic model as a black box, i.e. an interface.
 
 ## Context and Scope:
-The Frequency Transaction Payment system uses Capacity to pay for certain transactions on chain.  Accounts that wish to pay with Capacity must:
+The Frequency Transaction Payment system allows certain transactions on chain to be paid for with Capacity.  Accounts that wish to pay with Capacity must:
 
 1. Have an [MSA](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/accounts.md)
 2. Be a [Provider](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_registration.md) (see also [Provider Permissions and Grants](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_permissions.md))
 3. Stake a minimum amount of FRQCY (on mainnet, UNIT on Rococo testnet) token to receive [Capacity](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/capacity.md).
 
 # Problem Statement
-This document outlines how to implement the Staking for Rewards feature described in [Capacity Staking Rewards Economic Model (TBD)](TBD), without, at this time, regard to what the economic model actually is.
+This document outlines how to implement the Staking for Rewards feature described in [Capacity Staking Rewards Economic Model (TBD)](TBD).
+It does not give regard to what the economic model actually is, since that is yet to be determined.
 
 ## Glossary
-1. **FRQCY**: the native token of the Frequency blockchain
+1. **FRQCY**: the native token of Frequency, a Substrate parachain in the Polkdaot blockhain ecosystem.
 1. **Capacity**: the non-transferrable utility token which can be used only to pay for certain Frequency transactions.
 1. **Account**: a Frequency System Account controlled by a private key and addressed by a public key, having at least a minimum balance (currently 0.01 FRQCY).
 1. **Stake** (verb): to lock some amount of a token against transfer for a period of time in exchange for some reward.
-1. **RewardEra**: the time period (TBD in blocks or Capacity Epochs) that Staking Rewards are based upon. RewardEra is to distinguish it easily from Substrate's staking pallet Era, or the index of said time period.
+1. **RewardEra**: the time period (TBD in blocks) that Staking Rewards are based upon. `RewardEra` is to distinguish it easily from Substrate's staking pallet Era, or the index of said time period.
 1. **Staking Reward**: a per-RewardEra share of a staking reward pool of FRQCY tokens for a given staking account.
-1. **Reward Pool**:  a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
+1. **Reward Pool**: a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
 1. **StakingRewardsProvider**: a trait that encapsulates the economic model for staking rewards, providing functionality for calculating the reward pool and staking rewards.
 
 ## Staking Token Rewards
@@ -30,10 +44,10 @@ This document outlines how to implement the Staking for Rewards feature describe
 ### StakingAccountDetails updates
 New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
-Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed 
+Finally, `stake_change_unlocking`, is added, which stores an `UnlockChunk` when a staking account has changed.
 targets for some amount of funds.  This is to prevent retarget spamming.
 ```rust
-pub struct StakingAccountDetails {
+pub struct StakingAccountDetails<T: Config> {
     pub active: BalanceOf<T>,
     pub total: BalanceOf<T>,
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
@@ -75,35 +89,24 @@ Changes the thaw period to begin at the first block of next RewardEra instead of
 
 ### Changes to extrinsics
 #### stake
-A new parameter, `staking_type` is added to indicate the staking type. The staking type will determine how much 
-Capacity is generated for the targeted Provider. Passing `MaximumCapacity` makes the stake behave as before, whereas
-`ProviderBoost` generates a fraction of `MaximumCapacity`, splitting the staking reward as a periodically earned, 
-TBD amount of token.
-
-In the case of an increase in stake to an existing staker-target relationship, `staking_type` MUST be the same 
-as the existing relationship or else it will error with `Error::CannotChangeStakingType`.
-```rust
-pub fn stake(
-    origin: OriginFor<T>,
-    target: MessageSourceId,
-    amount: BalanceOf<T>,
-    staking_type: StakingType // NEW
-) -> DispatchResult {}
-```
+The parameters for the `stake` extrinsic remain the same and the behavior is the same, in that this creates or adds
+more token to a staker-target relationship with type `MaximiumCapacity`.
+However, if one calls `stake` with a `target` that `origin` already has a staker-target relationsip with, 
+it is _not_ a `MaximumCapacity` staking type, it will error with `Error::CannotChangeStakingType`. 
 
 #### unstake
 The unstake parameters are the same, and unstake behavior is the same for `MaximumCapacity` as before, however 
 for a `ProviderBoost` staker-target relationship, the behavior must be different.  While it's not feasible to
-store neither reward_pool history nor individual staking reward history indefinitely, it still may be lengthy
+store either `reward_pool` history or individual staking reward history indefinitely, it still may be lengthy
 enough that having to calculate _all_ unclaimed rewards for what could be numerous accounts in one block
-could make a block heavier than desired.  Therefore we want to put some sort of limit on how many eras
+could make a block heavier than desired.  Therefore there must be a limit limit on how many eras
 one can claim rewards for. This value will likely be a pallet constant.  The logic would be:
 
  * If a ProviderBoost stake is `payout_eligible`, 
    * check whether their last payout era is recent enough to pay out all rewards at once.
    * if so, first pay out all rewards and then continue with rest of unstaking code as is 
-   * if not, emit error "MustFirstClaimRewards", "UnclaimedRewardsOverTooManyEras" or something like that.
-       Don't use EraOutOfRange because it will overload the meaning of that error; needs to be something more specific.
+   * if not, emit error `MustFirstClaimRewards`, `UnclaimedRewardsOverTooManyEras` or something like that.
+       Don't use `EraOutOfRange` because it will overload the meaning of that error; needs to be something more specific.
  * If not payout eligible, 
    * check whether the last payout era is the current one. 
      * if so, all rewards have been claimed, so continue with rest of unstaking code as is, 
@@ -161,17 +164,6 @@ pub trait StakingRewardsProvider<T: Config> {
 }
 ```
 
-### NEW: StakingType enum
-```rust
-pub enum StakingType {
-    /// Staking account targets Providers for capacity only, no token reward
-    MaximizedCapacity,
-    /// Staking account targets Providers and splits reward between capacity to the Provider
-    /// and token for the account holder
-    ProviderBoost,
-}
-```
-
 ### NEW: Config items
 ```rust
 pub trait Config: frame_system::Config {
@@ -221,6 +213,7 @@ pub type StakingRewardPool<T: Config> = <CountedStorageMap<_, Twox64Concat, Rewa
 
 ### NEW: CurrentEra, RewardEraInfo
 Incremented, like CurrentEpoch, tracks the current RewardEra number and the block when it started.
+Storage is whitelisted because it's accessed every block and would improperly adversely impact all benchmarks.
 ```rust
 #[pallet::storage]
 #[pallet::whitelist_storage]
@@ -268,6 +261,17 @@ The thaw period must be short enough for all rewards to be claimed before reward
 Therefore, it's possible that a complete separate reward claim thaw period would need to be used.
 
 For all forms of claim_staking_reward, the event `StakingRewardClaimed` is emitted with the parameters of the extrinsic.
+
+#### provider_boost(origin, target, amount)
+Like `stake`, except this extrinsic creates or adds staked token to a `ProviderBoost` type staker-target relationship.
+In the case of an increase in stake, `staking_type` MUST be a `ProviderBoost` type, or else it will error with `Error::CannotChangeStakingType`.
+```rust
+pub fn provider_boost(
+    origin: OriginFor<T>,
+    target: MessageSourceId,
+    amount: BalanceOf<T>,
+) -> DispatchResult {}
+```
 
 #### 1. claim_staking_reward(origin, from_era, to_era), simple economic model
 In the case of a simple economic model such as a fixed rate return, reward calculations may be done on chain - 
