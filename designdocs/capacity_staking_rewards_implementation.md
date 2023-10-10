@@ -46,8 +46,10 @@ New fields are added. The field **`last_rewarded_at`** is to keep track of the l
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
 Finally, `stake_change_unlocking`, is added, which stores an `UnlockChunk` when a staking account has changed.
 targets for some amount of funds.  This is to prevent retarget spamming.
+
+This will be a V2 of this storage and original StakingAccountDetails will need to be migrated.
 ```rust
-pub struct StakingAccountDetails<T: Config> {
+pub struct StakingAccountDetailsV2<T: Config> {
     pub active: BalanceOf<T>,
     pub total: BalanceOf<T>,
     pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
