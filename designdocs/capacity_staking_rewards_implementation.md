@@ -19,7 +19,7 @@ Provider Boost token rewards are earned only for token staked for a complete Rew
 
 This process will be described in more detail in the Economic Model Design Document.
 
-![Staking Maximized vs Boosted](https://user-images.githubusercontent.com/502640/274079887-de7ab370-332c-449c-9cb0-ee27f32473b6.jpg)
+![Provider boosted staking](https://github.com/LibertyDSNP/frequency/assets/502640/ffb632f2-79c2-4a09-a906-e4de02e4f348)
 
 The proposed feature is a design for staking FRQCY token in exchange for Capacity and/or FRQCY.
 It is specific to the Frequency Substrate parachain.
