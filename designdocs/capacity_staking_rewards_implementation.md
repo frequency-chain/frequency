@@ -28,10 +28,10 @@ This document outlines how to implement the Staking for Rewards feature describe
 ## Staking Token Rewards
 
 ### StakingAccountDetails updates
-New fields are added. The field `last_rewarded_at` is to keep track of the last time rewards were claimed for this Staking Account.
-MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`.  This should be the default value also.
-`MaximumCapacity` is also the default value for `staking_type` and should map to 0.
-Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed targets for some amount of funds.  This is to prevent retarget spamming.
+New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
+MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
+Finally, `stake_change_unlocking`, a BoundedVec is added which tracks the chunks of when a staking account has changed 
+targets for some amount of funds.  This is to prevent retarget spamming.
 ```rust
 pub struct StakingAccountDetails {
     pub active: BalanceOf<T>,
@@ -42,21 +42,20 @@ pub struct StakingAccountDetails {
     /// staking amounts that have been retargeted are prevented from being retargeted again for the
     /// configured Thawing Period number of blocks.
     pub stake_change_unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>, // NEW
-    /// total staked amounts for each past era, up to StakingRewardsPastErasMax eras.
-    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>, // NEW
-}
-
-/// A per-reward-era record for StakingAccount total_staked amount.
-pub struct StakingHistory<Balance, RewardEra> {
-    total_staked: Balance,
-    reward_era: RewardEra,
 }
 ```
 
-### StakingTargetDetails updates
-A new field is added to indicate the type of staking the Account holder is doing in relation to this target.
+### StakingTargetDetails updates, StakingHistory
+A new field, `staking_type` is added to indicate the type of staking the Account holder is doing in relation to this target.
+Staking type may be `MaximumCapacity` or `ProviderBoost`. `MaximumCapacity` is the default value for `staking_type` and maps to 0.
 
 ```rust
+/// A per-reward-era record for StakingAccount total_staked amount.
+pub struct StakingHistory<Balance, RewardEra> { // NEW
+    total_staked: Balance,
+    reward_era: RewardEra,
+}
+
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct StakingTargetDetails<T: Config> {
@@ -66,6 +65,8 @@ pub struct StakingTargetDetails<T: Config> {
 	pub capacity: BalanceOf<T>,
 	/// The type of staking, which determines ultimate capacity per staked token.
 	pub staking_type: StakingType, // NEW
+    /// total staked amounts for each past era, up to StakingRewardsPastErasMax eras.
+    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>, // NEW
 }
 ```
 
@@ -73,44 +74,60 @@ pub struct StakingTargetDetails<T: Config> {
 Changes the thaw period to begin at the first block of next RewardEra instead of immediately.
 
 ### Changes to extrinsics
+#### stake
+A new parameter, `staking_type` is added to indicate the staking type. The staking type will determine how much 
+Capacity is generated for the targeted Provider. Passing `MaximumCapacity` makes the stake behave as before, whereas
+`ProviderBoost` generates a fraction of `MaximumCapacity`, splitting the staking reward as a periodically earned, 
+TBD amount of token.
+
+In the case of an increase in stake to an existing staker-target relationship, `staking_type` MUST be the same 
+as the existing relationship or else it will error with `Error::CannotChangeStakingType`.
 ```rust
 pub fn stake(
     origin: OriginFor<T>,
     target: MessageSourceId,
     amount: BalanceOf<T>,
     staking_type: StakingType // NEW
-) -> DispatchResult {
-    /// NEW BEHAVIOR:
-    // if the account is new, save the new staking type
-    // if not new and staking type is different, Error::CannotChangeStakingType
-}
+) -> DispatchResult {}
+```
 
+#### unstake
+The unstake parameters are the same, and unstake behavior is the same for `MaximumCapacity` as before, however 
+for a `ProviderBoost` staker-target relationship, the behavior must be different.  While it's not feasible to
+store neither reward_pool history nor individual staking reward history indefinitely, it still may be lengthy
+enough that having to calculate _all_ unclaimed rewards for what could be numerous accounts in one block
+could make a block heavier than desired.  Therefore we want to put some sort of limit on how many eras
+one can claim rewards for. This value will likely be a pallet constant.  The logic would be:
+
+ * If a ProviderBoost stake is `payout_eligible`, 
+   * check whether their last payout era is recent enough to pay out all rewards at once.
+   * if so, first pay out all rewards and then continue with rest of unstaking code as is 
+   * if not, emit error "MustFirstClaimRewards", "UnclaimedRewardsOverTooManyEras" or something like that.
+       Don't use EraOutOfRange because it will overload the meaning of that error; needs to be something more specific.
+ * If not payout eligible, 
+   * check whether the last payout era is the current one. 
+     * if so, all rewards have been claimed, so continue with rest of unstaking code as is, 
+     * if not, it means they have too many unlocking chunks so they'll have to wait. - the unstaking code
+         will catch this anyway and emit `MaxUnlockingChunksExceeded`
+
+```rust
 pub fn unstake(
     origin: OriginFor<T>,
     target: MessageSourceId,
     requested_amount: BalanceOf<T>,
-) -> DispatchResult {
-    // NEW BEHAVIOR:
-    // If StakingType is RewardsType
-    //   If payout_eligible,
-    //     check whether their last payout era is recent enough to pay out all rewards at once.
-    //     if so, first pay out all rewards and then continue with rest of unstaking code as is
-    //     if not, emit error "MustFirstClaimUnclaimedRewards", "UnclaimedRewardsOverTooManyEras" or something like that
-    //   If not payout eligible,
-    //     check whether the last payout era is the current one.
-    //     if so, all rewards have been claimed, so continue with rest of unstaking code as is,
-    //
-    //     otherwise, they have too many unlocking chunks so they'll have to wait. - the unstaking code
-    //     will catch this anyway and emit `MaxUnlockingChunksExceeded`
-}
+) -> DispatchResult {}
+
 ```
 ### NEW: StakingRewardsProvider - Economic Model trait
 This one is not yet determined, however there are certain functions that will definitely be needed.
-The struct and method for claiming rewards is probably going to change.
 The rewards system will still need to know the `reward_pool_size`.
-The `staking_reward_total` for a given staker may not be calculable depending on the complexity of the economic rewards model. 
+
+The struct and method for claiming rewards is probably going to change.
+The `staking_reward_total` for a given staker may not be calculable by the node, depending on the complexity of the 
+economic rewards model. 
 It's possible that it would be calculated via some app with access to the staker's wallet, and submitted as a proof
-with a payload.  In that case the `validate_staking_reward_claim` is more likely to be part of the trait.
+with a payload.
+In that case the `validate_staking_reward_claim` is more likely to be part of the trait.
 
 ```rust
 use std::hash::Hash;
@@ -176,13 +193,16 @@ pub trait Config: frame_system::Config {
     type EraLength: Get<u32>;
     /// The maximum number of eras over which one can claim rewards
     type StakingRewardsPastErasMax: Get<u32>;
-
+    /// The trait providing the ProviderBoost economic model calculations and values
     type RewardsProvider: StakingRewardsProvider;
 };
 ```
 
-### NEW: RewardPoolInfo
-Information about the reward pool for a given Reward Era and how it's stored.
+### NEW: RewardPoolInfo, RewardPoolHistory
+Information about the reward pool for a given Reward Era and how it's stored. The size of this pool is limited to
+`StakingRewardsPastErasMax` but is stored as a CountedStorageMap instead of a BoundedVec for performance reasons:
+* claiming rewards for the entire history will be unlikely to be allowed. Iterating over a much smaller range is more performant
+* Fetching/writing the entire history every block could affect block times. Instead, once per block, retrieve the latest record, delete the earliest record and insert a new one
 ```rust
 pub struct RewardPoolInfo<Balance> {
     /// the total staked for rewards in the associated RewardEra
@@ -196,7 +216,7 @@ pub struct RewardPoolInfo<Balance> {
 /// Reward Pool history
 #[pallet::storage]
 #[pallet::getter(fn get_reward_pool_for_era)]
-pub type StakingRewardPool<T: Config> = <StorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
+pub type StakingRewardPool<T: Config> = <CountedStorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
 ### NEW: CurrentEra, RewardEraInfo
@@ -220,66 +240,100 @@ pub struct RewardEraInfo<RewardEra, BlockNumber> {
 ```rust
 pub enum Error<T> {
     /// ...
-    /// Staker tried to change StakingType on an existing staker-target relationship
+    /// Staker tried to change StakingType on an existing account
     CannotChangeStakingType,
     /// The Era specified is too far in the past or is in the future
     EraOutOfRange,
     /// Rewards were already paid out for the specified Era range
     IneligibleForPayoutInEraRange,
+    /// Attempted to retarget but from and to Provider MSA Ids were the same
+    CannotRetargetToSameProvider,
+    /// Rewards were already paid out this era
+    AlreadyClaimedRewardsThisEra,
 }
 ```
 
 ### NEW Extrinsics
-1. *claim_staking_reward*, first version
-    a. `claim_staking_reward(origin,proof,payload)`
-    ```rust
-    /// TBD whether this is the form for claiming rewards.  This could be the form if calculations are
-    /// done off chain and submitted for validation.
+This is the most undecided portion of this design and depends strongly on the chosen economic model for Provider Boosting.
+There are generally two forms that claiming a staking reward could take, and this depends on whether it's possible to 
+calculate rewards on chain at all.
+
+Regardless, on success, the claimed rewards are minted and transferred as locked token to the origin, with the existing
+unstaking thaw period for withdrawal (which simply unlocks thawed token amounts as before).
+There is no chunk added; instead the existing unstaking thaw period is applied to last_rewards_claimed_at in StakingAccountDetails.
+
+Forcing stakers to wait a thaw period for every claim is an incentive to claim rewards sooner than later, leveling out
+possible inflationary effects and helping prevent unclaimed rewards from expiring. 
+The thaw period must be short enough for all rewards to be claimed before rewards history would end. 
+Therefore, it's possible that a complete separate reward claim thaw period would need to be used.
+
+For all forms of claim_staking_reward, the event `StakingRewardClaimed` is emitted with the parameters of the extrinsic.
+
+#### 1. claim_staking_reward(origin, from_era, to_era), simple economic model
+In the case of a simple economic model such as a fixed rate return, reward calculations may be done on chain - 
+within discussed limits.
+```rust
+/// Claim staking rewards from `from_era` to `to_era`, inclusive.
+/// from_era: if None, since last_reward_claimed_at
+/// to_era: if None, to CurrentEra - 1
+///  Errors:
+///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
+///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
+///     - EraOutOfRange: 
+///         - if `from_era` is earlier than history storage
+///         - if `to_era` is >= current era 
+///         - if `to_era` - `from_era` > StakingRewardsPastErasMax
+#[pallet::call_index(n)]
+pub fn claim_staking_reward(
+   origin: OriginFor<T>,
+   from_era: Option<T::RewardEra>,
+   to_era: Option<T::RewardEra>
+);
+```
+
+#### 2. claim_staking_reward(origin,proof,payload)
+TBD whether this is the form for claiming rewards.
+This could be the form if calculations are done off chain and submitted for validation.
+
+```rust
     /// Validates the reward claim. If validated, mints token and transfers to Origin.
     /// Errors:
     ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
     ///     - StakingRewardClaimInvalid:  if validation of calculation fails
     ///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-    ///     - EraOutOfRange: if one or both of the StakingRewardClaim eras are invalid
-    /// `proof` - the Merkle proof for the reward claim
+    ///     - EraOutOfRange: 
+    ///         - if `from_era` is earlier than history storage
+    ///         - if `to_era` is >= current era 
+    ///         - if `to_era` - `from_era` > StakingRewardsPastErasMax
     #[pallet::call_index(n)]
     pub fn claim_staking_reward(
         origin: OriginFor<T>,
+        /// `proof` - the Merkle proof for the reward claim
         proof: Hash,
+        /// The staking reward claim payload for which the proof was generated
         payload: StakingRewardClaim<T>
     );
-    ```
-    b. *claim_staking_reward*, alternate version
-    ```rust
-    /// An alternative, depending on staking reward economic model. This could be the form if calculations are done on chain.
-    /// from_era: if None, since last_reward_claimed_at
-    /// to_era: if None, to CurrentEra - 1
-    ///  Errors:
-    ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
-    ///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-    ///     - EraOutOfRange: if one or both of the eras specified are invalid
-    #[pallet::call_index(n)]
-    pub fn claim_staking_reward(
-        origin: OriginFor<T>,
-        from_era: Option<T::RewardEra>,
-        to_era: Option<T::RewardEra>
-    );
-    ```
-    Both emit events `StakingRewardClaimed` with the parameters of the extrinsic.
-
-2. **change_staking_target(origin, from, to, amount)**
+```
+#### 3. change_staking_target(origin, from, to, amount)
 Changes a staking account detail's target MSA Id to a new one by `amount`
 Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking  amount for the `from` target, the entire amount is retargeted.
-No more than T::MaxUnlockingChunks staking amounts may be retargeted within this Thawing Period.
+No more than `T::MaxUnlockingChunks` staking amounts may be retargeted within this Thawing Period.
 Each call creates one chunk.  Emits a `StakingTargetChanged` event with the parameters of the extrinsic.
-
 ```rust
-/// Errors:
-///    - MaxUnlockingChunksExceeded if 'from' target staking amount is still thawing in the staking unlock chunks (either type)
-///    - StakerTargetRelationshipNotFound` if `from` is not a staking target for Origin. This also covers when account's MSA is not staking anything at all or account has no MSA
-///    - StakingAmountBelowMinimum if amount to retarget is below the minimum staking amount.
-///    - InsufficientStakingBalance if amount to retarget exceeds what the staker has targeted to the `from` MSA Id.
-///    - InvalidTarget if `to` is not a Registered Provider.
+/// Sets the target of the staking capacity to a new target.
+/// This adds a chunk to `StakingAccountDetails.stake_change_unlocking chunks`, up to `T::MaxUnlockingChunks`.
+/// The staked amount and Capacity generated by `amount` originally targeted to the `from` MSA Id is reassigned to the `to` MSA Id.
+/// Does not affect unstaking process or additional stake amounts.
+/// Changing a staking target to a Provider when Origin has nothing staked them will retain the staking type.
+/// Changing a staking target to a Provider when Origin has any amount staked to them will error if the staking types are not the same.
+/// ### Errors
+/// - [`Error::NotAStakingAccount`] if origin does not have a staking account
+/// - [`Error::MaxUnlockingChunksExceeded`] if `stake_change_unlocking_chunks` == `T::MaxUnlockingChunks`
+/// - [`Error::StakerTargetRelationshipNotFound`] if `from` is not a target for Origin's staking account.
+/// - [`Error::StakingAmountBelowMinimum`] if `amount` to retarget is below the minimum staking amount.
+/// - [`Error::InsufficientStakingBalance`] if `amount` to retarget exceeds what the staker has targeted to `from` MSA Id.
+/// - [`Error::InvalidTarget`] if `to` does not belong to a registered Provider.
+/// - [`Error::CannotChangeStakingType`] if origin already has funds staked for `to` and the staking type for `from` is different.
 #[pallet:call_index(n+1)] // n = current call index in the pallet
 pub fn change_staking_target(
     origin: OriginFor<T>,
@@ -290,12 +344,14 @@ pub fn change_staking_target(
 ```
 
 ### NEW:  Capacity pallet helper function
+#### payout_eligible
+Returns whether `account_id` can claim a reward at all. 
+This function will return false if there is no staker-target relationship. 
+Staking accounts may claim rewards:
+* ONCE per RewardEra,
+* Only for funds staked for a complete RewardEra, i.e. the balance at the end of the Era,
+* Must wait for the thaw period to claim rewards again (see `last_rewards_claimed_at`)
 ```rust
-/// Return whether `account_id` can claim a reward. Staking accounts may not claim a reward more than once
-/// per RewardEra, may not claim rewards before a complete RewardEra has been staked, and may not claim more rewards past
-/// the number of `MaxUnlockingChunks`.
-/// Errors:
-///     NotAStakingAccount if account_id has no StakingAccountDetails in storage.
 fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
 ```
 
