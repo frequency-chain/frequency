@@ -451,10 +451,9 @@ pub mod pallet {
 			requested_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let unstaker = ensure_signed(origin)?;
-			Self::ensure_can_unstake(&unstaker)?;
-
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
+			Self::ensure_can_unstake(&unstaker)?;
 			let actual_amount = Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
 			let capacity_reduction = Self::reduce_capacity(&unstaker, target, actual_amount)?;
 
