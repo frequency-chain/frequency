@@ -48,6 +48,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
+use sp_std::ops::{Add, Mul};
 
 use frame_support::{
 	dispatch::DispatchResult,
@@ -60,7 +61,6 @@ use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
 	ArithmeticError, DispatchError, Perbill,
 };
-use sp_std::ops::Mul;
 
 pub use common_primitives::{
 	capacity::{Nontransferable, Replenishable, TargetValidator},
@@ -778,31 +778,34 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
 		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era(); // 1r
-		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {  // 1r
+		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
+			// 1r
 			let new_era_info = RewardEraInfo {
 				era_index: current_era_info.era_index.saturating_add(One::one()),
 				started_at: current_block,
 			};
 
-			let current_reward_pool = Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
-			let past_eras_max =  T::StakingRewardsPastErasMax::get();
+			let current_reward_pool_info =
+				Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
+			let past_eras_max = T::StakingRewardsPastErasMax::get();
 			let entries: u32 = StakingRewardPool::<T>::count();
-			if past_eras_max.eq(&entries.into()) { // 2r
+			if past_eras_max.eq(&entries.into()) {
+				// 2r
 				let current_era = Self::get_current_era().era_index;
-				let earliest_era = current_era.saturating_sub(past_eras_max);
+				let earliest_era = current_era.saturating_sub(past_eras_max).add(One::one());
 				StakingRewardPool::<T>::remove(earliest_era); // 1w
 			}
-			CurrentEraInfo::<T>::set(new_era_info);  // 1w
+			CurrentEraInfo::<T>::set(new_era_info); // 1w
 
 			// 		let msa_handle = T::HandleProvider::get_handle_for_msa(msa_id);
 			let total_reward_pool =
-				T::RewardsProvider::reward_pool_size(current_reward_pool.total_staked_token.clone());
+				T::RewardsProvider::reward_pool_size(current_reward_pool_info.total_staked_token);
 			let new_reward_pool = RewardPoolInfo {
-				total_staked_token: current_reward_pool.total_staked_token,
+				total_staked_token: current_reward_pool_info.total_staked_token,
 				total_reward_pool,
-				unclaimed_balance: total_reward_pool.clone(),
+				unclaimed_balance: total_reward_pool,
 			};
-			StakingRewardPool::<T>::insert(new_era_info.era_index.clone(), new_reward_pool); // 1w
+			StakingRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
 
 			T::WeightInfo::on_initialize()
 				.saturating_add(T::DbWeight::get().reads(5))
@@ -849,10 +852,13 @@ impl<T: Config> Pallet<T> {
 
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
 
-		if to_msa_target.amount.is_zero()  {
+		if to_msa_target.amount.is_zero() {
 			to_msa_target.staking_type = staking_type.clone();
 		} else {
-			ensure!(to_msa_target.staking_type.ne(staking_type), Error::<T>::CannotChangeStakingType);
+			ensure!(
+				to_msa_target.staking_type.eq(staking_type),
+				Error::<T>::CannotChangeStakingType
+			);
 		}
 		to_msa_target
 			.deposit(*amount, capacity_withdrawn)
@@ -966,9 +972,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		}
 
 		// For now reward pool size is set to 10% of total staked token
-		total_staked
-			.checked_div(&BalanceOf::<T>::from(10u8))
-			.unwrap_or_default()
+		total_staked.checked_div(&BalanceOf::<T>::from(10u8)).unwrap_or_default()
 	}
 
 	// Performs range checks plus a reward calculation based on economic model for the era range

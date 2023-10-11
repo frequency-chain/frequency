@@ -360,7 +360,17 @@ pub trait StakingRewardsProvider<T: Config> {
 
 /// The information needed to track a Reward Era
 #[derive(
-	PartialEq, Eq, Clone, Copy, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	PartialEq,
+	Eq,
+	Clone,
+	Copy,
+	Default,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
 )]
 pub struct RewardEraInfo<RewardEra, BlockNumber>
 where

@@ -1,9 +1,9 @@
 use super::mock::*;
 use frame_support::{assert_ok, traits::Hooks};
 
+use common_primitives::capacity::StakingType;
 #[allow(unused)]
 use sp_runtime::traits::SignedExtension;
-use common_primitives::capacity::StakingType;
 
 use crate::{BalanceOf, CapacityDetails, Config, Event};
 use common_primitives::msa::MessageSourceId;
@@ -64,7 +64,12 @@ pub fn create_capacity_account_and_fund(
 
 	capacity_details
 }
-pub fn setup_provider(staker: &u64, target: &MessageSourceId, amount: &u64, staking_type: StakingType) {
+pub fn setup_provider(
+	staker: &u64,
+	target: &MessageSourceId,
+	amount: &u64,
+	staking_type: StakingType,
+) {
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(*target, provider_name);
 	if amount.gt(&0u64) {

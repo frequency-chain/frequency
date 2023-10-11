@@ -15,7 +15,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, DispatchError, Perbill,
 };
-use sp_std::ops::{Mul, Div};
+use sp_std::ops::{Div, Mul};
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
