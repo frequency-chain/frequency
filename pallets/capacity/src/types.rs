@@ -1,16 +1,15 @@
 //! Types for the Capacity Pallet
 use super::*;
-use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
+use codec::{Decode, Encode, MaxEncodedLen};
 use frame_support::{
 	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
 
 use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
-use common_primitives::node::{AccountId, Hash};
 
 /// The type used for storing information about staking details.
 #[derive(
@@ -372,25 +371,11 @@ pub trait StakingRewardsProvider<T: Config> {
 	TypeInfo,
 	MaxEncodedLen,
 )]
-pub struct RewardEraInfo<RewardEra, BlockNumber>
-where
-	RewardEra: AtLeast32BitUnsigned + EncodeLike,
-{
+pub struct RewardEraInfo<RewardEra, BlockNumber> {
 	/// the index of this era
 	pub era_index: RewardEra,
 	/// the starting block of this era
 	pub started_at: BlockNumber,
-}
-
-/// The information needed to track a Reward Era
-#[derive(
-	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
-)]
-pub struct RewardEraInfo<RewardEra, BlockNumber> {
-	/// the index of this era
-	pub current_era: RewardEra,
-	/// the starting block of this era
-	pub era_start: BlockNumber,
 }
 
 /// Needed data about a RewardPool for a given RewardEra.

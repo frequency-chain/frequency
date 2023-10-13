@@ -2,7 +2,7 @@ use super::{mock::*, testing_utils::*};
 use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetails};
 use common_primitives::{
 	capacity::{
-		Nontransferable,
+		Nontransferable, StakingType,
 		StakingType::{MaximumCapacity, ProviderBoost},
 	},
 	msa::MessageSourceId,
@@ -389,7 +389,7 @@ fn increase_stake_and_issue_capacity_errors_with_overflow() {
 				&mut staking_account,
 				&target,
 				&overflow_amount,
-				&StakingType::ProviderBoost,
+				&ProviderBoost,
 			),
 			ArithmeticError::Overflow
 		);
@@ -479,8 +479,8 @@ fn assert_successful_increase_stake_with_type(
 fn increase_stake_and_issue_capacity_happy_path() {
 	new_test_ext().execute_with(|| {
 		assert_successful_increase_stake_with_type(1, MaximumCapacity, 550, 550, 55);
-		assert_successful_increase_stake_with_type(2, StakingType::ProviderBoost, 550, 550, 3);
-		assert_successful_increase_stake_with_type(2, StakingType::ProviderBoost, 6666, 7216, 36);
+		assert_successful_increase_stake_with_type(2, ProviderBoost, 550, 550, 3);
+		assert_successful_increase_stake_with_type(2, ProviderBoost, 6666, 7216, 36);
 	});
 }
 

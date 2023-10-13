@@ -70,21 +70,18 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::{
-	capacity::StakingType,
-	node::{RewardEra},
-};
+use common_primitives::capacity::StakingType;
 
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
+
 pub mod types;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 #[cfg(test)]
-mod tests;
 mod tests;
 
 pub mod weights;
@@ -96,9 +93,9 @@ const STAKING_ID: LockIdentifier = *b"netstkng";
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-    use codec::EncodeLike;
+	use codec::EncodeLike;
 
-	use common_primitives::capacity::{StakingType};
+	use common_primitives::capacity::StakingType;
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
@@ -766,13 +763,6 @@ impl<T: Config> Pallet<T> {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
 			T::DbWeight::get().reads(2).saturating_add(RocksDbWeight::get().writes(1))
 		}
-	}
-
-	/// Returns whether `account_id` may claim and and be paid token rewards.
-	pub fn payout_eligible(account_id: T::AccountId) -> bool {
-		let _staking_account =
-			Self::get_staking_account_for(account_id).ok_or(Error::<T>::StakingAccountNotFound);
-		false
 	}
 
 	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
