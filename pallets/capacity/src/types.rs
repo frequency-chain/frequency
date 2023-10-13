@@ -1,11 +1,11 @@
 //! Types for the Capacity Pallet
 use super::*;
-use codec::{Decode, Encode, MaxEncodedLen};
+use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use frame_support::{
 	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, Zero};
 
 use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
@@ -342,7 +342,7 @@ pub trait StakingRewardsProvider<T: Config> {
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
-	/// Errors::
+	/// Errors:
 	///     - NotAStakingAccount
 	///     - MaxUnlockingChunksExceeded
 	///     - All other conditions that would prevent a reward from being claimed return 'false'
@@ -371,7 +371,10 @@ pub trait StakingRewardsProvider<T: Config> {
 	TypeInfo,
 	MaxEncodedLen,
 )]
-pub struct RewardEraInfo<RewardEra, BlockNumber> {
+pub struct RewardEraInfo<RewardEra, BlockNumber>
+where
+	RewardEra: AtLeast32BitUnsigned + EncodeLike,
+{
 	/// the index of this era
 	pub era_index: RewardEra,
 	/// the starting block of this era

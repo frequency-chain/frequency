@@ -242,8 +242,9 @@ pub mod pallet {
 	pub type EpochLength<T: Config> =
 		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
 
-	/// Information about the current staking reward era.
+	/// Information about the current staking reward era. Checked every block.
 	#[pallet::storage]
+	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_current_era)]
 	pub type CurrentEraInfo<T: Config> =
 		StorageValue<_, RewardEraInfo<T::RewardEra, T::BlockNumber>, ValueQuery>;
@@ -767,8 +768,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_reward_era_if_needed(current_block: T::BlockNumber) -> Weight {
 		let current_era_info: RewardEraInfo<T::RewardEra, T::BlockNumber> = Self::get_current_era(); // 1r
+
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
-			// 1r
 			let new_era_info = RewardEraInfo {
 				era_index: current_era_info.era_index.saturating_add(One::one()),
 				started_at: current_block,
@@ -776,17 +777,17 @@ impl<T: Config> Pallet<T> {
 
 			let current_reward_pool_info =
 				Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
+
 			let past_eras_max = T::StakingRewardsPastErasMax::get();
-			let entries: u32 = StakingRewardPool::<T>::count();
+			let entries: u32 = StakingRewardPool::<T>::count(); // 1r
+
 			if past_eras_max.eq(&entries.into()) {
-				// 2r
-				let current_era = Self::get_current_era().era_index;
-				let earliest_era = current_era.saturating_sub(past_eras_max).add(One::one());
+				let earliest_era =
+					current_era_info.era_index.saturating_sub(past_eras_max).add(One::one());
 				StakingRewardPool::<T>::remove(earliest_era); // 1w
 			}
 			CurrentEraInfo::<T>::set(new_era_info); // 1w
 
-			// 		let msa_handle = T::HandleProvider::get_handle_for_msa(msa_id);
 			let total_reward_pool =
 				T::RewardsProvider::reward_pool_size(current_reward_pool_info.total_staked_token);
 			let new_reward_pool = RewardPoolInfo {
@@ -797,10 +798,10 @@ impl<T: Config> Pallet<T> {
 			StakingRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
 
 			T::WeightInfo::on_initialize()
-				.saturating_add(T::DbWeight::get().reads(5))
+				.saturating_add(T::DbWeight::get().reads(3))
 				.saturating_add(T::DbWeight::get().writes(3))
 		} else {
-			T::DbWeight::get().reads(2)
+			T::DbWeight::get().reads(1)
 		}
 	}
 
@@ -821,8 +822,7 @@ impl<T: Config> Pallet<T> {
 			Self::get_staking_account_for(staker).ok_or(Error::<T>::NotAStakingAccount)?;
 
 		let current_era: T::RewardEra = Self::get_current_era().era_index;
-		let thaw_eras = T::ChangeStakingTargetThawEras::get();
-		let thaw_at = current_era.saturating_add(thaw_eras);
+		let thaw_at = current_era.saturating_add(T::ChangeStakingTargetThawEras::get());
 		staking_account_details.update_stake_change_unlocking(amount, &thaw_at, &current_era)?;
 		Self::set_staking_account(staker, &staking_account_details);
 		Ok(())
@@ -842,8 +842,11 @@ impl<T: Config> Pallet<T> {
 		let mut to_msa_target = Self::get_target_for(staker, to_msa).unwrap_or_default();
 
 		if to_msa_target.amount.is_zero() {
+			// it's a new StakingTargetDetails record.
 			to_msa_target.staking_type = staking_type.clone();
 		} else {
+			// make sure they are not retargeting to a StakingTargetDetails with a different staking
+			// type, otherwise it could interfere with staking rewards.
 			ensure!(
 				to_msa_target.staking_type.eq(staking_type),
 				Error::<T>::CannotChangeStakingType

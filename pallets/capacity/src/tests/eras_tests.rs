@@ -48,7 +48,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 		);
 		system_run_to_block(8);
 
-		// TODO: Provider boost, after staking updates reward pool info
+		// TODO: Provider boost, after staking updates reward pool info #1699
 		// let staker = 10_000;
 		// let provider_msa: MessageSourceId = 1;
 		// let stake_amount = 600u64;
@@ -67,7 +67,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 			}
 		);
 
-		// TODO: after staking updates reward pool info
+		// TODO: after staking updates reward pool info #1699
 		// system_run_to_block(19);
 		// run_to_block(20);
 	});
