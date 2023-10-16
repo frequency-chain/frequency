@@ -200,13 +200,6 @@ describe("Capacity Transactions", function () {
       });
 
       describe("when capacity eligible transaction is from the messages pallet", async function () {
-        // Increase global timeout to allow for the IPFS node startup when
-        // the Frequency node is built for development. Running against a live
-        // chain doesn't bump into this problem because the timeouts are higher.
-        if (isDev()) {
-          this.timeout(5000);
-        }
-
         let starting_block: number;
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;

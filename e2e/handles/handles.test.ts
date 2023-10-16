@@ -15,6 +15,9 @@ describe("🤝 Handles", () => {
 
     let msa_id: MessageSourceId;
     let msaOwnerKeys: KeyringPair;
+
+    let expirationOffset = hasRelayChain() ? 10 : 100;
+
     before(async function () {
         // Create a MSA for the delegator
         [msaOwnerKeys, msa_id] = await createDelegator(fundingSource);
@@ -29,7 +32,7 @@ describe("🤝 Handles", () => {
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
                 baseHandle: handle_vec,
-                expiration: currentBlock + 10,
+                expiration: currentBlock + expirationOffset,
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
@@ -44,10 +47,6 @@ describe("🤝 Handles", () => {
 
     describe("@Retire Handle", () => {
         it("should be able to retire a handle", async function () {
-            if (hasRelayChain()) {
-                this.timeout(250_000 + 12 * 20 * 1000);
-            }
-
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
@@ -59,7 +58,7 @@ describe("🤝 Handles", () => {
             assert.notEqual(full_handle_state.canonical_base, undefined, "canonical_base should not be undefined");
             assert.notEqual(full_handle_state.base_handle, undefined, "base_handle should not be undefined");
             let currentBlock = await getBlockNumber();
-            await ExtrinsicHelper.runToBlock(currentBlock + 20);
+            await ExtrinsicHelper.runToBlock(currentBlock + expirationOffset + 1); // Must be at least 1 > original expiration
 
             const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
             const [event] = await retireHandle.fundAndSend(fundingSource);
@@ -88,7 +87,7 @@ describe("🤝 Handles", () => {
             /// Claim handle (extrinsic)
             const payload_ext = {
                 baseHandle: handle_bytes,
-                expiration: currentBlock + 100,
+                expiration: currentBlock + expirationOffset,
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
@@ -122,9 +121,6 @@ describe("🤝 Handles", () => {
 
     describe("👇 Negative Test: Early retire handle", () => {
         it("should not be able to retire a handle before expiration", async function () {
-            if (hasRelayChain()) {
-                this.timeout(250_000 + 12 * 10 * 1000);
-            }
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
                 throw new Error("handle_response should be Some");
@@ -136,7 +132,7 @@ describe("🤝 Handles", () => {
             assert.notEqual(suffix, 0, "suffix should not be 0");
 
             let currentBlock = await getBlockNumber();
-            await ExtrinsicHelper.runToBlock(currentBlock + 10);
+            await ExtrinsicHelper.runToBlock(currentBlock + expirationOffset + 1);
             try {
                 const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
                 const [event] = await retireHandle.fundAndSend(fundingSource);

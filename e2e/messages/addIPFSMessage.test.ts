@@ -15,13 +15,6 @@ import { isDev } from "../scaffolding/env";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Add Offchain Message", function () {
-    // Increase global timeout to allow for the IPFS node startup when
-    // the test chain validation is "instant_finality". Running against a live
-    // chain doesn't bump into this problem because the timeouts are higher.
-    if (isDev()) {
-        this.timeout(5000);
-    }
-
     const fundingSource = getFundingSource("messages-add-ipfs");
 
     let keys: KeyringPair;

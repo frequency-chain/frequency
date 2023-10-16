@@ -268,10 +268,6 @@ describe("Capacity Staking Tests", function () {
     describe("withdraw_unstaked()", async function () {
         describe("when attempting to call withdrawUnstake before first calling unstake", async function () {
             it("errors with NoUnstakedTokensAvailable", async function () {
-                if (hasRelayChain()) {
-                    this.timeout(250000);
-                }
-
                 let stakingKeys: KeyringPair = createKeys("stakingKeys");
                 let providerId: u64 = await createMsaAndProvider(fundingSource, stakingKeys, "stakingKeys", accountBalance);
 
