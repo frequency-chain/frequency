@@ -1,4 +1,7 @@
-use super::{mock::*, testing_utils::*};
+use super::{
+	mock::*,
+	testing_utils::{setup_provider, staking_events},
+};
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RewardEraInfo,
 	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
@@ -13,22 +16,6 @@ use common_primitives::{
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
-fn setup_provider(staker: &u64, target: &MessageSourceId, amount: &u64, staking_type: StakingType) {
-	let provider_name = String::from("Cst-") + target.to_string().as_str();
-	register_provider(*target, provider_name);
-	if amount.gt(&0u64) {
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(staker.clone()),
-			*target,
-			*amount,
-			staking_type.clone()
-		));
-		let target = Capacity::get_target_for(staker, target).unwrap();
-		assert_eq!(target.amount, *amount);
-		assert_eq!(target.staking_type, staking_type);
-	}
-}
-
 type TestCapacityDetails = CapacityDetails<BalanceOf<Test>, u32>;
 type TestTargetDetails = StakingTargetDetails<Test>;
 
@@ -60,6 +47,7 @@ fn assert_target_details(
 	let from_target_details = Capacity::get_target_for(staker, msa_id).unwrap();
 	assert_eq!(from_target_details, expected_from_target_details);
 }
+
 #[test]
 fn do_retarget_happy_path() {
 	new_test_ext().execute_with(|| {
@@ -160,6 +148,7 @@ fn assert_total_capacity(msas: Vec<MessageSourceId>, total: u64) {
 		.fold(0, |a, b| a + b);
 	assert_eq!(total, sum);
 }
+
 #[test]
 fn check_retarget_multiple_stakers() {
 	new_test_ext().execute_with(|| {
