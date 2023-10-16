@@ -163,7 +163,7 @@ fn test_ensure_msa_can_retire_fails_if_more_than_one_account_exists() {
 }
 
 #[test]
-fn test_ensure_msa_can_retire_fails_if_any_delegations_exist() {
+fn test_ensure_msa_can_retire_fails_if_any_active_delegations_exist() {
 	new_test_ext().execute_with(|| {
 		// Create delegator
 		let msa_id = 2;
