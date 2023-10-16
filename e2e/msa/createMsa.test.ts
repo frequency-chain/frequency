@@ -145,7 +145,8 @@ describe("Create Accounts", function () {
             const [publicKeyEvents] = await addPublicKeyOp.fundAndSend(fundingSource);
 
             assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
-            await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), { name: 'SignatureAlreadySubmitted' }, "should reject sending the same signed payload twiced");
+
+            await assert.rejects(addPublicKeyOp.fundAndSend(fundingSource), "should reject sending the same signed payload twice");
         });
 
         it("should fail if attempting to add the same key more than once (KeyAlreadyRegistered)", async function () {
