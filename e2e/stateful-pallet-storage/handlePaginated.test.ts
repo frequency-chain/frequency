@@ -1,4 +1,4 @@
-// E2E tests for pallets/stateful-pallet-storage/handlepaginated.ts
+// E2E tests for pallets/stateful-pallet-storage/handlePaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
 import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";
@@ -84,9 +84,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, page_id, payload_1, target_hash);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
@@ -98,9 +96,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId_unsupported, msa_id, page_id, payload_1, target_hash);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
@@ -114,9 +110,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, page_id, payload_1, target_hash);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
@@ -128,9 +122,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
 
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, 0);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'StalePageState',
                 section: 'statefulStorage',
             });
@@ -143,9 +135,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let fake_schema_id = 999;
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
@@ -154,9 +144,7 @@ describe("📗 Stateful Pallet Storage", () => {
         it("🛑 should fail call to remove page with invalid schema location", async function () {
             let page_id = 0;
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, page_id, 0);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
@@ -166,9 +154,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
@@ -176,9 +162,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
         it("🛑 should fail call to remove page with stale target hash", async function () {
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
-            await assert.rejects(async () => {
-                await paginated_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'StalePageState',
                 section: 'statefulStorage',
             });

@@ -133,9 +133,7 @@ describe("Sudo required", function () {
           let add_actions = [add_action, update_action, delete_action];
 
           let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, itemizedSchemaId, msa_id, add_actions, target_hash);
-          await assert.rejects(async () => {
-            await itemized_add_result_1.fundAndSend(fundingSource);
-          }, {
+          await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
             name: 'UnsupportedOperationForSchema',
             section: 'statefulStorage',
           });

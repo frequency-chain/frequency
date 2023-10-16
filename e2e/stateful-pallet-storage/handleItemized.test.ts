@@ -80,11 +80,9 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Add": payload_1
             }
             let add_actions = [add_action];
-            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 65_534);
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, fake_schema_id, msa_id, add_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
@@ -98,9 +96,7 @@ describe("📗 Stateful Pallet Storage", () => {
             }
             let add_actions = [add_action];
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_unsupported, msa_id, add_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
@@ -113,12 +109,10 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Add": payload_1
             }
             let add_actions = [add_action];
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
+            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 4_294_967_295)
 
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, add_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_add_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
@@ -172,11 +166,9 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
-            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 65_534);
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, fake_schema_id, msa_id, remove_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_remove_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
@@ -189,9 +181,7 @@ describe("📗 Stateful Pallet Storage", () => {
             }
             let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_unsupported, msa_id, remove_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_remove_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
@@ -203,11 +193,9 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
+            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 4_294_967_295);
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, remove_actions, 0);
-            await assert.rejects(async () => {
-                await itemized_remove_result_1.fundAndSend(fundingSource);
-            }, {
+            await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
