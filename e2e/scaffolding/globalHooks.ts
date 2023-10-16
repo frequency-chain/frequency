@@ -8,6 +8,7 @@ const SOURCE_AMOUNT = 100_000_000_000_000n;
 
 async function fundAllSources() {
   const root = getRootFundingSource().keys;
+  console.log("Root funding source: ", root.address);
   const nonce = await getNonce(root);
   await Promise.all(fundingSources.map((dest, i) => {
     return ExtrinsicHelper.transferFunds(root, getFundingSource(dest), SOURCE_AMOUNT).signAndSend(nonce + i);
