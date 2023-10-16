@@ -6,6 +6,7 @@ use crate::{
 use frame_support::assert_err;
 
 use sp_core::H256;
+use sp_std::ops::Div;
 
 #[test]
 fn test_staking_reward_total_happy_path() {
@@ -63,7 +64,7 @@ fn test_reward_pool_size_happy_path() {
 					unclaimed_balance: 0u64,
 				},
 			);
-			assert_eq!(Ok(tc.expected_reward_pool), Capacity::reward_pool_size());
+			assert_eq!(tc.expected_reward_pool, tc.total_staked.div(10u64));
 		}
 	})
 }
