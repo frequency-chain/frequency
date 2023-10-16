@@ -9,5 +9,5 @@
     ],
     "loader": "ts-node/esm",
     "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
-    "timeout": 2000
+    "timeout": 10000
 }

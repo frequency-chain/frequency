@@ -27,7 +27,7 @@ export interface Account {
 
 export type Sr25519Signature = { Sr25519: `0x${string}` }
 
-export const TEST_EPOCH_LENGTH = 10;
+export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
