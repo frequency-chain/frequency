@@ -86,6 +86,35 @@ fn provider_boost_works() {
 }
 
 #[test]
+fn calling_stake_on_provider_boost_target_errors() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		register_provider(target, String::from("Bear"));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+		assert_noop!(
+			Capacity::stake(RuntimeOrigin::signed(account), target, 50),
+			Error::<Test>::CannotChangeStakingType
+		);
+	})
+}
+#[test]
+fn calling_provider_boost_on_staked_target_errors() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		register_provider(target, String::from("Foobear"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
+		assert_noop!(
+			Capacity::provider_boost(RuntimeOrigin::signed(account), target, 50),
+			Error::<Test>::CannotChangeStakingType
+		);
+	})
+}
+
+#[test]
 fn stake_errors_invalid_target_when_target_is_not_registered_provider() {
 	new_test_ext().execute_with(|| {
 		let account = 100;
