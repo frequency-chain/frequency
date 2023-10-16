@@ -36,7 +36,7 @@ describe("TimeRelease", function () {
     const sourceKey: KeyringPair = getFundingSource("time-release");
 
     before(async function () {
-        vesterKeys = await createAndFundKeypair(sourceKey);
+        vesterKeys = await createAndFundKeypair(sourceKey, 50_000_000n);
     });
 
     describe("vested transfer and claim flow", function () {

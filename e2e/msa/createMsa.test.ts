@@ -15,7 +15,7 @@ describe("Create Accounts", function () {
     let authorizedKeys: KeyringPair[] = [];
 
     before(async function () {
-        keys = await createAndFundKeypair(fundingSource);
+        keys = await createAndFundKeypair(fundingSource, 50_000_000n);
     });
 
     describe("createMsa", function () {
@@ -51,7 +51,7 @@ describe("Create Accounts", function () {
         let addKeyData: Codec;
 
         before(async function () {
-            authorizedKeys.push(await createAndFundKeypair(fundingSource));
+            authorizedKeys.push(await createAndFundKeypair(fundingSource, 50_000_000n));
             badKeys = createKeys();
             defaultPayload.msaId = msaId;
             defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
@@ -82,7 +82,7 @@ describe("Create Accounts", function () {
         });
 
         it("should fail to add public key if origin does not have an MSA (NoKeyExists)", async function () {
-            const newOriginKeys = await createAndFundKeypair(fundingSource);
+            const newOriginKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", payload);
             ownerSig = signPayloadSr25519(newOriginKeys, addKeyData);
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
@@ -181,7 +181,7 @@ describe("Create Accounts", function () {
         let providerKeys: KeyringPair;
 
         before(async function () {
-            providerKeys = await createAndFundKeypair(fundingSource);
+            providerKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
             const createMsaOp = ExtrinsicHelper.createMsa(providerKeys);
             await createMsaOp.fundAndSend(fundingSource);
 

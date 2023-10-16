@@ -153,6 +153,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
 
     public async fundAndSend(source: KeyringPair): Promise<ParsedEventResult> {
         await this.fundOperation(source);
+        log("Fund and Send", `Fund Source: ${source.address}`);
         return this.signAndSend();
     }
 

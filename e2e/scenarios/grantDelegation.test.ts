@@ -3,7 +3,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
+import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { firstValueFrom } from "rxjs";
 import { getFundingSource } from "../scaffolding/funding";
@@ -24,9 +24,9 @@ describe("Delegation Scenario Tests", function () {
     let otherMsaId: u64;
 
     before(async function () {
-        noMsaKeys = await createAndFundKeypair(fundingSource);
+        // Fund all the different keys
+        [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(fundingSource, ["noMsaKeys", "keys", "otherMsaKeys", "providerKeys", "otherProviderKeys"]);
 
-        keys = await createAndFundKeypair(fundingSource);
         const createMsaOp = ExtrinsicHelper.createMsa(keys);
         let [msaCreatedEvent] = await createMsaOp.fundAndSend(fundingSource);
         if (msaCreatedEvent && createMsaOp.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
@@ -34,14 +34,12 @@ describe("Delegation Scenario Tests", function () {
         }
         assert.notEqual(msaId, undefined, 'setup should populate msaId');
 
-        otherMsaKeys = await createAndFundKeypair(fundingSource);
         [msaCreatedEvent] = await ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource);
         if (msaCreatedEvent && createMsaOp.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
             otherMsaId = msaCreatedEvent.data.msaId;
         }
         assert.notEqual(otherMsaId, undefined, 'setup should populate otherMsaId');
 
-        providerKeys = await createAndFundKeypair(fundingSource);
         let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
         await createProviderMsaOp.fundAndSend(fundingSource);
         let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "MyPoster");
@@ -52,7 +50,6 @@ describe("Delegation Scenario Tests", function () {
         }
         assert.notEqual(providerId, undefined, "setup should populate providerId");
 
-        otherProviderKeys = await createAndFundKeypair(fundingSource);
         createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
         await createProviderMsaOp.fundAndSend(fundingSource);
         createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, "MyPoster");
@@ -204,7 +201,7 @@ describe("Delegation Scenario Tests", function () {
 
     describe("revoke schema permissions", function () {
         it("should fail to revoke schema permissions from non-MSA (NoKeyExists)", async function () {
-            const nonMsaKeys = await createAndFundKeypair(fundingSource);
+            const nonMsaKeys = await createAndFundKeypair(fundingSource, 5_000_000n);
             const op = ExtrinsicHelper.revokeSchemaPermissions(nonMsaKeys, providerId, [schemaId]);
             await assert.rejects(op.fundAndSend(fundingSource), { name: 'NoKeyExists' });
         });
@@ -315,6 +312,8 @@ describe("Delegation Scenario Tests", function () {
             });
 
             it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
+                // Make a block first to make sure the state has rolled to the next block
+                await ExtrinsicHelper.createBlock();
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
@@ -360,7 +359,7 @@ describe("Delegation Scenario Tests", function () {
         let defaultPayload: AddProviderPayload;
 
         before(async function () {
-            sponsorKeys = await createAndFundKeypair(fundingSource);
+            sponsorKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
             defaultPayload = {
                 authorizedMsaId: providerId,
                 schemaIds: [schemaId],

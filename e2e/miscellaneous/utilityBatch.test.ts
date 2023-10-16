@@ -12,8 +12,8 @@ describe("Utility Batch Filtering", function () {
     const fundingSource = getFundingSource("misc-util-batch");
 
     before(async function () {
-        sender = await createAndFundKeypair(fundingSource);
-        recipient = await createAndFundKeypair(fundingSource);
+        sender = await createAndFundKeypair(fundingSource, 50_000_000n);
+        recipient = await createAndFundKeypair(fundingSource, 50_000_000n);
     });
 
     it("should successfully execute ✅ batch with allowed calls", async function () {

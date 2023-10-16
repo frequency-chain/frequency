@@ -200,7 +200,7 @@ describe("Capacity Staking Tests", function () {
             const maxMsaId = (await ExtrinsicHelper.getCurrentMsaIdentifierMaximum()).toNumber();
 
             const stakeAmount = 10n * CENTS;
-            const stakeKeys = await createAndFundKeypair(fundingSource, stakeAmount, "StakeKeys");
+            const stakeKeys = await createAndFundKeypair(fundingSource, stakeAmount + 1n, "StakeKeys");
 
             const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(fundingSource), { name: "InvalidTarget" });

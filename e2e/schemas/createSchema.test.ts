@@ -14,7 +14,7 @@ describe("#createSchema", function () {
   const fundingSource = getFundingSource("schemas-create");
 
   before(async function () {
-    keys = await createAndFundKeypair(fundingSource);
+    keys = await createAndFundKeypair(fundingSource, 50_000_000n);
     accountWithNoFunds = createKeys();
   });
 

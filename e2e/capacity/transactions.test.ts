@@ -137,7 +137,7 @@ describe("Capacity Transactions", function () {
           let newSig: Sr25519Signature;
           let addKeyData: Codec;
 
-          authorizedKeys.push(await createAndFundKeypair(fundingSource));
+          authorizedKeys.push(await createAndFundKeypair(fundingSource, 50_000_000n));
           defaultPayload.msaId = capacityProvider
           defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
 
@@ -629,7 +629,7 @@ describe("Capacity Transactions", function () {
 
       describe("and does not have an MSA account associated to signing keys", async function () {
         it("fails to pay for a transaction", async function () {
-          let emptyKeys = await createAndFundKeypair(fundingSource);
+          let emptyKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
 
           const payload = await generateDelegationPayload({
             authorizedMsaId: delegatorProviderId,

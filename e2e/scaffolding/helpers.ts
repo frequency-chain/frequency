@@ -161,8 +161,22 @@ export async function createAndFundKeypair(source: KeyringPair, amount: bigint |
   const keypair = createKeys(keyName);
 
   await fundKeypair(source, keypair, amount || await getExistentialDeposit(), nonce);
+  log("Funded", `Name: ${keyName || "None provided"}`, `Address: ${keypair.address}`);
 
   return keypair;
+}
+
+export async function createAndFundKeypairs(source: KeyringPair, keyNames: string[], amountOverExDep: bigint = 100_000_000n): Promise<KeyringPair[]> {
+  const nonce = await getNonce(source);
+  const existentialDeposit = await getExistentialDeposit();
+
+  const wait: Array<Promise<KeyringPair>> = keyNames.map((keyName, i) => {
+    const keypair = createKeys(keyName + ` ${i}th`);
+
+    return fundKeypair(source, keypair, existentialDeposit + amountOverExDep, nonce + i)
+      .then(() => keypair);
+  });
+  return Promise.all(wait);
 }
 
 export function log(...args: any[]) {
