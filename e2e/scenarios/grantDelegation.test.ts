@@ -272,7 +272,7 @@ describe("Delegation Scenario Tests", function () {
             let revokedAtBlock: bigint;
             async function revokeDelegationByProvider (myMsaId: u64 | undefined) {
               const op = ExtrinsicHelper.revokeDelegationByProvider(myMsaId as u64, providerKeys);
-              const [revokeEvent] = await op.fundAndSend();
+              const [revokeEvent] = await op.fundAndSend(fundingSource);
               assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
               if (revokeEvent && op.api.events.msa.DelegationRevoked.is(revokeEvent)) {
                 assert.deepEqual(revokeEvent.data.delegatorId, myMsaId, 'delegator ids should match');
