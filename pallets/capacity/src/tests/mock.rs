@@ -15,7 +15,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill,
 };
-use sp_std::ops::Mul;
+use sp_std::ops::{Div, Mul};
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -140,8 +140,8 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
 
-	fn reward_pool_size() -> Result<BalanceOf<Test>, DispatchError> {
-		Ok(1000u64)
+	fn reward_pool_size(total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
+		total_staked.div(10u64)
 	}
 
 	fn staking_reward_total(
