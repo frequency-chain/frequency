@@ -221,7 +221,14 @@ describe("Create Accounts", function () {
             });
         });
 
-        it("should test for 'NoKeyExists' error");
+        it("should test for 'NoKeyExists' error", async function () {
+            const key = createKeys("nothing key");
+            const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
+            await assert.rejects(op.fundAndSend(fundingSource), {
+                name: 'RpcError',
+                message: /Custom error: 1/,
+            });
+        });
 
         it("should delete all other authorized keys", async function () {
             for (const key of authorizedKeys) {
