@@ -12,6 +12,7 @@ export const fundingSources = [
   "capacity-replenishment",
   "load-signature-registry",
   "capacity-transactions",
+  "sudo-transactions",
   "time-release",
   "capacity-staking",
   "schemas-create",

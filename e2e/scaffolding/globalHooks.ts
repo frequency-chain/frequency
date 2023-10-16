@@ -1,7 +1,8 @@
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { ExtrinsicHelper } from "./extrinsicHelpers";
-import { fundingSources, getFundingSource, getRootFundingSource } from "./funding";
-import { getNonce } from "./helpers";
+import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from "./funding";
+import { TEST_EPOCH_LENGTH, getNonce, setEpochLength } from "./helpers";
+import { isDev } from "./env";
 
 const SOURCE_AMOUNT = 100_000_000_000_000n;
 
@@ -11,6 +12,12 @@ async function fundAllSources() {
   await Promise.all(fundingSources.map((dest, i) => {
     return ExtrinsicHelper.transferFunds(root, getFundingSource(dest), SOURCE_AMOUNT).signAndSend(nonce + i);
   }));
+}
+
+async function devSudoActions() {
+  // Because there is only one sudo, these actions must take place globally
+  const sudo = getSudo().keys;
+  await setEpochLength(sudo, TEST_EPOCH_LENGTH);
 }
 
 async function drainAllSources() {
@@ -25,6 +32,10 @@ export async function mochaGlobalSetup() {
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize();
   await fundAllSources();
+
+  // Sudo is only when not on Testnet
+  if (isDev()) await devSudoActions();
+
   console.log('Global Setup Complete');
 }
 

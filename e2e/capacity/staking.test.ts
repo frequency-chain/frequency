@@ -6,7 +6,7 @@ import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import {
     createKeys, createMsaAndProvider,
     stakeToProvider,
-    getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
+    getNextEpochBlock, TEST_EPOCH_LENGTH,
     CENTS, DOLLARS, createAndFundKeypair
 }
     from "../scaffolding/helpers";
@@ -27,15 +27,6 @@ describe("Capacity Staking Tests", function () {
     // so that tests against it can pass regardless if withdrawing (the frozen balance decreasing)
     // has happened or not.
     let trackedFrozenBalance: bigint = 0n;
-
-    before(async function () {
-        // Pallet config changes such as modifying the epoch length will
-        // only be modified when running tests against a Frequency node built
-        // for development.
-        if (isDev()) {
-            await setEpochLength(fundingSource, TEST_EPOCH_LENGTH);
-        }
-    });
 
     describe("scenario: user staking, unstaking, and withdraw-unstaked", function () {
         let stakeKeys: KeyringPair;

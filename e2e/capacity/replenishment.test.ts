@@ -9,8 +9,6 @@ import {
   stakeToProvider,
   fundKeypair,
   getNextEpochBlock,
-  TEST_EPOCH_LENGTH,
-  setEpochLength,
   getOrCreateGraphChangeSchema,
   CENTS,
   DOLLARS,
@@ -19,7 +17,7 @@ import {
   getRemainingCapacity,
   getNonce,
 } from "../scaffolding/helpers";
-import { getFundingSource, getSudo } from "../scaffolding/funding";
+import { getFundingSource } from "../scaffolding/funding";
 import { isTestnet } from "../scaffolding/env";
 
 describe("Capacity Replenishment Testing: ", function () {
@@ -37,11 +35,9 @@ describe("Capacity Replenishment Testing: ", function () {
 
 
   before(async function () {
-    // Replenishment requires SUDO
+    // Replenishment requires the epoch length to be shorter than testnet (set in globalHooks)
     if (isTestnet()) this.skip();
 
-    const sudo = getSudo().keys;
-    await setEpochLength(sudo, TEST_EPOCH_LENGTH);
     schemaId = await getOrCreateGraphChangeSchema(fundingSource);
   });
 
@@ -142,8 +138,8 @@ describe("Capacity Replenishment Testing: ", function () {
       // show that capacity was replenished and then fee deducted.
       let approxExpected = providerStakeAmt + userStakeAmt + userIncrementAmt - callCapacityCost;
       assert(remainingCapacity <= approxExpected, `remainingCapacity = ${remainingCapacity.toString()}`);
-    })
-  })
+    });
+  });
 });
 
 async function drainCapacity(call, stakeProviderId: u64, stakeKeys: KeyringPair): Promise<bigint> {
