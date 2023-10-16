@@ -124,7 +124,7 @@ describe("Create Accounts", function () {
             const maxMortality = ExtrinsicHelper.api.consts.msa.mortalityWindowSize.toNumber();
             const newPayload = await generateAddKeyPayload({
                 ...defaultPayload,
-                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 5,
+                expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 999,
             });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);
