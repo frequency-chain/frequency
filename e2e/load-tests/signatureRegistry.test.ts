@@ -59,7 +59,7 @@ describe("MSA Initializer Load Tests", function () {
         const blockNumberEnd = await getBlockNumber();
         console.log("Ending Block Number:", blockNumberEnd);
 
-    }).timeout(5_000_000)
+    });
 })
 
 // Checks the keys to make sure they were associated with an MSA

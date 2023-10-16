@@ -75,7 +75,7 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(chainEvents3["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents3["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageRemove, undefined, "should have returned a event");
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to upsert page with invalid schemaId", async function () {
 
@@ -90,7 +90,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to upsert page with invalid schema location", async function () {
 
@@ -104,7 +104,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to upsert page with for un-delegated attempts", async function () {
 
@@ -120,7 +120,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to upsert page with stale target hash", async function () {
 
@@ -134,7 +134,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'StalePageState',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
     });
 
     describe("Paginated Storage Removal Negative Tests 😊/😥", () => {
@@ -149,7 +149,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove page with invalid schema location", async function () {
             let page_id = 0;
@@ -160,7 +160,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove page for un-delegated attempts", async function () {
             let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
@@ -172,7 +172,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove page with stale target hash", async function () {
             let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
@@ -182,7 +182,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'StalePageState',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
     });
 
     describe("Paginated Storage RPC Tests", () => {
@@ -191,6 +191,6 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(result, undefined, "should have returned a valid response");
             assert.notEqual(result.length, 0, "should have returned paginated responses");
             assert.notEqual(result[0].hash, undefined, "should have returned a valid page");
-        }).timeout(10000);
+        });
     });
 });

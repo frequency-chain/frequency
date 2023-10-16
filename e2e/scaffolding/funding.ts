@@ -6,8 +6,9 @@ import { createKeys } from "./helpers";
 const coreFundingSourcesSeed = "salt glare message absent guess transfer oblige refuse keen current lunar pilot";
 const keyring = new Keyring({ type: 'sr25519' });
 
-// This is a list of the sources.
-// The index is used to determine the
+// This is a list of the funding sources.
+// New ones should be added to support additional parallel testing
+// tldr: Each test file should have a separate funding source listed below
 export const fundingSources = [
   "capacity-replenishment",
   "load-signature-registry",

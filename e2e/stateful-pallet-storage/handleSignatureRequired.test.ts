@@ -91,7 +91,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
       assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
       assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
-    }).timeout(10000);
+    });
 
     it("should be able to call applyItemizedActionWithSignatureV2 and apply actions", async function () {
 
@@ -122,7 +122,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
       assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
       assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
-    }).timeout(10000);
+    });
   });
 
   describe("Paginated With Signature Storage Tests", () => {
@@ -165,7 +165,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, "should have returned a valid response");
       assert.equal(result.length, 0, "should returned no paginated pages");
-    }).timeout(10000);
+    });
 
     it("should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully", async function () {
       let page_id = new u16(ExtrinsicHelper.api.registry, 1);
@@ -203,6 +203,6 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, "should have returned a valid response");
       assert.equal(result.length, 0, "should returned no paginated pages");
-    }).timeout(10000);
+    });
   });
 });

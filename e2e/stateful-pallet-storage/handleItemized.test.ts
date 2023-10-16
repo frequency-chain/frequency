@@ -71,7 +71,7 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to applyItemizedAction with invalid schemaId", async function () {
 
@@ -88,7 +88,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to applyItemizedAction with invalid schema location", async function () {
 
@@ -104,7 +104,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to applyItemizedAction with for un-delegated attempts", async function () {
 
@@ -122,7 +122,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to applyItemizedAction for target hash mismatch", async function () {
 
@@ -142,7 +142,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let add_actions = [add_action, update_action];
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, add_actions, 0);
             await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), { name: 'StalePageState' });
-        }).timeout(10000);
+        });
     });
 
     describe("Itemized Storage Remove Action Tests", () => {
@@ -164,7 +164,7 @@ describe("📗 Stateful Pallet Storage", () => {
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent2, undefined, "should have returned a event");
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove action with invalid schemaId", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
@@ -180,7 +180,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove action with invalid schema location", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
@@ -195,7 +195,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'SchemaPayloadLocationMismatch',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove action with invalid msa_id", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1)
@@ -211,7 +211,7 @@ describe("📗 Stateful Pallet Storage", () => {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
             });
-        }).timeout(10000);
+        });
 
         it("🛑 should fail call to remove action with stale state hash", async function () {
             const idx_1: u16 = new u16(ExtrinsicHelper.api.registry, 1);
@@ -221,7 +221,7 @@ describe("📗 Stateful Pallet Storage", () => {
             let remove_actions = [remove_action];
             let op = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, remove_actions, 0);
             await assert.rejects(op.fundAndSend(fundingSource), { name: 'StalePageState' })
-        }).timeout(10000);
+        });
     });
 
     describe("Itemized Storage RPC Tests", () => {
@@ -229,6 +229,6 @@ describe("📗 Stateful Pallet Storage", () => {
             const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
             assert.notEqual(result.hash, undefined, "should have returned a hash");
             assert.notEqual(result.size, undefined, "should have returned a itemized responses");
-        }).timeout(10000);
+        });
     });
 });
