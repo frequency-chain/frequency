@@ -1,6 +1,7 @@
 use super::mock::*;
 use frame_support::{assert_ok, traits::Hooks};
 
+use common_primitives::capacity::StakingType;
 #[allow(unused)]
 use sp_runtime::traits::SignedExtension;
 
@@ -87,5 +88,25 @@ pub fn setup_provider(
 		assert_eq!(target.amount, *amount);
 		let account_staking_type = Capacity::get_staking_account_for(staker).unwrap().staking_type;
 		assert_eq!(account_staking_type, staking_type);
+	}
+}
+pub fn setup_provider(
+	staker: &u64,
+	target: &MessageSourceId,
+	amount: &u64,
+	staking_type: StakingType,
+) {
+	let provider_name = String::from("Cst-") + target.to_string().as_str();
+	register_provider(*target, provider_name);
+	if amount.gt(&0u64) {
+		assert_ok!(Capacity::stake(
+			RuntimeOrigin::signed(staker.clone()),
+			*target,
+			*amount,
+			staking_type.clone()
+		));
+		let target = Capacity::get_target_for(staker, target).unwrap();
+		assert_eq!(target.amount, *amount);
+		assert_eq!(target.staking_type, staking_type);
 	}
 }
