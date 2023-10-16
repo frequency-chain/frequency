@@ -7,7 +7,7 @@ import {
     devAccounts, createKeys, createMsaAndProvider,
     stakeToProvider, CHAIN_ENVIRONMENT,
     getNextEpochBlock, TEST_EPOCH_LENGTH, setEpochLength,
-    CENTS, DOLLARS, createAndFundKeypair
+    CENTS, DOLLARS, createAndFundKeypair, boostProvider
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
@@ -208,7 +208,7 @@ describe("Capacity Staking Tests", function () {
             const stakeAmount = 10n * CENTS;
             const stakeKeys = await createAndFundKeypair(stakeAmount, "StakeKeys");
 
-            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount, 'MaximumCapacity');
+            const failStakeObj = ExtrinsicHelper.stake(stakeKeys, maxMsaId + 1, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "InvalidTarget" });
         });
     });
@@ -219,7 +219,7 @@ describe("Capacity Staking Tests", function () {
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", 150n * CENTS);
             let stakeAmount = 1500n;
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount, 'MaximumCapacity');
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "StakingAmountBelowMinimum" });
         });
     });
@@ -229,7 +229,7 @@ describe("Capacity Staking Tests", function () {
             let stakingKeys = createKeys("stakingKeys");
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys", );
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0, 'MaximumCapacity');
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, 0);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "StakingAmountBelowMinimum" });
         });
     });
@@ -240,7 +240,7 @@ describe("Capacity Staking Tests", function () {
             let providerId = await createMsaAndProvider(stakingKeys, "stakingKeys");
             let stakingAmount = 1n * DOLLARS;
 
-            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount, 'MaximumCapacity');
+            const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
             await assert.rejects(failStakeObj.fundAndSend(), { name: "BalanceTooLowtoStake" });
         });
     });
@@ -282,7 +282,7 @@ describe("Capacity Staking Tests", function () {
                 let stakingKeys: KeyringPair = createKeys("stakingKeys");
                 let providerId: u64 = await createMsaAndProvider(stakingKeys, "stakingKeys", accountBalance);
 
-                const stakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, tokenMinStake, 'MaximumCapacity');
+                const stakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, tokenMinStake);
                 const [stakeEvent] = await stakeObj.fundAndSend();
                 assert.notEqual(stakeEvent, undefined, "should return a Stake event");
 
@@ -291,4 +291,29 @@ describe("Capacity Staking Tests", function () {
             });
         })
     });
+
+    describe('provider_boost()', async () => {
+        let stakeKeys: KeyringPair;
+        let stakeProviderId: u64;
+        before(async function () {
+            stakeKeys = createKeys("StakeKeysProvider");
+            stakeProviderId = await createMsaAndProvider(stakeKeys, "SPBoost", accountBalance);
+        });
+
+        it('works, happy path', async () => {
+            await assert.doesNotReject(boostProvider(stakeKeys, stakeProviderId, tokenMinStake));
+
+            // Confirm that the tokens were locked in the stakeKeys account using the query API
+            const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+            assert.equal(stakedAcctInfo.data.frozen, tokenMinStake, `expected ${tokenMinStake} frozen balance, got ${stakedAcctInfo.data.frozen}`)
+
+            // Confirm that the capacity was added to the stakeProviderId using the query API
+            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+            assert.equal(capacityStaked.remainingCapacity, capacityMin, `expected capacityLedger.remainingCapacity = 1CENT, got ${capacityStaked.remainingCapacity}`);
+            assert.equal(capacityStaked.totalTokensStaked, tokenMinStake, `expected capacityLedger.totalTokensStaked = 1CENT, got ${capacityStaked.totalTokensStaked}`);
+            assert.equal(capacityStaked.totalCapacityIssued, capacityMin, `expected capacityLedger.totalCapacityIssued = 1CENT, got ${capacityStaked.totalCapacityIssued}`);
+            trackedFrozenBalance += tokenMinStake;
+
+        })
+    })
 })

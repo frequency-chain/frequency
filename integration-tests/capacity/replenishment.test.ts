@@ -101,7 +101,7 @@ describe("Capacity Replenishment Testing: ", function () {
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
       await fundKeypair(devAccounts[0].keys, userKeys, 5n * DOLLARS);
-      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt, 'MaximumCapacity').fundAndSend();
+      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend();
       assertEvent(events, 'system.ExtrinsicSuccess');
 
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
@@ -125,7 +125,7 @@ describe("Capacity Replenishment Testing: ", function () {
       assert(remainingCapacity < callCapacityCost);
 
       // user stakes tiny additional amount
-      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt, 'MaximumCapacity').fundAndSend();
+      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend();
       assertEvent(events, 'capacity.Staked');
 
       // provider can now send a message

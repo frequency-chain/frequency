@@ -1,10 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
-use common_primitives::{
-	capacity::{StakingType, StakingType::MaximumCapacity},
-	msa::MessageSourceId,
-};
+use common_primitives::{capacity::StakingType, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
@@ -20,12 +17,7 @@ fn unstake_happy_path() {
 
 		register_provider(target, String::from("Test Target"));
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target,
-			staking_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount,));
 		assert_ok!(Capacity::unstake(
 			RuntimeOrigin::signed(token_account),
 			target,
@@ -101,12 +93,7 @@ fn unstake_errors_unstaking_amount_is_zero() {
 
 		register_provider(target, String::from("Test Target"));
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target,
-			staking_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount,));
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
 			Error::<Test>::UnstakedAmountIsZero
@@ -124,12 +111,7 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 
 		register_provider(target, String::from("Test Target"));
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target,
-			staking_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount,));
 
 		for _n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
 			assert_ok!(Capacity::unstake(
@@ -156,12 +138,7 @@ fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
 
 		register_provider(target, String::from("Test Target"));
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(token_account),
-			target,
-			staking_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount,));
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
 			Error::<Test>::InsufficientStakingBalance

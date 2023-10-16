@@ -384,8 +384,12 @@ export class ExtrinsicHelper {
     public static setEpochLength(keys: KeyringPair, epoch_length: any): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.setEpochLength(epoch_length), keys, ExtrinsicHelper.api.events.capacity.EpochLengthUpdated);
     }
-    public static stake(keys: KeyringPair, target: any, amount: any, stakingType: 'MaximumCapacity' | 'ProviderBoost'): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount, stakingType), keys, ExtrinsicHelper.api.events.capacity.Staked);
+    public static stake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount), keys, ExtrinsicHelper.api.events.capacity.Staked);
+    }
+
+    public static provider_boost(keys: KeyringPair, target: any, amount: any): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.provider_boost(target, amount), keys, ExtrinsicHelper.api.events.capacity.ProviderBoosted);
     }
 
     public static unstake(keys: KeyringPair, target: any, amount: any): Extrinsic {

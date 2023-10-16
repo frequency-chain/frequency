@@ -69,11 +69,10 @@ benchmarks! {
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
 		let target = 1;
-		let staking_type = StakingType::MaximumCapacity;
 
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount, staking_type)
+	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
 	verify {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
@@ -165,6 +164,22 @@ benchmarks! {
 			to_msa,
 			amount: restake_amount.into()
 		}.into());
+	}
+
+	provider_boost {
+		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
+		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
+		let target = 1;
+
+		register_provider::<T>(target, "Foo");
+
+	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
+	verify {
+		assert!(StakingAccountLedger::<T>::contains_key(&caller));
+		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
+		assert!(CapacityLedger::<T>::contains_key(target));
+		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount, target, capacity}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,

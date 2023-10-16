@@ -271,7 +271,7 @@ export async function createMsaAndProvider(keys: KeyringPair, providerName: stri
 
 // Stakes the given amount of tokens from the given keys to the given provider
 export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
-  const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake, 'MaximumCapacity');
+  const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
   const [stakeEvent] = await stakeOp.fundAndSend();
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
@@ -285,6 +285,22 @@ export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokens
   }
   else {
     return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
+  }
+}
+export async function boostProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+  const stakeOp = ExtrinsicHelper.provider_boost(keys, providerId, tokensToStake);
+  const [stakeEvent] = await stakeOp.fundAndSend();
+  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+
+  if (stakeEvent && ExtrinsicHelper.api.events.capacity.ProviderBoosted.is(stakeEvent)) {
+    let stakedCapacity = stakeEvent.data.capacity;
+
+    let expectedCapacity = tokensToStake/TokenPerCapacity/BoostAdjustment;
+
+    assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
+  }
+  else {
+    return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.ProviderBoosted');
   }
 }
 
@@ -396,6 +412,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
 }
 
 export const TokenPerCapacity = 50n;
+export const BoostAdjustment = 5n;
 
 export function assertEvent(events: EventMap, eventName: string) {
   assert(events.hasOwnProperty(eventName));

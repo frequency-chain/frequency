@@ -18,12 +18,7 @@ fn stake_max_capacity_works() {
 		let amount = 50;
 		let capacity = 5;
 		register_provider(target, String::from("Foo"));
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target,
-			amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount,));
 
 		// Check that StakingAccountLedger is updated.
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 50);
@@ -56,14 +51,14 @@ fn stake_max_capacity_works() {
 }
 
 #[test]
-fn stake_rewards_works() {
+fn provider_boost_works() {
 	new_test_ext().execute_with(|| {
 		let account = 600;
 		let target: MessageSourceId = 1;
 		let amount = 200;
 		let capacity = 1;
 		register_provider(target, String::from("Foo"));
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount, ProviderBoost));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
 		// Check that StakingAccountLedger is updated.
 		let staking_account: StakingAccountDetails<Test> =
@@ -76,7 +71,10 @@ fn stake_rewards_works() {
 		assert_eq!(staking_account.stake_change_unlocking.len(), 0);
 
 		let events = staking_events();
-		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
+		assert_eq!(
+			events.first().unwrap(),
+			&Event::ProviderBoosted { account, target, amount, capacity }
+		);
 
 		assert_eq!(Balances::locks(&account)[0].amount, amount);
 		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
@@ -94,7 +92,7 @@ fn stake_errors_invalid_target_when_target_is_not_registered_provider() {
 		let target: MessageSourceId = 1;
 		let amount = 1;
 		assert_noop!(
-			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::InvalidTarget
 		);
 	});
@@ -108,7 +106,7 @@ fn stake_errors_insufficient_staking_amount_when_staking_below_minimum_staking_a
 		let amount = 1;
 		register_provider(target, String::from("Foo"));
 		assert_noop!(
-			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
@@ -121,7 +119,7 @@ fn stake_errors_zero_amount_not_allowed() {
 		let target: MessageSourceId = 1;
 		let amount = 0;
 		assert_noop!(
-			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
@@ -137,12 +135,7 @@ fn stake_increase_stake_amount_works() {
 		register_provider(target, String::from("Foo"));
 
 		// First Stake
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target,
-			initial_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, initial_amount,));
 		let events = staking_events();
 		assert_eq!(
 			events.first().unwrap(),
@@ -160,12 +153,7 @@ fn stake_increase_stake_amount_works() {
 		let additional_amount = 100;
 		let capacity = 10;
 		// Additional Stake
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target,
-			additional_amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, additional_amount,));
 
 		// Check that StakingAccountLedger is updated.
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 150);
@@ -201,12 +189,7 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			let account_1 = 200;
 			let stake_amount_1 = 50;
 
-			assert_ok!(Capacity::stake(
-				RuntimeOrigin::signed(account_1),
-				target,
-				stake_amount_1,
-				MaximumCapacity
-			));
+			assert_ok!(Capacity::stake(RuntimeOrigin::signed(account_1), target, stake_amount_1,));
 
 			// Check that StakingAccountLedger is updated.
 			assert_eq!(Capacity::get_staking_account_for(account_1).unwrap().total, 50);
@@ -230,12 +213,7 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			let account_2 = 300;
 			let stake_amount_2 = 100;
 
-			assert_ok!(Capacity::stake(
-				RuntimeOrigin::signed(account_2),
-				target,
-				stake_amount_2,
-				MaximumCapacity
-			));
+			assert_ok!(Capacity::stake(RuntimeOrigin::signed(account_2), target, stake_amount_2,));
 
 			// Check that StakingAccountLedger is updated.
 			assert_eq!(Capacity::get_staking_account_for(account_2).unwrap().total, 100);
@@ -266,24 +244,14 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		let amount_1 = 100;
 		let amount_2 = 200;
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target_1,
-			amount_1,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_1, amount_1,));
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, amount_1);
 
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		// run to epoch 2
 		run_to_block(21);
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target_2,
-			amount_2,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_2, amount_2,));
 
 		// Check that StakingAccountLedger is updated.
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 300);
@@ -319,12 +287,7 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		// An amount greater than the free balance
 		let amount = 230;
 
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(account),
-			target,
-			amount,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount,));
 
 		// Check that StakingAccountLedger is updated.
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 190);
@@ -352,7 +315,7 @@ fn stake_when_staking_amount_is_less_than_min_token_balance_it_errors() {
 		let amount = 4;
 
 		assert_noop!(
-			Capacity::stake(RuntimeOrigin::signed(account), target, amount, MaximumCapacity),
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::BalanceTooLowtoStake
 		);
 	});
@@ -378,7 +341,7 @@ fn increase_stake_and_issue_capacity_errors_with_overflow() {
 		let staker = 200;
 		let amount = 10;
 		register_provider(target, String::from("Foo"));
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount, MaximumCapacity));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
 		let mut staking_account = Capacity::get_staking_account_for(staker).unwrap_or_default();
 
 		let overflow_amount = u64::MAX;
@@ -441,7 +404,8 @@ fn ensure_can_stake_is_successful() {
 	});
 }
 
-// stakes and asserts expected amounts.
+// for tests of Capacity::increase_stake_and_issue_capacity
+// increases stake and issues capacity, then asserts expected amounts.
 fn assert_successful_increase_stake_with_type(
 	target: MessageSourceId,
 	staking_type: StakingType,
