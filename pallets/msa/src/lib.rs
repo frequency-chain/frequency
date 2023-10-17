@@ -800,9 +800,10 @@ pub mod pallet {
 		///
 		/// When a user wants to disassociate themselves from Frequency, they can retire their MSA for free provided that:
 		///  (1) They own the MSA
-		///  (2) There is only one account key
-		///  (3) The MSA is not a registered provider.
-		///  (4) The user has already deleted all delegations to providers
+		///  (2) The MSA is not a registered provider.
+		///  (3) They retire their user handle (if they have one)
+		///  (4) There is only one account key
+		///  (5) The user has already deleted all delegations to providers
 		///
 		/// This does not currently remove any messages related to the MSA.
 		///
@@ -1732,12 +1733,16 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)
 		);
 
-		let has_delegations: bool =
-			DelegatorAndProviderToDelegation::<T>::iter_key_prefix(DelegatorId(msa_id))
-				.any(|_| true);
+		let delegator_id = DelegatorId(msa_id);
+		let has_active_delegations: bool = DelegatorAndProviderToDelegation::<T>::iter_key_prefix(
+			delegator_id,
+		)
+		.any(|provider_id| {
+			Pallet::<T>::ensure_valid_delegation(provider_id, delegator_id, None).is_ok()
+		});
 
 		ensure!(
-			!has_delegations,
+			!has_active_delegations,
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
 		);
 

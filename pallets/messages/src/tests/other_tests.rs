@@ -658,6 +658,16 @@ fn validate_cid_not_correct_format_errors() {
 }
 
 #[test]
+fn validate_cid_unwrap_panics() {
+	new_test_ext().execute_with(|| {
+		// This should not panic, but should return an error.
+		let bad_cid = vec![102, 70, 70, 70, 70, 70, 70, 70, 70, 48, 48, 48, 54, 53, 53, 48, 48];
+
+		assert_noop!(MessagesPallet::validate_cid(&bad_cid), Error::<Test>::InvalidCid);
+	})
+}
+
+#[test]
 fn map_to_response_on_chain() {
 	let payload_vec = b"123456789012345678901234567890".to_vec();
 	let payload_bounded = BoundedVec::<u8, ConstU32<100>>::try_from(payload_vec.clone()).unwrap();
