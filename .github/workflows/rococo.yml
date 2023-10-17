@@ -1,5 +1,5 @@
-name: Rococo Integration
-run-name: Rococo Integration Testing ${{github.event.inputs.release-version || github.ref_name}}
+name: Rococo E2E Tests
+run-name: Rococo E2E Testing ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
@@ -14,8 +14,8 @@ env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
 
 jobs:
-  run-integration-tests:
-    name: Run Integration Tests
+  run-e2e:
+    name: Run E2E Tests
     runs-on: ubuntu-20.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
@@ -43,14 +43,14 @@ jobs:
         with:
           node-version: 18
           cache: "npm"
-          cache-dependency-path: integration-tests/package-lock.json
+          cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
-        working-directory: integration-tests
-      - name: Run Integration Tests
-        working-directory: integration-tests
+        working-directory: e2e
+      - name: Run e2e Tests
+        working-directory: e2e
         env:
           CHAIN_ENVIRONMENT: rococo-testnet
           WS_PROVIDER_URL: wss://rpc.rococo.frequency.xyz
-          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.ROCOCO_INTEGRATION_TEST_SEED_PHRASE }}
+          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.ROCOCO_E2E_TEST_SEED_PHRASE }}
         run: npm run test:relay

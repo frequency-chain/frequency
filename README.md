@@ -34,7 +34,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
       - [Stop and Clean Environment](#stop-and-clean-environment)
     - [All in Docker Container](#all-in-docker-container)
   - [Run Tests](#run-tests)
-    - [Integration Tests](#integration-tests)
+    - [E2E Tests](#e2e-tests)
   - [Run Benchmarks](#run-benchmarks)
 - [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
 - [Runtime](#runtime)
@@ -276,9 +276,9 @@ make test
 cargo test --features frequency
 ```
 
-### Integration Tests
+### E2E Tests
 
-To run the integration tests, run `make integration-test`.
+To run the end-to-end tests, run `make e2e-tests`.
 
 ## Run Benchmarks
 

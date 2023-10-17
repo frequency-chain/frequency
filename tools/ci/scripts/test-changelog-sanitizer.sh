@@ -30,7 +30,7 @@ changelog='### Major Changes|n|
   - Update README.md #1491|n|
   - Update README.md #1495|n|
   - chore(capacity): address PR 827 comments #1372|n|
-  - Integration tests on Rococo #1481|n|
+  - E2E tests on Rococo #1481|n|
   - switch Verify PR workflow to CI base image #1501|n|
   - Use standard srtool image version #1496|n|
   - build: Restore make-start to wasm execution; Add make-start-native; #1522|n|
@@ -41,14 +41,14 @@ changelog='### Major Changes|n|
   - switch build binaries back to self-hosted runners #1527|n|
   - Update Readme #1525|n|
   - test(e2e-tests): Capacity staking from multiple msa to one provider; … #1497|n|
-  - Message Integration Tests on Rococo #1514|n|
+  - Message E2E Tests on Rococo #1514|n|
   - fix: Add patch to Cargo.toml to ensure correct multihash version #1531|n|
   - feat: add interval sealing mode for development node (without relay) #1533|n|
   - build: Update Rust: toolchain = nightly-2022-11-15 #1535|n|
   - add rust installation to ci base image #1536|n|
   - remove 3rd party rust toolchain action #1547|n|
   - Fix manual/interval sealing to work without empty blocks #1539|n|
-  - Capacity Integration Tests on Rococo #1538|n|
+  - Capacity E2E Tests on Rococo #1538|n|
 '
 
 clean="${changelog//[\`\[\]$'\n']/}"
