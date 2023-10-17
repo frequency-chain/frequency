@@ -1,1 +1,1 @@
-polkadot-v1.1.0
+polkadot-v1.2.0
