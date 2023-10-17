@@ -1,7 +1,7 @@
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from "./funding";
-import { TEST_EPOCH_LENGTH, getNonce, setEpochLength } from "./helpers";
+import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from "./helpers";
 import { isDev } from "./env";
 
 const SOURCE_AMOUNT = 100_000_000_000_000n;
@@ -21,11 +21,10 @@ async function devSudoActions() {
   await setEpochLength(sudo, TEST_EPOCH_LENGTH);
 }
 
-async function drainAllSources() {
+function drainAllSources() {
+  const keys = fundingSources.map((source) => getFundingSource(source));
   const root = getRootFundingSource().keys;
-  await Promise.all(fundingSources.map((source, i) => {
-    return ExtrinsicHelper.emptyAccount(getFundingSource(source), root).signAndSend();
-  }));
+  return drainKeys(keys, root.address);
 }
 
 export async function mochaGlobalSetup() {

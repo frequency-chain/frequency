@@ -143,6 +143,13 @@ export async function generatePaginatedDeleteSignaturePayloadV2(payloadInputs: P
   }
 }
 
+// Keep track of all the funded keys so that we can drain them at the end of the test
+const createdKeys: Map<string, KeyringPair> = new Map();
+
+export function drainFundedKeys(dest: string) {
+  return drainKeys([...createdKeys.values()], dest);
+}
+
 export function createKeys(name: string = 'first pair'): KeyringPair {
   const mnemonic = mnemonicGenerate();
   // create & add the pair to the keyring with the type and some additional
@@ -150,7 +157,21 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   const keyring = new Keyring({ type: 'sr25519' });
   const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
 
+  createdKeys.set(keypair.address, keypair);
   return keypair;
+}
+
+export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
+  try {
+    await Promise.allSettled(keyPairs.map(async (keypair) => {
+      const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
+        if (!info.isEmpty && info.data.free.toNumber() > 0) {
+          await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
+        }
+    }));
+  } catch (e) {
+    console.log("Error draining accounts: ", e);
+  }
 }
 
 export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {

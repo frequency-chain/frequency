@@ -234,8 +234,8 @@ export class ExtrinsicHelper {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferKeepAlive(dest.address, amount), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
-    public static emptyAccount(source: KeyringPair, dest: KeyringPair): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest.address, false), source, ExtrinsicHelper.api.events.balances.Transfer);
+    public static emptyAccount(source: KeyringPair, dest: KeyringPair["address"]): Extrinsic {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest, false), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
     /** Schema Extrinsics */
