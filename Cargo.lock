@@ -966,11 +966,10 @@ dependencies = [
 [[package]]
 name = "cid"
 version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd94671561e36e4e7de75f753f577edafb0e7c05d6e4547229fdf7938fbcd2c3"
+source = "git+https://github.com/multiformats/rust-cid?rev=86c79126d851316350ad106d0df3e4ae69071874#86c79126d851316350ad106d0df3e4ae69071874"
 dependencies = [
  "core2",
- "multihash 0.18.1",
+ "multihash 0.19.1",
  "unsigned-varint",
 ]
 
@@ -5529,9 +5528,9 @@ dependencies = [
 
 [[package]]
 name = "multihash"
-version = "0.18.1"
+version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfd8a792c1694c6da4f68db0a9d707c72bd260994da179e6030a5dcee00bb815"
+checksum = "076d548d76a0e2a0d4ab471d0b1c36c577786dfc4471242035d97a12a735c492"
 dependencies = [
  "core2",
  "unsigned-varint",
