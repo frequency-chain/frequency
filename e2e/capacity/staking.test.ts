@@ -7,7 +7,7 @@ import {
     createKeys, createMsaAndProvider,
     stakeToProvider,
     getNextEpochBlock, TEST_EPOCH_LENGTH,
-    CENTS, DOLLARS, createAndFundKeypair
+    CENTS, DOLLARS, createAndFundKeypair, boostProvider
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
@@ -280,4 +280,30 @@ describe("Capacity Staking Tests", function () {
             });
         })
     });
+
+    describe('provider_boost()', async () => {
+        let stakeKeys: KeyringPair;
+        let stakeProviderId: u64;
+        let capacityBoostMin: bigint = capacityMin/ 20n; // 5% of the amount
+
+        before(async function () {
+            stakeKeys = createKeys("StakeKeysProvider");
+            stakeProviderId = await createMsaAndProvider(stakeKeys, "SPBoost", accountBalance);
+        });
+
+        it('works, happy path', async () => {
+            await assert.doesNotReject(boostProvider(stakeKeys, stakeProviderId, tokenMinStake));
+
+            // Confirm that the tokens were locked in the stakeKeys account using the query API
+            const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+            assert.equal(stakedAcctInfo.data.frozen, tokenMinStake, `expected ${tokenMinStake} frozen balance, got ${stakedAcctInfo.data.frozen}`)
+
+            // Confirm that the capacity was added to the stakeProviderId using the query API
+            const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
+            assert.equal(capacityStaked.remainingCapacity, capacityBoostMin, `expected capacityLedger.remainingCapacity = 1CENT, got ${capacityStaked.remainingCapacity}`);
+            assert.equal(capacityStaked.totalTokensStaked, tokenMinStake, `expected capacityLedger.totalTokensStaked = 1CENT, got ${capacityStaked.totalTokensStaked}`);
+            assert.equal(capacityStaked.totalCapacityIssued, capacityBoostMin, `expected capacityLedger.totalCapacityIssued = 1CENT, got ${capacityStaked.totalCapacityIssued}`);
+            trackedFrozenBalance += tokenMinStake;
+        })
+    })
 })

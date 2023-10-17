@@ -308,6 +308,22 @@ export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, pr
     return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
   }
 }
+export async function boostProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+  const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
+  const [stakeEvent] = await stakeOp.fundAndSend();
+  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+
+  if (stakeEvent && ExtrinsicHelper.api.events.capacity.ProviderBoosted.is(stakeEvent)) {
+    let stakedCapacity = stakeEvent.data.capacity;
+
+    let expectedCapacity = tokensToStake/TokenPerCapacity/BoostAdjustment;
+
+    assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
+  }
+  else {
+    return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.ProviderBoosted');
+  }
+}
 
 export async function getNextEpochBlock() {
   const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo());
@@ -417,6 +433,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
 }
 
 export const TokenPerCapacity = 50n;
+export const BoostAdjustment = 20n;  // divide by 20 or 5% of Maximum Capacity
 
 export function assertEvent(events: EventMap, eventName: string) {
   assert(events.hasOwnProperty(eventName));

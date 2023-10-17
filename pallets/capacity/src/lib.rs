@@ -261,7 +261,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// Tokens have been staked to the Frequency network.
+		/// Tokens have been staked to the Frequency network for Maximized Capacity.
 		Staked {
 			/// The token account that staked tokens to the network.
 			account: T::AccountId,
@@ -312,6 +312,17 @@ pub mod pallet {
 			to_msa: MessageSourceId,
 			/// The amount in token that was retargeted
 			amount: BalanceOf<T>,
+		},
+		/// Tokens have been staked on the network for Provider Boosting
+		ProviderBoosted {
+			/// The token account that staked tokens to the network.
+			account: T::AccountId,
+			/// The MSA that a token account targeted to receive Capacity based on this staking amount.
+			target: MessageSourceId,
+			/// An amount that was staked.
+			amount: BalanceOf<T>,
+			/// The Capacity amount issued to the target as a result of the stake.
+			capacity: BalanceOf<T>,
 		},
 	}
 
@@ -382,9 +393,9 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			target: MessageSourceId,
 			amount: BalanceOf<T>,
-			staking_type: StakingType,
 		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
+			let staking_type = StakingType::MaximumCapacity;
 
 			let (mut staking_account, actual_amount) =
 				Self::ensure_can_stake(&staker, &target, &amount, &staking_type)?;
@@ -530,6 +541,44 @@ pub mod pallet {
 				to_msa: to,
 				amount,
 			});
+			Ok(())
+		}
+
+		/// Stakes some amount of tokens to the network and generates a comparatively small amount of Capacity
+		/// for the target, and gives periodic rewards to origin.
+		/// ### Errors
+		///
+		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
+		/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
+		/// - Returns Error::CannotChangeStakingType if the staking account exists and staking_type is different
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::provider_boost())]
+		pub fn provider_boost(
+			origin: OriginFor<T>,
+			target: MessageSourceId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+			let staking_type = StakingType::ProviderBoost;
+
+			let (mut staking_account, actual_amount) =
+				Self::ensure_can_stake(&staker, &target, &amount, &staking_type)?;
+
+			let capacity = Self::increase_stake_and_issue_capacity(
+				&staker,
+				&mut staking_account,
+				&target,
+				&actual_amount,
+				&staking_type,
+			)?;
+
+			Self::deposit_event(Event::ProviderBoosted {
+				account: staker,
+				amount: actual_amount,
+				target,
+				capacity,
+			});
+
 			Ok(())
 		}
 	}
