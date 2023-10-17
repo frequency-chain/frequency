@@ -295,6 +295,8 @@ describe("Capacity Staking Tests", function () {
     describe('provider_boost()', async () => {
         let stakeKeys: KeyringPair;
         let stakeProviderId: u64;
+        let capacityBoostMin: bigint = capacityMin/ 20n; // 5% of the amount
+
         before(async function () {
             stakeKeys = createKeys("StakeKeysProvider");
             stakeProviderId = await createMsaAndProvider(stakeKeys, "SPBoost", accountBalance);
@@ -309,11 +311,10 @@ describe("Capacity Staking Tests", function () {
 
             // Confirm that the capacity was added to the stakeProviderId using the query API
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
-            assert.equal(capacityStaked.remainingCapacity, capacityMin, `expected capacityLedger.remainingCapacity = 1CENT, got ${capacityStaked.remainingCapacity}`);
+            assert.equal(capacityStaked.remainingCapacity, capacityBoostMin, `expected capacityLedger.remainingCapacity = 1CENT, got ${capacityStaked.remainingCapacity}`);
             assert.equal(capacityStaked.totalTokensStaked, tokenMinStake, `expected capacityLedger.totalTokensStaked = 1CENT, got ${capacityStaked.totalTokensStaked}`);
-            assert.equal(capacityStaked.totalCapacityIssued, capacityMin, `expected capacityLedger.totalCapacityIssued = 1CENT, got ${capacityStaked.totalCapacityIssued}`);
+            assert.equal(capacityStaked.totalCapacityIssued, capacityBoostMin, `expected capacityLedger.totalCapacityIssued = 1CENT, got ${capacityStaked.totalCapacityIssued}`);
             trackedFrozenBalance += tokenMinStake;
-
         })
     })
 })

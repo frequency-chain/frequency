@@ -288,7 +288,7 @@ export async function stakeToProvider(keys: KeyringPair, providerId: u64, tokens
   }
 }
 export async function boostProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
-  const stakeOp = ExtrinsicHelper.provider_boost(keys, providerId, tokensToStake);
+  const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
   const [stakeEvent] = await stakeOp.fundAndSend();
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
@@ -412,7 +412,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(): Promise<u16> {
 }
 
 export const TokenPerCapacity = 50n;
-export const BoostAdjustment = 5n;
+export const BoostAdjustment = 20n;  // divide by 20 or 5% of Maximum Capacity
 
 export function assertEvent(events: EventMap, eventName: string) {
   assert(events.hasOwnProperty(eventName));
