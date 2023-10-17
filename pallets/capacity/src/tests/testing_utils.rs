@@ -72,7 +72,6 @@ pub fn setup_provider(
 	amount: &u64,
 	staking_type: StakingType,
 ) {
-	// TODO: use provider_boost if staking_type is ProviderBoost
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(*target, provider_name);
 	if amount.gt(&0u64) {
