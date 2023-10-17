@@ -164,18 +164,8 @@ fn check_retarget_multiple_stakers() {
 
 		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(staker_600.clone()),
-			from_msa,
-			479u64,
-			MaximumCapacity
-		));
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(staker_400.clone()),
-			to_msa,
-			211u64,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_600.clone()), from_msa, 479u64,));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_400.clone()), to_msa, 211u64,));
 
 		// 647 * .1 * .05 = 3 (rounded down)
 		// 293 * .1 * .05 = 1 (rounded down)
@@ -204,12 +194,7 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 
 		// stake additional to provider from another Msa, doesn't matter which type.
 		// total staked to from_msa is now 22u64.
-		assert_ok!(Capacity::stake(
-			RuntimeOrigin::signed(300u64),
-			from_msa,
-			12u64,
-			MaximumCapacity
-		));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(300u64), from_msa, 12u64,));
 
 		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &amount, &MaximumCapacity));
 
@@ -362,11 +347,10 @@ fn change_staking_target_test_parametric_validity() {
 		setup_provider(&from_account, &from_target, &staked_amount, ProviderBoost);
 		setup_provider(&from_account, &to_target, &staked_amount, ProviderBoost);
 
-		assert_ok!(Capacity::stake(
+		assert_ok!(Capacity::provider_boost(
 			RuntimeOrigin::signed(from_account),
 			from_target,
 			staked_amount,
-			ProviderBoost
 		));
 
 		struct TestCase {
