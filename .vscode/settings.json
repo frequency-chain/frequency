@@ -13,5 +13,8 @@
         "lruntime",
         "pkill"
     ],
-    "rust-analyzer.showUnlinkedFileNotification": false
+    // Set the features to use for cargo commands
+    "rust-analyzer.cargo.features": [
+        "frequency-no-relay"
+    ]
 }
