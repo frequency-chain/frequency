@@ -30,9 +30,8 @@ sp-runtime = { git = "https://github.com/paritytech/substrate", default-features
 sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-# cid = { version = "0.10.1", default-features = false }
-# cid = { path = "/Users/mattheworris/projects/rust-cid", default-features = false}
-cid = { git = "https://github.com/mattheworris/rust-cid", branch = "fix-unwrap-panic", default-features = false}
+# Pinning a specific commit to fix an unwrap-panic issue: REVIEW: remove when cid > 0.10.1 
+cid = { git = "https://github.com/multiformats/rust-cid", rev = "86c79126d851316350ad106d0df3e4ae69071874", default-features = false}
 multibase = { version ="0.9", default-features = false }
 
 [dev-dependencies]

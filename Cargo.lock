@@ -966,7 +966,7 @@ dependencies = [
 [[package]]
 name = "cid"
 version = "0.10.1"
-source = "git+https://github.com/mattheworris/rust-cid?branch=fix-unwrap-panic#fcbae72452bdc166a036df17e7f46c79c8a2ba5e"
+source = "git+https://github.com/multiformats/rust-cid?rev=86c79126d851316350ad106d0df3e4ae69071874#86c79126d851316350ad106d0df3e4ae69071874"
 dependencies = [
  "core2",
  "multihash 0.19.1",
