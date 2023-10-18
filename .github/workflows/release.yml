@@ -386,7 +386,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
@@ -561,7 +561,6 @@ jobs:
               --rpc-external \
               --rpc-cors=all \
               --rpc-methods=Unsafe \
-              --ws-external \
               --no-telemetry \
               --no-prometheus \
               --reserved-only \
@@ -1004,7 +1003,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v3
         with:
-          node-version: 16
+          node-version: 18
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json

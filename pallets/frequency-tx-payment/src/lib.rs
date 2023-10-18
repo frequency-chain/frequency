@@ -299,11 +299,13 @@ impl<T: Config> Pallet<T> {
 				let len_fee = Self::length_to_fee(len);
 				let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
 
-				let adjusted_weight_fee =
-					base_fee.saturating_add(weight_fee).saturating_add(len_fee);
 				let tip = Zero::zero();
 				fees = FeeDetails {
-					inclusion_fee: Some(InclusionFee { base_fee, len_fee, adjusted_weight_fee }),
+					inclusion_fee: Some(InclusionFee {
+						base_fee,
+						len_fee,
+						adjusted_weight_fee: weight_fee,
+					}),
 					tip,
 				};
 			}
