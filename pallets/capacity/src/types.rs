@@ -5,12 +5,18 @@ use frame_support::{
 	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
-use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero};
 
 use common_primitives::capacity::StakingType;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
+/// A record of a staked amount for a complete RewardEra
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct StakingHistory<Balance, RewardEra> {
+	reward_era: RewardEra,
+	total_staked: Balance,
+}
 /// The type used for storing information about staking details.
 #[derive(
 	TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
@@ -28,6 +34,11 @@ pub struct StakingAccountDetails<T: Config> {
 	/// Chunks that have been retargeted within T::UnstakingThawPeriod
 	pub stake_change_unlocking:
 		BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>,
+
+	/// Staking amounts for eras up to StakingRewardsPastErasMax
+	/// Note that this is updated only on a stake change.
+	pub staking_history:
+		BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>,
 }
 
 /// The type that is used to record a single request for a number of tokens to be unlocked.
@@ -158,6 +169,8 @@ impl<T: Config> StakingAccountDetails<T> {
 		self.active = active;
 		Ok(actual_unstaked)
 	}
+
+	// pub fn update_staking_history();
 }
 
 impl<T: Config> Default for StakingAccountDetails<T> {
@@ -168,6 +181,7 @@ impl<T: Config> Default for StakingAccountDetails<T> {
 			unlocking: BoundedVec::default(),
 			last_rewards_claimed_at: None,
 			stake_change_unlocking: BoundedVec::default(),
+			staking_history: BoundedVec::default(),
 		}
 	}
 }

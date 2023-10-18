@@ -171,13 +171,13 @@ pub mod pallet {
 			+ Into<BalanceOf<Self>>
 			+ TypeInfo;
 
-		/// The number of blocks in a Staking Era
+		/// The number of blocks in a RewardEra
 		#[pallet::constant]
 		type EraLength: Get<u32>;
 
 		/// The maximum number of eras over which one can claim rewards
 		#[pallet::constant]
-		type StakingRewardsPastErasMax: Get<Self::RewardEra>;
+		type StakingRewardsPastErasMax: Get<u32>;
 
 		/// The StakingRewardsProvider used by this pallet in a given runtime
 		type RewardsProvider: StakingRewardsProvider<Self>;
@@ -186,7 +186,7 @@ pub mod pallet {
 		/// thaw chunk to expire. If the staker has called change_staking_target MaxUnlockingChunks
 		/// times, then at least one of the chunks must have expired before the next call
 		/// will succeed.
-		type ChangeStakingTargetThawEras: Get<Self::RewardEra>;
+		type ChangeStakingTargetThawEras: Get<u32>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -830,9 +830,9 @@ impl<T: Config> Pallet<T> {
 			let past_eras_max = T::StakingRewardsPastErasMax::get();
 			let entries: u32 = StakingRewardPool::<T>::count(); // 1r
 
-			if past_eras_max.eq(&entries.into()) {
+			if past_eras_max.eq(&entries) {
 				let earliest_era =
-					current_era_info.era_index.saturating_sub(past_eras_max).add(One::one());
+					current_era_info.era_index.saturating_sub(past_eras_max.into()).add(One::one());
 				StakingRewardPool::<T>::remove(earliest_era); // 1w
 			}
 			CurrentEraInfo::<T>::set(new_era_info); // 1w
@@ -871,7 +871,7 @@ impl<T: Config> Pallet<T> {
 			Self::get_staking_account_for(staker).ok_or(Error::<T>::NotAStakingAccount)?;
 
 		let current_era: T::RewardEra = Self::get_current_era().era_index;
-		let thaw_at = current_era.saturating_add(T::ChangeStakingTargetThawEras::get());
+		let thaw_at = current_era.saturating_add(T::ChangeStakingTargetThawEras::get().into());
 		staking_account_details.update_stake_change_unlocking(amount, &thaw_at, &current_era)?;
 		Self::set_staking_account(staker, &staking_account_details);
 		Ok(())
@@ -1023,11 +1023,15 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		to_era: T::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		let era_range = from_era.saturating_sub(to_era);
-		ensure!(era_range.le(&T::StakingRewardsPastErasMax::get()), Error::<T>::EraOutOfRange);
+		ensure!(
+			era_range.le(&T::StakingRewardsPastErasMax::get().into()),
+			Error::<T>::EraOutOfRange
+		);
 		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
 		let current_era_info = Self::get_current_era();
 		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
 
+		// TODO: update when staking history is implemented
 		// For now rewards 1 unit per era for a valid range since there is no history storage
 		let per_era = BalanceOf::<T>::one();
 

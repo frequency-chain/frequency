@@ -162,3 +162,17 @@ fn unstake_errors_not_a_staking_account() {
 		);
 	});
 }
+
+#[test]
+fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
+	new_test_ext().execute_with(|| {
+		assert!(false);
+	});
+}
+
+#[test]
+fn unstake_provider_boosted_target_updates_staking_account_history() {
+	new_test_ext().execute_with(|| {
+		assert!(false);
+	});
+}

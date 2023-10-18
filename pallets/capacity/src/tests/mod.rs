@@ -4,6 +4,7 @@ mod epochs_tests;
 mod eras_tests;
 pub mod mock;
 mod other_tests;
+mod provder_boost_tests;
 mod replenishment_tests;
 mod rewards_provider_tests;
 mod stake_and_deposit_tests;

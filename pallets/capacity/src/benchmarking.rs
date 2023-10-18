@@ -167,19 +167,19 @@ benchmarks! {
 	}
 
 	provider_boost {
-		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
-		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
-		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
+		let caller: T::AccountId = create_funded_account::<T>("boostaccount", SEED, 260u32);
+		let boost_amount: BalanceOf<T> = 200u32.into(); // enough for 1 Cap boosted
+		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
 		let target = 1;
 
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
+	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)
 	verify {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
 		assert!(CapacityLedger::<T>::contains_key(target));
-		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount, target, capacity}.into());
+		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount: boost_amount, target, capacity}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
