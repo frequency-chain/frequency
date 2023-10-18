@@ -6,6 +6,7 @@ use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_change
 	feature = "frequency-no-relay",
 	feature = "frequency-testnet"
 )))]
+
 compile_error!(
 	r#"You must enable one of these features:
 - Mainnet: "frequency"
