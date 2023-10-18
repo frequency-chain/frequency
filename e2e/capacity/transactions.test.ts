@@ -766,19 +766,25 @@ describe("Capacity Transactions", function () {
       const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
       const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", addProviderPayload);
       let delegatorKeys = createKeys("delegatorKeys");
-      const tx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+      const call = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
         delegatorKeys.publicKey,
         signPayloadSr25519(delegatorKeys, addProviderData),
         addProviderPayload
       );
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+    
+      // Actual weights and fee
+      const { weight: { refTime, proofSize }, } = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryInfo(call.toHex(), 0));
+      const weightFee = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryWeightToFee({refTime, proofSize}));
+
+      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(call.toHex(), null));
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
       const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
       assert(Math.abs(baseFee - 106382) < 10_000, "The base fee appears to be wrong or have changed more than expected");
       assert(Math.abs(lenFee - 1170000) < 100, "The len fee appears to be wrong or have changed more than expected");
-      assert(Math.abs(adjustedWeightFee - 2359035) < 100_000, "The adjusted weight fee appears to be wrong or have changed more than expected");
+      // This is comparing stable weight, which has no impact from targeted_fee_adjustment, with actual weights.
+      assert(Math.abs(adjustedWeightFee - weightFee.toNumber()) < 10_000, "The adjusted weight fee appears to be wrong or have changed more than expected");
     });
 
     it("Returns `FeeDetails` when requesting capacity cost of a transaction when wrapped in payWithCapacity", async function () {
