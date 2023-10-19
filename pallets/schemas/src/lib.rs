@@ -237,6 +237,8 @@ pub mod pallet {
 		///
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
+		#[allow(deprecated)]
+		#[deprecated(note = "please use `create_schema_v2` has been deprecated.")]
 		pub fn create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -337,6 +339,39 @@ pub mod pallet {
 			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
 			Ok(())
 		}
+
+		/// Adds a given schema to storage. The schema in question must be of length
+		/// between the min and max model size allowed for schemas (see pallet
+		/// constants above). If the pallet's maximum schema limit has been
+		/// fulfilled by the time this extrinsic is called, a SchemaCountOverflow error
+		/// will be thrown.
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::InvalidSetting`] - Invalid setting is provided
+		///
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::create_schema_v2(model.len() as u32 + settings.len() as u32))]
+		pub fn create_schema_v2(
+			origin: OriginFor<T>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+		) -> DispatchResult {
+			let sender = ensure_signed(origin)?;
+
+			let schema_id = Self::create_schema_for(model, model_type, payload_location, settings)?;
+
+			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
+			Ok(())
+		}
 	}
 
 	impl<T: Config> Pallet<T> {
@@ -430,6 +465,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::InvalidSetting`] - Invalid setting is provided
 		pub fn create_schema_for(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
