@@ -1,11 +1,12 @@
 use frame_support::{
 	assert_noop, assert_ok,
-	dispatch::{RawOrigin, Weight},
+	dispatch::RawOrigin,
 	traits::{ChangeMembers, Hash},
 	BoundedVec,
 };
 use serial_test::serial;
 use sp_core::{crypto::AccountId32, Encode};
+use sp_weights::Weight;
 
 use common_primitives::{
 	node::AccountId,

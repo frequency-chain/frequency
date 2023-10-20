@@ -1,8 +1,9 @@
 use frame_support::{
 	assert_ok,
-	dispatch::Weight,
 	traits::{ChangeMembers, Hash},
 };
+
+use sp_weights::Weight;
 
 use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
