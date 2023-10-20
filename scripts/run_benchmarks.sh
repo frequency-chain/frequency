@@ -181,7 +181,6 @@ function run_benchmark() {
   --pallet=${1} \
   --extrinsic "*" \
   --chain="frequency-bench" \
-  --execution=wasm \
   --heap-pages=4096 \
   --wasm-execution=compiled \
   --additional-trie-layers=20 \
@@ -222,5 +221,5 @@ if [[ -n "${OVERHEAD}" ]]
 then
   echo "Running extrinsic and block overhead benchmark"
   echo " "
-  ${BENCHMARK} overhead --execution=wasm --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
+  ${BENCHMARK} overhead --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi

@@ -576,13 +576,13 @@ fn build_time_release_schedule<T: Config>(
 	period: Duration,
 	period_count: u32,
 	per_period: BalanceOf<T>,
-) -> ReleaseSchedule<T::BlockNumber, BalanceOf<T>> {
+) -> ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>> {
 	let start_block_number = date_to_approximate_block_number(start_date);
 
 	let days_in_seconds = period.num_seconds();
 	let number_of_blocks_in_days = days_in_seconds / 6;
 
-	ReleaseSchedule::<T::BlockNumber, BalanceOf<T>> {
+	ReleaseSchedule::<BlockNumberFor<T>, BalanceOf<T>> {
 		start: start_block_number.into(),
 		period: (number_of_blocks_in_days as u32).into(),
 		period_count,

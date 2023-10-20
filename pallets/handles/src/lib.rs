@@ -29,7 +29,6 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -142,8 +141,13 @@ pub mod pallet {
 	/// - Value: `DisplayHandle`
 	#[pallet::storage]
 	#[pallet::getter(fn get_display_name_for_msa_id)]
-	pub type MSAIdToDisplayName<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, (DisplayHandle, T::BlockNumber), OptionQuery>;
+	pub type MSAIdToDisplayName<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		MessageSourceId,
+		(DisplayHandle, BlockNumberFor<T>),
+		OptionQuery,
+	>;
 
 	/// - Key: `CanonicalBase`
 	/// - Value: (Sequence Index, Suffix Min)
@@ -265,7 +269,9 @@ pub mod pallet {
 		///
 		/// * `Ok(())` - The signature is not expired.
 		/// * `Err(DispatchError)` - The signature is expired.
-		pub fn verify_signature_mortality(signature_expires_at: T::BlockNumber) -> DispatchResult {
+		pub fn verify_signature_mortality(
+			signature_expires_at: BlockNumberFor<T>,
+		) -> DispatchResult {
 			let current_block = frame_system::Pallet::<T>::block_number();
 
 			let mortality_period = Self::mortality_block_limit(current_block);
@@ -314,9 +320,9 @@ pub mod pallet {
 		/// The furthest in the future a mortality_block value is allowed
 		/// to be for current_block
 		/// This is calculated to be past the risk of a replay attack
-		fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+		fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
 			let mortality_size = T::MortalityWindowSize::get();
-			current_block + T::BlockNumber::from(mortality_size)
+			current_block + BlockNumberFor::<T>::from(mortality_size)
 		}
 		/// Generates a suffix for a canonical base, using the provided `canonical_base`
 		/// and `cursor` information.
@@ -379,7 +385,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			msa_owner_key: T::AccountId,
 			proof: MultiSignature,
-			payload: ClaimHandlePayload<T::BlockNumber>,
+			payload: ClaimHandlePayload<BlockNumberFor<T>>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -465,7 +471,7 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			msa_owner_key: T::AccountId,
 			proof: MultiSignature,
-			payload: ClaimHandlePayload<T::BlockNumber>,
+			payload: ClaimHandlePayload<BlockNumberFor<T>>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
@@ -608,7 +614,7 @@ pub mod pallet {
 		///
 		pub fn do_claim_handle(
 			msa_id: MessageSourceId,
-			payload: ClaimHandlePayload<T::BlockNumber>,
+			payload: ClaimHandlePayload<BlockNumberFor<T>>,
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(

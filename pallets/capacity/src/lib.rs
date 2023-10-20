@@ -40,7 +40,6 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -88,12 +87,12 @@ type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 const STAKING_ID: LockIdentifier = *b"netstkng";
+use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
-	use frame_system::pallet_prelude::*;
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	#[pallet::config]
@@ -105,7 +104,7 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// Function that allows a balance to be locked.
-		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 
 		/// Function that checks if an MSA is a valid target.
 		type TargetValidator: TargetValidator;
@@ -133,7 +132,7 @@ pub mod pallet {
 
 		/// Maximum number of blocks an epoch can be
 		#[pallet::constant]
-		type MaxEpochLength: Get<Self::BlockNumber>;
+		type MaxEpochLength: Get<BlockNumberFor<Self>>;
 
 		/// A type that provides an Epoch number
 		/// traits pulled from frame_system::Config::BlockNumber
@@ -192,11 +191,12 @@ pub mod pallet {
 	/// Storage for the current epoch info
 	#[pallet::storage]
 	#[pallet::getter(fn get_current_epoch_info)]
-	pub type CurrentEpochInfo<T: Config> = StorageValue<_, EpochInfo<T::BlockNumber>, ValueQuery>;
+	pub type CurrentEpochInfo<T: Config> =
+		StorageValue<_, EpochInfo<BlockNumberFor<T>>, ValueQuery>;
 
 	#[pallet::type_value]
 	/// EpochLength defaults to 100 blocks when not set
-	pub fn EpochLengthDefault<T: Config>() -> T::BlockNumber {
+	pub fn EpochLengthDefault<T: Config>() -> BlockNumberFor<T> {
 		100u32.into()
 	}
 
@@ -204,7 +204,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_epoch_length)]
 	pub type EpochLength<T: Config> =
-		StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
+		StorageValue<_, BlockNumberFor<T>, ValueQuery, EpochLengthDefault<T>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -225,7 +225,7 @@ pub mod pallet {
 			/// The Capacity amount issued to the target as a result of the stake.
 			capacity: BalanceOf<T>,
 		},
-		/// Unsstaked token that has thawed was unlocked for the given account
+		/// Unstaked token that has thawed was unlocked for the given account
 		StakeWithdrawn {
 			/// the account that withdrew its stake
 			account: T::AccountId,
@@ -246,7 +246,7 @@ pub mod pallet {
 		/// The Capacity epoch length was changed.
 		EpochLengthUpdated {
 			/// The new length of an epoch in blocks.
-			blocks: T::BlockNumber,
+			blocks: BlockNumberFor<T>,
 		},
 		/// Capacity has been withdrawn from a MessageSourceId.
 		CapacityWithdrawn {
@@ -292,7 +292,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_initialize(current: T::BlockNumber) -> Weight {
+		fn on_initialize(current: BlockNumberFor<T>) -> Weight {
 			Self::start_new_epoch_if_needed(current)
 		}
 	}
@@ -401,7 +401,7 @@ pub mod pallet {
 		/// - Returns `Error::MaxEpochLengthExceeded` if `length` is greater than T::MaxEpochLength.
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::set_epoch_length())]
-		pub fn set_epoch_length(origin: OriginFor<T>, length: T::BlockNumber) -> DispatchResult {
+		pub fn set_epoch_length(origin: OriginFor<T>, length: BlockNumberFor<T>) -> DispatchResult {
 			ensure_root(origin)?;
 			ensure!(length <= T::MaxEpochLength::get(), Error::<T>::MaxEpochLengthExceeded);
 
@@ -484,7 +484,7 @@ impl<T: Config> Pallet<T> {
 		StakingAccountLedger::<T>::remove(&staker);
 	}
 
-	/// If the staking account total is zero we reap storage, otherwise set the acount to the new details.
+	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
 	fn update_or_delete_staking_account(
 		staker: &T::AccountId,
 		staking_account: &StakingAccountDetails<T>,
@@ -573,7 +573,7 @@ impl<T: Config> Pallet<T> {
 		Perbill::from_rational(unstaking_amount, total_amount_staked).mul_ceil(total_capacity)
 	}
 
-	fn start_new_epoch_if_needed(current_block: T::BlockNumber) -> Weight {
+	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
 		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
 			Self::get_epoch_length()

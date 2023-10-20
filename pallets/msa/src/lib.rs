@@ -47,7 +47,6 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -182,7 +181,7 @@ pub mod pallet {
 		DelegatorId,
 		Twox64Concat,
 		ProviderId,
-		Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
 
@@ -234,13 +233,13 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_registry)]
 	pub(super) type PayloadSignatureRegistryList<T: Config> = StorageMap<
-		_,                                // prefix
-		Twox64Concat,                     // hasher for key1
+		_,                                   // prefix
+		Twox64Concat,                        // hasher for key1
 		MultiSignature, // An externally-created Signature for an external payload, provided by an extrinsic
-		(T::BlockNumber, MultiSignature), // An actual flipping block number and the oldest signature at write time
-		OptionQuery,                      // The type for the query
-		GetDefault,                       // OnEmpty return type, defaults to None
-		T::MaxSignaturesStored,           // Maximum total signatures to store
+		(BlockNumberFor<T>, MultiSignature), // An actual flipping block number and the oldest signature at write time
+		OptionQuery,                         // The type for the query
+		GetDefault,                          // OnEmpty return type, defaults to None
+		T::MaxSignaturesStored,              // Maximum total signatures to store
 	>;
 
 	/// This is the pointer for the Payload Signature Registry
@@ -249,7 +248,7 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::getter(fn get_payload_signature_pointer)]
 	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
-		StorageValue<_, SignatureRegistryPointer<T::BlockNumber>>;
+		StorageValue<_, SignatureRegistryPointer<BlockNumberFor<T>>>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -1137,7 +1136,7 @@ impl<T: Config> Pallet<T> {
 				if !schema_ids.contains(&existing_schema_id) {
 					match delegation.schema_permissions.get(&existing_schema_id) {
 						Some(block) =>
-							if *block == T::BlockNumber::zero() {
+							if *block == BlockNumberFor::<T>::zero() {
 								revoke_ids.push(*existing_schema_id);
 							},
 						None => {},
@@ -1165,7 +1164,7 @@ impl<T: Config> Pallet<T> {
 			PermittedDelegationSchemas::<T>::try_get_mut_schemas(
 				delegation,
 				update_ids,
-				T::BlockNumber::zero(),
+				BlockNumberFor::<T>::zero(),
 			)?;
 
 			// Insert any new ones that are not in the existing list
@@ -1213,7 +1212,7 @@ impl<T: Config> Pallet<T> {
 		delegator_id: DelegatorId,
 		provider_id: ProviderId,
 		f: impl FnOnce(
-			&mut Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+			&mut Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
 			bool,
 		) -> Result<R, E>,
 	) -> Result<R, E> {
@@ -1270,7 +1269,7 @@ impl<T: Config> Pallet<T> {
 				let mut info = maybe_info.take().ok_or(Error::<T>::DelegationNotFound)?;
 
 				ensure!(
-					info.revoked_at == T::BlockNumber::default(),
+					info.revoked_at == BlockNumberFor::<T>::default(),
 					Error::<T>::DelegationRevoked
 				);
 
@@ -1319,7 +1318,7 @@ impl<T: Config> Pallet<T> {
 	pub fn get_granted_schemas_by_msa_id(
 		delegator: DelegatorId,
 		provider: ProviderId,
-	) -> Result<Option<Vec<SchemaGrant<SchemaId, T::BlockNumber>>>, DispatchError> {
+	) -> Result<Option<Vec<SchemaGrant<SchemaId, BlockNumberFor<T>>>>, DispatchError> {
 		let provider_info =
 			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
 
@@ -1330,8 +1329,9 @@ impl<T: Config> Pallet<T> {
 
 		let mut schema_list = Vec::new();
 		for (schema_id, revoked_at) in schema_permissions {
-			if provider_info.revoked_at > T::BlockNumber::zero() &&
-				(revoked_at > provider_info.revoked_at || revoked_at == T::BlockNumber::zero())
+			if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
+				(revoked_at > provider_info.revoked_at ||
+					revoked_at == BlockNumberFor::<T>::zero())
 			{
 				schema_list.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
 			} else {
@@ -1360,7 +1360,7 @@ impl<T: Config> Pallet<T> {
 	///
 	pub fn register_signature(
 		signature: &MultiSignature,
-		signature_expires_at: T::BlockNumber,
+		signature_expires_at: BlockNumberFor<T>,
 	) -> DispatchResult {
 		let current_block = frame_system::Pallet::<T>::block_number();
 
@@ -1380,8 +1380,8 @@ impl<T: Config> Pallet<T> {
 	/// Do the actual enqueuing into the list storage and update the pointer
 	fn enqueue_signature(
 		signature: &MultiSignature,
-		signature_expires_at: T::BlockNumber,
-		current_block: T::BlockNumber,
+		signature_expires_at: BlockNumberFor<T>,
+		current_block: BlockNumberFor<T>,
 	) -> DispatchResult {
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
@@ -1444,9 +1444,9 @@ impl<T: Config> Pallet<T> {
 	/// The furthest in the future a mortality_block value is allowed
 	/// to be for current_block
 	/// This is calculated to be past the risk of a replay attack
-	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
+	fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
 		let mortality_size = T::MortalityWindowSize::get();
-		current_block + T::BlockNumber::from(mortality_size)
+		current_block + BlockNumberFor::<T>::from(mortality_size)
 	}
 }
 
@@ -1497,7 +1497,7 @@ impl<T: Config> MsaValidator for Pallet<T> {
 }
 
 impl<T: Config> ProviderLookup for Pallet<T> {
-	type BlockNumber = T::BlockNumber;
+	type BlockNumber = BlockNumberFor<T>;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
@@ -1510,7 +1510,7 @@ impl<T: Config> ProviderLookup for Pallet<T> {
 }
 
 impl<T: Config> DelegationValidator for Pallet<T> {
-	type BlockNumber = T::BlockNumber;
+	type BlockNumber = BlockNumberFor<T>;
 	type MaxSchemaGrantsPerDelegation = T::MaxSchemaGrantsPerDelegation;
 	type SchemaId = SchemaId;
 
@@ -1526,9 +1526,11 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 	fn ensure_valid_delegation(
 		provider_id: ProviderId,
 		delegator_id: DelegatorId,
-		block_number: Option<T::BlockNumber>,
-	) -> Result<Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>, DispatchError>
-	{
+		block_number: Option<BlockNumberFor<T>>,
+	) -> Result<
+		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
+		DispatchError,
+	> {
 		let info = Self::get_delegation(delegator_id, provider_id)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
@@ -1543,7 +1545,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 			None => current_block,
 		};
 
-		if info.revoked_at == T::BlockNumber::zero() {
+		if info.revoked_at == BlockNumberFor::<T>::zero() {
 			return Ok(info)
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
@@ -1558,7 +1560,7 @@ impl<T: Config> TargetValidator for Pallet<T> {
 	}
 }
 
-impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
+impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 	/// Check if provider is allowed to publish for a given schema_id for a given delegator
 	///
 	/// # Errors
@@ -1571,7 +1573,7 @@ impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 		provider: ProviderId,
 		delegator: DelegatorId,
 		schema_id: SchemaId,
-		block_number: T::BlockNumber,
+		block_number: BlockNumberFor<T>,
 	) -> DispatchResult {
 		let provider_info = Self::ensure_valid_delegation(provider, delegator, Some(block_number))?;
 
@@ -1580,7 +1582,7 @@ impl<T: Config> SchemaGrantValidator<T::BlockNumber> for Pallet<T> {
 			.get(&schema_id)
 			.ok_or(Error::<T>::SchemaNotGranted)?;
 
-		if *schema_permission_revoked_at_block_number == T::BlockNumber::zero() {
+		if *schema_permission_revoked_at_block_number == BlockNumberFor::<T>::zero() {
 			return Ok(())
 		}
 

@@ -28,7 +28,6 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -41,8 +40,8 @@ use frame_support::{
 	ensure,
 	pallet_prelude::*,
 	traits::{
-		Currency, EnsureOrigin, ExistenceRequirement, Get, LockIdentifier, LockableCurrency,
-		WithdrawReasons,
+		BuildGenesisConfig, Currency, EnsureOrigin, ExistenceRequirement, Get, LockIdentifier,
+		LockableCurrency, WithdrawReasons,
 	},
 	BoundedVec,
 };
@@ -78,14 +77,13 @@ pub mod module {
 
 	pub(crate) type BalanceOf<T> =
 		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
-	pub(crate) type ReleaseScheduleOf<T> =
-		ReleaseSchedule<<T as frame_system::Config>::BlockNumber, BalanceOf<T>>;
+	pub(crate) type ReleaseScheduleOf<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 	/// Scheduled item used for configuring genesis.
 	pub type ScheduledItem<T> = (
 		<T as frame_system::Config>::AccountId,
-		<T as frame_system::Config>::BlockNumber,
-		<T as frame_system::Config>::BlockNumber,
+		BlockNumberFor<T>,
+		BlockNumberFor<T>,
 		u32,
 		BalanceOf<T>,
 	);
@@ -96,7 +94,7 @@ pub mod module {
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
 		/// The currency trait used to set a lock on a balance.
-		type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
+		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
 
 		#[pallet::constant]
 		/// The minimum amount transferred to call `transfer`.
@@ -112,7 +110,7 @@ pub mod module {
 		type MaxReleaseSchedules: Get<u32>;
 
 		/// The block-number provider.
-		type BlockNumberProvider: BlockNumberProvider<BlockNumber = Self::BlockNumber>;
+		type BlockNumberProvider: BlockNumberProvider<BlockNumber = BlockNumberFor<Self>>;
 	}
 
 	#[pallet::error]
@@ -171,20 +169,17 @@ pub mod module {
 	>;
 
 	#[pallet::genesis_config]
+	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T: Config> {
+		/// Phantom data.
+		#[serde(skip)]
+		pub _config: sp_std::marker::PhantomData<T>,
 		/// A list of schedules to include.
 		pub schedules: Vec<ScheduledItem<T>>,
 	}
 
-	#[cfg(feature = "std")]
-	impl<T: Config> Default for GenesisConfig<T> {
-		fn default() -> Self {
-			GenesisConfig { schedules: vec![] }
-		}
-	}
-
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig<T> {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			self.schedules
 				.iter()
@@ -231,7 +226,7 @@ pub mod module {
 	pub struct Pallet<T>(_);
 
 	#[pallet::hooks]
-	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {}
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
@@ -352,7 +347,7 @@ impl<T: Config> Pallet<T> {
 	/// Deletes schedules that have released all funds up to a block-number.
 	fn prune_schedules_for(
 		who: &T::AccountId,
-		block_number: T::BlockNumber,
+		block_number: BlockNumberFor<T>,
 	) -> BoundedVec<ReleaseScheduleOf<T>, T::MaxReleaseSchedules> {
 		let mut schedules = Self::release_schedules(who);
 		schedules.retain(|schedule| !schedule.locked_amount(block_number).is_zero());

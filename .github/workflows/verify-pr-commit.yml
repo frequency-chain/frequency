@@ -199,7 +199,11 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Check
-        run: cargo fmt --check
+        # Remove these install commands when ci-base-image has nightly toolchain
+        run: |
+          rustup toolchain install nightly-2023-07-13
+          rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
+          cargo +nightly-2023-07-13 fmt --check
 
   lint-rust-code:
     needs: changes
@@ -211,8 +215,11 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Lint
+        # Remove these install commands when ci-base-image has nightly toolchain
         run: |
-          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
+          rustup toolchain install nightly-2023-07-13
+          rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
+          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy \
             --features runtime-benchmarks,frequency-lint-check \
             -- \
             -D warnings
@@ -227,9 +234,11 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Build Docs
+        # Remove these install commands when ci-base-image has nightly toolchain
         run: |
-          rustup target add wasm32-unknown-unknown
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
+          rustup toolchain install nightly-2023-07-13
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
@@ -367,7 +376,7 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.70.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}
@@ -673,7 +682,6 @@ jobs:
             --dev \
             --sealing=instant \
             --wasm-execution=compiled \
-            --execution=wasm \
             --no-telemetry \
             --no-prometheus \
             --port $((30333)) \
@@ -845,7 +853,7 @@ jobs:
           git diff
       - name: Commit Updated Weights
         id: commit-updated-weights
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update weights for PR #${{github.event.pull_request.number}}"
           commit_user_name: Frequency CI [bot]

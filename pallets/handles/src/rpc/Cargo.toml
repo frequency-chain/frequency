@@ -18,16 +18,16 @@ pallet-handles-runtime-api = { default-features = false, path = "../runtime-api"
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
-sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
-frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
+sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+sp-blockchain = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+frame-support = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
 
 [dev-dependencies]
 tokio = { version = "1.25.0", features = ["macros", "time", "parking_lot"] }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.43" }
-sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.43" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+sc-client-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 
 [features]
 default = ["std"]

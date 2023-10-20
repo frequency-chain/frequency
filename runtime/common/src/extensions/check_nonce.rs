@@ -42,11 +42,11 @@ use sp_std::vec;
 /// some kind of priority upon validating transactions.
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Index);
+pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 
 impl<T: Config> CheckNonce<T> {
 	/// utility constructor. Used only in client/factory code.
-	pub fn from(nonce: T::Index) -> Self {
+	pub fn from(nonce: T::Nonce) -> Self {
 		Self(nonce)
 	}
 }
@@ -99,7 +99,7 @@ where
 		}
 
 		// Increment account nonce by 1
-		account.nonce += T::Index::one();
+		account.nonce += T::Nonce::one();
 
 		// Only create or update the token account if the caller is paying
 		if info.pays_fee == Pays::Yes {

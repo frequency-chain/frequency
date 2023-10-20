@@ -31,7 +31,6 @@
 // --extrinsic
 // *
 // --chain=frequency-bench
-// --execution=wasm
 // --heap-pages=4096
 // --wasm-execution=compiled
 // --additional-trie-layers=20

@@ -15,5 +15,7 @@ RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/home/runner/.cargo/bin:/root/.cargo/bin:${PATH}"
 ENV RUSTUP_HOME="/root/.cargo"
 ENV CARGO_HOME="/root/.cargo"
+RUN rustup toolchain install nightly-2023-07-13
+RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
 
 RUN git config --system --add safe.directory /__w/frequency/frequency

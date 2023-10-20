@@ -10,7 +10,7 @@ use common_primitives::{
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, pallet_prelude::DispatchResult};
-use frame_system::RawOrigin;
+use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::traits::One;
 
 const IPFS_SCHEMA_ID: u16 = 50;
@@ -29,7 +29,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		Some(message_source_id.into()),
 		bounded_payload,
 		schema_id,
-		<T as frame_system::Config>::BlockNumber::one(),
+		BlockNumberFor::<T>::one(),
 	)?;
 	Ok(())
 }
@@ -47,7 +47,7 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 		None,
 		bounded_payload,
 		schema_id,
-		<T as frame_system::Config>::BlockNumber::one(),
+		BlockNumberFor::<T>::one(),
 	)?;
 
 	Ok(())
@@ -86,7 +86,7 @@ benchmarks! {
 	verify {
 		assert_eq!(
 			MessagesPallet::<T>::get_messages(
-				<T as frame_system::Config>::BlockNumber::one(), schema_id).len(),
+				BlockNumberFor::<T>::one(), schema_id).len(),
 			average_messages_per_block as usize
 		);
 	}
@@ -110,7 +110,7 @@ benchmarks! {
 	verify {
 		assert_eq!(
 			MessagesPallet::<T>::get_messages(
-				<T as frame_system::Config>::BlockNumber::one(), IPFS_SCHEMA_ID).len(),
+				BlockNumberFor::<T>::one(), IPFS_SCHEMA_ID).len(),
 			average_messages_per_block as usize
 		);
 	}
