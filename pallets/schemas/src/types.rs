@@ -6,12 +6,14 @@ use frame_support::{
 	BoundedVec,
 };
 use scale_info::TypeInfo;
+use sp_std::fmt::Debug;
 
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]
+#[codec(mel_bound(MaxModelSize: MaxEncodedLen))]
 /// A structure defining a Schema
 pub struct Schema<MaxModelSize>
 where

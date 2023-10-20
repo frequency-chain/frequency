@@ -211,11 +211,6 @@ export class ExtrinsicHelper {
         return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
     }
 
-    /** engine_createBlock **/
-    public static createBlock(): Promise<CreatedBlock> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
-    }
-
     /** Query Extrinsics */
     public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
         return ExtrinsicHelper.apiPromise.query.system.account(address);
@@ -242,6 +237,11 @@ export class ExtrinsicHelper {
     public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated"): Extrinsic {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
+
+  /** Schema v2 Extrinsics */
+  public static createSchemaV2(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated", grant: ("AppendOnly"| "SignatureRequired")[]): Extrinsic {
+    return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+  }
 
     /** Generic Schema Extrinsics */
     public static createSchemaWithSettingsGov(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated", grant: "AppendOnly"| "SignatureRequired"): Extrinsic {
@@ -425,7 +425,7 @@ export class ExtrinsicHelper {
         if (hasRelayChain()) {
             await new Promise((r) => setTimeout(r, 4_000));
         } else {
-            await ExtrinsicHelper.createBlock();
+            await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
         }
         currentBlock = await getBlockNumber();
       }

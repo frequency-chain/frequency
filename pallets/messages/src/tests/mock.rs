@@ -7,6 +7,7 @@ use common_primitives::{
 	schema::*,
 };
 
+use codec::{Encode, MaxEncodedLen};
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
@@ -77,26 +78,34 @@ parameter_types! {
 	// should have this set large enough to accommodate the largest possible CID.
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
-	pub const MaxMessagePayloadSizeBytes: u32 = 73;
+	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
 }
 
-impl std::fmt::Debug for MaxMessagePayloadSizeBytes {
+impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
 	fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-		f.debug_struct("MaxMessagePayloadSizeBytes")
-			.field("v", &MaxMessagePayloadSizeBytes::get())
+		f.debug_struct("MessagesMaxPayloadSizeBytes")
+			.field("v", &MessagesMaxPayloadSizeBytes::get())
 			.finish()
 	}
 }
 
-impl PartialEq for MaxMessagePayloadSizeBytes {
+impl PartialEq for MessagesMaxPayloadSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl Clone for MaxMessagePayloadSizeBytes {
+impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {
-		MaxMessagePayloadSizeBytes {}
+		MessagesMaxPayloadSizeBytes {}
+	}
+}
+
+impl Encode for MessagesMaxPayloadSizeBytes {}
+
+impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
 	}
 }
 
@@ -213,7 +222,7 @@ impl pallet_messages::Config for Test {
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
 	type MaxMessagesPerBlock = MaxMessagesPerBlock;
-	type MaxMessagePayloadSizeBytes = MaxMessagePayloadSizeBytes;
+	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]

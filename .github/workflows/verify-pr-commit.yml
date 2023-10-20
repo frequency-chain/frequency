@@ -199,10 +199,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Check
-        # Remove these install commands when ci-base-image has nightly toolchain
         run: |
-          rustup toolchain install nightly-2023-07-13
-          rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
           cargo +nightly-2023-07-13 fmt --check
 
   lint-rust-code:
@@ -215,10 +212,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Lint
-        # Remove these install commands when ci-base-image has nightly toolchain
         run: |
-          rustup toolchain install nightly-2023-07-13
-          rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
           SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy \
             --features runtime-benchmarks,frequency-lint-check \
             -- \
@@ -234,9 +228,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Build Docs
-        # Remove these install commands when ci-base-image has nightly toolchain
         run: |
-          rustup toolchain install nightly-2023-07-13
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
           RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
 
@@ -643,8 +635,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    runs-on: [self-hosted, Linux, X64, build, v2]
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

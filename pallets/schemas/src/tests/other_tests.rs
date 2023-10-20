@@ -48,6 +48,7 @@ pub fn test_public(n: u8) -> AccountId32 {
 }
 
 #[test]
+#[allow(deprecated)]
 fn require_valid_schema_size_errors() {
 	new_test_ext().execute_with(|| {
 		sudo_set_max_schema_size();
@@ -64,6 +65,28 @@ fn require_valid_schema_size_errors() {
 		for tc in test_cases {
 			assert_noop!(
 				SchemasPallet::create_schema(RuntimeOrigin::signed(test_public(1)), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain),
+				tc.expected.0);
+		}
+	})
+}
+
+#[test]
+fn create_schema_v2_requires_valid_schema_size() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		let test_cases: [TestCase<(Error<Test>, u8)>; 2] = [
+			TestCase {
+				schema: r#"{"a":1}"#,
+				expected: (Error::<Test>::LessThanMinSchemaModelBytes, 3),
+			},
+			TestCase {
+				schema: r#"{"id": "long", "title": "I am a very very very long schema", "properties": "just way too long to live a long life", "description": "Just a never ending stream of bytes that goes on for a minute too long"}"#,
+				expected: (Error::<Test>::ExceedsMaxSchemaModelBytes, 2),
+			},
+		];
+		for tc in test_cases {
+			assert_noop!(
+				SchemasPallet::create_schema_v2(RuntimeOrigin::signed(test_public(1)), create_bounded_schema_vec(tc.schema), ModelType::AvroBinary, PayloadLocation::OnChain, BoundedVec::default()),
 				tc.expected.0);
 		}
 	})
@@ -223,6 +246,7 @@ fn propose_to_create_schema_happy_path() {
 	})
 }
 
+#[allow(deprecated)]
 #[test]
 fn create_schema_happy_path() {
 	new_test_ext().execute_with(|| {
@@ -237,6 +261,22 @@ fn create_schema_happy_path() {
 	})
 }
 
+#[test]
+fn create_schema_v2_happy_path() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		assert_ok!(SchemasPallet::create_schema_v2(
+			RuntimeOrigin::signed(sender),
+			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+			BoundedVec::default()
+		));
+	})
+}
+
+#[allow(deprecated)]
 #[test]
 fn create_schema_unhappy_path() {
 	new_test_ext().execute_with(|| {
@@ -290,6 +330,7 @@ fn set_max_schema_size_fails_if_larger_than_bound() {
 	})
 }
 
+#[allow(deprecated)]
 #[test]
 #[serial]
 fn create_schema_id_deposits_events_and_increments_schema_id() {
@@ -328,6 +369,46 @@ fn create_schema_id_deposits_events_and_increments_schema_id() {
 }
 
 #[test]
+#[serial]
+fn create_schema_v2_id_deposits_events_and_increments_schema_id() {
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let mut last_schema_id: SchemaId = 0;
+		for fields in [
+			r#"{"Name": "Bond", "Code": "007"}"#,
+			r#"{"type": "num","minimum": -90,"maximum": 90}"#,
+			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
+		] {
+			let expected_schema_id = last_schema_id + 1;
+			assert_ok!(SchemasPallet::create_schema_v2(
+				RuntimeOrigin::signed(sender.clone()),
+				create_bounded_schema_vec(fields),
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain,
+				BoundedVec::default()
+			));
+			System::assert_last_event(
+				AnnouncementEvent::SchemaCreated {
+					key: sender.clone(),
+					schema_id: expected_schema_id,
+				}
+				.into(),
+			);
+			last_schema_id = expected_schema_id;
+		}
+		assert_ok!(SchemasPallet::create_schema_v2(
+			RuntimeOrigin::signed(sender.clone()),
+			create_bounded_schema_vec(r#"{"account":3050}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+			BoundedVec::default()
+		));
+	})
+}
+
+#[allow(deprecated)]
+#[test]
 fn get_existing_schema_by_id_should_return_schema() {
 	new_test_ext().execute_with(|| {
 		let sender: AccountId = test_public(1);
@@ -340,6 +421,31 @@ fn get_existing_schema_by_id_should_return_schema() {
 			create_bounded_schema_vec(test_str),
 			ModelType::AvroBinary,
 			PayloadLocation::OnChain,
+		));
+
+		// act
+		let res = SchemasPallet::get_schema_by_id(1);
+
+		// assert
+		assert_eq!(res.as_ref().is_some(), true);
+		assert_eq!(res.as_ref().unwrap().clone().model, serialized_fields);
+	})
+}
+
+#[test]
+fn get_existing_schema_by_id_should_return_schema_v2() {
+	new_test_ext().execute_with(|| {
+		let sender: AccountId = test_public(1);
+		sudo_set_max_schema_size();
+		// arrange
+		let test_str = r#"{"foo": "bar", "bar": "buzz"}"#;
+		let serialized_fields = Vec::from(test_str.as_bytes());
+		assert_ok!(SchemasPallet::create_schema_v2(
+			RuntimeOrigin::signed(sender),
+			create_bounded_schema_vec(test_str),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+			BoundedVec::default()
 		));
 
 		// act
