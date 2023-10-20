@@ -104,7 +104,7 @@ jobs:
           git diff
       - name: Commit Updated Weights
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
@@ -133,7 +133,7 @@ jobs:
           git diff
       - name: Commit Updated Version
         id: commit-updated-version
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
