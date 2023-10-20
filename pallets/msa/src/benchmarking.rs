@@ -76,7 +76,7 @@ fn generate_fake_signature(i: u8) -> MultiSignature {
 fn prep_signature_registry<T: Config>() {
 	// Add it with an 0 block expiration
 	let signatures: Vec<MultiSignature> = (1..=50u8).map(|x| generate_fake_signature(x)).collect();
-	let signature_expires_at: T::BlockNumber = 0u32.into();
+	let signature_expires_at: BlockNumberFor<T> = 0u32.into();
 	let len = signatures.len();
 	for (i, sig) in signatures.iter().enumerate() {
 		if i < (len - 1) {
@@ -133,7 +133,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
 	}
 
 	add_public_key_to_msa {
@@ -212,7 +212,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, T::BlockNumber::from(1u32));
+		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
 	}
 
 	create_provider {

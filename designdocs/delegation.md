@@ -129,7 +129,7 @@ Throws an Error enum indicating if either provider or delegator does not exist.
         Delegator,
         Twox64Concat,
         Provider,
-        Delegation<SchemaId, T::BlockNumber, T::MaxSchemaGrantsPerDelegation>,
+        Delegation<SchemaId, BlockNumberFor::<T>, T::MaxSchemaGrantsPerDelegation>,
         OptionQuery,
     >;
 ```

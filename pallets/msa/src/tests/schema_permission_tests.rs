@@ -1,4 +1,5 @@
 use frame_support::{assert_err, assert_noop, assert_ok, BoundedBTreeMap};
+use frame_system::pallet_prelude::BlockNumberFor;
 
 use crate::{
 	tests::{mock::*, other_tests::set_schema_count},
@@ -72,7 +73,7 @@ fn grant_permissions_for_schema_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
@@ -89,7 +90,7 @@ fn grant_permissions_for_schema_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
@@ -105,7 +106,7 @@ fn schema_permissions_trait_impl_try_insert_schema_success() {
 	new_test_ext().execute_with(|| {
 		let mut delegation: Delegation<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		> = Default::default();
 
@@ -123,7 +124,7 @@ fn schema_permissions_trait_impl_try_insert_schemas_errors_when_exceeds_max_sche
 	new_test_ext().execute_with(|| {
 		let mut delegation: Delegation<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		> = Default::default();
 
@@ -149,7 +150,7 @@ fn revoke_permissions_for_schema_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
@@ -167,7 +168,7 @@ fn revoke_permissions_for_schema_success() {
 		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
@@ -211,7 +212,7 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 			revoked_at: 0u32.into(),
 			schema_permissions: BoundedBTreeMap::<
 				SchemaId,
-				<Test as frame_system::Config>::BlockNumber,
+				BlockNumberFor<Test>,
 				<Test as Config>::MaxSchemaGrantsPerDelegation,
 			>::new(),
 		};
@@ -235,7 +236,7 @@ fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 	new_test_ext().execute_with(|| {
 		let mut delegation: Delegation<
 			SchemaId,
-			<Test as frame_system::Config>::BlockNumber,
+			BlockNumberFor<Test>,
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		> = Default::default();
 

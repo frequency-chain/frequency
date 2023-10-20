@@ -1,13 +1,9 @@
 use crate::cli::{Cli, RelayChainCli};
-use codec::Encode;
-use common_primitives::node::Block;
-use cumulus_client_cli::generate_genesis_block;
 use cumulus_primitives_core::ParaId;
 use frequency_service::chain_spec;
 use log::info;
 use sc_cli::SubstrateCli;
-use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::{AccountIdConversion, Block as BlockT};
+use sp_runtime::traits::AccountIdConversion;
 
 pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
@@ -20,14 +16,8 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		let parachain_account =
 			AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
 
-		let state_version = Cli::native_runtime_version(&config.chain_spec).state_version();
-		let block: Block = generate_genesis_block(&*config.chain_spec, state_version)
-			.map_err(|e| format!("{:?}", e))?;
-		let genesis_state = format!("0x{:?}", HexDisplay::from(&block.header().encode()));
-
 		info!("Parachain id: {:?}", id);
 		info!("Parachain Account: {}", parachain_account);
-		info!("Parachain genesis state: {}", genesis_state);
 		info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 		let tokio_handle = config.tokio_handle.clone();

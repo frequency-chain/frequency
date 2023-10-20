@@ -14,7 +14,8 @@ use sp_core::ByteArray;
 use sp_runtime::traits::AccountIdConversion;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec =
+	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
 
 use super::{get_properties, Extensions};
 
@@ -415,15 +416,19 @@ fn frequency_genesis(
 	technical_committee_members: Vec<AccountId>,
 	candidacy_bond: Balance,
 	id: ParaId,
-) -> frequency_runtime::GenesisConfig {
-	frequency_runtime::GenesisConfig {
+) -> frequency_runtime::RuntimeGenesisConfig {
+	frequency_runtime::RuntimeGenesisConfig {
 		system: frequency_runtime::SystemConfig {
 			code: frequency_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: frequency_runtime::BalancesConfig { balances: endowed_accounts },
-		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: frequency_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: initial_authorities.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond,

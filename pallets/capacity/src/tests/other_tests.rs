@@ -1,4 +1,5 @@
 use frame_support::traits::{Currency, Get};
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
 
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
@@ -13,10 +14,10 @@ use super::{mock::*, testing_utils::*};
 struct TestCase<T: Config> {
 	name: &'static str,
 	starting_epoch: <T>::EpochNumber,
-	epoch_start_block: <T>::BlockNumber,
+	epoch_start_block: BlockNumberFor<T>,
 	expected_epoch: <T>::EpochNumber,
-	expected_epoch_start_block: <T>::BlockNumber,
-	at_block: <T>::BlockNumber,
+	expected_epoch_start_block: BlockNumberFor<T>,
+	at_block: BlockNumberFor<T>,
 }
 
 #[test]

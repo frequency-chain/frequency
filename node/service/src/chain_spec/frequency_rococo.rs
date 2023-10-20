@@ -9,7 +9,8 @@ use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec = sc_service::GenericChainSpec<frequency_runtime::GenesisConfig, Extensions>;
+pub type ChainSpec =
+	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
@@ -189,17 +190,21 @@ fn testnet_genesis(
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_runtime::GenesisConfig {
-	frequency_runtime::GenesisConfig {
+) -> frequency_runtime::RuntimeGenesisConfig {
+	frequency_runtime::RuntimeGenesisConfig {
 		system: frequency_runtime::SystemConfig {
 			code: frequency_runtime::WASM_BINARY
 				.expect("WASM binary was not build, please build it!")
 				.to_vec(),
+			..Default::default()
 		},
 		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
-		parachain_info: frequency_runtime::ParachainInfoConfig { parachain_id: id },
+		parachain_info: frequency_runtime::ParachainInfoConfig {
+			parachain_id: id,
+			..Default::default()
+		},
 		collator_selection: frequency_runtime::CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond: EXISTENTIAL_DEPOSIT * 16,

@@ -1,32 +1,28 @@
 use frame_support::{
 	dispatch::DispatchError,
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
-	weights::{WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
+	weights::{Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use frame_system::EnsureRoot;
 
-use common_primitives::node::{AccountId, Header};
-pub use common_runtime::constants::*;
+use common_primitives::node::AccountId;
+use common_runtime::constants::DAYS;
 use pallet_collective;
 use smallvec::smallvec;
 use sp_core::{parameter_types, Encode, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, Perbill,
+	AccountId32, BuildStorage, Perbill,
 };
 
 use crate as pallet_schemas;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		SchemasPallet: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 	}
@@ -36,8 +32,9 @@ frame_support::construct_runtime!(
 // the descriptions of these configs.
 
 parameter_types! {
-	pub MaxProposalWeight: frame_support::weights::Weight =
-		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+	frame_system::limits::BlockWeights::simple_max(Weight::MAX);
+	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -45,9 +42,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type MotionDuration = CouncilMotionDuration;
-	type MaxProposals = CouncilMaxProposals;
-	type MaxMembers = CouncilMaxMembers;
+	type MotionDuration = ConstU32<{ 5 * DAYS }>;
+	type MaxProposals = ConstU32<25>;
+	type MaxMembers = ConstU32<10>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
 
@@ -129,14 +126,13 @@ impl frame_system::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
+	type Block = Block;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
@@ -150,7 +146,7 @@ impl frame_system::Config for Test {
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities =
-		frame_system::GenesisConfig::default().build_storage::<Test>().unwrap().into();
+		frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 	ext.execute_with(|| System::set_block_number(1));
 	ext
 }
