@@ -103,7 +103,7 @@ impl Encode for SchemasMaxBytesBoundedVecLimit {}
 
 impl MaxEncodedLen for SchemasMaxBytesBoundedVecLimit {
 	fn max_encoded_len() -> usize {
-		SchemasMaxBytesBoundedVecLimit::get() as usize
+		u32::max_encoded_len()
 	}
 }
 // -end- Schemas Pallet ---
@@ -279,8 +279,8 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 
 impl sp_std::fmt::Debug for MessagesMaxPayloadSizeBytes {
 	#[cfg(feature = "std")]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "MessagesMaxPayloadSizeBytes<{:?}>", Self::get())
 	}
 
 	#[cfg(not(feature = "std"))]
@@ -293,7 +293,7 @@ impl Encode for MessagesMaxPayloadSizeBytes {}
 
 impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 	fn max_encoded_len() -> usize {
-		MessagesMaxPayloadSizeBytes::get() as usize
+		u32::max_encoded_len()
 	}
 }
 // -end- Messages Pallet ---

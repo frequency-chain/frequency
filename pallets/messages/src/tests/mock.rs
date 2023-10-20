@@ -105,7 +105,7 @@ impl Encode for MessagesMaxPayloadSizeBytes {}
 
 impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 	fn max_encoded_len() -> usize {
-		MessagesMaxPayloadSizeBytes::get() as usize
+		u32::max_encoded_len()
 	}
 }
 
