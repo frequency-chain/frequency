@@ -1,6 +1,6 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
-use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
+use crate::{CapacityDetails, RewardPoolInfo, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
 use common_primitives::{capacity::StakingType, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
@@ -40,7 +40,6 @@ fn unstake_happy_path() {
 				total: BalanceOf::<Test>::from(staking_amount),
 				unlocking: expected_unlocking_chunks,
 				last_rewards_claimed_at: None,
-				stake_change_unlocking: BoundedVec::default(),
 			},
 			staking_account_details,
 		);
@@ -166,7 +165,25 @@ fn unstake_errors_not_a_staking_account() {
 #[test]
 fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
 	new_test_ext().execute_with(|| {
-		assert!(false);
+		// two accounts staking to the same target
+		let account1 = 600;
+		let account2 = 500;
+		let target: MessageSourceId = 1;
+		let amount1 = 500;
+		let amount2 = 200;
+		register_provider(target, String::from("Foo"));
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account1), target, amount1));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account2), target, amount2));
+
+		let reward_pool = Capacity::get_reward_pool_for_era(0).unwrap();
+		assert_eq!(reward_pool, RewardPoolInfo {
+			total_staked_token: 700,
+			total_reward_pool: 70,
+			unclaimed_balance: 70,
+		});
+
+		system_run_to_block(2);
 	});
 }
 

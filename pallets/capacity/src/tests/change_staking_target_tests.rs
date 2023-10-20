@@ -431,9 +431,3 @@ fn change_staking_target_test_parametric_validity() {
 		}
 	});
 }
-
-#[test]
-fn change_staking_target_cannot_switch_staking_type() {
-	// if you want to switch staking type you must unstake completely and restake regardless of
-	// whether it is with an existing or new provider.
-}
