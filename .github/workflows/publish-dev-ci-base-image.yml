@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
-      - 1734-ci-base-image-should-be-versioned
+      # - 1734-ci-base-image-should-be-versioned
 env:
   BIN_DIR: target/release
 
