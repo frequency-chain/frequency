@@ -80,7 +80,6 @@ jobs:
     if: needs.changes.outputs.ci-base-image == 'true'
     name: Publish CI Base Image
     env:
-      VERSION: 1.0.0
       IMAGE_NAME: ci-base-image
       BRANCH_NAME: main
     runs-on: ubuntu-20.04
@@ -112,6 +111,6 @@ jobs:
           push: true
           file: tools/ci/docker/ci-base-image.dockerfile
           tags: |
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}-${{env.VERSION}}}
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.VERSION}}}
