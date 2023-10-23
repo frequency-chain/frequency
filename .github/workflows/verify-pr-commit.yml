@@ -11,12 +11,14 @@ env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
+  CI_BASE_IMAGE: ghcr.io/libertydsnp/frequency/ci-base-image
+  CI_BASE_IMAGE_VERSION: 1.0.0
 
 jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -58,7 +60,7 @@ jobs:
   clear-metadata-labels:
     name: Clear Metadata Labels
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
@@ -132,7 +134,7 @@ jobs:
             spec: frequency
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     env:
       NETWORK: mainnet
     steps:
@@ -178,7 +180,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -194,7 +196,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -210,7 +212,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -229,7 +231,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -245,7 +247,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -257,7 +259,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -274,7 +276,7 @@ jobs:
     # This job currently fails on EKS runners and must be run on standalone until
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build, v1]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -397,7 +399,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -456,7 +458,7 @@ jobs:
     needs: build-binaries
     name: Verify Node Docker Images
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -510,7 +512,7 @@ jobs:
     if: needs.changes.outputs.ci-docker-image == 'true'
     name: Verify CI Docker Image
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -534,7 +536,7 @@ jobs:
     needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -565,7 +567,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -644,7 +646,7 @@ jobs:
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -717,7 +719,7 @@ jobs:
     needs: build-binaries
     name: Verify Genesis State
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Set Env Vars
         run: |
@@ -764,7 +766,7 @@ jobs:
     if: github.repository == 'LibertyDSNP/frequency'
     name: Run Benchmarks?
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ${{env.CI_BASE_IMAGE}}
     outputs:
       should_run_benchmarks: ${{steps.run-benchmarks.outputs.run}}
       pallets: ${{steps.run-benchmarks.outputs.pallets}}
