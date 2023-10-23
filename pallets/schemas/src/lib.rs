@@ -239,7 +239,7 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
 		#[allow(deprecated)]
-		#[deprecated(note = "please use `create_schema_v2` has been deprecated.")]
+		#[deprecated(note = "please use `create_schema_v2` since `create_schema` has been deprecated.")]
 		pub fn create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
