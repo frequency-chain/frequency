@@ -1,41 +1,34 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
 use common_primitives::{
-	msa::MessageSourceId,
-	node::{BlockNumber, Header},
-	schema::SchemaId,
-	utils::wrap_binary_data,
+	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
+use common_runtime::constants::DAYS;
 use frame_support::{
 	assert_ok,
 	dispatch::DispatchError,
 	parameter_types,
 	traits::{ConstU16, ConstU32, EitherOfDiverse, OnFinalize, OnInitialize},
+	weights::Weight,
 };
 use frame_system::EnsureRoot;
 use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32, MultiSignature, Perbill,
+	AccountId32, BuildStorage, MultiSignature,
 };
-
-pub use common_runtime::constants::*;
 
 pub use pallet_msa::Call as MsaCall;
 
 use common_primitives::node::AccountId;
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
@@ -46,8 +39,9 @@ frame_support::construct_runtime!(
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
 // the descriptions of these configs.
 parameter_types! {
-	pub MaxProposalWeight: frame_support::weights::Weight =
-		Perbill::from_percent(50) * common_runtime::constants::MAXIMUM_BLOCK_WEIGHT;
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(Weight::MAX);
+	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -55,9 +49,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Proposal = RuntimeCall;
 	type RuntimeEvent = RuntimeEvent;
-	type MotionDuration = CouncilMotionDuration;
-	type MaxProposals = CouncilMaxProposals;
-	type MaxMembers = CouncilMaxMembers;
+	type MotionDuration = ConstU32<{ 5 * DAYS }>;
+	type MaxProposals = ConstU32<25>;
+	type MaxMembers = ConstU32<10>;
 	type DefaultVote = pallet_collective::PrimeDefaultVote;
 	type WeightInfo = ();
 	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
@@ -71,13 +65,12 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = Block;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
@@ -206,7 +199,7 @@ pub fn set_max_public_keys_per_msa(max: u8) {
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	set_max_signature_stored(8000);
 	set_max_public_keys_per_msa(255);
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
@@ -337,7 +330,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 

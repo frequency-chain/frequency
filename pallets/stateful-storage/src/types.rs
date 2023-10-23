@@ -7,6 +7,7 @@ use common_primitives::{
 	stateful_storage::{PageHash, PageId, PageNonce},
 };
 use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{
@@ -103,7 +104,7 @@ pub struct ItemizedSignaturePayload<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 
 	/// Actions to apply to storage from possible: [`ItemAction`]
 	pub actions: BoundedVec<
@@ -125,7 +126,7 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 
 	/// Actions to apply to storage from possible: [`ItemAction`]
 	pub actions: BoundedVec<
@@ -156,7 +157,7 @@ pub struct PaginatedUpsertSignaturePayload<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 
 	/// payload to update the page with
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
@@ -179,7 +180,7 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 
 	/// payload to update the page with
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
@@ -207,7 +208,7 @@ pub struct PaginatedDeleteSignaturePayload<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 }
 
 /// Payload containing all necessary fields to verify signatures to delete a Paginated storage
@@ -227,7 +228,7 @@ pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 	pub target_hash: PageHash,
 
 	/// The block number at which the signed proof will expire
-	pub expiration: T::BlockNumber,
+	pub expiration: BlockNumberFor<T>,
 }
 
 /// A generic page of data which supports both Itemized and Paginated

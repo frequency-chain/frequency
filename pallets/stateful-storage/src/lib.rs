@@ -44,7 +44,6 @@
 #![allow(clippy::expect_used)]
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 // Strong Documentation Lints
 #![deny(
 	rustdoc::broken_intra_doc_links,
@@ -104,7 +103,7 @@ pub mod pallet {
 		type MsaInfoProvider: MsaLookup + MsaValidator<AccountId = Self::AccountId>;
 
 		/// A type that will validate schema grants
-		type SchemaGrantValidator: SchemaGrantValidator<Self::BlockNumber>;
+		type SchemaGrantValidator: SchemaGrantValidator<BlockNumberFor<Self>>;
 
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
@@ -654,8 +653,8 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::ProofNotYetValid`]
 	///
 	pub fn check_payload_expiration(
-		current_block: T::BlockNumber,
-		payload_expire_block: T::BlockNumber,
+		current_block: BlockNumberFor<T>,
+		payload_expire_block: BlockNumberFor<T>,
 	) -> Result<(), DispatchError> {
 		ensure!(payload_expire_block > current_block, Error::<T>::ProofHasExpired);
 		let max_supported_signature_block = Self::mortality_block_limit(current_block);
@@ -685,8 +684,8 @@ impl<T: Config> Pallet<T> {
 	/// The furthest in the future a mortality_block value is allowed
 	/// to be for current_block
 	/// This is calculated to be past the risk of a replay attack
-	fn mortality_block_limit(current_block: T::BlockNumber) -> T::BlockNumber {
-		current_block + T::BlockNumber::from(T::MortalityWindowSize::get())
+	fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
+		current_block + BlockNumberFor::<T>::from(T::MortalityWindowSize::get())
 	}
 
 	/// Checks that the schema is valid for is action

@@ -8,9 +8,7 @@ use common_primitives::node::Block;
 use frame_benchmarking_cli::BenchmarkCmd;
 use frequency_service::{
 	chain_spec,
-	service::{
-		frequency_runtime::VERSION, new_partial, FrequencyExecutorDispatch as ExecutorDispatch,
-	},
+	service::{frequency_runtime::VERSION, new_partial},
 };
 use sc_cli::{
 	ChainSpec, CliConfiguration, DefaultConfigurationValues, ImportParams, KeystoreParams,
@@ -194,8 +192,11 @@ impl SubstrateCli for Cli {
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		load_spec(id)
 	}
+}
 
-	fn native_runtime_version(_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
+impl Cli {
+	/// Returns a reference to the runtime version.
+	fn runtime_version() -> &'static RuntimeVersion {
 		&VERSION
 	}
 }
@@ -231,10 +232,6 @@ impl SubstrateCli for RelayChainCli {
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
 		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
-	}
-
-	fn native_runtime_version(chain_spec: &Box<dyn ChainSpec>) -> &'static RuntimeVersion {
-		polkadot_cli::Cli::native_runtime_version(chain_spec)
 	}
 }
 
@@ -307,10 +304,10 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::ExportGenesisState(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-			runner.sync_run(|_config| {
-				let spec = cli.load_spec(&cmd.shared_params.chain.clone().unwrap_or_default())?;
-				let state_version = Cli::native_runtime_version(&spec).state_version();
-				cmd.run::<Block>(&*spec, state_version)
+			runner.sync_run(|config| {
+				let partials = new_partial(&config, false)?;
+
+				cmd.run(&*config.chain_spec, &*partials.client)
 			})
 		},
 		Some(Subcommand::ExportGenesisWasm(cmd)) => {
@@ -326,7 +323,7 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, ExecutorDispatch>(config))
+						runner.sync_run(|config| cmd.run::<Block, ()>(config))
 					} else {
 						return Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."
@@ -396,7 +393,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			runner.async_run(|config| {
-				let version = Cli::native_runtime_version(&config.chain_spec);
+				let version = Cli::runtime_version();
 				// grab the task manager.
 				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
 				let task_manager =

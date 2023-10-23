@@ -22,7 +22,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "nightly-2023-05-22" # Match to /rust-toolchain.toml
+  RUST_TOOLCHAIN: "1.70.0" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
@@ -104,7 +104,7 @@ jobs:
           git diff
       - name: Commit Updated Weights
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
@@ -133,7 +133,7 @@ jobs:
           git diff
       - name: Commit Updated Version
         id: commit-updated-version
-        uses: stefanzweifel/git-auto-commit-action@3ea6ae190baf489ba007f7c92608f33ce20ef04a
+        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
           commit_user_name: Frequency CI [bot]
@@ -310,7 +310,7 @@ jobs:
           srtool --version
       - name: Build Deterministic WASM
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.66.1" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.70.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}
@@ -349,7 +349,7 @@ jobs:
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown
-          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --workspace --features frequency
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
         run: |
@@ -661,7 +661,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@713885393e391b4ce984457280aba0d24fbf0c87
+        uses: mikepenz/release-changelog-builder-action@6fd5cc6eaf7567dbd0f9666061215bb476f012fc
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:

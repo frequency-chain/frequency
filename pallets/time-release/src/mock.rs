@@ -1,14 +1,13 @@
 //! Mocks for the Time-release module.
 
 use super::*;
-use common_primitives::node::Header;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU32, ConstU64, EnsureOrigin, Everything},
 };
 use frame_system::RawOrigin;
 use sp_core::H256;
-use sp_runtime::traits::IdentityLookup;
+use sp_runtime::{traits::IdentityLookup, BuildStorage};
 
 use crate as pallet_time_release;
 
@@ -16,14 +15,13 @@ pub type AccountId = u128;
 impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
+	type Block = Block;
 	type BlockHashCount = ConstU32<250>;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -52,10 +50,10 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
-	type HoldIdentifier = ();
 	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
+	type RuntimeHoldReason = ();
 }
 
 pub struct EnsureAliceOrBob;
@@ -103,16 +101,12 @@ impl Config for Test {
 	type BlockNumberProvider = MockBlockNumberProvider;
 }
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
 		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>},
 		PalletBalances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
@@ -130,7 +124,7 @@ pub struct ExtBuilder;
 
 impl ExtBuilder {
 	pub fn build() -> sp_io::TestExternalities {
-		let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+		let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 
 		MockBlockNumberProvider::set(0);
 
@@ -141,6 +135,7 @@ impl ExtBuilder {
 		.unwrap();
 
 		pallet_time_release::GenesisConfig::<Test> {
+			_config: Default::default(),
 			schedules: vec![
 				// who, start, period, period_count, per_period
 				(CHARLIE, 2, 3, 1, 5),

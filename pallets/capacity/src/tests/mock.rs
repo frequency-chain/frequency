@@ -1,7 +1,7 @@
 use crate as pallet_capacity;
 
 use common_primitives::{
-	node::{AccountId, Header, ProposalProvider},
+	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
@@ -12,20 +12,16 @@ use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32, DispatchError, Perbill,
+	AccountId32, BuildStorage, DispatchError, Perbill,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
@@ -39,13 +35,12 @@ impl frame_system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
+	type Block = Block;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
@@ -70,9 +65,9 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type FreezeIdentifier = ();
-	type HoldIdentifier = ();
 	type MaxFreezes = ConstU32<0>;
 	type MaxHolds = ConstU32<0>;
+	type RuntimeHoldReason = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -157,7 +152,7 @@ impl pallet_capacity::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
 		balances: vec![
 			(50, 5),

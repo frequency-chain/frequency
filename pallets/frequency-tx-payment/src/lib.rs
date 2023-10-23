@@ -22,7 +22,6 @@
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
-#![feature(rustdoc_missing_doc_code_examples)]
 
 use codec::{Decode, Encode};
 use frame_support::{
@@ -271,10 +270,11 @@ impl<T: Config> Pallet<T> {
 		fee
 	}
 
-	/// Compute the length portion of a fee by invoking the configured `LengthToFee` impl.
+	/// Compute the capacity fee details for a transaction.
 	/// # Arguments
-	/// * `length` - The length of the transaction.
+	/// * `runtime_call` - The runtime call to be dispatched.
 	/// * `weight` - The weight of the transaction.
+	/// * `len` - The length of the transaction.
 	///
 	/// # Returns
 	/// `FeeDetails` - The fee details for the transaction.

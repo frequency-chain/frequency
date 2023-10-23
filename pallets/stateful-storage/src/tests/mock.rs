@@ -10,7 +10,7 @@ use common_primitives::{
 		Delegation, DelegationValidator, DelegatorId, MessageSourceId, MsaLookup, MsaValidator,
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
-	node::{AccountId, Header},
+	node::AccountId,
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
 };
 use frame_support::{
@@ -23,11 +23,10 @@ use frame_system as system;
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	DispatchError,
+	BuildStorage, DispatchError,
 };
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
 pub const INVALID_MSA_ID: MessageSourceId = 100;
@@ -35,12 +34,9 @@ pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
 
 // Configure a mock runtime to test the pallet.
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
+	pub enum Test
 	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		StatefulStoragePallet: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>},
 	}
 );
@@ -52,13 +48,12 @@ impl system::Config for Test {
 	type DbWeight = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u32;
+	type Nonce = u64;
+	type Block = Block;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
@@ -370,7 +365,7 @@ impl pallet_stateful_storage::Config for Test {
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
@@ -399,7 +394,7 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
 	use sp_std::sync::Arc;
 
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 

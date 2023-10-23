@@ -22,7 +22,7 @@ use sp_runtime::traits::MaybeDisplay;
 
 pub use pallet_transaction_payment::{FeeDetails, InclusionFee};
 
-// Here we declare the runtime API. It is implemented it the `impl` block in
+// Here we declare the runtime API. It is implemented in the `impl` block in
 // runtime files (the `runtime` folder)
 sp_api::decl_runtime_apis! {
 	/// Runtime Version for Frequency Payment

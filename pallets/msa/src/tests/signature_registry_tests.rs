@@ -8,13 +8,13 @@ use frame_support::{assert_noop, assert_ok};
 use common_primitives::{node::BlockNumber, utils::wrap_binary_data};
 
 use sp_core::{sr25519, Encode, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{BuildStorage, MultiSignature};
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	set_max_signature_stored(20);
 	set_max_public_keys_per_msa(10);
 
-	let t = frame_system::GenesisConfig::default().build_storage::<Test>().unwrap();
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext

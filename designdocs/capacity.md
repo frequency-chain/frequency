@@ -75,7 +75,7 @@ pub trait Config: frame_system::Config {
     /// Maximum number of blocks an epoch can be
     /// currently used as the actual value of epoch length.
     #[pallet::constant]
-    type MaxEpochLength: Get<Self::BlockNumber>;
+    type MaxEpochLength: Get<BlockNumberFor::<Self>>;
 
     /// A type that provides an Epoch number
     /// traits pulled from frame_system::Config::BlockNumber
@@ -278,7 +278,7 @@ pub enum Event<T: Config> {
   /// The Capacity epoch length was changed.
   EpochLengthUpdated {
     /// The new length of an epoch in blocks.
-    blocks: T::BlockNumber,
+    blocks: BlockNumberFor<T>,
   },
   /// Capacity has been withdrawn from a MessageSourceId.
   CapacityWithdrawn {
@@ -334,7 +334,7 @@ Storage for epoch length
 /// Storage for the epoch length
 #[pallet::storage]
 #[pallet::getter(fn get_epoch_length)]
-  pub type EpochLength<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery, EpochLengthDefault<T>>;
+  pub type EpochLength<T: Config> = StorageValue<_, BlockNumberFor::<T>, ValueQuery, EpochLengthDefault<T>>;
 ```
 
 The type used for storing information about the targeted MSA that received Capacity.
