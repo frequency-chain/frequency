@@ -105,7 +105,7 @@ pub mod pallet {
 
 		/// Maximum length of a Schema model Bounded Vec
 		#[pallet::constant]
-		type SchemaModelMaxBytesBoundedVecLimit: Get<u32>;
+		type SchemaModelMaxBytesBoundedVecLimit: Get<u32> + MaxEncodedLen;
 
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -167,7 +167,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::storage_version(SCHEMA_STORAGE_VERSION)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// Storage for the Governance managed max bytes for schema model
@@ -239,7 +238,9 @@ pub mod pallet {
 		#[pallet::call_index(0)]
 		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
 		#[allow(deprecated)]
-		#[deprecated(note = "please use `create_schema_v2` since `create_schema` has been deprecated.")]
+		#[deprecated(
+			note = "please use `create_schema_v2` since `create_schema` has been deprecated."
+		)]
 		pub fn create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,

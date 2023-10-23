@@ -251,7 +251,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 57,
+	spec_version: 59,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -265,7 +265,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 57,
+	spec_version: 59,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -892,7 +892,7 @@ impl pallet_messages::Config for Runtime {
 	// The maximum number of messages per block
 	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	// The maximum message payload in bytes
-	type MaxMessagePayloadSizeBytes = MessagesMaxPayloadSizeBytes;
+	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.
 	#[cfg(feature = "runtime-benchmarks")]
