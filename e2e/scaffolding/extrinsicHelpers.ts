@@ -211,11 +211,6 @@ export class ExtrinsicHelper {
         return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
     }
 
-    /** engine_createBlock **/
-    public static createBlock(): Promise<CreatedBlock> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
-    }
-
     /** Query Extrinsics */
     public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
         return ExtrinsicHelper.apiPromise.query.system.account(address);
@@ -430,7 +425,7 @@ export class ExtrinsicHelper {
         if (hasRelayChain()) {
             await new Promise((r) => setTimeout(r, 4_000));
         } else {
-            await ExtrinsicHelper.createBlock();
+            await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
         }
         currentBlock = await getBlockNumber();
       }

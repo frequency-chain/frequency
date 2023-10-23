@@ -313,7 +313,8 @@ describe("Delegation Scenario Tests", function () {
 
             it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
                 // Make a block first to make sure the state has rolled to the next block
-                await ExtrinsicHelper.createBlock();
+                const currentBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toNumber();
+                ExtrinsicHelper.runToBlock(currentBlock + 1);
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
