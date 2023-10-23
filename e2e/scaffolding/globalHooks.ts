@@ -29,7 +29,7 @@ function drainAllSources() {
 }
 
 export async function mochaGlobalSetup() {
-  console.log('Global Setup Start', "Default Parallel Job Count: ", Math.max(1, workerpool.cpus - 1));
+  console.log('Global Setup Start', "Reported CPU Count: ", workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize();
   await fundAllSources();
