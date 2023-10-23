@@ -13,7 +13,6 @@ use frame_support::{assert_ok, pallet_prelude::DispatchResult};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::traits::One;
 
-const AVERAGE_NUMBER_OF_MESSAGES: u32 = 499;
 const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 
@@ -23,7 +22,7 @@ fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let payload = Vec::from(
 		"{'fromId': 123, 'content': '232323', 'fromId': 123, 'content': '232323'}".as_bytes(),
 	);
-	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+	let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
 	MessagesPallet::<T>::add_message(
 		provider_id.into(),
@@ -40,7 +39,7 @@ fn ipfs_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let payload =
 		Vec::from("bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes());
 	let provider_id = ProviderId(1);
-	let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+	let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 		payload.try_into().expect("Invalid payload");
 
 	MessagesPallet::<T>::add_message(
@@ -63,8 +62,10 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 }
 
 benchmarks! {
+	// this is temporary to avoid massive PoV sizes which will break the chain until rework on messages
+	#[pov_mode = Measured]
 	add_onchain_message {
-		let n in 0 .. T::MaxMessagePayloadSizeBytes::get() - 1;
+		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
 		let schema_id = 1;
@@ -77,8 +78,8 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(ProviderId(1), message_source_id.into(), [schema_id].to_vec()));
 
 		let payload = vec![1; n as usize];
-
-		for j in 1 .. AVERAGE_NUMBER_OF_MESSAGES {
+		let average_messages_per_block: u32 = T::MaxMessagesPerBlock::get() / 2;
+		for j in 1 .. average_messages_per_block {
 			assert_ok!(onchain_message::<T>(schema_id));
 		}
 	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
@@ -86,10 +87,12 @@ benchmarks! {
 		assert_eq!(
 			MessagesPallet::<T>::get_messages(
 				BlockNumberFor::<T>::one(), schema_id).len(),
-			AVERAGE_NUMBER_OF_MESSAGES as usize
+			average_messages_per_block as usize
 		);
 	}
 
+	// this is temporary to avoid massive PoV sizes which will break the chain until rework on messages
+	#[pov_mode = Measured]
 	add_ipfs_message {
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
@@ -99,8 +102,8 @@ benchmarks! {
 			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
 		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
-
-		for j in 1 .. AVERAGE_NUMBER_OF_MESSAGES {
+		let average_messages_per_block: u32 = T::MaxMessagesPerBlock::get() / 2;
+		for j in 1 .. average_messages_per_block {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
@@ -108,7 +111,7 @@ benchmarks! {
 		assert_eq!(
 			MessagesPallet::<T>::get_messages(
 				BlockNumberFor::<T>::one(), IPFS_SCHEMA_ID).len(),
-			AVERAGE_NUMBER_OF_MESSAGES as usize
+			average_messages_per_block as usize
 		);
 	}
 

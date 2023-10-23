@@ -1,4 +1,5 @@
 use crate::prod_or_testnet_or_local;
+use codec::{Encode, MaxEncodedLen};
 use common_primitives::node::BlockNumber;
 
 use frame_support::{
@@ -87,14 +88,24 @@ pub type MSAMaxSignaturesStored = ConstU32<50_000>;
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---
+parameter_types! {
+	/// The maximum length of a schema model (in bytes)
+	pub const SchemasMaxBytesBoundedVecLimit :u32 = 65_500;
+}
 /// The maximum number of schema registrations
 pub type SchemasMaxRegistrations = ConstU16<65_000>;
 /// The minimum schema model size (in bytes)
 pub type SchemasMinModelSizeBytes = ConstU32<8>;
-/// The maximum length of a schema model (in bytes)
-pub type SchemasMaxBytesBoundedVecLimit = ConstU32<65_500>;
 /// The maximum number of grants allowed per schema
 pub type MaxSchemaSettingsPerSchema = ConstU32<2>;
+
+impl Encode for SchemasMaxBytesBoundedVecLimit {}
+
+impl MaxEncodedLen for SchemasMaxBytesBoundedVecLimit {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
+	}
+}
 // -end- Schemas Pallet ---
 
 // --- Handles Pallet ---
@@ -252,17 +263,37 @@ pub type CollatorKickThreshold =
 // Needs parameter_types! for the PalletId and impls below
 parameter_types! {
 	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
-	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 50; // 50K
+	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3; // 3K
 }
 // -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
 /// The maximum number of messages per block
-pub type MessagesMaxPerBlock = ConstU32<7000>;
+pub type MessagesMaxPerBlock = ConstU32<200>;
 
 impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {
 		MessagesMaxPayloadSizeBytes {}
+	}
+}
+
+impl sp_std::fmt::Debug for MessagesMaxPayloadSizeBytes {
+	#[cfg(feature = "std")]
+	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		write!(f, "MessagesMaxPayloadSizeBytes<{:?}>", Self::get())
+	}
+
+	#[cfg(not(feature = "std"))]
+	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+		Ok(())
+	}
+}
+
+impl Encode for MessagesMaxPayloadSizeBytes {}
+
+impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
 	}
 }
 // -end- Messages Pallet ---

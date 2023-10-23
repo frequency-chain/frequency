@@ -55,7 +55,7 @@ mod types;
 
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
-use sp_std::{convert::TryInto, prelude::*};
+use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 
 use codec::Encode;
 use common_primitives::{
@@ -105,7 +105,7 @@ pub mod pallet {
 
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
-		type MaxMessagePayloadSizeBytes: Get<u32> + Clone;
+		type MessagesMaxPayloadSizeBytes: Get<u32> + Clone + Debug + MaxEncodedLen;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
@@ -117,7 +117,6 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// A permanent storage for messages mapped by block number and schema id.
@@ -131,7 +130,7 @@ pub mod pallet {
 		BlockNumberFor<T>,
 		Twox64Concat,
 		SchemaId,
-		BoundedVec<Message<T::MaxMessagePayloadSizeBytes>, T::MaxMessagesPerBlock>,
+		BoundedVec<Message<T::MessagesMaxPayloadSizeBytes>, T::MaxMessagesPerBlock>,
 		ValueQuery,
 	>;
 
@@ -226,7 +225,7 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 			let cid_binary = Self::validate_cid(&cid)?;
 			let payload_tuple: OffchainPayloadType = (cid_binary, payload_length);
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> = payload_tuple
+			let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> = payload_tuple
 				.encode()
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
@@ -281,7 +280,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			let bounded_payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes> =
+			let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
 			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
@@ -341,7 +340,7 @@ impl<T: Config> Pallet<T> {
 	pub fn add_message(
 		provider_msa_id: MessageSourceId,
 		msa_id: Option<MessageSourceId>,
-		payload: BoundedVec<u8, T::MaxMessagePayloadSizeBytes>,
+		payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes>,
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
