@@ -3,7 +3,7 @@ FROM --platform=linux/amd64 ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
 LABEL description="Frequency CI base image"
-LABEL version="{VERSION}"
+LABEL version="{IMAGE_VERSION}"
 
 WORKDIR /ci
 RUN apt-get update && \
