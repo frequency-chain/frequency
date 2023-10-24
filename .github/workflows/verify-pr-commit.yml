@@ -643,8 +643,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    runs-on: [self-hosted, Linux, X64, build, v2]
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

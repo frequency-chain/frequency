@@ -16,7 +16,7 @@ env:
 jobs:
   run-e2e:
     name: Run E2E Tests
-    runs-on: ubuntu-20.04
+    runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Validate

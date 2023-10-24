@@ -1,4 +1,5 @@
 import { cryptoWaitReady } from "@polkadot/util-crypto";
+import workerpool from 'workerpool';
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from "./funding";
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from "./helpers";
@@ -28,7 +29,7 @@ function drainAllSources() {
 }
 
 export async function mochaGlobalSetup() {
-  console.log('Global Setup Start');
+  console.log('Global Setup Start', "Reported CPU Count: ", workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize();
   await fundAllSources();
