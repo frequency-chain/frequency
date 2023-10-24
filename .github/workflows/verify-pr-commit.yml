@@ -15,11 +15,21 @@ env:
   CI_BASE_IMAGE_VERSION: 1.0.0
 
 jobs:
+  # container doesn't understand the global env context, we use steps output instead
+  container-setup:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Setup Container Name and Version
+        id: setup-container
+        run: |
+          echo "${{env.CI_BASE_IMAGE}}"
+          echo "${{env.CI_BASE_IMAGE_VERSION}}"
+
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
     container:
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -62,7 +72,7 @@ jobs:
     name: Clear Metadata Labels
     runs-on: ubuntu-20.04
     container:
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
@@ -137,7 +147,7 @@ jobs:
             branch_alias: pr
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     env:
       NETWORK: mainnet
     steps:
@@ -184,7 +194,7 @@ jobs:
     name: Check for Vulnerable Crates
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -200,17 +210,18 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-20.04
-    container: 
-      image: ${{env.CI_BASE_IMAGE}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Check
         # Remove these install commands when ci-base-image has nightly toolchain
-        run: |
-          rustup toolchain install nightly-2023-07-13
-          rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
-          cargo +nightly-2023-07-13 fmt --check
+        uses: addnab/docker-run-action@v3
+        with:
+          image: ${{env.CI_BASE_IMAGE}}
+          run: |
+            rustup toolchain install nightly-2023-07-13
+            rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
+            cargo +nightly-2023-07-13 fmt --check
 
   lint-rust-code:
     needs: changes
@@ -218,7 +229,7 @@ jobs:
     name: Lint Rust Code
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -238,7 +249,7 @@ jobs:
     name: Verify Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -255,7 +266,7 @@ jobs:
     name: Verify Rust Packages and Dependencies
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -268,7 +279,7 @@ jobs:
     name: Run Rust Tests
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -286,7 +297,7 @@ jobs:
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build, v1]
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -410,7 +421,7 @@ jobs:
     name: Verify JS API Augment
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -470,7 +481,7 @@ jobs:
     name: Verify Node Docker Images
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -525,7 +536,7 @@ jobs:
     name: Verify CI Docker Image
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -550,7 +561,7 @@ jobs:
     name: Execute Binary Checks
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -582,7 +593,7 @@ jobs:
     name: Check Metadata and Spec Version
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -662,7 +673,7 @@ jobs:
     name: Run E2E Tests
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -736,7 +747,7 @@ jobs:
     name: Verify Genesis State
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     steps:
       - name: Set Env Vars
         run: |
@@ -784,7 +795,7 @@ jobs:
     name: Run Benchmarks?
     runs-on: ubuntu-20.04
     container: 
-      image: ${{env.CI_BASE_IMAGE}}
+      image: ghcr.io/libertydsnp/frequency/ci-base-image
     outputs:
       should_run_benchmarks: ${{steps.run-benchmarks.outputs.run}}
       pallets: ${{steps.run-benchmarks.outputs.pallets}}
