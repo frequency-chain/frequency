@@ -105,7 +105,7 @@ pub mod pallet {
 
 		/// Maximum length of a Schema model Bounded Vec
 		#[pallet::constant]
-		type SchemaModelMaxBytesBoundedVecLimit: Get<u32>;
+		type SchemaModelMaxBytesBoundedVecLimit: Get<u32> + MaxEncodedLen;
 
 		/// Maximum number of schemas that can be registered
 		#[pallet::constant]
@@ -167,7 +167,6 @@ pub mod pallet {
 
 	#[pallet::pallet]
 	#[pallet::storage_version(SCHEMA_STORAGE_VERSION)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(_);
 
 	/// Storage for the Governance managed max bytes for schema model

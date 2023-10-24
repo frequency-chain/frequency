@@ -1,4 +1,5 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
+use codec::MaxEncodedLen;
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
@@ -42,6 +43,15 @@ parameter_types! {
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::MAX);
 	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
+	pub const SchemaModelMaxBytesBoundedVecLimit: u32 = 10;
+}
+
+impl Encode for SchemaModelMaxBytesBoundedVecLimit {}
+
+impl MaxEncodedLen for SchemaModelMaxBytesBoundedVecLimit {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
+	}
 }
 
 type CouncilCollective = pallet_collective::Instance1;
@@ -88,7 +98,7 @@ impl pallet_schemas::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type MinSchemaModelSizeBytes = ConstU32<10>;
-	type SchemaModelMaxBytesBoundedVecLimit = ConstU32<10>;
+	type SchemaModelMaxBytesBoundedVecLimit = SchemaModelMaxBytesBoundedVecLimit;
 	type MaxSchemaRegistrations = ConstU16<10>;
 	type MaxSchemaSettingsPerSchema = ConstU32<1>;
 	// The proposal type

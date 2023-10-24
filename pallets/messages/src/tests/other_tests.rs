@@ -362,7 +362,7 @@ fn retrieved_ipfs_message_should_always_be_in_base32() {
 #[test]
 fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 	new_test_ext().execute_with(|| {
-		let bad_message: Message<MaxMessagePayloadSizeBytes> = Message {
+		let bad_message: Message<MessagesMaxPayloadSizeBytes> = Message {
 			payload: BoundedVec::try_from(
 				vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].to_vec(),
 			)
