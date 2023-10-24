@@ -138,6 +138,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -167,7 +168,8 @@ impl BaseCallFilter {
 
 			// Block `create_provider` and `create_schema` calls from utility batch
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -249,7 +251,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 58,
+	spec_version: 59,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -263,7 +265,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 58,
+	spec_version: 59,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
