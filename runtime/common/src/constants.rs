@@ -264,12 +264,25 @@ pub type CollatorKickThreshold =
 parameter_types! {
 	pub const NeverDepositIntoId: PalletId = PalletId(*b"NeverDep");
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3; // 3K
+	pub const MessagesMaxPerBlock: u32 = 200;
 }
 // -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
 /// The maximum number of messages per block
-pub type MessagesMaxPerBlock = ConstU32<200>;
+impl Default for MessagesMaxPerBlock {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Encode for MessagesMaxPerBlock {}
+
+impl MaxEncodedLen for MessagesMaxPerBlock {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
+	}
+}
 
 impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {

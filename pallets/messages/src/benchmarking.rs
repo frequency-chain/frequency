@@ -62,8 +62,6 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 }
 
 benchmarks! {
-	// this is temporary to avoid massive PoV sizes which will break the chain until rework on messages
-	#[pov_mode = Measured]
 	add_onchain_message {
 		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
 		let message_source_id = DelegatorId(2);
@@ -85,14 +83,11 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
 	verify {
 		assert_eq!(
-			MessagesPallet::<T>::get_messages(
-				BlockNumberFor::<T>::one(), schema_id).len(),
-			average_messages_per_block as usize
+			MessagesPallet::<T>::get_block_metadata().total_index as u32,
+			average_messages_per_block
 		);
 	}
 
-	// this is temporary to avoid massive PoV sizes which will break the chain until rework on messages
-	#[pov_mode = Measured]
 	add_ipfs_message {
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
@@ -109,9 +104,8 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
 	verify {
 		assert_eq!(
-			MessagesPallet::<T>::get_messages(
-				BlockNumberFor::<T>::one(), IPFS_SCHEMA_ID).len(),
-			average_messages_per_block as usize
+			MessagesPallet::<T>::get_block_metadata().total_index as u32,
+			average_messages_per_block
 		);
 	}
 

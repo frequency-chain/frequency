@@ -101,7 +101,7 @@ pub mod pallet {
 
 		/// The maximum number of messages in a block.
 		#[pallet::constant]
-		type MaxMessagesPerBlock: Get<u32>;
+		type MaxMessagesPerBlock: Get<u32> + Default + MaxEncodedLen;
 
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
@@ -140,6 +140,20 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_message_index)]
 	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_block_metadata)]
+	pub(super) type MessageBlockMetadata<T: Config> = StorageValue<_, BlockMetadata<T::MaxMessagesPerBlock>, ValueQuery>;
+
+	#[pallet::storage]
+	#[pallet::getter(fn get_messages_v2)]
+	pub(super) type MessagesV2<T: Config> = StorageNMap<
+		_,
+		(storage::Key<Twox64Concat, BlockNumberFor<T>>, storage::Key<Twox64Concat, SchemaId>, storage::Key<Twox64Concat, u16>),
+		Message<T::MessagesMaxPayloadSizeBytes>,
+		OptionQuery,
+	>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -186,9 +200,11 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
-			<BlockMessageIndex<T>>::set(0u16);
-			// allocates 1 read and 1 write for any access of `MessageIndex` in every block
-			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
+			<MessageBlockMetadata<T>>::set(BlockMetadata::<T::MaxMessagesPerBlock>::default());
+			T::DbWeight::get()
+				.reads(1u64)
+				.saturating_add(T::DbWeight::get().writes(1u64))
+				.add_proof_size(BlockMetadata::<T::MaxMessagesPerBlock>::max_encoded_len() as u64)
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
 	}
@@ -344,28 +360,38 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
-		<Messages<T>>::try_mutate(
-			current_block,
-			schema_id,
-			|existing_messages| -> Result<bool, DispatchError> {
-				// first message for any schema_id is going to trigger an event
-				let need_event = existing_messages.len() == 0;
-				let index = BlockMessageIndex::<T>::get();
-				let msg = Message {
-					payload, // size is checked on top of extrinsic
-					provider_msa_id,
-					msa_id,
-					index,
-				};
 
-				existing_messages
-					.try_push(msg)
-					.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+		let mut metadata = MessageBlockMetadata::<T>::get();
+		ensure!(u32::from(metadata.total_index) < T::MaxMessagesPerBlock::get(), Error::<T>::TooManyMessagesInBlock);
+		let mut found = false;
+		let mut current_index = 0u16;
+		for schema_count in metadata.schema_counts.iter_mut() {
+			if schema_count.schema_id == schema_id {
+				found = true;
+				current_index = schema_count.count;
+				schema_count.count = schema_count.count.saturating_add(1);
+			}
+		}
+		if !found {
+			metadata.schema_counts.try_push(SchemaCount {
+				count: 1,
+				schema_id,
+			}).map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+		}
 
-				BlockMessageIndex::<T>::put(index.saturating_add(1));
-				Ok(need_event)
-			},
-		)
+		let msg = Message {
+			payload, // size is checked on top of extrinsic
+			provider_msa_id,
+			msa_id,
+			index: metadata.total_index,
+		};
+
+		let need_event = metadata.total_index == 0;
+		metadata.total_index = metadata.total_index.saturating_add(1);
+
+		<MessagesV2<T>>::set((current_block, schema_id, current_index), Some(msg));
+		MessageBlockMetadata::<T>::set(metadata);
+		Ok(need_event)
 	}
 
 	/// Resolve an MSA from an account key(key)
@@ -394,12 +420,13 @@ impl<T: Config> Pallet<T> {
 
 		match schema_payload_location {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
-			_ =>
-				return <Messages<T>>::get(block_number, schema_id)
-					.into_inner()
-					.iter()
+			_ => {
+				let mut messages : Vec<_> = <MessagesV2<T>>::iter_prefix_values((block_number, schema_id))
 					.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
-					.collect(),
+					.collect();
+				messages.sort_by(|a, b| a.index.cmp(&b.index));
+				return messages
+			}
 		}
 	}
 
