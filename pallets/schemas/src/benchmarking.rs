@@ -42,7 +42,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
-		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
+		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
 	}
 
 	create_schema_via_governance {
@@ -55,7 +55,7 @@ benchmarks! {
 	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location, BoundedVec::default())
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
-		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
+		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
 	}
 
 	propose_to_create_schema {
@@ -80,7 +80,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default())
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
-		ensure!(SchemasPallet::<T>::get_schema(1).is_some(), "Created schema should exist");
+		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
 	}
 
 	set_max_schema_model_bytes {

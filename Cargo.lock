@@ -6910,6 +6910,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "numtoa",
  "pallet-collective",
  "parity-scale-codec",

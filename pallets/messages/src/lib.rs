@@ -230,7 +230,7 @@ pub mod pallet {
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+			if let Some(schema) = T::SchemaProvider::get_schema_info_by_id(schema_id) {
 				ensure!(
 					schema.payload_location == PayloadLocation::IPFS,
 					Error::<T>::InvalidPayloadLocation
@@ -283,7 +283,7 @@ pub mod pallet {
 			let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+			if let Some(schema) = T::SchemaProvider::get_schema_info_by_id(schema_id) {
 				ensure!(
 					schema.payload_location == PayloadLocation::OnChain,
 					Error::<T>::InvalidPayloadLocation

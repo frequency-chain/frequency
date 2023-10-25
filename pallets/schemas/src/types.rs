@@ -28,3 +28,14 @@ where
 	/// additional control settings for the schema
 	pub settings: SchemaSettings,
 }
+
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+/// A structure defining a Schema information (excluding the payload)
+pub struct SchemaInfo {
+	/// The type of model (AvroBinary, Parquet, etc.)
+	pub model_type: ModelType,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// additional control settings for the schema
+	pub settings: SchemaSettings,
+}

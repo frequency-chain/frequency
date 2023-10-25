@@ -75,6 +75,7 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
+use common_primitives::schema::SchemaInfoResponse;
 
 mod types;
 
@@ -197,13 +198,34 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	/// Storage for message schema info struct data
+	/// - Key: Schema Id
+	/// - Value: [`SchemaInfo`](SchemaInfo)
+	#[pallet::storage]
+	#[pallet::getter(fn get_schema_info)]
+	pub(super) type SchemaInfos<T: Config> =
+		StorageMap<_, Twox64Concat, SchemaId, SchemaInfo, OptionQuery>;
+
+	/// Storage for message schema struct data
+	/// - Key: Schema Id
+	/// - Value: [`BoundedVec`](BoundedVec<T::SchemaModelMaxBytesBoundedVecLimit>)
+	#[pallet::storage]
+	#[pallet::getter(fn get_schema_payload)]
+	pub(super) type SchemaPayloads<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		SchemaId,
+		BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+		OptionQuery,
+	>;
+
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
 		/// Phantom type
 		#[serde(skip)]
-		pub _config: sp_std::marker::PhantomData<T>,
+		pub _config: PhantomData<T>,
 	}
 
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
@@ -398,23 +420,46 @@ pub mod pallet {
 					set_settings.set(i);
 				}
 			}
-			let schema = Schema { model_type, model, payload_location, settings: set_settings };
+			let schema_info = SchemaInfo { model_type, payload_location, settings: set_settings };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
-			<Schemas<T>>::insert(schema_id, schema);
+			<SchemaInfos<T>>::insert(schema_id, schema_info);
+			<SchemaPayloads<T>>::insert(schema_id, model);
 			Ok(schema_id)
 		}
 
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			if let Some(schema) = Self::get_schema(schema_id) {
-				let model_vec: Vec<u8> = schema.model.into_inner();
-				let saved_settings = schema.settings;
+			match (Self::get_schema_info(schema_id), Self::get_schema_payload(schema_id)) {
+				(Some(schema_info), Some(payload)) => {
+					let model_vec: Vec<u8> = payload.into_inner();
+					let saved_settings = schema_info.settings;
+					let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
+					let response = SchemaResponse {
+						schema_id,
+						model: model_vec,
+						model_type: schema_info.model_type,
+						payload_location: schema_info.payload_location,
+						settings,
+					};
+					Some(response)
+				},
+				(None, Some(_)) | (Some(_), None) => {
+					log::error!("Corrupted state for schema {:?}, Should never happen!", schema_id);
+					None
+				},
+				(None, None) => None,
+			}
+		}
+
+		/// Retrieve a schema info by id
+		pub fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
+			if let Some(schema_info) = Self::get_schema_info(schema_id) {
+				let saved_settings = schema_info.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
-				let response = SchemaResponse {
+				let response = SchemaInfoResponse {
 					schema_id,
-					model: model_vec,
-					model_type: schema.model_type,
-					payload_location: schema.payload_location,
+					model_type: schema_info.model_type,
+					payload_location: schema_info.payload_location,
 					settings,
 				};
 				return Some(response)
@@ -531,5 +576,9 @@ impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 impl<T: Config> SchemaProvider<SchemaId> for Pallet<T> {
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 		Self::get_schema_by_id(schema_id)
+	}
+
+	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
+		Self::get_schema_info_by_id(schema_id)
 	}
 }
