@@ -114,5 +114,5 @@ jobs:
           tags: |
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}}
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
           build-args: IMAGE_VERSION=${{env.IMAGE_VERSION}}
