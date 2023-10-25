@@ -3,6 +3,8 @@ FROM --platform=linux/amd64 ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
 LABEL description="Frequency CI base image"
+ARG IMAGE_VERSION
+LABEL version="{IMAGE_VERSION}"
 
 WORKDIR /ci
 RUN apt-get update && \
@@ -17,5 +19,6 @@ ENV RUSTUP_HOME="/root/.cargo"
 ENV CARGO_HOME="/root/.cargo"
 RUN rustup toolchain install nightly-2023-07-13
 RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
+RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
 
 RUN git config --system --add safe.directory /__w/frequency/frequency
