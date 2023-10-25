@@ -1,13 +1,14 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
-	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
+	messages::MessageResponse,
+	msa::{MessageSourceId, SchemaId},
+	node::BlockNumber,
+	schema::PayloadLocation,
 };
 use frame_support::{traits::Get, BoundedVec};
 use multibase::Base;
 use scale_info::TypeInfo;
-use sp_std::prelude::*;
-use common_primitives::msa::SchemaId;
-use sp_std::{fmt::Debug};
+use sp_std::{fmt::Debug, prelude::*};
 
 /// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
 pub type OffchainPayloadType = (Vec<u8>, u32);
@@ -38,13 +39,13 @@ where
 #[scale_info(skip_type_params(MaxMessagesPerBlock))]
 #[codec(mel_bound(MaxMessagesPerBlock: MaxEncodedLen))]
 pub struct BlockMetadata<MaxMessagesPerBlock>
-	where
-		MaxMessagesPerBlock: Get<u32> + Default,
+where
+	MaxMessagesPerBlock: Get<u32> + Default,
 {
 	///  schema and the number of messages for that schema in current block
 	pub schema_counts: BoundedVec<SchemaCount, MaxMessagesPerBlock>,
 	///  Stores index of message in block to keep total order.
-	pub total_index: u16
+	pub total_index: u16,
 }
 
 /// Schema and the the number of messages for that
@@ -53,7 +54,7 @@ pub struct SchemaCount {
 	/// schema id
 	pub schema_id: SchemaId,
 	/// number of messages for this schema id
-	pub count: u16
+	pub count: u16,
 }
 
 impl<MaxDataSize> Message<MaxDataSize>

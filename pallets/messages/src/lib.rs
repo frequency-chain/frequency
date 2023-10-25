@@ -144,13 +144,18 @@ pub mod pallet {
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_block_metadata)]
-	pub(super) type MessageBlockMetadata<T: Config> = StorageValue<_, BlockMetadata<T::MaxMessagesPerBlock>, ValueQuery>;
+	pub(super) type MessageBlockMetadata<T: Config> =
+		StorageValue<_, BlockMetadata<T::MaxMessagesPerBlock>, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages_v2)]
 	pub(super) type MessagesV2<T: Config> = StorageNMap<
 		_,
-		(storage::Key<Twox64Concat, BlockNumberFor<T>>, storage::Key<Twox64Concat, SchemaId>, storage::Key<Twox64Concat, u16>),
+		(
+			storage::Key<Twox64Concat, BlockNumberFor<T>>,
+			storage::Key<Twox64Concat, SchemaId>,
+			storage::Key<Twox64Concat, u16>,
+		),
 		Message<T::MessagesMaxPayloadSizeBytes>,
 		OptionQuery,
 	>;
@@ -360,9 +365,11 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
-
 		let mut metadata = MessageBlockMetadata::<T>::get();
-		ensure!(u32::from(metadata.total_index) < T::MaxMessagesPerBlock::get(), Error::<T>::TooManyMessagesInBlock);
+		ensure!(
+			u32::from(metadata.total_index) < T::MaxMessagesPerBlock::get(),
+			Error::<T>::TooManyMessagesInBlock
+		);
 		let mut found = false;
 		let mut current_index = 0u16;
 		for schema_count in metadata.schema_counts.iter_mut() {
@@ -373,10 +380,10 @@ impl<T: Config> Pallet<T> {
 			}
 		}
 		if !found {
-			metadata.schema_counts.try_push(SchemaCount {
-				count: 1,
-				schema_id,
-			}).map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
+			metadata
+				.schema_counts
+				.try_push(SchemaCount { count: 1, schema_id })
+				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
 		}
 
 		let msg = Message {
@@ -421,12 +428,13 @@ impl<T: Config> Pallet<T> {
 		match schema_payload_location {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
 			_ => {
-				let mut messages : Vec<_> = <MessagesV2<T>>::iter_prefix_values((block_number, schema_id))
-					.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
-					.collect();
+				let mut messages: Vec<_> =
+					<MessagesV2<T>>::iter_prefix_values((block_number, schema_id))
+						.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
+						.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
 				return messages
-			}
+			},
 		}
 	}
 
