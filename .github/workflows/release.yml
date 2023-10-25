@@ -348,7 +348,7 @@ jobs:
         uses: actions/configure-pages@v3
       - name: Build Docs
         run: |
-          rustup target add wasm32-unknown-unknown
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
