@@ -1,5 +1,6 @@
 use crate::{
 	tests::mock::*, BlockMessageIndex, Config, Error, Event as MessageEvent, Message, Messages,
+	MessagesV2,
 };
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
@@ -10,7 +11,7 @@ use multibase::Base;
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
-use sp_core::{ConstU32, Get};
+use sp_core::ConstU32;
 use sp_std::vec::Vec;
 
 #[derive(Serialize)]
@@ -54,18 +55,18 @@ fn populate_messages(
 
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
-		let mut list = BoundedVec::default();
-		for _ in 0..*count {
-			list.try_push(Message {
-				msa_id: Some(10),
-				payload: payload.clone().try_into().unwrap(),
-				index: counter,
-				provider_msa_id: 1,
-			})
-			.unwrap();
+		for i in 0..*count {
+			MessagesV2::<Test>::set(
+				(idx as u32, schema_id, i as u16),
+				Some(Message {
+					msa_id: Some(10),
+					payload: payload.clone().try_into().unwrap(),
+					index: counter,
+					provider_msa_id: 1,
+				}),
+			);
 			counter += 1;
 		}
-		Messages::<Test>::insert(idx as u32, schema_id, list);
 	}
 }
 
@@ -127,37 +128,38 @@ fn add_message_should_store_message_in_storage() {
 		));
 
 		// assert messages
-		let list1 = Messages::<Test>::get(1, schema_id_1).into_inner();
-		let list2 = Messages::<Test>::get(1, schema_id_2).into_inner();
-		assert_eq!(list1.len(), 1);
-		assert_eq!(list2.len(), 2);
+		let msg1 = MessagesV2::<Test>::get((1, schema_id_1, 0u16));
+		let msg2 = MessagesV2::<Test>::get((1, schema_id_2, 0u16));
+		let msg3 = MessagesV2::<Test>::get((1, schema_id_2, 1u16));
 
 		assert_eq!(
-			list1[0],
-			Message {
+			msg1,
+			Some(Message {
 				msa_id: Some(get_msa_from_account(caller_1)),
 				payload: message_payload_1.try_into().unwrap(),
 				index: 0,
 				provider_msa_id: get_msa_from_account(caller_1)
-			}
+			})
 		);
 
 		assert_eq!(
-			list2,
-			vec![
-				Message {
-					msa_id: Some(get_msa_from_account(caller_2)),
-					payload: message_payload_2.try_into().unwrap(),
-					index: 1,
-					provider_msa_id: get_msa_from_account(caller_2)
-				},
-				Message {
-					msa_id: Some(get_msa_from_account(caller_2)),
-					payload: message_payload_3.try_into().unwrap(),
-					index: 2,
-					provider_msa_id: get_msa_from_account(caller_2)
-				},
-			]
+			msg2,
+			Some(Message {
+				msa_id: Some(get_msa_from_account(caller_2)),
+				payload: message_payload_2.try_into().unwrap(),
+				index: 1,
+				provider_msa_id: get_msa_from_account(caller_2)
+			})
+		);
+
+		assert_eq!(
+			msg3,
+			Some(Message {
+				msa_id: Some(get_msa_from_account(caller_2)),
+				payload: message_payload_3.try_into().unwrap(),
+				index: 2,
+				provider_msa_id: get_msa_from_account(caller_2)
+			})
 		);
 
 		// assert events

@@ -393,12 +393,11 @@ impl<T: Config> Pallet<T> {
 			index: metadata.total_index,
 		};
 
-		let need_event = metadata.total_index == 0;
 		metadata.total_index = metadata.total_index.saturating_add(1);
 
 		<MessagesV2<T>>::set((current_block, schema_id, current_index), Some(msg));
 		MessageBlockMetadata::<T>::set(metadata);
-		Ok(need_event)
+		Ok(!found)
 	}
 
 	/// Resolve an MSA from an account key(key)

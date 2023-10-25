@@ -67,7 +67,6 @@ impl system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-pub type MaxMessagesPerBlock = ConstU32<500>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
@@ -79,6 +78,8 @@ parameter_types! {
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
 	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
+
+	pub const MaxMessagesPerBlock: u32 = 500;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -109,6 +110,19 @@ impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 	}
 }
 
+impl Default for MaxMessagesPerBlock {
+	fn default() -> Self {
+		Self
+	}
+}
+
+impl Encode for MaxMessagesPerBlock {}
+
+impl MaxEncodedLen for MaxMessagesPerBlock {
+	fn max_encoded_len() -> usize {
+		u32::max_encoded_len()
+	}
+}
 pub struct MsaInfoHandler;
 pub struct DelegationInfoHandler;
 pub struct SchemaGrantValidationHandler;
