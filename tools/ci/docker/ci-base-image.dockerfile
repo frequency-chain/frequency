@@ -2,7 +2,7 @@ FROM --platform=linux/amd64 ubuntu:20.04
 # FROM ubuntu:20.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
-LABEL description="Frequency CI base image"
+LABEL description="Frequency CI Base Image"
 ARG IMAGE_VERSION
 LABEL version="{IMAGE_VERSION}"
 
