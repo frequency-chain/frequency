@@ -81,6 +81,7 @@ jobs:
     name: Publish CI Base Image
     env:
       IMAGE_NAME: ci-base-image
+      IMAGE_VERSION: 1.0.0
       BRANCH_NAME: main
     runs-on: ubuntu-20.04
     steps:
@@ -113,3 +114,5 @@ jobs:
           tags: |
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
+          build-args: IMAGE_VERSION=${{env.IMAGE_VERSION}}
