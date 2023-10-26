@@ -414,48 +414,35 @@ impl<T: Config> BoostingAccountDetails<T> {
 }
 
 /// Struct with utilities for storing and updating unlock chunks
-#[derive(TypeInfo, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen)]
+#[derive(Debug, TypeInfo, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
-pub struct RetargetUnlockChunks<T: Config> {
-	/// list of each time a stake was retargeted, limited to MaxUnlockingChunks.
-	pub chunks: BoundedVec<UnlockChunk<BalanceOf<T>, T::RewardEra>, T::MaxUnlockingChunks>,
+pub struct RetargetInfo<T: Config> {
+	/// How many times the account has retargeted this RewardEra
+	pub retarget_count: u32,
+	/// The last RewardEra they retargeted
+	pub last_retarget_at: T::RewardEra,
 }
 
-impl<T: Config> Default for RetargetUnlockChunks<T> {
+impl<T: Config> Default for RetargetInfo<T> {
 	fn default() -> Self {
-		Self { chunks: BoundedVec::default() }
+		Self { retarget_count: 0u32, last_retarget_at: Zero::zero() }
 	}
 }
 
-impl<T: Config> RetargetUnlockChunks<T> {
-	#[cfg(any(feature = "runtime-benchmarks", test))]
-	#[allow(clippy::unwrap_used)]
-	/// for testing and benchmarks only!
-	/// set stake_change_unlocking chunks with (balance, thaw_at).  does not check that the unlock chunks
-	/// don't exceed total.
-	/// returns true on success, false on failure (?)
-	pub fn set(&mut self, new_chunks: &Vec<(u32, u32)>) -> bool {
-		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::RewardEra>> = new_chunks
-			.into_iter()
-			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
-			.collect();
-		self.chunks = BoundedVec::try_from(result).unwrap();
-		self.chunks.len() == new_chunks.len()
-	}
-
-	/// update unlock chunks; remove those that have expired and add the new one
-	/// this doesn't affect staking amount, just controls how often a staker may retarget
-	pub fn update(
-		&mut self,
-		new_chunk_amount: &BalanceOf<T>,
-		thaw_at: &T::RewardEra,
-		current_era: &T::RewardEra,
-	) -> Result<(), DispatchError> {
-		self.chunks.retain(|chunk| current_era.lt(&chunk.thaw_at));
-		let unlock_chunk = UnlockChunk { value: *new_chunk_amount, thaw_at: *thaw_at };
-		self.chunks
-			.try_push(unlock_chunk)
-			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
-		Ok(())
+impl<T: Config> RetargetInfo<T> {
+	/// Increment retarget count and return Some() or
+	/// If there are too many, return None
+	pub fn update(&mut self, current_era: T::RewardEra) -> Option<()> {
+		let max_retargets = T::MaxRetargetsPerRewardEra::get();
+		if self.retarget_count.ge(&max_retargets) && self.last_retarget_at.eq(&current_era) {
+			return None
+		}
+		if self.last_retarget_at.le(&current_era) {
+			self.last_retarget_at = current_era;
+			self.retarget_count = 1;
+		} else {
+			self.retarget_count = self.retarget_count.saturating_add(1u32);
+		}
+		Some(())
 	}
 }

@@ -53,7 +53,7 @@ It does not give regard to what the economic model actually is, since that is ye
 ### StakingAccountDetails updates
 New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
-Finally, `stake_change_unlocking`, is added, which stores an `UnlockChunk` when a staking account has changed.
+Finally, `stake_change_unlocking`, is added, which stores or updates a `RetargetInfo` when a staking account has changed.
 targets for some amount of funds.  This is to prevent retarget spamming.
 
 This will be a V2 of this storage and original StakingAccountDetails will need to be migrated.

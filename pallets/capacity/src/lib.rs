@@ -48,7 +48,6 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-
 use sp_std::ops::{Add, Mul};
 
 use frame_support::{
@@ -185,11 +184,9 @@ pub mod pallet {
 		/// The StakingRewardsProvider used by this pallet in a given runtime
 		type RewardsProvider: StakingRewardsProvider<Self>;
 
-		/// After calling change_staking_target, the thaw period  for the created
-		/// thaw chunk to expire. If the staker has called change_staking_target MaxUnlockingChunks
-		/// times, then at least one of the chunks must have expired before the next call
-		/// will succeed.
-		type ChangeStakingTargetThawEras: Get<u32>;
+		/// A staker may not retarget more than MaxRetargetsPerRewardEra
+		#[pallet::constant]
+		type MaxRetargetsPerRewardEra: Get<u32>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -264,11 +261,10 @@ pub mod pallet {
 	pub type BoostingAccountLedger<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, BoostingAccountDetails<T>>;
 
-	/// Unlock chunks for retargeted stake, limited to MaxUnlockingChunks until the earliest EpochNumber.
+	/// stores how many times an account has retargeted, and when it last retargeted.
 	#[pallet::storage]
-	#[pallet::getter(fn get_stake_change_unlocking_for)]
-	pub type RetargetUnlocking<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, RetargetUnlockChunks<T>>;
+	#[pallet::getter(fn get_retargets_for)]
+	pub type Retargets<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, RetargetInfo<T>>;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(_);
@@ -383,8 +379,10 @@ pub mod pallet {
 		CannotRetargetToSameProvider,
 		/// Rewards were already paid out this era
 		AlreadyClaimedRewardsThisEra,
-		/// Caller needs to wait until the next RewardEra, claim rewards and then can boost again.
+		/// Caller must wait until the next RewardEra, claim rewards and then can boost again.
 		MustFirstClaimRewards,
+		/// Too many change_staking_target calls made in this RewardEra.
+		MaxRetargetsExceeded,
 	}
 
 	#[pallet::hooks]
@@ -532,6 +530,8 @@ pub mod pallet {
 			amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
+			// This will bounce immediately if they've tried to do this too many times.
+			Self::update_retarget_record(&staker)?;
 			ensure!(from.ne(&to), Error::<T>::CannotRetargetToSameProvider);
 			ensure!(
 				amount >= T::MinimumStakingAmount::get(),
@@ -954,17 +954,13 @@ impl<T: Config> Pallet<T> {
 		false
 	}
 
-	/// adds a new chunk to StakingAccountDetails.stake_change_unlocking.  The
-	/// call `update_stake_change_unlocking` garbage-collects thawed chunks before adding the new one.
-	fn add_change_staking_target_unlock_chunk(
-		staker: &T::AccountId,
-		amount: &BalanceOf<T>,
-	) -> Result<(), DispatchError> {
+	/// attempts to increment number of retargets this RewardEra
+	/// Returns:
+	///     Error::MaxRetargetsExceeded if they try to retarget too many times in one era.
+	fn update_retarget_record(staker: &T::AccountId) -> Result<(), DispatchError> {
 		let current_era: T::RewardEra = Self::get_current_era().era_index;
-		let thaw_at = current_era.saturating_add(T::ChangeStakingTargetThawEras::get().into());
-		let mut unlock_chunks = Self::get_stake_change_unlocking_for(staker).unwrap_or_default();
-		unlock_chunks.update(amount, &thaw_at, &current_era)?;
-		RetargetUnlocking::<T>::set(staker, Some(unlock_chunks.clone()));
+		let mut retargets = Self::get_retargets_for(staker).unwrap_or_default();
+		ensure!(retargets.update(current_era).is_some(), Error::<T>::MaxRetargetsExceeded);
 		Ok(())
 	}
 
@@ -1003,7 +999,7 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_target_details_for(staker, to_msa, &to_msa_target);
 		Self::set_capacity_for(to_msa, &capacity_details);
-		Self::add_change_staking_target_unlock_chunk(staker, amount)
+		Ok(())
 	}
 }
 

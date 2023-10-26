@@ -3,8 +3,8 @@ use super::{
 	testing_utils::{setup_provider, staking_events},
 };
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RetargetUnlockChunks,
-	RewardEraInfo, StakingAccountDetails, StakingAccountLedger, StakingTargetDetails, UnlockChunk,
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RetargetInfo, RewardEraInfo,
+	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
 };
 use common_primitives::{
 	capacity::{
@@ -12,10 +12,8 @@ use common_primitives::{
 		StakingType::{MaximumCapacity, ProviderBoost},
 	},
 	msa::MessageSourceId,
-	node::RewardEra,
 };
-use frame_support::{assert_err, assert_noop, assert_ok, traits::Get, BoundedVec};
-use std::thread::current;
+use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
 type TestCapacityDetails = CapacityDetails<BalanceOf<Test>, u32>;
@@ -428,44 +426,38 @@ fn change_staking_target_test_parametric_validity() {
 	});
 }
 
-type TestRetargetChunk<Test> = UnlockChunk<BalanceOf<Test>, RewardEra>;
-fn create_retarget_chunks(value: u64, thaw_at: u32) -> RetargetUnlockChunks<Test> {
-	let chunks: BoundedVec<TestRetargetChunk<Test>, <Test as Config>::MaxUnlockingChunks> =
-		BoundedVec::try_from(vec![UnlockChunk { value, thaw_at }]).unwrap();
-	RetargetUnlockChunks { chunks }
-}
 #[test]
-fn impl_retarget_chunks_errors_when_attempt_to_update_past_bounded_max() {
+fn impl_retarget_info_errors_when_attempt_to_update_past_bounded_max() {
 	new_test_ext().execute_with(|| {
-		let mut retarget_chunks = create_retarget_chunks(150, 10);
-		let current_era = 20;
-		let new_chunk_amount = 10u64;
-		let thaw_at: u32 = 25;
-		let max_chunks = <Test as Config>::MaxUnlockingChunks::get();
-		for i in 0..max_chunks {
-			assert_ok!(retarget_chunks.update(
-				&(new_chunk_amount + (i as u64)),
-				&thaw_at,
-				&current_era
-			));
+		struct TestCase {
+			era: u32,
+			retargets: u32,
+			last_retarget: u32,
+			expected: Option<()>,
 		}
-		assert_err!(
-			retarget_chunks.update(&new_chunk_amount, &thaw_at, &current_era),
-			Error::<Test>::MaxUnlockingChunksExceeded
-		);
+		for tc in [
+			TestCase { era: 1u32, retargets: 0u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 3, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 4, expected: Some(()) },
+			TestCase { era: 2u32, retargets: 5u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 5u32, last_retarget: 1, expected: None },
+		] {
+			let mut retarget_info: RetargetInfo<Test> =
+				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+			assert_eq!(retarget_info.update(tc.era), tc.expected);
+		}
 	})
 }
 
 #[test]
-fn impl_retarget_chunks_cleanup_when_thawed() {
+fn impl_retarget_chunks_cleanup_when_new_reward_era() {
 	new_test_ext().execute_with(|| {
-		let mut retarget_chunks = create_retarget_chunks(150, 10);
-		let thaw_at = 25u32;
-		let new_chunk_amount = 10u64;
-		let era_index = 20u32;
-		assert_ok!(retarget_chunks.update(&new_chunk_amount, &thaw_at, &era_index));
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: thaw_at, started_at: 100 });
-		assert_ok!(retarget_chunks.update(&new_chunk_amount, &thaw_at, &thaw_at));
-		assert_eq!(1, retarget_chunks.chunks.len());
+		let current_era = 2u32;
+		let mut retarget_info: RetargetInfo<Test> =
+			RetargetInfo { retarget_count: 5, last_retarget_at: 1 };
+		assert!(retarget_info.update(current_era).is_some());
+		let expected: RetargetInfo<Test> = RetargetInfo { retarget_count: 1, last_retarget_at: 2 };
+		assert_eq!(retarget_info, expected);
 	});
 }
