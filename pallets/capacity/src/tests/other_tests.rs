@@ -83,7 +83,7 @@ fn set_target_details_is_successful() {
 
 		assert_eq!(Capacity::get_target_for(&staker, target), None);
 
-		let mut target_details = StakingTargetDetails::<Test>::default();
+		let mut target_details = StakingTargetDetails::<BalanceOf<Test>>::default();
 		target_details.amount = 10;
 		target_details.capacity = 10;
 

@@ -3,8 +3,8 @@ use super::{
 	testing_utils::{setup_provider, staking_events},
 };
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RewardEraInfo,
-	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RetargetUnlockChunks,
+	RewardEraInfo, StakingAccountDetails, StakingAccountLedger, StakingTargetDetails, UnlockChunk,
 };
 use common_primitives::{
 	capacity::{
@@ -12,12 +12,14 @@ use common_primitives::{
 		StakingType::{MaximumCapacity, ProviderBoost},
 	},
 	msa::MessageSourceId,
+	node::RewardEra,
 };
-use frame_support::{assert_noop, assert_ok, traits::Get};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::Get, BoundedVec};
+use std::thread::current;
 
 // staker is unused unless amount > 0
 type TestCapacityDetails = CapacityDetails<BalanceOf<Test>, u32>;
-type TestTargetDetails = StakingTargetDetails<Test>;
+type TestTargetDetails = StakingTargetDetails<BalanceOf<Test>>;
 
 fn assert_capacity_details(
 	msa_id: MessageSourceId,
@@ -330,13 +332,7 @@ fn change_staking_target_test_parametric_validity() {
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,
-			StakingAccountDetails {
-				active: 20,
-				total: 20,
-				unlocking: Default::default(),
-				last_rewards_claimed_at: None,
-				stake_change_unlocking: Default::default(),
-			},
+			StakingAccountDetails { active: 20, total: 20, unlocking: Default::default() },
 		);
 		let from_account_not_staking = 100u64;
 		let from_target_not_staked: MessageSourceId = 1;
@@ -375,7 +371,7 @@ fn change_staking_target_test_parametric_validity() {
 				from_target,
 				to_target,
 				retarget_amount: staked_amount,
-				expected_err: Error::<Test>::NotAStakingAccount,
+				expected_err: Error::<Test>::StakerTargetRelationshipNotFound,
 			},
 			// from and to providers are valid, but zero amount too small
 			TestCase {
@@ -429,5 +425,47 @@ fn change_staking_target_test_parametric_validity() {
 				tc.expected_err
 			);
 		}
+	});
+}
+
+type TestRetargetChunk<Test> = UnlockChunk<BalanceOf<Test>, RewardEra>;
+fn create_retarget_chunks(value: u64, thaw_at: u32) -> RetargetUnlockChunks<Test> {
+	let chunks: BoundedVec<TestRetargetChunk<Test>, <Test as Config>::MaxUnlockingChunks> =
+		BoundedVec::try_from(vec![UnlockChunk { value, thaw_at }]).unwrap();
+	RetargetUnlockChunks { chunks }
+}
+#[test]
+fn impl_retarget_chunks_errors_when_attempt_to_update_past_bounded_max() {
+	new_test_ext().execute_with(|| {
+		let mut retarget_chunks = create_retarget_chunks(150, 10);
+		let current_era = 20;
+		let new_chunk_amount = 10u64;
+		let thaw_at: u32 = 25;
+		let max_chunks = <Test as Config>::MaxUnlockingChunks::get();
+		for i in 0..max_chunks {
+			assert_ok!(retarget_chunks.update(
+				&(new_chunk_amount + (i as u64)),
+				&thaw_at,
+				&current_era
+			));
+		}
+		assert_err!(
+			retarget_chunks.update(&new_chunk_amount, &thaw_at, &current_era),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
+	})
+}
+
+#[test]
+fn impl_retarget_chunks_cleanup_when_thawed() {
+	new_test_ext().execute_with(|| {
+		let mut retarget_chunks = create_retarget_chunks(150, 10);
+		let thaw_at = 25u32;
+		let new_chunk_amount = 10u64;
+		let era_index = 20u32;
+		assert_ok!(retarget_chunks.update(&new_chunk_amount, &thaw_at, &era_index));
+		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: thaw_at, started_at: 100 });
+		assert_ok!(retarget_chunks.update(&new_chunk_amount, &thaw_at, &thaw_at));
+		assert_eq!(1, retarget_chunks.chunks.len());
 	});
 }

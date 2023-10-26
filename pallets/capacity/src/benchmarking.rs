@@ -30,7 +30,7 @@ pub fn setup_provider_stake<T: Config>(
 	let mut staking_account: StakingAccountDetails<T> =
 		Capacity::get_staking_account_for(staker).unwrap_or_default();
 
-	let mut target_details = StakingTargetDetails::<T>::default();
+	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 	let mut capacity_details =
 		CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
@@ -118,7 +118,7 @@ benchmarks! {
 		let block_number = 4u32;
 
 		let mut staking_account = StakingAccountDetails::<T>::default();
-		let mut target_details = StakingTargetDetails::<T>::default();
+		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
 		staking_account.deposit(staking_amount);
@@ -176,7 +176,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)
 	verify {
-		assert!(StakingAccountLedger::<T>::contains_key(&caller));
+		assert!(BoostingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
 		assert!(CapacityLedger::<T>::contains_key(target));
 		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount: boost_amount, target, capacity}.into());
