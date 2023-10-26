@@ -39,7 +39,7 @@ jobs:
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"

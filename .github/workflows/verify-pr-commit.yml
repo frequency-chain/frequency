@@ -397,7 +397,7 @@ jobs:
         run: |
           echo "BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
@@ -683,7 +683,7 @@ jobs:
             --tmp \
             &
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
