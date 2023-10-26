@@ -265,7 +265,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
 
-		let max_chunks: u32 = <Test as Config>::MaxUnlockingChunks::get();
+		let max_chunks: u32 = <Test as Config>::MaxRetargetsPerRewardEra::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
 		setup_provider(&staker, &from_msa, &staking_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &10u64, ProviderBoost);
@@ -287,7 +287,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 				to_msa,
 				retarget_amount
 			),
-			Error::<Test>::MaxUnlockingChunksExceeded
+			Error::<Test>::MaxRetargetsExceeded
 		);
 	});
 }
@@ -446,6 +446,30 @@ fn impl_retarget_info_errors_when_attempt_to_update_past_bounded_max() {
 			let mut retarget_info: RetargetInfo<Test> =
 				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
 			assert_eq!(retarget_info.update(tc.era), tc.expected);
+		}
+	})
+}
+
+#[test]
+fn impl_retarget_info_updates_values_correctly() {
+	new_test_ext().execute_with(|| {
+		struct TestCase {
+			era: u32,
+			retargets: u32,
+			last_retarget: u32,
+			expected_retargets: u32,
+		}
+		for tc in [
+			TestCase { era: 5, retargets: 0, last_retarget: 5, expected_retargets: 1 },
+			TestCase { era: 1, retargets: 1, last_retarget: 1, expected_retargets: 2 },
+			TestCase { era: 3, retargets: 1, last_retarget: 1, expected_retargets: 1 },
+			TestCase { era: 2, retargets: 5, last_retarget: 1, expected_retargets: 1 },
+			TestCase { era: 1, retargets: 5, last_retarget: 1, expected_retargets: 5 },
+		] {
+			let mut retarget_info: RetargetInfo<Test> =
+				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+			retarget_info.update(tc.era);
+			assert_eq!(retarget_info.retarget_count, tc.expected_retargets);
 		}
 	})
 }

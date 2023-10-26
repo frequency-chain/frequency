@@ -437,7 +437,7 @@ impl<T: Config> RetargetInfo<T> {
 		if self.retarget_count.ge(&max_retargets) && self.last_retarget_at.eq(&current_era) {
 			return None
 		}
-		if self.last_retarget_at.le(&current_era) {
+		if self.last_retarget_at.lt(&current_era) {
 			self.last_retarget_at = current_era;
 			self.retarget_count = 1;
 		} else {

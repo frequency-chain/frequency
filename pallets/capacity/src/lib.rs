@@ -521,6 +521,7 @@ pub mod pallet {
 		/// - [`Error::InsufficientStakingBalance`] if `amount` to retarget exceeds what the staker has targeted to `from` MSA Id.
 		/// - [`Error::InvalidTarget`] if `to` does not belong to a registered Provider.
 		/// - [`Error::CannotChangeStakingType`] if origin already has funds staked for `to` and the staking type for `from` is different.
+		/// - [`Error::MaxRetargetsExceeded`] if origin has reached the maximimum number of retargets for the current RewardEra.
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::unstake())]
 		pub fn change_staking_target(
@@ -594,6 +595,7 @@ pub mod pallet {
 impl<T: Config> Pallet<T> {
 	/// Checks to see if staker has sufficient free-balance to stake the minimum required staking amount,
 	/// and leave the minimum required free balance after staking.
+	/// This function should not mutate any records.
 	///
 	/// # Errors
 	/// * [`Error::StakingAmountBelowMinimum`]
@@ -605,21 +607,11 @@ impl<T: Config> Pallet<T> {
 		target: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
-		ensure!(amount > &Zero::zero(), Error::<T>::StakingAmountBelowMinimum);
+		ensure!(amount.gt(&Zero::zero()), Error::<T>::StakingAmountBelowMinimum);
 		ensure!(T::TargetValidator::validate(*target), Error::<T>::InvalidTarget);
 
 		let staking_account: StakingAccountDetails<T> =
 			Self::get_staking_account_for(staker).unwrap_or_default();
-
-		let staking_target: StakingTargetDetails<BalanceOf<T>> =
-			Self::get_target_for(staker, target).unwrap_or_default();
-		// if total > 0 the account exists already. Prevent the staking type from being changed.
-		if staking_target.amount > Zero::zero() {
-			ensure!(
-				staking_target.staking_type == StakingType::MaximumCapacity,
-				Error::<T>::CannotChangeStakingType
-			);
-		}
 
 		let stakable_amount = staking_account.get_stakable_amount_for(&staker, *amount);
 
@@ -643,23 +635,13 @@ impl<T: Config> Pallet<T> {
 		target: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(BoostingAccountDetails<T>, BalanceOf<T>), DispatchError> {
-		ensure!(amount > &Zero::zero(), Error::<T>::StakingAmountBelowMinimum);
+		ensure!(amount.gt(&Zero::zero()), Error::<T>::StakingAmountBelowMinimum);
 		ensure!(T::TargetValidator::validate(*target), Error::<T>::InvalidTarget);
 		let account_details: BoostingAccountDetails<T> =
 			Self::get_boost_details_for(staker).unwrap_or_default();
 
 		ensure!(!account_details.boost_history.is_full(), Error::<T>::MustFirstClaimRewards);
 
-		let mut target_details: StakingTargetDetails<BalanceOf<T>> =
-			Self::get_target_for(staker, target).unwrap_or_default();
-		if target_details.amount.is_zero() {
-			target_details.staking_type = ProviderBoost;
-		} else {
-			ensure!(
-				target_details.staking_type == ProviderBoost,
-				Error::<T>::CannotChangeStakingType
-			);
-		}
 		let stakable_amount =
 			account_details.staking_details.get_stakable_amount_for(&staker, *amount);
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
@@ -679,8 +661,11 @@ impl<T: Config> Pallet<T> {
 		let capacity = Self::capacity_generated(*amount);
 
 		let mut target_details = Self::get_target_for(staker, target).unwrap_or_default();
+		ensure!(
+			target_details.staking_type == MaximumCapacity,
+			Error::<T>::CannotChangeStakingType
+		);
 		target_details.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
-		target_details.staking_type = MaximumCapacity;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
@@ -706,8 +691,16 @@ impl<T: Config> Pallet<T> {
 		let capacity = Self::capacity_generated(T::RewardsProvider::capacity_boost(*amount));
 
 		let mut target_details = Self::get_target_for(staker, target).unwrap_or_default();
+		if target_details.amount.is_zero() {
+			target_details.staking_type = ProviderBoost;
+		} else {
+			ensure!(
+				target_details.staking_type == ProviderBoost,
+				Error::<T>::CannotChangeStakingType
+			);
+		}
+
 		target_details.deposit(*amount, capacity).ok_or(ArithmeticError::Overflow)?;
-		target_details.staking_type = ProviderBoost;
 
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
@@ -961,6 +954,7 @@ impl<T: Config> Pallet<T> {
 		let current_era: T::RewardEra = Self::get_current_era().era_index;
 		let mut retargets = Self::get_retargets_for(staker).unwrap_or_default();
 		ensure!(retargets.update(current_era).is_some(), Error::<T>::MaxRetargetsExceeded);
+		Retargets::<T>::set(staker, Some(retargets));
 		Ok(())
 	}
 
