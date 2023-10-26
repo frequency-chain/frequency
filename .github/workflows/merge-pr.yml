@@ -11,7 +11,7 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
@@ -28,7 +28,7 @@ jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
     # This job currently fails on EKS runners and must be run on standalone until
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build, v1]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

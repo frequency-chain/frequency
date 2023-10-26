@@ -17,7 +17,7 @@ jobs:
   run-e2e:
     name: Run E2E Tests
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Validate
         shell: bash
