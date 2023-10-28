@@ -11,7 +11,7 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
@@ -28,7 +28,7 @@ jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -36,7 +36,7 @@ jobs:
         # Run the cargo command and ignore any extra lines outside of the json result
         run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-rococo-local -- export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
@@ -67,7 +67,7 @@ jobs:
     # This job currently fails on EKS runners and must be run on standalone until
     # https://www.pivotaltracker.com/story/show/185045668 is resolved.
     runs-on: [self-hosted, Linux, X64, build, v1]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
