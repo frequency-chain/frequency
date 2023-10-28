@@ -46,6 +46,8 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+/// migration module
+pub mod migration;
 #[cfg(test)]
 mod tests;
 
@@ -77,10 +79,15 @@ pub use weights::*;
 use cid::Cid;
 use frame_system::pallet_prelude::*;
 
+const LOG_TARGET: &str = "runtime::messages";
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 	use frame_support::pallet_prelude::*;
+
+	/// The current storage version.
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -117,22 +124,8 @@ pub mod pallet {
 	}
 
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
-
-	/// A permanent storage for messages mapped by block number and schema id.
-	/// - Keys: BlockNumber, Schema Id
-	/// - Value: List of Messages
-	#[pallet::storage]
-	#[pallet::getter(fn get_messages)]
-	pub(super) type Messages<T: Config> = StorageDoubleMap<
-		_,
-		Twox64Concat,
-		BlockNumberFor<T>,
-		Twox64Concat,
-		SchemaId,
-		BoundedVec<Message<T::MessagesMaxPayloadSizeBytes>, T::MaxMessagesPerBlock>,
-		ValueQuery,
-	>;
 
 	/// A temporary storage for getting the index for messages
 	/// At the start of the next block this storage is set to 0
@@ -212,6 +205,10 @@ pub mod pallet {
 				.add_proof_size(BlockMetadata::<T::MaxMessagesPerBlock>::max_encoded_len() as u64)
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
+		//
+		// fn on_runtime_upgrade() -> frame_support::weights::Weight {
+		// 	migration::v2::migrate_to_v2::<T>()
+		// }
 	}
 
 	#[pallet::call]
@@ -395,7 +392,7 @@ impl<T: Config> Pallet<T> {
 
 		metadata.total_index = metadata.total_index.saturating_add(1);
 
-		<MessagesV2<T>>::set((current_block, schema_id, current_index), Some(msg));
+		<MessagesV2<T>>::insert((current_block, schema_id, current_index), msg);
 		MessageBlockMetadata::<T>::set(metadata);
 		Ok(!found)
 	}

@@ -79,7 +79,7 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 
 #[cfg(feature = "try-runtime")]
-use frame_support::traits::TryStateSelect;
+use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -220,6 +220,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	(pallet_messages::migration::v2::MigrateToV2<Runtime>,),
 >;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -1280,9 +1281,9 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade(_checks: bool) -> (Weight, Weight) {
+		fn on_runtime_upgrade(checks: UpgradeCheckSelect) -> (Weight, Weight) {
 			log::info!("try-runtime::on_runtime_upgrade frequency.");
-			let weight = Executive::try_runtime_upgrade(true).unwrap();
+			let weight = Executive::try_runtime_upgrade(checks).unwrap();
 			(weight, RuntimeBlockWeights::get().max_block)
 		}
 

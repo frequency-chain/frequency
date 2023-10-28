@@ -1,6 +1,6 @@
 use crate::{
-	tests::mock::*, BlockMessageIndex, Config, Error, Event as MessageEvent, Message, Messages,
-	MessagesV2,
+	migration::v2, tests::mock::*, BlockMessageIndex, Config, Error, Event as MessageEvent,
+	Message, MessagesV2,
 };
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
@@ -401,8 +401,8 @@ fn add_message_via_non_delegate_should_fail() {
 		);
 
 		// assert
-		let list = Messages::<Test>::get(1, schema_id_1).into_inner();
-		assert_eq!(list.len(), 0);
+		let msg = MessagesV2::<Test>::get((1, schema_id_1, 0));
+		assert_eq!(msg, None);
 	});
 }
 
@@ -703,4 +703,50 @@ fn map_to_response_ipfs() {
 		payload_length: Some(10),
 	};
 	assert_eq!(msg.map_to_response(42, PayloadLocation::IPFS), expected);
+}
+
+#[test]
+fn migration_to_v2_should_work_as_expected() {
+	new_test_ext().execute_with(|| {
+		// Setup
+		let schema_id: SchemaId = IPFS_SCHEMA_ID;
+		let cid = &DUMMY_CID_BASE32[..];
+		let message_per_block = vec![3, 4, 5, 6];
+		let payload = (
+			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
+			IPFS_PAYLOAD_LENGTH,
+		)
+			.encode();
+
+		let mut counter = 0;
+		for (idx, count) in message_per_block.iter().enumerate() {
+			let mut list = BoundedVec::default();
+			for _ in 0..*count {
+				list.try_push(Message {
+					msa_id: Some(10),
+					payload: payload.clone().try_into().unwrap(),
+					index: counter,
+					provider_msa_id: 1,
+				})
+				.unwrap();
+				counter += 1;
+			}
+			v2::Messages::<Test>::insert(idx as u32, schema_id, list);
+		}
+
+		let _ = v2::migrate_to_v2::<Test>();
+
+		let mut old_count = 0;
+		for _ in v2::Messages::<Test>::iter() {
+			old_count += 1;
+		}
+
+		let mut new_count = 0;
+		for _ in MessagesV2::<Test>::iter() {
+			new_count += 1;
+		}
+
+		assert_eq!(old_count, 0);
+		assert_eq!(new_count, message_per_block.iter().sum::<i32>());
+	});
 }
