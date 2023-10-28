@@ -205,10 +205,6 @@ pub mod pallet {
 				.add_proof_size(BlockMetadata::<T::MaxMessagesPerBlock>::max_encoded_len() as u64)
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
-		//
-		// fn on_runtime_upgrade() -> frame_support::weights::Weight {
-		// 	migration::v2::migrate_to_v2::<T>()
-		// }
 	}
 
 	#[pallet::call]
