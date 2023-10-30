@@ -26,6 +26,9 @@ start-manual:
 start-interval:
 	./scripts/init.sh start-frequency-interval
 
+start-interval-1:
+	./scripts/init.sh start-frequency-interval-1
+
 .PHONY: stop
 stop-relay:
 	./scripts/init.sh stop-relay-chain
