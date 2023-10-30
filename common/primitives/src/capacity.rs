@@ -56,7 +56,9 @@ pub trait Replenishable {
 	fn can_replenish(msa_id: MessageSourceId) -> bool;
 }
 
-#[derive(Clone, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd)]
+#[derive(
+	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
+)]
 /// The type of staking a given Staking Account is doing.
 pub enum StakingType {
 	/// Staking account targets Providers for capacity only, no token reward
@@ -64,4 +66,10 @@ pub enum StakingType {
 	/// Staking account targets Providers and splits reward between capacity to the Provider
 	/// and token for the account holder
 	ProviderBoost,
+}
+
+impl Default for StakingType {
+	fn default() -> Self {
+		StakingType::MaximumCapacity
+	}
 }
