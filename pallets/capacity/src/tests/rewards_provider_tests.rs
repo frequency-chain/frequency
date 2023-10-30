@@ -21,8 +21,6 @@ fn test_staking_reward_total_happy_path() {
 				active: 1,
 				total: 1,
 				unlocking: Default::default(),
-				last_rewards_claimed_at: None,
-				stake_change_unlocking: Default::default(),
 			},
 			from_era: 1,
 			to_era: 5,
