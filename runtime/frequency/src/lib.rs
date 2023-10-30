@@ -504,7 +504,7 @@ impl pallet_capacity::Config for Runtime {
 	type EraLength = ConstU32<{ 14 * DAYS }>;
 	type StakingRewardsPastErasMax = ConstU32<26u32>; // 1 year
 	type RewardsProvider = Capacity;
-	type ChangeStakingTargetThawEras = CapacityChangeStakingTargetThawEras;
+	type MaxRetargetsPerRewardEra = ConstU32<16>;
 }
 
 impl pallet_schemas::Config for Runtime {

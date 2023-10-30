@@ -3,7 +3,7 @@ use super::{
 	testing_utils::{setup_provider, staking_events},
 };
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RewardEraInfo,
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RetargetInfo, RewardEraInfo,
 	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
 };
 use common_primitives::{
@@ -17,7 +17,7 @@ use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
 type TestCapacityDetails = CapacityDetails<BalanceOf<Test>, u32>;
-type TestTargetDetails = StakingTargetDetails<Test>;
+type TestTargetDetails = StakingTargetDetails<BalanceOf<Test>>;
 
 fn assert_capacity_details(
 	msa_id: MessageSourceId,
@@ -265,7 +265,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
 
-		let max_chunks: u32 = <Test as Config>::MaxUnlockingChunks::get();
+		let max_chunks: u32 = <Test as Config>::MaxRetargetsPerRewardEra::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
 		setup_provider(&staker, &from_msa, &staking_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &10u64, ProviderBoost);
@@ -287,7 +287,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 				to_msa,
 				retarget_amount
 			),
-			Error::<Test>::MaxUnlockingChunksExceeded
+			Error::<Test>::MaxRetargetsExceeded
 		);
 	});
 }
@@ -330,13 +330,7 @@ fn change_staking_target_test_parametric_validity() {
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,
-			StakingAccountDetails {
-				active: 20,
-				total: 20,
-				unlocking: Default::default(),
-				last_rewards_claimed_at: None,
-				stake_change_unlocking: Default::default(),
-			},
+			StakingAccountDetails { active: 20, total: 20, unlocking: Default::default() },
 		);
 		let from_account_not_staking = 100u64;
 		let from_target_not_staked: MessageSourceId = 1;
@@ -375,7 +369,7 @@ fn change_staking_target_test_parametric_validity() {
 				from_target,
 				to_target,
 				retarget_amount: staked_amount,
-				expected_err: Error::<Test>::NotAStakingAccount,
+				expected_err: Error::<Test>::StakerTargetRelationshipNotFound,
 			},
 			// from and to providers are valid, but zero amount too small
 			TestCase {
@@ -433,7 +427,61 @@ fn change_staking_target_test_parametric_validity() {
 }
 
 #[test]
-fn change_staking_target_cannot_switch_staking_type() {
-	// if you want to switch staking type you must unstake completely and restake regardless of
-	// whether it is with an existing or new provider.
+fn impl_retarget_info_errors_when_attempt_to_update_past_bounded_max() {
+	new_test_ext().execute_with(|| {
+		struct TestCase {
+			era: u32,
+			retargets: u32,
+			last_retarget: u32,
+			expected: Option<()>,
+		}
+		for tc in [
+			TestCase { era: 1u32, retargets: 0u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 3, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 1u32, last_retarget: 4, expected: Some(()) },
+			TestCase { era: 2u32, retargets: 5u32, last_retarget: 1, expected: Some(()) },
+			TestCase { era: 1u32, retargets: 5u32, last_retarget: 1, expected: None },
+		] {
+			let mut retarget_info: RetargetInfo<Test> =
+				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+			assert_eq!(retarget_info.update(tc.era), tc.expected);
+		}
+	})
+}
+
+#[test]
+fn impl_retarget_info_updates_values_correctly() {
+	new_test_ext().execute_with(|| {
+		struct TestCase {
+			era: u32,
+			retargets: u32,
+			last_retarget: u32,
+			expected_retargets: u32,
+		}
+		for tc in [
+			TestCase { era: 5, retargets: 0, last_retarget: 5, expected_retargets: 1 },
+			TestCase { era: 1, retargets: 1, last_retarget: 1, expected_retargets: 2 },
+			TestCase { era: 3, retargets: 1, last_retarget: 1, expected_retargets: 1 },
+			TestCase { era: 2, retargets: 5, last_retarget: 1, expected_retargets: 1 },
+			TestCase { era: 1, retargets: 5, last_retarget: 1, expected_retargets: 5 },
+		] {
+			let mut retarget_info: RetargetInfo<Test> =
+				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+			retarget_info.update(tc.era);
+			assert_eq!(retarget_info.retarget_count, tc.expected_retargets);
+		}
+	})
+}
+
+#[test]
+fn impl_retarget_chunks_cleanup_when_new_reward_era() {
+	new_test_ext().execute_with(|| {
+		let current_era = 2u32;
+		let mut retarget_info: RetargetInfo<Test> =
+			RetargetInfo { retarget_count: 5, last_retarget_at: 1 };
+		assert!(retarget_info.update(current_era).is_some());
+		let expected: RetargetInfo<Test> = RetargetInfo { retarget_count: 1, last_retarget_at: 2 };
+		assert_eq!(retarget_info, expected);
+	});
 }
