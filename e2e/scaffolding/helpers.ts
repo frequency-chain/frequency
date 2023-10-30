@@ -431,9 +431,9 @@ export async function stakeToProvider(
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
   }
 }
-export async function boostProvider(keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+export async function boostProvider(source: KeyringPair, keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
   const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
-  const [stakeEvent] = await stakeOp.fundAndSend();
+  const [stakeEvent] = await stakeOp.fundAndSend(source);
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
   if (stakeEvent && ExtrinsicHelper.api.events.capacity.ProviderBoosted.is(stakeEvent)) {
