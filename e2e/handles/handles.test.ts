@@ -70,7 +70,7 @@ describe("🤝 Handles", () => {
         /// Check chain to getNextSuffixesForHandle
 
         it("should be able to claim a handle and check suffix (=suffix_assumed if available on chain)", async function () {
-            let handle = "test1";
+            const handle = "test1";
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
             /// Get presumptive suffix from chain (rpc)
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(handle, 10);
@@ -89,8 +89,9 @@ describe("🤝 Handles", () => {
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
             const { target: event } = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
-            handle = event!.data.handle.toString();
-            assert.notEqual(handle, "", "claimHandle should emit a handle");
+            const displayHandle = event!.data.handle.toUtf8();
+            assert.notEqual(displayHandle, "", "claimHandle should emit a handle");
+
             // get handle using msa (rpc)
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
@@ -103,13 +104,10 @@ describe("🤝 Handles", () => {
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
 
             /// Get MSA from full display handle (rpc)
-            let display_handle = handle + "." + suffix;
-            let msa_option = await ExtrinsicHelper.getMsaForHandle(display_handle);
-            if (!msa_option.isSome) {
-                throw new Error("msa_option should be Some");
-            }
-            let msa_from_handle = msa_option.unwrap();
-            assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
+            const msaOption = await ExtrinsicHelper.getMsaForHandle(displayHandle);
+            assert(msaOption.isSome, "msaOption should be Some");
+            const msaFromHandle = msaOption.unwrap();
+            assert.equal(msaFromHandle.toString(), msa_id.toString(), "msaFromHandle should be equal to msa_id");
         });
     });
 
