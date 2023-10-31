@@ -5,7 +5,7 @@ import {createDelegatorAndDelegation, createProviderKeysAndId, getCurrentItemize
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
-import { MessageSourceId, PageHash, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -26,20 +26,14 @@ describe("📗 Stateful Pallet Storage", () => {
 
         // Create a schema to allow delete actions
         const createSchemaDeletable = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
-        const [eventDeletable] = await createSchemaDeletable.fundAndSend(fundingSource);
-        if (eventDeletable && createSchemaDeletable.api.events.schemas.SchemaCreated.is(eventDeletable)) {
-            schemaId_deletable = eventDeletable.data.schemaId;
-        }
-        assert.notEqual(schemaId_deletable, undefined, "setup should populate schemaId");
+        const { target: eventDeletable } = await createSchemaDeletable.fundAndSend(fundingSource);
+        schemaId_deletable = eventDeletable!.data.schemaId;
 
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const [event2] = await createSchema2.fundAndSend(fundingSource);
+        const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
-        if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
-            schemaId_unsupported = event2.data.schemaId;
-            assert.notEqual(schemaId_unsupported, undefined, "setup should populate schemaId_unsupported");
-        }
+        schemaId_unsupported = event2!.data.schemaId;
 
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId_deletable, providerId, providerKeys);
@@ -67,7 +61,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let add_actions = [add_action, update_action];
             let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, add_actions, target_hash);
-            const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.fundAndSend(fundingSource);
+            const { target: pageUpdateEvent1, eventMap: chainEvents } = await itemized_add_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
@@ -154,7 +148,7 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let remove_actions = [remove_action_1];
             let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, remove_actions, target_hash);
-            const [pageUpdateEvent2, chainEvents2] = await itemized_remove_result_1.fundAndSend(fundingSource);
+            const { target: pageUpdateEvent2, eventMap: chainEvents2 } = await itemized_remove_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent2, undefined, "should have returned a event");

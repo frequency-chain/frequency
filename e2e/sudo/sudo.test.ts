@@ -64,12 +64,9 @@ describe("Sudo required", function () {
       if (isTestnet()) this.skip();
 
       const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(sudoKey, AVRO_GRAPH_CHANGE, "AvroBinary", "Itemized", "AppendOnly");
-      const [event] = await createSchema.sudoSignAndSend();
+      const { target: event } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
-      let itemizedSchemaId: u16 = new u16(ExtrinsicHelper.api.registry, 0);
-      if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-        itemizedSchemaId = event.data.schemaId;
-      }
+      const itemizedSchemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
       assert.notEqual(itemizedSchemaId.toNumber(), 0);
       let schema_response = await ExtrinsicHelper.getSchema(itemizedSchemaId);
       assert(schema_response.isSome);
@@ -95,11 +92,8 @@ describe("Sudo required", function () {
 
         // Create a schema for Itemized PayloadLocation
         const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(sudoKey, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized", "AppendOnly");
-        const [event] = await createSchema.sudoSignAndSend();
-        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-          itemizedSchemaId = event.data.schemaId;
-        }
-        assert.notEqual(itemizedSchemaId, undefined, "setup should populate schemaId");
+        const { target: event } = await createSchema.sudoSignAndSend();
+        itemizedSchemaId = event!.data.schemaId;
 
         // Create a MSA for the delegator and delegate to the provider for the itemized schema
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, itemizedSchemaId, providerId, providerKeys);

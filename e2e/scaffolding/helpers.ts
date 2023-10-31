@@ -13,7 +13,7 @@ import {
   ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
   PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
 } from "./extrinsicHelpers";
-import { HandleResponse, MessageSourceId, PageHash, SchemaGrantResponse } from "@frequency-chain/api-augment/interfaces";
+import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
@@ -207,34 +207,26 @@ export function log(...args: any[]) {
 }
 
 export async function createProviderKeysAndId(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  let providerKeys = await createAndFundKeypair(source);
-  let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-  let providerId = new u64(ExtrinsicHelper.api.registry, 0)
-  await createProviderMsaOp.fundAndSend(source);
-  let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
-  let [providerEvent] = await createProviderOp.fundAndSend(source);
-  if (providerEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerEvent)) {
-    providerId = providerEvent.data.providerId;
-  }
+  const providerKeys = await createAndFundKeypair(source);
+  await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
+  const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
+  const { target: providerEvent } = await createProviderOp.fundAndSend(source);
+  const providerId = providerEvent?.data.providerId || new u64(ExtrinsicHelper.api.registry, 0);
   return [providerKeys, providerId];
 }
 
 export async function createDelegator(source: KeyringPair): Promise<[KeyringPair, u64]> {
   let keys = await createAndFundKeypair(source);
-  let delegator_msa_id = new u64(ExtrinsicHelper.api.registry, 0);
   const createMsa = ExtrinsicHelper.createMsa(keys);
-  const [msaCreatedEvent, _] = await createMsa.fundAndSend(source);
+  const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
+  const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
 
-  if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
-    delegator_msa_id = msaCreatedEvent.data.msaId;
-  }
-
-  return [keys, delegator_msa_id];
+  return [keys, delegatorMsaId];
 }
 
 export async function createDelegatorAndDelegation(source: KeyringPair, schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa
-  const [keys, delegator_msa_id] = await createDelegator(source);
+  const [keys, delegatorMsaId] = await createDelegator(source);
 
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
@@ -246,7 +238,7 @@ export async function createDelegatorAndDelegation(source: KeyringPair, schemaId
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
   await grantDelegationOp.fundAndSend(source);
 
-  return [keys, delegator_msa_id];
+  return [keys, delegatorMsaId];
 }
 
 export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
@@ -277,26 +269,26 @@ export async function createMsaAndProvider(source: KeyringPair, keys: KeyringPai
   // Use this keypair for stake operations
   await fundKeypair(source, keys, amount || (await getExistentialDeposit()));
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const [MsaCreatedEvent] = await createMsaOp.fundAndSend(source);
+  const { target: MsaCreatedEvent } = await createMsaOp.fundAndSend(source);
   assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
 
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
-  const [ProviderCreatedEvent] = await createProviderOp.fundAndSend(source);
-  assert.notEqual(ProviderCreatedEvent, undefined, 'createMsaAndProvider: should have returned ProviderCreated event');
+  const { target: providerCreatedEvent } = await createProviderOp.fundAndSend(source);
+  assert.notEqual(providerCreatedEvent, undefined, 'createMsaAndProvider: should have returned ProviderCreated event');
 
-  if (ProviderCreatedEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(ProviderCreatedEvent)) {
-    return ProviderCreatedEvent.data.providerId;
+  if (providerCreatedEvent) {
+    return providerCreatedEvent.data.providerId;
   }
-  return Promise.reject('createMsaAndProvider: ProviderCreatedEvent should be ExtrinsicHelper.api.events.msa.ProviderCreated');
+  return Promise.reject('Did not create provider with msa.ProviderCreated event');
 }
 
 // Stakes the given amount of tokens from the given keys to the given provider
 export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
-  const [stakeEvent] = await stakeOp.fundAndSend(source);
+  const { target: stakeEvent } = await stakeOp.fundAndSend(source);
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
-  if (stakeEvent && ExtrinsicHelper.api.events.capacity.Staked.is(stakeEvent)) {
+  if (stakeEvent) {
     let stakedCapacity = stakeEvent.data.capacity;
 
     // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
@@ -305,7 +297,7 @@ export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, pr
     assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
   }
   else {
-    return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.Staked');
+    return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
   }
 }
 
@@ -317,9 +309,8 @@ export async function getNextEpochBlock() {
 
 export async function setEpochLength(keys: KeyringPair, epochLength: number): Promise<void> {
   const setEpochLengthOp = ExtrinsicHelper.setEpochLength(keys, epochLength);
-  const [setEpochLengthEvent] = await setEpochLengthOp.sudoSignAndSend();
-  if (setEpochLengthEvent &&
-    ExtrinsicHelper.api.events.capacity.EpochLengthUpdated.is(setEpochLengthEvent)) {
+  const { target: setEpochLengthEvent } = await setEpochLengthOp.sudoSignAndSend();
+  if (setEpochLengthEvent) {
     const epochLength = setEpochLengthEvent.data.blocks;
     assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
     const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
@@ -335,11 +326,11 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
     const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
     return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
-    const [createSchemaEvent, eventMap] = await ExtrinsicHelper
+    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper
       .createSchema(source, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
       .fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
-    if (createSchemaEvent && ExtrinsicHelper.api.events.schemas.SchemaCreated.is(createSchemaEvent)) {
+    if (createSchemaEvent) {
       return createSchemaEvent.data.schemaId;
     } else {
       assert.fail("failed to create a schema")
@@ -353,8 +344,8 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
     return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
   } else {
     const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, "Parquet", "IPFS");
-    let [event] = await createSchema.fundAndSend(source);
-    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+    let { target: event } = await createSchema.fundAndSend(source);
+    if (event) {
       return event.data.schemaId;
     } else {
       assert.fail("failed to create a schema")
@@ -373,8 +364,8 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
       "AvroBinary",
       "OnChain"
     );
-    const [dummySchemaEvent] = await createDummySchema.fundAndSend(source);
-    if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
+    const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
+    if (dummySchemaEvent) {
       return dummySchemaEvent.data.schemaId;
     } else {
       assert.fail("failed to create a schema")
@@ -387,11 +378,10 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
     const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
     return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
   } else {
-    let schemaId: u16;
     // Create a schema for Paginated PayloadLocation
     const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-    const [event] = await createSchema.fundAndSend(source);
-    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+    const { target: event } = await createSchema.fundAndSend(source);
+    if (event) {
       return event.data.schemaId;
     } else {
       assert.fail("failed to create a schema")
@@ -404,11 +394,10 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
     return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
   } else {
-    let schemaId: u16;
     // Create a schema for Paginated PayloadLocation
     const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
-    const [event] = await createSchema.fundAndSend(source);
-    if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
+    const { target: event } = await createSchema.fundAndSend(source);
+    if (event) {
       return event.data.schemaId;
     } else {
       assert.fail("failed to create a schema")
