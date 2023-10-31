@@ -1,6 +1,7 @@
 use crate::{
-	migration::v2, tests::mock::*, migration::v2::old::BlockMessageIndex, Config, Error, Event as MessageEvent,
-	Message, MessagesV2,
+	migration::{v2, v2::old::BlockMessageIndex},
+	tests::mock::*,
+	Config, Error, Event as MessageEvent, Message, MessagesV2,
 };
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
