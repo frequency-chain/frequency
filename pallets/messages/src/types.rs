@@ -12,6 +12,8 @@ use sp_std::{fmt::Debug, prelude::*};
 
 /// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
 pub type OffchainPayloadType = (Vec<u8>, u32);
+/// Index of message in the block
+pub type MessageIndex = u16;
 
 /// A single message type definition.
 #[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -54,7 +56,7 @@ pub struct SchemaCount {
 	/// schema id
 	pub schema_id: SchemaId,
 	/// number of messages for this schema id
-	pub count: u16,
+	pub count: MessageIndex,
 }
 
 impl<MaxDataSize> Message<MaxDataSize>

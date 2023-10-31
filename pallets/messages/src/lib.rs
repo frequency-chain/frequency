@@ -127,13 +127,6 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
-	/// A temporary storage for getting the index for messages
-	/// At the start of the next block this storage is set to 0
-	#[pallet::storage]
-	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_message_index)]
-	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, u16, ValueQuery>;
-
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_block_metadata)]
@@ -147,7 +140,7 @@ pub mod pallet {
 		(
 			storage::Key<Twox64Concat, BlockNumberFor<T>>,
 			storage::Key<Twox64Concat, SchemaId>,
-			storage::Key<Twox64Concat, u16>,
+			storage::Key<Twox64Concat, MessageIndex>,
 		),
 		Message<T::MessagesMaxPayloadSizeBytes>,
 		OptionQuery,
@@ -364,7 +357,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::TooManyMessagesInBlock
 		);
 		let mut found = false;
-		let mut current_index = 0u16;
+		let mut current_index: MessageIndex = 0;
 		for schema_count in metadata.schema_counts.iter_mut() {
 			if schema_count.schema_id == schema_id {
 				found = true;

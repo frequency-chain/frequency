@@ -1,5 +1,5 @@
 use crate::{
-	migration::v2, tests::mock::*, BlockMessageIndex, Config, Error, Event as MessageEvent,
+	migration::v2, tests::mock::*, migration::v2::old::BlockMessageIndex, Config, Error, Event as MessageEvent,
 	Message, MessagesV2,
 };
 use codec::Encode;
@@ -22,7 +22,7 @@ struct Payload {
 	content: String,
 }
 
-pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4";
+pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzcratewb5arcnvuvfwo2d4qgzyx5hymvto4";
 
 /// Populate mocked Messages storage with message data.
 ///
@@ -731,13 +731,13 @@ fn migration_to_v2_should_work_as_expected() {
 				.unwrap();
 				counter += 1;
 			}
-			v2::Messages::<Test>::insert(idx as u32, schema_id, list);
+			v2::old::Messages::<Test>::insert(idx as u32, schema_id, list);
 		}
 
 		let _ = v2::migrate_to_v2::<Test>();
 
 		let mut old_count = 0;
-		for _ in v2::Messages::<Test>::iter() {
+		for _ in v2::old::Messages::<Test>::iter() {
 			old_count += 1;
 		}
 
