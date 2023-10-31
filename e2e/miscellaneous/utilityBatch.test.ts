@@ -1,7 +1,7 @@
 import assert from "assert";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair } from "../scaffolding/helpers";
+import { createAndFundKeypair, getNonce } from "../scaffolding/helpers";
 import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -12,8 +12,9 @@ describe("Utility Batch Filtering", function () {
     const fundingSource = getFundingSource("misc-util-batch");
 
     before(async function () {
-        sender = await createAndFundKeypair(fundingSource, 50_000_000n);
-        recipient = await createAndFundKeypair(fundingSource, 50_000_000n);
+        let nonce = await getNonce(fundingSource);
+        sender = await createAndFundKeypair(fundingSource, 50_000_000n, "utility-sender", nonce++);
+        recipient = await createAndFundKeypair(fundingSource, 50_000_000n, "utility-recipient", nonce++);
     });
 
     it("should successfully execute ✅ batch with allowed calls", async function () {

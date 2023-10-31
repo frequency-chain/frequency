@@ -410,8 +410,9 @@ export const TokenPerCapacity = 50n;
 export function assertEvent(events: EventMap, eventName: string) {
   assert(events.hasOwnProperty(eventName));
 }
+
 export async function getRemainingCapacity(providerId: u64): Promise<u128> {
-  const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(providerId))).unwrap();
+  const capacityStaked = (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
   return capacityStaked.remainingCapacity;
 }
 
