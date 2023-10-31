@@ -70,7 +70,7 @@ describe("🤝 Handles", () => {
         /// Check chain to getNextSuffixesForHandle
 
         it("should be able to claim a handle and check suffix (=suffix_assumed if available on chain)", async function () {
-            const handle = "test1";
+            const handle = "test-" + Math.random().toFixed(10).toString().replaceAll("0.", "");
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
             /// Get presumptive suffix from chain (rpc)
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(handle, 10);
