@@ -1,6 +1,6 @@
 use super::{
 	mock::*,
-	testing_utils::{setup_provider, staking_events},
+	testing_utils::{setup_provider, staking_events, set_era_and_reward_pool_at_block},
 };
 use crate::*;
 use common_primitives::{
@@ -49,6 +49,7 @@ fn do_retarget_happy_path() {
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
 		let staking_type = ProviderBoost;
+		set_era_and_reward_pool_at_block(10, 500, 500, 0);
 		setup_provider(&staker, &from_msa, &from_amount, staking_type.clone());
 		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
 
@@ -75,6 +76,7 @@ fn do_retarget_flip_flop() {
 		let from_amount = 600u64;
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
+		set_era_and_reward_pool_at_block(10, 500, 500, 0);
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
 
@@ -109,6 +111,7 @@ fn check_retarget_rounding_errors() {
 		let from_amount = 666u64;
 		let to_amount = 301u64;
 		let to_msa: MessageSourceId = 2;
+		set_era_and_reward_pool_at_block(10, 500, 500, 0);
 
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
@@ -152,6 +155,7 @@ fn check_retarget_multiple_stakers() {
 		let amt1 = 192u64;
 		let amt2 = 313u64;
 
+		set_era_and_reward_pool_at_block(10, 500, 500, 0);
 		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_600.clone()), from_msa, 479u64,));
@@ -229,6 +233,7 @@ fn change_staking_starget_emits_event_on_success() {
 		let from_amount = 20u64;
 		let to_amount = from_amount / 2;
 		let to_msa: MessageSourceId = 2;
+		set_era_and_reward_pool_at_block(10, 500, 500, 0);
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
 
@@ -253,6 +258,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 		let staker = 200u64;
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
+		set_era_and_reward_pool_at_block(0, 0, 0, 0);
 
 		let max_chunks: u32 = <Test as Config>::MaxRetargetsPerRewardEra::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
@@ -288,6 +294,8 @@ fn change_staking_target_garbage_collects_thawed_chunks() {
 		let staking_account = 200u64;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
+		set_era_and_reward_pool_at_block(0, 0, 0, 0);
+
 		setup_provider(&staking_account, &from_target, &staked_amount, ProviderBoost);
 		setup_provider(&staking_account, &to_target, &staked_amount, ProviderBoost);
 
@@ -316,6 +324,7 @@ fn change_staking_target_test_parametric_validity() {
 	new_test_ext().execute_with(|| {
 		let staked_amount = 10u64;
 		let from_account = 200u64;
+		set_era_and_reward_pool_at_block(0, 0, 0, 0);
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,

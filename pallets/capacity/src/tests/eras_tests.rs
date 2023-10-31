@@ -1,22 +1,17 @@
 use super::{
 	mock::*,
-	testing_utils::{run_to_block, system_run_to_block},
+	testing_utils::{run_to_block, system_run_to_block, set_era_and_reward_pool_at_block},
 };
 use crate::{Config, CurrentEraInfo, RewardEraInfo, RewardPoolInfo, StakingRewardPool};
 use sp_core::Get;
+use common_primitives::capacity::StakingType::ProviderBoost;
+use common_primitives::msa::MessageSourceId;
+use crate::tests::testing_utils::setup_provider;
 
 #[test]
 fn start_new_era_if_needed_updates_era_info_and_limits_reward_pool_size() {
 	new_test_ext().execute_with(|| {
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 1, started_at: 0 });
-		StakingRewardPool::<Test>::insert(
-			1,
-			RewardPoolInfo {
-				total_staked_token: 10_000,
-				total_reward_pool: 1_000,
-				unclaimed_balance: 1_000,
-			},
-		);
+		set_era_and_reward_pool_at_block(1, 0, 1, 10_000);
 		system_run_to_block(9);
 		for i in 1..4 {
 			let block_decade = i * 10;
@@ -37,38 +32,44 @@ fn start_new_era_if_needed_updates_era_info_and_limits_reward_pool_size() {
 #[test]
 fn start_new_era_if_needed_updates_reward_pool() {
 	new_test_ext().execute_with(|| {
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 1, started_at: 0 });
-		StakingRewardPool::<Test>::insert(
-			1,
-			RewardPoolInfo {
-				total_staked_token: 10_000,
-				total_reward_pool: 1_000,
-				unclaimed_balance: 1_000,
-			},
-		);
+		set_era_and_reward_pool_at_block(1, 0, 1, 10_000);
 		system_run_to_block(8);
-
-		// TODO: Provider boost, after staking updates reward pool info #1699
-		// let staker = 10_000;
-		// let provider_msa: MessageSourceId = 1;
-		// let stake_amount = 600u64;
-		// setup_provider(&staker, &provider_msa, &stake_amount, ProviderBoost);
+		let staker = 10_000;
+		let provider_msa: MessageSourceId = 1;
+		let stake_amount = 600u64;
+		setup_provider(&staker, &provider_msa, &stake_amount, ProviderBoost);
 
 		system_run_to_block(9);
 		run_to_block(10);
 		assert_eq!(StakingRewardPool::<Test>::count(), 2);
-		let current_reward_pool_info = StakingRewardPool::<Test>::get(2).unwrap();
 		assert_eq!(
-			current_reward_pool_info,
+			StakingRewardPool::<Test>::get(2).unwrap(),
 			RewardPoolInfo {
-				total_staked_token: 10_000,
-				total_reward_pool: 1_000,
-				unclaimed_balance: 1_000,
+				total_staked_token: 10_600,
+				total_reward_pool: 0,
+				unclaimed_balance: 0,
 			}
 		);
 
 		// TODO: after staking updates reward pool info #1699
-		// system_run_to_block(19);
-		// run_to_block(20);
+		system_run_to_block(19);
+		run_to_block(20);
+		assert_eq!(StakingRewardPool::<Test>::count(), 3);
+		assert_eq!(
+			StakingRewardPool::<Test>::get(2).unwrap(),
+			RewardPoolInfo {
+				total_staked_token: 10_600,
+				total_reward_pool: 1060,
+				unclaimed_balance: 1060,
+			}
+		);
+		assert_eq!(
+			StakingRewardPool::<Test>::get(3).unwrap(),
+			RewardPoolInfo {
+				total_staked_token: 10_600,
+				total_reward_pool: 0,
+				unclaimed_balance: 0,
+			}
+		);
 	});
 }
