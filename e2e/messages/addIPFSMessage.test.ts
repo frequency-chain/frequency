@@ -7,11 +7,10 @@ import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaTyp
 import assert from "assert";
 import { createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { u16, u32 } from "@polkadot/types";
+import { u16 } from "@polkadot/types";
 import { firstValueFrom } from "rxjs";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import { ipfsCid } from "./ipfs";
-import { isDev } from "../scaffolding/env";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Add Offchain Message", function () {
@@ -20,7 +19,6 @@ describe("Add Offchain Message", function () {
     let keys: KeyringPair;
     let schemaId: u16;
     let dummySchemaId: u16;
-    let messageBlockNumber: u32;
 
     let ipfs_cid_64: string;
     let ipfs_cid_32: string;
@@ -43,17 +41,13 @@ describe("Add Offchain Message", function () {
 
         // Create a schema for IPFS
         const createSchema = ExtrinsicHelper.createSchema(keys, PARQUET_BROADCAST, "Parquet", "IPFS");
-        const [event] = await createSchema.fundAndSend(fundingSource);
-        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-            [, schemaId] = event.data;
-        }
+        const { target: event } = await createSchema.fundAndSend(fundingSource);
+        schemaId = event!.data.schemaId;
 
         // Create a dummy on-chain schema
         const createDummySchema = ExtrinsicHelper.createSchema(keys, { type: "record", name: "Dummy on-chain schema", fields: [] }, "AvroBinary", "OnChain");
-        const [dummySchemaEvent] = await createDummySchema.fundAndSend(fundingSource);
-        if (dummySchemaEvent && createDummySchema.api.events.schemas.SchemaCreated.is(dummySchemaEvent)) {
-            [, dummySchemaId] = dummySchemaEvent.data;
-        }
+        const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(fundingSource);
+        dummySchemaId = dummySchemaEvent!.data.schemaId;
     });
 
     it('should fail if insufficient funds', async function () {
@@ -99,14 +93,11 @@ describe("Add Offchain Message", function () {
 
     it("should successfully add an IPFS message", async function () {
         const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
-        const [event] = await f.fundAndSend(fundingSource);
+        const { target: event } = await f.fundAndSend(fundingSource);
 
         assert.notEqual(event, undefined, "should have returned a MessagesStored event");
-        if (event && f.api.events.messages.MessagesStored.is(event)) {
-            messageBlockNumber = event.data.blockNumber;
-            assert.deepEqual(event.data.schemaId, schemaId, 'schema ids should be equal');
-            assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
-        }
+        assert.deepEqual(event?.data.schemaId, schemaId, 'schema ids should be equal');
+        assert.notEqual(event?.data.blockNumber, undefined, 'should have a block number');
     });
 
     it("should successfully retrieve added message and returned CID should have Base32 encoding", async function () {
@@ -119,14 +110,11 @@ describe("Add Offchain Message", function () {
     describe("Add OnChain Message and successfully retrieve it", function () {
         it("should successfully add and retrieve an onchain message", async function () {
             const f = ExtrinsicHelper.addOnChainMessage(keys, dummySchemaId, "0xdeadbeef");
-            const [event] = await f.fundAndSend(fundingSource);
+            const { target: event } = await f.fundAndSend(fundingSource);
 
             assert.notEqual(event, undefined, "should have returned a MessagesStored event");
-            if (event && f.api.events.messages.MessagesStored.is(event)) {
-                messageBlockNumber = event.data.blockNumber;
-                assert.deepEqual(event.data.schemaId, dummySchemaId, 'schema ids should be equal');
-                assert.notEqual(event.data.blockNumber, undefined, 'should have a block number');
-            }
+            assert.deepEqual(event?.data.schemaId, dummySchemaId, 'schema ids should be equal');
+            assert.notEqual(event?.data.blockNumber, undefined, 'should have a block number');
 
             const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
                     dummySchemaId,

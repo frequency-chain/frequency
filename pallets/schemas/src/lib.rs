@@ -65,7 +65,7 @@ use frame_support::{
 	ensure,
 	traits::{BuildGenesisConfig, Get},
 };
-use sp_runtime::{traits::Dispatchable, BoundedVec};
+use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
 use sp_std::{boxed::Box, vec::Vec};
 
 #[cfg(test)]

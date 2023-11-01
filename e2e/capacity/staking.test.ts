@@ -11,7 +11,7 @@ import {
 }
     from "../scaffolding/helpers";
 import { firstValueFrom } from "rxjs";
-import { hasRelayChain, isDev } from "../scaffolding/env";
+import { isDev } from "../scaffolding/env";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Capacity Staking Tests", function () {
@@ -54,16 +54,10 @@ describe("Capacity Staking Tests", function () {
 
         it("successfully unstakes the minimum amount", async function () {
             const stakeObj = ExtrinsicHelper.unstake(stakeKeys, stakeProviderId, tokenMinStake);
-            const [unStakeEvent] = await stakeObj.fundAndSend(fundingSource);
+            const { target: unStakeEvent } = await stakeObj.fundAndSend(fundingSource);
             assert.notEqual(unStakeEvent, undefined, "should return an UnStaked event");
+            assert.equal(unStakeEvent?.data.capacity, capacityMin, "should return an UnStaked event with 1 CENT reduced capacity");
 
-            if (unStakeEvent && ExtrinsicHelper.api.events.capacity.UnStaked.is(unStakeEvent)) {
-                let unstakedCapacity = unStakeEvent.data.capacity;
-                assert.equal(unstakedCapacity, capacityMin, "should return an UnStaked event with 1 CENT reduced capacity");
-            }
-            else {
-                assert.fail("should return an capacity.UnStaked.is(unStakeEvent) event");
-            }
             // Confirm that the tokens were unstaked in the stakeProviderId account using the query API
             const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(stakeProviderId))).unwrap();
             assert.equal(capacityStaked.remainingCapacity, 0, "should return a capacityLedger with 0 remainingCapacity");
@@ -82,13 +76,11 @@ describe("Capacity Staking Tests", function () {
             await ExtrinsicHelper.runToBlock(newEpochBlock + TEST_EPOCH_LENGTH + 1);
 
             const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
-            const [withdrawEvent] = await withdrawObj.fundAndSend(fundingSource);
+            const { target: withdrawEvent } = await withdrawObj.fundAndSend(fundingSource);
             assert.notEqual(withdrawEvent, undefined, "should return a StakeWithdrawn event");
 
-            if (withdrawEvent && ExtrinsicHelper.api.events.capacity.StakeWithdrawn.is(withdrawEvent)) {
-                let amount = withdrawEvent.data.amount;
-                assert.equal(amount, tokenMinStake, "should return a StakeWithdrawn event with 1M amount");
-            }
+            const amount = withdrawEvent!.data.amount;
+            assert.equal(amount, tokenMinStake, "should return a StakeWithdrawn event with 1M amount");
 
             // Confirm that the tokens were unstaked in the stakeKeys account using the query API
             const unStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
@@ -272,7 +264,7 @@ describe("Capacity Staking Tests", function () {
                 let providerId: u64 = await createMsaAndProvider(fundingSource, stakingKeys, "stakingKeys", accountBalance);
 
                 const stakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, tokenMinStake);
-                const [stakeEvent] = await stakeObj.fundAndSend(fundingSource);
+                const { target: stakeEvent } = await stakeObj.fundAndSend(fundingSource);
                 assert.notEqual(stakeEvent, undefined, "should return a Stake event");
 
                 const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakingKeys);

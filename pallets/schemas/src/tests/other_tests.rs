@@ -1,11 +1,13 @@
 use frame_support::{
 	assert_noop, assert_ok,
-	dispatch::{GetStorageVersion, RawOrigin, Weight},
+	dispatch::RawOrigin,
+	pallet_prelude::GetStorageVersion,
 	traits::{ChangeMembers, Hash, StorageVersion},
 	BoundedVec,
 };
 use serial_test::serial;
 use sp_core::{crypto::AccountId32, Encode};
+use sp_weights::Weight;
 
 use common_primitives::{
 	node::AccountId,
@@ -731,7 +733,6 @@ fn schemas_migration_to_v2_should_work_as_expected() {
 		let new_info_count = SchemaInfos::<Test>::iter().count();
 		let new_payload_count = SchemaPayloads::<Test>::iter().count();
 		let current_version = SchemasPallet::current_storage_version();
-
 
 		assert_eq!(old_count, 0);
 		assert_eq!(new_info_count, schemas.len());

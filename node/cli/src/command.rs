@@ -511,10 +511,6 @@ impl CliConfiguration<Self> for RelayChainCli {
 		self.base.base.default_heap_pages()
 	}
 
-	fn force_authoring(&self) -> Result<bool> {
-		self.base.base.force_authoring()
-	}
-
 	fn disable_grandpa(&self) -> Result<bool> {
 		self.base.base.disable_grandpa()
 	}

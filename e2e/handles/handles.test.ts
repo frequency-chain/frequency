@@ -27,7 +27,7 @@ describe("🤝 Handles", () => {
 
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
-            const handle = "test_handle";
+            let handle = "test_handle";
             let currentBlock = await getBlockNumber();
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
@@ -36,12 +36,10 @@ describe("🤝 Handles", () => {
             }
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
-            const [event] = await claimHandle.fundAndSend(fundingSource);
+            const { target: event } = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
-            if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
-                let handle = event.data.handle.toString();
-                assert.notEqual(handle, "", "claimHandle should emit a handle");
-            }
+            handle = event!.data.handle.toString();
+            assert.notEqual(handle, "", "claimHandle should emit a handle");
         });
     });
 
@@ -61,12 +59,10 @@ describe("🤝 Handles", () => {
             await ExtrinsicHelper.runToBlock(currentBlock + expirationOffset + 1); // Must be at least 1 > original expiration
 
             const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
-            const [event] = await retireHandle.fundAndSend(fundingSource);
+            const { target: event } = await retireHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "retireHandle should return an event");
-            if (event && retireHandle.api.events.handles.HandleRetired.is(event)) {
-                let handle = event.data.handle.toString();
-                assert.notEqual(handle, "", "retireHandle should return the correct handle");
-            }
+            const handle = event!.data.handle.toString();
+            assert.notEqual(handle, "", "retireHandle should return the correct handle");
         });
     });
 
@@ -74,7 +70,7 @@ describe("🤝 Handles", () => {
         /// Check chain to getNextSuffixesForHandle
 
         it("should be able to claim a handle and check suffix (=suffix_assumed if available on chain)", async function () {
-            const handle = "test1";
+            const handle = "test-" + Math.random().toFixed(10).toString().replaceAll("0.", "");
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
             /// Get presumptive suffix from chain (rpc)
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(handle, 10);
@@ -91,12 +87,11 @@ describe("🤝 Handles", () => {
             };
             const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
-            const [event] = await claimHandle.fundAndSend(fundingSource);
+            const { target: event } = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
-            if (event && claimHandle.api.events.handles.HandleClaimed.is(event)) {
-                let handle = event.data.handle.toString();
-                assert.notEqual(handle, "", "claimHandle should emit a handle");
-            }
+            const displayHandle = event!.data.handle.toUtf8();
+            assert.notEqual(displayHandle, "", "claimHandle should emit a handle");
+
             // get handle using msa (rpc)
             let handle_response = await ExtrinsicHelper.getHandleForMSA(msa_id);
             if (!handle_response.isSome) {
@@ -109,13 +104,10 @@ describe("🤝 Handles", () => {
             assert.equal(suffix, suffix_assumed, "suffix should be equal to suffix_assumed");
 
             /// Get MSA from full display handle (rpc)
-            let display_handle = handle + "." + suffix;
-            let msa_option = await ExtrinsicHelper.getMsaForHandle(display_handle);
-            if (!msa_option.isSome) {
-                throw new Error("msa_option should be Some");
-            }
-            let msa_from_handle = msa_option.unwrap();
-            assert.equal(msa_from_handle.toString(), msa_id.toString(), "msa_from_handle should be equal to msa_id");
+            const msaOption = await ExtrinsicHelper.getMsaForHandle(displayHandle);
+            assert(msaOption.isSome, "msaOption should be Some");
+            const msaFromHandle = msaOption.unwrap();
+            assert.equal(msaFromHandle.toString(), msa_id.toString(), "msaFromHandle should be equal to msa_id");
         });
     });
 
@@ -135,7 +127,7 @@ describe("🤝 Handles", () => {
             await ExtrinsicHelper.runToBlock(currentBlock + expirationOffset + 1);
             try {
                 const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
-                const [event] = await retireHandle.fundAndSend(fundingSource);
+                const { target: event } = await retireHandle.fundAndSend(fundingSource);
                 assert.equal(event, undefined, "retireHandle should not return an event");
             }
             catch (e) {

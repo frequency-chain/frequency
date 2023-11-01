@@ -58,7 +58,7 @@
 use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure, log,
+	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -67,6 +67,7 @@ use frame_support::{
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
 use frame_system::pallet_prelude::*;
+use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{

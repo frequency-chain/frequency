@@ -1,9 +1,9 @@
 #![allow(clippy::unwrap_used)]
-use frame_benchmarking::{benchmarks, vec, whitelisted_caller};
+use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
 use numtoa::NumToA;
-use sp_std::vec::Vec;
+use sp_std::vec;
 
 use crate::Pallet as SchemasPallet;
 

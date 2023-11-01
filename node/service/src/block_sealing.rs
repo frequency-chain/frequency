@@ -13,7 +13,7 @@ use sc_consensus_manual_seal::{
 use futures::FutureExt;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
-use sp_api::{ProvideRuntimeApi, TransactionFor};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
@@ -148,22 +148,18 @@ pub fn frequency_dev_sealing(
 		};
 
 		// Prepare the future for manual sealing block authoring
-		let authorship_future = run_seal_command(
-			sealing_mode,
-			sealing_create_empty_blocks,
-			sc_consensus_manual_seal::ManualSealParams {
-				block_import: client.clone(),
-				env: proposer_factory,
-				client: client.clone(),
-				pool: transaction_pool.clone(),
-				commands_stream: futures::stream_select!(commands_stream, import_stream),
-				select_chain,
-				consensus_data_provider: None,
-				create_inherent_data_providers: |_, _| async {
-					Ok((sp_timestamp::InherentDataProvider::from_system_time(),))
-				},
+		let authorship_future = run_seal_command(sc_consensus_manual_seal::ManualSealParams {
+			block_import: client.clone(),
+			env: proposer_factory,
+			client: client.clone(),
+			pool: transaction_pool.clone(),
+			commands_stream: futures::stream_select!(commands_stream, import_stream),
+			select_chain,
+			consensus_data_provider: None,
+			create_inherent_data_providers: |_, _| async {
+				Ok((sp_timestamp::InherentDataProvider::from_system_time(),))
 			},
-		);
+		});
 
 		// Spawn a background task for block authoring
 		task_manager.spawn_essential_handle().spawn_blocking(
@@ -218,9 +214,7 @@ pub fn frequency_dev_sealing(
 }
 
 /// Override manual sealing to handle creating non-empty blocks for interval sealing mode without nuisance warning logs
-pub async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
-	sealing_mode: SealingMode,
-	sealing_create_empty_blocks: bool,
+async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
 	ManualSealParams {
 		mut block_import,
 		mut env,
@@ -233,28 +227,22 @@ pub async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
 	}: ManualSealParams<B, BI, E, C, TP, SC, CS, CIDP, P>,
 ) where
 	B: BlockT + 'static,
-	BI: BlockImport<B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor<C, B>>
-		+ Send
-		+ Sync
-		+ 'static,
+	BI: BlockImport<B, Error = sp_consensus::Error> + Send + Sync + 'static,
 	C: HeaderBackend<B> + Finalizer<B, CB> + ProvideRuntimeApi<B> + 'static,
 	CB: ClientBackend<B> + 'static,
 	E: Environment<B> + 'static,
-	E::Proposer: Proposer<B, Proof = P, Transaction = TransactionFor<C, B>>,
+	E::Proposer: Proposer<B, Proof = P>,
 	CS: Stream<Item = EngineCommand<<B as BlockT>::Hash>> + Unpin + 'static,
 	SC: SelectChain<B> + 'static,
-	TransactionFor<C, B>: 'static,
 	TP: TransactionPool<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()>,
-	P: Send + Sync + 'static,
+	P: codec::Encode + Send + Sync + 'static,
 {
 	while let Some(command) = commands_stream.next().await {
 		match command {
 			EngineCommand::SealNewBlock { create_empty, finalize, parent_hash, sender } =>
-				if sealing_mode != SealingMode::Interval ||
-					sealing_create_empty_blocks ||
-					pool.ready().count() > 0
-				{
+			// To keep the logs quieter, don't even attempt to create empty blocks unless there are transactions in the pool
+				if create_empty || pool.ready().count() > 0 {
 					sc_consensus_manual_seal::seal_block(
 						sc_consensus_manual_seal::SealBlockParams {
 							sender,

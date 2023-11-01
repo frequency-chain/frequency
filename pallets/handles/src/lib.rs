@@ -69,7 +69,7 @@ pub use pallet::*;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
 	traits::{Convert, Verify},
-	MultiSignature,
+	DispatchError, MultiSignature,
 };
 use sp_std::{prelude::*, vec::Vec};
 

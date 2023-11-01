@@ -1,6 +1,5 @@
 use codec::MaxEncodedLen;
 use frame_support::{
-	dispatch::DispatchError,
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
@@ -13,7 +12,7 @@ use smallvec::smallvec;
 use sp_core::{parameter_types, Encode, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32, BuildStorage, Perbill,
+	AccountId32, BuildStorage, DispatchError, Perbill,
 };
 
 use crate as pallet_schemas;

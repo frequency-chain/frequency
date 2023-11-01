@@ -103,8 +103,8 @@ describe("Capacity Replenishment Testing: ", function () {
       // new user/msa stakes to provider
       const userKeys = createKeys("userKeys");
       await fundKeypair(fundingSource, userKeys, 5n * DOLLARS);
-      let [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend(fundingSource);
-      assertEvent(events, 'system.ExtrinsicSuccess');
+      const { eventMap } = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).fundAndSend(fundingSource);
+      assertEvent(eventMap, 'system.ExtrinsicSuccess');
 
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 })
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
@@ -127,12 +127,12 @@ describe("Capacity Replenishment Testing: ", function () {
       assert(remainingCapacity < callCapacityCost);
 
       // user stakes tiny additional amount
-      [_, events] = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend(fundingSource);
-      assertEvent(events, 'capacity.Staked');
+      const { eventMap: hasStaked } = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userIncrementAmt).fundAndSend(fundingSource);
+      assertEvent(hasStaked, 'capacity.Staked');
 
       // provider can now send a message
-      [_, events] = await call.payWithCapacity(-1);
-      assertEvent(events, 'capacity.CapacityWithdrawn');
+      const { eventMap: hasCapacityWithdrawn } = await call.payWithCapacity(-1);
+      assertEvent(hasCapacityWithdrawn, 'capacity.CapacityWithdrawn');
 
       remainingCapacity = (await getRemainingCapacity(stakeProviderId)).toBigInt();
       // show that capacity was replenished and then fee deducted.

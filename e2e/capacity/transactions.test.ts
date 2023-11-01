@@ -41,7 +41,6 @@ import {
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
-import { isDev } from "../scaffolding/env";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Capacity Transactions", function () {
@@ -65,9 +64,9 @@ describe("Capacity Transactions", function () {
         const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
         const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
         const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
-        const [_foo, chainEvents] = await addPublicKeyOp.signAndSend(-1);
-        assertEvent(chainEvents, "system.ExtrinsicSuccess");
-        assertEvent(chainEvents, "msa.PublicKeyAdded");
+        const { eventMap } = await addPublicKeyOp.signAndSend(-1);
+        assertEvent(eventMap, "system.ExtrinsicSuccess");
+        assertEvent(eventMap, "msa.PublicKeyAdded");
       }
 
       function getCapacityFee(chainEvents: EventMap): bigint {
@@ -147,10 +146,10 @@ describe("Capacity Transactions", function () {
           newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
           const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, payload);
 
-          const [_, chainEvents] = await addPublicKeyOp.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "msa.PublicKeyAdded");
+          const { eventMap } = await addPublicKeyOp.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "msa.PublicKeyAdded");
         });
 
         it("successfully pays with Capacity for eligible transaction - createSponsoredAccountWithDelegation", async function () {
@@ -160,18 +159,18 @@ describe("Capacity Transactions", function () {
             signPayloadSr25519(delegatorKeys, addProviderData),
             payload
           );
-          const [_, chainEvents] = await call.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "msa.DelegationGranted");
+          const { eventMap } = await call.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "msa.DelegationGranted");
         });
 
         it("successfully pays with Capacity for eligible transaction - grantDelegation", async function () {
 
           await fundKeypair(fundingSource, delegatorKeys, 10n * CENTS);
 
-          let [_unused1, MsaCreatedEvent] = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
-          assertEvent(MsaCreatedEvent, "msa.MsaCreated");
+          let { eventMap } = await ExtrinsicHelper.createMsa(delegatorKeys).signAndSend();
+          assertEvent(eventMap, "msa.MsaCreated");
 
           const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, capacityKeys,
@@ -179,17 +178,17 @@ describe("Capacity Transactions", function () {
 
           const capacityStakedInitial = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
 
-          const [_unused2, chainEvents] = await grantDelegationOp.payWithCapacity();
+          ({ eventMap } = await grantDelegationOp.payWithCapacity());
 
           // Check for remaining capacity to be reduced
           const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
 
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "msa.DelegationGranted");
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "msa.DelegationGranted");
 
-          let fee = getCapacityFee(chainEvents);
-          // assumning no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
+          let fee = getCapacityFee(eventMap);
+          // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / TokenPerCapacity - fee
 
           let remaining = capacityStaked.remainingCapacity.toBigInt();
@@ -221,18 +220,18 @@ describe("Capacity Transactions", function () {
           const ipfs_cid_64 = (await ipfsCid(ipfs_payload_data, './e2e_test.txt')).toString(base64);
           const call = ExtrinsicHelper.addIPFSMessage(capacityKeys, schemaId, ipfs_cid_64, ipfs_payload_len);
 
-          const [_, chainEvents] = await call.payWithCapacity();
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "messages.MessagesStored");
+          const { eventMap } = await call.payWithCapacity();
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "messages.MessagesStored");
         });
 
         it("successfully pays with Capacity for eligible transaction - addOnchainMessage", async function () {
           // Create a dummy on-chain schema
           let dummySchemaId: u16 = await getOrCreateDummySchema(fundingSource);
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, "0xdeadbeef");
-          const [_, chainEvents] = await call.payWithCapacity();
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "messages.MessagesStored");
+          const { eventMap } = await call.payWithCapacity();
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "messages.MessagesStored");
           const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
             dummySchemaId,
             {
@@ -280,10 +279,10 @@ describe("Capacity Transactions", function () {
 
           let add_actions = [add_action, update_action];
           const call = ExtrinsicHelper.applyItemActions(capacityKeys, schemaId_deletable, capacityProvider, add_actions, target_hash);
-          const [_pageUpdateEvent, chainEvents] = await call.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "statefulStorage.ItemizedPageUpdated");
+          const { eventMap } = await call.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "statefulStorage.ItemizedPageUpdated");
         });
 
         it("successfully pays with Capacity for eligible transaction - upsertPage; deletePage", async function () {
@@ -294,19 +293,19 @@ describe("Capacity Transactions", function () {
 
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-          let call = ExtrinsicHelper.upsertPage(capacityKeys, schemaId, capacityProvider, page_id, payload_1, target_hash);
-          let [_pageUpdateEvent1, chainEvents] = await call.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "statefulStorage.PaginatedPageUpdated")
+          const call = ExtrinsicHelper.upsertPage(capacityKeys, schemaId, capacityProvider, page_id, payload_1, target_hash);
+          const { eventMap } = await call.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap, "statefulStorage.PaginatedPageUpdated")
 
           // Remove the page
           target_hash = await getCurrentPaginatedHash(capacityProvider, schemaId, page_id)
-          call = ExtrinsicHelper.removePage(capacityKeys, schemaId, capacityProvider, page_id, target_hash);
-          let [_pageRemove, chainEvents2] = await call.payWithCapacity();
-          assertEvent(chainEvents2, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents2, "statefulStorage.PaginatedPageDeleted");
+          const call2 = ExtrinsicHelper.removePage(capacityKeys, schemaId, capacityProvider, page_id, target_hash);
+          const { eventMap: eventMap2 } = await call2.payWithCapacity();
+          assertEvent(eventMap2, "system.ExtrinsicSuccess");
+          assertEvent(eventMap2, "capacity.CapacityWithdrawn");
+          assertEvent(eventMap2, "statefulStorage.PaginatedPageDeleted");
         });
 
         it("successfully pays with Capacity for eligible transaction - applyItemActionsWithSignature", async function () {
@@ -340,9 +339,9 @@ describe("Capacity Transactions", function () {
           });
           const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayload", payload);
           let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
-          const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+          const { target: pageUpdateEvent1, eventMap } = await itemized_add_result_1.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
         });
 
@@ -376,9 +375,9 @@ describe("Capacity Transactions", function () {
           });
           const itemizedPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStorageItemizedSignaturePayloadV2", payload);
           let itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, itemizedPayloadData), payload);
-          const [pageUpdateEvent1, chainEvents] = await itemized_add_result_1.payWithCapacity();
-          assertEvent(chainEvents, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents, "capacity.CapacityWithdrawn");
+          const { target: pageUpdateEvent1, eventMap } = await itemized_add_result_1.payWithCapacity();
+          assertEvent(eventMap, "system.ExtrinsicSuccess");
+          assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStorageItemizedActionApplied event");
         });
 
@@ -403,9 +402,9 @@ describe("Capacity Transactions", function () {
           });
           const upsertPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedUpsertSignaturePayload", upsertPayload);
           let upsert_result = ExtrinsicHelper.upsertPageWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, upsertPayloadData), upsertPayload);
-          const [pageUpdateEvent, chainEvents1] = await upsert_result.payWithCapacity();
-          assertEvent(chainEvents1, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents1, "capacity.CapacityWithdrawn");
+          const { target: pageUpdateEvent, eventMap: eventMap1 } = await upsert_result.payWithCapacity();
+          assertEvent(eventMap1, "system.ExtrinsicSuccess");
+          assertEvent(eventMap1, "capacity.CapacityWithdrawn");
           assert.notEqual(pageUpdateEvent, undefined, "should have returned a PalletStatefulStoragePaginatedPageUpdate event");
 
           // Remove the page
@@ -418,9 +417,9 @@ describe("Capacity Transactions", function () {
           });
           const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayload", deletePayload);
           let remove_result = ExtrinsicHelper.deletePageWithSignature(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
-          const [pageRemove, chainEvents2] = await remove_result.payWithCapacity();
-          assertEvent(chainEvents2, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
+          const { target: pageRemove, eventMap: eventMap2 } = await remove_result.payWithCapacity();
+          assertEvent(eventMap2, "system.ExtrinsicSuccess");
+          assertEvent(eventMap2, "capacity.CapacityWithdrawn");
           assert.notEqual(pageRemove, undefined, "should have returned a event");
 
           // no pages should exist
@@ -449,9 +448,9 @@ describe("Capacity Transactions", function () {
           });
           const upsertPayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedUpsertSignaturePayloadV2", upsertPayload);
           let upsert_result = ExtrinsicHelper.upsertPageWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, upsertPayloadData), upsertPayload);
-          const [pageUpdateEvent, chainEvents1] = await upsert_result.payWithCapacity();
-          assertEvent(chainEvents1, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents1, "capacity.CapacityWithdrawn");
+          const { target: pageUpdateEvent, eventMap: eventMap1 } = await upsert_result.payWithCapacity();
+          assertEvent(eventMap1, "system.ExtrinsicSuccess");
+          assertEvent(eventMap1, "capacity.CapacityWithdrawn");
           assert.notEqual(pageUpdateEvent, undefined, "should have returned a PalletStatefulStoragePaginatedPageUpdate event");
 
           // Remove the page
@@ -463,9 +462,9 @@ describe("Capacity Transactions", function () {
           });
           const deletePayloadData = ExtrinsicHelper.api.registry.createType("PalletStatefulStoragePaginatedDeleteSignaturePayloadV2", deletePayload);
           let remove_result = ExtrinsicHelper.deletePageWithSignatureV2(delegatorKeys, capacityKeys, signPayloadSr25519(delegatorKeys, deletePayloadData), deletePayload);
-          const [pageRemove, chainEvents2] = await remove_result.payWithCapacity();
-          assertEvent(chainEvents2, "system.ExtrinsicSuccess");
-          assertEvent(chainEvents2, "capacity.CapacityWithdrawn");
+          const { target: pageRemove, eventMap: eventMap2 } = await remove_result.payWithCapacity();
+          assertEvent(eventMap2, "system.ExtrinsicSuccess");
+          assertEvent(eventMap2, "capacity.CapacityWithdrawn");
           assert.notEqual(pageRemove, undefined, "should have returned a event");
 
           // no pages should exist
@@ -495,7 +494,7 @@ describe("Capacity Transactions", function () {
           };
           const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
           const claimHandle = ExtrinsicHelper.claimHandle(capacityKeys, claimHandlePayload);
-          const [_, eventMap] = await claimHandle.payWithCapacity();
+          const { eventMap } = await claimHandle.payWithCapacity();
           assertEvent(eventMap, "system.ExtrinsicSuccess");
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assertEvent(eventMap, "handles.HandleClaimed");
@@ -558,11 +557,11 @@ describe("Capacity Transactions", function () {
         let newSig = signPayloadSr25519(noTokensKeys, addKeyData);
         const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, newKeyPayload);
 
-        const [publicKeyEvents] = await addPublicKeyOp.fundAndSend(fundingSource);
-        assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
+        const { target: publicKeyEvent } = await addPublicKeyOp.fundAndSend(fundingSource);
+        assert.notEqual(publicKeyEvent, undefined, 'should have added public key');
 
         const createMsaOp = ExtrinsicHelper.createMsa(delegatorKeys);
-        const [MsaCreatedEvent] = await createMsaOp.fundAndSend(fundingSource);
+        const { target: MsaCreatedEvent } = await createMsaOp.fundAndSend(fundingSource);
         assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
 
         const payload = await generateDelegationPayload({
@@ -600,8 +599,8 @@ describe("Capacity Transactions", function () {
 
           const createMsaOp = ExtrinsicHelper.createMsa(noProviderKeys);
 
-          const [MsaCreatedEvent] = await createMsaOp.fundAndSend(fundingSource);
-          assert.notEqual(MsaCreatedEvent, undefined, "should have returned MsaCreated event");
+          const { target: msaCreatedEvent } = await createMsaOp.fundAndSend(fundingSource);
+          assert.notEqual(msaCreatedEvent, undefined, "should have returned MsaCreated event");
 
           // When a user is not a registered provider and attempts to pay with Capacity,
           // it should error with InvalidTransaction::Payment, which is a 1010 error, Inability to pay some fees.
@@ -693,7 +692,7 @@ describe("Capacity Transactions", function () {
 
       let payWithCapacityBatchAllOp = ExtrinsicHelper.payWithCapacityBatchAll(capacityProviderKeys, calls);
 
-      const [batchCompletedEvent, eventMap] = await payWithCapacityBatchAllOp.signAndSend();
+      const { target: batchCompletedEvent, eventMap } = await payWithCapacityBatchAllOp.signAndSend();
 
       if (batchCompletedEvent &&
         !(ExtrinsicHelper.api.events.utility.BatchCompleted.is(batchCompletedEvent))) {
@@ -771,7 +770,7 @@ describe("Capacity Transactions", function () {
         signPayloadSr25519(delegatorKeys, addProviderData),
         addProviderPayload
       );
-    
+
       // Actual weights and fee
       const { weight: { refTime, proofSize }, } = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryInfo(call.toHex(), 0));
       const weightFee = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryWeightToFee({refTime, proofSize}));

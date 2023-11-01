@@ -1,11 +1,13 @@
 //! Types for the Capacity Pallet
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
-};
+use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound};
+use log::warn;
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::{
+	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
+	RuntimeDebug,
+};
 
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;

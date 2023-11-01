@@ -1,10 +1,9 @@
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use frame_support::{
-	assert_noop, assert_ok,
-	dispatch::{GetDispatchInfo, Weight},
-};
+use frame_support::{assert_noop, assert_ok, dispatch::GetDispatchInfo};
+
+use sp_weights::Weight;
 
 use crate::{
 	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum, DispatchResult, Error,

@@ -5,8 +5,8 @@ import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginat
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
-import { MessageSourceId, PageId, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { Bytes, u16, u32, u64 } from "@polkadot/types";
+import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
+import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("📗 Stateful Pallet Storage", () => {
@@ -26,19 +26,14 @@ describe("📗 Stateful Pallet Storage", () => {
 
         // Create a schema for Paginated PayloadLocation
         const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-        const [event] = await createSchema.fundAndSend(fundingSource);
-        if (event && createSchema.api.events.schemas.SchemaCreated.is(event)) {
-            schemaId = event.data.schemaId;
-        }
-        assert.notEqual(schemaId, undefined, "setup should populate schemaId");
+        const { target: event } = await createSchema.fundAndSend(fundingSource);
+        schemaId = event!.data.schemaId;
+
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const [event2] = await createSchema2.fundAndSend(fundingSource);
+        const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
-        if (event2 && createSchema2.api.events.schemas.SchemaCreated.is(event2)) {
-            schemaId_unsupported = event2.data.schemaId;
-            assert.notEqual(schemaId_unsupported, undefined, "setup should populate schemaId_unsupported");
-        }
+        schemaId_unsupported = event2!.data.schemaId;
 
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
@@ -54,7 +49,7 @@ describe("📗 Stateful Pallet Storage", () => {
             // Add and update actions
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, target_hash);
-            const [pageUpdateEvent1, chainEvents] = await paginated_add_result_1.fundAndSend(fundingSource);
+            const { target: pageUpdateEvent1, eventMap: chainEvents } = await paginated_add_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent1, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
@@ -63,7 +58,7 @@ describe("📗 Stateful Pallet Storage", () => {
             page_id = 1;
             target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_add_result_2 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, target_hash);
-            const [pageUpdateEvent2, chainEvents2] = await paginated_add_result_2.fundAndSend(fundingSource);
+            const { target: pageUpdateEvent2, eventMap: chainEvents2 } = await paginated_add_result_2.fundAndSend(fundingSource);
             assert.notEqual(chainEvents2["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents2["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageUpdateEvent2, undefined, "should have returned a PalletStatefulStoragepaginatedActionApplied event");
@@ -71,7 +66,7 @@ describe("📗 Stateful Pallet Storage", () => {
             // Remove the second page
             target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let paginated_remove_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, page_id, target_hash);
-            const [pageRemove, chainEvents3] = await paginated_remove_result_1.fundAndSend(fundingSource);
+            const { target: pageRemove, eventMap: chainEvents3 } = await paginated_remove_result_1.fundAndSend(fundingSource);
             assert.notEqual(chainEvents3["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(chainEvents3["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
             assert.notEqual(pageRemove, undefined, "should have returned a event");

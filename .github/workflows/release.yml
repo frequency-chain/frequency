@@ -28,7 +28,7 @@ jobs:
   validate-release-version:
     name: Validate Release Version
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -47,7 +47,7 @@ jobs:
     needs: validate-release-version
     name: Create Release Branch
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
     needs: run-all-benchmarks
     name: Version Code
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -178,7 +178,7 @@ jobs:
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -338,7 +338,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -373,7 +373,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-rococo-local
       ARCH: amd64
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -384,7 +384,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
@@ -437,7 +437,7 @@ jobs:
           - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -631,7 +631,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -805,7 +805,7 @@ jobs:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -899,7 +899,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -976,7 +976,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     permissions:
       contents: read
       pages: write
@@ -994,14 +994,14 @@ jobs:
     needs: wait-for-all-builds
     name: Release JS API Augment
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
