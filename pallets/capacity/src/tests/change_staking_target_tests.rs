@@ -1,6 +1,6 @@
 use super::{
 	mock::*,
-	testing_utils::{setup_provider, staking_events, set_era_and_reward_pool_at_block},
+	testing_utils::{set_era_and_reward_pool_at_block, setup_provider, staking_events},
 };
 use crate::*;
 use common_primitives::{
@@ -49,7 +49,7 @@ fn do_retarget_happy_path() {
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
 		let staking_type = ProviderBoost;
-		set_era_and_reward_pool_at_block(10,500,0);
+		set_era_and_reward_pool_at_block(10, 500, 0);
 		setup_provider(&staker, &from_msa, &from_amount, staking_type.clone());
 		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
 
@@ -76,7 +76,7 @@ fn do_retarget_flip_flop() {
 		let from_amount = 600u64;
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(10,500,0);
+		set_era_and_reward_pool_at_block(10, 500, 0);
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
 
@@ -111,7 +111,7 @@ fn check_retarget_rounding_errors() {
 		let from_amount = 666u64;
 		let to_amount = 301u64;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(10,500,0);
+		set_era_and_reward_pool_at_block(10, 500, 0);
 
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
@@ -155,7 +155,7 @@ fn check_retarget_multiple_stakers() {
 		let amt1 = 192u64;
 		let amt2 = 313u64;
 
-		set_era_and_reward_pool_at_block(10,500,0);
+		set_era_and_reward_pool_at_block(10, 500, 0);
 		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_600.clone()), from_msa, 479u64,));

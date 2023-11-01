@@ -1,12 +1,13 @@
 use super::{
 	mock::*,
-	testing_utils::{run_to_block, system_run_to_block, set_era_and_reward_pool_at_block},
+	testing_utils::{run_to_block, set_era_and_reward_pool_at_block, system_run_to_block},
 };
-use crate::{Config, CurrentEraInfo, RewardEraInfo, RewardPoolInfo, StakingRewardPool};
+use crate::{
+	tests::testing_utils::setup_provider, Config, CurrentEraInfo, RewardEraInfo, RewardPoolInfo,
+	StakingRewardPool,
+};
+use common_primitives::{capacity::StakingType::ProviderBoost, msa::MessageSourceId};
 use sp_core::Get;
-use common_primitives::capacity::StakingType::ProviderBoost;
-use common_primitives::msa::MessageSourceId;
-use crate::tests::testing_utils::setup_provider;
 
 #[test]
 fn start_new_era_if_needed_updates_era_info_and_limits_reward_pool_size() {
