@@ -18,14 +18,14 @@ use common_primitives::{
 		types::ParquetType,
 		ParquetModel,
 	},
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
+	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings},
 };
 use sp_runtime::DispatchError::BadOrigin;
 
 use crate::{
 	migration::v2,
 	pallet::{SchemaInfos, SchemaPayloads},
-	Config, Error, Event as AnnouncementEvent,
+	Config, Error, Event as AnnouncementEvent, Schema,
 };
 
 use super::mock::*;
@@ -715,7 +715,7 @@ fn schemas_migration_to_v2_should_work_as_expected() {
 			r#"{"type": "num","minimum": -90,"maximum": 90}"#,
 			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
 		];
-		for fields in &schemas {
+		for (idx, fields) in schemas.iter().enumerate() {
 			assert_ok!(SchemasPallet::create_schema_v2(
 				RuntimeOrigin::signed(sender.clone()),
 				create_bounded_schema_vec(fields),
@@ -723,7 +723,18 @@ fn schemas_migration_to_v2_should_work_as_expected() {
 				PayloadLocation::OnChain,
 				BoundedVec::default()
 			));
+			v2::old::Schemas::<Test>::insert(
+				idx as u16 + 1,
+				Schema {
+					model_type: ModelType::AvroBinary,
+					payload_location: PayloadLocation::OnChain,
+					settings: SchemaSettings::all_disabled(),
+					model: BoundedVec::try_from(fields.as_bytes().to_vec())
+						.expect("should have value"),
+				},
+			);
 		}
+		let old_schema_1 = v2::old::Schemas::<Test>::get(1u16).expect("should have value");
 
 		// Act
 		let _ = v2::migrate_to_v2::<Test>();
@@ -734,9 +745,17 @@ fn schemas_migration_to_v2_should_work_as_expected() {
 		let new_payload_count = SchemaPayloads::<Test>::iter().count();
 		let current_version = SchemasPallet::current_storage_version();
 
+		let schema_info_1 = SchemaInfos::<Test>::get(1).expect("should have value");
+		let schema_payload_1 = SchemaPayloads::<Test>::get(1u16).expect("should have value");
+
 		assert_eq!(old_count, 0);
 		assert_eq!(new_info_count, schemas.len());
 		assert_eq!(new_payload_count, schemas.len());
 		assert_eq!(current_version, StorageVersion::new(2));
+
+		assert_eq!(schema_info_1.model_type, old_schema_1.model_type);
+		assert_eq!(schema_info_1.payload_location, old_schema_1.payload_location);
+		assert_eq!(schema_info_1.settings, old_schema_1.settings);
+		assert_eq!(schema_payload_1.into_inner(), old_schema_1.model.into_inner());
 	});
 }
