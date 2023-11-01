@@ -22,15 +22,13 @@ describe("Create Accounts", function () {
 
         it("should successfully create an MSA account", async function () {
             const f = ExtrinsicHelper.createMsa(keys);
-            const [msaCreatedEvent, chainEvents] = await f.fundAndSend(fundingSource);
+            const { target: msaCreatedEvent, eventMap: chainEvents } = await f.fundAndSend(fundingSource);
 
             assert.notEqual(chainEvents["system.ExtrinsicSuccess"], undefined, "should have returned an ExtrinsicSuccess event");
             assert.notEqual(msaCreatedEvent, undefined, "should have returned  an MsaCreated event");
             assert.notEqual(chainEvents["transactionPayment.TransactionFeePaid"], undefined, "should have returned a TransactionFeePaid event");
 
-            if (msaCreatedEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(msaCreatedEvent)) {
-                msaId = msaCreatedEvent.data.msaId;
-            }
+            msaId = msaCreatedEvent!.data.msaId;
         });
 
         it("should fail to create an MSA for a keypair already associated with an MSA", async function () {
@@ -142,7 +140,7 @@ describe("Create Accounts", function () {
             newSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-            const [publicKeyEvents] = await addPublicKeyOp.fundAndSend(fundingSource);
+            const { target: publicKeyEvents } = await addPublicKeyOp.fundAndSend(fundingSource);
 
             assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
 
@@ -171,7 +169,7 @@ describe("Create Accounts", function () {
             ownerSig = signPayloadSr25519(authorizedKeys[0], addKeyData);
             newSig = signPayloadSr25519(additionalKeys, addKeyData);
             const op = ExtrinsicHelper.addPublicKeyToMsa(authorizedKeys[0], ownerSig, newSig, newPayload);
-            const [event] = await op.fundAndSend(fundingSource);
+            const { target: event } = await op.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, 'should have added public key');
             authorizedKeys.push(additionalKeys);
         });
@@ -233,7 +231,7 @@ describe("Create Accounts", function () {
         it("should delete all other authorized keys", async function () {
             for (const key of authorizedKeys) {
                 const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
-                const [event] = await op.fundAndSend(fundingSource);
+                const { target: event } = await op.fundAndSend(fundingSource);
                 assert.notEqual(event, undefined, "should have returned PublicKeyDeleted event");
             };
             authorizedKeys = [];
@@ -241,7 +239,7 @@ describe("Create Accounts", function () {
 
         it("should allow retiring MSA after additional keys have been deleted", async function () {
             const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
-            const [event, eventMap] = await retireMsaOp.fundAndSend(fundingSource);
+            const { target: event, eventMap } = await retireMsaOp.fundAndSend(fundingSource);
 
             assert.notEqual(eventMap["msa.PublicKeyDeleted"], undefined, 'should have deleted public key (retired)');
             assert.notEqual(event, undefined, 'should have retired msa');
