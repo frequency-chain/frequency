@@ -11,7 +11,7 @@ use crate::tests::testing_utils::setup_provider;
 #[test]
 fn start_new_era_if_needed_updates_era_info_and_limits_reward_pool_size() {
 	new_test_ext().execute_with(|| {
-		set_era_and_reward_pool_at_block(1, 0, 1, 10_000);
+		set_era_and_reward_pool_at_block(1, 0, 10_000);
 		system_run_to_block(9);
 		for i in 1..4 {
 			let block_decade = i * 10;
@@ -32,7 +32,7 @@ fn start_new_era_if_needed_updates_era_info_and_limits_reward_pool_size() {
 #[test]
 fn start_new_era_if_needed_updates_reward_pool() {
 	new_test_ext().execute_with(|| {
-		set_era_and_reward_pool_at_block(1, 0, 1, 10_000);
+		set_era_and_reward_pool_at_block(1, 0, 10_000);
 		system_run_to_block(8);
 		let staker = 10_000;
 		let provider_msa: MessageSourceId = 1;
