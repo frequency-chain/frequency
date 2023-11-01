@@ -15,7 +15,26 @@ use sp_std::vec::Vec;
 /// old module storages
 pub mod old {
 	use super::*;
-	use crate::Schema;
+	use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
+
+	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+	#[scale_info(skip_type_params(MaxModelSize))]
+	#[codec(mel_bound(MaxModelSize: MaxEncodedLen))]
+	/// A structure defining a Schema
+	pub struct Schema<MaxModelSize>
+	where
+		MaxModelSize: Get<u32>,
+	{
+		/// The type of model (AvroBinary, Parquet, etc.)
+		pub model_type: ModelType,
+		/// Defines the structure of the message payload using model_type
+		pub model: BoundedVec<u8, MaxModelSize>,
+		/// The payload location
+		pub payload_location: PayloadLocation,
+		/// additional control settings for the schema
+		pub settings: SchemaSettings,
+	}
+
 	/// Storage for message schema struct data
 	/// - Key: Schema Id
 	/// - Value: [`Schema`](Schema)

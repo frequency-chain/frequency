@@ -25,7 +25,7 @@ use sp_runtime::DispatchError::BadOrigin;
 use crate::{
 	migration::v2,
 	pallet::{SchemaInfos, SchemaPayloads},
-	Config, Error, Event as AnnouncementEvent, Schema,
+	Config, Error, Event as AnnouncementEvent,
 };
 
 use super::mock::*;
@@ -725,7 +725,7 @@ fn schemas_migration_to_v2_should_work_as_expected() {
 			));
 			v2::old::Schemas::<Test>::insert(
 				idx as u16 + 1,
-				Schema {
+				v2::old::Schema {
 					model_type: ModelType::AvroBinary,
 					payload_location: PayloadLocation::OnChain,
 					settings: SchemaSettings::all_disabled(),
