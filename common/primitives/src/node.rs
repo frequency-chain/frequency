@@ -2,11 +2,11 @@
 pub use sp_runtime::{
 	generic,
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
-	MultiAddress, MultiSignature, OpaqueExtrinsic,
+	DispatchError, MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
 use sp_std::{boxed::Box, vec::Vec};
 
-use frame_support::dispatch::{DispatchError, DispatchResultWithPostInfo};
+use frame_support::dispatch::DispatchResultWithPostInfo;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.

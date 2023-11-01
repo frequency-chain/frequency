@@ -13,25 +13,25 @@ version = "0.0.0"
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.2.2", default-features = false, features = [
+codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
   "derive",
 ] }
-frame-support = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
+frame-support = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+frame-system = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
 impl-serde = { version = "0.4.0", default-features = false }
-scale-info = { version = "2.5.0", default-features = false, features = [
+scale-info = { version = "2.10.0", default-features = false, features = [
   "derive",
 ] }
-serde = { version = "1.0.163", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.86", default-features = false, features = [
+serde = { version = "1.0", default-features = false, features = ["derive"] }
+serde_json = { version = "1.0.107", default-features = false, features = [
   "alloc",
 ] }
 enumflags2 = "0.7.7"
-smallvec = "1.10.0"
-sp-api = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
-sp-core = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
-sp-std = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v1.0.0" }
+smallvec = "1.11.0"
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
 
 [features]
 default = ['std']

@@ -25,7 +25,7 @@
 
 use codec::{Decode, Encode};
 use frame_support::{
-	dispatch::{DispatchInfo, Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{Currency, IsSubType, IsType},
 	weights::{Weight, WeightToFee},
@@ -35,7 +35,7 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };

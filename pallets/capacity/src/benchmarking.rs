@@ -1,7 +1,8 @@
 use super::*;
 use crate::Pallet as Capacity;
 
-use frame_benchmarking::{account, benchmarks, whitelist_account, Vec};
+use codec::alloc::vec::Vec;
+use frame_benchmarking::{account, benchmarks, whitelist_account};
 use frame_support::{assert_ok, traits::Currency};
 use frame_system::RawOrigin;
 

@@ -13,7 +13,7 @@ use sc_consensus_manual_seal::{
 use futures::FutureExt;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
-use sp_api::{ProvideRuntimeApi, TransactionFor};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
@@ -227,20 +227,16 @@ async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
 	}: ManualSealParams<B, BI, E, C, TP, SC, CS, CIDP, P>,
 ) where
 	B: BlockT + 'static,
-	BI: BlockImport<B, Error = sp_consensus::Error, Transaction = sp_api::TransactionFor<C, B>>
-		+ Send
-		+ Sync
-		+ 'static,
+	BI: BlockImport<B, Error = sp_consensus::Error> + Send + Sync + 'static,
 	C: HeaderBackend<B> + Finalizer<B, CB> + ProvideRuntimeApi<B> + 'static,
 	CB: ClientBackend<B> + 'static,
 	E: Environment<B> + 'static,
-	E::Proposer: Proposer<B, Proof = P, Transaction = TransactionFor<C, B>>,
+	E::Proposer: Proposer<B, Proof = P>,
 	CS: Stream<Item = EngineCommand<<B as BlockT>::Hash>> + Unpin + 'static,
 	SC: SelectChain<B> + 'static,
-	TransactionFor<C, B>: 'static,
 	TP: TransactionPool<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()>,
-	P: Send + Sync + 'static,
+	P: codec::Encode + Send + Sync + 'static,
 {
 	while let Some(command) = commands_stream.next().await {
 		match command {

@@ -5,7 +5,7 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
-	parameter_types,
+	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
 };
 use frame_system::EnsureSigned;
@@ -18,7 +18,7 @@ use sp_runtime::{
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
 // Configure a mock runtime to test the pallet.
-frame_support::construct_runtime!(
+construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},

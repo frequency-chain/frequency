@@ -3,10 +3,10 @@ use crate::impl_codec_bitflags;
 use crate::utils;
 use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use enumflags2::{bitflags, BitFlags};
-use frame_support::RuntimeDebug;
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
+use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use utils::*;
