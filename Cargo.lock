@@ -3223,6 +3223,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "derive_more",
+ "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-support",
  "frame-system",

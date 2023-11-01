@@ -1,7 +1,7 @@
 use frame_support::{
 	assert_noop, assert_ok,
-	dispatch::{RawOrigin, Weight},
-	traits::{ChangeMembers, Hash},
+	dispatch::{GetStorageVersion, RawOrigin, Weight},
+	traits::{ChangeMembers, Hash, StorageVersion},
 	BoundedVec,
 };
 use serial_test::serial;
@@ -20,7 +20,11 @@ use common_primitives::{
 };
 use sp_runtime::DispatchError::BadOrigin;
 
-use crate::{Config, Error, Event as AnnouncementEvent};
+use crate::{
+	migration::v2,
+	pallet::{SchemaInfos, SchemaPayloads},
+	Config, Error, Event as AnnouncementEvent,
+};
 
 use super::mock::*;
 
@@ -696,4 +700,42 @@ fn create_schema_with_append_only_setting_and_non_itemized_should_fail() {
 			Error::<Test>::InvalidSetting
 		);
 	})
+}
+
+#[test]
+fn schemas_migration_to_v2_should_work_as_expected() {
+	new_test_ext().execute_with(|| {
+		// Arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(5);
+		let schemas = vec![
+			r#"{"Name": "Bond", "Code": "007"}"#,
+			r#"{"type": "num","minimum": -90,"maximum": 90}"#,
+			r#"{"latitude": 48.858093,"longitude": 2.294694}"#,
+		];
+		for fields in &schemas {
+			assert_ok!(SchemasPallet::create_schema_v2(
+				RuntimeOrigin::signed(sender.clone()),
+				create_bounded_schema_vec(fields),
+				ModelType::AvroBinary,
+				PayloadLocation::OnChain,
+				BoundedVec::default()
+			));
+		}
+
+		// Act
+		let _ = v2::migrate_to_v2::<Test>();
+
+		// Assert
+		let old_count = v2::old::Schemas::<Test>::iter().count();
+		let new_info_count = SchemaInfos::<Test>::iter().count();
+		let new_payload_count = SchemaPayloads::<Test>::iter().count();
+		let current_version = SchemasPallet::current_storage_version();
+
+
+		assert_eq!(old_count, 0);
+		assert_eq!(new_info_count, schemas.len());
+		assert_eq!(new_payload_count, schemas.len());
+		assert_eq!(current_version, StorageVersion::new(2));
+	});
 }

@@ -9,7 +9,7 @@ use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 
 /// Current storage version of the schemas pallet.
-pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 #[scale_info(skip_type_params(MaxModelSize))]

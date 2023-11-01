@@ -76,7 +76,8 @@ mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
 use common_primitives::schema::SchemaInfoResponse;
-
+/// migration module
+pub mod migration;
 mod types;
 
 pub use pallet::*;
@@ -85,6 +86,8 @@ pub use types::*;
 pub use weights::*;
 
 mod serde;
+
+const LOG_TARGET: &str = "runtime::schemas";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -184,19 +187,6 @@ pub mod pallet {
 	#[pallet::getter(fn get_current_schema_identifier_maximum)]
 	pub(super) type CurrentSchemaIdentifierMaximum<T: Config> =
 		StorageValue<_, SchemaId, ValueQuery>;
-
-	/// Storage for message schema struct data
-	/// - Key: Schema Id
-	/// - Value: [`Schema`](Schema)
-	#[pallet::storage]
-	#[pallet::getter(fn get_schema)]
-	pub(super) type Schemas<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		SchemaId,
-		Schema<T::SchemaModelMaxBytesBoundedVecLimit>,
-		OptionQuery,
-	>;
 
 	/// Storage for message schema info struct data
 	/// - Key: Schema Id
