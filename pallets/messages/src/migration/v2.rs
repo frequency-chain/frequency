@@ -1,7 +1,6 @@
 use crate::{BlockNumberFor, Config, Message, MessagesV2, Pallet, SchemaId, LOG_TARGET};
-use frame_support::{
-	log, pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade, weights::Weight,
-};
+use frame_support::{pallet_prelude::*, storage_alias, traits::OnRuntimeUpgrade, weights::Weight};
+use log;
 use sp_runtime::Saturating;
 
 #[cfg(feature = "try-runtime")]

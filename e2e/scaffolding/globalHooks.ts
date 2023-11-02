@@ -1,3 +1,5 @@
+// These run ONCE per entire test run
+
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import workerpool from 'workerpool';
 import { ExtrinsicHelper } from "./extrinsicHelpers";

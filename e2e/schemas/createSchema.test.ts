@@ -102,7 +102,7 @@ describe("#createSchema", function () {
 
   it("should successfully create an Avro GraphChange schema", async function () {
     const f = ExtrinsicHelper.createSchema(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain");
-    const [createSchemaEvent, eventMap] = await f.fundAndSend(fundingSource);
+    const { target: createSchemaEvent, eventMap } = await f.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap);
     assert.notEqual(createSchemaEvent, undefined);
@@ -110,7 +110,7 @@ describe("#createSchema", function () {
 
   it("should successfully create an Avro GraphChange schema v2", async function () {
     const f = ExtrinsicHelper.createSchemaV2(keys, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain", []);
-    const [createSchemaEvent, eventMap] = await f.fundAndSend(fundingSource);
+    const { target: createSchemaEvent, eventMap } = await f.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap);
     assert.notEqual(createSchemaEvent, undefined);

@@ -4,10 +4,9 @@ use crate::utils::as_hex;
 use serde::{Deserialize, Serialize};
 
 use codec::{Codec, Decode, Encode, EncodeLike};
-use frame_support::dispatch::fmt::Debug;
 use frame_system::{EventRecord, Phase};
 use scale_info::TypeInfo;
-use sp_std::vec::Vec;
+use sp_std::{fmt::Debug, vec::Vec};
 
 /// The Struct for the getEvents RPC
 /// This handles the Scale encoding of ONLY the event

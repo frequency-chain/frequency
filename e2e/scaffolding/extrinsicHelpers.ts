@@ -1,20 +1,19 @@
 import { ApiPromise, ApiRx } from "@polkadot/api";
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/types";
 import { KeyringPair } from "@polkadot/keyring/types";
-import {Compact, u128, u16, u32, u64, Vec, Option, Bool} from "@polkadot/types";
+import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
 import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
-import {firstValueFrom, filter, map, pipe, tap} from "rxjs";
+import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from "./helpers";
 import { connect, connectPromise } from "./apiConnection";
-import { CreatedBlock, DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
+import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
 import { HandleResponse, ItemizedStoragePageResponse, MessageSourceId, PaginatedStorageResponse, PresumptiveSuffixesResponse, SchemaResponse } from "@frequency-chain/api-augment/interfaces";
 import { u8aToHex } from "@polkadot/util/u8a/toHex";
 import { u8aWrapBytes } from "@polkadot/util";
 import type { Call } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from "./env";
-import { getFundingSource } from "./funding";
 
 export type ReleaseSchedule = {
     start: number;
@@ -60,7 +59,7 @@ export class EventError extends Error {
     }
 }
 
-export type EventMap = { [key: string]: Event }
+export type EventMap = Record<string, Event>;
 
 function eventKey(event: Event): string {
     return `${event.section}.${event.method}`;
@@ -93,14 +92,16 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
-export type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = [ParsedEvent<C, N> | undefined, EventMap];
+export type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = {
+    target?: ParsedEvent<C, N>;
+    eventMap: EventMap;
+};
 
 
-export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[], N = unknown> {
+export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
 
     private event?: IsEvent<C, N>;
     private extrinsic: () => SubmittableExtrinsic<"rxjs", T>;
-    // private call: Call;
     private keys: KeyringPair;
     public api: ApiRx;
 
@@ -111,21 +112,21 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         this.api = ExtrinsicHelper.api;
     }
 
-    public signAndSend(nonce?: number): Promise<ParsedEventResult> {
-        return firstValueFrom(this.extrinsic().signAndSend(this.keys, {nonce: nonce}).pipe(
+    public signAndSend(nonce?: number) {
+        return firstValueFrom(this.extrinsic().signAndSend(this.keys, { nonce: nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public sudoSignAndSend(): Promise<[ParsedEvent<C, N> | undefined, EventMap]> {
+    public sudoSignAndSend() {
         return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public payWithCapacity(nonce?: number): Promise<ParsedEventResult> {
+    public payWithCapacity(nonce?: number) {
         return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
@@ -151,7 +152,7 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
         }
     }
 
-    public async fundAndSend(source: KeyringPair): Promise<ParsedEventResult> {
+    public async fundAndSend(source: KeyringPair) {
         await this.fundOperation(source);
         log("Fund and Send", `Fund Source: ${source.address}`);
         return this.signAndSend();
@@ -166,33 +167,33 @@ export class Extrinsic<T extends ISubmittableResult = ISubmittableResult, C exte
                     throw err;
                 }
             }),
-            map((result: ISubmittableResult) => result.events.reduce((acc, { event }) => {
-                acc[eventKey(event)] = event;
-                if (targetEvent && targetEvent.is(event)) {
-                    acc["defaultEvent"] = event;
+            map((result: ISubmittableResult) => {
+                const eventMap = result.events.reduce((acc, { event }) => {
+                    acc[eventKey(event)] = event;
+                    if (this.api.events.sudo.Sudid.is(event)) {
+                        let { data: [result] } = event;
+                        if (result.isErr) {
+                            let err = new EventError(result.asErr);
+                            log(err.toString());
+                            throw err;
+                        }
+                    }
+                    return acc;
+                }, {} as EventMap);
+
+                const target = targetEvent && result.events.find(({ event }) => targetEvent.is(event))?.event;
+                // Required for Typescript to be happy
+                if (target && targetEvent.is(target)) {
+                    return { target, eventMap };
                 }
-                if(this.api.events.sudo.Sudid.is(event)) {
-                  let { data: [result] } = event;
-                  if (result.isErr) {
-                    let err = new EventError(result.asErr);
-                    log(err.toString());
-                    throw err;
-                  }
-                }
-                return acc;
-            }, {} as EventMap)),
-            map((em) => {
-                let result: ParsedEventResult<T, N> = [undefined, {}];
-                if (targetEvent && targetEvent.is(em?.defaultEvent)) {
-                    result[0] = em.defaultEvent;
-                }
-                result[1] = em;
-                return result;
+
+                return { eventMap };
             }),
-            tap((events) => log(events)),
+            tap(({ eventMap }) => {
+                Object.entries(eventMap).map(([k, v]) => log(k, v.toHuman()));
+            }),
         );
     }
-
 }
 
 export class ExtrinsicHelper {
@@ -225,26 +226,26 @@ export class ExtrinsicHelper {
     }
 
     /** Balance Extrinsics */
-    public static transferFunds(source: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber): Extrinsic {
+    public static transferFunds(source: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferKeepAlive(dest.address, amount), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
-    public static emptyAccount(source: KeyringPair, dest: KeyringPair["address"]): Extrinsic {
+    public static emptyAccount(source: KeyringPair, dest: KeyringPair["address"]) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.balances.transferAll(dest, false), source, ExtrinsicHelper.api.events.balances.Transfer);
     }
 
     /** Schema Extrinsics */
-    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated"): Extrinsic {
+    public static createSchema(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated") {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
-  /** Schema v2 Extrinsics */
-  public static createSchemaV2(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated", grant: ("AppendOnly"| "SignatureRequired")[]): Extrinsic {
-    return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
-  }
+    /** Schema v2 Extrinsics */
+    public static createSchemaV2(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated", grant: ("AppendOnly" | "SignatureRequired")[]) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
+    }
 
     /** Generic Schema Extrinsics */
-    public static createSchemaWithSettingsGov(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS"| "Itemized" | "Paginated", grant: "AppendOnly"| "SignatureRequired"): Extrinsic {
+    public static createSchemaWithSettingsGov(keys: KeyringPair, model: any, modelType: "AvroBinary" | "Parquet", payloadLocation: "OnChain" | "IPFS" | "Itemized" | "Paginated", grant: "AppendOnly" | "SignatureRequired") {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernance(keys.publicKey, JSON.stringify(model), modelType, payloadLocation, [grant]), keys, ExtrinsicHelper.api.events.schemas.SchemaCreated);
     }
 
@@ -254,91 +255,91 @@ export class ExtrinsicHelper {
     }
 
     /** MSA Extrinsics */
-    public static createMsa(keys: KeyringPair): Extrinsic {
+    public static createMsa(keys: KeyringPair) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.create(), keys, ExtrinsicHelper.api.events.msa.MsaCreated);
     }
 
-    public static addPublicKeyToMsa(keys: KeyringPair, ownerSignature: Sr25519Signature, newSignature: Sr25519Signature, payload: AddKeyData): Extrinsic {
+    public static addPublicKeyToMsa(keys: KeyringPair, ownerSignature: Sr25519Signature, newSignature: Sr25519Signature, payload: AddKeyData) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.addPublicKeyToMsa(keys.publicKey, ownerSignature, newSignature, payload), keys, ExtrinsicHelper.api.events.msa.PublicKeyAdded);
     }
 
-    public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array): Extrinsic {
+    public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array) {
         ExtrinsicHelper.api.query.msa
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.deleteMsaPublicKey(publicKey), keys, ExtrinsicHelper.api.events.msa.PublicKeyDeleted);
     }
 
-    public static retireMsa(keys: KeyringPair): Extrinsic {
+    public static retireMsa(keys: KeyringPair) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.retireMsa(), keys, ExtrinsicHelper.api.events.msa.MsaRetired);
     }
 
-    public static createProvider(keys: KeyringPair, providerName: string): Extrinsic {
+    public static createProvider(keys: KeyringPair, providerName: string) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createProvider(providerName), keys, ExtrinsicHelper.api.events.msa.ProviderCreated);
     }
 
-    public static createSponsoredAccountWithDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
+    public static createSponsoredAccountWithDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.MsaCreated);
     }
 
-    public static grantDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload): Extrinsic {
+    public static grantDelegation(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: AddProviderPayload) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.msa.DelegationGranted);
     }
 
-    public static grantSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Extrinsic {
+    public static grantSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.grantSchemaPermissions(providerMsaId, schemaIds), delegatorKeys, ExtrinsicHelper.api.events.msa.DelegationUpdated);
     }
 
-    public static revokeSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any): Extrinsic {
+    public static revokeSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeSchemaPermissions(providerMsaId, schemaIds), delegatorKeys, ExtrinsicHelper.api.events.msa.DelegationUpdated);
     }
 
-    public static revokeDelegationByDelegator(keys: KeyringPair, providerMsaId: any): Extrinsic {
+    public static revokeDelegationByDelegator(keys: KeyringPair, providerMsaId: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByDelegator(providerMsaId), keys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
     }
 
-    public static revokeDelegationByProvider(delegatorMsaId: u64, providerKeys: KeyringPair): Extrinsic {
+    public static revokeDelegationByProvider(delegatorMsaId: u64, providerKeys: KeyringPair) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.revokeDelegationByProvider(delegatorMsaId), providerKeys, ExtrinsicHelper.api.events.msa.DelegationRevoked);
     }
 
     /** Messages Extrinsics */
-    public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
+    public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesInBlock);
     }
 
     /** Stateful Storage Extrinsics */
-    public static applyItemActions(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, actions: any, target_hash: any): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions(msa_id, schemaId, target_hash,actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    public static applyItemActions(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, actions: any, target_hash: any) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActions(msa_id, schemaId, target_hash, actions), keys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
-    public static removePage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, target_hash: any): Extrinsic {
+    public static removePage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, target_hash: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePage(msa_id, schemaId, page_id, target_hash), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
-    public static upsertPage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, payload: any, target_hash: any): Extrinsic {
+    public static upsertPage(keys: KeyringPair, schemaId: any, msa_id: MessageSourceId, page_id: any, payload: any, target_hash: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPage(msa_id, schemaId, page_id, target_hash, payload), keys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
-    public static applyItemActionsWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayload): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    public static applyItemActionsWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayload) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
-    public static applyItemActionsWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayloadV2): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
+    public static applyItemActionsWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: ItemizedSignaturePayloadV2) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated);
     }
 
-    public static deletePageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayload): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
+    public static deletePageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayload) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
-    public static deletePageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayloadV2): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
+    public static deletePageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedDeleteSignaturePayloadV2) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted);
     }
 
-    public static upsertPageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayload): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    public static upsertPageWithSignature(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayload) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
-    public static upsertPageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayloadV2): Extrinsic {
-      return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
+    public static upsertPageWithSignatureV2(delegatorKeys: KeyringPair, providerKeys: KeyringPair, signature: Sr25519Signature, payload: PaginatedUpsertSignaturePayloadV2) {
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignatureV2(delegatorKeys.publicKey, signature, payload), providerKeys, ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated);
     }
 
     public static getItemizedStorage(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
@@ -349,16 +350,16 @@ export class ExtrinsicHelper {
         return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
     }
 
-    public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule): Extrinsic {
+    public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule), keys, ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded);
     }
 
-    public static claimHandle(delegatorKeys: KeyringPair, payload: any): Extrinsic {
+    public static claimHandle(delegatorKeys: KeyringPair, payload: any) {
         const proof = { Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(payload.toU8a()))) }
         return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.claimHandle(delegatorKeys.publicKey, proof, payload), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleClaimed);
     }
 
-    public static retireHandle(delegatorKeys: KeyringPair): Extrinsic {
+    public static retireHandle(delegatorKeys: KeyringPair) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.handles.retireHandle(), delegatorKeys, ExtrinsicHelper.api.events.handles.HandleRetired);
     }
 
@@ -368,8 +369,7 @@ export class ExtrinsicHelper {
     }
 
     public static getMsaForHandle(handle: string): Promise<Option<MessageSourceId>> {
-        let msa_response = ExtrinsicHelper.api.rpc.handles.getMsaForHandle(handle);
-        return firstValueFrom(msa_response);
+        return ExtrinsicHelper.apiPromise.rpc.handles.getMsaForHandle(handle);
     }
 
     public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
@@ -378,43 +378,43 @@ export class ExtrinsicHelper {
     }
 
     public static validateHandle(base_handle: string): Promise<Bool> {
-      let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
-      return firstValueFrom(validationResult);
+        let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
+        return firstValueFrom(validationResult);
     }
 
-    public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
+    public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesInBlock);
     }
 
     /** Capacity Extrinsics **/
-    public static setEpochLength(keys: KeyringPair, epoch_length: any): Extrinsic {
+    public static setEpochLength(keys: KeyringPair, epoch_length: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.setEpochLength(epoch_length), keys, ExtrinsicHelper.api.events.capacity.EpochLengthUpdated);
     }
-    public static stake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+    public static stake(keys: KeyringPair, target: any, amount: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.stake(target, amount), keys, ExtrinsicHelper.api.events.capacity.Staked);
     }
 
-    public static unstake(keys: KeyringPair, target: any, amount: any): Extrinsic {
+    public static unstake(keys: KeyringPair, target: any, amount: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.unstake(target, amount), keys, ExtrinsicHelper.api.events.capacity.UnStaked);
     }
 
-    public static withdrawUnstaked(keys: KeyringPair): Extrinsic {
+    public static withdrawUnstaked(keys: KeyringPair) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.capacity.withdrawUnstaked(), keys, ExtrinsicHelper.api.events.capacity.StakeWithdrawn);
     }
 
-    public static payWithCapacityBatchAll(keys: KeyringPair, calls: any): Extrinsic {
+    public static payWithCapacityBatchAll(keys: KeyringPair, calls: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
-    public static executeUtilityBatchAll(keys: KeyringPair, calls: any): Extrinsic {
+    public static executeUtilityBatchAll(keys: KeyringPair, calls: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.utility.batchAll(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
-    public static executeUtilityBatch(keys: KeyringPair, calls: any): Extrinsic {
+    public static executeUtilityBatch(keys: KeyringPair, calls: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.utility.batch(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 
-    public static executeUtilityForceBatch(keys: KeyringPair, calls: any): Extrinsic {
+    public static executeUtilityForceBatch(keys: KeyringPair, calls: any) {
         return new Extrinsic(() => ExtrinsicHelper.api.tx.utility.forceBatch(calls), keys, ExtrinsicHelper.api.events.utility.BatchCompleted);
     }
 

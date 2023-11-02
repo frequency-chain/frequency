@@ -1,3 +1,5 @@
+// These run once per TEST FILE
+
 import { cryptoWaitReady } from "@polkadot/util-crypto";
 import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { drainFundedKeys } from "./helpers";

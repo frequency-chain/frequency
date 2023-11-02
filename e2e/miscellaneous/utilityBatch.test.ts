@@ -1,7 +1,7 @@
 import assert from "assert";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair } from "../scaffolding/helpers";
+import { createAndFundKeypair, getNonce } from "../scaffolding/helpers";
 import { ApiTypes, SubmittableExtrinsic } from "@polkadot/api/types";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -12,8 +12,9 @@ describe("Utility Batch Filtering", function () {
     const fundingSource = getFundingSource("misc-util-batch");
 
     before(async function () {
-        sender = await createAndFundKeypair(fundingSource, 50_000_000n);
-        recipient = await createAndFundKeypair(fundingSource, 50_000_000n);
+        let nonce = await getNonce(fundingSource);
+        sender = await createAndFundKeypair(fundingSource, 50_000_000n, "utility-sender", nonce++);
+        recipient = await createAndFundKeypair(fundingSource, 50_000_000n, "utility-recipient", nonce++);
     });
 
     it("should successfully execute ✅ batch with allowed calls", async function () {
@@ -23,7 +24,7 @@ describe("Utility Batch Filtering", function () {
         goodBatch.push(ExtrinsicHelper.api.tx.system.remark("Hello From Batch"))
         goodBatch.push(ExtrinsicHelper.api.tx.msa.create())
         const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, goodBatch);
-        const [event, eventMap] = await batch.fundAndSend(fundingSource);
+        const { target: event, eventMap } = await batch.fundAndSend(fundingSource);
         assert.notEqual(event, undefined, "should return an event");
         assert.notEqual(eventMap, undefined, "should return an eventMap");
     });
@@ -60,7 +61,7 @@ describe("Utility Batch Filtering", function () {
 
         // batch
         const batch = ExtrinsicHelper.executeUtilityBatch(sender, badBatch);
-        let [ok, eventMap] = await batch.fundAndSend(fundingSource);
+        const { target: ok, eventMap } = await batch.fundAndSend(fundingSource);
         assert.equal(ok, undefined, "should not return an ok event");
         assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
         assert.notEqual(eventMap["utility.BatchInterrupted"], undefined, "should return a batch interrupted event");
@@ -76,7 +77,7 @@ describe("Utility Batch Filtering", function () {
 
         // forceBatch
         const forceBatch = ExtrinsicHelper.executeUtilityForceBatch(sender, badBatch);
-        let [ok, eventMap] = await forceBatch.fundAndSend(fundingSource);
+        const { target: ok, eventMap } = await forceBatch.fundAndSend(fundingSource);
         assert.equal(ok, undefined, "should not return an ok event");
         assert.equal(eventMap["utility.BatchCompleted"], undefined, "should not return a batch completed event");
         assert.notEqual(eventMap["utility.BatchCompletedWithErrors"], undefined, "should return a batch completed with error event");
