@@ -890,8 +890,6 @@ impl pallet_messages::Config for Runtime {
 	type SchemaGrantValidator = Msa;
 	// The type that provides schema info
 	type SchemaProvider = Schemas;
-	// The maximum number of messages per block
-	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 

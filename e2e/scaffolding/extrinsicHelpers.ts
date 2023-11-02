@@ -301,7 +301,7 @@ export class ExtrinsicHelper {
 
     /** Messages Extrinsics */
     public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length), keys, ExtrinsicHelper.api.events.messages.MessagesInBlock);
     }
 
     /** Stateful Storage Extrinsics */
@@ -383,7 +383,7 @@ export class ExtrinsicHelper {
     }
 
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string): Extrinsic {
-        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesStored);
+        return new Extrinsic(() => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload), keys, ExtrinsicHelper.api.events.messages.MessagesInBlock);
     }
 
     /** Capacity Extrinsics **/

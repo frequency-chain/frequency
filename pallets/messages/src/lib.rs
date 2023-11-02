@@ -106,10 +106,6 @@ pub mod pallet {
 		/// A type that will supply schema related information.
 		type SchemaProvider: SchemaProvider<SchemaId>;
 
-		/// The maximum number of messages in a block.
-		#[pallet::constant]
-		type MaxMessagesPerBlock: Get<u32> + Default + MaxEncodedLen;
-
 		/// The maximum size of a message payload bytes.
 		#[pallet::constant]
 		type MessagesMaxPayloadSizeBytes: Get<u32> + Clone + Debug + MaxEncodedLen;
@@ -127,11 +123,12 @@ pub mod pallet {
 	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
+	/// A temporary storage for getting the index for messages
+	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_block_metadata)]
-	pub(super) type MessageBlockMetadata<T: Config> =
-		StorageValue<_, BlockMetadata<T::MaxMessagesPerBlock>, ValueQuery>;
+	#[pallet::getter(fn get_message_index)]
+	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, MessageIndex, ValueQuery>;
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_messages_v2)]
@@ -148,7 +145,7 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Too many messages are added to existing block
+		/// Deprecated: Too many messages are added to existing block
 		TooManyMessagesInBlock,
 
 		/// Message payload size is too large
@@ -179,6 +176,7 @@ pub mod pallet {
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
 	pub enum Event<T: Config> {
+		/// Deprecated: please use [`Event::MessagesInBlock`]
 		/// Messages are stored for a specified schema id and block number
 		MessagesStored {
 			/// The schema for these messages
@@ -186,16 +184,16 @@ pub mod pallet {
 			/// The block number for these messages
 			block_number: BlockNumberFor<T>,
 		},
+		/// Messages stored in the current block
+		MessagesInBlock,
 	}
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
-			<MessageBlockMetadata<T>>::set(BlockMetadata::<T::MaxMessagesPerBlock>::default());
-			T::DbWeight::get()
-				.reads(1u64)
-				.saturating_add(T::DbWeight::get().writes(1u64))
-				.add_proof_size(BlockMetadata::<T::MaxMessagesPerBlock>::max_encoded_len() as u64)
+			<BlockMessageIndex<T>>::set(0u16);
+			// allocates 1 read and 1 write for any access of `MessageIndex` in every block
+			T::DbWeight::get().reads(1u64).saturating_add(T::DbWeight::get().writes(1u64))
 			// TODO: add retention policy execution GitHub Issue: #126 and #25
 		}
 	}
@@ -209,14 +207,13 @@ pub mod pallet {
 		/// The actual message content will be on IPFS.
 		///
 		/// # Events
-		/// * [`Event::MessagesStored`] - In the next block
+		/// * [`Event::MessagesInBlock`] - Messages Stored in the block
 		///
 		/// # Errors
 		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
 		/// * [`Error::InvalidSchemaId`] - Schema not found
 		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
 		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
-		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 		/// * [`Error::InvalidCid`] - Unable to parse provided CID
@@ -252,10 +249,7 @@ pub mod pallet {
 					schema_id,
 					current_block,
 				)? {
-					Self::deposit_event(Event::MessagesStored {
-						schema_id,
-						block_number: current_block,
-					});
+					Self::deposit_event(Event::MessagesInBlock);
 				}
 				Ok(())
 			} else {
@@ -266,7 +260,7 @@ pub mod pallet {
 		/// Add an on-chain message for a given schema id.
 		///
 		/// # Events
-		/// * [`Event::MessagesStored`] - In the next block
+		/// * [`Event::MessagesInBlock`] - In the next block
 		///
 		/// # Errors
 		/// * [`Error::ExceedsMaxMessagePayloadSizeBytes`] - Payload is too large
@@ -274,7 +268,6 @@ pub mod pallet {
 		/// * [`Error::InvalidPayloadLocation`] - The schema is not an IPFS payload location
 		/// * [`Error::InvalidMessageSourceAccount`] - Origin must be from an MSA
 		/// * [`Error::UnAuthorizedDelegate`] - Trying to add a message without a proper delegation between the origin and the on_behalf_of MSA
-		/// * [`Error::TooManyMessagesInBlock`] - Block is full of messages already
 		/// * [`Error::TypeConversionOverflow`] - Failed to add the message to storage as it is very full
 		///
 		#[pallet::call_index(1)]
@@ -323,10 +316,7 @@ pub mod pallet {
 					schema_id,
 					current_block,
 				)? {
-					Self::deposit_event(Event::MessagesStored {
-						schema_id,
-						block_number: current_block,
-					});
+					Self::deposit_event(Event::MessagesInBlock);
 				}
 
 				Ok(())
@@ -341,7 +331,6 @@ impl<T: Config> Pallet<T> {
 	/// Stores a message for a given schema id.
 	/// returns true if it needs to emit an event
 	/// # Errors
-	/// * [`Error::TooManyMessagesInBlock`]
 	/// * [`Error::TypeConversionOverflow`]
 	///
 	pub fn add_message(
@@ -351,39 +340,17 @@ impl<T: Config> Pallet<T> {
 		schema_id: SchemaId,
 		current_block: BlockNumberFor<T>,
 	) -> Result<bool, DispatchError> {
-		let mut metadata = MessageBlockMetadata::<T>::get();
-		ensure!(
-			u32::from(metadata.total_index) < T::MaxMessagesPerBlock::get(),
-			Error::<T>::TooManyMessagesInBlock
-		);
-		let mut found = false;
-		let mut current_index: MessageIndex = 0;
-		for schema_count in metadata.schema_counts.iter_mut() {
-			if schema_count.schema_id == schema_id {
-				found = true;
-				current_index = schema_count.count;
-				schema_count.count = schema_count.count.saturating_add(1);
-			}
-		}
-		if !found {
-			metadata
-				.schema_counts
-				.try_push(SchemaCount { count: 1, schema_id })
-				.map_err(|_| Error::<T>::TooManyMessagesInBlock)?;
-		}
-
+		let index = BlockMessageIndex::<T>::get();
+		let first = index == 0;
 		let msg = Message {
 			payload, // size is checked on top of extrinsic
 			provider_msa_id,
 			msa_id,
-			index: metadata.total_index,
 		};
 
-		metadata.total_index = metadata.total_index.saturating_add(1);
-
-		<MessagesV2<T>>::insert((current_block, schema_id, current_index), msg);
-		MessageBlockMetadata::<T>::set(metadata);
-		Ok(!found)
+		<MessagesV2<T>>::insert((current_block, schema_id, index), msg);
+		BlockMessageIndex::<T>::set(index.saturating_add(1));
+		Ok(first)
 	}
 
 	/// Resolve an MSA from an account key(key)
@@ -413,10 +380,11 @@ impl<T: Config> Pallet<T> {
 		match schema_payload_location {
 			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
 			_ => {
-				let mut messages: Vec<_> =
-					<MessagesV2<T>>::iter_prefix_values((block_number, schema_id))
-						.map(|msg| msg.map_to_response(block_number_value, schema_payload_location))
-						.collect();
+				let mut messages: Vec<_> = <MessagesV2<T>>::iter_prefix((block_number, schema_id))
+					.map(|(index, msg)| {
+						msg.map_to_response(block_number_value, schema_payload_location, index)
+					})
+					.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
 				return messages
 			},

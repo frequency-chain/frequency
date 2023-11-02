@@ -79,7 +79,6 @@ parameter_types! {
 	// is not too big.
 	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
 
-	pub const MaxMessagesPerBlock: u32 = 500;
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -110,19 +109,6 @@ impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 	}
 }
 
-impl Default for MaxMessagesPerBlock {
-	fn default() -> Self {
-		Self
-	}
-}
-
-impl Encode for MaxMessagesPerBlock {}
-
-impl MaxEncodedLen for MaxMessagesPerBlock {
-	fn max_encoded_len() -> usize {
-		u32::max_encoded_len()
-	}
-}
 pub struct MsaInfoHandler;
 pub struct DelegationInfoHandler;
 pub struct SchemaGrantValidationHandler;
@@ -235,7 +221,6 @@ impl pallet_messages::Config for Test {
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
-	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.

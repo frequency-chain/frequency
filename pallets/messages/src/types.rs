@@ -1,9 +1,6 @@
 use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
-	messages::MessageResponse,
-	msa::{MessageSourceId, SchemaId},
-	node::BlockNumber,
-	schema::PayloadLocation,
+	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
 };
 use frame_support::{traits::Get, BoundedVec};
 use multibase::Base;
@@ -32,31 +29,6 @@ where
 	pub provider_msa_id: MessageSourceId,
 	///  Message source account id (the original source).
 	pub msa_id: Option<MessageSourceId>,
-	///  Stores index of message in block to keep total order.
-	pub index: u16,
-}
-
-/// Metadata for current block
-#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-#[scale_info(skip_type_params(MaxMessagesPerBlock))]
-#[codec(mel_bound(MaxMessagesPerBlock: MaxEncodedLen))]
-pub struct BlockMetadata<MaxMessagesPerBlock>
-where
-	MaxMessagesPerBlock: Get<u32> + Default,
-{
-	///  schema and the number of messages for that schema in current block
-	pub schema_counts: BoundedVec<SchemaCount, MaxMessagesPerBlock>,
-	///  Stores index of message in block to keep total order.
-	pub total_index: u16,
-}
-
-/// Schema and the the number of messages for that
-#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-pub struct SchemaCount {
-	/// schema id
-	pub schema_id: SchemaId,
-	/// number of messages for this schema id
-	pub count: MessageIndex,
 }
 
 impl<MaxDataSize> Message<MaxDataSize>
@@ -68,11 +40,12 @@ where
 		&self,
 		block_number: BlockNumber,
 		payload_location: PayloadLocation,
+		index: u16,
 	) -> MessageResponse {
 		match payload_location {
 			PayloadLocation::OnChain => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
-				index: self.index,
+				index,
 				block_number,
 				msa_id: self.msa_id,
 				payload: Some(self.payload.to_vec()),
@@ -84,7 +57,7 @@ where
 					OffchainPayloadType::decode(&mut &self.payload[..]).unwrap_or_default();
 				MessageResponse {
 					provider_msa_id: self.provider_msa_id,
-					index: self.index,
+					index,
 					block_number,
 					cid: Some(multibase::encode(Base::Base32Lower, binary_cid).as_bytes().to_vec()),
 					payload_length: Some(payload_length),
@@ -94,7 +67,7 @@ where
 			}, // Message types of Itemized and Paginated are retrieved differently
 			_ => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
-				index: self.index,
+				index,
 				block_number,
 				msa_id: None,
 				payload: None,

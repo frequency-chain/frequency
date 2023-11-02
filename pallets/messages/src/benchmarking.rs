@@ -15,6 +15,7 @@ use sp_runtime::traits::One;
 
 const IPFS_SCHEMA_ID: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
+const MAX_MESSAGES_IN_BLOCK: u32 = 500;
 
 fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let message_source_id = DelegatorId(1);
@@ -76,15 +77,14 @@ benchmarks! {
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(ProviderId(1), message_source_id.into(), [schema_id].to_vec()));
 
 		let payload = vec![1; n as usize];
-		let average_messages_per_block: u32 = T::MaxMessagesPerBlock::get() / 2;
-		for j in 1 .. average_messages_per_block {
+		for j in 1 .. MAX_MESSAGES_IN_BLOCK {
 			assert_ok!(onchain_message::<T>(schema_id));
 		}
 	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
 	verify {
-		assert_eq!(
-			MessagesPallet::<T>::get_block_metadata().total_index as u32,
-			average_messages_per_block
+		assert_eq!(MessagesPallet::<T>::get_messages_by_schema_and_block(
+				schema_id, PayloadLocation::OnChain, BlockNumberFor::<T>::one()).len(),
+			MAX_MESSAGES_IN_BLOCK as usize
 		);
 	}
 
@@ -97,15 +97,14 @@ benchmarks! {
 			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
 		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
-		let average_messages_per_block: u32 = T::MaxMessagesPerBlock::get() / 2;
-		for j in 1 .. average_messages_per_block {
+		for j in 1 .. MAX_MESSAGES_IN_BLOCK {
 			assert_ok!(ipfs_message::<T>(IPFS_SCHEMA_ID));
 		}
 	}: _ (RawOrigin::Signed(caller),IPFS_SCHEMA_ID, cid, IPFS_PAYLOAD_LENGTH)
 	verify {
-		assert_eq!(
-			MessagesPallet::<T>::get_block_metadata().total_index as u32,
-			average_messages_per_block
+		assert_eq!(MessagesPallet::<T>::get_messages_by_schema_and_block(
+				IPFS_SCHEMA_ID, PayloadLocation::IPFS, BlockNumberFor::<T>::one()).len(),
+			MAX_MESSAGES_IN_BLOCK as usize
 		);
 	}
 

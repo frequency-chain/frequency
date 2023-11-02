@@ -223,7 +223,7 @@ describe("Capacity Transactions", function () {
 
           const [_, chainEvents] = await call.payWithCapacity();
           assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "messages.MessagesStored");
+          assertEvent(chainEvents, "messages.MessagesInBlock");
         });
 
         it("successfully pays with Capacity for eligible transaction - addOnchainMessage", async function () {
@@ -232,7 +232,7 @@ describe("Capacity Transactions", function () {
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, "0xdeadbeef");
           const [_, chainEvents] = await call.payWithCapacity();
           assertEvent(chainEvents, "capacity.CapacityWithdrawn");
-          assertEvent(chainEvents, "messages.MessagesStored");
+          assertEvent(chainEvents, "messages.MessagesInBlock");
           const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
             dummySchemaId,
             {
@@ -771,7 +771,7 @@ describe("Capacity Transactions", function () {
         signPayloadSr25519(delegatorKeys, addProviderData),
         addProviderPayload
       );
-    
+
       // Actual weights and fee
       const { weight: { refTime, proofSize }, } = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryInfo(call.toHex(), 0));
       const weightFee = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryWeightToFee({refTime, proofSize}));

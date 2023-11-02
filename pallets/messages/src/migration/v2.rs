@@ -9,12 +9,34 @@ use sp_runtime::TryRuntimeError;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
-/// A permanent storage for messages mapped by block number and schema id.
-/// - Keys: BlockNumber, Schema Id
-/// - Value: List of Messages
+/// old structures and storages
 pub mod old {
 	use super::*;
+	use common_primitives::msa::MessageSourceId;
+	use sp_std::fmt::Debug;
 
+	/// old message structure that was stored
+	#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+	#[scale_info(skip_type_params(MaxDataSize))]
+	#[codec(mel_bound(MaxDataSize: MaxEncodedLen))]
+	pub struct OldMessage<MaxDataSize>
+	where
+		MaxDataSize: Get<u32> + Debug,
+	{
+		///  Data structured by the associated schema's model.
+		pub payload: BoundedVec<u8, MaxDataSize>,
+		/// Message source account id of the Provider. This may be the same id as contained in `msa_id`,
+		/// indicating that the original source MSA is acting as its own provider. An id differing from that
+		/// of `msa_id` indicates that `provider_msa_id` was delegated by `msa_id` to send this message on
+		/// its behalf.
+		pub provider_msa_id: MessageSourceId,
+		///  Message source account id (the original source).
+		pub msa_id: Option<MessageSourceId>,
+		///  Stores index of message in block to keep total order.
+		pub index: u16,
+	}
+
+	/// old permanent storage for messages mapped by block number and schema id.
 	#[storage_alias]
 	pub(crate) type Messages<T: Config> = StorageDoubleMap<
 		Pallet<T>,
@@ -23,15 +45,11 @@ pub mod old {
 		Twox64Concat,
 		SchemaId,
 		BoundedVec<
-			Message<<T as crate::pallet::Config>::MessagesMaxPayloadSizeBytes>,
-			<T as crate::pallet::Config>::MaxMessagesPerBlock,
+			OldMessage<<T as crate::pallet::Config>::MessagesMaxPayloadSizeBytes>,
+			ConstU32<500>,
 		>,
 		ValueQuery,
 	>;
-
-	#[storage_alias]
-	pub(crate) type BlockMessageIndex<T: crate::pallet::Config> =
-		StorageValue<Pallet<T>, u16, ValueQuery>;
 }
 /// migration to v2 implementation
 pub struct MigrateToV2<T>(PhantomData<T>);
@@ -44,10 +62,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
-		let mut count = 0u32;
-		for (_, _, v) in old::Messages::<T>::iter() {
-			count += v.len() as u32;
-		}
+		let count = old::Messages::<T>::iter().count() as u32;
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
 		Ok(count.encode())
 	}
@@ -85,17 +100,19 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 		for (block_number, schema_id, messages) in old::Messages::<T>::drain() {
 			bytes = bytes.saturating_add(messages.encode().len() as u64);
 
-			for (idx, message) in messages.iter().enumerate() {
-				MessagesV2::<T>::insert((block_number, schema_id, idx as u16), message);
+			for message in &messages {
+				let new_msg = Message {
+					provider_msa_id: message.provider_msa_id,
+					msa_id: message.msa_id,
+					payload: message.payload.clone(),
+				};
+				MessagesV2::<T>::insert((block_number, schema_id, message.index), new_msg);
 				bytes = bytes.saturating_add(message.encode().len() as u64);
 			}
 
 			reads.saturating_inc();
 			writes = writes.saturating_add(messages.len() as u64 + 1);
 		}
-
-		writes.saturating_inc();
-		old::BlockMessageIndex::<T>::kill();
 
 		// Set storage version to `2`.
 		StorageVersion::new(2).put::<Pallet<T>>();

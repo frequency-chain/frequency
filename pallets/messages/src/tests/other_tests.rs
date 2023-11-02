@@ -1,7 +1,7 @@
 use crate::{
-	migration::{v2, v2::old::BlockMessageIndex},
+	migration::{v2, v2::old::OldMessage},
 	tests::mock::*,
-	Config, Error, Event as MessageEvent, Message, MessagesV2,
+	BlockMessageIndex, Error, Event as MessageEvent, Message, MessagesV2,
 };
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
@@ -56,13 +56,12 @@ fn populate_messages(
 
 	let mut counter = 0;
 	for (idx, count) in message_per_block.iter().enumerate() {
-		for i in 0..*count {
+		for _ in 0..*count {
 			MessagesV2::<Test>::set(
-				(idx as u32, schema_id, i as u16),
+				(idx as u32, schema_id, counter),
 				Some(Message {
 					msa_id: Some(10),
 					payload: payload.clone().try_into().unwrap(),
-					index: counter,
 					provider_msa_id: 1,
 				}),
 			);
@@ -130,15 +129,14 @@ fn add_message_should_store_message_in_storage() {
 
 		// assert messages
 		let msg1 = MessagesV2::<Test>::get((1, schema_id_1, 0u16));
-		let msg2 = MessagesV2::<Test>::get((1, schema_id_2, 0u16));
-		let msg3 = MessagesV2::<Test>::get((1, schema_id_2, 1u16));
+		let msg2 = MessagesV2::<Test>::get((1, schema_id_2, 1u16));
+		let msg3 = MessagesV2::<Test>::get((1, schema_id_2, 2u16));
 
 		assert_eq!(
 			msg1,
 			Some(Message {
 				msa_id: Some(get_msa_from_account(caller_1)),
 				payload: message_payload_1.try_into().unwrap(),
-				index: 0,
 				provider_msa_id: get_msa_from_account(caller_1)
 			})
 		);
@@ -148,7 +146,6 @@ fn add_message_should_store_message_in_storage() {
 			Some(Message {
 				msa_id: Some(get_msa_from_account(caller_2)),
 				payload: message_payload_2.try_into().unwrap(),
-				index: 1,
 				provider_msa_id: get_msa_from_account(caller_2)
 			})
 		);
@@ -158,33 +155,19 @@ fn add_message_should_store_message_in_storage() {
 			Some(Message {
 				msa_id: Some(get_msa_from_account(caller_2)),
 				payload: message_payload_3.try_into().unwrap(),
-				index: 2,
 				provider_msa_id: get_msa_from_account(caller_2)
 			})
 		);
 
 		// assert events
-		let events_occured = System::events();
+		let events_occurred = System::events();
 		assert_eq!(
-			events_occured,
-			vec![
-				EventRecord {
-					phase: Phase::Initialization,
-					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-						block_number: 1,
-						schema_id: schema_id_1,
-					}),
-					topics: vec![]
-				},
-				EventRecord {
-					phase: Phase::Initialization,
-					event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesStored {
-						block_number: 1,
-						schema_id: schema_id_2,
-					}),
-					topics: vec![]
-				},
-			]
+			events_occurred,
+			vec![EventRecord {
+				phase: Phase::Initialization,
+				event: RuntimeEvent::MessagesPallet(MessageEvent::MessagesInBlock),
+				topics: vec![]
+			},]
 		);
 	});
 }
@@ -247,63 +230,6 @@ fn add_ipfs_message_with_invalid_msa_account_errors() {
 				15
 			),
 			Error::<Test>::InvalidMessageSourceAccount
-		);
-	});
-}
-
-#[test]
-fn add_message_with_maxed_out_storage_errors() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = 1;
-		let message_payload_1 = generate_payload(1, None);
-
-		// act
-		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
-			assert_ok!(MessagesPallet::add_onchain_message(
-				RuntimeOrigin::signed(caller_1),
-				None,
-				schema_id_1,
-				message_payload_1.clone()
-			));
-		}
-		assert_noop!(
-			MessagesPallet::add_onchain_message(
-				RuntimeOrigin::signed(caller_1),
-				None,
-				schema_id_1,
-				message_payload_1
-			),
-			Error::<Test>::TooManyMessagesInBlock
-		);
-	});
-}
-
-#[test]
-fn add_ipfs_message_with_maxed_out_storage_errors() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let caller_1 = 5;
-		let schema_id_1: SchemaId = IPFS_SCHEMA_ID;
-
-		// act
-		for _ in 0..<Test as Config>::MaxMessagesPerBlock::get() {
-			assert_ok!(MessagesPallet::add_ipfs_message(
-				RuntimeOrigin::signed(caller_1),
-				schema_id_1,
-				DUMMY_CID_BASE32.to_vec(),
-				15
-			));
-		}
-		assert_noop!(
-			MessagesPallet::add_ipfs_message(
-				RuntimeOrigin::signed(caller_1),
-				schema_id_1,
-				DUMMY_CID_BASE32.to_vec(),
-				15
-			),
-			Error::<Test>::TooManyMessagesInBlock
 		);
 	});
 }
@@ -372,9 +298,8 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 			.unwrap(),
 			msa_id: Some(0),
 			provider_msa_id: 1,
-			index: 0,
 		};
-		let mapped_response = bad_message.map_to_response(0, PayloadLocation::IPFS);
+		let mapped_response = bad_message.map_to_response(0, PayloadLocation::IPFS, 0);
 		assert_eq!(
 			mapped_response.cid,
 			Some(multibase::encode(Base::Base32Lower, Vec::new()).as_bytes().to_vec())
@@ -674,8 +599,7 @@ fn validate_cid_unwrap_panics() {
 fn map_to_response_on_chain() {
 	let payload_vec = b"123456789012345678901234567890".to_vec();
 	let payload_bounded = BoundedVec::<u8, ConstU32<100>>::try_from(payload_vec.clone()).unwrap();
-	let msg =
-		Message { payload: payload_bounded, provider_msa_id: 10u64, msa_id: None, index: 1u16 };
+	let msg = Message { payload: payload_bounded, provider_msa_id: 10u64, msa_id: None };
 	let expected = MessageResponse {
 		provider_msa_id: 10u64,
 		index: 1u16,
@@ -685,7 +609,7 @@ fn map_to_response_on_chain() {
 		cid: None,
 		payload_length: None,
 	};
-	assert_eq!(msg.map_to_response(42, PayloadLocation::OnChain), expected);
+	assert_eq!(msg.map_to_response(42, PayloadLocation::OnChain, 1), expected);
 }
 
 #[test]
@@ -693,7 +617,7 @@ fn map_to_response_ipfs() {
 	let cid = DUMMY_CID_SHA512;
 	let payload_tuple: crate::OffchainPayloadType = (multibase::decode(cid).unwrap().1, 10);
 	let payload = BoundedVec::<u8, ConstU32<500>>::try_from(payload_tuple.encode()).unwrap();
-	let msg = Message { payload, provider_msa_id: 10u64, msa_id: None, index: 1u16 };
+	let msg = Message { payload, provider_msa_id: 10u64, msa_id: None };
 	let expected = MessageResponse {
 		provider_msa_id: 10u64,
 		index: 1u16,
@@ -703,7 +627,7 @@ fn map_to_response_ipfs() {
 		cid: Some(cid.as_bytes().to_vec()),
 		payload_length: Some(10),
 	};
-	assert_eq!(msg.map_to_response(42, PayloadLocation::IPFS), expected);
+	assert_eq!(msg.map_to_response(42, PayloadLocation::IPFS, 1), expected);
 }
 
 #[test]
@@ -723,7 +647,7 @@ fn migration_to_v2_should_work_as_expected() {
 		for (idx, count) in message_per_block.iter().enumerate() {
 			let mut list = BoundedVec::default();
 			for _ in 0..*count {
-				list.try_push(Message {
+				list.try_push(OldMessage {
 					msa_id: Some(10),
 					payload: payload.clone().try_into().unwrap(),
 					index: counter,
@@ -737,17 +661,10 @@ fn migration_to_v2_should_work_as_expected() {
 
 		let _ = v2::migrate_to_v2::<Test>();
 
-		let mut old_count = 0;
-		for _ in v2::old::Messages::<Test>::iter() {
-			old_count += 1;
-		}
-
-		let mut new_count = 0;
-		for _ in MessagesV2::<Test>::iter() {
-			new_count += 1;
-		}
+		let old_count = v2::old::Messages::<Test>::iter().count();
+		let new_count = MessagesV2::<Test>::iter().count();
 
 		assert_eq!(old_count, 0);
-		assert_eq!(new_count, message_per_block.iter().sum::<i32>());
+		assert_eq!(new_count, message_per_block.iter().sum::<usize>());
 	});
 }
