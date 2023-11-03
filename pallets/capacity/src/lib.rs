@@ -49,7 +49,6 @@
 )]
 
 use frame_support::{
-	dispatch::DispatchResult,
 	ensure,
 	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
 	weights::{constants::RocksDbWeight, Weight},
@@ -82,18 +81,23 @@ mod benchmarking;
 mod tests;
 
 pub mod weights;
+mod migration;
 
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 const STAKING_ID: LockIdentifier = *b"netstkng";
 use frame_system::pallet_prelude::*;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
+	use frame_support::pallet_prelude::{StorageVersion, GetStorageVersion};
+
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -154,11 +158,11 @@ pub mod pallet {
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
 	/// - Keys: AccountId
-	/// - Value: [`StakingAccountDetails`](types::StakingAccountDetails)
+	/// - Value: [`StakingAccountDetailsV2`](types::StakingAccountDetailsV2)
 	#[pallet::storage]
 	#[pallet::getter(fn get_staking_account_for)]
 	pub type StakingAccountLedger<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetails<T>>;
+		StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetailsV2<T>>;
 
 	/// Storage to record how many tokens were targeted to an MSA.
 	/// - Keys: AccountId, MSA Id
@@ -206,9 +210,15 @@ pub mod pallet {
 	pub type EpochLength<T: Config> =
 		StorageValue<_, BlockNumberFor<T>, ValueQuery, EpochLengthDefault<T>>;
 
+	#[pallet::storage]
+	#[pallet::getter(fn get_unstake_unlocking_for)]
+	pub type UnstakeUnlocks<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunks<T>>;
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
+	#[pallet::storage_version(STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::event]
@@ -339,7 +349,7 @@ pub mod pallet {
 		/// in the caller's token account.
 		///
 		/// ### Errors
-		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetails are found for `origin`.
+		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetailsV2 are found for `origin`.
 		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
@@ -350,7 +360,10 @@ pub mod pallet {
 				Self::get_staking_account_for(&staker).ok_or(Error::<T>::NotAStakingAccount)?;
 
 			let current_epoch = Self::get_current_epoch();
-			let amount_withdrawn = staking_account.reap_thawed(current_epoch);
+
+			// TODO: call reap_thawed on unlock storage
+			// let amount_withdrawn = staking_account.reap_thawed(current_epoch);
+			let amount_withdrawn: BalanceOf<T> = Zero::zero();
 			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
 
 			Self::update_or_delete_staking_account(&staker, &mut staking_account);
@@ -426,12 +439,14 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
-	) -> Result<(StakingAccountDetails<T>, BalanceOf<T>), DispatchError> {
+	) -> Result<(StakingAccountDetailsV2<T>, BalanceOf<T>), DispatchError> {
 		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 
 		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
-		let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
+		// let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
+		// TODO: correct amount
+		let stakable_amount = amount.clone();
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
 
@@ -452,7 +467,7 @@ impl<T: Config> Pallet<T> {
 	/// Additionally, it issues Capacity to the MSA target.
 	fn increase_stake_and_issue_capacity(
 		staker: &T::AccountId,
-		staking_account: &mut StakingAccountDetails<T>,
+		staking_account: &mut StakingAccountDetailsV2<T>,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
@@ -473,8 +488,9 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details.
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
-		T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetailsV2<T>) {
+		// TODO: adjust for storage in unlocks  (active is wrong)
+		T::Currency::set_lock(STAKING_ID, &staker, staking_account.active, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
 	}
 
@@ -487,9 +503,10 @@ impl<T: Config> Pallet<T> {
 	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
 	fn update_or_delete_staking_account(
 		staker: &T::AccountId,
-		staking_account: &StakingAccountDetails<T>,
+		staking_account: &StakingAccountDetailsV2<T>,
 	) {
-		if staking_account.total.is_zero() {
+		// TODO: look for no key in unlock chunks
+		if staking_account.active.is_zero() {
 			Self::delete_staking_account(&staker);
 		} else {
 			Self::set_staking_account(&staker, &staking_account)

@@ -58,7 +58,7 @@ benchmarks! {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 
-		let mut staking_account = StakingAccountDetails::<T>::default();
+		let mut staking_account = StakingAccountDetailsV2::<T>::default();
 		staking_account.deposit(500u32.into());
 
 		// set new unlock chunks using tuples of (value, thaw_at)
@@ -91,7 +91,7 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
-		let mut staking_account = StakingAccountDetails::<T>::default();
+		let mut staking_account = StakingAccountDetailsV2::<T>::default();
 		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 

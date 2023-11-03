@@ -1,5 +1,5 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetails};
+use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetailsV2};
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
 use sp_runtime::ArithmeticError;
@@ -15,9 +15,7 @@ fn stake_works() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 
 		// Check that StakingAccountLedger is updated.
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 50);
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().active, 50);
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().unlocking.len(), 0);
 
 		// Check that StakingTargetLedger is updated.
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().amount, 50);
@@ -115,9 +113,7 @@ fn stake_increase_stake_amount_works() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, additional_amount));
 
 		// Check that StakingAccountLedger is updated.
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 150);
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().active, 150);
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().unlocking.len(), 0);
 
 		// Check that StakingTargetLedger is updated.
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().amount, 150);
@@ -151,9 +147,7 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_ok!(Capacity::stake(RuntimeOrigin::signed(account_1), target, stake_amount_1));
 
 			// Check that StakingAccountLedger is updated.
-			assert_eq!(Capacity::get_staking_account_for(account_1).unwrap().total, 50);
 			assert_eq!(Capacity::get_staking_account_for(account_1).unwrap().active, 50);
-			assert_eq!(Capacity::get_staking_account_for(account_1).unwrap().unlocking.len(), 0);
 
 			// Check that StakingTargetLedger is updated.
 			assert_eq!(Capacity::get_target_for(account_1, target).unwrap().amount, 50);
@@ -175,9 +169,7 @@ fn stake_multiple_accounts_can_stake_to_the_same_target() {
 			assert_ok!(Capacity::stake(RuntimeOrigin::signed(account_2), target, stake_amount_2));
 
 			// Check that StakingAccountLedger is updated.
-			assert_eq!(Capacity::get_staking_account_for(account_2).unwrap().total, 100);
 			assert_eq!(Capacity::get_staking_account_for(account_2).unwrap().active, 100);
-			assert_eq!(Capacity::get_staking_account_for(account_2).unwrap().unlocking.len(), 0);
 
 			// Check that StakingTargetLedger is updated.
 			assert_eq!(Capacity::get_target_for(account_2, target).unwrap().amount, 100);
@@ -204,7 +196,6 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		let amount_2 = 200;
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_1, amount_1));
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, amount_1);
 
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
@@ -213,9 +204,7 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target_2, amount_2));
 
 		// Check that StakingAccountLedger is updated.
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 300);
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().active, 300);
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().unlocking.len(), 0);
 
 		// Check that StakingTargetLedger is updated for target 1.
 		assert_eq!(Capacity::get_target_for(account, target_1).unwrap().amount, 100);
@@ -249,9 +238,7 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 
 		// Check that StakingAccountLedger is updated.
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().total, 190);
 		assert_eq!(Capacity::get_staking_account_for(account).unwrap().active, 190);
-		assert_eq!(Capacity::get_staking_account_for(account).unwrap().unlocking.len(), 0);
 
 		// Check that StakingTargetLedger is updated.
 		assert_eq!(Capacity::get_target_for(account, target).unwrap().amount, 190);
@@ -354,7 +341,7 @@ fn ensure_can_stake_is_successful() {
 		let amount = 10;
 		register_provider(target, String::from("Foo"));
 
-		let staking_details = StakingAccountDetails::<Test>::default();
+		let staking_details = StakingAccountDetailsV2::<Test>::default();
 		assert_ok!(
 			Capacity::ensure_can_stake(&account, target, amount),
 			(staking_details, BalanceOf::<Test>::from(10u64))
@@ -368,7 +355,7 @@ fn increase_stake_and_issue_capacity_is_successful() {
 		let staker = 10_000; // has 10_000 token
 		let target: MessageSourceId = 1;
 		let amount = 550;
-		let mut staking_account = StakingAccountDetails::<Test>::default();
+		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
 
 		assert_ok!(Capacity::increase_stake_and_issue_capacity(
 			&staker,
@@ -377,9 +364,7 @@ fn increase_stake_and_issue_capacity_is_successful() {
 			amount
 		));
 
-		assert_eq!(staking_account.total, amount);
 		assert_eq!(staking_account.active, amount);
-		assert_eq!(staking_account.unlocking.len(), 0);
 
 		let capacity_details = Capacity::get_capacity_for(&target).unwrap();
 
