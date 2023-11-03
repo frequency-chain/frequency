@@ -80,6 +80,9 @@ start-frequency-instant)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=instant \
     --wasm-execution=compiled \
@@ -109,6 +112,9 @@ start-frequency-interval)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=interval \
     --sealing-interval=${interval} \
