@@ -26,6 +26,8 @@ scale-info = { version = "2.10.0", default-features = false, features = [
   "derive",
 ] }
 
+sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+
 # testing dependencies
 sp-keystore = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
 sp-keyring = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
