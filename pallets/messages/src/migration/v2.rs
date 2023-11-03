@@ -69,7 +69,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 		assert_eq!(&b"Messages"[..], storage_prefix);
 
 		let mut count = 0u32;
-		for (_,_,messages) in old::Messages::<T>::iter() {
+		for (_, _, messages) in old::Messages::<T>::iter() {
 			count += messages.len() as u32;
 		}
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
