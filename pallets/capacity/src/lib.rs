@@ -80,8 +80,8 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
-pub mod weights;
 mod migration;
+pub mod weights;
 
 type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -93,10 +93,11 @@ use frame_system::pallet_prelude::*;
 pub mod pallet {
 	use super::*;
 
+	use frame_support::pallet_prelude::{GetStorageVersion, StorageVersion};
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
-	use frame_support::pallet_prelude::{StorageVersion, GetStorageVersion};
 
+	/// the storage version for this pallet
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::config]
@@ -212,8 +213,7 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_unstake_unlocking_for)]
-	pub type UnstakeUnlocks<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunks<T>>;
+	pub type UnstakeUnlocks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, UnlockChunks<T>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -592,8 +592,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
-			Self::get_epoch_length()
+		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start)
+			>= Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
@@ -672,7 +672,7 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
 		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.can_replenish(Self::get_current_epoch())
+			return capacity_details.can_replenish(Self::get_current_epoch());
 		}
 		false
 	}

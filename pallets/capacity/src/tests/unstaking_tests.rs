@@ -1,6 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
-use crate::{CapacityDetails, StakingAccountDetailsV2, StakingTargetDetails, StakingType, UnlockChunk};
+use crate::{
+	CapacityDetails, StakingAccountDetailsV2, StakingTargetDetails, StakingType, UnlockChunk,
+};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
 use pallet_capacity::{BalanceOf, Config, Error, Event};

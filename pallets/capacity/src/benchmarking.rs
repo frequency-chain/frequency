@@ -61,9 +61,10 @@ benchmarks! {
 		let mut staking_account = StakingAccountDetailsV2::<T>::default();
 		staking_account.deposit(500u32.into());
 
+		// TODO: set chunks in new storage
 		// set new unlock chunks using tuples of (value, thaw_at)
-		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
-		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+		// let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
+		// assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
 		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
@@ -71,6 +72,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
 		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
+		// assert storage was deleted
 	}
 
 	on_initialize {

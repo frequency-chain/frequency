@@ -4,14 +4,14 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use log::warn;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
 	RuntimeDebug,
 };
-use sp_runtime::traits::AtLeast32BitUnsigned;
 
 #[derive(
-Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
+	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
 )]
 /// The type of staking a given Staking Account is doing.
 pub enum StakingType {
@@ -198,7 +198,6 @@ pub struct EpochInfo<BlockNumber> {
 	pub epoch_start: BlockNumber,
 }
 
-
 /// The type that stores all the unlocks an account has generated from `unstake` calls
 // #[derive(
 // TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
@@ -206,10 +205,10 @@ pub struct EpochInfo<BlockNumber> {
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct UnlockChunks<T: Config> {
-	unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>
+	unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
 }
 
-impl <T: Config> UnlockChunks<T> {
+impl<T: Config> UnlockChunks<T> {
 	#[cfg(any(feature = "runtime-benchmarks", test))]
 	#[allow(clippy::unwrap_used)]
 	///  tmp fn for testing only
@@ -244,7 +243,12 @@ impl <T: Config> UnlockChunks<T> {
 	/// Attempt to add a new chunk to unlocking.
 	/// caller is responsible for reaping_thawed chunks beforehand.
 	/// Returns:  () or MaxUnlockingChunksExceeded if the BoundedVec is full.
-	pub fn add(&mut self, amount: BalanceOf<T>, thaw_at: <T>::EpochNumber, current_epoch: <T>::EpochNumber) -> Result<(), DispatchError>{
+	pub fn add(
+		&mut self,
+		amount: BalanceOf<T>,
+		thaw_at: <T>::EpochNumber,
+		current_epoch: <T>::EpochNumber,
+	) -> Result<(), DispatchError> {
 		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
 		self.unlocking
 			.try_push(unlock_chunk)
