@@ -355,18 +355,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-
-			let mut staking_account =
-				Self::get_staking_account_for(&staker).ok_or(Error::<T>::NotAStakingAccount)?;
-
-			let current_epoch = Self::get_current_epoch();
-
-			// TODO: call reap_thawed on unlock storage
-			// let amount_withdrawn = staking_account.reap_thawed(current_epoch);
-			let amount_withdrawn: BalanceOf<T> = Zero::zero();
-			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
-
-			Self::update_or_delete_staking_account(&staker, &mut staking_account);
+			let amount_withdrawn = Self::do_withdraw_unstaked(&staker)?;
 			Self::deposit_event(Event::<T>::StakeWithdrawn {
 				account: staker,
 				amount: amount_withdrawn,
@@ -394,6 +383,8 @@ pub mod pallet {
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
 			let actual_amount = Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
+			Self::add_unlock_chunk(&unstaker, actual_amount)?;
+
 			let capacity_reduction = Self::reduce_capacity(&unstaker, target, actual_amount)?;
 
 			Self::deposit_event(Event::UnStaked {
@@ -444,9 +435,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 
 		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
-		// let stakable_amount = staking_account.get_stakable_amount_for(&staker, amount);
-		// TODO: correct amount
-		let stakable_amount = amount.clone();
+		let stakable_amount = Self::get_stakable_amount_for(&staker, amount);
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
 
@@ -480,7 +469,11 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
-		Self::set_staking_account(&staker, staking_account);
+		// TODO: we -can- set the lock here
+		// Self::set_staking_account(&staker, staking_account);
+		T::Currency::set_lock(STAKING_ID, &staker, staking_account.active, WithdrawReasons::all());
+		StakingAccountLedger::<T>::insert(staker, staking_account);
+
 		Self::set_target_details_for(&staker, target, target_details);
 		Self::set_capacity_for(target, capacity_details);
 
@@ -495,23 +488,24 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Deletes staking account details
-	fn delete_staking_account(staker: &T::AccountId) {
-		T::Currency::remove_lock(STAKING_ID, &staker);
-		StakingAccountLedger::<T>::remove(&staker);
-	}
+	// fn delete_staking_account(staker: &T::AccountId) {
+	// 	T::Currency::remove_lock(STAKING_ID, &staker);
+	// 	StakingAccountLedger::<T>::remove(&staker);
+	// }
 
 	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
-	fn update_or_delete_staking_account(
-		staker: &T::AccountId,
-		staking_account: &StakingAccountDetailsV2<T>,
-	) {
-		// TODO: look for no key in unlock chunks
-		if staking_account.active.is_zero() {
-			Self::delete_staking_account(&staker);
-		} else {
-			Self::set_staking_account(&staker, &staking_account)
-		}
-	}
+	/// TODO: figure out if this is still needed.
+	// fn update_or_delete_staking_account(
+	// 	staker: &T::AccountId,
+	// 	staking_account: &StakingAccountDetailsV2<T>,
+	// ) {
+	// 	// TODO: look for no key in unlock chunks
+	// 	if staking_account.active.is_zero() {
+	// 		Self::delete_staking_account(&staker);
+	// 	} else {
+	// 		Self::set_staking_account(&staker, &staking_account)
+	// 	}
+	// }
 
 	/// Sets target account details.
 	fn set_target_details_for(
@@ -531,6 +525,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
+	// TODO: I think this should be a try_mutate_exists and set it to None if all of it is unstaked.
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
@@ -539,15 +534,69 @@ impl<T: Config> Pallet<T> {
 			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
+		let actual_unstaked_amount = staking_account.withdraw(amount)?;
+
+		// TODO: we can't set the lock here - the lock needs to be set when it's withdrawn.
+		// Self::set_staking_account(&unstaker, &staking_account);
+		StakingAccountLedger::<T>::insert(unstaker, staking_account);
+
+		Ok(actual_unstaked_amount)
+	}
+
+	fn add_unlock_chunk(
+		unstaker: &T::AccountId,
+		actual_unstaked_amount: BalanceOf<T>,
+	) -> Result<(), DispatchError> {
 		let current_epoch: T::EpochNumber = Self::get_current_epoch();
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
+		let mut unlocks = Self::get_unstake_unlocking_for(unstaker).unwrap_or_default();
+		unlocks.add(actual_unstaked_amount, thaw_at)?;
+		UnstakeUnlocks::<T>::set(unstaker, Some(unlocks));
+		Ok(())
+	}
 
-		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
+	// Calculates a stakable amount from a proposed amount.
+	pub(crate) fn get_stakable_amount_for(
+		staker: &T::AccountId,
+		proposed_amount: BalanceOf<T>,
+	) -> BalanceOf<T> {
+		let account_balance = T::Currency::free_balance(&staker);
+		account_balance
+			.saturating_sub(T::MinimumTokenBalance::get())
+			.min(proposed_amount)
+	}
 
-		Self::set_staking_account(&unstaker, &staking_account);
-
-		Ok(unstake_result)
+	pub(crate) fn do_withdraw_unstaked(
+		staker: &T::AccountId,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let current_epoch = Self::get_current_epoch();
+		let mut amount_withdrawn: BalanceOf<T> = Zero::zero();
+		let mut total_unlocking: BalanceOf<T> = Zero::zero();
+		UnstakeUnlocks::<T>::try_mutate_exists(
+			staker,
+			|maybe_unlocks| -> Result<(), DispatchError> {
+				let mut unlocks =
+					maybe_unlocks.take().ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
+				amount_withdrawn = unlocks.reap_thawed(current_epoch);
+				ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
+				if unlocks.unlocking.is_empty() {
+					*maybe_unlocks = None;
+				} else {
+					total_unlocking = unlocks.total();
+					*maybe_unlocks = Some(unlocks);
+				}
+				Ok(())
+			},
+		)?;
+		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
+		let total_locked = staking_account.active.saturating_add(total_unlocking);
+		if total_locked.is_zero() {
+			T::Currency::remove_lock(STAKING_ID, &staker);
+		} else {
+			T::Currency::set_lock(STAKING_ID, &staker, total_locked, WithdrawReasons::all());
+		}
+		Ok(amount_withdrawn)
 	}
 
 	/// Reduce available capacity of target and return the amount of capacity reduction.

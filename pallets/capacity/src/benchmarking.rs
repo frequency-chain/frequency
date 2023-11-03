@@ -56,17 +56,11 @@ benchmarks! {
 
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		let mut unlocking: UnlockChunks<T> = UnlockChunks::default();
+		assert_ok!(unlocking.add(50u32.into(), 3u32.into()));
+		assert_ok!(unlocking.add(50u32.into(), 5u32.into()));
+		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
-		let mut staking_account = StakingAccountDetailsV2::<T>::default();
-		staking_account.deposit(500u32.into());
-
-		// TODO: set chunks in new storage
-		// set new unlock chunks using tuples of (value, thaw_at)
-		// let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
-		// assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-
-		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))

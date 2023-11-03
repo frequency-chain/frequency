@@ -1,126 +1,121 @@
-use super::{mock::*, testing_utils::run_to_block};
-use crate as pallet_capacity;
-use crate::StakingAccountDetailsV2;
-use frame_support::{assert_noop, assert_ok};
-use pallet_capacity::{BalanceOf, Error, Event};
+use super::{
+	mock::*,
+	testing_utils::{register_provider, run_to_block},
+};
+use crate::{
+	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, StakingAccountDetailsV2, UnlockChunks,
+	UnstakeUnlocks,
+};
+use frame_support::{assert_noop, assert_ok, BoundedVec};
 
-// TODO: rewrite for UnlockChunks
-// #[test]
-// fn withdraw_unstaked_happy_path() {
-// 	new_test_ext().execute_with(|| {
-// 		// set up staker and staking account
-// 		let staker = 500;
-// 		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
-// 		let unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
-//
-// 		// setup_staking_account_for::<Test>(staker, staking_amount, &unlocks);
-// 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
-//
-// 		// we have 10 total staked, and 6 of those are unstaking.
-// 		staking_account.deposit(10);
-// 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
-// 		assert_eq!(10u64, staking_account.total);
-// 		Capacity::set_staking_account(&staker, &staking_account.into());
-//
-// 		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
-//
-// 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
-//
-// 		// We want to advance to epoch 3 to unlock the first two sets.
-// 		run_to_block(31);
-// 		assert_eq!(3u32, Capacity::get_current_epoch());
-// 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-//
-// 		let current_account: StakingAccountDetailsV2<Test> =
-// 			Capacity::get_staking_account_for(&staker).unwrap();
-// 		let expected_reaped_value = 3u64;
-// 		assert_eq!(starting_account.total - expected_reaped_value, current_account.total);
-// 		System::assert_last_event(
-// 			Event::StakeWithdrawn { account: staker, amount: expected_reaped_value }.into(),
-// 		);
-// 	})
-// }
-//
-// #[test]
-// fn withdraw_unstaked_correctly_sets_new_lock_state() {
-// 	new_test_ext().execute_with(|| {
-// 		let staker = 500;
-// 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
-// 		staking_account.deposit(10);
-//
-// 		// set new unlock chunks using tuples of (value, thaw_at)
-// 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
-// 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-//
-// 		Capacity::set_staking_account(&staker, &staking_account);
-// 		assert_eq!(1, Balances::locks(&staker).len());
-// 		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
-//
-// 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
-//
-// 		// Epoch length = 10, we want to run to epoch 3
-// 		run_to_block(31);
-// 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-//
-// 		assert_eq!(1, Balances::locks(&staker).len());
-// 		assert_eq!(7u64, Balances::locks(&staker)[0].amount);
-// 	})
-// }
-//
-// #[test]
-// fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
-// 	new_test_ext().execute_with(|| {
-// 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
-// 		let staking_amount: BalanceOf<Test> = 10;
-// 		staking_account.deposit(staking_amount);
-//
-// 		// set new unlock chunks using tuples of (value, thaw_at)
-// 		let new_unlocks: Vec<(u32, u32)> = vec![(10u32, 2u32)];
-// 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-//
-// 		let staker = 500;
-// 		Capacity::set_staking_account(&staker, &staking_account);
-// 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
-//
-// 		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
-// 		run_to_block(30);
-// 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-// 		assert!(Capacity::get_staking_account_for(&staker).is_none());
-//
-// 		assert_eq!(0, Balances::locks(&staker).len());
-// 	})
-// }
-//
-// #[test]
-// fn withdraw_unstaked_cannot_withdraw_if_no_unstaking_chunks() {
-// 	new_test_ext().execute_with(|| {
-// 		let staker = 500;
-// 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
-// 		staking_account.deposit(10);
-// 		Capacity::set_staking_account(&staker, &staking_account);
-// 		assert_noop!(
-// 			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
-// 			Error::<Test>::NoUnstakedTokensAvailable
-// 		);
-// 	})
-// }
-// #[test]
-// fn withdraw_unstaked_cannot_withdraw_if_unstaking_chunks_not_thawed() {
-// 	new_test_ext().execute_with(|| {
-// 		let staker = 500;
-// 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
-// 		staking_account.deposit(10);
-//
-// 		// set new unlock chunks using tuples of (value, thaw_at)
-// 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 3u32), (2u32, 40u32), (3u32, 9u32)];
-// 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-//
-// 		Capacity::set_staking_account(&staker, &staking_account);
-//
-// 		run_to_block(2);
-// 		assert_noop!(
-// 			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
-// 			Error::<Test>::NoUnstakedTokensAvailable
-// 		);
-// 	})
-// }
+#[test]
+fn withdraw_unstaked_happy_path() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		CurrentEpoch::<Test>::set(0);
+		CurrentEpochInfo::<Test>::set(EpochInfo { epoch_start: 0 });
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
+		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
+		let mut unlocking: UnlockChunks<Test> = UnlockChunks::default();
+		assert_ok!(unlocking.add(1, 2));
+		assert_ok!(unlocking.add(2, 3));
+		assert_ok!(unlocking.add(3, 4));
+		UnstakeUnlocks::<Test>::set(&staker, Some(unlocking));
+
+		// We want to advance to epoch 3 to unlock the first two sets.
+		run_to_block(31);
+		assert_eq!(3u32, Capacity::get_current_epoch());
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+
+		let expected_reaped_value = 3u64;
+		System::assert_last_event(
+			Event::StakeWithdrawn { account: staker, amount: expected_reaped_value }.into(),
+		);
+	})
+}
+
+#[test]
+fn withdraw_unstaked_correctly_sets_new_lock_state() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 20;
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
+		register_provider(target, String::from("WithdrawUnst"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+
+		run_to_block(1);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 1));
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(20u64, Balances::locks(&staker)[0].amount);
+
+		// thaw period in mock is 2 Epochs * 10 blocks = 20 blocks.
+		run_to_block(21);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 2));
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(19u64, Balances::locks(&staker)[0].amount);
+
+		run_to_block(41);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 3));
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(17u64, Balances::locks(&staker)[0].amount);
+
+		run_to_block(61);
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+		assert_eq!(1, Balances::locks(&staker).len());
+		assert_eq!(14u64, Balances::locks(&staker)[0].amount);
+	})
+}
+
+#[test]
+fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 20;
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
+		register_provider(target, String::from("WithdrawUnst"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+
+		run_to_block(1);
+		// unstake everything
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
+		// wait for thaw
+		run_to_block(21);
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+		assert_eq!(0, Balances::locks(&staker).len());
+		assert!(Capacity::get_unstake_unlocking_for(&staker).is_none());
+	})
+}
+
+#[test]
+fn withdraw_unstaked_cannot_withdraw_if_no_unstaking_chunks() {
+	new_test_ext().execute_with(|| {
+		assert_noop!(
+			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
+			Error::<Test>::NoUnstakedTokensAvailable
+		);
+	})
+}
+#[test]
+fn withdraw_unstaked_cannot_withdraw_if_unstaking_chunks_not_thawed() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 10;
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+		register_provider(target, String::from("WithdrawUnst"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+
+		run_to_block(11);
+		assert_noop!(
+			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
+			Error::<Test>::NoUnstakedTokensAvailable
+		);
+	})
+}

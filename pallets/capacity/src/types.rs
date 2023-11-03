@@ -4,11 +4,12 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use log::warn;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::traits::AtLeast32BitUnsigned;
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
 	RuntimeDebug,
 };
+#[cfg(any(feature = "runtime-benchmarks", test))]
+use sp_std::vec::Vec;
 
 #[derive(
 	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
@@ -54,26 +55,8 @@ impl<T: Config> StakingAccountDetailsV2<T> {
 		Some(())
 	}
 
-	// TODO: Move this into a pallet helper fn
-	/// Calculates a stakable amount from a proposed amount.
-	// pub fn get_stakable_amount_for(
-	// 	&self,
-	// 	staker: &T::AccountId,
-	// 	proposed_amount: BalanceOf<T>,
-	// ) -> BalanceOf<T> {
-	// 	let account_balance = T::Currency::free_balance(&staker);
-	// 	let available_staking_balance = account_balance.saturating_sub(self.total);
-	// 	available_staking_balance
-	// 		.saturating_sub(T::MinimumTokenBalance::get())
-	// 		.min(proposed_amount)
-	// }
-
 	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
-	pub fn withdraw(
-		&mut self,
-		amount: BalanceOf<T>,
-		thaw_at: T::EpochNumber,
-	) -> Result<BalanceOf<T>, DispatchError> {
+	pub fn withdraw(&mut self, amount: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError> {
 		let mut active = self.active.saturating_sub(amount);
 		let mut actual_unstaked: BalanceOf<T> = amount;
 
@@ -199,13 +182,17 @@ pub struct EpochInfo<BlockNumber> {
 }
 
 /// The type that stores all the unlocks an account has generated from `unstake` calls
-// #[derive(
-// TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
-// )]
 #[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct UnlockChunks<T: Config> {
-	unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+	/// the list of unstaked amounts + thaw_at Epoch
+	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+}
+
+impl<T: Config> Default for UnlockChunks<T> {
+	fn default() -> Self {
+		Self { unlocking: BoundedVec::default() }
+	}
 }
 
 impl<T: Config> UnlockChunks<T> {
@@ -215,30 +202,32 @@ impl<T: Config> UnlockChunks<T> {
 	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
 	/// don't exceed total.
 	/// returns true on success, false on failure (?)
-	// pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
-	// 	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
-	// 		.into_iter()
-	// 		.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
-	// 		.collect();
-	// 	self.unlocking = BoundedVec::try_from(result).unwrap();
-	// 	self.unlocking.len() == chunks.len()
-	// }
+	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
+		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
+			.into_iter()
+			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
+			.collect();
+		self.unlocking = BoundedVec::try_from(result).unwrap();
+		self.unlocking.len() == chunks.len()
+	}
 
 	/// Deletes thawed chunks
 	/// Caller is responsible for updating free/locked balance on the token account.
 	/// Returns: the total amount reaped from `unlocking`
-	// pub fn reap_thawed(&mut self, current_epoch: <T>::EpochNumber) -> BalanceOf<T> {
-	// 	let mut total_reaped: BalanceOf<T> = 0u32.into();
-	// 	self.unlocking.retain(|chunk| {
-	// 		if current_epoch.ge(&chunk.thaw_at) {
-	// 			total_reaped = total_reaped.saturating_add(chunk.value);
-	// 			false
-	// 		} else {
-	// 			true
-	// 		}
-	// 	});
-	// 	total_reaped
-	// }
+	pub fn reap_thawed(&mut self, current_epoch: <T>::EpochNumber) -> BalanceOf<T> {
+		let mut total_reaped: BalanceOf<T> = 0u32.into();
+		if !self.unlocking.is_empty() {
+			self.unlocking.retain(|chunk| {
+				if current_epoch.ge(&chunk.thaw_at) {
+					total_reaped = total_reaped.saturating_add(chunk.value);
+					false
+				} else {
+					true
+				}
+			});
+		}
+		total_reaped
+	}
 
 	/// Attempt to add a new chunk to unlocking.
 	/// caller is responsible for reaping_thawed chunks beforehand.
@@ -247,12 +236,21 @@ impl<T: Config> UnlockChunks<T> {
 		&mut self,
 		amount: BalanceOf<T>,
 		thaw_at: <T>::EpochNumber,
-		current_epoch: <T>::EpochNumber,
 	) -> Result<(), DispatchError> {
 		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
 		self.unlocking
 			.try_push(unlock_chunk)
 			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 		Ok(())
+	}
+
+	/// Get the total balance of all unlock chunks
+	pub fn total(&mut self) -> BalanceOf<T> {
+		if self.unlocking.is_empty() {
+			return Zero::zero();
+		}
+		self.unlocking
+			.iter()
+			.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
 	}
 }

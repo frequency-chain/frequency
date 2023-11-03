@@ -252,6 +252,17 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 }
 
 #[test]
+fn get_stakable_amount_for_works() {
+	new_test_ext().execute_with(|| {
+		let account = 200;
+		// An amount greater than the free balance
+		let amount = 230;
+		let res: u64 = Capacity::get_stakable_amount_for(&account, amount);
+		assert_eq!(res, 190);
+	})
+}
+
+#[test]
 fn stake_when_staking_amount_is_less_than_min_token_balance_it_errors() {
 	new_test_ext().execute_with(|| {
 		let target: MessageSourceId = 1;
