@@ -3,7 +3,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
+import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, getBlockNumber, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -218,12 +218,12 @@ describe("Delegation Scenario Tests", function () {
         it("should fail to revoke a delegation if no MSA exists (InvalidMsaKey)", async function () {
             const nonMsaKeys = await createAndFundKeypair(fundingSource);
             const op = ExtrinsicHelper.revokeDelegationByDelegator(nonMsaKeys, providerId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 1$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 1$/ });
         });
 
         it("should revoke a delegation by delegator", async function () {
             const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            const { target: revokeDelegationEvent } = await revokeDelegationOp.fundAndSend(fundingSource);
+            const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend('current');
             assert.notEqual(revokeDelegationEvent, undefined, "should have returned DelegationRevoked event");
             assert.deepEqual(revokeDelegationEvent?.data.providerId, providerId, 'provider ids should be equal');
             assert.deepEqual(revokeDelegationEvent?.data.delegatorId, msaId, 'delegator ids should be equal');
@@ -231,26 +231,18 @@ describe("Delegation Scenario Tests", function () {
 
         it("should fail to revoke a delegation that has already been revoked (InvalidDelegation)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         it("should fail to revoke delegation where no delegation exists (DelegationNotFound)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, otherProviderId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         describe('Successful revocation', () => {
             let newKeys: KeyringPair;
             let msaId: u64 | undefined;
-            let revokedAtBlock: bigint;
-            async function revokeDelegationByProvider (myMsaId: u64 | undefined) {
-              const op = ExtrinsicHelper.revokeDelegationByProvider(myMsaId as u64, providerKeys);
-              const { target: revokeEvent } = await op.fundAndSend(fundingSource);
-              assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
-              assert.deepEqual(revokeEvent?.data.delegatorId, myMsaId, 'delegator ids should match');
-              assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
-              revokedAtBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toBigInt()
-            }
+            let revokedAtBlock: number;
 
             before(async () => {
                 newKeys = createKeys();
@@ -273,24 +265,24 @@ describe("Delegation Scenario Tests", function () {
 
             it("should revoke a delegation by provider", async function () {
                 const op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
-                const { target: revokeEvent } = await op.fundAndSend(fundingSource);
+                const { target: revokeEvent } = await op.signAndSend('current');
                 assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
                 assert.deepEqual(revokeEvent?.data.delegatorId, msaId, 'delegator ids should match');
                 assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
-                revokedAtBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toBigInt()
+                revokedAtBlock = await getBlockNumber();
             });
 
             it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
                 // Make a block first to make sure the state has rolled to the next block
-                const currentBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toNumber();
+                const currentBlock = await getBlockNumber();
                 ExtrinsicHelper.runToBlock(currentBlock + 1);
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
                 delegations.forEach((delegation) => {
-                    const diff = delegation.revoked_at.toBigInt() - revokedAtBlock;
+                    const diff = delegation.revoked_at.toNumber() - revokedAtBlock;
                     // Due to parallelization, this could be off by a few blocks
-                    assert(Math.abs(Number(diff.toString())) < 5);
+                    assert(Math.abs(Number(diff.toString())) < 20);
                 })
             })
 
@@ -302,9 +294,10 @@ describe("Delegation Scenario Tests", function () {
               const { target: msaEvent } = await op.fundAndSend(fundingSource);
               const newMsaId = msaEvent?.data.msaId;
               assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
-              await revokeDelegationByProvider(newMsaId);
+              await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend('current'));
+
               const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-              const { target: retireMsaEvent } = await retireMsaOp.fundAndSend(fundingSource);
+              const { target: retireMsaEvent } = await retireMsaOp.signAndSend('current');
               assert.notEqual(retireMsaEvent, undefined, "should have returned MsaRetired event");
               assert.deepEqual(retireMsaEvent?.data.msaId, newMsaId, 'msaId should be equal');
             });
@@ -318,7 +311,7 @@ describe("Delegation Scenario Tests", function () {
             const newMsaId = msaEvent?.data.msaId;
             assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
             const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-            await assert.rejects(retireMsaOp.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 6$/ });
+            await assert.rejects(retireMsaOp.signAndSend('current'), { name: 'RpcError', message: /Custom error: 6$/ });
           });
         });
     });

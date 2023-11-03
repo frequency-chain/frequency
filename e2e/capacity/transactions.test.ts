@@ -65,7 +65,7 @@ describe("Capacity Transactions", function () {
         const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
         const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
         const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
-        const { eventMap } = await addPublicKeyOp.signAndSend(-1);
+        const { eventMap } = await addPublicKeyOp.signAndSend();
         assertEvent(eventMap, "system.ExtrinsicSuccess");
         assertEvent(eventMap, "msa.PublicKeyAdded");
       }
@@ -102,7 +102,7 @@ describe("Capacity Transactions", function () {
         };
         const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", handlePayload);
         const claimHandle = ExtrinsicHelper.claimHandle(newControlKeypair, claimHandlePayload);
-        await assert.rejects(claimHandle.payWithCapacity(), {
+        await assert.rejects(claimHandle.payWithCapacity('current'), {
           name: "RpcError", message:
             "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
         });
@@ -506,7 +506,7 @@ describe("Capacity Transactions", function () {
         const capacityKeys = createKeys("CapacityKeys");
         const capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
         const nonCapacityTxn = ExtrinsicHelper.stake(capacityKeys, capacityProvider, 1n * CENTS);
-        await assert.rejects(nonCapacityTxn.payWithCapacity(), {
+        await assert.rejects(nonCapacityTxn.payWithCapacity('current'), {
           name: "RpcError", message:
             "1010: Invalid Transaction: Custom error: 0"
         });
@@ -531,7 +531,7 @@ describe("Capacity Transactions", function () {
         const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noCapacityKeys,
           signPayloadSr25519(noCapacityKeys, addProviderData), payload);
 
-        await assert.rejects(grantDelegationOp.payWithCapacity(), {
+        await assert.rejects(grantDelegationOp.payWithCapacity('current'), {
           name: "RpcError", message:
             "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
         });
@@ -571,7 +571,7 @@ describe("Capacity Transactions", function () {
         const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noTokensKeys,
           signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-        await assert.rejects(grantDelegationOp.payWithCapacity(), {
+        await assert.rejects(grantDelegationOp.payWithCapacity('current'), {
           name: 'RpcError',
           message: "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low",
         })
@@ -611,7 +611,7 @@ describe("Capacity Transactions", function () {
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, noProviderKeys,
             signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-          await assert.rejects(grantDelegationOp.payWithCapacity(), {
+          await assert.rejects(grantDelegationOp.payWithCapacity('current'), {
             name: "RpcError", message:
               "1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low"
           });
@@ -630,7 +630,7 @@ describe("Capacity Transactions", function () {
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, emptyKeys,
             signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-          await assert.rejects(grantDelegationOp.payWithCapacity(), {
+          await assert.rejects(grantDelegationOp.payWithCapacity('current'), {
             name: "RpcError", message:
               "1010: Invalid Transaction: Custom error: 1"
           });
