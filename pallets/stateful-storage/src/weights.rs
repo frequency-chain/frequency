@@ -55,6 +55,9 @@ pub trait WeightInfo {
 	fn apply_item_actions_with_signature(s: u32, ) -> Weight;
 	fn upsert_page_with_signature(s: u32, ) -> Weight;
 	fn delete_page_with_signature() -> Weight;
+	fn apply_item_actions_test_pov(s: u32, ) -> Weight;
+	fn upsert_page_test_pov(s: u32, ) -> Weight;
+	fn delete_page_test_pov() -> Weight;
 }
 
 /// Weights for pallet_stateful_storage using the Substrate node and recommended hardware.
@@ -168,6 +171,64 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `s` is `[1, 5121]`.
+	fn apply_item_actions_test_pov(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `33346`
+		//  Estimated: `45721`
+		// Minimum execution time: 95_864_000 picoseconds.
+		Weight::from_parts(100_554_019, 45721)
+			// Standard Error: 615
+			.saturating_add(Weight::from_parts(4_988, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// The range of component `s` is `[1, 1024]`.
+	fn upsert_page_test_pov(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `392`
+		//  Estimated: `12767`
+		// Minimum execution time: 28_918_000 picoseconds.
+		Weight::from_parts(29_786_260, 12767)
+			// Standard Error: 179
+			.saturating_add(Weight::from_parts(963, 0).saturating_mul(s.into()))
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	fn delete_page_test_pov() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1551`
+		//  Estimated: `13926`
+		// Minimum execution time: 32_286_000 picoseconds.
+		Weight::from_parts(33_306_000, 13926)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests
@@ -278,6 +339,64 @@ impl WeightInfo for () {
 		// Minimum execution time: 85_991_000 picoseconds.
 		Weight::from_parts(86_655_000, 13859)
 			.saturating_add(RocksDbWeight::get().reads(3_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `s` is `[1, 5121]`.
+	fn apply_item_actions_test_pov(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `33346`
+		//  Estimated: `45721`
+		// Minimum execution time: 95_864_000 picoseconds.
+		Weight::from_parts(100_554_019, 45721)
+			// Standard Error: 615
+			.saturating_add(Weight::from_parts(4_988, 0).saturating_mul(s.into()))
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// The range of component `s` is `[1, 1024]`.
+	fn upsert_page_test_pov(s: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `392`
+		//  Estimated: `12767`
+		// Minimum execution time: 28_918_000 picoseconds.
+		Weight::from_parts(29_786_260, 12767)
+			// Standard Error: 179
+			.saturating_add(Weight::from_parts(963, 0).saturating_mul(s.into()))
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(14), added: 2489, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::DelegatorAndProviderToDelegation` (r:1 w:0)
+	/// Proof: `Msa::DelegatorAndProviderToDelegation` (`max_values`: None, `max_size`: Some(217), added: 2692, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	fn delete_page_test_pov() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1551`
+		//  Estimated: `13926`
+		// Minimum execution time: 32_286_000 picoseconds.
+		Weight::from_parts(33_306_000, 13926)
+			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }

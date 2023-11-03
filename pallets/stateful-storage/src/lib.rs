@@ -581,6 +581,63 @@ pub mod pallet {
 			)?;
 			Ok(())
 		}
+
+		/// test pov apply item
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::apply_item_actions_test_pov(Pallet::<T>::sum_add_actions_bytes(actions)))]
+		pub fn apply_item_actions_test_pov(
+			origin: OriginFor<T>,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] target_hash: PageHash,
+			actions: BoundedVec<
+				ItemAction<T::MaxItemizedBlobSizeBytes>,
+				T::MaxItemizedActionsCount,
+			>,
+		) -> DispatchResult {
+			let _ = ensure_signed(origin)?;
+			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
+			Ok(())
+		}
+
+		/// test pov upsert page
+		#[pallet::call_index(10)]
+		#[pallet::weight(T::WeightInfo::upsert_page_test_pov(payload.len() as u32))]
+		pub fn upsert_page_test_pov(
+			origin: OriginFor<T>,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] target_hash: PageHash,
+			payload: BoundedVec<u8, <T>::MaxPaginatedPageSizeBytes>,
+		) -> DispatchResult {
+			let _ = ensure_signed(origin)?;
+			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
+			Self::update_paginated(
+				state_owner_msa_id,
+				schema_id,
+				page_id,
+				target_hash,
+				PaginatedPage::<T>::from(payload),
+			)?;
+			Ok(())
+		}
+
+		/// test pov delete page
+		#[pallet::call_index(11)]
+		#[pallet::weight(T::WeightInfo::delete_page_test_pov())]
+		pub fn delete_page_test_pov(
+			origin: OriginFor<T>,
+			#[pallet::compact] state_owner_msa_id: MessageSourceId,
+			#[pallet::compact] schema_id: SchemaId,
+			#[pallet::compact] page_id: PageId,
+			#[pallet::compact] target_hash: PageHash,
+		) -> DispatchResult {
+			let _ = ensure_signed(origin)?;
+			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
+			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
+			Ok(())
+		}
 	}
 }
 
