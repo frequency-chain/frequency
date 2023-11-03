@@ -1,5 +1,5 @@
 use crate as pallet_stateful_storage;
-use codec::Decode;
+use parity_scale_codec::Decode;
 
 use crate::test_common::{
 	constants,

@@ -1,7 +1,6 @@
 #![allow(clippy::unwrap_used, clippy::expect_used)]
 use super::*;
 use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
-use codec::{Decode, Encode};
 use common_primitives::{
 	schema::{ModelType, PayloadLocation},
 	stateful_storage::{PageHash, PageId},
@@ -9,6 +8,7 @@ use common_primitives::{
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
+use parity_scale_codec::{Decode, Encode};
 use sp_core::{bounded::BoundedVec, crypto::KeyTypeId};
 use sp_runtime::RuntimeAppPublic;
 use stateful_child_tree::StatefulChildTree;

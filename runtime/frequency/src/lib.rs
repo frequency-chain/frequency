@@ -17,7 +17,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, DispatchError,
 };
 
-use codec::Encode;
+use parity_scale_codec::Encode;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -261,7 +261,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 62,
+	spec_version: 63,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -275,7 +275,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 62,
+	spec_version: 63,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

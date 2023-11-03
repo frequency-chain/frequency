@@ -23,7 +23,6 @@
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
@@ -33,6 +32,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},

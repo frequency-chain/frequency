@@ -10,16 +10,13 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
-	"derive"
-] }
 # Substrate
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+sp-api = { workspace = true }
+frame-support = { workspace = true }
+sp-runtime = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 
 [features]
 default = ["std"]
-std = ["codec/std", "sp-api/std", "frame-support/std", 'common-primitives/std', 'sp-runtime/std']
+std = ["sp-api/std", "frame-support/std", 'common-primitives/std', 'sp-runtime/std']

@@ -236,7 +236,7 @@ async fn run_seal_command<B, BI, CB, E, C, TP, SC, CS, CIDP, P>(
 	SC: SelectChain<B> + 'static,
 	TP: TransactionPool<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()>,
-	P: codec::Encode + Send + Sync + 'static,
+	P: parity_scale_codec::Encode + Send + Sync + 'static,
 {
 	while let Some(command) = commands_stream.next().await {
 		match command {

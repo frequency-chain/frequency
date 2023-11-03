@@ -32,12 +32,12 @@ pub mod constants {
 #[cfg(test)]
 pub mod test_utility {
 	use crate::{pallet, tests::mock::Test, Config, ItemHeader, ItemizedPage, Page};
-	use codec::{Decode, Encode, MaxEncodedLen};
 	use common_primitives::{
 		schema::{ModelType, PayloadLocation},
 		stateful_storage::PageNonce,
 	};
 	use frame_support::BoundedVec;
+	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 	use scale_info::TypeInfo;
 	use sp_core::Get;
 

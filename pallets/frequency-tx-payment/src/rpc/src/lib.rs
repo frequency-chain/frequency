@@ -19,7 +19,6 @@
 
 use std::{convert::TryInto, sync::Arc};
 
-use codec::{Codec, Decode};
 use jsonrpsee::{
 	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
@@ -29,6 +28,7 @@ use jsonrpsee::{
 	},
 };
 use pallet_frequency_tx_payment_runtime_api::{FeeDetails, InclusionFee};
+use parity_scale_codec::{Codec, Decode};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::Bytes;
