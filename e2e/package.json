@@ -7,6 +7,7 @@
         "clean": "rm -Rf dist",
         "build": "tsc -p ./tsconfig.json",
         "test": "mocha",
+        "test:serial": "mocha --parallel=false",
         "test:relay": "mocha --config .relay-chain.mocharc.json",
         "test:load": "mocha --config .load-test.mocharc.json",
         "format": "tsc --noEmit --pretty",
