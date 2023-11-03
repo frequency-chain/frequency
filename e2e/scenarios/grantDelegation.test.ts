@@ -3,7 +3,7 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, getBlockNumber, signPayloadSr25519 } from "../scaffolding/helpers";
+import { DOLLARS, createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, getBlockNumber, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -24,26 +24,25 @@ describe("Delegation Scenario Tests", function () {
 
     before(async function () {
         // Fund all the different keys
-        [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(fundingSource, ["noMsaKeys", "keys", "otherMsaKeys", "providerKeys", "otherProviderKeys"]);
+        [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(fundingSource, ["noMsaKeys", "keys", "otherMsaKeys", "providerKeys", "otherProviderKeys"], 1n * DOLLARS);
 
-        const createMsaOp = ExtrinsicHelper.createMsa(keys);
-        let { target: msaCreatedEvent } = await createMsaOp.fundAndSend(fundingSource);
-        msaId = msaCreatedEvent!.data.msaId;
+        const { target: msaCreatedEvent1 } = await ExtrinsicHelper.createMsa(keys).signAndSend();
+        msaId = msaCreatedEvent1!.data.msaId;
 
-        ({ target: msaCreatedEvent } = await ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource));
-        otherMsaId = msaCreatedEvent!.data.msaId;
+        const { target: msaCreatedEvent2 } = await ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend();
+        otherMsaId = msaCreatedEvent2!.data.msaId;
 
         let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-        await createProviderMsaOp.fundAndSend(fundingSource);
+        await createProviderMsaOp.signAndSend();
         let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "MyPoster");
-        let { target: providerEvent } = await createProviderOp.fundAndSend(fundingSource);
+        let { target: providerEvent } = await createProviderOp.signAndSend();
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         providerId = providerEvent!.data.providerId;
 
         createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
-        await createProviderMsaOp.fundAndSend(fundingSource);
+        await createProviderMsaOp.signAndSend();
         createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, "MyPoster");
-        ({ target: providerEvent } = await createProviderOp.fundAndSend(fundingSource));
+        ({ target: providerEvent } = await createProviderOp.signAndSend());
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         otherProviderId = providerEvent!.data.providerId;
 
@@ -79,12 +78,12 @@ describe("Delegation Scenario Tests", function () {
                 },
             ]
         }, "AvroBinary", "OnChain");
-        let { target: createSchemaEvent } = await createSchemaOp.fundAndSend(fundingSource);
+        let { target: createSchemaEvent } = await createSchemaOp.signAndSend();
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         schemaId = createSchemaEvent!.data.schemaId;
 
         // Create a second schema
-        ({ target: createSchemaEvent } = await createSchemaOp.fundAndSend(fundingSource));
+        ({ target: createSchemaEvent } = await createSchemaOp.signAndSend());
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         schemaId2 = createSchemaEvent!.data.schemaId;
     });
