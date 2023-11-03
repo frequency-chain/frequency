@@ -1,6 +1,7 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u32, u64, Option, u128 } from "@polkadot/types";
+import { u16, u32, u64, Option } from "@polkadot/types";
+import type { PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -407,18 +408,17 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
 
 export const TokenPerCapacity = 50n;
 
-export function assertEvent(events: EventMap, eventName: string) {
-  assert(events.hasOwnProperty(eventName));
-}
-
-export async function getRemainingCapacity(providerId: u64): Promise<u128> {
-  const capacityStaked = (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
-  return capacityStaked.remainingCapacity;
+export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
+  return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
 }
 
 export async function getNonce(keys: KeyringPair): Promise<number> {
   const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
   return nonce.toNumber();
+}
+
+export function assertEvent(events: EventMap, eventName: string) {
+  assert(events.hasOwnProperty(eventName));
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {

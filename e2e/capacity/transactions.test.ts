@@ -37,7 +37,8 @@ import {
   getOrCreateAvroChatMessagePaginatedSchema,
   generateItemizedSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
-  generatePaginatedDeleteSignaturePayloadV2
+  generatePaginatedDeleteSignaturePayloadV2,
+  getCapacity
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -176,12 +177,10 @@ describe("Capacity Transactions", function () {
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, capacityKeys,
             signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-          const capacityStakedInitial = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
-
           ({ eventMap } = await grantDelegationOp.payWithCapacity());
 
           // Check for remaining capacity to be reduced
-          const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
+          const capacityStaked = await getCapacity(capacityProvider);
 
           assertEvent(eventMap, "system.ExtrinsicSuccess");
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
