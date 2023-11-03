@@ -1,7 +1,7 @@
 // E2E tests for pallets/stateful-pallet-storage/handlePaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";
+import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
@@ -17,6 +17,7 @@ describe("📗 Stateful Pallet Storage", () => {
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
+    let badMsaId: u64;
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
@@ -38,6 +39,9 @@ describe("📗 Stateful Pallet Storage", () => {
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
+
+        // Create an MSA that is not a provider to be used for testing failure cases
+        [badMsaId] = await createMsa(fundingSource);
     });
 
     describe("Paginated Storage Upsert/Remove Tests 😊/😥", () => {
@@ -101,10 +105,9 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let page_id = 0;
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
-            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, page_id, payload_1, target_hash);
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, badMsaId, page_id, payload_1, target_hash);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -146,9 +149,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
 
         it("🛑 should fail call to remove page for un-delegated attempts", async function () {
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
-
-            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, badMsaId, 0, 0);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',

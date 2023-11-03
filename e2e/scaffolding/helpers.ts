@@ -178,7 +178,7 @@ export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(source: KeyringPair, amount: bigint | undefined = undefined, keyName?: string, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(source: KeyringPair, amount?: bigint, keyName?: string, nonce?: number): Promise<KeyringPair> {
   const keypair = createKeys(keyName);
 
   await fundKeypair(source, keypair, amount || await getExistentialDeposit(), nonce);
@@ -259,6 +259,19 @@ export async function getCurrentPaginatedHash(msa_id: MessageSourceId, schemaId:
 export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
   const result = await ExtrinsicHelper.getHandleForMSA(msa_id);
   return result;
+}
+
+// Creates an MSA and a provider for the given keys
+// Returns the MSA Id of the provider
+export async function createMsa(source: KeyringPair, amount?: bigint):
+  Promise<[u64, KeyringPair]> {
+
+  const keys = await createAndFundKeypair(source, amount);
+  const createMsaOp = ExtrinsicHelper.createMsa(keys);
+  const { target } = await createMsaOp.fundAndSend(source);
+  assert.notEqual(target, undefined, 'createMsa: should have returned MsaCreated event');
+
+  return [target!.data.msaId, keys];
 }
 
 // Creates an MSA and a provider for the given keys
