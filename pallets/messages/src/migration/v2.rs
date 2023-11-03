@@ -45,7 +45,7 @@ pub mod old {
 		SchemaId,
 		BoundedVec<
 			OldMessage<<T as crate::pallet::Config>::MessagesMaxPayloadSizeBytes>,
-			ConstU32<500>,
+			ConstU32<200>,
 		>,
 		ValueQuery,
 	>;
@@ -60,8 +60,18 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
+		use frame_support::storage::generator::StorageDoubleMap;
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
-		let count = old::Messages::<T>::iter().count() as u32;
+
+		let pallet_prefix = old::Messages::<T>::module_prefix();
+		let storage_prefix = old::Messages::<T>::storage_prefix();
+		assert_eq!(&b"Messages"[..], pallet_prefix);
+		assert_eq!(&b"Messages"[..], storage_prefix);
+
+		let mut count = 0u32;
+		for (_,_,messages) in old::Messages::<T>::iter() {
+			count += messages.len() as u32;
+		}
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
 		Ok(count.encode())
 	}
@@ -105,8 +115,8 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 					msa_id: message.msa_id,
 					payload: message.payload.clone(),
 				};
+				bytes = bytes.saturating_add(new_msg.encode().len() as u64);
 				MessagesV2::<T>::insert((block_number, schema_id, message.index), new_msg);
-				bytes = bytes.saturating_add(message.encode().len() as u64);
 			}
 
 			reads.saturating_inc();

@@ -5,7 +5,12 @@ use crate::{
 };
 use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	pallet_prelude::{GetStorageVersion, StorageVersion},
+	traits::OnInitialize,
+	BoundedVec,
+};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
 #[allow(unused_imports)]
@@ -23,7 +28,7 @@ struct Payload {
 	content: String,
 }
 
-pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzcratewb5arcnvuvfwo2d4qgzyx5hymvto4";
+pub const DUMMY_CID_SHA512: &str = "bafkrgqb76pscorjihsk77zpyst3p364zlti6aojlu4nga34vhp7t5orzwbwwytvp7ej44r5yhjzneanqwb5arcnvuvfwo2d4qgzyx5hymvto4";
 
 /// Populate mocked Messages storage with message data.
 ///
@@ -663,8 +668,32 @@ fn migration_to_v2_should_work_as_expected() {
 
 		let old_count = v2::old::Messages::<Test>::iter().count();
 		let new_count = MessagesV2::<Test>::iter().count();
+		let current_version = MessagesPallet::current_storage_version();
 
 		assert_eq!(old_count, 0);
 		assert_eq!(new_count, message_per_block.iter().sum::<usize>());
+		assert_eq!(current_version, StorageVersion::new(2));
+
+		let mut total_index = 0u16;
+		for (block, count) in message_per_block.iter().enumerate() {
+			for _ in 0..*count {
+				assert!(MessagesV2::<Test>::get((block as u32, schema_id, total_index)).is_some());
+				total_index += 1;
+			}
+			// should not exist
+			assert!(MessagesV2::<Test>::get((block as u32, schema_id, total_index)).is_none());
+		}
+	});
+}
+
+#[test]
+fn migration_to_v2_should_have_correct_prefix() {
+	new_test_ext().execute_with(|| {
+		use frame_support::storage::generator::StorageDoubleMap;
+		let pallet_prefix = v2::old::Messages::<Test>::module_prefix();
+		let storage_prefix = v2::old::Messages::<Test>::storage_prefix();
+
+		assert_eq!(&b"MessagesPallet"[..], pallet_prefix);
+		assert_eq!(&b"Messages"[..], storage_prefix);
 	});
 }
