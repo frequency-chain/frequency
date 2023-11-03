@@ -37,7 +37,8 @@ import {
   generateItemizedSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2,
-  getCapacity
+  getCapacity,
+  getTestHandle
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -92,7 +93,7 @@ describe("Capacity Transactions", function () {
         await assertAddNewKey(capacityKeys, addKeyPayload, newControlKeypair);
 
         // attempt a capacity transaction using the new unfunded key: claimHandle
-        const handle = "test_handle";
+        const handle = getTestHandle();
         const expiration = (await getBlockNumber()) + 10;
         const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
         const handlePayload = {
@@ -483,7 +484,7 @@ describe("Capacity Transactions", function () {
         it("successfully pays with Capacity for eligible transaction - claimHandle", async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
 
-          const handle = "test_handle";
+          const handle = getTestHandle();
           const expiration = (await getBlockNumber()) + 10;
           const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
           const handlePayload = {
@@ -666,7 +667,7 @@ describe("Capacity Transactions", function () {
         addProviderPayload
       );
 
-      const handle = "test_handle";
+      const handle = getTestHandle();
       const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
       const expiration = (await getBlockNumber()) + 5;
       const handlePayload = {

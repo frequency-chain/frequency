@@ -32,6 +32,10 @@ export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
 
+export function getTestHandle(prefix = "test-") {
+  return prefix + Math.random().toFixed(10).toString().replaceAll("0.", "");
+}
+
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
 }
