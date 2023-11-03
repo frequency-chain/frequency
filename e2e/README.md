@@ -13,7 +13,7 @@ To run an individual test (after starting up a Frequency node):
 
 Note: this is for the "createMsa" tests
 
-`npm run test -- --grep createMsa`
+`npm run test:serial -- --grep createMsa`
 
 See below for running load tests.
 
