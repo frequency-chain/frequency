@@ -80,6 +80,9 @@ start-frequency-instant)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=instant \
     --wasm-execution=compiled \
@@ -94,7 +97,9 @@ start-frequency-instant)
   ;;
 
 start-frequency-interval)
-  printf "\nBuilding Frequency without relay.  Running with interval sealing ...\n"
+  defaultInterval=12
+  interval=${2-$defaultInterval}
+  printf "\nBuilding Frequency without relay.  Running with interval sealing with interval of $interval seconds...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -107,36 +112,12 @@ start-frequency-interval)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=interval \
-    --wasm-execution=compiled \
-    --no-telemetry \
-    --no-prometheus \
-    --port $((30333)) \
-    --rpc-port $((9944)) \
-    --rpc-external \
-    --rpc-cors all \
-    --rpc-methods=Unsafe \
-    --tmp
-  ;;
-
-  start-frequency-interval-1)
-  printf "\nBuilding Frequency without relay.  Running with interval sealing 1 second blocktime...\n"
-  cargo build --features frequency-no-relay
-
-  parachain_dir=$base_dir/parachain/${para_id}
-  mkdir -p $parachain_dir;
-
-  if [ "$2" == "purge" ]; then
-    echo "purging parachain..."
-    rm -rf $parachain_dir
-  fi
-
-  ./target/debug/frequency \
-    --dev \
-    -lruntime=debug \
-    --sealing=interval \
-    --sealing-interval=1 \
+    --sealing-interval=${interval} \
     --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \
