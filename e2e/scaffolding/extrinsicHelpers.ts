@@ -209,7 +209,7 @@ export class ExtrinsicHelper {
     }
 
     public static getLastBlock(): Promise<SignedBlock> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
+        return ExtrinsicHelper.apiPromise.rpc.chain.getBlock();
     }
 
     /** Query Extrinsics */
@@ -251,7 +251,7 @@ export class ExtrinsicHelper {
 
     /** Get Schema RPC */
     public static getSchema(schemaId: u16): Promise<Option<SchemaResponse>> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.schemas.getBySchemaId(schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.schemas.getBySchemaId(schemaId);
     }
 
     /** MSA Extrinsics */
@@ -343,11 +343,11 @@ export class ExtrinsicHelper {
     }
 
     public static getItemizedStorage(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorage(msa_id, schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.statefulStorage.getItemizedStorage(msa_id, schemaId);
     }
 
     public static getPaginatedStorage(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId);
     }
 
     public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule) {
@@ -364,8 +364,7 @@ export class ExtrinsicHelper {
     }
 
     public static getHandleForMSA(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
-        let handle_response = ExtrinsicHelper.api.rpc.handles.getHandleForMsa(msa_id);
-        return firstValueFrom(handle_response);
+        return ExtrinsicHelper.apiPromise.rpc.handles.getHandleForMsa(msa_id);
     }
 
     public static getMsaForHandle(handle: string): Promise<Option<MessageSourceId>> {
@@ -373,13 +372,11 @@ export class ExtrinsicHelper {
     }
 
     public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
-        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
-        return firstValueFrom(suffixes);
+        return ExtrinsicHelper.apiPromise.rpc.handles.getNextSuffixes(base_handle, count);
     }
 
     public static validateHandle(base_handle: string): Promise<Bool> {
-        let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
-        return firstValueFrom(validationResult);
+        return ExtrinsicHelper.apiPromise.rpc.handles.validateHandle(base_handle);
     }
 
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string) {
@@ -425,7 +422,7 @@ export class ExtrinsicHelper {
         if (hasRelayChain()) {
             await new Promise((r) => setTimeout(r, 4_000));
         } else {
-            await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
+            await ExtrinsicHelper.apiPromise.rpc.engine.createBlock(true, true);
         }
         currentBlock = await getBlockNumber();
       }

@@ -16,7 +16,6 @@ import {
 } from "./extrinsicHelpers";
 import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
-import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
@@ -303,8 +302,8 @@ export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, pr
 }
 
 export async function getNextEpochBlock() {
-  const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo());
-  const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+  const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();
+  const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
   return actualEpochLength.toNumber() + epochInfo.epochStart.toNumber() + 1;
 }
 
@@ -314,7 +313,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   if (setEpochLengthEvent) {
     const epochLength = setEpochLengthEvent.data.blocks;
     assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
-    const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+    const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
     assert.equal(actualEpochLength, TEST_EPOCH_LENGTH, `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`);
   }
   else {
@@ -413,7 +412,7 @@ export async function getCapacity(providerId: u64): Promise<PalletCapacityCapaci
 }
 
 export async function getNonce(keys: KeyringPair): Promise<number> {
-  const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
+  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(keys.address);
   return nonce.toNumber();
 }
 

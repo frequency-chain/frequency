@@ -3,7 +3,6 @@ import assert from "assert";
 import { createKeys, signPayloadSr25519, getBlockNumber, generateAddKeyPayload, createAndFundKeypair, getNonce, getExistentialDeposit } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { AddKeyData, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { firstValueFrom } from "rxjs";
 import { u64, Option } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
@@ -121,7 +120,7 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
 async function createBlock(wait: number = 300) {
     // Wait ms before creating the block to give the chain time to process the transaction pool
     await new Promise(r => setTimeout(r, wait));
-    return firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
+    return ExtrinsicHelper.apiPromise.rpc.engine.createBlock(true, true);
 }
 
 function getMsaFromKey(keys: KeyringPair): Promise<Option<u64>> {

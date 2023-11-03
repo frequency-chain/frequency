@@ -10,7 +10,6 @@ import {
     CENTS, DOLLARS, createAndFundKeypair, getCapacity
 }
     from "../scaffolding/helpers";
-import { firstValueFrom } from "rxjs";
 import { isDev } from "../scaffolding/env";
 import { getFundingSource } from "../scaffolding/funding";
 
