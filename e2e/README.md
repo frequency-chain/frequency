@@ -13,7 +13,7 @@ To run an individual test (after starting up a Frequency node):
 
 Note: this is for the "createMsa" tests
 
-`npm run test -- --grep createMsa`
+`npm run test:serial -- --grep createMsa`
 
 See below for running load tests.
 
@@ -58,18 +58,23 @@ with the following methods:
         }
     ```
 7. Extrinsic helper methods & returned events
-Many of the extrinsic helper methods pass an event type to the underlying Extrincic object that can be used to parse the targeted event type
-from the resulting stream and return it specifically. The `Extrinsic::signAndSend()` method returns an array of `[targetEvent, eventMap]` where
-`targetEvent` will be the parsed target event *if present*. The `eventMap` is a map of <string, event> with the keys being `paletteName.eventName`.
+Many of the extrinsic helper methods pass an event type to the underlying Extrinsic object that can be used to parse the targeted event type
+from the resulting stream and return it specifically. The `Extrinsic::signAndSend()` method returns an object of `{ target, eventMap }` where
+`target` will be the parsed target event *if present*. The `eventMap` is a map of <string, event> with the keys being `paletteName.eventName`.
 A special key "defaultEvent" is added to also contain the target event, if present.
 Events may be used with type guards to access the event-specific structure. Event types are in the `ApiRx.events.<palette>.*` structure, and can be
 accessed like so:
     ```
     const extrinsic = ExtrinsicHelper.createMsa(keypair);
-    const [targetEvent, eventMap] = await extrinsic.fundAndSend();
-    if (targetEvent && ExtrinsicHelper.api.events.msa.MsaCreated.is(targetEvent)) {
+    const { target: targetEvent, eventMap } = await extrinsic.fundAndSend();
+    if (targetEvent) {
         const msaId = targetEvent.data.msaId;
     }
+    // OR null coalescing
+    const maybeMsaId = targetEvent?.data.msaId;
+
+    // OR Throw unless defined
+    const throwIfNotMsaId = targetEvent!.data.msaId;
     ```
 
 Load Testing
