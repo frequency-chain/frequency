@@ -27,6 +27,7 @@ scale-info = { version = "2.10.0", default-features = false, features = [
 ] }
 
 sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+chrono = { version = "0.4.24" }
 
 # testing dependencies
 sp-keystore = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
@@ -35,6 +36,9 @@ pretty_assertions = { version = "1.3.0" }
 
 # frame pallets
 pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+
+
 
 # rpc
 rayon = "1.5.3"
