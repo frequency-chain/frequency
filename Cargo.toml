@@ -44,6 +44,11 @@ pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 # dev
 serde = { version = "1.0" }
 
+# handles utils
+oorandom = "11.1.3"
+phf = { version = "0.11", default-features = false  }
+unicode-normalization = { version = "0.1.22", default-features = false }
+
 
 
 # rpc
