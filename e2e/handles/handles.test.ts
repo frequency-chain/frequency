@@ -1,7 +1,7 @@
 //  Handles test suite
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import { createDelegator } from "../scaffolding/helpers";
+import { createDelegator, getTestHandle } from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { MessageSourceId } from "@frequency-chain/api-augment/interfaces";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
@@ -27,7 +27,7 @@ describe("🤝 Handles", () => {
 
     describe("@Claim Handle", () => {
         it("should be able to claim a handle", async function () {
-            let handle = "test_handle";
+            const handle = getTestHandle();
             let currentBlock = await getBlockNumber();
             const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
             const payload = {
@@ -38,8 +38,7 @@ describe("🤝 Handles", () => {
             const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
             const { target: event } = await claimHandle.fundAndSend(fundingSource);
             assert.notEqual(event, undefined, "claimHandle should return an event");
-            handle = event!.data.handle.toString();
-            assert.notEqual(handle, "", "claimHandle should emit a handle");
+            assert.notEqual(event!.data.handle.toString(), "", "claimHandle should emit a handle");
         });
     });
 
@@ -70,7 +69,7 @@ describe("🤝 Handles", () => {
         /// Check chain to getNextSuffixesForHandle
 
         it("should be able to claim a handle and check suffix (=suffix_assumed if available on chain)", async function () {
-            const handle = "test-" + Math.random().toFixed(10).toString().replaceAll("0.", "");
+            const handle = getTestHandle();
             let handle_bytes = new Bytes(ExtrinsicHelper.api.registry, handle);
             /// Get presumptive suffix from chain (rpc)
             let suffixes_response = await ExtrinsicHelper.getNextSuffixesForHandle(handle, 10);

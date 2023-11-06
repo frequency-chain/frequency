@@ -5,7 +5,6 @@ import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { firstValueFrom } from "rxjs";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Delegation Scenario Tests", function () {
@@ -151,7 +150,7 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it('initial granted schemas should be correct', async function () {
-            let schemaGrants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let schemaGrants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             assert.equal(schemaGrants.isSome, true);
             const schemaIds = schemaGrants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             const expectedSchemaIds = [schemaId.toNumber()];
@@ -170,7 +169,7 @@ describe("Delegation Scenario Tests", function () {
             assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
             assert.deepEqual(grantDelegationEvent?.data.providerId, providerId, 'provider IDs should match');
             assert.deepEqual(grantDelegationEvent?.data.delegatorId, msaId, 'delegator IDs should match');
-            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
             assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
@@ -209,7 +208,7 @@ describe("Delegation Scenario Tests", function () {
         it("should successfully revoke granted schema", async function () {
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId2]);
             await assert.doesNotReject(op.fundAndSend(fundingSource));
-            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             assert.deepEqual(grantedSchemaIds, [schemaId.toNumber()], "granted schema permissions should include only non-revoked schema permission");
         });

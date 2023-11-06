@@ -1,7 +1,6 @@
 import "@frequency-chain/api-augment";
 import { Keyring } from "@polkadot/api";
 import { isTestnet } from "./env";
-import { createKeys } from "./helpers";
 
 const coreFundingSourcesSeed = "salt glare message absent guess transfer oblige refuse keen current lunar pilot";
 const keyring = new Keyring({ type: 'sr25519' });
@@ -23,6 +22,7 @@ export const fundingSources = [
   "scenarios-grant-delegation",
   "stateful-storage-handle-sig-req",
   "msa-create-msa",
+  "msa-key-management",
   "stateful-storage-handle-paginated",
   "stateful-storage-handle-itemized",
 ] as const;

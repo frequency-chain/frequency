@@ -5,6 +5,11 @@ import { ExtrinsicHelper } from "./extrinsicHelpers";
 import { drainFundedKeys } from "./helpers";
 import { getRootFundingSource } from "./funding";
 
+// Make sure that we can serialize BigInts for Mocha
+(BigInt.prototype as any).toJSON = function () {
+  return this.toString();
+};
+
 export const mochaHooks = {
   async beforeAll() {
     try {

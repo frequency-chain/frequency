@@ -7,7 +7,6 @@ import { u8aWrapBytes } from "@polkadot/util";
 import assert from "assert";
 import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { base64 } from 'multiformats/bases/base64';
-import { firstValueFrom } from "rxjs";
 import { SchemaId, MessageResponse } from "@frequency-chain/api-augment/interfaces";
 import {
   createKeys,
@@ -37,7 +36,9 @@ import {
   getOrCreateAvroChatMessagePaginatedSchema,
   generateItemizedSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
-  generatePaginatedDeleteSignaturePayloadV2
+  generatePaginatedDeleteSignaturePayloadV2,
+  getCapacity,
+  getTestHandle
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -92,7 +93,7 @@ describe("Capacity Transactions", function () {
         await assertAddNewKey(capacityKeys, addKeyPayload, newControlKeypair);
 
         // attempt a capacity transaction using the new unfunded key: claimHandle
-        const handle = "test_handle";
+        const handle = getTestHandle();
         const expiration = (await getBlockNumber()) + 10;
         const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
         const handlePayload = {
@@ -176,12 +177,10 @@ describe("Capacity Transactions", function () {
           const grantDelegationOp = ExtrinsicHelper.grantDelegation(delegatorKeys, capacityKeys,
             signPayloadSr25519(delegatorKeys, addProviderData), payload);
 
-          const capacityStakedInitial = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
-
           ({ eventMap } = await grantDelegationOp.payWithCapacity());
 
           // Check for remaining capacity to be reduced
-          const capacityStaked = (await firstValueFrom(ExtrinsicHelper.api.query.capacity.capacityLedger(capacityProvider))).unwrap();
+          const capacityStaked = await getCapacity(capacityProvider);
 
           assertEvent(eventMap, "system.ExtrinsicSuccess");
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
@@ -209,7 +208,7 @@ describe("Capacity Transactions", function () {
         })
 
         beforeEach(async function () {
-          starting_block = (await firstValueFrom(ExtrinsicHelper.api.rpc.chain.getHeader())).number.toNumber();
+          starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
@@ -232,7 +231,7 @@ describe("Capacity Transactions", function () {
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assertEvent(eventMap, "messages.MessagesStored");
-          const get = await firstValueFrom(ExtrinsicHelper.api.rpc.messages.getBySchemaId(
+          const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(
             dummySchemaId,
             {
               from_block: starting_block,
@@ -240,7 +239,7 @@ describe("Capacity Transactions", function () {
               to_block: starting_block + 999,
               page_size: 999
             }
-          ));
+          );
           const response: MessageResponse = get.content[get.content.length - 1];
           assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
         });
@@ -485,7 +484,7 @@ describe("Capacity Transactions", function () {
         it("successfully pays with Capacity for eligible transaction - claimHandle", async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
 
-          const handle = "test_handle";
+          const handle = getTestHandle();
           const expiration = (await getBlockNumber()) + 10;
           const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
           const handlePayload = {
@@ -668,7 +667,7 @@ describe("Capacity Transactions", function () {
         addProviderPayload
       );
 
-      const handle = "test_handle";
+      const handle = getTestHandle();
       const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
       const expiration = (await getBlockNumber()) + 5;
       const handlePayload = {
@@ -772,10 +771,10 @@ describe("Capacity Transactions", function () {
       );
 
       // Actual weights and fee
-      const { weight: { refTime, proofSize }, } = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryInfo(call.toHex(), 0));
-      const weightFee = await firstValueFrom(ExtrinsicHelper.api.call.transactionPaymentApi.queryWeightToFee({refTime, proofSize}));
+      const { weight: { refTime, proofSize }, } = await ExtrinsicHelper.apiPromise.call.transactionPaymentApi.queryInfo(call.toHex(), 0);
+      const weightFee = await ExtrinsicHelper.apiPromise.call.transactionPaymentApi.queryWeightToFee({refTime, proofSize});
 
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(call.toHex(), null));
+      const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(call.toHex(), null);
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
@@ -796,7 +795,7 @@ describe("Capacity Transactions", function () {
         addProviderPayload
       );
       const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+      const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null);
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert.notEqual(feeDetails.inclusionFee, undefined, "should have returned a partialFee");
       assert(feeDetails.inclusionFee.isSome, "should have returned a partialFee");
@@ -810,7 +809,7 @@ describe("Capacity Transactions", function () {
 
     it("Returns nothing when requesting capacity cost of a non-capacity transaction", async function () {
       const tx = ExtrinsicHelper.api.tx.msa.retireMsa();
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null));
+      const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null);
       assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert(feeDetails.inclusionFee.isNone, "should have returned something for the inclusionFee");
     });
@@ -818,7 +817,8 @@ describe("Capacity Transactions", function () {
     it("Returns nothing when requesting pay with capacity call with a non-capacity transaction", async function () {
       const insideTx = ExtrinsicHelper.api.tx.msa.retireMsa();
       const tx = ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacity(insideTx);
-      const feeDetails: FeeDetails = await firstValueFrom(ExtrinsicHelper.api.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null)); assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
+      const feeDetails: FeeDetails = await ExtrinsicHelper.apiPromise.rpc.frequencyTxPayment.computeCapacityFeeDetails(tx.toHex(), null);
+      assert.notEqual(feeDetails, undefined, "should have returned a feeDetails");
       assert(feeDetails.inclusionFee.isNone, "should have returned something for the inclusionFee");
     });
   });

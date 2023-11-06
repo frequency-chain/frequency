@@ -4,7 +4,6 @@ import "@frequency-chain/api-augment";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { KeyringPair } from "@polkadot/keyring/types";
 import assert from "assert";
-import { firstValueFrom } from "rxjs";
 import { Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { isTestnet } from "../scaffolding/env";
 import { getSudo, getFundingSource } from "../scaffolding/funding";
@@ -40,11 +39,11 @@ describe("Sudo required", function () {
     })
 
     it("should successfully set the max schema size", async function () {
-      const size = (await firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes())).toBigInt();
+      const size = (await ExtrinsicHelper.apiPromise.query.schemas.governanceSchemaModelMaxBytes()).toBigInt();
       const op = new Extrinsic(() => ExtrinsicHelper.api.tx.schemas.setMaxSchemaModelBytes(size + 1n), sudoKey);
       await op.sudoSignAndSend();
       assert.equal(true, true, 'operation should not have thrown error');
-      const newSize = (await firstValueFrom(ExtrinsicHelper.api.query.schemas.governanceSchemaModelMaxBytes())).toBigInt();
+      const newSize = (await ExtrinsicHelper.apiPromise.query.schemas.governanceSchemaModelMaxBytes()).toBigInt();
       assert.equal(size + 1n, newSize, 'new size should have been set');
     });
   });
