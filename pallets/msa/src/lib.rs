@@ -1094,6 +1094,76 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	// use case is not clear to me
+
+	// User can be making a claim over authority of an account and want to add a new key
+	// A user is requesting access to MSA account
+	   // - potential future features would be to also include permissions
+
+	// A user wants to add a new key via a two step claim and verification process.
+	// A user can create a claim leaving a deposit that it wants to add a new key.
+	// It claims that a new key should be added to an MSA and wants to add a key to it.
+	// This claim provides the proof that it has ownership over a key.
+	// The owner or authorized provider can approve the key.
+
+
+	// as a user I want to be able to make a claim add a new key to an MSA
+	// - user provides msa-id for which they want to associate account
+	// - user provides proof of key ownership
+	// - user leaves a deposit for adding key
+	// note: giving authority to service profider to accept claim can
+	// have risk of a service provider hijacking an account.
+
+	// Possible ways to authorize:
+	
+	// As a user of frequency who has Capacity, 
+	// I want to be able to submit and pay for a add-key claim on behalf of a user.
+	// - user providers proof of ownership over MSA by signing.
+	// - user provides the key the are allowing to be added 
+	// proof ownership of new key: part of claim
+	// proof of msa ownership: here
+	// summary: transaction is submitted by anyone
+	
+	// As an owner of MSA, I want to be able to submit transaction and verify an add key claim.
+	// - user submits transaction with key associated to an MSA to prover ownership
+	// - user submits key that is being added
+	// summary: transaction is submitted by owner of msa
+	
+
+	// As a delegator, I want to verify an add-key claim on behalf of a user,
+	// and pay for the transaction with Capacity
+	// - provider must be a delegate of the claiment to add key claim
+	// summary: transaction is submitted by delegator.
+
+
+		// #[pallet::call_index(5)]
+		// #[pallet::weight(T::WeightInfo::add_public_key_to_msa())]
+		// pub fn add_key_claim(
+		// 	origin: OriginFor<T>,
+		// 	msa_id: MsaId,
+		// 	proof: MultiSignature,
+		// 	key: Address,
+		// ) -> DispatchResult {
+			// 
+			// check ownership over key
+			// withdraw deposit
+			// set time TTL
+			// set TTL ?
+			// NewKeyClaim::<T>::insert(msa_id, true);
+		// }
+
+		// is the a delegate allow to verify a claim on your behalf?
+		// do I asign a transaction to allow a delegate to pay for transaction?
+		//
+		// pub fn verify_add_key_claim(
+		// 	origin: OriginFor<T>,
+		// 	claiment_key: Address,
+		// ) {
+		// 	// get msa id of key
+		// 	// check that authorize the key that has added claim
+		// does the person submitting the verification a delegate?
+		// }
+
 	/// Add a provider to a delegator with the default permissions
 	///
 	/// # Errors
