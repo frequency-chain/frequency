@@ -238,12 +238,12 @@ describe("Delegation Scenario Tests", function () {
             await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
-        describe('Successful revocation', () => {
+        describe('Successful revocation', function () {
             let newKeys: KeyringPair;
             let msaId: u64 | undefined;
             let revokedAtBlock: number;
 
-            before(async () => {
+            before(async function () {
                 newKeys = createKeys();
                 const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
@@ -253,7 +253,7 @@ describe("Delegation Scenario Tests", function () {
                 assert.notEqual(msaId, undefined, 'should have returned an MSA');
             });
 
-            it("schema permissions revoked block of delegation should be zero", async () => {
+            it("schema permissions revoked block of delegation should be zero", async function () {
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
@@ -271,7 +271,7 @@ describe("Delegation Scenario Tests", function () {
                 revokedAtBlock = await getBlockNumber();
             });
 
-            it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
+            it("revoked delegation should be reflected in all previously-granted schema permissions", async function () {
                 // Make a block first to make sure the state has rolled to the next block
                 const currentBlock = await getBlockNumber();
                 ExtrinsicHelper.runToBlock(currentBlock + 1);

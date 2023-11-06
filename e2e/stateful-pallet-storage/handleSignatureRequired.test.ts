@@ -19,7 +19,7 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
-describe("📗 Stateful Pallet Storage Signature Required", () => {
+describe("📗 Stateful Pallet Storage Signature Required", function () {
   const fundingSource = getFundingSource("stateful-storage-handle-sig-req");
 
 
@@ -54,7 +54,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
     assert.notEqual(msa_id, undefined, "setup should populate msa_id");
   });
 
-  describe("Itemized With Signature Storage Tests", () => {
+  describe("Itemized With Signature Storage Tests", function () {
 
     it("should be able to call applyItemizedActionWithSignature and apply actions", async function () {
 
@@ -120,7 +120,7 @@ describe("📗 Stateful Pallet Storage Signature Required", () => {
     });
   });
 
-  describe("Paginated With Signature Storage Tests", () => {
+  describe("Paginated With Signature Storage Tests", function () {
 
     it("should be able to call upsert a page and delete it successfully", async function () {
       let page_id = new u16(ExtrinsicHelper.api.registry, 1);
