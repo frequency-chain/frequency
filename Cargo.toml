@@ -49,6 +49,7 @@ sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", default-fe
 sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
 substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
 tokio = { version = "1.25.0", default-features = false }
+sp-rpc = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
 
 [profile.release]
 panic = "unwind"
