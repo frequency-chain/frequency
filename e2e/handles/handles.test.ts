@@ -93,7 +93,7 @@ describe("🤝 Handles", function () {
                 };
                 const claimHandlePayload = ExtrinsicHelper.api.registry.createType("CommonPrimitivesHandlesClaimHandlePayload", payload_ext);
                 const claimHandle = ExtrinsicHelper.claimHandle(msaOwnerKeys, claimHandlePayload);
-                const { target: event } = await claimHandle.fundAndSend(fundingSource, true);
+                const { target: event } = await claimHandle.fundAndSend(fundingSource);
                 assert.notEqual(event, undefined, "claimHandle should return an event");
                 const displayHandle = event!.data.handle.toUtf8();
                 assert.notEqual(displayHandle, "", "claimHandle should emit a handle");
