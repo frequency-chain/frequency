@@ -13,21 +13,21 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+codec = { package = "parity-scale-codec", workspace = true, features = [
   "derive",
 ] }
-log = { version = "0.4.17", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = [
+log = { workspace = true }
+scale-info = { workspace = true, features = [
   "derive",
 ] }
 # Substrate
-frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, optional = true, branch = "release-polkadot-v1.1.0" }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+frame-benchmarking = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 # Pinning a specific commit to fix an unwrap-panic issue: REVIEW: remove when cid > 0.10.1 
@@ -38,7 +38,7 @@ multibase = { version ="0.9", default-features = false }
 common-runtime = { path = '../../runtime/common', default-features = false }
 # Testing dependencies
 rand = "0.8.5"
-pretty_assertions = "1.3.0"
+pretty_assertions = { workspace = true}
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
