@@ -9,7 +9,7 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
-describe("📗 Stateful Pallet Storage", () => {
+describe("📗 Stateful Pallet Storage", function ()  {
     const fundingSource = getFundingSource("stateful-storage-handle-itemized");
     let schemaId_deletable: SchemaId;
     let schemaId_unsupported: SchemaId;
@@ -40,7 +40,7 @@ describe("📗 Stateful Pallet Storage", () => {
         [badMsaId] = await createMsa(fundingSource);
     });
 
-    describe("Itemized Storage Tests 😊/😥", () => {
+    describe("Itemized Storage Tests 😊/😥", function () {
 
         it("✅ should be able to call applyItemizedAction and apply actions", async function () {
 
@@ -132,7 +132,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Itemized Storage Remove Action Tests", () => {
+    describe("Itemized Storage Remove Action Tests", function () {
 
         it("✅ should be able to call applyItemizedAction and apply remove actions", async function () {
             let target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
@@ -205,7 +205,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Itemized Storage RPC Tests", () => {
+    describe("Itemized Storage RPC Tests", function () {
         it("✅ should be able to call getItemizedStorage and get data for itemized schema", async function () {
             const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
             assert.notEqual(result.hash, undefined, "should have returned a hash");

@@ -3,9 +3,10 @@ import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/ty
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
-import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
+import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from "./helpers";
+import autoNonce, { AutoNonce } from "./autoNonce";
 import { connect, connectPromise } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -56,6 +57,17 @@ export class EventError extends Error {
 
     public toString() {
         return `${this.section}.${this.name}: ${this.message}`;
+    }
+}
+
+class CallError extends Error {
+    message: string;
+    result: AnyJson;
+
+    constructor(submittable: ISubmittableResult, msg?: string) {
+        super();
+        this.result = submittable.toHuman();
+        this.message = msg ?? "Call Error";
     }
 }
 
@@ -112,22 +124,42 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         this.api = ExtrinsicHelper.api;
     }
 
-    public signAndSend(nonce?: number) {
-        return firstValueFrom(this.extrinsic().signAndSend(this.keys, { nonce: nonce }).pipe(
+    // This uses automatic nonce management by default.
+    public async signAndSend(inputNonce?: AutoNonce) {
+        const nonce = await autoNonce.auto(this.keys, inputNonce);
+
+        try {
+            const op = this.extrinsic();
+            return await firstValueFrom(op.signAndSend(this.keys, { nonce }).pipe(
+                tap((result) => {
+                    // If we learn a transaction has an error status (this does NOT include RPC errors)
+                    // Then throw an error
+                    if (result.isError) {
+                        throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || "unknown"}`);
+                    }
+                }),
+                filter(({ status }) => status.isInBlock || status.isFinalized),
+                this.parseResult(this.event),
+            ));
+        } catch (e) {
+            if ((e as any).name === "RpcError" && inputNonce === 'auto') {
+                console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+            }
+            throw e;
+        }
+    }
+
+    public async sudoSignAndSend() {
+        const nonce = await autoNonce.auto(this.keys);
+        return await firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public sudoSignAndSend() {
-        return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
-            filter(({ status }) => status.isInBlock || status.isFinalized),
-            this.parseResult(this.event),
-        ))
-    }
-
-    public payWithCapacity(nonce?: number) {
-        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
+    public async payWithCapacity(inputNonce?: AutoNonce) {
+        const nonce = await autoNonce.auto(this.keys, inputNonce);
+        return await firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))

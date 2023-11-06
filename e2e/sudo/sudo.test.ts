@@ -75,7 +75,7 @@ describe("Sudo required", function () {
     });
 
 
-    describe("📗 Stateful Pallet Storage AppendOnly Schemas", () => {
+    describe("📗 Stateful Pallet Storage AppendOnly Schemas", function () {
       // This requires schema creation abilities
 
       let itemizedSchemaId: SchemaId;
@@ -99,7 +99,7 @@ describe("Sudo required", function () {
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
       });
 
-      describe("Itemized With AppendOnly Storage Tests", () => {
+      describe("Itemized With AppendOnly Storage Tests", function () {
 
         it("should not be able to call delete action", async function () {
 

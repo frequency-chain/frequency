@@ -78,7 +78,7 @@ describe("Capacity Replenishment Testing: ", function () {
 
   function assert_capacity_call_fails_with_balance_too_low(call: Extrinsic) {
     return assert.rejects(
-      call.payWithCapacity(-1), { name: "RpcError", message: /1010.+account balance too low/ });
+      call.payWithCapacity('current'), { name: "RpcError", message: /1010.+account balance too low/ });
   }
 
   describe("Capacity is not replenished", function () {
@@ -132,7 +132,7 @@ describe("Capacity Replenishment Testing: ", function () {
       assertEvent(hasStaked, 'capacity.Staked');
 
       // provider can now send a message
-      const { eventMap: hasCapacityWithdrawn } = await call.payWithCapacity(-1);
+      const { eventMap: hasCapacityWithdrawn } = await call.payWithCapacity();
       assertEvent(hasCapacityWithdrawn, 'capacity.CapacityWithdrawn');
 
       remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();

@@ -9,7 +9,7 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
-describe("📗 Stateful Pallet Storage", () => {
+describe("📗 Stateful Pallet Storage", function () {
     const fundingSource = getFundingSource("stateful-storage-handle-paginated");
 
     let schemaId: SchemaId;
@@ -44,7 +44,7 @@ describe("📗 Stateful Pallet Storage", () => {
         [badMsaId] = await createMsa(fundingSource);
     });
 
-    describe("Paginated Storage Upsert/Remove Tests 😊/😥", () => {
+    describe("Paginated Storage Upsert/Remove Tests 😊/😥", function () {
 
         it("✅ should be able to call upsert page and add a page and remove a page via id", async function () {
             let page_id = 0;
@@ -127,7 +127,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Paginated Storage Removal Negative Tests 😊/😥", () => {
+    describe("Paginated Storage Removal Negative Tests 😊/😥", function () {
 
         it("🛑 should fail call to remove page with invalid schemaId", async function () {
             let fake_schema_id = 999;
@@ -165,7 +165,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Paginated Storage RPC Tests", () => {
+    describe("Paginated Storage RPC Tests", function () {
         it("✅ should be able to call get_paginated_storage and get paginated data", async function () {
             const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, schemaId);
             assert.notEqual(result, undefined, "should have returned a valid response");
