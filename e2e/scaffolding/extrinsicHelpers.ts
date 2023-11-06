@@ -142,11 +142,11 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
                 this.parseResult(this.event),
             ));
         } catch (e) {
-                if ((e as any).name === "RpcError" && inputNonce === 'auto') {
-                    console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
-                }
-                throw e;
+            if ((e as any).name === "RpcError" && inputNonce === 'auto') {
+                console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
             }
+            throw e;
+        }
     }
 
     public async sudoSignAndSend() {
