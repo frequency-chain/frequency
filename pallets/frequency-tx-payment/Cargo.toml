@@ -13,31 +13,31 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-codec = {package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+codec = {package = "parity-scale-codec", workspace = true, features = [
   "derive",
 ]}
-frame-benchmarking = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-frame-support = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-frame-system = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+frame-benchmarking = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
 pallet-capacity = {default-features = false, path = "../capacity"}
 pallet-msa = {default-features = false, path = "../msa"}
-pallet-transaction-payment = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-scale-info = {version = "2.10.0", default-features = false, features = [
+pallet-transaction-payment = { workspace = true }
+scale-info = { workspace = true, features = [
   "derive",
 ]}
-sp-core = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-io = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-runtime = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-std = {default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-log = "0.4.17"
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+log = { workspace = true } 
 
 # Frequency related dependencies
 common-primitives = {default-features = false, path = "../../common/primitives"}
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
-pallet-balances = {git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-pallet-utility = {git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+pallet-balances = { workspace = true }
+pallet-utility = { workspace = true }
 
 # Frequency related dev dependencies
 pallet-msa = {path = '../msa'}
