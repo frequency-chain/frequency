@@ -10,26 +10,26 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 edition = "2021"
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1" }
-jsonrpsee = { version = "0.16.2", features = ["client-core", "server", "macros"] }
-rayon = "1.5.3"
+codec = { package = "parity-scale-codec", workspace = true }
+jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
+rayon = { workspace = true } 
 # Frequency crates
 pallet-frequency-tx-payment-runtime-api = { default-features = false, path = "../runtime-api" }
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-rpc = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+sp-core = { workspace = true }
+sp-api = { workspace = true }
+sp-std = { workspace = true }
+sp-blockchain = { workspace = true }
+sp-runtime = { workspace = true }
+sp-rpc = { workspace = true }
+sp-weights = { workspace = true }
 
 [dev-dependencies]
-tokio = { version = "1.25.0", features = ["macros", "time", "parking_lot"] }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
+substrate-test-runtime-client = { workspace = true }
+sc-client-api = { workspace = true }
 
 [features]
 default = ["std"]
