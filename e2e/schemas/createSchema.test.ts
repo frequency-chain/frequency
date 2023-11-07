@@ -20,7 +20,7 @@ describe("#createSchema", function () {
 
   it("should fail if account does not have enough tokens", async function () {
 
-    await assert.rejects(ExtrinsicHelper.createSchema(accountWithNoFunds, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain").signAndSend(), {
+    await assert.rejects(ExtrinsicHelper.createSchema(accountWithNoFunds, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain").signAndSend('current'), {
       name: 'RpcError',
       message: /Inability to pay some fees/,
     });
@@ -28,7 +28,7 @@ describe("#createSchema", function () {
 
   it("should fail if account does not have enough tokens v2", async function () {
 
-    await assert.rejects(ExtrinsicHelper.createSchemaV2(accountWithNoFunds, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain",[]).signAndSend(), {
+    await assert.rejects(ExtrinsicHelper.createSchemaV2(accountWithNoFunds, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain",[]).signAndSend('current'), {
       name: 'RpcError',
       message: /Inability to pay some fees/,
     });

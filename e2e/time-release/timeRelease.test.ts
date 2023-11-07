@@ -7,7 +7,7 @@ import { getFundingSource } from "../scaffolding/funding";
 
 const DOLLARS: number = 100000000; // 100_000_000
 
-export function getBlocksInMonthPeriod(blockTime, periodInMonths) {
+export function getBlocksInMonthPeriod(blockTime: number, periodInMonths: number) {
     const secondsPerMonth = 2592000; // Assuming 30 days in a month
 
     // Calculate the number of blocks in the given period
@@ -45,7 +45,7 @@ describe("TimeRelease", function () {
             let schedule: ReleaseSchedule = calculateReleaseSchedule(amount);
 
             const vestedTransferTx = ExtrinsicHelper.timeReleaseTransfer(sourceKey, vesterKeys, schedule);
-            const [event, eventMap] = await vestedTransferTx.signAndSend();
+            const { target: event, eventMap } = await vestedTransferTx.signAndSend();
             assert.notEqual(event, undefined, "should have returned ReleaseScheduleAdded event");
         });
     });

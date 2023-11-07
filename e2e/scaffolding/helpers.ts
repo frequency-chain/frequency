@@ -1,6 +1,7 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u32, u64, Option, u128 } from "@polkadot/types";
+import { u16, u32, u64, Option } from "@polkadot/types";
+import type { PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -15,7 +16,6 @@ import {
 } from "./extrinsicHelpers";
 import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
-import { firstValueFrom } from "rxjs";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
@@ -31,6 +31,10 @@ export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
+
+export function getTestHandle(prefix = "test-") {
+  return prefix + Math.random().toFixed(10).toString().replaceAll("0.", "");
+}
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
@@ -178,7 +182,7 @@ export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(source: KeyringPair, amount: bigint | undefined = undefined, keyName?: string, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(source: KeyringPair, amount?: bigint, keyName?: string, nonce?: number): Promise<KeyringPair> {
   const keypair = createKeys(keyName);
 
   await fundKeypair(source, keypair, amount || await getExistentialDeposit(), nonce);
@@ -263,6 +267,19 @@ export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<H
 
 // Creates an MSA and a provider for the given keys
 // Returns the MSA Id of the provider
+export async function createMsa(source: KeyringPair, amount?: bigint):
+  Promise<[u64, KeyringPair]> {
+
+  const keys = await createAndFundKeypair(source, amount);
+  const createMsaOp = ExtrinsicHelper.createMsa(keys);
+  const { target } = await createMsaOp.fundAndSend(source);
+  assert.notEqual(target, undefined, 'createMsa: should have returned MsaCreated event');
+
+  return [target!.data.msaId, keys];
+}
+
+// Creates an MSA and a provider for the given keys
+// Returns the MSA Id of the provider
 export async function createMsaAndProvider(source: KeyringPair, keys: KeyringPair, providerName: string, amount: bigint | undefined = undefined):
   Promise<u64> {
   // Create and fund a keypair with stakeAmount
@@ -302,8 +319,8 @@ export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, pr
 }
 
 export async function getNextEpochBlock() {
-  const epochInfo = await firstValueFrom(ExtrinsicHelper.api.query.capacity.currentEpochInfo());
-  const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+  const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();
+  const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
   return actualEpochLength.toNumber() + epochInfo.epochStart.toNumber() + 1;
 }
 
@@ -313,7 +330,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   if (setEpochLengthEvent) {
     const epochLength = setEpochLengthEvent.data.blocks;
     assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
-    const actualEpochLength = await firstValueFrom(ExtrinsicHelper.api.query.capacity.epochLength());
+    const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
     assert.equal(actualEpochLength, TEST_EPOCH_LENGTH, `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`);
   }
   else {
@@ -407,18 +424,17 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
 
 export const TokenPerCapacity = 50n;
 
-export function assertEvent(events: EventMap, eventName: string) {
-  assert(events.hasOwnProperty(eventName));
-}
-
-export async function getRemainingCapacity(providerId: u64): Promise<u128> {
-  const capacityStaked = (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
-  return capacityStaked.remainingCapacity;
+export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
+  return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
 }
 
 export async function getNonce(keys: KeyringPair): Promise<number> {
-  const nonce = await firstValueFrom(ExtrinsicHelper.api.call.accountNonceApi.accountNonce(keys.address));
+  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(keys.address);
   return nonce.toNumber();
+}
+
+export function assertEvent(events: EventMap, eventName: string) {
+  assert(events.hasOwnProperty(eventName));
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {

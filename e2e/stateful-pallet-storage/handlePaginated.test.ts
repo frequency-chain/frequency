@@ -1,7 +1,7 @@
 // E2E tests for pallets/stateful-pallet-storage/handlePaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash} from "../scaffolding/helpers";
+import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
@@ -9,7 +9,7 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
-describe("📗 Stateful Pallet Storage", () => {
+describe("📗 Stateful Pallet Storage", function () {
     const fundingSource = getFundingSource("stateful-storage-handle-paginated");
 
     let schemaId: SchemaId;
@@ -17,6 +17,7 @@ describe("📗 Stateful Pallet Storage", () => {
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
+    let badMsaId: u64;
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
@@ -38,9 +39,12 @@ describe("📗 Stateful Pallet Storage", () => {
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
+
+        // Create an MSA that is not a provider to be used for testing failure cases
+        [badMsaId] = await createMsa(fundingSource);
     });
 
-    describe("Paginated Storage Upsert/Remove Tests 😊/😥", () => {
+    describe("Paginated Storage Upsert/Remove Tests 😊/😥", function () {
 
         it("✅ should be able to call upsert page and add a page and remove a page via id", async function () {
             let page_id = 0;
@@ -101,10 +105,9 @@ describe("📗 Stateful Pallet Storage", () => {
 
             let page_id = 0;
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
 
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
-            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, bad_msa_id, page_id, payload_1, target_hash);
+            let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, badMsaId, page_id, payload_1, target_hash);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -124,7 +127,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Paginated Storage Removal Negative Tests 😊/😥", () => {
+    describe("Paginated Storage Removal Negative Tests 😊/😥", function () {
 
         it("🛑 should fail call to remove page with invalid schemaId", async function () {
             let fake_schema_id = 999;
@@ -146,9 +149,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
 
         it("🛑 should fail call to remove page for un-delegated attempts", async function () {
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 999)
-
-            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, bad_msa_id, 0, 0);
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, badMsaId, 0, 0);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -164,7 +165,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Paginated Storage RPC Tests", () => {
+    describe("Paginated Storage RPC Tests", function () {
         it("✅ should be able to call get_paginated_storage and get paginated data", async function () {
             const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, schemaId);
             assert.notEqual(result, undefined, "should have returned a valid response");

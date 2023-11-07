@@ -65,6 +65,11 @@ case "${CHAIN}" in
             LOCAL_NODE_BLOCK_SEALING="manual"
         fi
     ;;
+    "serial")
+        PROVIDER_URL="ws://127.0.0.1:9944"
+        NPM_RUN_COMMAND="test:serial"
+        CHAIN_ENVIRONMENT="dev"
+    ;;
     "rococo_local")
         PROVIDER_URL="ws://127.0.0.1:9944"
         NPM_RUN_COMMAND="test:relay"

@@ -1,7 +1,7 @@
 // E2E tests for pallets/stateful-pallet-storage/handleItemized.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createDelegatorAndDelegation, createProviderKeysAndId, getCurrentItemizedHash} from "../scaffolding/helpers";
+import {DOLLARS, createDelegatorAndDelegation, createMsa, createProviderKeysAndId, getCurrentItemizedHash} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
@@ -9,16 +9,16 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
-describe("📗 Stateful Pallet Storage", () => {
+describe("📗 Stateful Pallet Storage", function ()  {
     const fundingSource = getFundingSource("stateful-storage-handle-itemized");
     let schemaId_deletable: SchemaId;
     let schemaId_unsupported: SchemaId;
     let msa_id: MessageSourceId;
     let providerId: MessageSourceId;
     let providerKeys: KeyringPair;
+    let badMsaId: u64;
 
     before(async function () {
-
         // Create a provider for the MSA, the provider will be used to grant delegation
         [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
@@ -28,19 +28,19 @@ describe("📗 Stateful Pallet Storage", () => {
         const createSchemaDeletable = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
         const { target: eventDeletable } = await createSchemaDeletable.fundAndSend(fundingSource);
         schemaId_deletable = eventDeletable!.data.schemaId;
-
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
         const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         schemaId_unsupported = event2!.data.schemaId;
-
         // Create a MSA for the delegator and delegate to the provider
         [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId_deletable, providerId, providerKeys);
         assert.notEqual(msa_id, undefined, "setup should populate msa_id");
+        // Create an MSA that is not a provider to be used for testing failure cases
+        [badMsaId] = await createMsa(fundingSource);
     });
 
-    describe("Itemized Storage Tests 😊/😥", () => {
+    describe("Itemized Storage Tests 😊/😥", function () {
 
         it("✅ should be able to call applyItemizedAction and apply actions", async function () {
 
@@ -103,9 +103,8 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Add": payload_1
             }
             let add_actions = [add_action];
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 4_294_967_295)
 
-            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, add_actions, 0);
+            let itemized_add_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, badMsaId, add_actions, 0);
             await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -133,7 +132,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Itemized Storage Remove Action Tests", () => {
+    describe("Itemized Storage Remove Action Tests", function () {
 
         it("✅ should be able to call applyItemizedAction and apply remove actions", async function () {
             let target_hash = await getCurrentItemizedHash(msa_id, schemaId_deletable);
@@ -187,8 +186,8 @@ describe("📗 Stateful Pallet Storage", () => {
                 "Delete": idx_1,
             }
             let remove_actions = [remove_action_1];
-            let bad_msa_id = new u64(ExtrinsicHelper.api.registry, 4_294_967_295);
-            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, bad_msa_id, remove_actions, 0);
+
+            let itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, badMsaId, remove_actions, 0);
             await assert.rejects(itemized_remove_result_1.fundAndSend(fundingSource), {
                 name: 'UnauthorizedDelegate',
                 section: 'statefulStorage',
@@ -206,7 +205,7 @@ describe("📗 Stateful Pallet Storage", () => {
         });
     });
 
-    describe("Itemized Storage RPC Tests", () => {
+    describe("Itemized Storage RPC Tests", function () {
         it("✅ should be able to call getItemizedStorage and get data for itemized schema", async function () {
             const result = await ExtrinsicHelper.getItemizedStorage(msa_id, schemaId_deletable);
             assert.notEqual(result.hash, undefined, "should have returned a hash");

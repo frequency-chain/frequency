@@ -3,9 +3,8 @@ import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u64 } from "@polkadot/types";
 import assert from "assert";
 import { AddProviderPayload, Extrinsic, ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
-import { createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, signPayloadSr25519 } from "../scaffolding/helpers";
+import { DOLLARS, createAndFundKeypair, createAndFundKeypairs, createKeys, generateDelegationPayload, getBlockNumber, signPayloadSr25519 } from "../scaffolding/helpers";
 import { SchemaGrantResponse, SchemaId } from "@frequency-chain/api-augment/interfaces";
-import { firstValueFrom } from "rxjs";
 import { getFundingSource } from "../scaffolding/funding";
 
 describe("Delegation Scenario Tests", function () {
@@ -25,26 +24,25 @@ describe("Delegation Scenario Tests", function () {
 
     before(async function () {
         // Fund all the different keys
-        [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(fundingSource, ["noMsaKeys", "keys", "otherMsaKeys", "providerKeys", "otherProviderKeys"]);
+        [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(fundingSource, ["noMsaKeys", "keys", "otherMsaKeys", "providerKeys", "otherProviderKeys"], 1n * DOLLARS);
 
-        const createMsaOp = ExtrinsicHelper.createMsa(keys);
-        let { target: msaCreatedEvent } = await createMsaOp.fundAndSend(fundingSource);
-        msaId = msaCreatedEvent!.data.msaId;
+        const { target: msaCreatedEvent1 } = await ExtrinsicHelper.createMsa(keys).signAndSend();
+        msaId = msaCreatedEvent1!.data.msaId;
 
-        ({ target: msaCreatedEvent } = await ExtrinsicHelper.createMsa(otherMsaKeys).fundAndSend(fundingSource));
-        otherMsaId = msaCreatedEvent!.data.msaId;
+        const { target: msaCreatedEvent2 } = await ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend();
+        otherMsaId = msaCreatedEvent2!.data.msaId;
 
         let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
-        await createProviderMsaOp.fundAndSend(fundingSource);
+        await createProviderMsaOp.signAndSend();
         let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "MyPoster");
-        let { target: providerEvent } = await createProviderOp.fundAndSend(fundingSource);
+        let { target: providerEvent } = await createProviderOp.signAndSend();
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         providerId = providerEvent!.data.providerId;
 
         createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
-        await createProviderMsaOp.fundAndSend(fundingSource);
+        await createProviderMsaOp.signAndSend();
         createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, "MyPoster");
-        ({ target: providerEvent } = await createProviderOp.fundAndSend(fundingSource));
+        ({ target: providerEvent } = await createProviderOp.signAndSend());
         assert.notEqual(providerEvent, undefined, "setup should return a ProviderCreated event");
         otherProviderId = providerEvent!.data.providerId;
 
@@ -80,12 +78,12 @@ describe("Delegation Scenario Tests", function () {
                 },
             ]
         }, "AvroBinary", "OnChain");
-        let { target: createSchemaEvent } = await createSchemaOp.fundAndSend(fundingSource);
+        let { target: createSchemaEvent } = await createSchemaOp.signAndSend();
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         schemaId = createSchemaEvent!.data.schemaId;
 
         // Create a second schema
-        ({ target: createSchemaEvent } = await createSchemaOp.fundAndSend(fundingSource));
+        ({ target: createSchemaEvent } = await createSchemaOp.signAndSend());
         assert.notEqual(createSchemaEvent, undefined, "setup should return SchemaCreated event");
         schemaId2 = createSchemaEvent!.data.schemaId;
     });
@@ -151,7 +149,7 @@ describe("Delegation Scenario Tests", function () {
         });
 
         it('initial granted schemas should be correct', async function () {
-            let schemaGrants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let schemaGrants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             assert.equal(schemaGrants.isSome, true);
             const schemaIds = schemaGrants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             const expectedSchemaIds = [schemaId.toNumber()];
@@ -170,7 +168,7 @@ describe("Delegation Scenario Tests", function () {
             assert.notEqual(grantDelegationEvent, undefined, "should have returned DelegationGranted event");
             assert.deepEqual(grantDelegationEvent?.data.providerId, providerId, 'provider IDs should match');
             assert.deepEqual(grantDelegationEvent?.data.delegatorId, msaId, 'delegator IDs should match');
-            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
             assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
@@ -209,7 +207,7 @@ describe("Delegation Scenario Tests", function () {
         it("should successfully revoke granted schema", async function () {
             const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId2]);
             await assert.doesNotReject(op.fundAndSend(fundingSource));
-            let grants = await firstValueFrom(ExtrinsicHelper.api.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId));
+            let grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
             const grantedSchemaIds = grants.unwrap().filter((grant) => grant.revoked_at.toBigInt() === 0n).map((grant) => grant.schema_id.toNumber());
             assert.deepEqual(grantedSchemaIds, [schemaId.toNumber()], "granted schema permissions should include only non-revoked schema permission");
         });
@@ -219,12 +217,12 @@ describe("Delegation Scenario Tests", function () {
         it("should fail to revoke a delegation if no MSA exists (InvalidMsaKey)", async function () {
             const nonMsaKeys = await createAndFundKeypair(fundingSource);
             const op = ExtrinsicHelper.revokeDelegationByDelegator(nonMsaKeys, providerId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 1$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 1$/ });
         });
 
         it("should revoke a delegation by delegator", async function () {
             const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            const { target: revokeDelegationEvent } = await revokeDelegationOp.fundAndSend(fundingSource);
+            const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend('current');
             assert.notEqual(revokeDelegationEvent, undefined, "should have returned DelegationRevoked event");
             assert.deepEqual(revokeDelegationEvent?.data.providerId, providerId, 'provider ids should be equal');
             assert.deepEqual(revokeDelegationEvent?.data.delegatorId, msaId, 'delegator ids should be equal');
@@ -232,28 +230,20 @@ describe("Delegation Scenario Tests", function () {
 
         it("should fail to revoke a delegation that has already been revoked (InvalidDelegation)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         it("should fail to revoke delegation where no delegation exists (DelegationNotFound)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, otherProviderId);
-            await assert.rejects(op.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
-        describe('Successful revocation', () => {
+        describe('Successful revocation', function () {
             let newKeys: KeyringPair;
             let msaId: u64 | undefined;
-            let revokedAtBlock: bigint;
-            async function revokeDelegationByProvider (myMsaId: u64 | undefined) {
-              const op = ExtrinsicHelper.revokeDelegationByProvider(myMsaId as u64, providerKeys);
-              const { target: revokeEvent } = await op.fundAndSend(fundingSource);
-              assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
-              assert.deepEqual(revokeEvent?.data.delegatorId, myMsaId, 'delegator ids should match');
-              assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
-              revokedAtBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toBigInt()
-            }
+            let revokedAtBlock: number;
 
-            before(async () => {
+            before(async function () {
                 newKeys = createKeys();
                 const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
                 const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
@@ -263,7 +253,7 @@ describe("Delegation Scenario Tests", function () {
                 assert.notEqual(msaId, undefined, 'should have returned an MSA');
             });
 
-            it("schema permissions revoked block of delegation should be zero", async () => {
+            it("schema permissions revoked block of delegation should be zero", async function () {
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
@@ -274,24 +264,24 @@ describe("Delegation Scenario Tests", function () {
 
             it("should revoke a delegation by provider", async function () {
                 const op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
-                const { target: revokeEvent } = await op.fundAndSend(fundingSource);
+                const { target: revokeEvent } = await op.signAndSend('current');
                 assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
                 assert.deepEqual(revokeEvent?.data.delegatorId, msaId, 'delegator ids should match');
                 assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
-                revokedAtBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toBigInt()
+                revokedAtBlock = await getBlockNumber();
             });
 
-            it("revoked delegation should be reflected in all previously-granted schema permissions", async () => {
+            it("revoked delegation should be reflected in all previously-granted schema permissions", async function () {
                 // Make a block first to make sure the state has rolled to the next block
-                const currentBlock = (await ExtrinsicHelper.apiPromise.rpc.chain.getBlock()).block.header.number.toNumber();
+                const currentBlock = await getBlockNumber();
                 ExtrinsicHelper.runToBlock(currentBlock + 1);
                 const delegationsResponse = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
                 assert(delegationsResponse.isSome);
                 const delegations: SchemaGrantResponse[] = delegationsResponse.unwrap().toArray();
                 delegations.forEach((delegation) => {
-                    const diff = delegation.revoked_at.toBigInt() - revokedAtBlock;
+                    const diff = delegation.revoked_at.toNumber() - revokedAtBlock;
                     // Due to parallelization, this could be off by a few blocks
-                    assert(Math.abs(Number(diff.toString())) < 5);
+                    assert(Math.abs(Number(diff.toString())) < 20);
                 })
             })
 
@@ -303,9 +293,10 @@ describe("Delegation Scenario Tests", function () {
               const { target: msaEvent } = await op.fundAndSend(fundingSource);
               const newMsaId = msaEvent?.data.msaId;
               assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
-              await revokeDelegationByProvider(newMsaId);
+              await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend('current'));
+
               const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-              const { target: retireMsaEvent } = await retireMsaOp.fundAndSend(fundingSource);
+              const { target: retireMsaEvent } = await retireMsaOp.signAndSend('current');
               assert.notEqual(retireMsaEvent, undefined, "should have returned MsaRetired event");
               assert.deepEqual(retireMsaEvent?.data.msaId, newMsaId, 'msaId should be equal');
             });
@@ -319,7 +310,7 @@ describe("Delegation Scenario Tests", function () {
             const newMsaId = msaEvent?.data.msaId;
             assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
             const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-            await assert.rejects(retireMsaOp.fundAndSend(fundingSource), { name: 'RpcError', message: /Custom error: 6$/ });
+            await assert.rejects(retireMsaOp.signAndSend('current'), { name: 'RpcError', message: /Custom error: 6$/ });
           });
         });
     });

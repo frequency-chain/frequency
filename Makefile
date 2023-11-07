@@ -26,8 +26,8 @@ start-manual:
 start-interval:
 	./scripts/init.sh start-frequency-interval
 
-start-interval-1:
-	./scripts/init.sh start-frequency-interval-1
+start-interval-short:
+	./scripts/init.sh start-frequency-interval 1
 
 .PHONY: stop
 stop-relay:
@@ -235,6 +235,9 @@ test:
 
 e2e-tests:
 	./scripts/run_e2e_tests.sh
+
+e2e-tests-serial:
+	./scripts/run_e2e_tests.sh -c serial
 
 e2e-tests-only:
 	./scripts/run_e2e_tests.sh -s

@@ -3,9 +3,10 @@ import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from "@polkadot/api/ty
 import { KeyringPair } from "@polkadot/keyring/types";
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from "@polkadot/types";
 import { FrameSystemAccountInfo, SpRuntimeDispatchError } from "@polkadot/types/lookup";
-import { AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
+import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from "@polkadot/types/types";
 import { firstValueFrom, filter, map, pipe, tap } from "rxjs";
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from "./helpers";
+import autoNonce, { AutoNonce } from "./autoNonce";
 import { connect, connectPromise } from "./apiConnection";
 import { DispatchError, Event, SignedBlock } from "@polkadot/types/interfaces";
 import { IsEvent } from "@polkadot/types/metadata/decorate/types";
@@ -56,6 +57,17 @@ export class EventError extends Error {
 
     public toString() {
         return `${this.section}.${this.name}: ${this.message}`;
+    }
+}
+
+class CallError extends Error {
+    message: string;
+    result: AnyJson;
+
+    constructor(submittable: ISubmittableResult, msg?: string) {
+        super();
+        this.result = submittable.toHuman();
+        this.message = msg ?? "Call Error";
     }
 }
 
@@ -112,22 +124,42 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         this.api = ExtrinsicHelper.api;
     }
 
-    public signAndSend(nonce?: number) {
-        return firstValueFrom(this.extrinsic().signAndSend(this.keys, { nonce: nonce }).pipe(
+    // This uses automatic nonce management by default.
+    public async signAndSend(inputNonce?: AutoNonce) {
+        const nonce = await autoNonce.auto(this.keys, inputNonce);
+
+        try {
+            const op = this.extrinsic();
+            return await firstValueFrom(op.signAndSend(this.keys, { nonce }).pipe(
+                tap((result) => {
+                    // If we learn a transaction has an error status (this does NOT include RPC errors)
+                    // Then throw an error
+                    if (result.isError) {
+                        throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || "unknown"}`);
+                    }
+                }),
+                filter(({ status }) => status.isInBlock || status.isFinalized),
+                this.parseResult(this.event),
+            ));
+        } catch (e) {
+            if ((e as any).name === "RpcError" && inputNonce === 'auto') {
+                console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+            }
+            throw e;
+        }
+    }
+
+    public async sudoSignAndSend() {
+        const nonce = await autoNonce.auto(this.keys);
+        return await firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
     }
 
-    public sudoSignAndSend() {
-        return firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys).pipe(
-            filter(({ status }) => status.isInBlock || status.isFinalized),
-            this.parseResult(this.event),
-        ))
-    }
-
-    public payWithCapacity(nonce?: number) {
-        return firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
+    public async payWithCapacity(inputNonce?: AutoNonce) {
+        const nonce = await autoNonce.auto(this.keys, inputNonce);
+        return await firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
@@ -209,7 +241,7 @@ export class ExtrinsicHelper {
     }
 
     public static getLastBlock(): Promise<SignedBlock> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.chain.getBlock());
+        return ExtrinsicHelper.apiPromise.rpc.chain.getBlock();
     }
 
     /** Query Extrinsics */
@@ -219,10 +251,6 @@ export class ExtrinsicHelper {
 
     public static getSchemaMaxBytes() {
         return ExtrinsicHelper.apiPromise.query.schemas.governanceSchemaModelMaxBytes();
-    }
-
-    public static getCurrentMsaIdentifierMaximum() {
-        return ExtrinsicHelper.apiPromise.query.msa.currentMsaIdentifierMaximum();
     }
 
     /** Balance Extrinsics */
@@ -251,7 +279,7 @@ export class ExtrinsicHelper {
 
     /** Get Schema RPC */
     public static getSchema(schemaId: u16): Promise<Option<SchemaResponse>> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.schemas.getBySchemaId(schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.schemas.getBySchemaId(schemaId);
     }
 
     /** MSA Extrinsics */
@@ -343,11 +371,11 @@ export class ExtrinsicHelper {
     }
 
     public static getItemizedStorage(msa_id: MessageSourceId, schemaId: any): Promise<ItemizedStoragePageResponse> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getItemizedStorage(msa_id, schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.statefulStorage.getItemizedStorage(msa_id, schemaId);
     }
 
     public static getPaginatedStorage(msa_id: MessageSourceId, schemaId: any): Promise<Vec<PaginatedStorageResponse>> {
-        return firstValueFrom(ExtrinsicHelper.api.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId));
+        return ExtrinsicHelper.apiPromise.rpc.statefulStorage.getPaginatedStorage(msa_id, schemaId);
     }
 
     public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule) {
@@ -364,8 +392,7 @@ export class ExtrinsicHelper {
     }
 
     public static getHandleForMSA(msa_id: MessageSourceId): Promise<Option<HandleResponse>> {
-        let handle_response = ExtrinsicHelper.api.rpc.handles.getHandleForMsa(msa_id);
-        return firstValueFrom(handle_response);
+        return ExtrinsicHelper.apiPromise.rpc.handles.getHandleForMsa(msa_id);
     }
 
     public static getMsaForHandle(handle: string): Promise<Option<MessageSourceId>> {
@@ -373,13 +400,11 @@ export class ExtrinsicHelper {
     }
 
     public static getNextSuffixesForHandle(base_handle: string, count: number): Promise<PresumptiveSuffixesResponse> {
-        let suffixes = ExtrinsicHelper.api.rpc.handles.getNextSuffixes(base_handle, count);
-        return firstValueFrom(suffixes);
+        return ExtrinsicHelper.apiPromise.rpc.handles.getNextSuffixes(base_handle, count);
     }
 
     public static validateHandle(base_handle: string): Promise<Bool> {
-        let validationResult = ExtrinsicHelper.api.rpc.handles.validateHandle(base_handle);
-        return firstValueFrom(validationResult);
+        return ExtrinsicHelper.apiPromise.rpc.handles.validateHandle(base_handle);
     }
 
     public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string) {
@@ -425,7 +450,7 @@ export class ExtrinsicHelper {
         if (hasRelayChain()) {
             await new Promise((r) => setTimeout(r, 4_000));
         } else {
-            await firstValueFrom(ExtrinsicHelper.api.rpc.engine.createBlock(true, true));
+            await ExtrinsicHelper.apiPromise.rpc.engine.createBlock(true, true);
         }
         currentBlock = await getBlockNumber();
       }
