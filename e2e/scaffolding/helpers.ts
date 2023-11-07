@@ -178,9 +178,7 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
       keyPairs.map(async (keypair) => {
         const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
         // Only drain keys that can be
-        if (canDrainAccount(info)) {
-          const x = await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-        }
+        if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
       })
     );
   } catch (e) {
