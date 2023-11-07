@@ -33,10 +33,6 @@ pub struct StakingAccountDetailsV2<T: Config> {
 	pub active: BalanceOf<T>,
 	/// The type of staking for this staking account
 	pub staking_type: StakingType,
-	// The total amount of tokens in `active` and `unlocking`
-	// pub total: BalanceOf<T>,
-	// Unstaked balances that are thawing or awaiting withdrawal.
-	// pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
 }
 
 /// The type that is used to record a single request for a number of tokens to be unlocked.
@@ -57,14 +53,18 @@ impl<T: Config> StakingAccountDetailsV2<T> {
 
 	/// Decrease the amount of active stake by an amount and create an UnlockChunk.
 	pub fn withdraw(&mut self, amount: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError> {
-		let mut active = self.active.saturating_sub(amount);
+		let current_active = self.active;
+
+		// this is zero if amount exceeds self.active
+		let mut new_active = self.active.saturating_sub(amount);
 		let mut actual_unstaked: BalanceOf<T> = amount;
 
 		if new_active.le(&T::MinimumStakingAmount::get()) {
 			actual_unstaked = current_active;
 			new_active = Zero::zero();
 		}
-		self.active = active;
+
+		self.active = new_active;
 		Ok(actual_unstaked)
 	}
 }
