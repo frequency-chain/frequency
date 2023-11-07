@@ -25,14 +25,13 @@ fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
 	};
 	assert_eq!(Ok(10u64), staking_account_details.withdraw(6));
 	assert_eq!(0u64, staking_account_details.active);
-	assert_eq!(10u64, staking_account_details.total);
 
 	staking_account_details.deposit(10);
-	assert_eq!(Ok(10u64), staking_account_details.withdraw(9, 3));
+	assert_eq!(Ok(10u64), staking_account_details.withdraw(9));
 	assert_eq!(0u64, staking_account_details.active);
 
 	staking_account_details.deposit(10);
-	assert_eq!(Ok(10u64), staking_account_details.withdraw(11, 3));
+	assert_eq!(Ok(10u64), staking_account_details.withdraw(11));
 	assert_eq!(0u64, staking_account_details.active);
 }
 
