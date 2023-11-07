@@ -38,7 +38,8 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
-  getTestHandle
+  getTestHandle,
+  assertHasMessage
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -240,8 +241,7 @@ describe("Capacity Transactions", function () {
               page_size: 999
             }
           );
-          const response: MessageResponse = get.content[get.content.length - 1];
-          assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
+          assertHasMessage(get, x => x.payload.isSome && x.payload.toString() === "0xdeadbeef");
         });
       });
 

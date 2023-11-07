@@ -14,7 +14,7 @@ import {
   ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
   PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
 } from "./extrinsicHelpers";
-import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
+import { BlockPaginationResponseMessage, HandleResponse, MessageResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
@@ -449,4 +449,18 @@ export function assertEvent(events: EventMap, eventName: string) {
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {
   assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+}
+
+export function assertHasMessage(response: BlockPaginationResponseMessage, testFn: (x: MessageResponse) => Boolean) {
+  const messages = response.content;
+  assert(messages.length > 0, "Expected some messages, but found none.");
+
+  const found = messages.find(testFn);
+
+  if (found) {
+    assert.notEqual(found, undefined);
+  } else {
+    const allPayloads = messages.map(x => x.payload.toString());
+    assert.fail(`Unable to find message in response (length: ${messages.length}, Payloads: ${allPayloads.join(", ")})`);
+  }
 }
