@@ -1,7 +1,7 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u32, u64, Option } from "@polkadot/types";
-import type { PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
+import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -165,16 +165,26 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
+function canDrainAccount(info: FrameSystemAccountInfo): Boolean {
+  return !info.isEmpty
+    && info.data.free.toNumber() > 1_500_000 // ~Cost to do the transfer
+    && info.data.reserved.toNumber() < 1
+    && info.data.frozen.toNumber() < 1;
+}
+
 export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
   try {
-    await Promise.allSettled(keyPairs.map(async (keypair) => {
-      const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
-        if (!info.isEmpty && info.data.free.toNumber() > 0) {
-          await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
+    await Promise.all(
+      keyPairs.map(async (keypair) => {
+        const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
+        // Only drain keys that can be
+        if (canDrainAccount(info)) {
+          const x = await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
         }
-    }));
+      })
+    );
   } catch (e) {
-    console.log("Error draining accounts: ", e);
+    console.log('Error draining accounts: ', e);
   }
 }
 

@@ -155,7 +155,7 @@ describe("MSA Key management", function () {
             assert.notEqual(event, undefined, 'should have added public key');
 
             // Cleanup
-            await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, thirdKey.publicKey).signAndSend());
+            await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, thirdKey.publicKey).signAndSend('current'));
         });
     });
 
