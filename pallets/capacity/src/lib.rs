@@ -93,7 +93,7 @@ use frame_system::pallet_prelude::*;
 pub mod pallet {
 	use super::*;
 
-	use frame_support::pallet_prelude::{GetStorageVersion, StorageVersion};
+	use frame_support::pallet_prelude::{StorageVersion};
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
@@ -469,10 +469,7 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
-		// TODO: we -can- set the lock here
-		// Self::set_staking_account(&staker, staking_account);
-		T::Currency::set_lock(STAKING_ID, &staker, staking_account.active, WithdrawReasons::all());
-		StakingAccountLedger::<T>::insert(staker, staking_account);
+		Self::set_staking_account(&staker, staking_account)?;
 
 		Self::set_target_details_for(&staker, target, target_details);
 		Self::set_capacity_for(target, capacity_details);
@@ -480,32 +477,14 @@ impl<T: Config> Pallet<T> {
 		Ok(capacity)
 	}
 
-	/// Sets staking account details.
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetailsV2<T>) {
-		// TODO: adjust for storage in unlocks  (active is wrong)
-		T::Currency::set_lock(STAKING_ID, &staker, staking_account.active, WithdrawReasons::all());
+	/// Sets staking account details after a deposit
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetailsV2<T>) -> Result<(), DispatchError> {
+		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
+		let total_to_lock: BalanceOf<T> = staking_account.active.checked_add(&unlocks.total()).ok_or(ArithmeticError::Overflow)?;
+		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
+		Ok(())
 	}
-
-	/// Deletes staking account details
-	// fn delete_staking_account(staker: &T::AccountId) {
-	// 	T::Currency::remove_lock(STAKING_ID, &staker);
-	// 	StakingAccountLedger::<T>::remove(&staker);
-	// }
-
-	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
-	/// TODO: figure out if this is still needed.
-	// fn update_or_delete_staking_account(
-	// 	staker: &T::AccountId,
-	// 	staking_account: &StakingAccountDetailsV2<T>,
-	// ) {
-	// 	// TODO: look for no key in unlock chunks
-	// 	if staking_account.active.is_zero() {
-	// 		Self::delete_staking_account(&staker);
-	// 	} else {
-	// 		Self::set_staking_account(&staker, &staking_account)
-	// 	}
-	// }
 
 	/// Sets target account details.
 	fn set_target_details_for(
@@ -530,17 +509,18 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let mut staking_account =
-			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
-		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
+		StakingAccountLedger::<T>::try_mutate_exists(unstaker, |maybe_staking_account| -> Result<BalanceOf<T>, DispatchError>{
+			let mut staking_account = maybe_staking_account.take().ok_or(Error::<T>::NotAStakingAccount)?;
+			ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
-		let actual_unstaked_amount = staking_account.withdraw(amount)?;
-
-		// TODO: we can't set the lock here - the lock needs to be set when it's withdrawn.
-		// Self::set_staking_account(&unstaker, &staking_account);
-		StakingAccountLedger::<T>::insert(unstaker, staking_account);
-
-		Ok(actual_unstaked_amount)
+			let actual_unstaked_amount = staking_account.withdraw(amount)?;
+			if staking_account.active.is_zero() {
+				*maybe_staking_account = None;
+			} else {
+				*maybe_staking_account = Some(staking_account);
+			}
+			Ok(actual_unstaked_amount)
+		})
 	}
 
 	fn add_unlock_chunk(

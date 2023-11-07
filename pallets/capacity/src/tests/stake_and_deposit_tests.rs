@@ -391,6 +391,26 @@ fn increase_stake_and_issue_capacity_is_successful() {
 }
 
 #[test]
+fn stake_when_there_are_unlocks_sets_lock_correctly() {
+	new_test_ext().execute_with(|| {
+		let staker = 600;
+		let target1 = 2;
+		let target2 = 3;
+		register_provider(target1, String::from("target1"));
+		register_provider(target2, String::from("target2"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target1, 20));
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 5));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target2, 20));
+
+		// should all still be locked.
+		assert_eq!(Balances::locks(&staker)[0].amount, 40);
+		assert_eq!(Balances::locks(&staker)[0].reasons, WithdrawReasons::all().into());
+	})
+}
+
+#[test]
 fn impl_deposit_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;

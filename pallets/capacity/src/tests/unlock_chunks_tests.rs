@@ -9,7 +9,6 @@ fn unlock_chunks_add_returns_error_when_too_many_chunks() {
 	new_test_ext().execute_with(|| {
 		let mut unlock_chunks: UnlockChunks<Test> = UnlockChunks::default();
 		let limit: u32 = <Test as Config>::MaxUnlockingChunks::get();
-		let current_epoch: <Test as Config>::EpochNumber = 1;
 
 		for i in 0..limit {
 			assert_ok!(unlock_chunks.add(i as u64, i));

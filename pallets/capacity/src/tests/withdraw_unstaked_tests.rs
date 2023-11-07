@@ -3,10 +3,10 @@ use super::{
 	testing_utils::{register_provider, run_to_block},
 };
 use crate::{
-	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, StakingAccountDetailsV2, UnlockChunks,
+	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnlockChunks,
 	UnstakeUnlocks,
 };
-use frame_support::{assert_noop, assert_ok, BoundedVec};
+use frame_support::{assert_noop, assert_ok};
 
 #[test]
 fn withdraw_unstaked_happy_path() {

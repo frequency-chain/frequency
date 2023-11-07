@@ -1,13 +1,5 @@
 use super::mock::*;
 use crate::*;
-use frame_support::assert_err;
-use sp_core::bounded::BoundedVec;
-
-type UnlockBVec<T> = BoundedVec<
-	UnlockChunk<BalanceOf<T>, <T as Config>::EpochNumber>,
-	<T as Config>::MaxUnlockingChunks,
->;
-
 #[test]
 fn staking_account_details_withdraw_reduces_active_staking_balance() {
 	let mut staking_account_details = StakingAccountDetailsV2::<Test> {

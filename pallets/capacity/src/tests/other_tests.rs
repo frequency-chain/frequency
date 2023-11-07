@@ -1,4 +1,4 @@
-use frame_support::traits::{Currency, Get};
+use frame_support::{assert_ok, traits::{Currency, Get}};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
 
@@ -64,13 +64,13 @@ fn start_new_epoch_works() {
 }
 
 #[test]
-fn set_staking_account_is_succesful() {
+fn set_staking_account_is_successful() {
 	new_test_ext().execute_with(|| {
 		let staker = 100;
 		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
 		staking_account.deposit(55);
 
-		Capacity::set_staking_account(&staker, &staking_account);
+		assert_ok!(Capacity::set_staking_account(&staker, &staking_account));
 
 		assert_eq!(Balances::locks(&staker)[0].amount, 55);
 	});
