@@ -7,6 +7,8 @@ import { u64 } from "@polkadot/types";
 import { Codec } from "@polkadot/types/types";
 import { getFundingSource } from "../scaffolding/funding";
 
+const maxU64 = 18_446_744_073_709_551_615n;
+
 describe("MSA Key management", function () {
     const fundingSource = getFundingSource("msa-key-management");
 
@@ -75,7 +77,7 @@ describe("MSA Key management", function () {
         it("should fail to add public key if origin does not own MSA (NotMsaOwner)", async function () {
             const newPayload = await generateAddKeyPayload({
                 ...defaultPayload,
-                msaId: new u64(ExtrinsicHelper.api.registry, 999), // If we create more than 999 MSAs in our test suites, this will fail
+                msaId: new u64(ExtrinsicHelper.api.registry, maxU64),
             });
             addKeyData = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", newPayload);
             ownerSig = signPayloadSr25519(keys, addKeyData);

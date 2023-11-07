@@ -9,6 +9,8 @@ import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
 
+const badSchemaId = 65_534;
+
 describe("📗 Stateful Pallet Storage", function () {
     const fundingSource = getFundingSource("stateful-storage-handle-paginated");
 
@@ -81,7 +83,7 @@ describe("📗 Stateful Pallet Storage", function () {
             let page_id = 0;
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, badSchemaId);
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, page_id, payload_1, target_hash);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
@@ -130,9 +132,8 @@ describe("📗 Stateful Pallet Storage", function () {
     describe("Paginated Storage Removal Negative Tests 😊/😥", function () {
 
         it("🛑 should fail call to remove page with invalid schemaId", async function () {
-            let fake_schema_id = 999;
             let page_id = 0;
-            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, badSchemaId, msa_id, page_id, 0);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
