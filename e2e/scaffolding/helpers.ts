@@ -220,8 +220,8 @@ export function log(...args: any[]) {
   }
 }
 
-export async function createProviderKeysAndId(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  const providerKeys = await createAndFundKeypair(source);
+export async function createProviderKeysAndId(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  const providerKeys = await createAndFundKeypair(source, amount);
   await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
   const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
   const { target: providerEvent } = await createProviderOp.fundAndSend(source);
@@ -229,8 +229,8 @@ export async function createProviderKeysAndId(source: KeyringPair): Promise<[Key
   return [providerKeys, providerId];
 }
 
-export async function createDelegator(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  let keys = await createAndFundKeypair(source);
+export async function createDelegator(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  let keys = await createAndFundKeypair(source, amount);
   const createMsa = ExtrinsicHelper.createMsa(keys);
   const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
   const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);

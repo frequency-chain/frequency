@@ -1,7 +1,7 @@
 // E2E tests for pallets/stateful-pallet-storage/handlePaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa} from "../scaffolding/helpers";
+import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa, DOLLARS} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
@@ -21,18 +21,18 @@ describe("📗 Stateful Pallet Storage", function () {
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
+        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Paginated PayloadLocation
         const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-        const { target: event } = await createSchema.fundAndSend(fundingSource);
+        const { target: event } = await createSchema.signAndSend();
         schemaId = event!.data.schemaId;
 
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
+        const { target: event2 } = await createSchema2.signAndSend();
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         schemaId_unsupported = event2!.data.schemaId;
 

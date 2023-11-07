@@ -245,8 +245,6 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-        })
-        beforeEach(async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
