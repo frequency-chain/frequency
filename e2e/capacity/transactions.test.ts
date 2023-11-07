@@ -110,6 +110,7 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+          // Stake enough for all transactions
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, stakedForMsa));
         })
 
@@ -178,11 +179,11 @@ describe("Capacity Transactions", function () {
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assertEvent(eventMap, "msa.DelegationGranted");
 
-          let fee = getCapacityFee(eventMap);
+          const fee = getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / TokenPerCapacity - fee
 
-          let remaining = capacityStaked.remainingCapacity.toBigInt();
+          const remaining = capacityStaked.remainingCapacity.toBigInt();
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
           assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / TokenPerCapacity);
@@ -201,6 +202,7 @@ describe("Capacity Transactions", function () {
 
         beforeEach(async function () {
           starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
+          // Stake each time so that we always have enough capacity to do the call
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
@@ -245,6 +247,10 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+        });
+
+        beforeEach(async function () {
+          // Stake each time so that we always have enough capacity to do the call
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
@@ -469,7 +475,8 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-        })
+        });
+
         it("successfully pays with Capacity for eligible transaction - claimHandle", async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
 
