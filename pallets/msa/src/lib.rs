@@ -1093,10 +1093,38 @@ impl<T: Config> Pallet<T> {
 
 		Ok(())
 	}
+	// owner of msa 
 
-	// use case is not clear to me
+	// Background:
+	  // Tokenless user wants to add a new key to an account that they own.
+	  // Currently, a user requires to fund a key and submit "add_public_key_to_msa" extrinsic.
+	  // This extrinic requires:
+	  //  - Proof of ownership over the new key.
+	  //  - Proof of ownership over the msa.
+	  //  - A key that is funded to pay for the transaction.
+	  //
+	  // Currently, most users are tokenless users who are onboarded by providers with custodial wallet.
+	  // This requires coordination between the custodial wallet and wallet where the new key is stored. 
+	  // For example, a UI is needed that is integrated with both custodial wallet and
+	  // and the wallet of the new key.
+	  // We can decouple this coordination by allowing anyone to be able to PROPOSE a new key to be attached to an account.
+	  // The proposer is required to leave a deposit in addtion for paying the transaction.
+	  // The owner of the MSA can later approve the proposal to add a new key free of cost.
+	  
 
-	// User can be making a claim over authority of an account and want to add a new key
+	 // Some cons of allowing anyone to submit attachments are that a user may accidnetly
+	 // add a key to an account that they do not care about.
+	 
+	 // If we flip the order, as in the owner of the MSA submits the transaction this can
+	 // could cause tokenless user not to be able to submit the transaction.
+
+	 // Some decisions to make:
+	 // - who initiates the proposal?
+	 // - - the owner of the MSA
+	 // - - - this requires the owner to have a funded key (whis is not the case for tokenless user)
+	 // - - the owner who wants to attch a key
+
+	// User can wants to add a new key to an account that they do NOT own.
 	// A user is requesting access to MSA account
 	   // - potential future features would be to also include permissions
 
@@ -1107,14 +1135,14 @@ impl<T: Config> Pallet<T> {
 	// The owner or authorized provider can approve the key.
 
 
-	// as a user I want to be able to make a claim add a new key to an MSA
+	// as a user I want to be able to make a claim to add a new key to an MSA
 	// - user provides msa-id for which they want to associate account
 	// - user provides proof of key ownership
 	// - user leaves a deposit for adding key
 	// note: giving authority to service profider to accept claim can
 	// have risk of a service provider hijacking an account.
 
-	// Possible ways to authorize:
+	// Possible ways to confirm:
 	
 	// As a user of frequency who has Capacity, 
 	// I want to be able to submit and pay for a add-key claim on behalf of a user.
