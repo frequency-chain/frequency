@@ -39,7 +39,8 @@ import {
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
   getTestHandle,
-  assertHasMessage
+  assertHasMessage,
+  assertAddNewKey
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -60,16 +61,6 @@ describe("Capacity Transactions", function () {
         schemaId = await getOrCreateGraphChangeSchema(fundingSource);
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
       });
-
-      async function assertAddNewKey(capacityKeys: KeyringPair, addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
-        const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", addKeyPayload);
-        const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
-        const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
-        const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
-        const { eventMap } = await addPublicKeyOp.signAndSend();
-        assertEvent(eventMap, "system.ExtrinsicSuccess");
-        assertEvent(eventMap, "msa.PublicKeyAdded");
-      }
 
       function getCapacityFee(chainEvents: EventMap): bigint {
         if (chainEvents["capacity.CapacityWithdrawn"] &&

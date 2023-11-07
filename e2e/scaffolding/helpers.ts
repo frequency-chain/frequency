@@ -464,3 +464,13 @@ export function assertHasMessage(response: BlockPaginationResponseMessage, testF
     assert.fail(`Unable to find message in response (length: ${messages.length}, Payloads: ${allPayloads.join(", ")})`);
   }
 }
+
+export async function assertAddNewKey(capacityKeys: KeyringPair, addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
+  const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", addKeyPayload);
+  const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
+  const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
+  const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
+  const { eventMap } = await addPublicKeyOp.signAndSend();
+  assertEvent(eventMap, "system.ExtrinsicSuccess");
+  assertEvent(eventMap, "msa.PublicKeyAdded");
+}
