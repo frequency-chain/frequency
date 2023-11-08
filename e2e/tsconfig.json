@@ -1,27 +1,25 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "display": "Base",
-    "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "module": "esnext",
-        "moduleResolution": "node",
-        "noImplicitAny": false,
-        "noImplicitThis": false,
-        "outDir": "dist",
-        "resolveJsonModule": true,
-        "sourceMap": false,
-        "strict": true,
-        "skipLibCheck": true,
-        "target": "es2022",
-        "typeRoots": [
-            "node_modules/@types"
-        ]
-    },
-    "ts-node": {
-        "esm": true,
-        "experimentalSpecifierResolution": "node"
-    },
-    "include": ["./**/*.ts"],
-    "exclude": ["node_modules/**", "./dist/**"]
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "noImplicitThis": false,
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "sourceMap": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "typeRoots": ["node_modules/@types"]
+  },
+  "ts-node": {
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["node_modules/**", "./dist/**"]
 }

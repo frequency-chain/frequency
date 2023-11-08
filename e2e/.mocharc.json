@@ -1,13 +1,9 @@
 {
-    "exit": true,
-    "extension": ["ts"],
-    "parallel": true,
-    "require": [
-        "scaffolding/globalHooks.ts",
-        "scaffolding/rootHooks.ts",
-        "scaffolding/extrinsicHelpers.ts"
-    ],
-    "loader": "ts-node/esm",
-    "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
-    "timeout": 20000
+  "exit": true,
+  "extension": ["ts"],
+  "parallel": true,
+  "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
+  "loader": "ts-node/esm",
+  "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
+  "timeout": 20000
 }
