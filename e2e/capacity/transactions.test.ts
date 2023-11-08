@@ -38,7 +38,9 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
-  getTestHandle
+  getTestHandle,
+  assertHasMessage,
+  assertAddNewKey
 } from "../scaffolding/helpers";
 import { FeeDetails } from "@polkadot/types/interfaces";
 import { ipfsCid } from "../messages/ipfs";
@@ -59,16 +61,6 @@ describe("Capacity Transactions", function () {
         schemaId = await getOrCreateGraphChangeSchema(fundingSource);
         assert.notEqual(schemaId, undefined, "setup should populate schemaId");
       });
-
-      async function assertAddNewKey(capacityKeys: KeyringPair, addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
-        const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", addKeyPayload);
-        const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
-        const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
-        const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
-        const { eventMap } = await addPublicKeyOp.signAndSend();
-        assertEvent(eventMap, "system.ExtrinsicSuccess");
-        assertEvent(eventMap, "msa.PublicKeyAdded");
-      }
 
       function getCapacityFee(chainEvents: EventMap): bigint {
         if (chainEvents["capacity.CapacityWithdrawn"] &&
@@ -118,6 +110,7 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
+          // Stake enough for all transactions
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, stakedForMsa));
         })
 
@@ -186,11 +179,11 @@ describe("Capacity Transactions", function () {
           assertEvent(eventMap, "capacity.CapacityWithdrawn");
           assertEvent(eventMap, "msa.DelegationGranted");
 
-          let fee = getCapacityFee(eventMap);
+          const fee = getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / TokenPerCapacity - fee
 
-          let remaining = capacityStaked.remainingCapacity.toBigInt();
+          const remaining = capacityStaked.remainingCapacity.toBigInt();
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
           assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / TokenPerCapacity);
@@ -209,6 +202,7 @@ describe("Capacity Transactions", function () {
 
         beforeEach(async function () {
           starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
+          // Stake each time so that we always have enough capacity to do the call
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
@@ -240,8 +234,7 @@ describe("Capacity Transactions", function () {
               page_size: 999
             }
           );
-          const response: MessageResponse = get.content[get.content.length - 1];
-          assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
+          assertHasMessage(get, x => x.payload.isSome && x.payload.toString() === "0xdeadbeef");
         });
       });
 
@@ -254,8 +247,10 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-        })
+        });
+
         beforeEach(async function () {
+          // Stake each time so that we always have enough capacity to do the call
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
         });
 
@@ -480,7 +475,8 @@ describe("Capacity Transactions", function () {
         before(async function () {
           capacityKeys = createKeys("CapacityKeys");
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, "CapacityProvider", FUNDS_AMOUNT);
-        })
+        });
+
         it("successfully pays with Capacity for eligible transaction - claimHandle", async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
 

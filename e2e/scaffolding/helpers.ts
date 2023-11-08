@@ -1,7 +1,7 @@
 import { Keyring } from "@polkadot/api";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { u16, u32, u64, Option } from "@polkadot/types";
-import type { PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
+import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
 import { Codec } from "@polkadot/types/types";
 import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
 import { mnemonicGenerate } from '@polkadot/util-crypto';
@@ -14,7 +14,7 @@ import {
   ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
   PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
 } from "./extrinsicHelpers";
-import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
+import { BlockPaginationResponseMessage, HandleResponse, MessageResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
 import assert from "assert";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
@@ -165,16 +165,24 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
+function canDrainAccount(info: FrameSystemAccountInfo): Boolean {
+  return !info.isEmpty
+    && info.data.free.toNumber() > 1_500_000 // ~Cost to do the transfer
+    && info.data.reserved.toNumber() < 1
+    && info.data.frozen.toNumber() < 1;
+}
+
 export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
   try {
-    await Promise.allSettled(keyPairs.map(async (keypair) => {
-      const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
-        if (!info.isEmpty && info.data.free.toNumber() > 0) {
-          await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-        }
-    }));
+    await Promise.all(
+      keyPairs.map(async (keypair) => {
+        const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
+        // Only drain keys that can be
+        if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
+      })
+    );
   } catch (e) {
-    console.log("Error draining accounts: ", e);
+    console.log('Error draining accounts: ', e);
   }
 }
 
@@ -210,8 +218,8 @@ export function log(...args: any[]) {
   }
 }
 
-export async function createProviderKeysAndId(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  const providerKeys = await createAndFundKeypair(source);
+export async function createProviderKeysAndId(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  const providerKeys = await createAndFundKeypair(source, amount);
   await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
   const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
   const { target: providerEvent } = await createProviderOp.fundAndSend(source);
@@ -219,8 +227,8 @@ export async function createProviderKeysAndId(source: KeyringPair): Promise<[Key
   return [providerKeys, providerId];
 }
 
-export async function createDelegator(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  let keys = await createAndFundKeypair(source);
+export async function createDelegator(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  let keys = await createAndFundKeypair(source, amount);
   const createMsa = ExtrinsicHelper.createMsa(keys);
   const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
   const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
@@ -439,4 +447,28 @@ export function assertEvent(events: EventMap, eventName: string) {
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {
   assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+}
+
+export function assertHasMessage(response: BlockPaginationResponseMessage, testFn: (x: MessageResponse) => Boolean) {
+  const messages = response.content;
+  assert(messages.length > 0, "Expected some messages, but found none.");
+
+  const found = messages.find(testFn);
+
+  if (found) {
+    assert.notEqual(found, undefined);
+  } else {
+    const allPayloads = messages.map(x => x.payload.toString());
+    assert.fail(`Unable to find message in response (length: ${messages.length}, Payloads: ${allPayloads.join(", ")})`);
+  }
+}
+
+export async function assertAddNewKey(capacityKeys: KeyringPair, addKeyPayload: AddKeyData, newControlKeypair: KeyringPair) {
+  const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType("PalletMsaAddKeyData", addKeyPayload);
+  const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
+  const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
+  const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
+  const { eventMap } = await addPublicKeyOp.signAndSend();
+  assertEvent(eventMap, "system.ExtrinsicSuccess");
+  assertEvent(eventMap, "msa.PublicKeyAdded");
 }

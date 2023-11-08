@@ -20,17 +20,17 @@ describe("📗 Stateful Pallet Storage", function ()  {
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
+        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema to allow delete actions
         const createSchemaDeletable = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
-        const { target: eventDeletable } = await createSchemaDeletable.fundAndSend(fundingSource);
+        const { target: eventDeletable } = await createSchemaDeletable.signAndSend();
         schemaId_deletable = eventDeletable!.data.schemaId;
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
+        const { target: event2 } = await createSchema2.signAndSend();
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         schemaId_unsupported = event2!.data.schemaId;
         // Create a MSA for the delegator and delegate to the provider
