@@ -5,7 +5,7 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid'
 import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
 import assert from "assert";
-import { createAndFundKeypair } from "../scaffolding/helpers";
+import { assertHasMessage, createAndFundKeypair } from "../scaffolding/helpers";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { u16 } from "@polkadot/types";
 import { MessageResponse } from "@frequency-chain/api-augment/interfaces";
@@ -100,9 +100,10 @@ describe("Add Offchain Message", function () {
 
     it("should successfully retrieve added message and returned CID should have Base32 encoding", async function () {
         const f = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(schemaId, { from_block: starting_block, from_index: 0, to_block: starting_block + 999, page_size: 999 });
-        const response: MessageResponse = f.content[f.content.length - 1];
-        const cid = Buffer.from(response.cid.unwrap()).toString();
-        assert.equal(cid, ipfs_cid_32, 'returned CID should match base32-encoded CID');
+        assertHasMessage(f, x => {
+          const cid = x.cid.isSome && Buffer.from(x.cid.unwrap()).toString();
+          return cid === ipfs_cid_32;
+        });
     })
 
     describe("Add OnChain Message and successfully retrieve it", function () {
@@ -112,15 +113,14 @@ describe("Add Offchain Message", function () {
 
             assert.notEqual(event, undefined, "should have returned a MessagesInBlock event");
             const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(
-              dummySchemaId,
-              { from_block: starting_block,
-                from_index: 0,
-                to_block: starting_block + 999,
-                page_size: 999
-              }
-            );
-            const response: MessageResponse = get.content[get.content.length - 1];
-            assert.equal(response.payload, "0xdeadbeef", "payload should be 0xdeadbeef");
+                    dummySchemaId,
+                    { from_block: starting_block,
+                    from_index: 0,
+                    to_block: starting_block + 999,
+                    page_size: 999
+                    }
+                );
+            assertHasMessage(get, x => x.payload.isSome && x.payload.toString() === "0xdeadbeef");
         });
     });
 });

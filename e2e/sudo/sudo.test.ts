@@ -10,6 +10,7 @@ import { getSudo, getFundingSource } from "../scaffolding/funding";
 import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
 import { Bytes, u16 } from "@polkadot/types";
 import {
+  DOLLARS,
   createDelegatorAndDelegation,
   createProviderKeysAndId,
   getCurrentItemizedHash,
@@ -85,7 +86,7 @@ describe("Sudo required", function () {
 
       before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
+        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 

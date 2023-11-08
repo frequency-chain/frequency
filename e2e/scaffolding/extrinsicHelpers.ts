@@ -130,7 +130,8 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 
         try {
             const op = this.extrinsic();
-            return await firstValueFrom(op.signAndSend(this.keys, { nonce }).pipe(
+            // Era is 0 for tests due to issues with BirthBlock
+            return await firstValueFrom(op.signAndSend(this.keys, { nonce, era: 0 }).pipe(
                 tap((result) => {
                     // If we learn a transaction has an error status (this does NOT include RPC errors)
                     // Then throw an error
@@ -151,7 +152,8 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 
     public async sudoSignAndSend() {
         const nonce = await autoNonce.auto(this.keys);
-        return await firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
+        // Era is 0 for tests due to issues with BirthBlock
+        return await firstValueFrom(this.api.tx.sudo.sudo(this.extrinsic()).signAndSend(this.keys, { nonce, era: 0 }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))
@@ -159,7 +161,8 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 
     public async payWithCapacity(inputNonce?: AutoNonce) {
         const nonce = await autoNonce.auto(this.keys, inputNonce);
-        return await firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce }).pipe(
+        // Era is 0 for tests due to issues with BirthBlock
+        return await firstValueFrom(this.api.tx.frequencyTxPayment.payWithCapacity(this.extrinsic()).signAndSend(this.keys, { nonce, era: 0 }).pipe(
             filter(({ status }) => status.isInBlock || status.isFinalized),
             this.parseResult(this.event),
         ))

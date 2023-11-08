@@ -1,13 +1,15 @@
 // E2E tests for pallets/stateful-pallet-storage/handlePaginated.ts
 import "@frequency-chain/api-augment";
 import assert from "assert";
-import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa} from "../scaffolding/helpers";
+import {createProviderKeysAndId, createDelegatorAndDelegation, getCurrentPaginatedHash, createMsa, DOLLARS} from "../scaffolding/helpers";
 import { KeyringPair } from "@polkadot/keyring/types";
 import { ExtrinsicHelper } from "../scaffolding/extrinsicHelpers";
 import { AVRO_CHAT_MESSAGE } from "./fixtures/itemizedSchemaType";
 import { MessageSourceId, SchemaId } from "@frequency-chain/api-augment/interfaces";
 import { Bytes, u16, u64 } from "@polkadot/types";
 import { getFundingSource } from "../scaffolding/funding";
+
+const badSchemaId = 65_534;
 
 describe("📗 Stateful Pallet Storage", function () {
     const fundingSource = getFundingSource("stateful-storage-handle-paginated");
@@ -21,18 +23,18 @@ describe("📗 Stateful Pallet Storage", function () {
 
     before(async function () {
         // Create a provider for the MSA, the provider will be used to grant delegation
-        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource);
+        [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
         assert.notEqual(providerId, undefined, "setup should populate providerId");
         assert.notEqual(providerKeys, undefined, "setup should populate providerKeys");
 
         // Create a schema for Paginated PayloadLocation
         const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
-        const { target: event } = await createSchema.fundAndSend(fundingSource);
+        const { target: event } = await createSchema.signAndSend();
         schemaId = event!.data.schemaId;
 
         // Create non supported schema
         const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, "AvroBinary", "OnChain");
-        const { target: event2 } = await createSchema2.fundAndSend(fundingSource);
+        const { target: event2 } = await createSchema2.signAndSend();
         assert.notEqual(event2, undefined, "setup should return a SchemaCreated event");
         schemaId_unsupported = event2!.data.schemaId;
 
@@ -81,7 +83,7 @@ describe("📗 Stateful Pallet Storage", function () {
             let page_id = 0;
             let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id)
             let payload_1 = new Bytes(ExtrinsicHelper.api.registry, "Hello World From Frequency");
-            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, 999);
+            let fake_schema_id = new u16(ExtrinsicHelper.api.registry, badSchemaId);
             let paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, fake_schema_id, msa_id, page_id, payload_1, target_hash);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
@@ -130,9 +132,8 @@ describe("📗 Stateful Pallet Storage", function () {
     describe("Paginated Storage Removal Negative Tests 😊/😥", function () {
 
         it("🛑 should fail call to remove page with invalid schemaId", async function () {
-            let fake_schema_id = 999;
             let page_id = 0;
-            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, fake_schema_id, msa_id, page_id, 0);
+            let paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, badSchemaId, msa_id, page_id, 0);
             await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
                 name: 'InvalidSchemaId',
                 section: 'statefulStorage',
