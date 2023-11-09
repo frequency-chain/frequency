@@ -107,8 +107,8 @@ describe('Add Offchain Message', function () {
     const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
     const { target: event } = await f.fundAndSend(fundingSource);
 
-        assert.notEqual(event, undefined, "should have returned a MessagesInBlock event");
-    });
+    assert.notEqual(event, undefined, 'should have returned a MessagesInBlock event');
+  });
 
   it('should successfully retrieve added message and returned CID should have Base32 encoding', async function () {
     const f = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(schemaId, {
