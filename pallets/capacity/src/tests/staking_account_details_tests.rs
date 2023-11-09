@@ -2,7 +2,7 @@ use super::mock::*;
 use crate::*;
 #[test]
 fn staking_account_details_withdraw_reduces_active_staking_balance() {
-	let mut staking_account_details = StakingAccountDetailsV2::<Test> {
+	let mut staking_account_details = StakingDetails::<Test> {
 		active: BalanceOf::<Test>::from(15u64),
 		staking_type: StakingType::MaximumCapacity,
 	};
@@ -10,7 +10,7 @@ fn staking_account_details_withdraw_reduces_active_staking_balance() {
 
 	assert_eq!(
 		staking_account_details,
-		StakingAccountDetailsV2::<Test> {
+		StakingDetails::<Test> {
 			active: BalanceOf::<Test>::from(12u64),
 			staking_type: StakingType::MaximumCapacity,
 		}
@@ -19,7 +19,7 @@ fn staking_account_details_withdraw_reduces_active_staking_balance() {
 
 #[test]
 fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
-	let mut staking_account_details = StakingAccountDetailsV2::<Test> {
+	let mut staking_account_details = StakingDetails::<Test> {
 		active: BalanceOf::<Test>::from(10u64),
 		staking_type: StakingType::MaximumCapacity,
 	};
@@ -37,12 +37,12 @@ fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
 
 #[test]
 fn impl_staking_account_details_increase_by() {
-	let mut staking_account = StakingAccountDetailsV2::<Test>::default();
+	let mut staking_account = StakingDetails::<Test>::default();
 	assert_eq!(staking_account.deposit(10), Some(()));
 
 	assert_eq!(
 		staking_account,
-		StakingAccountDetailsV2::<Test> {
+		StakingDetails::<Test> {
 			active: BalanceOf::<Test>::from(10u64),
 			staking_type: StakingType::MaximumCapacity,
 		}
@@ -52,8 +52,8 @@ fn impl_staking_account_details_increase_by() {
 #[test]
 fn impl_staking_account_details_default() {
 	assert_eq!(
-		StakingAccountDetailsV2::<Test>::default(),
-		StakingAccountDetailsV2::<Test> {
+		StakingDetails::<Test>::default(),
+		StakingDetails::<Test> {
 			active: BalanceOf::<Test>::zero(),
 			staking_type: StakingType::MaximumCapacity,
 		},

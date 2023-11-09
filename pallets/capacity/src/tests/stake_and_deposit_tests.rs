@@ -1,5 +1,5 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Error, Event, StakingAccountDetailsV2};
+use crate::{BalanceOf, CapacityDetails, Error, Event, StakingDetails};
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
 use sp_runtime::ArithmeticError;
@@ -352,7 +352,7 @@ fn ensure_can_stake_is_successful() {
 		let amount = 10;
 		register_provider(target, String::from("Foo"));
 
-		let staking_details = StakingAccountDetailsV2::<Test>::default();
+		let staking_details = StakingDetails::<Test>::default();
 		assert_ok!(
 			Capacity::ensure_can_stake(&account, target, amount),
 			(staking_details, BalanceOf::<Test>::from(10u64))
@@ -366,7 +366,7 @@ fn increase_stake_and_issue_capacity_is_successful() {
 		let staker = 10_000; // has 10_000 token
 		let target: MessageSourceId = 1;
 		let amount = 550;
-		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
+		let mut staking_account = StakingDetails::<Test>::default();
 
 		assert_ok!(Capacity::increase_stake_and_issue_capacity(
 			&staker,

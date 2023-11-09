@@ -28,7 +28,7 @@ pub enum StakingType {
 	TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
 )]
 #[scale_info(skip_type_params(T))]
-pub struct StakingAccountDetailsV2<T: Config> {
+pub struct StakingDetails<T: Config> {
 	/// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
 	pub active: BalanceOf<T>,
 	/// The type of staking for this staking account
@@ -44,7 +44,7 @@ pub struct UnlockChunk<Balance, EpochNumber> {
 	pub thaw_at: EpochNumber,
 }
 
-impl<T: Config> StakingAccountDetailsV2<T> {
+impl<T: Config> StakingDetails<T> {
 	/// Increases total and active balances by an amount.
 	pub fn deposit(&mut self, amount: BalanceOf<T>) -> Option<()> {
 		self.active = amount.checked_add(&self.active)?;
@@ -69,7 +69,7 @@ impl<T: Config> StakingAccountDetailsV2<T> {
 	}
 }
 
-impl<T: Config> Default for StakingAccountDetailsV2<T> {
+impl<T: Config> Default for StakingDetails<T> {
 	fn default() -> Self {
 		Self { active: Zero::zero(), staking_type: StakingType::MaximumCapacity }
 	}

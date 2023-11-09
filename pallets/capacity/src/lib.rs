@@ -159,11 +159,11 @@ pub mod pallet {
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
 	/// - Keys: AccountId
-	/// - Value: [`StakingAccountDetailsV2`](types::StakingAccountDetailsV2)
+	/// - Value: [`StakingAccountDetailsV2`](types::StakingDetails)
 	#[pallet::storage]
 	#[pallet::getter(fn get_staking_account_for)]
 	pub type StakingAccountLedger<T: Config> =
-		StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetailsV2<T>>;
+		StorageMap<_, Twox64Concat, T::AccountId, StakingDetails<T>>;
 
 	/// Storage to record how many tokens were targeted to an MSA.
 	/// - Keys: AccountId, MSA Id
@@ -430,7 +430,7 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
-	) -> Result<(StakingAccountDetailsV2<T>, BalanceOf<T>), DispatchError> {
+	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
 		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 
@@ -456,7 +456,7 @@ impl<T: Config> Pallet<T> {
 	/// Additionally, it issues Capacity to the MSA target.
 	fn increase_stake_and_issue_capacity(
 		staker: &T::AccountId,
-		staking_account: &mut StakingAccountDetailsV2<T>,
+		staking_account: &mut StakingDetails<T>,
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
@@ -478,7 +478,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details after a deposit
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetailsV2<T>) -> Result<(), DispatchError> {
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingDetails<T>) -> Result<(), DispatchError> {
 		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
 		let total_to_lock: BalanceOf<T> = staking_account.active.checked_add(&unlocks.total()).ok_or(ArithmeticError::Overflow)?;
 		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
@@ -504,7 +504,6 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
-	// TODO: I think this should be a try_mutate_exists and set it to None if all of it is unstaked.
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,

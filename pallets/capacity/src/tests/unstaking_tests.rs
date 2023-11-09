@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, StakingAccountDetailsV2, StakingTargetDetails, StakingType, UnlockChunk,
+    CapacityDetails, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
@@ -38,11 +38,11 @@ fn unstake_happy_path() {
 		assert_eq!(unlocking.unlocking, expected_unlocking_chunks);
 
 		assert_eq!(
-			StakingAccountDetailsV2::<Test> {
+            StakingDetails::<Test> {
 				active: BalanceOf::<Test>::from(60u64),
 				staking_type: StakingType::MaximumCapacity,
 			},
-			staking_account_details,
+            staking_account_details,
 		);
 
 		// Assert that staking target detail values are decremented correctly after unstaking

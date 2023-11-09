@@ -87,7 +87,7 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
-		let mut staking_account = StakingAccountDetailsV2::<T>::default();
+		let mut staking_account = StakingDetails::<T>::default();
 		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 

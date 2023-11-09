@@ -6,7 +6,7 @@ use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo,
-	StakingAccountDetailsV2, StakingTargetDetails,
+	StakingDetails, StakingTargetDetails,
 };
 
 use super::{mock::*, testing_utils::*};
@@ -67,7 +67,7 @@ fn start_new_epoch_works() {
 fn set_staking_account_is_successful() {
 	new_test_ext().execute_with(|| {
 		let staker = 100;
-		let mut staking_account = StakingAccountDetailsV2::<Test>::default();
+		let mut staking_account = StakingDetails::<Test>::default();
 		staking_account.deposit(55);
 
 		assert_ok!(Capacity::set_staking_account(&staker, &staking_account));
