@@ -102,6 +102,7 @@ where
 		account.nonce += T::Nonce::one();
 
 		// Only create or update the token account if the caller is paying
+		// See: https://github.com/LibertyDSNP/frequency/issues/1766
 		if info.pays_fee == Pays::Yes {
 			frame_system::Account::<T>::insert(who, account);
 		}
