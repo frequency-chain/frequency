@@ -3,8 +3,14 @@ description: Runs cargo llvm-cov
 runs:
   using: "composite"
   steps:
+    - name: Inside Composite 1
+      shell: bash
+      run: echo "Inside Composite before llvm"
     - name: Install cargo-llvm-cov
       uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Inside Composite 2
+      shell: bash
+      run: echo "Inside Composite post llvm"
     - name: Generate code coverage
       shell: bash
       run: |
