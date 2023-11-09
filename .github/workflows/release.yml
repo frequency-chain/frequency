@@ -140,7 +140,7 @@ jobs:
           commit_user_email: do-not-reply@users.noreply.github.com
           commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
       - name: Update Release Version Tag
-        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
+        uses: rickstaa/action-create-tag@861755f3fcbce1b21a65c17bad10e7d35c27b6d9
         with:
           tag: ${{env.NEW_RELEASE_TAG}}
           force_push_tag: true
@@ -765,7 +765,7 @@ jobs:
         if: |
           steps.is-full-release.outputs.is-full-release == 'true' &&
           env.TEST_RUN != 'true'
-        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
+        uses: rickstaa/action-create-tag@861755f3fcbce1b21a65c17bad10e7d35c27b6d9
         with:
           commit_sha: ${{steps.get-latest-commit.outputs.sha}}
           tag: ${{env.LATEST_FULL_RELEASE_TAG}}
