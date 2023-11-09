@@ -4,17 +4,45 @@ runs:
   using: "composite"
   steps:
     - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@cargo-llvm-cov
+      shell: bash
+      run: cargo install grcov
+    - name: Build
+      shell: bash # Limited to 12 threads max
+      run: cargo +nightly-2023-07-13 build -j 12 --features frequency-lint-check
+      env:
+        CARGO_INCREMENTAL: '0'
+        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTDOCFLAGS: "-Cpanic=abort"
+    - name: Test
+      shell: bash # Limited to 12 threads max
+      run: cargo +nightly-2023-07-13 test -j 12 --features frequency-lint-check
+      env:
+        CARGO_INCREMENTAL: '0'
+        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTDOCFLAGS: "-Cpanic=abort"
     - name: Generate code coverage
       shell: bash
       run: |
-        cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
-        --ignore-filename-regex "^.*\/(node\/|runtime\/|mock\.rs|weights(\.rs)?|benchmarking\.rs|runtime-api/src/lib\.rs).*$" \
-        --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
-        --features frequency-lint-check
+        grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing \
+          --excl-start 'mod test* \{' \
+          --ignore "target/*" \
+          --ignore "node/*"  \
+          --ignore "runtime/*" \
+          --ignore "**/*weights.rs" \
+          --ignore "**/benchmark*.rs" \
+          --ignore "**/*tests.rs" \
+          --ignore "**/tests/*.rs" \
+          --ignore "**/*mock.rs" \
+          --ignore "**/*runtime-api/src/lib.rs" \
+          --ignore "*github.com*" \
+          --ignore "*libcore*" \
+          --ignore "*rustc*" \
+          --ignore "*liballoc*" \
+          --ignore "*cargo*" \
+          -o ./target/debug/lcov.info
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v3
       with:
-        files: lcov.info
+        files: ./target/debug/lcov.info
         fail_ci_if_error: false # optional (default = false)
         verbose: true # optional (default = false)
