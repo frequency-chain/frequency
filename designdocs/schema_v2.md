@@ -40,7 +40,7 @@ pub struct SchemaInfo {
 }
 ```
 ### Expected PoV improvements
-This PoV improvement would not extrinsic weights in this pallet, but it would directly affect any
+This PoV improvement would not affect extrinsic weights in this pallet, but it would directly affect any
 pallet that is dependent on **Schemas** pallet. Some of these pallets are **Messages** and
 **Stateful-Storage**. After these changes we are expecting see to see around 30-60KiB decrease in PoV
 for `MaxEncodedLen` mode.
