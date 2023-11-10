@@ -257,7 +257,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions(Pallet::<T>::sum_add_actions_bytes(actions)))]
+		#[pallet::weight(
+			T::WeightInfo::apply_item_actions_delete(actions.len() as u32)
+			.max(T::WeightInfo::apply_item_actions_add(Pallet::<T>::sum_add_actions_bytes(actions)))
+		)]
 		pub fn apply_item_actions(
 			origin: OriginFor<T>,
 			#[pallet::compact] state_owner_msa_id: MessageSourceId,
@@ -336,9 +339,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(3)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
-			Pallet::<T>::sum_add_actions_bytes(&payload.actions)
-		))]
+		#[pallet::weight(
+		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
+		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
+		)]
 		#[allow(deprecated)]
 		#[deprecated(note = "please use `apply_item_actions_with_signature_v2` instead")]
 		pub fn apply_item_actions_with_signature(
@@ -378,7 +382,7 @@ pub mod pallet {
 		/// * [`Event::PaginatedPageUpdated`]
 		///
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
+		#[pallet::weight(T::WeightInfo::upsert_page_with_signature_v2(payload.payload.len() as u32))]
 		#[allow(deprecated)]
 		#[deprecated(note = "please use `upsert_page_with_signature_v2` instead")]
 		pub fn upsert_page_with_signature(
@@ -421,7 +425,7 @@ pub mod pallet {
 		/// * [`Event::PaginatedPageDeleted`]
 		///
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
+		#[pallet::weight(T::WeightInfo::delete_page_with_signature_v2())]
 		#[allow(deprecated)]
 		#[deprecated(note = "please use `delete_page_with_signature_v2` instead")]
 		pub fn delete_page_with_signature(
@@ -465,9 +469,10 @@ pub mod pallet {
 		/// * [`Event::ItemizedPageDeleted`]
 		///
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions_with_signature(
-		Pallet::<T>::sum_add_actions_bytes(&payload.actions)
-		))]
+		#[pallet::weight(
+		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
+		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
+		)]
 		pub fn apply_item_actions_with_signature_v2(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -506,7 +511,7 @@ pub mod pallet {
 		/// * [`Event::PaginatedPageUpdated`]
 		///
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::upsert_page_with_signature(payload.payload.len() as u32))]
+		#[pallet::weight(T::WeightInfo::upsert_page_with_signature_v2(payload.payload.len() as u32))]
 		pub fn upsert_page_with_signature_v2(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -548,7 +553,7 @@ pub mod pallet {
 		/// * [`Event::PaginatedPageDeleted`]
 		///
 		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::delete_page_with_signature())]
+		#[pallet::weight(T::WeightInfo::delete_page_with_signature_v2())]
 		pub fn delete_page_with_signature_v2(
 			origin: OriginFor<T>,
 			delegator_key: T::AccountId,
@@ -579,63 +584,6 @@ pub mod pallet {
 				payload.page_id,
 				payload.target_hash,
 			)?;
-			Ok(())
-		}
-
-		/// test pov apply item
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::apply_item_actions_test_pov(Pallet::<T>::sum_add_actions_bytes(actions)))]
-		pub fn apply_item_actions_test_pov(
-			origin: OriginFor<T>,
-			#[pallet::compact] state_owner_msa_id: MessageSourceId,
-			#[pallet::compact] schema_id: SchemaId,
-			#[pallet::compact] target_hash: PageHash,
-			actions: BoundedVec<
-				ItemAction<T::MaxItemizedBlobSizeBytes>,
-				T::MaxItemizedActionsCount,
-			>,
-		) -> DispatchResult {
-			let _ = ensure_signed(origin)?;
-			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
-			Ok(())
-		}
-
-		/// test pov upsert page
-		#[pallet::call_index(10)]
-		#[pallet::weight(T::WeightInfo::upsert_page_test_pov(payload.len() as u32))]
-		pub fn upsert_page_test_pov(
-			origin: OriginFor<T>,
-			#[pallet::compact] state_owner_msa_id: MessageSourceId,
-			#[pallet::compact] schema_id: SchemaId,
-			#[pallet::compact] page_id: PageId,
-			#[pallet::compact] target_hash: PageHash,
-			payload: BoundedVec<u8, <T>::MaxPaginatedPageSizeBytes>,
-		) -> DispatchResult {
-			let _ = ensure_signed(origin)?;
-			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::update_paginated(
-				state_owner_msa_id,
-				schema_id,
-				page_id,
-				target_hash,
-				PaginatedPage::<T>::from(payload),
-			)?;
-			Ok(())
-		}
-
-		/// test pov delete page
-		#[pallet::call_index(11)]
-		#[pallet::weight(T::WeightInfo::delete_page_test_pov())]
-		pub fn delete_page_test_pov(
-			origin: OriginFor<T>,
-			#[pallet::compact] state_owner_msa_id: MessageSourceId,
-			#[pallet::compact] schema_id: SchemaId,
-			#[pallet::compact] page_id: PageId,
-			#[pallet::compact] target_hash: PageHash,
-		) -> DispatchResult {
-			let _ = ensure_signed(origin)?;
-			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}
 	}
