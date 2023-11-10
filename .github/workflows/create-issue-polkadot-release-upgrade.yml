@@ -6,14 +6,14 @@ on:
     paths:
       - .github/.latest-polkadot-full-release.txt
 env:
-  RELEASE_PAGE_PREFIX_URL: https://github.com/paritytech/polkadot/releases/tag
+  RELEASE_PAGE_PREFIX_URL: https://github.com/paritytech/polkadot-sdk/releases/tag
   RELEASE_TRACK_FILENAME: .github/.latest-polkadot-full-release.txt
 jobs:
   create-issue:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out Repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
           release_version=$(cat ${{env.RELEASE_TRACK_FILENAME}})
