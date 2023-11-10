@@ -7,7 +7,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency"
 repository = "https://github.com/LibertyDSNP/frequency/"
-version = "0.0.0"
+version = "1.9.0-rc3+polkadot1.1.0"
 
 [[bin]]
 name = "frequency"
