@@ -220,7 +220,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(pallet_schemas::migration::v2::MigrateToV2<Runtime>,),
+	(
+		pallet_messages::migration::v2::MigrateToV2<Runtime>,
+		pallet_schemas::migration::v2::MigrateToV2<Runtime>,
+	),
 >;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -258,7 +261,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 61,
+	spec_version: 62,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -272,7 +275,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 61,
+	spec_version: 62,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -921,8 +924,6 @@ impl pallet_messages::Config for Runtime {
 	type SchemaGrantValidator = Msa;
 	// The type that provides schema info
 	type SchemaProvider = Schemas;
-	// The maximum number of messages per block
-	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 

@@ -179,6 +179,8 @@ jobs:
           #   arch: arm64
     runs-on: ${{matrix.os}}
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
+    env:
+      SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -212,10 +214,21 @@ jobs:
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
-          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707 # signing subkey
+          fingerprint: ${{env.SIGNING_SUBKEY_FINGERPRINT}}
+      - name: List GPG Keys
+        run: gpg -k; gpg -K
+      # The error in this step may be due to expired signing subkey
+      # See https://github.com/LibertyDSNP/frequency/issues/1695
       - name: Generate Binary Signature
         working-directory: ${{env.BIN_DIR}}
-        run: gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
+        run: |
+          gpg --version
+          gpg --local-user ${{env.SIGNING_SUBKEY_FINGERPRINT}} \
+            --sign --armor \
+            --pinentry-mode=loopback \
+            --passphrase="${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}" \
+            --detach-sig \
+            ${{env.RELEASE_BIN_FILENAME}}
       - name: Verify Binary
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
