@@ -9,6 +9,8 @@ use sp_std::{fmt::Debug, prelude::*};
 
 /// Payloads stored offchain contain a tuple of (bytes(the payload reference), payload length).
 pub type OffchainPayloadType = (Vec<u8>, u32);
+/// Index of message in the block
+pub type MessageIndex = u16;
 
 /// A single message type definition.
 #[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -27,8 +29,6 @@ where
 	pub provider_msa_id: MessageSourceId,
 	///  Message source account id (the original source).
 	pub msa_id: Option<MessageSourceId>,
-	///  Stores index of message in block to keep total order.
-	pub index: u16,
 }
 
 impl<MaxDataSize> Message<MaxDataSize>
@@ -40,11 +40,12 @@ where
 		&self,
 		block_number: BlockNumber,
 		payload_location: PayloadLocation,
+		index: u16,
 	) -> MessageResponse {
 		match payload_location {
 			PayloadLocation::OnChain => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
-				index: self.index,
+				index,
 				block_number,
 				msa_id: self.msa_id,
 				payload: Some(self.payload.to_vec()),
@@ -56,7 +57,7 @@ where
 					OffchainPayloadType::decode(&mut &self.payload[..]).unwrap_or_default();
 				MessageResponse {
 					provider_msa_id: self.provider_msa_id,
-					index: self.index,
+					index,
 					block_number,
 					cid: Some(multibase::encode(Base::Base32Lower, binary_cid).as_bytes().to_vec()),
 					payload_length: Some(payload_length),
@@ -66,7 +67,7 @@ where
 			}, // Message types of Itemized and Paginated are retrieved differently
 			_ => MessageResponse {
 				provider_msa_id: self.provider_msa_id,
-				index: self.index,
+				index,
 				block_number,
 				msa_id: None,
 				payload: None,

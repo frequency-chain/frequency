@@ -218,7 +218,7 @@ describe('Capacity Transactions', function () {
 
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesStored');
+          assertEvent(eventMap, 'messages.MessagesInBlock');
         });
 
         it('successfully pays with Capacity for eligible transaction - addOnchainMessage', async function () {
@@ -227,7 +227,7 @@ describe('Capacity Transactions', function () {
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, '0xdeadbeef');
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesStored');
+          assertEvent(eventMap, 'messages.MessagesInBlock');
           const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
             from_block: starting_block,
             from_index: 0,

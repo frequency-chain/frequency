@@ -483,7 +483,7 @@ export class ExtrinsicHelper {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.messages.addIpfsMessage(schemaId, cid, payload_length),
       keys,
-      ExtrinsicHelper.api.events.messages.MessagesStored
+      ExtrinsicHelper.api.events.messages.MessagesInBlock
     );
   }
 
@@ -668,7 +668,7 @@ export class ExtrinsicHelper {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.messages.addOnchainMessage(null, schemaId, payload),
       keys,
-      ExtrinsicHelper.api.events.messages.MessagesStored
+      ExtrinsicHelper.api.events.messages.MessagesInBlock
     );
   }
 

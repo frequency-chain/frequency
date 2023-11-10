@@ -268,9 +268,6 @@ parameter_types! {
 // -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
-/// The maximum number of messages per block
-pub type MessagesMaxPerBlock = ConstU32<200>;
-
 impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {
 		MessagesMaxPayloadSizeBytes {}

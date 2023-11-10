@@ -79,7 +79,7 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 
 #[cfg(feature = "try-runtime")]
-use frame_support::traits::TryStateSelect;
+use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -220,6 +220,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
+	(pallet_messages::migration::v2::MigrateToV2<Runtime>,),
 >;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -257,7 +258,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 60,
+	spec_version: 61,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -271,7 +272,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 60,
+	spec_version: 61,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -920,8 +921,6 @@ impl pallet_messages::Config for Runtime {
 	type SchemaGrantValidator = Msa;
 	// The type that provides schema info
 	type SchemaProvider = Schemas;
-	// The maximum number of messages per block
-	type MaxMessagesPerBlock = MessagesMaxPerBlock;
 	// The maximum message payload in bytes
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
@@ -1321,9 +1320,9 @@ impl_runtime_apis! {
 
 	#[cfg(feature = "try-runtime")]
 	impl frame_try_runtime::TryRuntime<Block> for Runtime {
-		fn on_runtime_upgrade(_checks: bool) -> (Weight, Weight) {
+		fn on_runtime_upgrade(checks: UpgradeCheckSelect) -> (Weight, Weight) {
 			log::info!("try-runtime::on_runtime_upgrade frequency.");
-			let weight = Executive::try_runtime_upgrade(true).unwrap();
+			let weight = Executive::try_runtime_upgrade(checks).unwrap();
 			(weight, RuntimeBlockWeights::get().max_block)
 		}
 
