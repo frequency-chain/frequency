@@ -1,21 +1,23 @@
 // These run ONCE per entire test run
 
-import { cryptoWaitReady } from "@polkadot/util-crypto";
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 import workerpool from 'workerpool';
-import { ExtrinsicHelper } from "./extrinsicHelpers";
-import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from "./funding";
-import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from "./helpers";
-import { isDev } from "./env";
+import { ExtrinsicHelper } from './extrinsicHelpers';
+import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from './funding';
+import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
+import { isDev } from './env';
 
 const SOURCE_AMOUNT = 100_000_000_000_000n;
 
 async function fundAllSources() {
   const root = getRootFundingSource().keys;
-  console.log("Root funding source: ", root.address);
+  console.log('Root funding source: ', root.address);
   const nonce = await getNonce(root);
-  await Promise.all(fundingSources.map((dest, i) => {
-    return ExtrinsicHelper.transferFunds(root, getFundingSource(dest), SOURCE_AMOUNT).signAndSend(nonce + i);
-  }));
+  await Promise.all(
+    fundingSources.map((dest, i) => {
+      return ExtrinsicHelper.transferFunds(root, getFundingSource(dest), SOURCE_AMOUNT).signAndSend(nonce + i);
+    })
+  );
 }
 
 async function devSudoActions() {
@@ -31,7 +33,7 @@ function drainAllSources() {
 }
 
 export async function mochaGlobalSetup() {
-  console.log('Global Setup Start', "Reported CPU Count: ", workerpool.cpus);
+  console.log('Global Setup Start', 'Reported CPU Count: ', workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize();
   await fundAllSources();

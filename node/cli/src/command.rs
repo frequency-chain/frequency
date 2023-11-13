@@ -373,7 +373,9 @@ pub fn run() -> Result<()> {
 		Some(Subcommand::TryRuntime(cmd)) => {
 			use common_runtime::constants::MILLISECS_PER_BLOCK;
 			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
+
 			let runner = cli.create_runner(cmd)?;
+
 			type HostFunctions =
 				(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
 

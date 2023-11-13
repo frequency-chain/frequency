@@ -67,7 +67,6 @@ impl system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-pub type MaxMessagesPerBlock = ConstU32<500>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
@@ -79,6 +78,7 @@ parameter_types! {
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
 	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
+
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -232,7 +232,6 @@ impl pallet_messages::Config for Test {
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
-	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.

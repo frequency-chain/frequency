@@ -92,6 +92,7 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 	let onchain_version = Pallet::<T>::on_chain_storage_version();
 	let current_version = Pallet::<T>::current_storage_version();
 	log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
+	let each_layer_access: u64 = 33 * 16;
 
 	if onchain_version < 2 {
 		let mut reads = 1u64;
@@ -99,6 +100,7 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 		let mut bytes = 0u64;
 		for (schema_id, schema) in old::Schemas::<T>::drain() {
 			bytes = bytes.saturating_add(schema.encode().len() as u64);
+			bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
 
 			let info = SchemaInfo {
 				model_type: schema.model_type,

@@ -395,7 +395,7 @@ pub mod pallet {
 			<CurrentSchemaIdentifierMaximum<T>>::set(n);
 		}
 
-		/// Build the [`SchemaInfo`] and insert it into storage
+		/// Inserts both the [`SchemaInfo`] and Schema Payload into storage
 		/// Updates the `CurrentSchemaIdentifierMaximum` storage
 		pub fn add_schema(
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
