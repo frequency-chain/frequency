@@ -49,7 +49,15 @@ impl<T: Config> StakingAccountDetails<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let account_balance = T::Currency::free_balance(&staker);
+		// REVIEW: experiments at getting the type correct/shorter
+		// let account_balance = T::Currency::free_balance(&staker);
+		// let account_balance = <<T>::FungibleToken as frame_support::traits::fungible::Inspect<_>>::balance(&staker);
+		// let account_balance = T::FungibleToken::fungible::Inspect::balance(&staker);
+		// let account_balance = BalanceOf::<T>::balance(&staker);
+		let account_balance =
+			<<T as Config>::FungibleToken as frame_support::traits::fungible::Inspect<
+				<T as frame_system::Config>::AccountId,
+			>>::balance(&staker);
 		let available_staking_balance = account_balance.saturating_sub(self.total);
 		available_staking_balance
 			.saturating_sub(T::MinimumTokenBalance::get())

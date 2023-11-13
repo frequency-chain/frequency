@@ -51,7 +51,7 @@
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{fungible, Get, Hooks},
 	weights::{constants::RocksDbWeight, Weight},
 };
 
@@ -82,11 +82,19 @@ mod benchmarking;
 mod tests;
 
 pub mod weights;
+// REVIEW: original
+// type BalanceOf<T> =
+// 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
-type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+// type BalanceOf<T> =
+// 	<<T as Config>::FungibleToken as fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
-const STAKING_ID: LockIdentifier = *b"netstkng";
+// REVIEW: Mostly working version, except Balance doesn't have EncodeLike
+use codec::EncodeLike;
+type BalanceOf<T> = <<T as Config>::FungibleToken as frame_support::traits::fungible::Inspect<
+	<T as frame_system::Config>::AccountId,
+>>::Balance;
+
 use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
 pub mod pallet {
@@ -95,16 +103,33 @@ pub mod pallet {
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
+	// REVIEW: Can I put the enum here?
+	/// A reason for freezing funds.
+	#[pallet::composite_enum]
+	pub enum FreezeReason {
+		// REVIEW: If Id is a type like this, will it fix the EncodeLike issue?
+		// type Id: codec::Encode + TypeInfo + 'static;
+		/// The account is staked.
+		Staked,
+	}
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// The overarching freeze reason.
+		type RuntimeFreezeReason: From<FreezeReason>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
 		/// Function that allows a balance to be locked.
-		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		// REVIEW: replace LockableCurrency
+		// type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		type FungibleToken: fungible::InspectFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ fungible::MutateFreeze<Self::AccountId>
+			+ fungible::Inspect<Self::AccountId>;
 
 		/// Function that checks if an MSA is a valid target.
 		type TargetValidator: TargetValidator;
@@ -473,14 +498,29 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details.
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
-		T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
-		StakingAccountLedger::<T>::insert(staker, staking_account);
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>)
+	// REVIEW: experimenting with restricting the EncodeLike trait
+	// where
+	// 	<<T as pallet::Config>::FungibleToken as frame_support::traits::fungible::Inspect<
+	// 		<T as frame_system::Config>::AccountId,
+	// 	>>::Balance: EncodeLike<types::StakingAccountDetails<T>>,
+	{
+		// REVIEW: replace LockableCurrency
+		// T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
+		<<T as Config>::FungibleToken as frame_support::traits::fungible::freeze::Mutate<
+			T::AccountId,
+		>>::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total);
+		StakingAccountLedger::<T>::insert(staker, staking_account.total);
 	}
 
 	/// Deletes staking account details
 	fn delete_staking_account(staker: &T::AccountId) {
-		T::Currency::remove_lock(STAKING_ID, &staker);
+		// REVIEW: replace remove_lock with thaw
+		// T::FungibleToken::freeze::Mutate::thaw(STAKING_ID, staker);
+		<<T as Config>::FungibleToken as frame_support::traits::fungible::freeze::Mutate<
+			T::AccountId,
+		>>::thaw(&FreezeReason::Staked.into(), staker);
+		// T::Currency::remove_lock(STAKING_ID, &staker);
 		StakingAccountLedger::<T>::remove(&staker);
 	}
 

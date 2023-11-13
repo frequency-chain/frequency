@@ -26,7 +26,8 @@ pub fn create_funded_account<T: Config>(
 	whitelist_account!(user);
 	let balance = T::Currency::minimum_balance() * balance_factor.into();
 	let _ = T::Currency::make_free_balance_be(&user, balance);
-	assert_eq!(T::Currency::free_balance(&user), balance.into());
+	// REVIEW:
+	assert_eq!(T::fungible::Inspect::balance(&user), balance.into());
 	user
 }
 

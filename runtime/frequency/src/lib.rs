@@ -406,7 +406,8 @@ impl pallet_msa::Config for Runtime {
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
-	type Currency = Balances;
+	// REVIEW: Change Currency->Fungible
+	type FungibleToken = Balances;
 	type MinimumStakingAmount = CapacityMinimumStakingAmount;
 	type MinimumTokenBalance = CapacityMinimumTokenBalance;
 	type TargetValidator = Msa;
@@ -509,7 +510,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = ConstU32<0>;
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type FreezeIdentifier = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -1056,7 +1057,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
-		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 	}
