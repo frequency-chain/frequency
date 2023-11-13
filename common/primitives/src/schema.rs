@@ -73,10 +73,27 @@ pub struct SchemaResponse {
 	pub settings: Vec<SchemaSetting>,
 }
 
+/// RPC Response form for a Schema Info
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct SchemaInfoResponse {
+	/// The unique identifier for this Schema
+	pub schema_id: SchemaId,
+	/// The model format type for how the schema model is represented
+	pub model_type: ModelType,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// grants for the schema
+	pub settings: Vec<SchemaSetting>,
+}
+
 /// This allows other pallets to resolve Schema information. With generic SchemaId
 pub trait SchemaProvider<SchemaId> {
 	/// Gets the Schema details associated with this `SchemaId` if any
 	fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse>;
+
+	/// Gets the Schema Info associated with this `SchemaId` if any
+	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse>;
 }
 
 /// This allows other Pallets to check validity of schema ids.
