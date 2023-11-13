@@ -20,7 +20,6 @@ exec /frequency/frequency \
     -lruntime=debug \
     --no-telemetry \
 	--no-prometheus \
-	--port=30333 \
 	--rpc-port=9944 \
 	--rpc-external \
 	--rpc-cors=all \

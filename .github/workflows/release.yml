@@ -883,13 +883,17 @@ jobs:
       fail-fast: true
       matrix:
         arch: [amd64]
-        node: [collator-node-local, instant-seal-node]
+        node: [collator-node-local, instant-seal-node, standalone-node]
         include:
           - node: collator-node-local
             network: local
             build-profile: release
             release-file-name-prefix: frequency-rococo-local
           - node: instant-seal-node
+            network: dev
+            build-profile: release
+            release-file-name-prefix: frequency-dev
+          - node: standalone-node
             network: dev
             build-profile: release
             release-file-name-prefix: frequency-dev

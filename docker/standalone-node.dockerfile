@@ -1,11 +1,11 @@
 # Docker image for running Frequency parachain node container (with collating)
-# locally in instant seal mode. Requires to run from repository root and to copy
+# locally as a standalone node. Requires to run from repository root and to copy
 # the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
 FROM --platform=linux/amd64 ubuntu:20.04 AS base
 
 LABEL maintainer="Frequency"
-LABEL description="Frequency collator node in instant seal mode"
+LABEL description="Frequency standalone node"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
@@ -21,30 +21,15 @@ USER frequency
 
 COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # For local testing only
-# COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
+# COPY --chown=frequency target/x86_64-unknown-linux-gnu/debug/frequency ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
-RUN chmod +x ./frequency/frequency
+COPY --chown=frequency scripts/frequency-start.sh ./frequency
+RUN chmod +x ./frequency/frequency ./frequency/frequency-start.sh
 
 # 9944 for RPC call
-# 30333 for p2p
 # 9615 for Telemetry (prometheus)
-EXPOSE 9944 30333 9615
+EXPOSE 9944 9615
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/frequency/frequency", \
-	# Required params for starting the chain
-	"--dev", \
-	"-lruntime=debug", \
-	"--no-telemetry", \
-	"--no-prometheus", \
-	"--port=30333", \
-	"--rpc-port=9944", \
-	"--rpc-external", \
-	"--rpc-cors=all", \
-	"--rpc-methods=Unsafe", \
-	"--base-path=/data" \
-	]
-
-# Params which can be overriden from CLI
-CMD ["--sealing=instant"]
+ENTRYPOINT [ "/frequency/frequency-start.sh" ]
