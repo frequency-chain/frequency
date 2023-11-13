@@ -1,8 +1,13 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
-use crate::{CapacityDetails, StakingAccountDetails, StakingTargetDetails, UnlockChunk};
+use crate::{
+	CapacityDetails, FreezeReason, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk,
+};
 use common_primitives::msa::MessageSourceId;
-use frame_support::{assert_noop, assert_ok, traits::Get};
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::{fungible::InspectFreeze, Get},
+};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
 
@@ -26,18 +31,19 @@ fn unstake_happy_path() {
 		// Assert that staking account detail values are decremented correctly after unstaking
 		let staking_account_details = Capacity::get_staking_account_for(token_account).unwrap();
 
-		assert_eq!(staking_account_details.unlocking.len(), 1);
 		let expected_unlocking_chunks: BoundedVec<
 			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
 			<Test as Config>::MaxUnlockingChunks,
 		> = BoundedVec::try_from(vec![UnlockChunk { value: unstaking_amount, thaw_at: 2u32 }])
 			.unwrap();
 
+		let unlocking = Capacity::get_unstake_unlocking_for(token_account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
+
 		assert_eq!(
-			StakingAccountDetails::<Test> {
+			StakingDetails::<Test> {
 				active: BalanceOf::<Test>::from(60u64),
-				total: BalanceOf::<Test>::from(staking_amount),
-				unlocking: expected_unlocking_chunks,
+				staking_type: StakingType::MaximumCapacity,
 			},
 			staking_account_details,
 		);
@@ -109,7 +115,7 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 
-		for _n in 0..<Test as pallet_capacity::Config>::MaxUnlockingChunks::get() {
+		for _n in 0..<Test as Config>::MaxUnlockingChunks::get() {
 			assert_ok!(Capacity::unstake(
 				RuntimeOrigin::signed(token_account),
 				target,
@@ -157,4 +163,41 @@ fn unstake_errors_not_a_staking_account() {
 			Error::<Test>::NotAStakingAccount
 		);
 	});
+}
+
+#[test]
+fn unstaking_everything_reaps_staking_account() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 20;
+		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
+
+		register_provider(target, String::from("WithdrawUnst"));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+
+		run_to_block(1);
+		// unstake everything
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
+		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
+
+		// it should reap the staking account right away
+		assert!(Capacity::get_staking_account_for(&staker).is_none());
+	})
+}
+
+#[test]
+fn unstake_when_not_staking_to_target_errors() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 20;
+		register_provider(target, String::from("WithdrawUnst"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(staker), 2, 20),
+			Error::<Test>::StakerTargetRelationshipNotFound
+		);
+	})
 }

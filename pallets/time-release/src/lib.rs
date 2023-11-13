@@ -37,18 +37,22 @@
 )]
 
 use frame_support::{
+	dispatch::DispatchResult,
 	ensure,
 	pallet_prelude::*,
 	traits::{
-		BuildGenesisConfig, Currency, EnsureOrigin, ExistenceRequirement, Get, LockIdentifier,
-		LockableCurrency, WithdrawReasons,
+		tokens::{
+			fungible::{Inspect as InspectFungible, Mutate, MutateFreeze},
+			Balance, Preservation,
+		},
+		BuildGenesisConfig, EnsureOrigin, Get,
 	},
 	BoundedVec,
 };
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
 	traits::{BlockNumberProvider, CheckedAdd, StaticLookup, Zero},
-	ArithmeticError, DispatchResult,
+	ArithmeticError,
 };
 use sp_std::vec::Vec;
 
@@ -56,6 +60,9 @@ use sp_std::vec::Vec;
 mod mock;
 #[cfg(test)]
 mod tests;
+
+/// storage migrations
+pub mod migration;
 
 mod types;
 pub use types::*;
@@ -68,15 +75,13 @@ mod benchmarking;
 
 pub use module::*;
 
-/// The lock identifier for timed released transfers.
-pub const RELEASE_LOCK_ID: LockIdentifier = *b"timeRels";
-
 #[frame_support::pallet]
 pub mod module {
 	use super::*;
 
-	pub(crate) type BalanceOf<T> =
-		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	pub(crate) type BalanceOf<T> = <<T as Config>::Currency as InspectFungible<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
 	pub(crate) type ReleaseScheduleOf<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 	/// Scheduled item used for configuring genesis.
@@ -88,13 +93,32 @@ pub mod module {
 		BalanceOf<T>,
 	);
 
+	/// A reason for freezing funds.
+	/// Creates a freeze reason for this pallet that is aggregated by `construct_runtime`.
+	#[pallet::composite_enum]
+	pub enum FreezeReason {
+		/// Funds are currently locked and are not yet liquid.
+		TimeReleaseVesting,
+	}
+
+	/// the storage version for this pallet
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// The overarching freeze reason.
+		type RuntimeFreezeReason: From<FreezeReason>;
+
+		/// We need MaybeSerializeDeserialize because of the genesis config.
+		type Balance: Balance + MaybeSerializeDeserialize;
+
 		/// The currency trait used to set a lock on a balance.
-		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ InspectFungible<Self::AccountId, Balance = Self::Balance>
+			+ Mutate<Self::AccountId>;
 
 		#[pallet::constant]
 		/// The minimum amount transferred to call `transfer`.
@@ -207,16 +231,16 @@ pub mod module {
 						.expect("Invalid release schedule");
 
 					assert!(
-						T::Currency::free_balance(who) >= total_amount,
+						T::Currency::balance(who) >= total_amount,
 						"Account do not have enough balance"
 					);
 
-					T::Currency::set_lock(
-						RELEASE_LOCK_ID,
+					T::Currency::set_freeze(
+						&FreezeReason::TimeReleaseVesting.into(),
 						who,
 						total_amount,
-						WithdrawReasons::all(),
-					);
+					)
+					.expect("Failed to set freeze");
 					ReleaseSchedules::<T>::insert(who, bounded_schedules);
 				});
 		}
@@ -239,7 +263,7 @@ pub mod module {
 		#[pallet::weight(T::WeightInfo::claim(<T as Config>::MaxReleaseSchedules::get() / 2))]
 		pub fn claim(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let locked_amount = Self::do_claim(&who);
+			let locked_amount = Self::do_claim(&who)?;
 
 			Self::deposit_event(Event::Claimed { who, amount: locked_amount });
 			Ok(())
@@ -268,7 +292,7 @@ pub mod module {
 
 			if to == from {
 				ensure!(
-					T::Currency::free_balance(&from) >=
+					T::Currency::balance(&from) >=
 						schedule.total_amount().ok_or(ArithmeticError::Overflow)?,
 					Error::<T>::InsufficientBalanceToLock,
 				);
@@ -324,7 +348,7 @@ pub mod module {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			let who = T::Lookup::lookup(dest)?;
-			let locked_amount = Self::do_claim(&who);
+			let locked_amount = Self::do_claim(&who)?;
 
 			Self::deposit_event(Event::Claimed { who, amount: locked_amount });
 			Ok(())
@@ -333,15 +357,15 @@ pub mod module {
 }
 
 impl<T: Config> Pallet<T> {
-	fn do_claim(who: &T::AccountId) -> BalanceOf<T> {
+	fn do_claim(who: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
 		let locked = Self::prune_and_get_locked_balance(who);
 		if locked.is_zero() {
-			Self::delete_lock(who);
+			Self::delete_lock(who)?;
 		} else {
-			Self::update_lock(who, locked);
+			Self::update_lock(who, locked)?;
 		}
 
-		locked
+		Ok(locked)
 	}
 
 	/// Deletes schedules that have released all funds up to a block-number.
@@ -385,9 +409,9 @@ impl<T: Config> Pallet<T> {
 			.checked_add(&schedule_amount)
 			.ok_or(ArithmeticError::Overflow)?;
 
-		T::Currency::transfer(from, to, schedule_amount, ExistenceRequirement::AllowDeath)?;
+		T::Currency::transfer(from, to, schedule_amount, Preservation::Expendable)?;
 
-		Self::update_lock(&to, total_amount);
+		Self::update_lock(&to, total_amount)?;
 
 		<ReleaseSchedules<T>>::try_append(to, schedule)
 			.map_err(|_| Error::<T>::MaxReleaseSchedulesExceeded)?;
@@ -405,7 +429,7 @@ impl<T: Config> Pallet<T> {
 
 		// empty release schedules cleanup the storage and unlock the fund
 		if bounded_schedules.is_empty() {
-			Self::delete_release_schedules(who);
+			Self::delete_release_schedules(who)?;
 			return Ok(())
 		}
 
@@ -418,23 +442,22 @@ impl<T: Config> Pallet<T> {
 				},
 			)?;
 
-		ensure!(
-			T::Currency::free_balance(who) >= total_amount,
-			Error::<T>::InsufficientBalanceToLock,
-		);
+		ensure!(T::Currency::balance(who) >= total_amount, Error::<T>::InsufficientBalanceToLock,);
 
-		Self::update_lock(&who, total_amount);
+		Self::update_lock(&who, total_amount)?;
 		Self::set_schedules_for(who, bounded_schedules);
 
 		Ok(())
 	}
 
-	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) {
-		T::Currency::set_lock(RELEASE_LOCK_ID, who, locked, WithdrawReasons::all());
+	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
+		T::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), who, locked)?;
+		Ok(())
 	}
 
-	fn delete_lock(who: &T::AccountId) {
-		T::Currency::remove_lock(RELEASE_LOCK_ID, who);
+	fn delete_lock(who: &T::AccountId) -> DispatchResult {
+		T::Currency::thaw(&FreezeReason::TimeReleaseVesting.into(), who)?;
+		Ok(())
 	}
 
 	fn set_schedules_for(
@@ -444,9 +467,10 @@ impl<T: Config> Pallet<T> {
 		ReleaseSchedules::<T>::insert(who, schedules);
 	}
 
-	fn delete_release_schedules(who: &T::AccountId) {
+	fn delete_release_schedules(who: &T::AccountId) -> DispatchResult {
 		<ReleaseSchedules<T>>::remove(who);
-		Self::delete_lock(who);
+		Self::delete_lock(who)?;
+		Ok(())
 	}
 }
 

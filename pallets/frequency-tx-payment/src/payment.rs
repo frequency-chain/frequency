@@ -1,5 +1,5 @@
 use common_primitives::msa::MsaValidator;
-use frame_support::traits::tokens::Balance;
+use frame_support::traits::tokens::{fungible::Inspect as InspectFungible, Balance};
 use sp_std::marker::PhantomData;
 
 use super::*;
@@ -23,7 +23,7 @@ pub struct CapacityAdapter<Curr, Msa>(PhantomData<(Curr, Msa)>);
 impl<T, Curr, Msa> OnChargeCapacityTransaction<T> for CapacityAdapter<Curr, Msa>
 where
 	T: Config,
-	Curr: Currency<<T as frame_system::Config>::AccountId>,
+	Curr: InspectFungible<<T as frame_system::Config>::AccountId>,
 	Msa: MsaValidator<AccountId = <T as frame_system::Config>::AccountId>,
 	BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<CapacityBalanceOf<T>> + MaxEncodedLen,
 {
@@ -36,7 +36,7 @@ where
 		fee: Self::Balance,
 	) -> Result<Self::Balance, TransactionValidityError> {
 		ensure!(
-			Curr::free_balance(key) >= Curr::minimum_balance(),
+			Curr::balance(key) >= Curr::minimum_balance(),
 			TransactionValidityError::Invalid(InvalidTransaction::Payment)
 		);
 

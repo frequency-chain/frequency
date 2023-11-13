@@ -58,7 +58,7 @@ describe('🤝 Handles', function () {
       await ExtrinsicHelper.runToBlock(currentBlock + expirationOffset + 1); // Must be at least 1 > original expiration
 
       const retireHandle = ExtrinsicHelper.retireHandle(msaOwnerKeys);
-      const { target: event } = await retireHandle.signAndSend('current');
+      const { target: event } = await retireHandle.signAndSend();
       assert.notEqual(event, undefined, 'retireHandle should return an event');
       const handle = event!.data.handle.toString();
       assert.notEqual(handle, '', 'retireHandle should return the correct handle');

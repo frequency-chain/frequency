@@ -25,13 +25,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{
-	handles::*,
-	messages::*,
-	msa::*,
-	node::*,
-	rpc::RpcEvent,
-	schema::{PayloadLocation, SchemaId, SchemaResponse},
-	stateful_storage::*,
+	handles::*, messages::*, msa::*, node::*, rpc::RpcEvent, schema::*, stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -139,6 +133,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -170,6 +165,7 @@ impl BaseCallFilter {
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -221,8 +217,13 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 	(
-		pallet_messages::migration::v2::MigrateToV2<Runtime>,
-		pallet_schemas::migration::v2::MigrateToV2<Runtime>,
+		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
+		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
+		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
+		pallet_time_release::migration::v2::MigrationToV2<
+			Runtime,
+			pallet_balances::Pallet<Runtime>,
+		>,
 	),
 >;
 
@@ -261,7 +262,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 64,
+	spec_version: 68,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -275,7 +276,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 64,
+	spec_version: 68,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -417,6 +418,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -466,6 +468,7 @@ pub type MaxReleaseSchedules = ConstU32<{ MAX_RELEASE_SCHEDULES }>;
 // the descriptions of these configs.
 impl pallet_time_release::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
 	type Currency = Balances;
 	type MinReleaseTransfer = MinReleaseTransfer;
 	type TransferOrigin = EnsureSigned<AccountId>;
@@ -475,6 +478,7 @@ impl pallet_time_release::Config for Runtime {
 	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
@@ -507,9 +511,9 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type MaxHolds = ConstU32<0>;
-	type MaxFreezes = ConstU32<0>;
+	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type FreezeIdentifier = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -1049,14 +1053,14 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
 		// FRQC Update
-		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, FreezeReason} = 40,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
-		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 	}
@@ -1264,6 +1268,10 @@ impl_runtime_apis! {
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
+		}
+
+		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
+			Schemas::get_schema_versions(schema_name)
 		}
 	}
 

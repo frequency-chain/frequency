@@ -25,10 +25,21 @@ export default {
       ],
       type: "bool",
     },
+    getVersions: {
+      description: "Get different versions and schema ids for a complete schema name or only a namespace",
+      params: [
+        {
+          name: "schema_name",
+          type: "String",
+        },
+      ],
+      type: "Option<Vec<SchemaVersionResponse>>",
+    },
   },
   types: {
     SchemaId: "u16",
     SchemaModel: "Vec<u8>",
+    SchemaVersion: "u8",
     SchemaResponse: {
       schema_id: "SchemaId",
       model: "SchemaModel",
@@ -45,6 +56,11 @@ export default {
     SchemaSetting: {
       _enum: ["AppendOnly", "SignatureRequired"],
     },
+    SchemaVersionResponse: {
+      schema_name: "String",
+      schema_version: "SchemaVersion",
+      schema_id: "SchemaId",
+    },
   },
   runtime: {
     SchemasRuntimeApi: [
@@ -60,8 +76,18 @@ export default {
             ],
             type: "Option<SchemaResponse>",
           },
+          get_schema_versions_by_name: {
+            description: "Fetch the schema versions by name",
+            params: [
+              {
+                name: "schema_name",
+                type: "Vec<u8>",
+              },
+            ],
+            type: "Option<Vec<SchemaVersionResponse>>",
+          },
         },
-        version: 1,
+        version: 2,
       },
     ],
   },
