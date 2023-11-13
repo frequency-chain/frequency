@@ -39,6 +39,17 @@ Note: Docker `--rm` removes the volume when stopped.
 docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node:<version.tag>
 ```
 
+## Environment Variables
+
+The following environment variables are supported by this image. The same behavior may be requested by overriding the command line arguments in the `CMD` of the container; however, certain use cases (GitHub Actions) do not support overriding `CMD` when instantiating a container-based service in a workflow. In such a case, injecting these environment variables is a viable workaround.
+
+| Environmnet Variable | Possible Values | Description |
+| --- | --- | --- |
+| `SEALING_MODE` | `instant`, `interval`, `manual` | Overrides `--sealing=SEALING_MODE` |
+| `SEALING_INTERVAL` | integer > 0 | Adds `--sealing-interval=SEALING_INTERVAL`. Number of seconds between block in `interval` sealing mode |
+| `CREATE_EMPTY_BLOCKS` | `true` | Add `--sealing-create-empty-blocks`. Whether to form empty blocks on the interval in `interval` sealing mode |
+
+
 ## Overriding Arguments
 
 | Argument | Description |
