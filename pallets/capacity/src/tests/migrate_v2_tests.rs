@@ -1,11 +1,11 @@
 
 #[cfg(test)]
 mod test {
-    use frame_support::{assert_noop, BoundedVec, Hashable};
+    use frame_support::{BoundedVec};
     use super::*;
     use frame_support::traits::{ StorageVersion};
     use crate::{Config, StakingAccountLedger, types::*, tests::mock::*, migration::*, BalanceOf, UnstakeUnlocks};
-    use crate::migration::v2::migration::{v1::StakingAccountLedger as OldStakingAccountLedger, v1::StakingAccountDetails as OldStakingAccountDetails};
+    use crate::migration::v2::{v1::StakingAccountLedger as OldStakingAccountLedger, v1::StakingAccountDetails as OldStakingAccountDetails};
     use crate::StakingType::MaximumCapacity;
 
     #[test]
@@ -22,16 +22,17 @@ mod test {
                         UnlockChunk{ value: (i+2) as u64, thaw_at: i+30 },
                     ]).unwrap_or_default();
 
-                let old_record = OldStakingAccountDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber, <Test as Config>::MaxUnlockingChunks> {
+                let old_record = OldStakingAccountDetails::<Test> {
                         active: 3, total: 5, unlocking: unlocks,
                     };
+                // For future reference, this also works if you set storage_key up above to = the twox64_concat-ed hash
                 // frame_support::migration::put_storage_value(b"Capacity", b"StakingAccountDetails", &storage_key, &old);
                 OldStakingAccountLedger::<Test>::insert(storage_key, old_record);
             }
 
             assert_eq!(OldStakingAccountLedger::<Test>::iter().count(), 3);
 
-            let _w = v2::migration::migrate_to_v2::<Test>();
+            let _w = v2::migrate_to_v2::<Test>();
 
             assert_eq!(StakingAccountLedger::<Test>::iter().count(), 3);
             assert_eq!(UnstakeUnlocks::<Test>::iter().count(), 3);

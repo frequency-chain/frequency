@@ -80,7 +80,8 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
-mod migration;
+/// storage migrations
+pub mod migration;
 pub mod weights;
 
 type BalanceOf<T> =
@@ -159,7 +160,7 @@ pub mod pallet {
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
 	/// - Keys: AccountId
-	/// - Value: [`StakingAccountDetailsV2`](types::StakingDetails)
+	/// - Value: [`StakingDetails`](types::StakingDetails)
 	#[pallet::storage]
 	#[pallet::getter(fn get_staking_account_for)]
 	pub type StakingAccountLedger<T: Config> =
