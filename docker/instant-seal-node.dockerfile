@@ -5,7 +5,7 @@
 FROM --platform=linux/amd64 ubuntu:20.04 AS base
 
 LABEL maintainer="Frequency"
-LABEL description="Frequency collator node in instant seal mode"
+LABEL description="Frequency standalone node"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
@@ -23,7 +23,8 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # For local testing only
 # COPY --chown=frequency target/release/frequency.amd64 ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
-RUN chmod +x ./frequency/frequency
+COPY --chown=frequency scripts/frequency-start.sh ./frequency
+RUN chmod +x ./frequency/frequency ./frequency/frequency-start.sh
 
 # 9944 for RPC call
 # 30333 for p2p
@@ -32,19 +33,4 @@ EXPOSE 9944 30333 9615
 
 VOLUME ["/data"]
 
-ENTRYPOINT ["/frequency/frequency", \
-	# Required params for starting the chain
-	"--dev", \
-	"-lruntime=debug", \
-	"--no-telemetry", \
-	"--no-prometheus", \
-	"--port=30333", \
-	"--rpc-port=9944", \
-	"--rpc-external", \
-	"--rpc-cors=all", \
-	"--rpc-methods=Unsafe", \
-	"--base-path=/data" \
-	]
-
-# Params which can be overriden from CLI
-CMD ["--sealing=instant"]
+ENTRYPOINT [ "/frequency/frequency-start.sh" ]
