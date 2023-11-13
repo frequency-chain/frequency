@@ -1031,8 +1031,17 @@ jobs:
         run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
-        if: env.TEST_RUN != 'true'
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release == 'true'
         run: npm publish --tag latest --access public
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Release Candidate on NPM
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release != 'true'
+        run: npm publish --access public
+        working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
