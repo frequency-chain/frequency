@@ -407,7 +407,7 @@ impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
 	// REVIEW: Change Currency->Fungible
-	type FungibleToken = Balances;
+	type Currency = Balances;
 	type MinimumStakingAmount = CapacityMinimumStakingAmount;
 	type MinimumTokenBalance = CapacityMinimumTokenBalance;
 	type TargetValidator = Msa;

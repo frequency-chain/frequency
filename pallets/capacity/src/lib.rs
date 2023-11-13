@@ -51,7 +51,12 @@
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
-	traits::{fungible, Get, Hooks},
+	traits::{
+		fungible::{
+			Inspect as FunInspect, InspectFreeze, MutateFreeze, freeze::Mutate
+		},
+		Get, Hooks
+	},
 	weights::{constants::RocksDbWeight, Weight},
 };
 
@@ -90,10 +95,10 @@ pub mod weights;
 // 	<<T as Config>::FungibleToken as fungible::Inspect<<T as frame_system::Config>::AccountId>>::Balance;
 
 // REVIEW: Mostly working version, except Balance doesn't have EncodeLike
-use codec::EncodeLike;
-type BalanceOf<T> = <<T as Config>::FungibleToken as frame_support::traits::fungible::Inspect<
-	<T as frame_system::Config>::AccountId,
->>::Balance;
+type BalanceOf<T> = <<T as Config>::Currency as FunInspect<<T as frame_system::Config>::AccountId>>::Balance;
+// ::traits::fungible::Inspect<
+// 	<T as frame_system::Config>::AccountId,
+// >>::Balance;
 
 use frame_system::pallet_prelude::*;
 #[frame_support::pallet]
@@ -113,6 +118,8 @@ pub mod pallet {
 		Staked,
 	}
 
+	// REVIEW: Why do we need to add EncodeLike to Balance?
+	// use codec::EncodeLike;
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
@@ -127,9 +134,9 @@ pub mod pallet {
 		/// Function that allows a balance to be locked.
 		// REVIEW: replace LockableCurrency
 		// type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
-		type FungibleToken: fungible::InspectFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
-			+ fungible::MutateFreeze<Self::AccountId>
-			+ fungible::Inspect<Self::AccountId>;
+		type Currency: InspectFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ MutateFreeze<Self::AccountId>
+			+ FunInspect<Self::AccountId>;
 
 		/// Function that checks if an MSA is a valid target.
 		type TargetValidator: TargetValidator;
@@ -507,9 +514,7 @@ impl<T: Config> Pallet<T> {
 	{
 		// REVIEW: replace LockableCurrency
 		// T::Currency::set_lock(STAKING_ID, &staker, staking_account.total, WithdrawReasons::all());
-		<<T as Config>::FungibleToken as frame_support::traits::fungible::freeze::Mutate<
-			T::AccountId,
-		>>::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total);
+		<<T as Config>::Currency as Mutate< T::AccountId, >>::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total);
 		StakingAccountLedger::<T>::insert(staker, staking_account.total);
 	}
 
@@ -517,9 +522,7 @@ impl<T: Config> Pallet<T> {
 	fn delete_staking_account(staker: &T::AccountId) {
 		// REVIEW: replace remove_lock with thaw
 		// T::FungibleToken::freeze::Mutate::thaw(STAKING_ID, staker);
-		<<T as Config>::FungibleToken as frame_support::traits::fungible::freeze::Mutate<
-			T::AccountId,
-		>>::thaw(&FreezeReason::Staked.into(), staker);
+		<<T as Config>::Currency as Mutate< T::AccountId, >>::thaw(&FreezeReason::Staked.into(), staker);
 		// T::Currency::remove_lock(STAKING_ID, &staker);
 		StakingAccountLedger::<T>::remove(&staker);
 	}
