@@ -14,13 +14,12 @@ use sp_std::{
     fmt::{Debug},
     vec::Vec,
 };
-use crate::migration::v2;
 
 /// Only contains V1 storage format
 pub mod v1 {
     use super::*;
     use codec::{Decode, Encode, MaxEncodedLen};
-    use frame_support::{BoundedVec, storage_alias, Twox64Concat, pallet_prelude::OptionQuery};
+    use frame_support::{BoundedVec, storage_alias, Twox64Concat};
     use scale_info::TypeInfo;
 
     #[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
