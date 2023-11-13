@@ -5,9 +5,9 @@ then
     SEALING_MODE=instant
 fi
 
-if [ -z "${SEALING_INTERVAL}" ]
+if [ -n "${SEALING_INTERVAL}" ]
 then
-    SEALING_INTERVAL=12
+    SEALING_INTERVAL="--sealing-interval=${SEALING_INTERVAL}"
 fi
 
 if [ "${CREATE_EMPTY_BLOCKS}" = true ]
@@ -27,6 +27,6 @@ exec /frequency/frequency \
 	--rpc-methods=Unsafe \
 	--base-path=/data \
     --sealing=${SEALING_MODE} \
-    --sealing-interval=${SEALING_INTERVAL} \
+    ${SEALING_INTERVAL} \
     ${CREATE_EMPTY_BLOCKS} \
     $*
