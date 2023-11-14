@@ -66,7 +66,6 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
 		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
-		// assert storage was deleted
 	}
 
 	on_initialize {

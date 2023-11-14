@@ -55,7 +55,6 @@ impl<T: Config> StakingDetails<T> {
 	pub fn withdraw(&mut self, amount: BalanceOf<T>) -> Result<BalanceOf<T>, DispatchError> {
 		let current_active = self.active;
 
-		// this is zero if amount exceeds self.active
 		let mut new_active = self.active.saturating_sub(amount);
 		let mut actual_unstaked: BalanceOf<T> = amount;
 

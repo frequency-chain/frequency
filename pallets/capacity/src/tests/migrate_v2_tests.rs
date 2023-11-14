@@ -1,6 +1,5 @@
 #[cfg(test)]
 mod test {
-	use super::*;
 	use crate::{
 		migration::{
 			v2::v1::{
@@ -18,7 +17,7 @@ mod test {
 	use frame_support::{traits::StorageVersion, BoundedVec};
 
 	#[test]
-	#[allow(deprecated)] // TODO: needed?
+	#[allow(deprecated)]
 	fn test_v1_to_v2_works() {
 		new_test_ext().execute_with(|| {
 			StorageVersion::new(1).put::<Capacity>();

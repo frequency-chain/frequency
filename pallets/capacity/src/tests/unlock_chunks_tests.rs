@@ -42,7 +42,7 @@ fn unlock_chunks_reap_thawed_happy_path() {
 fn unlock_chunks_total() {
 	new_test_ext().execute_with(|| {
 		let mut unlock_chunks: UnlockChunks<Test> = UnlockChunks::default();
-		// 10 token total, 6 token unstaked
+		assert_eq!(0u64, unlock_chunks.total());
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 		assert_eq!(true, unlock_chunks.set_unlock_chunks(&new_unlocks));
 		assert_eq!(6u64, unlock_chunks.total());

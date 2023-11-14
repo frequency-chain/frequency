@@ -20,7 +20,6 @@ pub mod v1 {
 	use scale_info::TypeInfo;
 
 	#[derive(Default, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-	#[scale_info(skip_type_params(Balance, EpochNumber, MaxDataSize))]
 	/// Old StakingAccountDetails struct
 	pub struct StakingAccountDetails<T: Config> {
 		/// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
