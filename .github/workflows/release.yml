@@ -28,7 +28,7 @@ jobs:
   validate-release-version:
     name: Validate Release Version
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -47,7 +47,7 @@ jobs:
     needs: validate-release-version
     name: Create Release Branch
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -115,7 +115,7 @@ jobs:
     needs: run-all-benchmarks
     name: Version Code
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -178,7 +178,9 @@ jobs:
           # - os: [self-hosted, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
+    env:
+      SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -212,10 +214,21 @@ jobs:
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
-          fingerprint: B6327D1474C6392032870E8EFA4FD1E73A0FE707 # signing subkey
+          fingerprint: ${{env.SIGNING_SUBKEY_FINGERPRINT}}
+      - name: List GPG Keys
+        run: gpg -k; gpg -K
+      # The error in this step may be due to expired signing subkey
+      # See https://github.com/LibertyDSNP/frequency/issues/1695
       - name: Generate Binary Signature
         working-directory: ${{env.BIN_DIR}}
-        run: gpg --detach-sign --armor ${{env.RELEASE_BIN_FILENAME}}
+        run: |
+          gpg --version
+          gpg --local-user ${{env.SIGNING_SUBKEY_FINGERPRINT}} \
+            --sign --armor \
+            --pinentry-mode=loopback \
+            --passphrase="${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}" \
+            --detach-sig \
+            ${{env.RELEASE_BIN_FILENAME}}
       - name: Verify Binary
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
@@ -338,7 +351,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -373,7 +386,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-rococo-local
       ARCH: amd64
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -384,7 +397,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
@@ -437,7 +450,7 @@ jobs:
           - os: ubuntu-20.04
             arch: amd64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -631,7 +644,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -773,7 +786,7 @@ jobs:
           message: Latest full release
       - name: Dispatch Auto-signer Workflow
         if: env.TEST_RUN != 'true'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
           script: |
@@ -805,7 +818,7 @@ jobs:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -903,7 +916,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
         run: |
@@ -980,7 +993,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     permissions:
       contents: read
       pages: write
@@ -998,14 +1011,14 @@ jobs:
     needs: wait-for-all-builds
     name: Release JS API Augment
     runs-on: ubuntu-20.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Set up NodeJs
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
           cache: "npm"
@@ -1022,8 +1035,17 @@ jobs:
         run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
-        if: env.TEST_RUN != 'true'
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release == 'true'
         run: npm publish --tag latest --access public
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Release Candidate on NPM
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release != 'true'
+        run: npm publish --access public
+        working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+

@@ -1,11 +1,13 @@
 //! Types for the Capacity Pallet
 use super::*;
 use codec::{Decode, Encode, MaxEncodedLen};
-use frame_support::{
-	log::warn, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebug, RuntimeDebugNoBound,
-};
+use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound};
+use log::warn;
 use scale_info::TypeInfo;
-use sp_runtime::traits::{CheckedAdd, CheckedSub, Saturating, Zero};
+use sp_runtime::{
+	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
+	RuntimeDebug,
+};
 
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
@@ -103,12 +105,14 @@ impl<T: Config> StakingAccountDetails<T> {
 			self.unlocking.len() < T::MaxUnlockingChunks::get() as usize,
 			Error::<T>::MaxUnlockingChunksExceeded
 		);
-		let mut active = self.active.saturating_sub(amount);
+
+		let current_active = self.active;
+		let mut new_active = self.active.saturating_sub(amount);
 		let mut actual_unstaked: BalanceOf<T> = amount;
 
-		if active.le(&T::MinimumStakingAmount::get()) {
-			actual_unstaked = amount.saturating_add(active);
-			active = Zero::zero();
+		if new_active.le(&T::MinimumStakingAmount::get()) {
+			actual_unstaked = current_active;
+			new_active = Zero::zero();
 		}
 		let unlock_chunk = UnlockChunk { value: actual_unstaked, thaw_at };
 
@@ -117,7 +121,7 @@ impl<T: Config> StakingAccountDetails<T> {
 			.try_push(unlock_chunk)
 			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
 
-		self.active = active;
+		self.active = new_active;
 		Ok(actual_unstaked)
 	}
 }

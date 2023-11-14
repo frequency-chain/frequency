@@ -8,14 +8,11 @@ use common_primitives::{
 	node::AccountId,
 	utils::wrap_binary_data,
 };
-use frame_support::{
-	dispatch::DispatchError,
-	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
-};
+use frame_support::traits::{ConstU16, ConstU32, OnFinalize, OnInitialize};
 use sp_core::{crypto::AccountId32, sr25519, ByteArray, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	BuildStorage, MultiSignature,
+	BuildStorage, DispatchError, MultiSignature,
 };
 
 use handles_utils::converter::convert_to_canonical;

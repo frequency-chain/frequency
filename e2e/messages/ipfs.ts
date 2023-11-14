@@ -14,7 +14,7 @@ export async function ipfsCid(content: string, path: string) {
   // add the bytes to your node and receive a unique content identifier
   const cid = await fs.addFile({
     path,
-    content: encoder.encode(content)
+    content: encoder.encode(content),
   });
 
   return cid;

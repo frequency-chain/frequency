@@ -371,22 +371,24 @@ pub fn run() -> Result<()> {
 
 		#[cfg(feature = "try-runtime")]
 		Some(Subcommand::TryRuntime(cmd)) => {
-			use sc_executor::{sp_wasm_interface::ExtendedHostFunctions, NativeExecutionDispatch};
+			use common_runtime::constants::MILLISECS_PER_BLOCK;
+			use try_runtime_cli::block_building_info::timestamp_with_aura_info;
+
 			let runner = cli.create_runner(cmd)?;
-			runner.async_run(|config| {
-				// we don't need any of the components of new_partial, just a runtime, or a task
-				// manager to do `async_run`.
-				let registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-				let task_manager =
-					sc_service::TaskManager::new(config.tokio_handle.clone(), registry)
-						.map_err(|e| sc_cli::Error::Service(sc_service::Error::Prometheus(e)))?;
-				Ok((
-					cmd.run::<Block, ExtendedHostFunctions<
-						sp_io::SubstrateHostFunctions,
-						<ExecutorDispatch as NativeExecutionDispatch>::ExtendHostFunctions,
-					>>(),
-					task_manager,
-				))
+
+			type HostFunctions =
+				(sp_io::SubstrateHostFunctions, frame_benchmarking::benchmarking::HostFunctions);
+
+			// grab the task manager.
+			let registry = &runner.config().prometheus_config.as_ref().map(|cfg| &cfg.registry);
+			let task_manager =
+				sc_service::TaskManager::new(runner.config().tokio_handle.clone(), *registry)
+					.map_err(|e| format!("Error: {:?}", e))?;
+
+			let info_provider = timestamp_with_aura_info(MILLISECS_PER_BLOCK);
+
+			runner.async_run(|_| {
+				Ok((cmd.run::<Block, HostFunctions, _>(Some(info_provider)), task_manager))
 			})
 		},
 		Some(Subcommand::ExportRuntimeVersion(cmd)) => {
@@ -509,10 +511,6 @@ impl CliConfiguration<Self> for RelayChainCli {
 
 	fn default_heap_pages(&self) -> Result<Option<u64>> {
 		self.base.base.default_heap_pages()
-	}
-
-	fn force_authoring(&self) -> Result<bool> {
-		self.base.base.force_authoring()
 	}
 
 	fn disable_grandpa(&self) -> Result<bool> {

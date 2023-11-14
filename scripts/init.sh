@@ -80,6 +80,9 @@ start-frequency-instant)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=instant \
     --wasm-execution=compiled \
@@ -94,7 +97,9 @@ start-frequency-instant)
   ;;
 
 start-frequency-interval)
-  printf "\nBuilding Frequency without relay.  Running with interval sealing ...\n"
+  defaultInterval=12
+  interval=${2-$defaultInterval}
+  printf "\nBuilding Frequency without relay.  Running with interval sealing with interval of $interval seconds...\n"
   cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
@@ -107,8 +112,12 @@ start-frequency-interval)
 
   ./target/debug/frequency \
     --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
     -lruntime=debug \
     --sealing=interval \
+    --sealing-interval=${interval} \
     --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \

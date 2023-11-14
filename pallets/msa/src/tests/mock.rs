@@ -5,9 +5,7 @@ use common_primitives::{
 };
 use common_runtime::constants::DAYS;
 use frame_support::{
-	assert_ok,
-	dispatch::DispatchError,
-	parameter_types,
+	assert_ok, parameter_types,
 	traits::{ConstU16, ConstU32, EitherOfDiverse, OnFinalize, OnInitialize},
 	weights::Weight,
 };
@@ -16,7 +14,7 @@ use pallet_collective;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
-	AccountId32, BuildStorage, MultiSignature,
+	AccountId32, BuildStorage, DispatchError, MultiSignature,
 };
 
 pub use pallet_msa::Call as MsaCall;
