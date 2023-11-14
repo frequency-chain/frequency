@@ -94,8 +94,10 @@ use frame_system::pallet_prelude::*;
 pub mod pallet {
 	use super::*;
 
-	use frame_support::pallet_prelude::{StorageVersion};
-	use frame_support::{pallet_prelude::*, Twox64Concat};
+	use frame_support::{
+		pallet_prelude::{StorageVersion, *},
+		Twox64Concat,
+	};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	/// the storage version for this pallet
@@ -350,7 +352,7 @@ pub mod pallet {
 		/// in the caller's token account.
 		///
 		/// ### Errors
-		///   - Returns `Error::NotAStakingAccount` if no StakingAccountDetailsV2 are found for `origin`.
+		///   - Returns `Error::NotAStakingAccount` if no StakingDetails are found for `origin`.
 		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
@@ -479,9 +481,15 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details after a deposit
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingDetails<T>) -> Result<(), DispatchError> {
+	fn set_staking_account(
+		staker: &T::AccountId,
+		staking_account: &StakingDetails<T>,
+	) -> Result<(), DispatchError> {
 		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
-		let total_to_lock: BalanceOf<T> = staking_account.active.checked_add(&unlocks.total()).ok_or(ArithmeticError::Overflow)?;
+		let total_to_lock: BalanceOf<T> = staking_account
+			.active
+			.checked_add(&unlocks.total())
+			.ok_or(ArithmeticError::Overflow)?;
 		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
 		Ok(())
@@ -509,18 +517,25 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		StakingAccountLedger::<T>::try_mutate_exists(unstaker, |maybe_staking_account| -> Result<BalanceOf<T>, DispatchError>{
-			let mut staking_account = maybe_staking_account.take().ok_or(Error::<T>::NotAStakingAccount)?;
-			ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
+		StakingAccountLedger::<T>::try_mutate_exists(
+			unstaker,
+			|maybe_staking_account| -> Result<BalanceOf<T>, DispatchError> {
+				let mut staking_account =
+					maybe_staking_account.take().ok_or(Error::<T>::NotAStakingAccount)?;
+				ensure!(
+					amount <= staking_account.active,
+					Error::<T>::AmountToUnstakeExceedsAmountStaked
+				);
 
-			let actual_unstaked_amount = staking_account.withdraw(amount)?;
-			if staking_account.active.is_zero() {
-				*maybe_staking_account = None;
-			} else {
-				*maybe_staking_account = Some(staking_account);
-			}
-			Ok(actual_unstaked_amount)
-		})
+				let actual_unstaked_amount = staking_account.withdraw(amount)?;
+				if staking_account.active.is_zero() {
+					*maybe_staking_account = None;
+				} else {
+					*maybe_staking_account = Some(staking_account);
+				}
+				Ok(actual_unstaked_amount)
+			},
+		)
 	}
 
 	fn add_unlock_chunk(
@@ -621,8 +636,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start)
-			>= Self::get_epoch_length()
+		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
+			Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
@@ -701,7 +716,7 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
 		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.can_replenish(Self::get_current_epoch());
+			return capacity_details.can_replenish(Self::get_current_epoch())
 		}
 		false
 	}

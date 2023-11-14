@@ -3,8 +3,7 @@ use super::{
 	testing_utils::{register_provider, run_to_block},
 };
 use crate::{
-	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnlockChunks,
-	UnstakeUnlocks,
+	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnlockChunks, UnstakeUnlocks,
 };
 use frame_support::{assert_noop, assert_ok};
 

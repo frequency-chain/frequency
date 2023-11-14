@@ -247,7 +247,7 @@ impl<T: Config> UnlockChunks<T> {
 	/// Get the total balance of all unlock chunks
 	pub fn total(&self) -> BalanceOf<T> {
 		if self.unlocking.is_empty() {
-			return Zero::zero();
+			return Zero::zero()
 		}
 		self.unlocking
 			.iter()

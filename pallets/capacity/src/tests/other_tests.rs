@@ -1,12 +1,15 @@
-use frame_support::{assert_ok, traits::{Currency, Get}};
+use frame_support::{
+	assert_ok,
+	traits::{Currency, Get},
+};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
 
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo,
-	StakingDetails, StakingTargetDetails,
+	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo, StakingDetails,
+	StakingTargetDetails,
 };
 
 use super::{mock::*, testing_utils::*};

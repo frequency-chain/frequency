@@ -51,7 +51,7 @@ It does not give regard to what the economic model actually is, since that is ye
 
 ## Staking Token Rewards
 
-### StakingAccountDetails updates
+### StakingAccountDetails --> StakingDetails
 New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
 

@@ -59,4 +59,3 @@ fn impl_staking_account_details_default() {
 		},
 	);
 }
-
