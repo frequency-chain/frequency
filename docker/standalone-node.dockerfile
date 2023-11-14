@@ -23,7 +23,7 @@ COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificat
 # For local testing only
 # COPY --chown=frequency target/x86_64-unknown-linux-gnu/debug/frequency ./frequency/frequency
 COPY --chown=frequency target/release/frequency ./frequency/
-COPY --chown=frequency scripts/frequency-start.sh ./frequency
+COPY --chown=frequency docker/frequency-start.sh ./frequency/
 RUN chmod +x ./frequency/frequency ./frequency/frequency-start.sh
 
 # 9944 for RPC call
