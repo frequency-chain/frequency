@@ -7,7 +7,7 @@ A "collator node" is a Frequency parachain node that is actively collating (aka 
 ### Quick Run
 
 ```sh
-docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/standalone-node:<version.tag>
+docker run --rm -p 9944:9944 frequencychain/standalone-node:<version.tag>
 ```
 
 

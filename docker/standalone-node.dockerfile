@@ -27,8 +27,7 @@ COPY --chown=frequency scripts/frequency-start.sh ./frequency
 RUN chmod +x ./frequency/frequency ./frequency/frequency-start.sh
 
 # 9944 for RPC call
-# 9615 for Telemetry (prometheus)
-EXPOSE 9944 9615
+EXPOSE 9944
 
 VOLUME ["/data"]
 
