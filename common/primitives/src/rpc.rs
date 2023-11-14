@@ -3,8 +3,8 @@ use crate::utils::as_hex;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 
-use codec::{Codec, Decode, Encode, EncodeLike};
 use frame_system::{EventRecord, Phase};
+use parity_scale_codec::{Codec, Decode, Encode, EncodeLike};
 use scale_info::TypeInfo;
 use sp_std::{fmt::Debug, vec::Vec};
 

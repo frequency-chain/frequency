@@ -55,13 +55,13 @@
 	missing_docs
 )]
 
-use codec::{Decode, Encode};
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
+use parity_scale_codec::{Decode, Encode};
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};

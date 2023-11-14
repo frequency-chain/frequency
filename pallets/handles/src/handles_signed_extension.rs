@@ -1,12 +1,12 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
 use crate::{Call, Config, Error, MSAIdToDisplayName};
-use codec::{Decode, Encode};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
 	dispatch::DispatchInfo, ensure, pallet_prelude::ValidTransaction, traits::IsSubType,
 	unsigned::UnknownTransaction,
 };
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},

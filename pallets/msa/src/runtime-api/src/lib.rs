@@ -17,8 +17,8 @@
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
 
-use codec::Codec;
 use common_primitives::{msa::*, node::BlockNumber};
+use parity_scale_codec::Codec;
 use sp_std::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
