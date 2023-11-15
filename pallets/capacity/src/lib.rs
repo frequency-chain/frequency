@@ -52,7 +52,7 @@ use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
 	traits::{
-		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, MutateFreeze},
+		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::{constants::RocksDbWeight, Weight},
@@ -117,6 +117,7 @@ pub mod pallet {
 
 		/// Function that allows a balance to be locked.
 		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ Mutate<Self::AccountId>
 			+ InspectFreeze<Self::AccountId>
 			+ InspectFungible<Self::AccountId>;
 

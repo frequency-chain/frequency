@@ -2,7 +2,7 @@ use super::*;
 use crate::Pallet as Capacity;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account};
-use frame_support::{assert_ok, traits::Currency};
+use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
 
@@ -25,9 +25,8 @@ pub fn create_funded_account<T: Config>(
 	let user = account(string, n, SEED);
 	whitelist_account!(user);
 	let balance = T::Currency::minimum_balance() * balance_factor.into();
-	let _ = T::Currency::make_free_balance_be(&user, balance);
-	// REVIEW:
-	assert_eq!(T::fungible::Inspect::balance(&user), balance.into());
+	let _ = T::Currency::set_balance(&user, balance);
+	assert_eq!(T::Currency::balance(&user), balance.into());
 	user
 }
 
