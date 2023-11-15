@@ -1,4 +1,7 @@
-use frame_support::traits::{fungible::{InspectFreeze, Inspect}, Get};
+use frame_support::traits::{
+	fungible::{Inspect, InspectFreeze},
+	Get,
+};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
 
