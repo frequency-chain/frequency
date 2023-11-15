@@ -24,7 +24,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
-		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 	}
 );
 
@@ -64,10 +64,10 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
 	type WeightInfo = ();
-	type FreezeIdentifier = ();
-	type MaxFreezes = ConstU32<0>;
-	type MaxHolds = ConstU32<0>;
+	type FreezeIdentifier = RuntimeFreezeReason;
+	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type MaxHolds = ConstU32<0>;
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -135,6 +135,7 @@ parameter_types! {
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = Msa;
 	// In test, this must be >= Token:Capacity ratio since unit is plancks
