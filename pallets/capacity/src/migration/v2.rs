@@ -15,7 +15,7 @@ use sp_std::{fmt::Debug, vec::Vec};
 /// Only contains V1 storage format
 pub mod v1 {
 	use super::*;
-	use codec::{Decode, Encode, MaxEncodedLen};
+	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 	use frame_support::{storage_alias, BoundedVec, Twox64Concat};
 	use scale_info::TypeInfo;
 
@@ -87,7 +87,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
-		use codec::Encode;
+		use parity_scale_codec::Encode;
 		use frame_support::storage::generator::StorageMap;
 		let pallet_prefix = v1::StakingAccountLedger::<T>::module_prefix();
 		let storage_prefix = v1::StakingAccountLedger::<T>::storage_prefix();
@@ -102,7 +102,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-		use codec::Decode;
+		use parity_scale_codec::Decode;
 		let pre_upgrade_count: u32 = Decode::decode(&mut state.as_slice()).unwrap_or_default();
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 

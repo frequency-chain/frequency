@@ -1,8 +1,7 @@
 //! Types for the Capacity Pallet
 use super::*;
 use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound};
-use log::warn;
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+	use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
