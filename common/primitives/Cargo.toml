@@ -13,31 +13,31 @@ version = "0.0.0"
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+parity-scale-codec = { workspace = true, features = [
   "derive",
 ] }
-frame-support = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-impl-serde = { version = "0.4.0", default-features = false }
-scale-info = { version = "2.10.0", default-features = false, features = [
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+impl-serde = { workspace = true }
+scale-info = { workspace = true, features = [
   "derive",
 ] }
-serde = { version = "1.0", default-features = false, features = ["derive"] }
-serde_json = { version = "1.0.107", default-features = false, features = [
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = [
   "alloc",
 ] }
-enumflags2 = "0.7.7"
-smallvec = "1.11.0"
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
+enumflags2 = { workspace = true }
+smallvec = { workspace = true }
+sp-api = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
 
 [features]
 default = ['std']
 runtime-benchmarks = []
 std = [
-  'codec/std',
+  'parity-scale-codec/std',
   'frame-support/std',
   'frame-system/std',
   'sp-std/std',

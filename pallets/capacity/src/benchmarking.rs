@@ -1,10 +1,10 @@
 use super::*;
 use crate::Pallet as Capacity;
 
-use codec::alloc::vec::Vec;
 use frame_benchmarking::{account, benchmarks, whitelist_account};
 use frame_support::{assert_ok, traits::Currency};
 use frame_system::RawOrigin;
+use parity_scale_codec::alloc::vec::Vec;
 
 const SEED: u32 = 0;
 

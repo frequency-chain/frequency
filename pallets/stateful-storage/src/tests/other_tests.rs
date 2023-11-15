@@ -5,9 +5,9 @@ use crate::{
 	types::*,
 	Config, Error,
 };
-use codec::Encode;
 use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_err, assert_ok};
+use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::Pair;

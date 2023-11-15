@@ -1,9 +1,9 @@
-use codec::MaxEncodedLen;
 use frame_support::{
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
 };
 use frame_system::EnsureRoot;
+use parity_scale_codec::MaxEncodedLen;
 
 use common_primitives::node::AccountId;
 use common_runtime::constants::DAYS;

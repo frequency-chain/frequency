@@ -7,13 +7,13 @@ use common_primitives::{
 	schema::*,
 };
 
-use codec::{Encode, MaxEncodedLen};
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+use parity_scale_codec::{Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},

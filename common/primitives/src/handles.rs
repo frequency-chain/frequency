@@ -1,8 +1,8 @@
 use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
-use codec::{Decode, Encode};
 use frame_support::BoundedVec;
+use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;

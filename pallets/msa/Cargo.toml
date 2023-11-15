@@ -13,21 +13,20 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-log = "0.4.17"
-codec = { package = "parity-scale-codec", version = "3.6.1", default-features = false, features = [
+log = { workspace = true }
+parity-scale-codec = { workspace = true, features = [
   "derive",
-] }
-frame-benchmarking = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-frame-support = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-frame-system = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-scale-info = { version = "2.10.0", default-features = false, features = [
-  "derive",
-] }
-sp-core = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-io = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-runtime = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-std = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-weights = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+]}
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+
+scale-info = { workspace = true, features =  ["derive"] }
+sp-core = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+sp-weights = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 
@@ -35,10 +34,10 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 common-runtime = { path = "../../runtime/common", default-features = false }
 pallet-schemas = { path = "../schemas", default-features = false }
 pallet-handles = { path = "../handles", default-features = false }
-pallet-collective = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-keystore = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-keyring = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-pretty_assertions = { version = "1.3.0"}
+pallet-collective = { workspace = true }
+sp-keystore = { workspace = true }
+sp-keyring = { workspace = true }
+pretty_assertions = { workspace = true }
 
 [features]
 default = ["std"]
@@ -50,7 +49,7 @@ runtime-benchmarks = [
   "pallet-collective/runtime-benchmarks",
 ]
 std = [
-  "codec/std",
+  "parity-scale-codec/std",
   "scale-info/std",
   "frame-support/std",
   "frame-system/std",

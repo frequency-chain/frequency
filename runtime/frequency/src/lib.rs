@@ -17,7 +17,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, DispatchError,
 };
 
-use codec::Encode;
+use parity_scale_codec::Encode;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]

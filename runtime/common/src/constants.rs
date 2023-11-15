@@ -1,6 +1,6 @@
 use crate::prod_or_testnet_or_local;
-use codec::{Encode, MaxEncodedLen};
 use common_primitives::node::BlockNumber;
+use parity_scale_codec::{Encode, MaxEncodedLen};
 
 use frame_support::{
 	parameter_types,

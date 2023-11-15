@@ -1,8 +1,8 @@
 use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
-use codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use enumflags2::{bitflags, BitFlags};
+use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};

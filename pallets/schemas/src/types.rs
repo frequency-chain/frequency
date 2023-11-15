@@ -1,7 +1,7 @@
 //! Types for the Schema Pallet
-use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
 use frame_support::traits::StorageVersion;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_std::fmt::Debug;
 

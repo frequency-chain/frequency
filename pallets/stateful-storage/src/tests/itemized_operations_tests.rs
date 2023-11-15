@@ -1,7 +1,7 @@
 use crate::{test_common::test_utility::*, tests::mock::*, types::*, Config};
-use codec::{Encode, MaxEncodedLen};
 use common_primitives::stateful_storage::PageNonce;
 use frame_support::{assert_ok, traits::Len};
+use parity_scale_codec::{Encode, MaxEncodedLen};
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 

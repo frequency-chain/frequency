@@ -59,7 +59,6 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 
-use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{
@@ -68,6 +67,7 @@ use common_primitives::{
 	schema::*,
 };
 use frame_support::dispatch::DispatchResult;
+use parity_scale_codec::Encode;
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};

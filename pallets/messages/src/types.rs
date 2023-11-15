@@ -1,9 +1,9 @@
-use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	messages::MessageResponse, msa::MessageSourceId, node::BlockNumber, schema::PayloadLocation,
 };
 use frame_support::{traits::Get, BoundedVec};
 use multibase::Base;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_std::{fmt::Debug, prelude::*};
 
