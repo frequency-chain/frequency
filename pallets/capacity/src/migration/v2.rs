@@ -4,9 +4,9 @@ use crate::{
 };
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, Weight},
-	traits::{OnRuntimeUpgrade, StorageVersion},
-	weights::constants::RocksDbWeight,
+	traits::{OnRuntimeUpgrade, StorageVersion, Get},
 };
+
 const LOG_TARGET: &str = "runtime::capacity";
 
 #[cfg(feature = "try-runtime")]
@@ -45,7 +45,7 @@ pub mod v1 {
 
 /// migrate StakingAccountLedger to use new StakingDetails
 pub fn migrate_to_v2<T: Config>() -> Weight {
-	let on_chain_version = Pallet::<T>::on_chain_storage_version();
+	let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
 	if on_chain_version.lt(&2) {
 		log::info!(target: LOG_TARGET, "🔄 StakingAccountLedger migration started");
@@ -65,13 +65,17 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 				Some(new_account)
 			},
 		);
-		StorageVersion::new(2).put::<Pallet<T>>();
+		StorageVersion::new(2).put::<Pallet<T>>(); // 1 w
+		let reads = (maybe_count + 1) as u64;
+		let writes = (maybe_count *2 + 1) as u64;
 		log::info!(target: LOG_TARGET, "🔄 migration finished");
-		let count = (StakingAccountLedger::<T>::iter().count() + 1) as u64;
-		RocksDbWeight::get().reads_writes(count, count)
+		let weight = T::DbWeight::get().reads_writes(reads, writes);
+		log::info!(target: LOG_TARGET, "Migration calculated weight = {:?}", weight);
+		weight
 	} else {
 		// storage was already migrated.
-		Weight::zero()
+		log::info!(target: LOG_TARGET, "Old StorageAccountLedger migration attempted to run. Please remove");
+		T::DbWeight::get().reads(1)
 	}
 }
 /// The OnRuntimeUpgrade implementation for this storage migration
@@ -103,7 +107,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
 		assert_eq!(on_chain_version, crate::pallet::STORAGE_VERSION);
-		assert_eq!(pre_upgrade_count as usize, v2::StakingAccountLedger::<T>::iter().count());
+		assert_eq!(pre_upgrade_count as usize, StakingAccountLedger::<T>::iter().count());
 		assert_eq!(pre_upgrade_count as usize, UnstakeUnlocks::<T>::iter().count());
 
 		log::info!(target: LOG_TARGET, "✅ migration post_upgrade checks passed");

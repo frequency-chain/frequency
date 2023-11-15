@@ -352,7 +352,6 @@ pub mod pallet {
 		/// in the caller's token account.
 		///
 		/// ### Errors
-		///   - Returns `Error::NotAStakingAccount` if no StakingDetails are found for `origin`.
 		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
@@ -512,7 +511,7 @@ impl<T: Config> Pallet<T> {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
 
-	/// Decrease a staking account's active token and create an unlocking chunk to be thawed at some future block.
+	/// Decrease a staking account's active token.
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,

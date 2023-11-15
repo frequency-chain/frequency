@@ -197,15 +197,15 @@ impl<T: Config> Default for UnlockChunks<T> {
 impl<T: Config> UnlockChunks<T> {
 	#[cfg(any(feature = "runtime-benchmarks", test))]
 	#[allow(clippy::unwrap_used)]
-	///  tmp fn for testing only
-	/// set unlock chunks with (balance, thaw_at).  does not check that the unlock chunks
-	/// don't exceed total.
+	/// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
 	/// returns true on success, false on failure (?)
+	/// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
 	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
 		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
 			.into_iter()
 			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
 			.collect();
+		// CAUTION
 		self.unlocking = BoundedVec::try_from(result).unwrap();
 		self.unlocking.len() == chunks.len()
 	}
@@ -215,16 +215,14 @@ impl<T: Config> UnlockChunks<T> {
 	/// Returns: the total amount reaped from `unlocking`
 	pub fn reap_thawed(&mut self, current_epoch: <T>::EpochNumber) -> BalanceOf<T> {
 		let mut total_reaped: BalanceOf<T> = 0u32.into();
-		if !self.unlocking.is_empty() {
-			self.unlocking.retain(|chunk| {
-				if current_epoch.ge(&chunk.thaw_at) {
-					total_reaped = total_reaped.saturating_add(chunk.value);
-					false
-				} else {
-					true
-				}
-			});
-		}
+		self.unlocking.retain(|chunk| {
+			if current_epoch.ge(&chunk.thaw_at) {
+				total_reaped = total_reaped.saturating_add(chunk.value);
+				false
+			} else {
+				true
+			}
+		});
 		total_reaped
 	}
 
@@ -245,9 +243,6 @@ impl<T: Config> UnlockChunks<T> {
 
 	/// Get the total balance of all unlock chunks
 	pub fn total(&self) -> BalanceOf<T> {
-		if self.unlocking.is_empty() {
-			return Zero::zero()
-		}
 		self.unlocking
 			.iter()
 			.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))

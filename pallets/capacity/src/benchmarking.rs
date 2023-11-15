@@ -57,15 +57,17 @@ benchmarks! {
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let mut unlocking: UnlockChunks<T> = UnlockChunks::default();
-		assert_ok!(unlocking.add(50u32.into(), 3u32.into()));
-		assert_ok!(unlocking.add(50u32.into(), 5u32.into()));
+		for _i in 0..T::MaxUnlockingChunks::get() {
+			assert_ok!(unlocking.add(1u32.into(), 3u32.into()));
+		}
 		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
-		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
+		let total = T::MaxUnlockingChunks::get();
+		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
 	}
 
 	on_initialize {
