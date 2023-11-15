@@ -418,6 +418,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 impl pallet_schemas::Config for Runtime {

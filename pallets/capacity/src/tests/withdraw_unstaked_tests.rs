@@ -1,8 +1,8 @@
 use super::{mock::*, testing_utils::run_to_block};
-use crate as pallet_capacity;
+use crate::{self as pallet_capacity, FreezeReason};
 use crate::StakingAccountDetails;
-use frame_support::{assert_noop, assert_ok};
-use pallet_capacity::{BalanceOf, Error, Event};
+use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
+use pallet_capacity::{BalanceOf, Config, Error, Event};
 
 #[test]
 fn withdraw_unstaked_happy_path() {
@@ -52,8 +52,7 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
 		Capacity::set_staking_account(&staker, &staking_account);
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(10u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(10u64, <Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &staker));
 
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
@@ -61,8 +60,7 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		run_to_block(31);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(7u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(7u64, <Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &staker));
 	})
 }
 

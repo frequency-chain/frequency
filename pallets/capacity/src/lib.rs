@@ -52,7 +52,7 @@ use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
 	traits::{
-		tokens::fungible::{Inspect as InspectFungible, MutateFreeze},
+		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::{constants::RocksDbWeight, Weight},
@@ -100,6 +100,7 @@ pub mod pallet {
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
 		/// The account is staked.
+		#[codec(index = 0)]
 		Staked,
 	}
 
@@ -115,7 +116,9 @@ pub mod pallet {
 		type WeightInfo: WeightInfo;
 
 		/// Function that allows a balance to be locked.
-		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>;
+		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ InspectFreeze<Self::AccountId>
+			+ InspectFungible<Self::AccountId>;
 
 		/// Function that checks if an MSA is a valid target.
 		type TargetValidator: TargetValidator;
