@@ -100,6 +100,15 @@ benchmarks! {
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
 		Capacity::<T>::set_capacity_for(target, capacity_details);
 
+		// fill up unlock chunks to max bound - 1
+		let mut unlocking: UnlockChunks<T> = UnlockChunks::default();
+		let count = T::MaxUnlockingChunks::get()-1;
+		for _i in 0..count {
+			assert_ok!(unlocking.add(1u32.into(), 3u32.into()));
+		}
+		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
+
+
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
 	verify {
 		assert_last_event::<T>(Event::<T>::UnStaked {account: caller, target: target, amount: unstaking_amount.into(), capacity: Capacity::<T>::calculate_capacity_reduction(unstaking_amount.into(), staking_amount, capacity_amount) }.into());
