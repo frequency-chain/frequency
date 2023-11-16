@@ -27,7 +27,7 @@ pub const DESCRIPTOR_MIN: usize = 1;
 pub const DESCRIPTOR_MAX: u32 = 16;
 /// separator character
 pub const SEPARATOR_CHAR: char = '.';
-const AUTO_ASSIGNED_NAMESPACE: &str = "AUTO_ASSIGNED";
+const AUTO_ASSIGNED_NAMESPACE: &str = "auto_assigned";
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
