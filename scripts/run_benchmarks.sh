@@ -183,7 +183,7 @@ function run_benchmark() {
   --chain="frequency-bench" \
   --heap-pages=4096 \
   --wasm-execution=compiled \
-  --additional-trie-layers=20 \
+  --additional-trie-layers=5 \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
