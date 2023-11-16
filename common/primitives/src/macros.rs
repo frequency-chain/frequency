@@ -50,9 +50,9 @@ macro_rules! impl_codec_bitflags {
 		}
 		impl EncodeLike for $wrapper {}
 		impl Decode for $wrapper {
-			fn decode<I: codec::Input>(
+			fn decode<I: parity_scale_codec::Input>(
 				input: &mut I,
-			) -> sp_std::result::Result<Self, codec::Error> {
+			) -> sp_std::result::Result<Self, parity_scale_codec::Error> {
 				let field = <$size>::decode(input)?;
 				Ok(Self(BitFlags::from_bits(field as $size).map_err(|_| "invalid value")?))
 			}

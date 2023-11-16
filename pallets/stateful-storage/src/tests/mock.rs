@@ -1,5 +1,5 @@
 use crate as pallet_stateful_storage;
-use codec::Decode;
+use parity_scale_codec::Decode;
 
 use crate::test_common::{
 	constants,
@@ -11,7 +11,10 @@ use common_primitives::{
 		ProviderId, ProviderLookup, SchemaGrantValidator,
 	},
 	node::AccountId,
-	schema::{ModelType, PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
+	schema::{
+		ModelType, PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaResponse,
+		SchemaSetting,
+	},
 };
 use frame_support::{
 	dispatch::DispatchResult,
@@ -250,6 +253,17 @@ impl SchemaProvider<u16> for SchemaHandler {
 				settings: Vec::from(vec![SchemaSetting::AppendOnly]),
 			}),
 		}
+	}
+
+	fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
+		Self::get_schema_by_id(schema_id).and_then(|schema| {
+			Some(SchemaInfoResponse {
+				schema_id: schema.schema_id,
+				settings: schema.settings,
+				model_type: schema.model_type,
+				payload_location: schema.payload_location,
+			})
+		})
 	}
 }
 

@@ -1,5 +1,12 @@
 # Frequency Collator Node in Local Only Sealing Mode
 
+## Deprecation Note
+
+This image has been deprecated and will be removed in a future Frequency release. The new image, [frequencychain/standalone-node](./standalone-node.overview.md), replaces it. Current usage patterns for this image are fully supported by the new image, as well as additional enhancements.
+##
+
+### Description
+
 Runs just one collator node that will not connect to any other nodes.
 Defaults to running in instant sealing mode where a block will be triggered when a transaction enters the validated transaction pool.
 A "collator node" is a Frequency parachain node that is actively collating (aka forming blocks to submit to the relay chain, although in this case without a relay chain).

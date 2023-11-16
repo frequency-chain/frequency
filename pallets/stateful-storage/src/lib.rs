@@ -73,7 +73,7 @@ use common_primitives::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
 	node::Verify,
-	schema::{PayloadLocation, SchemaId, SchemaProvider, SchemaResponse, SchemaSetting},
+	schema::{PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaSetting},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
@@ -697,9 +697,9 @@ impl<T: Config> Pallet<T> {
 	fn check_schema_for_read(
 		schema_id: SchemaId,
 		expected_payload_location: PayloadLocation,
-	) -> Result<SchemaResponse, DispatchError> {
-		let schema =
-			T::SchemaProvider::get_schema_by_id(schema_id).ok_or(Error::<T>::InvalidSchemaId)?;
+	) -> Result<SchemaInfoResponse, DispatchError> {
+		let schema = T::SchemaProvider::get_schema_info_by_id(schema_id)
+			.ok_or(Error::<T>::InvalidSchemaId)?;
 
 		// Ensure that the schema's payload location matches the expected location.
 		ensure!(

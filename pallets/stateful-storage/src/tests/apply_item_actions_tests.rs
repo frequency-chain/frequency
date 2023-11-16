@@ -5,12 +5,12 @@ use crate::{
 	types::*,
 	Config, Error, Event as StatefulEvent,
 };
-use codec::Encode;
 use common_primitives::{
 	stateful_storage::{PageHash, PageNonce},
 	utils::wrap_binary_data,
 };
 use frame_support::{assert_err, assert_ok, BoundedVec};
+use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::{sr25519, Get, Pair};

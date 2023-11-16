@@ -16,8 +16,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use codec::{Decode, Encode};
 use frame_system::Config;
+use parity_scale_codec::{Decode, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},

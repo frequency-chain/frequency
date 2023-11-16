@@ -500,6 +500,14 @@ jobs:
           context: .
           push: false
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+      - name: Build collator standalone
+        env:
+          IMAGE_NAME: standalone-node
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
       - name: Build collator image for local relay chain
         env:
           IMAGE_NAME: collator-node-local

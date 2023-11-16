@@ -786,7 +786,7 @@ jobs:
           message: Latest full release
       - name: Dispatch Auto-signer Workflow
         if: env.TEST_RUN != 'true'
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         with:
           github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
           script: |
@@ -896,13 +896,17 @@ jobs:
       fail-fast: true
       matrix:
         arch: [amd64]
-        node: [collator-node-local, instant-seal-node]
+        node: [collator-node-local, instant-seal-node, standalone-node]
         include:
           - node: collator-node-local
             network: local
             build-profile: release
             release-file-name-prefix: frequency-rococo-local
           - node: instant-seal-node
+            network: dev
+            build-profile: release
+            release-file-name-prefix: frequency-dev
+          - node: standalone-node
             network: dev
             build-profile: release
             release-file-name-prefix: frequency-dev
@@ -1031,8 +1035,17 @@ jobs:
         run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
         working-directory: js/api-augment/dist
       - name: Release on NPM @latest
-        if: env.TEST_RUN != 'true'
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release == 'true'
         run: npm publish --tag latest --access public
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Release Candidate on NPM
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release != 'true'
+        run: npm publish --access public
+        working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+

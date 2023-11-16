@@ -1,11 +1,11 @@
 use core::marker::PhantomData;
 
-use codec::{Decode, Encode};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
 	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
 };
+use parity_scale_codec::{Decode, Encode};
 use sp_core::{ConstU8, Get};
 use sp_io::hashing::twox_64;
 use sp_std::{fmt::Debug, prelude::*};
@@ -59,12 +59,15 @@ pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 	fn hash(&self) -> Vec<u8>;
 	fn hash_prefix_only(&self) -> Vec<u8>;
 
-	fn decode(hash: &[u8]) -> Result<Self, codec::Error> {
+	fn decode(hash: &[u8]) -> Result<Self, parity_scale_codec::Error> {
 		let mut key_material = H::reverse(hash, Self::Arity::get());
 		<Self as Decode>::decode(&mut key_material)
 	}
 
-	fn decode_without_prefix(hash: &[u8], prefix_len: u8) -> Result<Self, codec::Error> {
+	fn decode_without_prefix(
+		hash: &[u8],
+		prefix_len: u8,
+	) -> Result<Self, parity_scale_codec::Error> {
 		if prefix_len > Self::Arity::get() {
 			return Err("Prefix longer than total key length".into())
 		}
@@ -85,7 +88,7 @@ impl<H: MultipartKeyStorageHasher> MultipartKey<H> for () {
 		Vec::new()
 	}
 
-	fn decode(_hash: &[u8]) -> Result<Self, codec::Error> {
+	fn decode(_hash: &[u8]) -> Result<Self, parity_scale_codec::Error> {
 		Ok(())
 	}
 }
