@@ -25,13 +25,7 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{
-	handles::*,
-	messages::*,
-	msa::*,
-	node::*,
-	rpc::RpcEvent,
-	schema::{PayloadLocation, SchemaId, SchemaResponse},
-	stateful_storage::*,
+	handles::*, messages::*, msa::*, node::*, rpc::RpcEvent, schema::*, stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -1264,6 +1258,10 @@ impl_runtime_apis! {
 	impl pallet_schemas_runtime_api::SchemasRuntimeApi<Block> for Runtime {
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse> {
 			Schemas::get_schema_by_id(schema_id)
+		}
+
+		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
+			Schemas::get_schema_versions(schema_name)
 		}
 	}
 

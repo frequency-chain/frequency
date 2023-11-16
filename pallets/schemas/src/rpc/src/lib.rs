@@ -55,6 +55,10 @@ pub trait SchemasApi<BlockHash> {
 	/// validates a schema model and returns `true` if the model is correct.
 	#[method(name = "schemas_checkSchemaValidity")]
 	fn check_schema_validity(&self, model: Vec<u8>, at: Option<BlockHash>) -> RpcResult<bool>;
+
+	/// returns an array of schema versions
+	#[method(name = "schemas_getVersions")]
+	fn get_versions(&self, schema_name: String) -> RpcResult<Option<Vec<SchemaVersionResponse>>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -97,6 +101,13 @@ where
 		let api = self.client.runtime_api();
 		let at = self.client.info().best_hash;
 		let schema_api_result = api.get_by_schema_id(at, schema_id);
+		map_rpc_result(schema_api_result)
+	}
+
+	fn get_versions(&self, schema_name: String) -> RpcResult<Option<Vec<SchemaVersionResponse>>> {
+		let api = self.client.runtime_api();
+		let at = self.client.info().best_hash;
+		let schema_api_result = api.get_schema_versions_by_name(at, schema_name.into_bytes());
 		map_rpc_result(schema_api_result)
 	}
 }

@@ -18,6 +18,7 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::schema::*;
+use sp_api::vec::Vec;
 
 sp_api::decl_runtime_apis! {
 
@@ -32,5 +33,7 @@ sp_api::decl_runtime_apis! {
 	{
 		/// Fetch the schema by id
 		fn get_by_schema_id(schema_id: SchemaId) -> Option<SchemaResponse>;
+		/// Fetch the schema versions by name
+		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>>;
 	}
 }

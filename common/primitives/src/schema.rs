@@ -14,6 +14,9 @@ use utils::*;
 /// Schema Id is the unique identifier for a Schema
 pub type SchemaId = u16;
 
+/// Schema version number
+pub type SchemaVersion = u8;
+
 /// Types of modeling in which a message payload may be defined
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
@@ -129,6 +132,16 @@ impl SchemaSettings {
 	}
 }
 impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
+
+/// RPC Response form a schema name query
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct SchemaVersionResponse {
+	/// The version for this schema
+	pub schema_version: SchemaVersion,
+	/// The unique identifier for this Schema
+	pub schema_id: SchemaId,
+}
 
 #[cfg(test)]
 mod tests {

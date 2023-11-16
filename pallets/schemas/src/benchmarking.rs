@@ -83,6 +83,24 @@ benchmarks! {
 		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
 	}
 
+	create_schema_v3 {
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let sender: T::AccountId = whitelisted_caller();
+		let version: SchemaVersion = 1;
+		let namespace  = vec![b'a'; NAMESPACE_MAX as usize];
+		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Signed(sender), bounded_name, version, schema_input, model_type, payload_location, BoundedVec::default())
+	verify {
+		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
+		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
+	}
+
 	set_max_schema_model_bytes {
 		let sender = RawOrigin::Root;
 		let max_size = T::SchemaModelMaxBytesBoundedVecLimit::get();
