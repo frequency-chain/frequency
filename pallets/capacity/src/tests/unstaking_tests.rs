@@ -181,3 +181,19 @@ fn unstaking_everything_reaps_staking_account() {
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
 	})
 }
+
+#[test]
+fn unstake_when_not_staking_to_target_errors() {
+	new_test_ext().execute_with(|| {
+		let staker = 500;
+		let target = 1;
+		let amount = 20;
+		register_provider(target, String::from("WithdrawUnst"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(staker), 2, 20),
+			Error::<Test>::StakerTargetRelationshipNotFound
+		);
+	})
+}
