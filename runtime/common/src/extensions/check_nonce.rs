@@ -98,11 +98,10 @@ where
 			.into())
 		}
 
-		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
-
 		// Only create or update the token account if the caller is paying
-		if info.pays_fee == Pays::Yes {
+		if info.pays_fee == Pays::Yes || account.nonce == self.0 {
+			// Increment account nonce by 1
+			account.nonce += T::Nonce::one();
 			frame_system::Account::<T>::insert(who, account);
 		}
 

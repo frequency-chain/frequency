@@ -50,7 +50,7 @@ describe("Add Offchain Message", function () {
     });
 
     it('should fail if insufficient funds', async function () {
-        await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend('current'), {
+        await assert.rejects(ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len).signAndSend(), {
             name: 'RpcError',
             message: /Inability to pay some fees/,
         });

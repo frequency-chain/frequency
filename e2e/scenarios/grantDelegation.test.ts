@@ -217,12 +217,12 @@ describe("Delegation Scenario Tests", function () {
         it("should fail to revoke a delegation if no MSA exists (InvalidMsaKey)", async function () {
             const nonMsaKeys = await createAndFundKeypair(fundingSource);
             const op = ExtrinsicHelper.revokeDelegationByDelegator(nonMsaKeys, providerId);
-            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 1$/ });
+            await assert.rejects(op.signAndSend(), { name: 'RpcError', message: /Custom error: 1$/ });
         });
 
         it("should revoke a delegation by delegator", async function () {
             const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend('current');
+            const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend();
             assert.notEqual(revokeDelegationEvent, undefined, "should have returned DelegationRevoked event");
             assert.deepEqual(revokeDelegationEvent?.data.providerId, providerId, 'provider ids should be equal');
             assert.deepEqual(revokeDelegationEvent?.data.delegatorId, msaId, 'delegator ids should be equal');
@@ -230,12 +230,12 @@ describe("Delegation Scenario Tests", function () {
 
         it("should fail to revoke a delegation that has already been revoked (InvalidDelegation)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend(), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         it("should fail to revoke delegation where no delegation exists (DelegationNotFound)", async function () {
             const op = ExtrinsicHelper.revokeDelegationByDelegator(keys, otherProviderId);
-            await assert.rejects(op.signAndSend('current'), { name: 'RpcError', message: /Custom error: 0$/ });
+            await assert.rejects(op.signAndSend(), { name: 'RpcError', message: /Custom error: 0$/ });
         });
 
         describe('Successful revocation', function () {
@@ -264,7 +264,7 @@ describe("Delegation Scenario Tests", function () {
 
             it("should revoke a delegation by provider", async function () {
                 const op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
-                const { target: revokeEvent } = await op.signAndSend('current');
+                const { target: revokeEvent } = await op.signAndSend();
                 assert.notEqual(revokeEvent, undefined, "should have returned a DelegationRevoked event");
                 assert.deepEqual(revokeEvent?.data.delegatorId, msaId, 'delegator ids should match');
                 assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
@@ -293,10 +293,10 @@ describe("Delegation Scenario Tests", function () {
               const { target: msaEvent } = await op.fundAndSend(fundingSource);
               const newMsaId = msaEvent?.data.msaId;
               assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
-              await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend('current'));
+              await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend());
 
               const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-              const { target: retireMsaEvent } = await retireMsaOp.signAndSend('current');
+              const { target: retireMsaEvent } = await retireMsaOp.signAndSend();
               assert.notEqual(retireMsaEvent, undefined, "should have returned MsaRetired event");
               assert.deepEqual(retireMsaEvent?.data.msaId, newMsaId, 'msaId should be equal');
             });
@@ -310,7 +310,7 @@ describe("Delegation Scenario Tests", function () {
             const newMsaId = msaEvent?.data.msaId;
             assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
             const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-            await assert.rejects(retireMsaOp.signAndSend('current'), { name: 'RpcError', message: /Custom error: 6$/ });
+            await assert.rejects(retireMsaOp.signAndSend(), { name: 'RpcError', message: /Custom error: 6$/ });
           });
         });
     });

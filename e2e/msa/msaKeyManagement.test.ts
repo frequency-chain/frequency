@@ -164,7 +164,7 @@ describe("MSA Key management", function () {
         it("should disallow retiring MSA belonging to a provider", async function () {
             const [providerKeys] = await createProviderKeysAndId(fundingSource);
             const retireOp = ExtrinsicHelper.retireMsa(providerKeys);
-            await assert.rejects(retireOp.signAndSend('current'), {
+            await assert.rejects(retireOp.signAndSend(), {
                 name: 'RpcError',
                 message: /Custom error: 2/,
             });
@@ -199,7 +199,7 @@ describe("MSA Key management", function () {
 
         it("should disallow retiring an MSA with more than one key authorized", async function () {
             const retireOp = ExtrinsicHelper.retireMsa(keys);
-            await assert.rejects(retireOp.signAndSend('current'), {
+            await assert.rejects(retireOp.signAndSend(), {
                 name: 'RpcError',
                 message: /Custom error: 3/,
             });
@@ -207,7 +207,7 @@ describe("MSA Key management", function () {
 
         it("should fail to delete public key for self", async function () {
             const op = ExtrinsicHelper.deletePublicKey(keys, keys.publicKey);
-            await assert.rejects(op.signAndSend('current'), {
+            await assert.rejects(op.signAndSend(), {
                 name: 'RpcError',
                 message: /Custom error: 4/,
             });
@@ -217,7 +217,7 @@ describe("MSA Key management", function () {
             const [providerKeys] = await createProviderKeysAndId(fundingSource);
 
             const op = ExtrinsicHelper.deletePublicKey(providerKeys, keys.publicKey);
-            await assert.rejects(op.signAndSend('current'), {
+            await assert.rejects(op.signAndSend(), {
                 name: 'RpcError',
                 message: /Custom error: 5/,
             });
@@ -226,7 +226,7 @@ describe("MSA Key management", function () {
         it("should test for 'NoKeyExists' error", async function () {
             const key = createKeys("nothing key");
             const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
-            await assert.rejects(op.signAndSend('current'), {
+            await assert.rejects(op.signAndSend(), {
                 name: 'RpcError',
                 message: /Custom error: 1/,
             });
@@ -234,13 +234,13 @@ describe("MSA Key management", function () {
 
         it("should delete secondary key", async function () {
             const op = ExtrinsicHelper.deletePublicKey(keys, secondaryKey.publicKey);
-            const { target: event } = await op.signAndSend('current');
+            const { target: event } = await op.signAndSend();
             assert.notEqual(event, undefined, "should have returned PublicKeyDeleted event");
         });
 
         it("should allow retiring MSA after additional keys have been deleted", async function () {
             const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
-            const { target: event, eventMap } = await retireMsaOp.signAndSend('current');
+            const { target: event, eventMap } = await retireMsaOp.signAndSend();
 
             assert.notEqual(eventMap["msa.PublicKeyDeleted"], undefined, 'should have deleted public key (retired)');
             assert.notEqual(event, undefined, 'should have retired msa');
