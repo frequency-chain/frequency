@@ -59,7 +59,6 @@ use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
 use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 
-use codec::Encode;
 use common_primitives::{
 	messages::*,
 	msa::{
@@ -68,6 +67,7 @@ use common_primitives::{
 	schema::*,
 };
 use frame_support::dispatch::DispatchResult;
+use parity_scale_codec::Encode;
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
@@ -234,7 +234,7 @@ pub mod pallet {
 				.try_into()
 				.map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+			if let Some(schema) = T::SchemaProvider::get_schema_info_by_id(schema_id) {
 				ensure!(
 					schema.payload_location == PayloadLocation::IPFS,
 					Error::<T>::InvalidPayloadLocation
@@ -283,7 +283,7 @@ pub mod pallet {
 			let bounded_payload: BoundedVec<u8, T::MessagesMaxPayloadSizeBytes> =
 				payload.try_into().map_err(|_| Error::<T>::ExceedsMaxMessagePayloadSizeBytes)?;
 
-			if let Some(schema) = T::SchemaProvider::get_schema_by_id(schema_id) {
+			if let Some(schema) = T::SchemaProvider::get_schema_info_by_id(schema_id) {
 				ensure!(
 					schema.payload_location == PayloadLocation::OnChain,
 					Error::<T>::InvalidPayloadLocation

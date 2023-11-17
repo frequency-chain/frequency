@@ -1,11 +1,11 @@
 use crate::{handles_signed_extension::HandlesSignedExtension, tests::mock::*, Error, Event};
-use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId};
 use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays},
 };
 use numtoa::*;
+use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::traits::SignedExtension;
 

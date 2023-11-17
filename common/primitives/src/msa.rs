@@ -1,5 +1,5 @@
-use codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec};
+use parity_scale_codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -30,7 +30,9 @@ impl Encode for DelegatorId {
 }
 
 impl Decode for DelegatorId {
-	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+	fn decode<I: parity_scale_codec::Input>(
+		input: &mut I,
+	) -> Result<Self, parity_scale_codec::Error> {
 		match <u64>::decode(input) {
 			Ok(x) => Ok(DelegatorId(x)),
 			_ => Err(Error::from("Could not decode DelegatorId")),
@@ -138,7 +140,9 @@ impl Encode for ProviderId {
 }
 
 impl Decode for ProviderId {
-	fn decode<I: codec::Input>(input: &mut I) -> Result<Self, codec::Error> {
+	fn decode<I: parity_scale_codec::Input>(
+		input: &mut I,
+	) -> Result<Self, parity_scale_codec::Error> {
 		match <u64>::decode(input) {
 			Ok(x) => Ok(ProviderId(x)),
 			_ => Err(Error::from("Could not decode ProviderId")),

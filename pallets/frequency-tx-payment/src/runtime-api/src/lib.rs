@@ -16,8 +16,8 @@
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
 
-use codec::Codec;
 use frame_support::sp_runtime;
+use parity_scale_codec::Codec;
 use sp_runtime::traits::MaybeDisplay;
 
 pub use pallet_transaction_payment::{FeeDetails, InclusionFee};

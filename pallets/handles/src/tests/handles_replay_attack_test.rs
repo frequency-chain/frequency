@@ -1,8 +1,8 @@
 use crate::{tests::mock::*, Error};
-use codec::Decode;
 use common_primitives::{handles::*, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok};
 use numtoa::*;
+use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
 
 #[test]

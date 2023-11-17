@@ -3,7 +3,6 @@ use crate::{
 	tests::mock::*,
 	BlockMessageIndex, Error, Event as MessageEvent, Message, MessagesV2,
 };
-use codec::Encode;
 use common_primitives::{messages::MessageResponse, schema::*};
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
@@ -13,6 +12,7 @@ use frame_support::{
 };
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
+use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;

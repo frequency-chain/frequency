@@ -7,13 +7,13 @@ use common_primitives::{
 	schema::*,
 };
 
-use codec::{Encode, MaxEncodedLen};
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+use parity_scale_codec::{Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -211,6 +211,17 @@ impl SchemaProvider<u16> for SchemaHandler {
 			model_type: ModelType::AvroBinary,
 			payload_location: PayloadLocation::OnChain,
 			settings: Vec::new(),
+		})
+	}
+
+	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
+		Self::get_schema_by_id(schema_id).and_then(|schema| {
+			Some(SchemaInfoResponse {
+				schema_id: schema.schema_id,
+				settings: schema.settings,
+				model_type: schema.model_type,
+				payload_location: schema.payload_location,
+			})
 		})
 	}
 }
