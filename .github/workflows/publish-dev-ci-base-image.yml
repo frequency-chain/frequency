@@ -35,7 +35,7 @@ jobs:
           username: ${{github.actor}}
           password: ${{secrets.GITHUB_TOKEN}}
       - name: Sanitize repo owner slug
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         id: repo_slug
         with:
           result-encoding: string

@@ -1,6 +1,6 @@
 use crate::prod_or_testnet_or_local;
-use codec::{Encode, MaxEncodedLen};
 use common_primitives::node::BlockNumber;
+use parity_scale_codec::{Encode, MaxEncodedLen};
 
 use frame_support::{
 	parameter_types,
@@ -268,9 +268,6 @@ parameter_types! {
 // -end- Collator Selection Pallet ---
 
 // --- Messages Pallet ---
-/// The maximum number of messages per block
-pub type MessagesMaxPerBlock = ConstU32<200>;
-
 impl Clone for MessagesMaxPayloadSizeBytes {
 	fn clone(&self) -> Self {
 		MessagesMaxPayloadSizeBytes {}
@@ -309,12 +306,13 @@ parameter_types! {
 // --- Stateful Storage Pallet ---
 // Needs parameter_types! for the impls below
 parameter_types! {
-	/// The maximum size of a page (in bytes) for an Itemized storage model (64KB)
-	pub const MaxItemizedPageSizeBytes: u32 = 64 * 1024;
-	/// The maximum size of a page (in bytes) for a Paginated storage model (1KB)
-	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 	/// The maximum size of a single item in an itemized storage model (in bytes)
 	pub const MaxItemizedBlobSizeBytes: u32 = 1024;
+	/// The maximum size of a page (in bytes) for an Itemized storage model ~ (10KiB)
+	/// extra 2 bytes is for ItemHeader which enables us to simulate max PoV in benchmarks
+	pub const MaxItemizedPageSizeBytes: u32 = 10 * (1024 + 2);
+	/// The maximum size of a page (in bytes) for a Paginated storage model (1KiB)
+	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 }
 /// The maximum number of pages in a Paginated storage model
 pub type MaxPaginatedPageId = ConstU16<16>;

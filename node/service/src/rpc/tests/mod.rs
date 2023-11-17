@@ -3,9 +3,9 @@ mod rpc_mock;
 use rpc_mock::*;
 
 use crate::rpc::frequency_rpc::{FrequencyRpcApiServer, FrequencyRpcHandler};
-use codec::{Decode, Encode};
 use common_primitives::rpc::RpcEvent;
 use frame_system::{EventRecord, Phase};
+use parity_scale_codec::{Decode, Encode};
 use sp_core::H256;
 use sp_runtime::scale_info::TypeInfo;
 use std::sync::Arc;

@@ -8,13 +8,13 @@
 
 //! Custom APIs for [MSA](../pallet_msa/index.html)
 
-use codec::Codec;
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	msa::{DelegatorId, ProviderId, SchemaGrant},
 	node::BlockNumber,
 	schema::SchemaId,
 };
+use parity_scale_codec::Codec;
 
 use jsonrpsee::{
 	core::{async_trait, RpcResult},

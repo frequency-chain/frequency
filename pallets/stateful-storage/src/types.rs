@@ -1,6 +1,5 @@
 //! Types for the Stateful Storage Pallet
 use crate::Config;
-use codec::{Decode, Encode, MaxEncodedLen};
 use common_primitives::{
 	msa::MessageSourceId,
 	schema::SchemaId,
@@ -8,6 +7,7 @@ use common_primitives::{
 };
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
+use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 use sp_std::{

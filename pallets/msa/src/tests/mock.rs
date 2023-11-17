@@ -1,5 +1,4 @@
 use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
-use codec::MaxEncodedLen;
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
@@ -11,6 +10,7 @@ use frame_support::{
 };
 use frame_system::EnsureRoot;
 use pallet_collective;
+use parity_scale_codec::MaxEncodedLen;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},

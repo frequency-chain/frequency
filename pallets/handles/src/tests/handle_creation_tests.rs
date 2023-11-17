@@ -1,7 +1,7 @@
 use crate::{tests::mock::*, Error, Event};
-use codec::Decode;
 use common_primitives::{handles::HANDLE_BYTES_MAX, msa::MessageSourceId};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
+use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
 use sp_std::collections::btree_set::BTreeSet;
 

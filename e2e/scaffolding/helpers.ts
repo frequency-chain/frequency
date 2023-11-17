@@ -1,150 +1,167 @@
-import { Keyring } from "@polkadot/api";
-import { KeyringPair } from "@polkadot/keyring/types";
-import { u16, u32, u64, Option } from "@polkadot/types";
-import type { PalletCapacityCapacityDetails } from "@polkadot/types/lookup";
-import { Codec } from "@polkadot/types/types";
-import { u8aToHex, u8aWrapBytes } from "@polkadot/util";
+import { Keyring } from '@polkadot/api';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { u16, u32, u64, Option } from '@polkadot/types';
+import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
+import { Codec } from '@polkadot/types/types';
+import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import { env, isTestnet } from "./env";
+import { verbose, isTestnet } from './env';
 import {
   AddKeyData,
   AddProviderPayload,
   EventMap,
   ExtrinsicHelper,
-  ItemizedSignaturePayload, ItemizedSignaturePayloadV2, PaginatedDeleteSignaturePayload,
-  PaginatedDeleteSignaturePayloadV2, PaginatedUpsertSignaturePayload, PaginatedUpsertSignaturePayloadV2
-} from "./extrinsicHelpers";
-import { HandleResponse, MessageSourceId, PageHash } from "@frequency-chain/api-augment/interfaces";
-import assert from "assert";
-import { AVRO_GRAPH_CHANGE } from "../schemas/fixtures/avroGraphChangeSchemaType";
-import { PARQUET_BROADCAST } from "../schemas/fixtures/parquetBroadcastSchemaType";
-import { AVRO_CHAT_MESSAGE } from "../stateful-pallet-storage/fixtures/itemizedSchemaType";
+  ItemizedSignaturePayload,
+  ItemizedSignaturePayloadV2,
+  PaginatedDeleteSignaturePayload,
+  PaginatedDeleteSignaturePayloadV2,
+  PaginatedUpsertSignaturePayload,
+  PaginatedUpsertSignaturePayloadV2,
+} from './extrinsicHelpers';
+import {
+  BlockPaginationResponseMessage,
+  HandleResponse,
+  MessageResponse,
+  MessageSourceId,
+  PageHash,
+} from '@frequency-chain/api-augment/interfaces';
+import assert from 'assert';
+import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
+import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
+import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 
 export interface Account {
-  uri: string,
-  keys: KeyringPair,
+  uri: string;
+  keys: KeyringPair;
 }
 
-export type Sr25519Signature = { Sr25519: `0x${string}` }
+export type Sr25519Signature = { Sr25519: `0x${string}` };
 
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
 
-export function getTestHandle(prefix = "test-") {
-  return prefix + Math.random().toFixed(10).toString().replaceAll("0.", "");
+export function getTestHandle(prefix = 'test-') {
+  return prefix + Math.random().toFixed(10).toString().replaceAll('0.', '');
 }
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
-  return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) }
+  return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) };
 }
 
-export async function generateDelegationPayload(payloadInputs: AddProviderPayload, expirationOffset: number = 100, blockNumber?: number): Promise<AddProviderPayload> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generateDelegationPayload(
+  payloadInputs: AddProviderPayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<AddProviderPayload> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
 export async function getBlockNumber(): Promise<number> {
-  return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber()
+  return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber();
 }
-
 
 let cacheED: null | bigint = null;
 export async function getExistentialDeposit(): Promise<bigint> {
   if (cacheED !== null) return cacheED;
-  return cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt();
+  return (cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt());
 }
 
-export async function generateAddKeyPayload(payloadInputs: AddKeyData, expirationOffset: number = 100, blockNumber?: number): Promise<AddKeyData> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generateAddKeyPayload(
+  payloadInputs: AddKeyData,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<AddKeyData> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generateItemizedSignaturePayload(payloadInputs: ItemizedSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<ItemizedSignaturePayload> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generateItemizedSignaturePayload(
+  payloadInputs: ItemizedSignaturePayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<ItemizedSignaturePayload> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generateItemizedSignaturePayloadV2(payloadInputs: ItemizedSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<ItemizedSignaturePayloadV2> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generateItemizedSignaturePayloadV2(
+  payloadInputs: ItemizedSignaturePayloadV2,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<ItemizedSignaturePayloadV2> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generatePaginatedUpsertSignaturePayload(payloadInputs: PaginatedUpsertSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedUpsertSignaturePayload> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generatePaginatedUpsertSignaturePayload(
+  payloadInputs: PaginatedUpsertSignaturePayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<PaginatedUpsertSignaturePayload> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generatePaginatedUpsertSignaturePayloadV2(payloadInputs: PaginatedUpsertSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedUpsertSignaturePayloadV2> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generatePaginatedUpsertSignaturePayloadV2(
+  payloadInputs: PaginatedUpsertSignaturePayloadV2,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<PaginatedUpsertSignaturePayloadV2> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generatePaginatedDeleteSignaturePayload(payloadInputs: PaginatedDeleteSignaturePayload, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedDeleteSignaturePayload> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generatePaginatedDeleteSignaturePayload(
+  payloadInputs: PaginatedDeleteSignaturePayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<PaginatedDeleteSignaturePayload> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
-export async function generatePaginatedDeleteSignaturePayloadV2(payloadInputs: PaginatedDeleteSignaturePayloadV2, expirationOffset: number = 100, blockNumber?: number): Promise<PaginatedDeleteSignaturePayloadV2> {
-  let { expiration, ...payload } = payloadInputs;
-  if (!expiration) {
-    expiration = (blockNumber || (await getBlockNumber())) + expirationOffset;
-  }
+export async function generatePaginatedDeleteSignaturePayloadV2(
+  payloadInputs: PaginatedDeleteSignaturePayloadV2,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<PaginatedDeleteSignaturePayloadV2> {
+  const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
-  }
+  };
 }
 
 // Keep track of all the funded keys so that we can drain them at the end of the test
@@ -165,62 +182,85 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   return keypair;
 }
 
+function canDrainAccount(info: FrameSystemAccountInfo): boolean {
+  return (
+    !info.isEmpty &&
+    info.data.free.toNumber() > 1_500_000 && // ~Cost to do the transfer
+    info.data.reserved.toNumber() < 1 &&
+    info.data.frozen.toNumber() < 1
+  );
+}
+
 export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
   try {
-    await Promise.allSettled(keyPairs.map(async (keypair) => {
-      const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
-        if (!info.isEmpty && info.data.free.toNumber() > 0) {
-          await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-        }
-    }));
+    await Promise.all(
+      keyPairs.map(async (keypair) => {
+        const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
+        // Only drain keys that can be
+        if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
+      })
+    );
   } catch (e) {
-    console.log("Error draining accounts: ", e);
+    console.log('Error draining accounts: ', e);
   }
 }
 
-export async function fundKeypair(source: KeyringPair, dest: KeyringPair, amount: bigint, nonce?: number): Promise<void> {
+export async function fundKeypair(
+  source: KeyringPair,
+  dest: KeyringPair,
+  amount: bigint,
+  nonce?: number
+): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-export async function createAndFundKeypair(source: KeyringPair, amount?: bigint, keyName?: string, nonce?: number): Promise<KeyringPair> {
+export async function createAndFundKeypair(
+  source: KeyringPair,
+  amount?: bigint,
+  keyName?: string,
+  nonce?: number
+): Promise<KeyringPair> {
   const keypair = createKeys(keyName);
 
-  await fundKeypair(source, keypair, amount || await getExistentialDeposit(), nonce);
-  log("Funded", `Name: ${keyName || "None provided"}`, `Address: ${keypair.address}`);
+  await fundKeypair(source, keypair, amount || (await getExistentialDeposit()), nonce);
+  log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${keypair.address}`);
 
   return keypair;
 }
 
-export async function createAndFundKeypairs(source: KeyringPair, keyNames: string[], amountOverExDep: bigint = 100_000_000n): Promise<KeyringPair[]> {
+export async function createAndFundKeypairs(
+  source: KeyringPair,
+  keyNames: string[],
+  amountOverExDep: bigint = 100_000_000n
+): Promise<KeyringPair[]> {
   const nonce = await getNonce(source);
   const existentialDeposit = await getExistentialDeposit();
 
   const wait: Array<Promise<KeyringPair>> = keyNames.map((keyName, i) => {
     const keypair = createKeys(keyName + ` ${i}th`);
 
-    return fundKeypair(source, keypair, existentialDeposit + amountOverExDep, nonce + i)
-      .then(() => keypair);
+    return fundKeypair(source, keypair, existentialDeposit + amountOverExDep, nonce + i).then(() => keypair);
   });
   return Promise.all(wait);
 }
 
 export function log(...args: any[]) {
-  if (env.verbose) {
+  if (verbose) {
     console.log(...args);
   }
 }
 
-export async function createProviderKeysAndId(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  const providerKeys = await createAndFundKeypair(source);
+export async function createProviderKeysAndId(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  const providerKeys = await createAndFundKeypair(source, amount);
   await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
-  const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, "PrivateProvider");
+  const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider');
   const { target: providerEvent } = await createProviderOp.fundAndSend(source);
   const providerId = providerEvent?.data.providerId || new u64(ExtrinsicHelper.api.registry, 0);
   return [providerKeys, providerId];
 }
 
-export async function createDelegator(source: KeyringPair): Promise<[KeyringPair, u64]> {
-  let keys = await createAndFundKeypair(source);
+export async function createDelegator(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+  const keys = await createAndFundKeypair(source, amount);
   const createMsa = ExtrinsicHelper.createMsa(keys);
   const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
   const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
@@ -228,7 +268,12 @@ export async function createDelegator(source: KeyringPair): Promise<[KeyringPair
   return [keys, delegatorMsaId];
 }
 
-export async function createDelegatorAndDelegation(source: KeyringPair, schemaId: u16, providerId: u64, providerKeys: KeyringPair): Promise<[KeyringPair, u64]> {
+export async function createDelegatorAndDelegation(
+  source: KeyringPair,
+  schemaId: u16,
+  providerId: u64,
+  providerKeys: KeyringPair
+): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa
   const [keys, delegatorMsaId] = await createDelegator(source);
 
@@ -237,9 +282,14 @@ export async function createDelegatorAndDelegation(source: KeyringPair, schemaId
     authorizedMsaId: providerId,
     schemaIds: [schemaId],
   });
-  const addProviderData = ExtrinsicHelper.api.registry.createType("PalletMsaAddProvider", payload);
+  const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
-  const grantDelegationOp = ExtrinsicHelper.grantDelegation(keys, providerKeys, signPayloadSr25519(keys, addProviderData), payload);
+  const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+    keys,
+    providerKeys,
+    signPayloadSr25519(keys, addProviderData),
+    payload
+  );
   await grantDelegationOp.fundAndSend(source);
 
   return [keys, delegatorMsaId];
@@ -267,9 +317,7 @@ export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<H
 
 // Creates an MSA and a provider for the given keys
 // Returns the MSA Id of the provider
-export async function createMsa(source: KeyringPair, amount?: bigint):
-  Promise<[u64, KeyringPair]> {
-
+export async function createMsa(source: KeyringPair, amount?: bigint): Promise<[u64, KeyringPair]> {
   const keys = await createAndFundKeypair(source, amount);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const { target } = await createMsaOp.fundAndSend(source);
@@ -280,8 +328,12 @@ export async function createMsa(source: KeyringPair, amount?: bigint):
 
 // Creates an MSA and a provider for the given keys
 // Returns the MSA Id of the provider
-export async function createMsaAndProvider(source: KeyringPair, keys: KeyringPair, providerName: string, amount: bigint | undefined = undefined):
-  Promise<u64> {
+export async function createMsaAndProvider(
+  source: KeyringPair,
+  keys: KeyringPair,
+  providerName: string,
+  amount: bigint | undefined = undefined
+): Promise<u64> {
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
   await fundKeypair(source, keys, amount || (await getExistentialDeposit()));
@@ -300,20 +352,28 @@ export async function createMsaAndProvider(source: KeyringPair, keys: KeyringPai
 }
 
 // Stakes the given amount of tokens from the given keys to the given provider
-export async function stakeToProvider(source: KeyringPair, keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
+export async function stakeToProvider(
+  source: KeyringPair,
+  keys: KeyringPair,
+  providerId: u64,
+  tokensToStake: bigint
+): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
   if (stakeEvent) {
-    let stakedCapacity = stakeEvent.data.capacity;
+    const stakedCapacity = stakeEvent.data.capacity;
 
     // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
-    let expectedCapacity = tokensToStake / TokenPerCapacity;
+    const expectedCapacity = tokensToStake / TokenPerCapacity;
 
-    assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
-  }
-  else {
+    assert.equal(
+      stakedCapacity,
+      expectedCapacity,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
+    );
+  } else {
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
   }
 }
@@ -329,12 +389,15 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   const { target: setEpochLengthEvent } = await setEpochLengthOp.sudoSignAndSend();
   if (setEpochLengthEvent) {
     const epochLength = setEpochLengthEvent.data.blocks;
-    assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, "should set epoch length to TEST_EPOCH_LENGTH blocks");
+    assert.equal(epochLength.toNumber(), TEST_EPOCH_LENGTH, 'should set epoch length to TEST_EPOCH_LENGTH blocks');
     const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
-    assert.equal(actualEpochLength, TEST_EPOCH_LENGTH, `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`);
-  }
-  else {
-    assert.fail("should return an EpochLengthUpdated event");
+    assert.equal(
+      actualEpochLength,
+      TEST_EPOCH_LENGTH,
+      `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`
+    );
+  } else {
+    assert.fail('should return an EpochLengthUpdated event');
   }
 }
 
@@ -343,14 +406,17 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
     const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
     return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
   } else {
-    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper
-      .createSchema(source, AVRO_GRAPH_CHANGE, "AvroBinary", "OnChain")
-      .fundAndSend(source);
+    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchema(
+      source,
+      AVRO_GRAPH_CHANGE,
+      'AvroBinary',
+      'OnChain'
+    ).fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
       return createSchemaEvent.data.schemaId;
     } else {
-      assert.fail("failed to create a schema")
+      assert.fail('failed to create a schema');
     }
   }
 }
@@ -360,12 +426,12 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
     const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
     return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
   } else {
-    const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, "Parquet", "IPFS");
-    let { target: event } = await createSchema.fundAndSend(source);
+    const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, 'Parquet', 'IPFS');
+    const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
     } else {
-      assert.fail("failed to create a schema")
+      assert.fail('failed to create a schema');
     }
   }
 }
@@ -377,15 +443,15 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
   } else {
     const createDummySchema = ExtrinsicHelper.createSchema(
       source,
-      { type: "record", name: "Dummy on-chain schema", fields: [] },
-      "AvroBinary",
-      "OnChain"
+      { type: 'record', name: 'Dummy on-chain schema', fields: [] },
+      'AvroBinary',
+      'OnChain'
     );
     const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
     if (dummySchemaEvent) {
       return dummySchemaEvent.data.schemaId;
     } else {
-      assert.fail("failed to create a schema")
+      assert.fail('failed to create a schema');
     }
   }
 }
@@ -396,12 +462,12 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
     return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
   } else {
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Paginated");
+    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated');
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
     } else {
-      assert.fail("failed to create a schema")
+      assert.fail('failed to create a schema');
     }
   }
 }
@@ -412,12 +478,12 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
   } else {
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, "AvroBinary", "Itemized");
+    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Itemized');
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
     } else {
-      assert.fail("failed to create a schema")
+      assert.fail('failed to create a schema');
     }
   }
 }
@@ -434,9 +500,37 @@ export async function getNonce(keys: KeyringPair): Promise<number> {
 }
 
 export function assertEvent(events: EventMap, eventName: string) {
-  assert(events.hasOwnProperty(eventName));
+  assert(Object.hasOwn(events, eventName), `Could not find expected event: ${eventName}`);
 }
 
 export function assertExtrinsicSuccess(eventMap: EventMap) {
-  assert.notEqual(eventMap["system.ExtrinsicSuccess"], undefined);
+  assert.notEqual(eventMap['system.ExtrinsicSuccess'], undefined);
+}
+
+export function assertHasMessage(response: BlockPaginationResponseMessage, testFn: (x: MessageResponse) => boolean) {
+  const messages = response.content;
+  assert(messages.length > 0, 'Expected some messages, but found none.');
+
+  const found = messages.find(testFn);
+
+  if (found) {
+    assert.notEqual(found, undefined);
+  } else {
+    const allPayloads = messages.map((x) => x.payload.toString());
+    assert.fail(`Unable to find message in response (length: ${messages.length}, Payloads: ${allPayloads.join(', ')})`);
+  }
+}
+
+export async function assertAddNewKey(
+  capacityKeys: KeyringPair,
+  addKeyPayload: AddKeyData,
+  newControlKeypair: KeyringPair
+) {
+  const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
+  const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
+  const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
+  const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
+  const { eventMap } = await addPublicKeyOp.signAndSend();
+  assertEvent(eventMap, 'system.ExtrinsicSuccess');
+  assertEvent(eventMap, 'msa.PublicKeyAdded');
 }

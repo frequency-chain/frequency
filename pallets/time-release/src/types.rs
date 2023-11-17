@@ -1,7 +1,7 @@
 //! Types for the TimeRelease Pallet
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use codec::{Decode, Encode, HasCompact, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, HasCompact, MaxEncodedLen};
 use sp_runtime::{traits::AtLeast32Bit, RuntimeDebug};
 use sp_std::cmp::{Eq, PartialEq};
 

@@ -2,7 +2,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 use super::*;
-use codec::{Decode, Encode};
+use parity_scale_codec::{Decode, Encode};
 
 use core::fmt::Debug;
 

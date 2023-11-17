@@ -1,7 +1,7 @@
 use crate::{tests::mock::*, Error, Event};
-use codec::Decode;
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_err, assert_ok};
+use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
 
 #[test]

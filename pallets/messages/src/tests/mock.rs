@@ -7,13 +7,13 @@ use common_primitives::{
 	schema::*,
 };
 
-use codec::{Encode, MaxEncodedLen};
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
 	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 };
 use frame_system as system;
+use parity_scale_codec::{Encode, MaxEncodedLen};
 use sp_core::H256;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -67,7 +67,6 @@ impl system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-pub type MaxMessagesPerBlock = ConstU32<500>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 
 // Needs parameter_types! for the impls below
@@ -79,6 +78,7 @@ parameter_types! {
 	// Take care when adding new tests for on-chain (not IPFS) messages that the payload
 	// is not too big.
 	pub const MessagesMaxPayloadSizeBytes: u32 = 73;
+
 }
 
 impl std::fmt::Debug for MessagesMaxPayloadSizeBytes {
@@ -213,6 +213,17 @@ impl SchemaProvider<u16> for SchemaHandler {
 			settings: Vec::new(),
 		})
 	}
+
+	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
+		Self::get_schema_by_id(schema_id).and_then(|schema| {
+			Some(SchemaInfoResponse {
+				schema_id: schema.schema_id,
+				settings: schema.settings,
+				model_type: schema.model_type,
+				payload_location: schema.payload_location,
+			})
+		})
+	}
 }
 
 impl pallet_messages::Config for Test {
@@ -221,7 +232,6 @@ impl pallet_messages::Config for Test {
 	type SchemaGrantValidator = SchemaGrantValidationHandler;
 	type SchemaProvider = SchemaHandler;
 	type WeightInfo = ();
-	type MaxMessagesPerBlock = MaxMessagesPerBlock;
 	type MessagesMaxPayloadSizeBytes = MessagesMaxPayloadSizeBytes;
 
 	/// A set of helper functions for benchmarking.

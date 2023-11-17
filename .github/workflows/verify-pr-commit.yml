@@ -488,6 +488,14 @@ jobs:
           context: .
           push: false
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
+      - name: Build collator standalone
+        env:
+          IMAGE_NAME: standalone-node
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
       - name: Build collator image for local relay chain
         env:
           IMAGE_NAME: collator-node-local
@@ -693,6 +701,9 @@ jobs:
         working-directory: e2e
       - name: Install NPM Modules
         run: npm ci
+        working-directory: e2e
+      - name: Lint
+        run: npm run lint
         working-directory: e2e
       - name: Run E2E Tests
         working-directory: e2e

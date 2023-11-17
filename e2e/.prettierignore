@@ -1,8 +1,11 @@
 # package.json is formatted by package managers, so we ignore it here
 package.json
+package-lock.json
 build/*
+dist/*
 coverage/*
 multimodules/*
 /*.d.ts
 /*.map
 /*.js
+**/*.md

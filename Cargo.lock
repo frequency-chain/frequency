@@ -3715,6 +3715,7 @@ dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-parachain-inherent",
  "derive_more",
+ "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-support",
  "frame-system",
@@ -3728,7 +3729,6 @@ dependencies = [
  "pallet-handles",
  "pallet-msa",
  "pallet-transaction-payment",
- "parity-scale-codec",
  "polkadot-cli",
  "polkadot-parachain-primitives",
  "polkadot-primitives",
@@ -6909,7 +6909,6 @@ dependencies = [
  "frame-support",
  "jsonrpsee",
  "pallet-handles-runtime-api",
- "parity-scale-codec",
  "rayon",
  "sc-client-api",
  "sp-api",
@@ -6925,7 +6924,6 @@ name = "pallet-handles-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "parity-scale-codec",
  "sp-api",
  "sp-std",
 ]
@@ -7052,7 +7050,6 @@ dependencies = [
  "frame-support",
  "jsonrpsee",
  "pallet-messages-runtime-api",
- "parity-scale-codec",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
@@ -7067,7 +7064,6 @@ version = "0.0.0"
 dependencies = [
  "common-primitives",
  "frame-support",
- "parity-scale-codec",
  "sp-api",
 ]
 
@@ -7378,6 +7374,7 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "log",
  "numtoa",
  "pallet-collective",
  "parity-scale-codec",
@@ -7402,7 +7399,6 @@ dependencies = [
  "frame-support",
  "jsonrpsee",
  "pallet-schemas-runtime-api",
- "parity-scale-codec",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
@@ -7420,7 +7416,6 @@ version = "0.0.0"
 dependencies = [
  "common-primitives",
  "frame-support",
- "parity-scale-codec",
  "sp-api",
  "sp-runtime",
  "sp-std",
@@ -7582,7 +7577,6 @@ dependencies = [
  "frame-support",
  "jsonrpsee",
  "pallet-stateful-storage-runtime-api",
- "parity-scale-codec",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
@@ -7600,7 +7594,6 @@ version = "0.0.0"
 dependencies = [
  "common-primitives",
  "frame-support",
- "parity-scale-codec",
  "sp-api",
  "sp-runtime",
 ]
@@ -13591,7 +13584,6 @@ dependencies = [
  "common-primitives",
  "frame-support",
  "frame-system",
- "parity-scale-codec",
  "serde_json",
  "sp-api",
  "sp-runtime",

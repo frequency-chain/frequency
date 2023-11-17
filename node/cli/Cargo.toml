@@ -9,14 +9,13 @@ repository = "https://github.com/LibertyDSNP/frequency/"
 version = "0.0.0"
 
 [dependencies]
-clap = { version = "4.2.5", features = ["derive"] }
-codec = { package = "parity-scale-codec", version = "3.6.1" }
-derive_more = "0.99.17"
-futures = { version = "0.3.28", features = ["thread-pool"] }
-hex-literal = "0.4.1"
-log = "0.4.17"
-serde_json = "1.0.107"
-serde = { version = "1.0", features = ["derive"] }
+clap = { workspace = true, features = ["derive"] }
+derive_more = { workspace = true }
+futures = { workspace = true, features = ["thread-pool"] }
+hex-literal = { workspace = true }
+log = { workspace = true }
+serde_json = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
 # Frequency Runtime
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { package = "common-runtime", path = "../../runtime/common", default-features = false }
@@ -28,39 +27,40 @@ pallet-handles = { package = "pallet-handles", path = "../../pallets/handles", d
 cli-opt = { default-features = false, path = "../cli-opt" }
 
 # Substrate
-frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sc-service = { git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-sc-sysinfo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sc-tracing = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", default-features = false, branch = "release-polkadot-v1.1.0" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
-sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-try-runtime-cli = { git = "https://github.com/paritytech/polkadot-sdk", optional = true, branch = "release-polkadot-v1.1.0" }
+frame-benchmarking-cli = { workspace = true, optional = true }
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+pallet-balances = { workspace = true }
+pallet-transaction-payment = { workspace = true }
+sc-cli = { workspace = true, optional = true }
+sc-client-api = { workspace = true }
+sc-service = { workspace = true, optional = true }
+sc-sysinfo = { workspace = true }
+sc-telemetry = { workspace = true }
+sc-tracing = { workspace = true }
+sc-executor = { workspace = true }
+sp-io = { workspace = true }
+sp-api = { workspace = true }
+sp-core = { workspace = true, optional = true }
+sp-inherents = { workspace = true }
+sp-keyring = { workspace = true }
+sp-runtime = { workspace = true }
+sp-timestamp = { workspace = true }
+try-runtime-cli = { workspace = true, optional = true }
 # Polkadot
-polkadot-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-polkadot-parachain-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-polkadot-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+polkadot-cli = { workspace = true }
+polkadot-parachain-primitives = { workspace = true }
+polkadot-primitives = { workspace = true }
+polkadot-service = { workspace = true }
 # Cumulus
-cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-cumulus-primitives-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
-cumulus-primitives-parachain-inherent = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+cumulus-client-cli = { workspace = true }
+cumulus-client-service = { workspace = true }
+cumulus-primitives-parachain-inherent = { workspace =true }
+cumulus-primitives-core = { workspace = true }
 
 [build-dependencies]
-substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
+substrate-build-script-utils = { workspace = true }
 
 [features]
 std = ["sp-api/std", "sp-io/std"]
@@ -70,6 +70,7 @@ cli = [
   "sc-cli",
   "sc-service",
   "frame-benchmarking-cli",
+  "frame-benchmarking",
   "try-runtime-cli"
 ]
 default = ["std", "cli"]
