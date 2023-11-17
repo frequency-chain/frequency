@@ -74,7 +74,7 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Set Swap Space
-        uses: pierotofy/set-swap-space@master
+        uses: LibertyDSNP/frequency@code-coverage-runner
         with:
           swap-size-gb: 20
       - name: Generate code coverage
