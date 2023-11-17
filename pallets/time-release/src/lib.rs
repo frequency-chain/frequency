@@ -40,8 +40,11 @@ use frame_support::{
 	ensure,
 	pallet_prelude::*,
 	traits::{
-		BuildGenesisConfig, Currency, EnsureOrigin, ExistenceRequirement, Get, LockIdentifier,
-		LockableCurrency, WithdrawReasons,
+		tokens::{
+			fungible::{Inspect as InspectFungible, Mutate, MutateFreeze},
+			Balance, Preservation,
+		},
+		BuildGenesisConfig, EnsureOrigin, Get,
 	},
 	BoundedVec,
 };
@@ -68,15 +71,13 @@ mod benchmarking;
 
 pub use module::*;
 
-/// The lock identifier for timed released transfers.
-pub const RELEASE_LOCK_ID: LockIdentifier = *b"timeRels";
-
 #[frame_support::pallet]
 pub mod module {
 	use super::*;
 
-	pub(crate) type BalanceOf<T> =
-		<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	pub(crate) type BalanceOf<T> = <<T as Config>::Currency as InspectFungible<
+		<T as frame_system::Config>::AccountId,
+	>>::Balance;
 	pub(crate) type ReleaseScheduleOf<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 	/// Scheduled item used for configuring genesis.
@@ -88,13 +89,30 @@ pub mod module {
 		BalanceOf<T>,
 	);
 
+	/// A reason for freezing funds.
+	#[pallet::composite_enum]
+	pub enum FreezeReason {
+		/// The account is staked.
+		#[codec(index = 0)]
+		Staked,
+		/// An account with time released assets.
+		TimeReleased,
+	}
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// The overarching freeze reason.
+		type RuntimeFreezeReason: From<FreezeReason>;
+
+		/// We need MaybeSerializeDeserialize because of the genesis config.
+		type Balance: Balance + MaybeSerializeDeserialize;
+
 		/// The currency trait used to set a lock on a balance.
-		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ InspectFungible<Self::AccountId, Balance = Self::Balance>
+			+ Mutate<Self::AccountId>;
 
 		#[pallet::constant]
 		/// The minimum amount transferred to call `transfer`.
@@ -207,15 +225,14 @@ pub mod module {
 						.expect("Invalid release schedule");
 
 					assert!(
-						T::Currency::free_balance(who) >= total_amount,
+						T::Currency::balance(who) >= total_amount,
 						"Account do not have enough balance"
 					);
 
-					T::Currency::set_lock(
-						RELEASE_LOCK_ID,
+					let _ = T::Currency::set_freeze(
+						&FreezeReason::TimeReleased.into(),
 						who,
 						total_amount,
-						WithdrawReasons::all(),
 					);
 					ReleaseSchedules::<T>::insert(who, bounded_schedules);
 				});
@@ -268,7 +285,7 @@ pub mod module {
 
 			if to == from {
 				ensure!(
-					T::Currency::free_balance(&from) >=
+					T::Currency::balance(&from) >=
 						schedule.total_amount().ok_or(ArithmeticError::Overflow)?,
 					Error::<T>::InsufficientBalanceToLock,
 				);
@@ -385,7 +402,7 @@ impl<T: Config> Pallet<T> {
 			.checked_add(&schedule_amount)
 			.ok_or(ArithmeticError::Overflow)?;
 
-		T::Currency::transfer(from, to, schedule_amount, ExistenceRequirement::AllowDeath)?;
+		T::Currency::transfer(from, to, schedule_amount, Preservation::Expendable)?;
 
 		Self::update_lock(&to, total_amount);
 
@@ -418,10 +435,7 @@ impl<T: Config> Pallet<T> {
 				},
 			)?;
 
-		ensure!(
-			T::Currency::free_balance(who) >= total_amount,
-			Error::<T>::InsufficientBalanceToLock,
-		);
+		ensure!(T::Currency::balance(who) >= total_amount, Error::<T>::InsufficientBalanceToLock,);
 
 		Self::update_lock(&who, total_amount);
 		Self::set_schedules_for(who, bounded_schedules);
@@ -430,11 +444,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) {
-		T::Currency::set_lock(RELEASE_LOCK_ID, who, locked, WithdrawReasons::all());
+		let _ = T::Currency::set_freeze(&FreezeReason::TimeReleased.into(), who, locked);
 	}
 
 	fn delete_lock(who: &T::AccountId) {
-		T::Currency::remove_lock(RELEASE_LOCK_ID, who);
+		let _ = T::Currency::thaw(&FreezeReason::TimeReleased.into(), who);
 	}
 
 	fn set_schedules_for(

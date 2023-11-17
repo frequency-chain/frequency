@@ -1,9 +1,16 @@
 //! Unit tests for the time-release module.
 use super::*;
 use chrono::{DateTime, Days, Duration, TimeZone, Utc};
-use frame_support::{assert_noop, assert_ok, error::BadOrigin, traits::Imbalance};
+use frame_support::{
+	assert_noop, assert_ok,
+	error::BadOrigin,
+	traits::{
+		fungible::{Inspect, InspectFreeze},
+		tokens::Fortitude,
+		Currency, WithdrawReasons,
+	},
+};
 use mock::*;
-use pallet_balances::{BalanceLock, Reasons};
 use sp_runtime::{traits::Dispatchable, SaturatedConversion, TokenError};
 
 #[test]
@@ -113,8 +120,8 @@ fn add_new_release_schedule_merges_with_current_locked_balance_and_until() {
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, another_schedule));
 
 		assert_eq!(
-			PalletBalances::locks(&BOB).get(0),
-			Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 17u64, reasons: Reasons::All })
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			17u64
 		);
 	});
 }
@@ -218,10 +225,13 @@ fn claim_works() {
 		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(BOB), ALICE, 10));
 		// all used up
-		assert_eq!(PalletBalances::free_balance(BOB), 0);
+		assert_eq!(<Test as Config>::Currency::balance(&BOB), 0);
 
 		// no locks anymore
-		assert_eq!(PalletBalances::locks(&BOB), vec![]);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 	});
 }
 
@@ -235,8 +245,8 @@ fn claim_for_works() {
 		assert_ok!(TimeRelease::claim_for(RuntimeOrigin::signed(ALICE), BOB));
 
 		assert_eq!(
-			PalletBalances::locks(&BOB).get(0),
-			Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 20u64, reasons: Reasons::All })
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			20u64
 		);
 		assert!(ReleaseSchedules::<Test>::contains_key(&BOB));
 
@@ -245,7 +255,10 @@ fn claim_for_works() {
 		assert_ok!(TimeRelease::claim_for(RuntimeOrigin::signed(ALICE), BOB));
 
 		// no locks anymore
-		assert_eq!(PalletBalances::locks(&BOB), vec![]);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
 	});
 }
@@ -276,12 +289,15 @@ fn update_release_schedules_works() {
 		// empty release schedules cleanup the storage and unlock the fund
 		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_eq!(
-			PalletBalances::locks(&BOB).get(0),
-			Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 10u64, reasons: Reasons::All })
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			10u64
 		);
 		assert_ok!(TimeRelease::update_release_schedules(RuntimeOrigin::root(), BOB, vec![]));
 		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
-		assert_eq!(PalletBalances::locks(&BOB), vec![]);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 	});
 }
 
@@ -289,7 +305,8 @@ fn update_release_schedules_works() {
 fn update_release_schedules_fails_if_unexpected_existing_locks() {
 	ExtBuilder::build().execute_with(|| {
 		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(ALICE), BOB, 1));
-		PalletBalances::set_lock(*b"prelocks", &BOB, 0u64, WithdrawReasons::all());
+		let _ =
+			<Test as Config>::Currency::set_freeze(&FreezeReason::TimeReleased.into(), &BOB, 0u64);
 	});
 }
 
@@ -330,7 +347,10 @@ fn multiple_release_schedule_claim_works() {
 
 		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
 
-		assert_eq!(PalletBalances::locks(&BOB), vec![]);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 	});
 }
 
@@ -380,19 +400,25 @@ fn cliff_release_works() {
 			per_period: VESTING_AMOUNT,
 		};
 
-		let balance_lock =
-			BalanceLock { id: RELEASE_LOCK_ID, amount: VESTING_AMOUNT, reasons: Reasons::All };
-
-		assert_eq!(PalletBalances::free_balance(BOB), 0);
+		assert_eq!(<Test as Config>::Currency::balance(&BOB), 0);
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, cliff_schedule));
-		assert_eq!(PalletBalances::free_balance(BOB), VESTING_AMOUNT);
-		assert_eq!(PalletBalances::locks(&BOB), vec![balance_lock.clone()]);
+		assert_eq!(<Test as Config>::Currency::balance(&BOB), VESTING_AMOUNT);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			VESTING_AMOUNT
+		);
 
 		for i in 1..VESTING_PERIOD {
 			MockBlockNumberProvider::set(i);
 			assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-			assert_eq!(PalletBalances::free_balance(BOB), VESTING_AMOUNT);
-			assert_eq!(PalletBalances::locks(&BOB), vec![balance_lock.clone()]);
+			assert_eq!(<Test as Config>::Currency::balance(&BOB), VESTING_AMOUNT);
+			assert_eq!(
+				<Test as Config>::Currency::balance_frozen(
+					&FreezeReason::TimeReleased.into(),
+					&BOB
+				),
+				VESTING_AMOUNT
+			);
 			assert_noop!(
 				PalletBalances::transfer_allow_death(
 					RuntimeOrigin::signed(BOB),
@@ -405,7 +431,10 @@ fn cliff_release_works() {
 
 		MockBlockNumberProvider::set(VESTING_PERIOD);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert!(PalletBalances::locks(&BOB).is_empty());
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 		assert_ok!(PalletBalances::transfer_allow_death(
 			RuntimeOrigin::signed(BOB),
 			CHARLIE,
@@ -454,19 +483,36 @@ fn alice_time_releases_schedule() {
 
 		// Bob starts with zero balance and zero locks.
 		assert_eq!(get_balance::<Test>(&BOB), 0);
-		assert!(PalletBalances::locks(&BOB).is_empty());
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 
 		// Time release transfer is initiated by Alice to Bob. As a result, Bobs free-balance
 		// increases by the total amount scheduled to be time-released.
 		// However, it cannot spent because a lock is put on the balance.
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 		assert_eq!(get_balance::<Test>(&BOB), 24_996);
-		assert_eq!(PalletBalances::locks(&BOB).len(), 1usize);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			24996
+		);
+		assert_eq!(
+			<Test as Config>::Currency::reducible_balance(
+				&BOB,
+				Preservation::Expendable,
+				Fortitude::Polite
+			),
+			0
+		);
 
 		// Bob naively attempts to claim the transfer before the scheduled release date
 		// and nothing happens because the schedule release has yet to start.
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert_eq!(PalletBalances::locks(&BOB).first().unwrap().amount, 24_996);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			24_996
+		);
 
 		let time_release_transfer_data: Vec<(DateTime<Utc>, _)> =
 			time_release_transfers_data::<Test>();
@@ -494,7 +540,10 @@ fn alice_time_releases_schedule() {
 		// Doing a claim does not do anything
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		// Since the first issuance the total amount locked increases by the new transfers: 24_996;
-		assert_eq!(PalletBalances::locks(&BOB).first().unwrap().amount, total_locked);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			total_locked
+		);
 
 		let july_2024_sept_2024: Vec<DateTime<Utc>> = vec![
 			Utc.with_ymd_and_hms(2024, 7, 1, 0, 0, 0).unwrap(),
@@ -509,7 +558,13 @@ fn alice_time_releases_schedule() {
 			MockBlockNumberProvider::set(date_to_approximate_block_number(month.clone()).into());
 			assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 			total_locked -= 4_166 as u64;
-			assert_eq!(PalletBalances::locks(&BOB).first().unwrap().amount, total_locked);
+			assert_eq!(
+				<Test as Config>::Currency::balance_frozen(
+					&FreezeReason::TimeReleased.into(),
+					&BOB
+				),
+				total_locked
+			);
 		}
 
 		// quarter-6:  time-release transfer AND monthly claim
@@ -530,7 +585,10 @@ fn alice_time_releases_schedule() {
 		// new transfer_total - one_month_of_time_release
 		total_locked += total_transfered;
 		total_locked -= 4_166;
-		assert_eq!(PalletBalances::locks(&BOB).first().unwrap().amount, total_locked);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			total_locked
+		);
 
 		// quarter-7-12:  time-release transfer AND monthly claim
 		let jan_2025_to_april_2026_quarterly_data = &time_release_transfer_data[6..];
@@ -557,18 +615,23 @@ fn alice_time_releases_schedule() {
 				.into(),
 		);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-		assert_eq!(PalletBalances::locks(&BOB).first(), None);
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleased.into(), &BOB),
+			0
+		);
 	});
 }
 
 fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
-	T::Currency::free_balance(who)
+	T::Currency::balance(who)
 }
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let deposit_result = T::Currency::deposit_creating(who, balance.saturated_into());
-	let actual_deposit = deposit_result.peek();
-	assert_eq!(balance, actual_deposit);
+	let _ = T::Currency::mint_into(&who, balance.saturated_into());
+	assert_eq!(
+		T::Currency::balance(who).saturated_into::<u64>(),
+		balance.saturated_into::<u64>() + 100u64
+	);
 }
 
 fn build_time_release_schedule<T: Config>(

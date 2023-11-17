@@ -50,10 +50,10 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
-	type FreezeIdentifier = ();
-	type MaxHolds = ConstU32<0>;
-	type MaxFreezes = ConstU32<0>;
+	type FreezeIdentifier = RuntimeFreezeReason;
+	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type MaxHolds = ConstU32<0>;
 }
 
 pub struct EnsureAliceOrBob;
@@ -99,6 +99,8 @@ impl Config for Test {
 	type WeightInfo = ();
 	type MaxReleaseSchedules = ConstU32<50>;
 	type BlockNumberProvider = MockBlockNumberProvider;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type Balance = Balance;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
@@ -107,7 +109,7 @@ construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>},
+		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>, FreezeReason},
 		PalletBalances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
