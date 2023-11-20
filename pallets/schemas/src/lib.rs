@@ -75,7 +75,7 @@ mod tests;
 mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
-use common_primitives::schema::{SchemaInfoResponse, SchemaVersion, SchemaVersionResponse};
+use common_primitives::schema::{SchemaInfoResponse, SchemaVersionResponse};
 /// migration module
 pub mod migration;
 mod types;
@@ -186,11 +186,11 @@ pub mod pallet {
 		/// Invalid schema descriptor length
 		InvalidSchemaDescriptorLength,
 
-		/// Invalid schema version
-		InvalidSchemaVersion,
+		/// Schema version exceeds the maximum allowed number
+		ExceedsMaxNumberOfVersions,
 
-		/// Schema name and version already registered
-		SchemaNameAndVersionAlreadyRegistered,
+		/// Inserted schema id already exists
+		SchemaIdAlreadyExists,
 	}
 
 	#[pallet::pallet]
@@ -237,15 +237,15 @@ pub mod pallet {
 	/// - Key: Schema Id
 	/// - Value: [`SchemaInfo`](SchemaInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_id)]
-	pub(super) type SchemaNamesToId<T: Config> = StorageDoubleMap<
+	#[pallet::getter(fn get_schema_ids)]
+	pub(super) type SchemaNameToIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
-		SchemaName,
+		SchemaNamespace,
 		Blake2_128Concat,
-		SchemaVersion,
-		SchemaId,
-		OptionQuery,
+		SchemaDescriptor,
+		SchemaVersionId,
+		ValueQuery,
 	>;
 
 	#[pallet::genesis_config]
@@ -429,6 +429,40 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Create a schema by means of council approval
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32))]
+		pub fn create_schema_via_governance_v2(
+			origin: OriginFor<T>,
+			creator_key: T::AccountId,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			schema_name: Option<SchemaNamePayload>,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+			let schema_id = Self::create_schema_for(
+				model,
+				model_type,
+				payload_location,
+				settings,
+				schema_name,
+			)?;
+
+			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
+			Ok(())
+		}
+
 		/// Adds a given schema to storage. The schema in question must be of length
 		/// between the min and max model size allowed for schemas (see pallet
 		/// constants above). If the pallet's maximum schema limit has been
@@ -445,16 +479,15 @@ pub mod pallet {
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		/// * [`Error::InvalidSetting`] - Invalid setting is provided
 		///
-		#[pallet::call_index(5)]
+		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::create_schema_v3(model.len() as u32 + settings.len() as u32))]
 		pub fn create_schema_v3(
 			origin: OriginFor<T>,
-			schema_name: SchemaNamePayload,
-			schema_version: SchemaVersion,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			schema_name: Option<SchemaNamePayload>,
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
@@ -463,7 +496,7 @@ pub mod pallet {
 				model_type,
 				payload_location,
 				settings,
-				Some((schema_name, schema_version)),
+				schema_name,
 			)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
@@ -485,20 +518,9 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name_version: Option<(SchemaNamePayload, SchemaVersion)>,
+			schema_name_option: Option<SchemaName>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
-			let (schema_name, version) = match schema_name_version {
-				Some((name_payload, schema_version)) => {
-					let parsed_name = SchemaName::try_parse::<T>(name_payload)?;
-					(parsed_name, schema_version)
-				},
-				None => {
-					// no name is provided since coming from an old extrinsic, auto assign a name
-					let parsed_name = SchemaName::create_old::<T>(schema_id)?;
-					(parsed_name, 1)
-				},
-			};
 			let mut set_settings = SchemaSettings::all_disabled();
 			if !settings.is_empty() {
 				for i in settings.into_inner() {
@@ -506,25 +528,23 @@ pub mod pallet {
 				}
 			}
 
-			SchemaNamesToId::<T>::try_mutate(
-				schema_name,
-				version,
-				|maybe_schema_id| -> Result<SchemaId, DispatchError> {
-					ensure!(
-						maybe_schema_id.is_none(),
-						Error::<T>::SchemaNameAndVersionAlreadyRegistered
-					);
+			if let Some(schema_name) = schema_name_option {
+				SchemaNameToIds::<T>::try_mutate(
+					schema_name.namespace,
+					schema_name.descriptor,
+					|schema_version_id| -> Result<(), DispatchError> {
+						schema_version_id.add::<T>(schema_id)?;
+						Ok(())
+					},
+				)?;
+			};
 
-					let schema_info =
-						SchemaInfo { model_type, payload_location, settings: set_settings };
-					<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
-					<SchemaInfos<T>>::insert(schema_id, schema_info);
-					<SchemaPayloads<T>>::insert(schema_id, model);
-					*maybe_schema_id = Some(schema_id);
+			let schema_info = SchemaInfo { model_type, payload_location, settings: set_settings };
+			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
+			<SchemaInfos<T>>::insert(schema_id, schema_info);
+			<SchemaPayloads<T>>::insert(schema_id, model);
 
-					Ok(schema_id)
-				},
-			)
+			Ok(schema_id)
 		}
 
 		/// Retrieve a schema by id
@@ -618,7 +638,7 @@ pub mod pallet {
 			model_type: ModelType,
 			payload_location: PayloadLocation,
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
-			schema_name_version: Option<(SchemaNamePayload, SchemaVersion)>,
+			optional_schema_name: Option<SchemaNamePayload>,
 		) -> Result<SchemaId, DispatchError> {
 			Self::ensure_valid_model(&model_type, &model)?;
 			ensure!(
@@ -635,20 +655,29 @@ pub mod pallet {
 					payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
-			Self::add_schema(model, model_type, payload_location, settings, schema_name_version)
+			let schema_name = match optional_schema_name {
+				None => None,
+				Some(name_payload) => {
+					let parsed_name = SchemaName::try_parse::<T>(name_payload, true)?;
+					Some(parsed_name)
+				},
+			};
+			Self::add_schema(model, model_type, payload_location, settings, schema_name)
 		}
 
 		/// a method to return all versions of a schema name with their schemaIds
 		pub fn get_schema_versions(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
 			let bounded_name = BoundedVec::try_from(schema_name).ok()?;
-			let parsed_name = SchemaName::try_parse::<T>(bounded_name).ok()?;
-			let mut versions: Vec<_> = SchemaNamesToId::<T>::iter_prefix(parsed_name)
-				.map(|(schema_version, schema_id)| SchemaVersionResponse {
-					schema_version,
-					schema_id,
-				})
-				.collect();
-			versions.sort_by(|a, b| a.schema_version.cmp(&b.schema_version));
+			let parsed_name = SchemaName::try_parse::<T>(bounded_name, false).ok()?;
+			let versions: Vec<_> = match parsed_name.descriptor_exists() {
+				true => SchemaNameToIds::<T>::get(&parsed_name.namespace, &parsed_name.descriptor)
+					.convert_to_response(parsed_name),
+				false => SchemaNameToIds::<T>::iter_prefix(&parsed_name.namespace)
+					.flat_map(|(descriptor, val)| {
+						val.convert_to_response(parsed_name.new_with_descriptor(descriptor))
+					})
+					.collect(),
+			};
 			Some(versions)
 		}
 	}

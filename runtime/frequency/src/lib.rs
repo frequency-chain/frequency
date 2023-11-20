@@ -216,7 +216,7 @@ pub type Executive = frame_executive::Executive<
 	AllPalletsWithSystem,
 	(
 		pallet_messages::migration::v2::MigrateToV2<Runtime>,
-		pallet_schemas::migration::v2::MigrateToV2<Runtime>,
+		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
 	),
 >;
 

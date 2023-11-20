@@ -137,6 +137,9 @@ impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct SchemaVersionResponse {
+	/// Base handle (without delimiter or suffix)
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub schema_name: Vec<u8>,
 	/// The version for this schema
 	pub schema_version: SchemaVersion,
 	/// The unique identifier for this Schema
