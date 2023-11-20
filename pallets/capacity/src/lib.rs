@@ -99,7 +99,7 @@ pub mod pallet {
 	/// A reason for freezing funds.
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
-		/// The account is staked.
+		/// The account has staked tokens to the Frequency network.
 		#[codec(index = 0)]
 		Staked,
 	}
@@ -115,7 +115,7 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// Function that allows a balance to be locked.
+		/// Functions that allow a fungible balance to be changed or frozen.
 		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
 			+ Mutate<Self::AccountId>
 			+ InspectFreeze<Self::AccountId>

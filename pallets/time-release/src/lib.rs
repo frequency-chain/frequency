@@ -92,11 +92,9 @@ pub mod module {
 	/// A reason for freezing funds.
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
-		/// The account is staked.
+		/// Funds are currently locked and are not yet liquid.
 		#[codec(index = 0)]
-		Staked,
-		/// An account with time released assets.
-		TimeReleased,
+		NotYetVested,
 	}
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -230,7 +228,7 @@ pub mod module {
 					);
 
 					let _ = T::Currency::set_freeze(
-						&FreezeReason::TimeReleased.into(),
+						&FreezeReason::NotYetVested.into(),
 						who,
 						total_amount,
 					);
@@ -444,11 +442,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) {
-		let _ = T::Currency::set_freeze(&FreezeReason::TimeReleased.into(), who, locked);
+		let _ = T::Currency::set_freeze(&FreezeReason::NotYetVested.into(), who, locked);
 	}
 
 	fn delete_lock(who: &T::AccountId) {
-		let _ = T::Currency::thaw(&FreezeReason::TimeReleased.into(), who);
+		let _ = T::Currency::thaw(&FreezeReason::NotYetVested.into(), who);
 	}
 
 	fn set_schedules_for(
