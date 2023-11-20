@@ -22,9 +22,9 @@ runs:
     - name: Set Swap
       shell: bash
       run: |
-          export SWAP_FILE=$(swapon --show=NAME | tail -n 1)
-          swapoff $SWAP_FILE
-          rm $SWAP_FILE
+          export SWAP_FILE="/tmp/swap"
+          swapoff $SWAP_FILE || true
+          rm -f $SWAP_FILE
           fallocate -l ${{ inputs.swap-size-gb }}G $SWAP_FILE
           chmod 600 $SWAP_FILE
           mkswap $SWAP_FILE
