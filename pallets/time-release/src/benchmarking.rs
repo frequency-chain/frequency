@@ -15,13 +15,9 @@ pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 const SEED: u32 = 0;
 
-// TODO: this function is duplicated in pallets/time-release/src/mock.rs
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let _ = T::Currency::mint_into(&who, balance.saturated_into());
-	assert_eq!(
-		T::Currency::balance(who).saturated_into::<u64>(),
-		balance.saturated_into::<u64>() + 100u64
-	);
+	let actual_deposit = T::Currency::mint_into(&who, balance.saturated_into());
+	assert_eq!(balance, actual_deposit.unwrap());
 }
 
 fn lookup_of_account<T: Config>(
