@@ -202,7 +202,7 @@ parameter_types! {
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-	type Currency = Self::Currency;
+	type Currency = pallet_balances::Pallet<Self>;
 	type TargetValidator = ();
 	// In test, this must be >= Token:Capacity ratio since unit is plancks
 	type MinimumStakingAmount = ConstU64<10>;
