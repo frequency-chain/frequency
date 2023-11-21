@@ -1,5 +1,5 @@
 use common_primitives::msa::MsaValidator;
-use frame_support::traits::tokens::{Balance, fungible::Inspect as InspectFungible};
+use frame_support::traits::tokens::{fungible::Inspect as InspectFungible, Balance};
 use sp_std::marker::PhantomData;
 
 use super::*;
