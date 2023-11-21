@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
-			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
+			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 			FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>},
 			Utility: pallet_utility::{Pallet, Call, Storage, Event},
@@ -202,7 +202,7 @@ parameter_types! {
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
-	type Currency = pallet_balances::Pallet<Self>;
+	type Currency = Self::Currency;
 	type TargetValidator = ();
 	// In test, this must be >= Token:Capacity ratio since unit is plancks
 	type MinimumStakingAmount = ConstU64<10>;
@@ -216,6 +216,7 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 use pallet_balances::Call as BalancesCall;

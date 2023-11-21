@@ -92,10 +92,13 @@ pub mod module {
 	/// A reason for freezing funds.
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
-		/// Funds are currently locked and are not yet liquid.
 		#[codec(index = 0)]
+		/// Funds are staked.
+		Staked,
+		/// Funds are currently locked and are not yet liquid.
 		NotYetVested,
 	}
+	// use crate::pallet_capacity::FreezeReason;
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.

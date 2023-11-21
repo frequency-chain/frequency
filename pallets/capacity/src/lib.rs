@@ -102,6 +102,8 @@ pub mod pallet {
 		/// The account has staked tokens to the Frequency network.
 		#[codec(index = 0)]
 		Staked,
+		/// Funds are currently locked and are not yet liquid.
+		NotYetVested,
 	}
 
 	#[pallet::config]

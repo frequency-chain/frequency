@@ -261,7 +261,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 64,
+	spec_version: 65,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -275,7 +275,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 64,
+	spec_version: 65,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -407,7 +407,7 @@ impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
 	// REVIEW: Change Currency->Fungible
-	type Currency = Balances;
+	type Currency = Self::Currency;
 	type MinimumStakingAmount = CapacityMinimumStakingAmount;
 	type MinimumTokenBalance = CapacityMinimumTokenBalance;
 	type TargetValidator = Msa;
@@ -794,6 +794,7 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
+	type Currency = Self::Currency;
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;
