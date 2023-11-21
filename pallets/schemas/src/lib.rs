@@ -148,6 +148,14 @@ pub mod pallet {
 			/// Max size of schema document
 			max_size: u32,
 		},
+
+		/// Emitted when a schema is assigned a name
+		SchemaNameCreated {
+			/// Schema ID which a name is assigned
+			schema_id: SchemaId,
+			/// ASCII string in bytes of the assigned name
+			name: Vec<u8>,
+		},
 	}
 
 	#[derive(PartialEq, Eq)] // for testing
@@ -300,7 +308,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			let schema_id = Self::create_schema_for(
+			let (schema_id, _) = Self::create_schema_for(
 				model,
 				model_type,
 				payload_location,
@@ -344,6 +352,10 @@ pub mod pallet {
 		///
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::propose_to_create_schema(model.len() as u32))]
+		#[allow(deprecated)]
+		#[deprecated(
+			note = "please use `propose_to_create_schema_v2` since `propose_to_create_schema` has been deprecated."
+		)]
 		pub fn propose_to_create_schema(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -379,6 +391,10 @@ pub mod pallet {
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		#[pallet::call_index(3)]
 		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32))]
+		#[allow(deprecated)]
+		#[deprecated(
+			note = "please use `create_schema_via_governance_v2` since `create_schema_via_governance` has been deprecated."
+		)]
 		pub fn create_schema_via_governance(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
@@ -388,7 +404,7 @@ pub mod pallet {
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
-			let schema_id =
+			let (schema_id, _) =
 				Self::create_schema_for(model, model_type, payload_location, settings, None)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
@@ -413,6 +429,10 @@ pub mod pallet {
 		///
 		#[pallet::call_index(4)]
 		#[pallet::weight(T::WeightInfo::create_schema_v2(model.len() as u32 + settings.len() as u32))]
+		#[allow(deprecated)]
+		#[deprecated(
+			note = "please use `create_schema_v3` since `create_schema_v2` has been deprecated."
+		)]
 		pub fn create_schema_v2(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -422,10 +442,39 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			let schema_id =
+			let (schema_id, _) =
 				Self::create_schema_for(model, model_type, payload_location, settings, None)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
+			Ok(())
+		}
+
+		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		///
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_schema(model.len() as u32))]
+		pub fn propose_to_create_schema_v2(
+			origin: OriginFor<T>,
+			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+			model_type: ModelType,
+			payload_location: PayloadLocation,
+			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+			schema_name: Option<SchemaNamePayload>,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_schema_via_governance_v2 {
+					creator_key: proposer.clone(),
+					model,
+					model_type,
+					payload_location,
+					settings,
+					schema_name,
+				})
+				.into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
 			Ok(())
 		}
 
@@ -439,7 +488,7 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		#[pallet::call_index(5)]
+		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32))]
 		pub fn create_schema_via_governance_v2(
 			origin: OriginFor<T>,
@@ -451,7 +500,7 @@ pub mod pallet {
 			schema_name: Option<SchemaNamePayload>,
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
-			let schema_id = Self::create_schema_for(
+			let (schema_id, schema_name) = Self::create_schema_for(
 				model,
 				model_type,
 				payload_location,
@@ -460,6 +509,12 @@ pub mod pallet {
 			)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: creator_key, schema_id });
+			if let Some(inner_name) = schema_name {
+				Self::deposit_event(Event::SchemaNameCreated {
+					schema_id,
+					name: inner_name.get_combined_name(),
+				});
+			}
 			Ok(())
 		}
 
@@ -479,7 +534,7 @@ pub mod pallet {
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		/// * [`Error::InvalidSetting`] - Invalid setting is provided
 		///
-		#[pallet::call_index(6)]
+		#[pallet::call_index(7)]
 		#[pallet::weight(T::WeightInfo::create_schema_v3(model.len() as u32 + settings.len() as u32))]
 		pub fn create_schema_v3(
 			origin: OriginFor<T>,
@@ -491,7 +546,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let sender = ensure_signed(origin)?;
 
-			let schema_id = Self::create_schema_for(
+			let (schema_id, schema_name) = Self::create_schema_for(
 				model,
 				model_type,
 				payload_location,
@@ -500,7 +555,48 @@ pub mod pallet {
 			)?;
 
 			Self::deposit_event(Event::SchemaCreated { key: sender, schema_id });
+			if let Some(inner_name) = schema_name {
+				Self::deposit_event(Event::SchemaNameCreated {
+					schema_id,
+					name: inner_name.get_combined_name(),
+				});
+			}
 			Ok(())
+		}
+
+		/// Assigns a name to a schema without any name
+		///
+		/// # Events
+		/// * [`Event::SchemaCreated`]
+		///
+		/// # Errors
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::create_schema_via_governance(schema_name.len() as u32))]
+		pub fn create_schema_name_via_governance(
+			origin: OriginFor<T>,
+			schema_id: SchemaId,
+			schema_name: SchemaNamePayload,
+		) -> DispatchResult {
+			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
+
+			let parsed_name = SchemaName::try_parse::<T>(schema_name, true)?;
+			SchemaNameToIds::<T>::try_mutate(
+				&parsed_name.namespace,
+				&parsed_name.descriptor,
+				|schema_version_id| -> DispatchResult {
+					schema_version_id.add::<T>(schema_id)?;
+
+					Self::deposit_event(Event::SchemaNameCreated {
+						schema_id,
+						name: parsed_name.get_combined_name(),
+					});
+					Ok(())
+				},
+			)
 		}
 	}
 
@@ -639,7 +735,7 @@ pub mod pallet {
 			payload_location: PayloadLocation,
 			settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
 			optional_schema_name: Option<SchemaNamePayload>,
-		) -> Result<SchemaId, DispatchError> {
+		) -> Result<(SchemaId, Option<SchemaName>), DispatchError> {
 			Self::ensure_valid_model(&model_type, &model)?;
 			ensure!(
 				model.len() >= T::MinSchemaModelSizeBytes::get() as usize,
@@ -662,7 +758,14 @@ pub mod pallet {
 					Some(parsed_name)
 				},
 			};
-			Self::add_schema(model, model_type, payload_location, settings, schema_name)
+			let schema_id = Self::add_schema(
+				model,
+				model_type,
+				payload_location,
+				settings,
+				schema_name.clone(),
+			)?;
+			Ok((schema_id, schema_name))
 		}
 
 		/// a method to return all versions of a schema name with their schemaIds
@@ -671,10 +774,10 @@ pub mod pallet {
 			let parsed_name = SchemaName::try_parse::<T>(bounded_name, false).ok()?;
 			let versions: Vec<_> = match parsed_name.descriptor_exists() {
 				true => SchemaNameToIds::<T>::get(&parsed_name.namespace, &parsed_name.descriptor)
-					.convert_to_response(parsed_name),
+					.convert_to_response(&parsed_name),
 				false => SchemaNameToIds::<T>::iter_prefix(&parsed_name.namespace)
 					.flat_map(|(descriptor, val)| {
-						val.convert_to_response(parsed_name.new_with_descriptor(descriptor))
+						val.convert_to_response(&parsed_name.new_with_descriptor(descriptor))
 					})
 					.collect(),
 			};

@@ -149,7 +149,7 @@ impl SchemaVersionId {
 	}
 
 	/// convert into a response vector
-	pub fn convert_to_response(&self, schema_name: SchemaName) -> Vec<SchemaVersionResponse> {
+	pub fn convert_to_response(&self, schema_name: &SchemaName) -> Vec<SchemaVersionResponse> {
 		self.ids
 			.iter()
 			.enumerate()

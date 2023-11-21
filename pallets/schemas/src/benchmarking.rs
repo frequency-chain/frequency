@@ -1,4 +1,5 @@
 #![allow(clippy::unwrap_used)]
+use common_primitives::schema::SchemaVersion;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
@@ -95,7 +96,7 @@ benchmarks! {
 		let payload_location = PayloadLocation::OnChain;
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
 		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), bounded_name, version, schema_input, model_type, payload_location, BoundedVec::default())
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default(), Some(bounded_name))
 	verify {
 		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
 		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
