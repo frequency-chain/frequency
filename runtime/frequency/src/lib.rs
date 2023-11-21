@@ -406,8 +406,7 @@ impl pallet_msa::Config for Runtime {
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
-	// REVIEW: Change Currency->Fungible
-	type Currency = Self::Currency;
+	type Currency = Balances;
 	type MinimumStakingAmount = CapacityMinimumStakingAmount;
 	type MinimumTokenBalance = CapacityMinimumTokenBalance;
 	type TargetValidator = Msa;
@@ -794,7 +793,6 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
-	type Currency = Self::Currency;
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
 	type CapacityCalls = CapacityEligibleCalls;

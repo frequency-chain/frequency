@@ -26,7 +26,7 @@
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{IsSubType, IsType, fungible::Inspect as InspectFungible},
+	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
@@ -160,9 +160,6 @@ pub mod pallet {
 			+ From<frame_system::Call<Self>>
 			+ IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
-
-		/// Functions that allow a fungible balance to be changed or frozen.
-		type Currency: InspectFungible<Self::AccountId>;
 
 		/// The type that replenishes and keeps capacity balances.
 		type Capacity: Replenishable + Nontransferable;

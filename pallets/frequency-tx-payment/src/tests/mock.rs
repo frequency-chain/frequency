@@ -91,7 +91,7 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
 	type MaxReserves = ();
-	type FreezeIdentifier = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxFreezes = ConstU32<0>;
 	type MaxHolds = ConstU32<0>;
 	type RuntimeHoldReason = ();
