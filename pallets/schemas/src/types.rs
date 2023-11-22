@@ -25,13 +25,13 @@ pub type SchemaNamespace = BoundedVec<u8, ConstU32<NAMESPACE_MAX>>;
 /// schema descriptor type
 pub type SchemaDescriptor = BoundedVec<u8, ConstU32<DESCRIPTOR_MAX>>;
 /// The minimum size of a namespace in schema
-pub const NAMESPACE_MIN: usize = 3;
+pub const NAMESPACE_MIN: u32 = 3;
 /// The maximum size of a namespace in schema
-pub const NAMESPACE_MAX: u32 = 15;
+pub const NAMESPACE_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (DESCRIPTOR_MIN + 1);
 /// The minimum size of a schema descriptor
-pub const DESCRIPTOR_MIN: usize = 1;
+pub const DESCRIPTOR_MIN: u32 = 1;
 /// The maximum size of a schema descriptor
-pub const DESCRIPTOR_MAX: u32 = 16;
+pub const DESCRIPTOR_MAX: u32 = SCHEMA_NAME_BYTES_MAX - (NAMESPACE_MIN + 1);
 /// separator character
 pub const SEPARATOR_CHAR: char = '.';
 /// maximum number of versions for a certain schema name
@@ -96,7 +96,7 @@ impl SchemaName {
 		// check namespace
 		let namespace = BoundedVec::try_from(chunks[0].as_bytes().to_vec())
 			.map_err(|_| Error::<T>::InvalidSchemaNamespaceLength)?;
-		ensure!(NAMESPACE_MIN <= namespace.len(), Error::<T>::InvalidSchemaNamespaceLength);
+		ensure!(NAMESPACE_MIN <= namespace.len() as u32, Error::<T>::InvalidSchemaNamespaceLength);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -104,7 +104,7 @@ impl SchemaName {
 				let descriptor = BoundedVec::try_from(chunks[1].as_bytes().to_vec())
 					.map_err(|_| Error::<T>::InvalidSchemaDescriptorLength)?;
 				ensure!(
-					DESCRIPTOR_MIN <= descriptor.len(),
+					DESCRIPTOR_MIN <= descriptor.len() as u32,
 					Error::<T>::InvalidSchemaDescriptorLength
 				);
 				descriptor

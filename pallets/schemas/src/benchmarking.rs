@@ -88,7 +88,7 @@ benchmarks! {
 		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let sender: T::AccountId = whitelisted_caller();
 		let version: SchemaVersion = 1;
-		let namespace  = vec![b'a'; NAMESPACE_MAX as usize];
+		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
 		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
@@ -110,7 +110,67 @@ benchmarks! {
 		ensure!(SchemasPallet::<T>::get_schema_model_max_bytes() == T::SchemaModelMaxBytesBoundedVecLimit::get(), "Schema model max should be updated!");
 	}
 
+	create_schema_via_governance_v2 {
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let sender: T::AccountId = whitelisted_caller();
+		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
+		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location, BoundedVec::default(), Some(bounded_name))
+	verify {
+		ensure!(SchemasPallet::<T>::get_current_schema_identifier_maximum() > 0, "Created schema count should be > 0");
+		ensure!(SchemasPallet::<T>::get_schema_info(1).is_some(), "Created schema should exist");
+	}
 
+	propose_to_create_schema_v2 {
+		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
+		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
+		let bounded_name = BoundedVec::try_from(name).expect("should resolve");
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		let schema_input = generate_schema::<T>(m as usize);
+	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default(), Some(bounded_name))
+	verify {
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
+	}
+
+	propose_to_create_schema_name {
+		let sender: T::AccountId = whitelisted_caller();
+		let schema_id = 1;
+		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
+		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
+		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
+		SchemasPallet::<T>::set_schema_count(1);
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+	}: _(RawOrigin::Signed(sender), schema_id, schema_name)
+	verify {
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
+	}
+
+	create_schema_name_via_governance {
+		let schema_id = 1;
+		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
+		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
+		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
+		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
+		SchemasPallet::<T>::set_schema_count(1);
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+	}: _(RawOrigin::Root, schema_id, schema_name.clone())
+	verify {
+		let versions = SchemasPallet::<T>::get_schema_versions(schema_name.into_inner());
+		ensure!(versions.is_some(), "Created schema name should exist");
+		ensure!(versions.unwrap().len() == 1, "Version should be added!");
+	}
 
 	impl_benchmark_test_suite!(
 		SchemasPallet,

@@ -133,6 +133,7 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
+				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -164,6 +165,7 @@ impl BaseCallFilter {
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,

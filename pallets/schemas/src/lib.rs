@@ -199,6 +199,9 @@ pub mod pallet {
 
 		/// Inserted schema id already exists
 		SchemaIdAlreadyExists,
+
+		///  SchemaId does not exist
+		SchemaIdDoesNotExist,
 	}
 
 	#[pallet::pallet]
@@ -298,7 +301,7 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::create_schema(model.len() as u32))]
 		#[allow(deprecated)]
 		#[deprecated(
-			note = "please use `create_schema_v2` since `create_schema` has been deprecated."
+			note = "please use `create_schema_v3` since `create_schema` has been deprecated."
 		)]
 		pub fn create_schema(
 			origin: OriginFor<T>,
@@ -452,7 +455,12 @@ pub mod pallet {
 		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
 		///
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::propose_to_create_schema(model.len() as u32))]
+		#[pallet::weight(
+			match schema_name {
+				Some(_) => T::WeightInfo::propose_to_create_schema_v2(model.len() as u32),
+				None => T::WeightInfo::propose_to_create_schema(model.len() as u32)
+			}
+		)]
 		pub fn propose_to_create_schema_v2(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -489,7 +497,12 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32))]
+		#[pallet::weight(
+			match schema_name {
+				Some(_) => T::WeightInfo::create_schema_via_governance_v2(model.len() as u32+ settings.len() as u32),
+				None => T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32)
+			}
+		)]
 		pub fn create_schema_via_governance_v2(
 			origin: OriginFor<T>,
 			creator_key: T::AccountId,
@@ -535,7 +548,12 @@ pub mod pallet {
 		/// * [`Error::InvalidSetting`] - Invalid setting is provided
 		///
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::create_schema_v3(model.len() as u32 + settings.len() as u32))]
+		#[pallet::weight(
+			match schema_name {
+				Some(_) => T::WeightInfo::create_schema_v3(model.len() as u32 + settings.len() as u32),
+				None => T::WeightInfo::create_schema_v2(model.len() as u32 + settings.len() as u32)
+			}
+		)]
 		pub fn create_schema_v3(
 			origin: OriginFor<T>,
 			model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
@@ -564,6 +582,29 @@ pub mod pallet {
 			Ok(())
 		}
 
+		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		///
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::propose_to_create_schema_name())]
+		pub fn propose_to_create_schema_name(
+			origin: OriginFor<T>,
+			schema_id: SchemaId,
+			schema_name: SchemaNamePayload,
+		) -> DispatchResult {
+			let proposer = ensure_signed(origin)?;
+
+			ensure!(
+				schema_id <= Self::get_current_schema_identifier_maximum(),
+				Error::<T>::SchemaIdDoesNotExist
+			);
+
+			let proposal: Box<T::Proposal> = Box::new(
+				(Call::<T>::create_schema_name_via_governance { schema_id, schema_name }).into(),
+			);
+			T::ProposalProvider::propose_with_simple_majority(proposer, proposal)?;
+			Ok(())
+		}
+
 		/// Assigns a name to a schema without any name
 		///
 		/// # Events
@@ -574,8 +615,8 @@ pub mod pallet {
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
-		#[pallet::call_index(8)]
-		#[pallet::weight(T::WeightInfo::create_schema_via_governance(schema_name.len() as u32))]
+		#[pallet::call_index(9)]
+		#[pallet::weight(T::WeightInfo::create_schema_name_via_governance())]
 		pub fn create_schema_name_via_governance(
 			origin: OriginFor<T>,
 			schema_id: SchemaId,
@@ -583,6 +624,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
 
+			ensure!(
+				schema_id <= Self::get_current_schema_identifier_maximum(),
+				Error::<T>::SchemaIdDoesNotExist
+			);
 			let parsed_name = SchemaName::try_parse::<T>(schema_name, true)?;
 			SchemaNameToIds::<T>::try_mutate(
 				&parsed_name.namespace,
