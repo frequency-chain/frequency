@@ -23,7 +23,7 @@ const tokenMinStake: bigint = 1n * CENTS;
 const capacityMin: bigint = tokenMinStake / 50n;
 const fundingSource = getFundingSource('capacity-staking');
 
-describe('Capacity Staking Tests', function () {
+describe.only('Capacity Staking Tests', function () {
   // The frozen balance is initialized and tracked throughout the staking end to end tests
   // to accommodate for the fact that withdrawing unstaked token tests are not executed
   // against a relay chain. Since the length of time to wait for an epoch period to roll over could
@@ -45,6 +45,7 @@ describe('Capacity Staking Tests', function () {
 
       // Confirm that the tokens were locked in the stakeKeys account using the query API
       const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+      console.log("stakedAcctInfo.data.frozen", stakedAcctInfo.data.frozen.toHuman());
       assert.equal(
         stakedAcctInfo.data.frozen,
         tokenMinStake,

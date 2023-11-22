@@ -370,7 +370,7 @@ pub mod pallet {
 			let amount_withdrawn = staking_account.reap_thawed(current_epoch);
 			ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
 
-			Self::update_or_delete_staking_account(&staker, &mut staking_account);
+			Self::update_or_delete_staking_account(&staker, &mut staking_account)?;
 			Self::deposit_event(Event::<T>::StakeWithdrawn {
 				account: staker,
 				amount: amount_withdrawn,
@@ -482,7 +482,7 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
-		Self::set_staking_account(&staker, staking_account);
+		Self::set_staking_account(&staker, staking_account)?;
 		Self::set_target_details_for(&staker, target, target_details);
 		Self::set_capacity_for(target, capacity_details);
 
@@ -490,10 +490,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details.
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) {
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) -> DispatchResult {
 		let _ =
-			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total);
+			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total)?;
 		StakingAccountLedger::<T>::insert(staker, staking_account);
+		Ok(())
 	}
 
 	/// Deletes staking account details
@@ -506,12 +507,14 @@ impl<T: Config> Pallet<T> {
 	fn update_or_delete_staking_account(
 		staker: &T::AccountId,
 		staking_account: &StakingAccountDetails<T>,
-	) {
+	) -> DispatchResult {
 		if staking_account.total.is_zero() {
 			Self::delete_staking_account(&staker);
 		} else {
-			Self::set_staking_account(&staker, &staking_account)
+			Self::set_staking_account(&staker, &staking_account)?;
 		}
+
+		Ok(())
 	}
 
 	/// Sets target account details.
@@ -546,7 +549,7 @@ impl<T: Config> Pallet<T> {
 
 		let unstake_result = staking_account.withdraw(amount, thaw_at)?;
 
-		Self::set_staking_account(&unstaker, &staking_account);
+		Self::set_staking_account(&unstaker, &staking_account)?;
 
 		Ok(unstake_result)
 	}
