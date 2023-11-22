@@ -10,7 +10,6 @@ use sp_runtime::Saturating;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::TryRuntimeError;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
-extern crate alloc;
 
 /// get known schema names for mainnet
 #[cfg(feature = "frequency")]
