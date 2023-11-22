@@ -37,8 +37,6 @@ pub const SEPARATOR_CHAR: char = '.';
 /// maximum number of versions for a certain schema name
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
-const SCHEMA_NAME_REGEX: &str =
-	r#"^[a-zA-Z]{1}[a-zA-Z\-]*[a-zA-Z]{1}\.([a-zA-Z]{1}|[a-zA-Z]{1}[a-zA-Z\-]*[a-zA-Z]{1})$"#;
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
