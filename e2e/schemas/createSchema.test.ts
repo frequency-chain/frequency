@@ -170,9 +170,9 @@ describe('#createSchema', function () {
 
   it('should fail to create schema with invalid namespace length v3', async function () {
     const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'a.b');
-    await assert.rejects(f.fundAndSend(fundingSource),{
-        name: 'InvalidSchemaNamespaceLength',
-      });
+    await assert.rejects(f.fundAndSend(fundingSource), {
+      name: 'InvalidSchemaNamespaceLength',
+    });
   });
 
   it('get version rpc should return all schemas using the same name', async function () {
@@ -183,7 +183,14 @@ describe('#createSchema', function () {
     assert.notEqual(createSchemaEvent, undefined);
     assert.notEqual(eventMap['schemas.SchemaNameCreated'], undefined);
 
-    const f2 = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'my-namespace.alice');
+    const f2 = ExtrinsicHelper.createSchemaV3(
+      keys,
+      AVRO_GRAPH_CHANGE,
+      'AvroBinary',
+      'OnChain',
+      [],
+      'my-namespace.alice'
+    );
     const { target: createSchemaEvent2, eventMap: eventMap2 } = await f2.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap2);
@@ -194,7 +201,7 @@ describe('#createSchema', function () {
     assert(versions.isSome);
     const versions_response_value = versions.unwrap();
     assert.equal(versions_response_value.length, 2);
-    assert(versions_response_value.toArray().some(v => v.schema_name == 'my-namespace.bob'));
-    assert(versions_response_value.toArray().some(v => v.schema_name == 'my-namespace.alice'));
+    assert(versions_response_value.toArray().some((v) => v.schema_name == 'my-namespace.bob'));
+    assert(versions_response_value.toArray().some((v) => v.schema_name == 'my-namespace.alice'));
   });
 });
