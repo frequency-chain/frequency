@@ -37,6 +37,8 @@ pub const SEPARATOR_CHAR: char = '.';
 /// maximum number of versions for a certain schema name
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
+const SCHEMA_NAME_REGEX: &str =
+	r#"^[a-zA-Z]{1}[a-zA-Z\-]*[a-zA-Z]{1}\.([a-zA-Z]{1}|[a-zA-Z]{1}[a-zA-Z\-]*[a-zA-Z]{1})$"#;
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
@@ -78,7 +80,7 @@ impl SchemaName {
 		ensure!(str.is_ascii(), Error::<T>::InvalidSchemaNameEncoding);
 
 		// to canonical form
-		str = str.to_lowercase();
+		str = String::from(str.to_lowercase().trim());
 
 		// check if alphabetic or - or separator character
 		ensure!(
@@ -89,7 +91,7 @@ impl SchemaName {
 		// split to namespace and descriptor
 		let chunks: Vec<_> = str.split(SEPARATOR_CHAR).collect();
 		ensure!(
-			chunks.len() == 2 || (chunks.len() == 1 && is_strict == false),
+			chunks.len() == 2 || (chunks.len() == 1 && !is_strict),
 			Error::<T>::InvalidSchemaNameStructure
 		);
 
@@ -139,7 +141,7 @@ impl SchemaName {
 impl SchemaVersionId {
 	/// adds a new schema id and returns the version for that schema_id
 	pub fn add<T: Config>(&mut self, schema_id: SchemaId) -> Result<SchemaVersion, DispatchError> {
-		let is_new = self.ids.iter().find(|id| *id == &schema_id).is_none();
+		let is_new = !self.ids.iter().any(|id| id == &schema_id);
 		ensure!(is_new, Error::<T>::SchemaIdAlreadyExists);
 		self.ids
 			.try_push(schema_id)

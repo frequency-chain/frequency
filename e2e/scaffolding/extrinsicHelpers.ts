@@ -344,10 +344,27 @@ export class ExtrinsicHelper {
     model: any,
     modelType: 'AvroBinary' | 'Parquet',
     payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
-    grant: ('AppendOnly' | 'SignatureRequired')[]
+    grant: ('AppendOnly' | 'SignatureRequired')[],
+
   ) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant),
+      keys,
+      ExtrinsicHelper.api.events.schemas.SchemaCreated
+    );
+  }
+
+  /** Schema v3 Extrinsics */
+  public static createSchemaV3(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: ('AppendOnly' | 'SignatureRequired')[],
+    schemaNme: string | null,
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.schemas.createSchemaV3(JSON.stringify(model), modelType, payloadLocation, grant, schemaNme),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
     );
