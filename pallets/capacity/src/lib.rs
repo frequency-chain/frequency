@@ -490,7 +490,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details.
-	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingAccountDetails<T>) -> DispatchResult {
+	fn set_staking_account(
+		staker: &T::AccountId,
+		staking_account: &StakingAccountDetails<T>,
+	) -> DispatchResult {
 		let _ =
 			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total)?;
 		StakingAccountLedger::<T>::insert(staker, staking_account);
