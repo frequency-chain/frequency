@@ -398,6 +398,30 @@ export class ExtrinsicHelper {
     );
   }
 
+  /** Generic Schema Extrinsics v2 */
+  public static createSchemaWithSettingsGovV2(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: 'AppendOnly' | 'SignatureRequired',
+    schemaName: string | null
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernanceV2(
+          keys.publicKey,
+          JSON.stringify(model),
+          modelType,
+          payloadLocation,
+          [grant],
+          schemaName
+        ),
+      keys,
+      ExtrinsicHelper.api.events.schemas.SchemaCreated
+    );
+  }
+
   /** Get Schema RPC */
   public static getSchema(schemaId: u16): Promise<Option<SchemaResponse>> {
     return ExtrinsicHelper.apiPromise.rpc.schemas.getBySchemaId(schemaId);

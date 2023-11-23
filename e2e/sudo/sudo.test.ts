@@ -49,6 +49,31 @@ describe('Sudo required', function () {
     });
   });
 
+  describe('schema-pallet ', function () {
+    it('should create schema with name using createSchemaWithSettingsGovV2', async function () {
+      if (isTestnet()) this.skip();
+
+      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
+        sudoKey,
+        AVRO_GRAPH_CHANGE,
+        'AvroBinary',
+        'Itemized',
+        'AppendOnly',
+        'sudo.test'
+      );
+      const { target: event, eventMap } = await createSchema.sudoSignAndSend();
+      assert.notEqual(event, undefined);
+      const itemizedSchemaId: u16 = event?.data.schemaId || new u16(ExtrinsicHelper.api.registry, 0);
+      assert.notEqual(itemizedSchemaId.toNumber(), 0);
+      const schema_response = await ExtrinsicHelper.getSchema(itemizedSchemaId);
+      assert(schema_response.isSome);
+      const schema_response_value = schema_response.unwrap();
+      const schema_settings = schema_response_value.settings;
+      assert.notEqual(schema_settings.length, 0);
+      assert.notEqual(eventMap['schemas.SchemaNameCreated'], undefined);
+    });
+  });
+
   describe('stateful-pallet-storage', function () {
     it('should fail to create non itemized schema with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();

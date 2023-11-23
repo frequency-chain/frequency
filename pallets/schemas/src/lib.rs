@@ -582,7 +582,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Propose to create a schema.  Creates a proposal for council approval to create a schema
+		/// Propose to create a schema name.  Creates a proposal for council approval to create a schema name
 		///
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::propose_to_create_schema_name())]

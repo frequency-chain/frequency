@@ -589,6 +589,62 @@ fn create_schema_v3_increments_schema_id_and_version_for_same_name() {
 }
 
 #[test]
+fn get_schema_versions_for_namespace_should_return_all_descriptors() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		sudo_set_max_schema_size();
+		let sender: AccountId = test_public(1);
+		let namespace = "namespace";
+		let name_1 = format!("{}.alice", namespace);
+		let schema_name_1: SchemaNamePayload =
+			BoundedVec::try_from(name_1.to_string().into_bytes()).expect("should convert");
+		let name_2 = format!("{}.bob", namespace);
+		let schema_name_2: SchemaNamePayload =
+			BoundedVec::try_from(name_2.to_string().into_bytes()).expect("should convert");
+		assert_ok!(SchemasPallet::create_schema_v3(
+			RuntimeOrigin::signed(sender.clone()),
+			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+			Some(schema_name_1.clone()),
+		));
+		assert_ok!(SchemasPallet::create_schema_v3(
+			RuntimeOrigin::signed(sender.clone()),
+			create_bounded_schema_vec(r#"{"name": "Doe", "type": "lost"}"#),
+			ModelType::AvroBinary,
+			PayloadLocation::OnChain,
+			BoundedVec::default(),
+			Some(schema_name_2.clone()),
+		));
+
+		// act
+		let versions = SchemasPallet::get_schema_versions(String::from(namespace).into_bytes());
+
+		// assert
+		assert!(versions.is_some());
+
+		let mut inner = versions.clone().unwrap();
+		inner.sort_by(|a, b| a.schema_name.cmp(&b.schema_name));
+		assert_eq!(
+			versions,
+			Some(vec![
+				SchemaVersionResponse {
+					schema_id: 1,
+					schema_name: schema_name_1.into_inner(),
+					schema_version: 1
+				},
+				SchemaVersionResponse {
+					schema_id: 2,
+					schema_name: schema_name_2.into_inner(),
+					schema_version: 1
+				},
+			])
+		);
+	})
+}
+
+#[test]
 fn create_schema_via_governance_v2_happy_path() {
 	new_test_ext().execute_with(|| {
 		// arrange
