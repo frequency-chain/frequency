@@ -135,6 +135,8 @@ pub type AuthorshipUncleGenerations = ZERO;
 // --- Balances Pallet ---
 pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
+pub type BalancesMaxFreezes = FIFTY;
+pub type BalancesMaxHolds = FIFTY;
 // -end- Balances Pallet ---
 
 // --- Scheduler Pallet ---

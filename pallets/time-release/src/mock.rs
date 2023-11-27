@@ -46,14 +46,14 @@ impl pallet_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = frame_system::Pallet<Test>;
-	type MaxLocks = ();
-	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxFreezes = ConstU32<1>;
+	type MaxLocks = ConstU32<50>;
+	type MaxReserves = ConstU32<50>;
+	type MaxFreezes = ConstU32<50>;
+	type MaxHolds = ConstU32<50>;
 	type RuntimeHoldReason = ();
-	type MaxHolds = ConstU32<0>;
 }
 
 pub struct EnsureAliceOrBob;
