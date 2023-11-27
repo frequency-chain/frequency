@@ -73,7 +73,8 @@ fn set_staking_account_is_succesful() {
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 		staking_account.deposit(55);
 
-		Capacity::set_staking_account(&staker, &staking_account);
+		Capacity::set_staking_account(&staker, &staking_account)
+			.expect("Failed to set staking account");
 
 		let frozen_balance =
 			<Test as Config>::Currency::balance_frozen(&(FreezeReason::Staked).into(), &staker);

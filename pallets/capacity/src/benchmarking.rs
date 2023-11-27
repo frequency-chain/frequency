@@ -25,7 +25,7 @@ pub fn create_funded_account<T: Config>(
 	let user = account(string, n, SEED);
 	whitelist_account!(user);
 	let balance = T::Currency::minimum_balance() * balance_factor.into();
-	let _ = T::Currency::set_balance(&user, balance);
+	T::Currency::set_balance(&user, balance);
 	assert_eq!(T::Currency::balance(&user), balance.into());
 	user
 }
@@ -99,7 +99,7 @@ benchmarks! {
 		target_details.deposit(staking_amount, capacity_amount);
 		capacity_details.deposit(&staking_amount, &capacity_amount);
 
-		let _ = Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
+		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account).expect("Failed to set staking account");
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
 		Capacity::<T>::set_capacity_for(target, capacity_details);
 

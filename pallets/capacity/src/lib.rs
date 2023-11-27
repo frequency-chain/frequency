@@ -494,16 +494,16 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		staking_account: &StakingAccountDetails<T>,
 	) -> DispatchResult {
-		let _ =
-			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total)?;
+		T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, staking_account.total)?;
 		StakingAccountLedger::<T>::insert(staker, staking_account);
 		Ok(())
 	}
 
 	/// Deletes staking account details
-	fn delete_staking_account(staker: &T::AccountId) {
-		let _ = T::Currency::thaw(&FreezeReason::Staked.into(), staker);
+	fn delete_staking_account(staker: &T::AccountId) -> DispatchResult {
+		T::Currency::thaw(&FreezeReason::Staked.into(), staker)?;
 		StakingAccountLedger::<T>::remove(&staker);
+		Ok(())
 	}
 
 	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
@@ -512,7 +512,7 @@ impl<T: Config> Pallet<T> {
 		staking_account: &StakingAccountDetails<T>,
 	) -> DispatchResult {
 		if staking_account.total.is_zero() {
-			Self::delete_staking_account(&staker);
+			Self::delete_staking_account(&staker)?;
 		} else {
 			Self::set_staking_account(&staker, &staking_account)?;
 		}

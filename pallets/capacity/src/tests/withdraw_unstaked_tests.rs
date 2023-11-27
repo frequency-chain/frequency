@@ -18,7 +18,8 @@ fn withdraw_unstaked_happy_path() {
 		staking_account.deposit(10);
 		assert_eq!(true, staking_account.set_unlock_chunks(&unlocks));
 		assert_eq!(10u64, staking_account.total);
-		Capacity::set_staking_account(&staker, &staking_account.into());
+		Capacity::set_staking_account(&staker, &staking_account.into())
+			.expect("Failed to set staking account");
 
 		let starting_account = Capacity::get_staking_account_for(&staker).unwrap();
 
@@ -50,7 +51,8 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
-		Capacity::set_staking_account(&staker, &staking_account);
+		Capacity::set_staking_account(&staker, &staking_account)
+			.expect("Failed to set staking account");
 		assert_eq!(
 			10u64,
 			<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &staker)
@@ -81,7 +83,8 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
 		let staker = 500;
-		Capacity::set_staking_account(&staker, &staking_account);
+		Capacity::set_staking_account(&staker, &staking_account)
+			.expect("Failed to set staking account");
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		// Epoch Length = 10 and UnstakingThawPeriod = 2 (epochs)
@@ -99,7 +102,8 @@ fn withdraw_unstaked_cannot_withdraw_if_no_unstaking_chunks() {
 		let staker = 500;
 		let mut staking_account = StakingAccountDetails::<Test>::default();
 		staking_account.deposit(10);
-		Capacity::set_staking_account(&staker, &staking_account);
+		Capacity::set_staking_account(&staker, &staking_account)
+			.expect("Failed to set staking account");
 		assert_noop!(
 			Capacity::withdraw_unstaked(RuntimeOrigin::signed(500)),
 			Error::<Test>::NoUnstakedTokensAvailable
@@ -117,7 +121,8 @@ fn withdraw_unstaked_cannot_withdraw_if_unstaking_chunks_not_thawed() {
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 3u32), (2u32, 40u32), (3u32, 9u32)];
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
-		Capacity::set_staking_account(&staker, &staking_account);
+		Capacity::set_staking_account(&staker, &staking_account)
+			.expect("Failed to set staking account");
 
 		run_to_block(2);
 		assert_noop!(
