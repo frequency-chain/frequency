@@ -14,6 +14,7 @@ import {
   createDelegatorAndDelegation,
   createProviderKeysAndId,
   getCurrentItemizedHash,
+  generateSchemaPartialName,
 } from '../scaffolding/helpers';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 
@@ -52,14 +53,14 @@ describe('Sudo required', function () {
   describe('schema-pallet ', function () {
     it('should create schema with name using createSchemaWithSettingsGovV2', async function () {
       if (isTestnet()) this.skip();
-
+      const schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
       const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
         'Itemized',
         'AppendOnly',
-        'sudo.test'
+        schemaName
       );
       const { target: event, eventMap } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);

@@ -97,6 +97,11 @@ impl SchemaName {
 		let namespace = BoundedVec::try_from(chunks[0].as_bytes().to_vec())
 			.map_err(|_| Error::<T>::InvalidSchemaNamespaceLength)?;
 		ensure!(NAMESPACE_MIN <= namespace.len() as u32, Error::<T>::InvalidSchemaNamespaceLength);
+		// should not start or end with -
+		ensure!(
+			!(namespace.starts_with(b"-") || namespace.ends_with(b"-")),
+			Error::<T>::InvalidSchemaNameStructure
+		);
 
 		// check descriptor
 		let descriptor = match chunks.len() == 2 {
@@ -106,6 +111,11 @@ impl SchemaName {
 				ensure!(
 					DESCRIPTOR_MIN <= descriptor.len() as u32,
 					Error::<T>::InvalidSchemaDescriptorLength
+				);
+				// should not start or end with -
+				ensure!(
+					!(descriptor.starts_with(b"-") || descriptor.ends_with(b"-")),
+					Error::<T>::InvalidSchemaNameStructure
 				);
 				descriptor
 			},

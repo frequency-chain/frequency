@@ -5,7 +5,12 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from './fixtures/avroGraphChangeSchemaType';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { createKeys, createAndFundKeypair, assertExtrinsicSuccess } from '../scaffolding/helpers';
+import {
+  createKeys,
+  createAndFundKeypair,
+  assertExtrinsicSuccess,
+  generateSchemaPartialName,
+} from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
 const fundingSource = getFundingSource('schemas-create');
@@ -130,7 +135,8 @@ describe('#createSchema', function () {
   });
 
   it('should successfully create a schema v3 with name', async function () {
-    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'e-e.test');
+    const schemaName = 'e-e.' + generateSchemaPartialName(20);
+    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], schemaName);
     const { target: createSchemaEvent, eventMap } = await f.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap);
@@ -176,32 +182,28 @@ describe('#createSchema', function () {
   });
 
   it('get version rpc should return all schemas using the same name', async function () {
-    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'my-namespace.bob');
+    const namespace = generateSchemaPartialName(20);
+    const aliceSchemaName = namespace + '.alice';
+    const bobSchemaName = namespace + '.bob';
+    const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], aliceSchemaName);
     const { target: createSchemaEvent, eventMap } = await f.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap);
     assert.notEqual(createSchemaEvent, undefined);
     assert.notEqual(eventMap['schemas.SchemaNameCreated'], undefined);
 
-    const f2 = ExtrinsicHelper.createSchemaV3(
-      keys,
-      AVRO_GRAPH_CHANGE,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'my-namespace.alice'
-    );
+    const f2 = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], bobSchemaName);
     const { target: createSchemaEvent2, eventMap: eventMap2 } = await f2.fundAndSend(fundingSource);
 
     assertExtrinsicSuccess(eventMap2);
     assert.notEqual(createSchemaEvent2, undefined);
     assert.notEqual(eventMap2['schemas.SchemaNameCreated'], undefined);
 
-    const versions = await ExtrinsicHelper.apiPromise.rpc.schemas.getVersions('my-namespace');
+    const versions = await ExtrinsicHelper.apiPromise.rpc.schemas.getVersions(namespace);
     assert(versions.isSome);
     const versions_response_value = versions.unwrap();
     assert.equal(versions_response_value.length, 2);
-    assert(versions_response_value.toArray().some((v) => v.schema_name == 'my-namespace.bob'));
-    assert(versions_response_value.toArray().some((v) => v.schema_name == 'my-namespace.alice'));
+    assert(versions_response_value.toArray().some((v) => v.schema_name == aliceSchemaName));
+    assert(versions_response_value.toArray().some((v) => v.schema_name == bobSchemaName));
   });
 });

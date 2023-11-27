@@ -257,6 +257,22 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
 			TestCase {
+				input: r#"-asbdsdhks.shd"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
+				input: r#"asbdsdhks-.shd"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
+				input: r#"asbdsdhks.-shd"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
+				input: r#"asbdsdhks.shd-"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
 				input: r#"hjsagdhjsagjhgdshjagsadhjsaaaaa."#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
@@ -299,6 +315,14 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 			TestCase { input: r#"hg@d"#, expected: Error::<Test>::InvalidSchemaNameCharacters },
 			TestCase {
 				input: r#"asbd.sdhks.shd"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
+				input: r#"-asbdsdhks.shd"#,
+				expected: Error::<Test>::InvalidSchemaNameStructure,
+			},
+			TestCase {
+				input: r#"asbdsdhks-.shd"#,
 				expected: Error::<Test>::InvalidSchemaNameStructure,
 			},
 			TestCase {

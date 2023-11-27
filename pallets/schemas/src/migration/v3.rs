@@ -83,11 +83,13 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 		let mut reads = 1u64;
 		let mut writes = 0u64;
 		let mut bytes = 0u64;
-		for (schema_id, schema) in SchemaInfos::<T>::iter() {
-			bytes = bytes.saturating_add(schema.encode().len() as u64);
-			bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
+		for (schema_id, schema_name) in known_schemas.iter() {
+			reads.saturating_inc();
 
-			if let Some(schema_name) = known_schemas.get(&schema_id) {
+			if let Some(schema) = SchemaInfos::<T>::get(&schema_id) {
+				bytes = bytes.saturating_add(schema.encode().len() as u64);
+				bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
+
 				match BoundedVec::try_from(schema_name.clone()) {
 					Ok(bounded_name) => match SchemaName::try_parse::<T>(bounded_name, true) {
 						Ok(parsed_name) => {
@@ -98,7 +100,7 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 									bytes = bytes
 										.saturating_add(schema_version_id.encode().len() as u64);
 
-									let _ = schema_version_id.add::<T>(schema_id);
+									let _ = schema_version_id.add::<T>(*schema_id);
 									Ok(())
 								},
 							);
@@ -114,7 +116,6 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 					},
 				}
 			}
-			reads.saturating_inc();
 		}
 
 		// Set storage version to `3`.
