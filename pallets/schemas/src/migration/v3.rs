@@ -108,7 +108,7 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 							writes.saturating_inc();
 						},
 						Err(_) => {
-							log::error!(target: LOG_TARGET, "Not bale to parse the name {:?}", schema_name);
+							log::error!(target: LOG_TARGET, "Not able to parse the name {:?}", schema_name);
 						},
 					},
 					Err(_) => {

@@ -490,12 +490,21 @@ pub mod pallet {
 		///
 		/// # Events
 		/// * [`Event::SchemaCreated`]
+		/// * [`Event::SchemaNameCreated`]
 		///
 		/// # Errors
 		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
+		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
+		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
+		///
 		#[pallet::call_index(6)]
 		#[pallet::weight(
 			match schema_name {
@@ -539,6 +548,7 @@ pub mod pallet {
 		///
 		/// # Events
 		/// * [`Event::SchemaCreated`]
+		/// * [`Event::SchemaNameCreated`]
 		///
 		/// # Errors
 		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
@@ -546,6 +556,13 @@ pub mod pallet {
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
 		/// * [`Error::InvalidSetting`] - Invalid setting is provided
+		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
+		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
+		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
 		///
 		#[pallet::call_index(7)]
 		#[pallet::weight(
@@ -608,13 +625,21 @@ pub mod pallet {
 		/// Assigns a name to a schema without any name
 		///
 		/// # Events
-		/// * [`Event::SchemaCreated`]
+		/// * [`Event::SchemaNameCreated`]
 		///
 		/// # Errors
 		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
 		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
 		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
 		/// * [`Error::SchemaCountOverflow`] - The schema count has exceeded its bounds
+		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
+		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
+		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
+		///
 		#[pallet::call_index(9)]
 		#[pallet::weight(T::WeightInfo::create_schema_name_via_governance())]
 		pub fn create_schema_name_via_governance(
@@ -814,6 +839,7 @@ pub mod pallet {
 		}
 
 		/// a method to return all versions of a schema name with their schemaIds
+		/// Warning: Must only get called from RPC, since the number of DB accesses is not deterministic
 		pub fn get_schema_versions(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
 			let bounded_name = BoundedVec::try_from(schema_name).ok()?;
 			let parsed_name = SchemaName::try_parse::<T>(bounded_name, false).ok()?;
