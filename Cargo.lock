@@ -1458,7 +1458,7 @@ checksum = "702fc72eb24e5a1e48ce58027a675bc24edd52096d5397d4aea7c6dd9eca0bd1"
 
 [[package]]
 name = "cli-opt"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "clap",
 ]
@@ -1518,7 +1518,7 @@ dependencies = [
 
 [[package]]
 name = "common-helpers"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "apache-avro",
  "common-primitives",
@@ -1537,7 +1537,7 @@ checksum = "2382f75942f4b3be3690fe4f86365e9c853c1587d6ee58212cebf6e2a9ccd101"
 
 [[package]]
 name = "common-primitives"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "enumflags2",
  "frame-support",
@@ -1556,7 +1556,7 @@ dependencies = [
 
 [[package]]
 name = "common-runtime"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "cumulus-primitives-core",
@@ -3695,7 +3695,7 @@ dependencies = [
 
 [[package]]
 name = "frequency"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "frequency-cli",
  "frequency-service",
@@ -3704,7 +3704,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-cli"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "clap",
  "cli-opt",
@@ -3755,7 +3755,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-runtime"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -3829,7 +3829,7 @@ dependencies = [
 
 [[package]]
 name = "frequency-service"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "clap",
  "cli-opt",
@@ -4249,7 +4249,7 @@ dependencies = [
 
 [[package]]
 name = "handles-utils"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "oorandom",
  "phf",
@@ -6614,7 +6614,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-capacity"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -6799,7 +6799,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -6822,7 +6822,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -6844,7 +6844,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-frequency-tx-payment-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -6879,7 +6879,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "env_logger 0.10.0",
@@ -6902,7 +6902,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -6921,7 +6921,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-handles-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "sp-api",
@@ -7019,7 +7019,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "cid 0.10.1",
  "common-primitives",
@@ -7043,7 +7043,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7060,7 +7060,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-messages-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -7087,7 +7087,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -7112,7 +7112,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7131,7 +7131,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-msa-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -7367,7 +7367,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "common-runtime",
@@ -7392,7 +7392,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7412,7 +7412,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-schemas-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -7549,7 +7549,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "env_logger 0.10.0",
@@ -7570,7 +7570,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-rpc"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
@@ -7590,7 +7590,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-stateful-storage-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",
@@ -7615,7 +7615,7 @@ dependencies = [
 
 [[package]]
 name = "pallet-time-release"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "chrono",
  "common-primitives",
@@ -13579,7 +13579,7 @@ dependencies = [
 
 [[package]]
 name = "system-runtime-api"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 dependencies = [
  "common-primitives",
  "frame-support",

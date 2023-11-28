@@ -5,7 +5,7 @@ edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-handles"
-version = "0.0.0"
+version = "1.9.0+polkadot1.1.0"
 publish = false
 repository = "https://github.com/libertyDSNP/frequency/"
 
