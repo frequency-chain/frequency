@@ -65,7 +65,7 @@ benchmarks! {
 		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
 		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
 
-		let _ = Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
+		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account).expect("Failed to set staking account");
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
