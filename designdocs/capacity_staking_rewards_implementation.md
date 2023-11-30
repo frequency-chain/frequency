@@ -1,11 +1,13 @@
 # Capacity Staking Rewards Implementation
 
 ## Overview
-Staking Capacity for rewards is a new feature which allows token holders to stake FRQCY and split the staking 
-rewards with a  Provider they choose. The Provider receives a small reward in Capacity 
-(which is periodically replenished), and the staker receives a periodic return in FRQCY token.
-The amount of Capacity that the Provider would receive in such case is a fraction of what they would get from a
-`MaximumCapacity` stake.
+This document describes a new type of staking which allows token holders to stake FRQCY and split staking rewards with a Provider the staker chooses. 
+
+Currently, when staking token for Capacity, the only choice is to assign all the generated Capacity to the designated target.  
+The target, who must be a Provider, may then spend this Capacity to pay for specific transactions.  This is called **Maximized Capacity** staking.
+
+In this new type of staking, called **Provider Boosting**, the Provider receives a reward in Capacity and the staker receives a periodic return in FRQCY token.
+The amount of Capacity that the Provider would receive in such case is a less than what they would get from a `MaximumCapacity` stake.
 
 The period of Capacity replenishment - the `Epoch` - and the period of token reward - the `RewardEra`- are different. 
 Epochs much necessarily be much shorter than rewards because Capacity replenishment needs to be multiple times a day to meet the needs of a high traffic network, and to allow Providers the ability to delay transactions to a time of day with lower network activity if necessary. 
