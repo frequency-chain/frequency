@@ -2,7 +2,7 @@ use super::*;
 use crate::Pallet as Capacity;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account};
-use frame_support::{assert_ok, traits::Currency};
+use frame_support::{assert_ok, traits::Currency, BoundedVec};
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
 
@@ -56,9 +56,10 @@ benchmarks! {
 
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let mut unlocking: UnlockChunks<T> = UnlockChunks::default();
+		let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
 		for _i in 0..T::MaxUnlockingChunks::get() {
-			assert_ok!(unlocking.add(1u32.into(), 3u32.into()));
+			let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
+			assert_ok!(unlocking.try_push(unlock_chunk));
 		}
 		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
@@ -101,10 +102,11 @@ benchmarks! {
 		Capacity::<T>::set_capacity_for(target, capacity_details);
 
 		// fill up unlock chunks to max bound - 1
-		let mut unlocking: UnlockChunks<T> = UnlockChunks::default();
 		let count = T::MaxUnlockingChunks::get()-1;
+		let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
 		for _i in 0..count {
-			assert_ok!(unlocking.add(1u32.into(), 3u32.into()));
+			let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
+			assert_ok!(unlocking.try_push(unlock_chunk));
 		}
 		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 

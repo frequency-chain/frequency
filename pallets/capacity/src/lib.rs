@@ -216,7 +216,8 @@ pub mod pallet {
 
 	#[pallet::storage]
 	#[pallet::getter(fn get_unstake_unlocking_for)]
-	pub type UnstakeUnlocks<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, UnlockChunks<T>>;
+	pub type UnstakeUnlocks<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunkList<T>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -301,6 +302,8 @@ pub mod pallet {
 		MaxEpochLengthExceeded,
 		/// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
 		BalanceTooLowtoStake,
+		/// None of the token amounts in UnlockChunks has thawed yet.
+		NoThawedTokenAvailable,
 	}
 
 	#[pallet::hooks]
@@ -488,7 +491,7 @@ impl<T: Config> Pallet<T> {
 		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
 		let total_to_lock: BalanceOf<T> = staking_account
 			.active
-			.checked_add(&unlocks.total())
+			.checked_add(&unlock_chunks_total::<T>(&unlocks))
 			.ok_or(ArithmeticError::Overflow)?;
 		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
 		StakingAccountLedger::<T>::insert(staker, staking_account);
@@ -546,7 +549,13 @@ impl<T: Config> Pallet<T> {
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 		let mut unlocks = Self::get_unstake_unlocking_for(unstaker).unwrap_or_default();
-		unlocks.add(actual_unstaked_amount, thaw_at)?;
+
+		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> =
+			UnlockChunk { value: actual_unstaked_amount, thaw_at };
+		unlocks
+			.try_push(unlock_chunk)
+			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+
 		UnstakeUnlocks::<T>::set(unstaker, Some(unlocks));
 		Ok(())
 	}
@@ -566,24 +575,18 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		let current_epoch = Self::get_current_epoch();
-		let mut amount_withdrawn: BalanceOf<T> = Zero::zero();
 		let mut total_unlocking: BalanceOf<T> = Zero::zero();
-		UnstakeUnlocks::<T>::try_mutate_exists(
-			staker,
-			|maybe_unlocks| -> Result<(), DispatchError> {
-				let mut unlocks =
-					maybe_unlocks.take().ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
-				amount_withdrawn = unlocks.reap_thawed(current_epoch);
-				ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoUnstakedTokensAvailable);
-				if unlocks.unlocking.is_empty() {
-					*maybe_unlocks = None;
-				} else {
-					total_unlocking = unlocks.total();
-					*maybe_unlocks = Some(unlocks);
-				}
-				Ok(())
-			},
-		)?;
+
+		let mut unlocks =
+			Self::get_unstake_unlocking_for(staker).ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
+		let amount_withdrawn = unlock_chunks_reap_thawed::<T>(&mut unlocks, current_epoch);
+		ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoThawedTokenAvailable);
+		if unlocks.is_empty() {
+			UnstakeUnlocks::<T>::set(staker, None);
+		} else {
+			total_unlocking = unlock_chunks_total::<T>(&unlocks);
+			UnstakeUnlocks::<T>::set(staker, Some(unlocks));
+		}
 		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {

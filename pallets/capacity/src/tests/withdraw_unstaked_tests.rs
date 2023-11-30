@@ -3,7 +3,8 @@ use super::{
 	testing_utils::{register_provider, run_to_block},
 };
 use crate::{
-	CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnlockChunks, UnstakeUnlocks,
+	unlock_chunks_from_vec, unlock_chunks_reap_thawed, CurrentEpoch, CurrentEpochInfo, EpochInfo,
+	Error, Event, UnstakeUnlocks,
 };
 use frame_support::{assert_noop, assert_ok};
 
@@ -16,10 +17,8 @@ fn withdraw_unstaked_happy_path() {
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
-		let mut unlocking: UnlockChunks<Test> = UnlockChunks::default();
-		assert_ok!(unlocking.add(1, 2));
-		assert_ok!(unlocking.add(2, 3));
-		assert_ok!(unlocking.add(3, 4));
+		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
+		let unlocking = unlock_chunks_from_vec::<Test>(&new_unlocks);
 		UnstakeUnlocks::<Test>::set(&staker, Some(unlocking));
 
 		// We want to advance to epoch 3 to unlock the first two sets.

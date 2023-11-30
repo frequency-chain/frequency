@@ -50,7 +50,7 @@ mod test {
 			assert_eq!(last_account.staking_type, MaximumCapacity);
 
 			let last_unlocks = Capacity::get_unstake_unlocking_for(2).unwrap();
-			assert_eq!(last_unlocks.total(), 9u64);
+			assert_eq!(9u64, unlock_chunks_total::<Test>(&last_unlocks));
 		})
 	}
 }

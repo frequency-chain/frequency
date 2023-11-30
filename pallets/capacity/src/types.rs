@@ -179,71 +179,47 @@ pub struct EpochInfo<BlockNumber> {
 	pub epoch_start: BlockNumber,
 }
 
-/// The type that stores all the unlocks an account has generated from `unstake` calls
-#[derive(Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
-pub struct UnlockChunks<T: Config> {
-	/// the list of unstaked amounts + thaw_at Epoch
-	pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>, T::EpochNumber>, T::MaxUnlockingChunks>,
+/// A BoundedVec containing UnlockChunks
+pub type UnlockChunkList<T> = BoundedVec<
+	UnlockChunk<BalanceOf<T>, <T as Config>::EpochNumber>,
+	<T as Config>::MaxUnlockingChunks,
+>;
+
+/// Computes and returns the total token held in an UnlockChunkList.
+pub fn unlock_chunks_total<T: Config>(unlock_chunks: &UnlockChunkList<T>) -> BalanceOf<T> {
+	unlock_chunks
+		.iter()
+		.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
 }
 
-impl<T: Config> Default for UnlockChunks<T> {
-	fn default() -> Self {
-		Self { unlocking: BoundedVec::default() }
-	}
+/// Deletes thawed chunks
+/// Caller is responsible for updating free/locked balance on the token account.
+/// Returns: the total amount reaped from `unlocking`
+pub fn unlock_chunks_reap_thawed<T: Config>(
+	unlock_chunks: &mut UnlockChunkList<T>,
+	current_epoch: <T>::EpochNumber,
+) -> BalanceOf<T> {
+	let mut total_reaped: BalanceOf<T> = 0u32.into();
+	unlock_chunks.retain(|chunk| {
+		if current_epoch.ge(&chunk.thaw_at) {
+			total_reaped = total_reaped.saturating_add(chunk.value);
+			false
+		} else {
+			true
+		}
+	});
+	total_reaped
 }
-
-impl<T: Config> UnlockChunks<T> {
-	#[cfg(any(feature = "runtime-benchmarks", test))]
-	#[allow(clippy::unwrap_used)]
-	/// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
-	/// returns true on success, false on failure (?)
-	/// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
-	pub fn set_unlock_chunks(&mut self, chunks: &Vec<(u32, u32)>) -> bool {
-		let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
-			.into_iter()
-			.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
-			.collect();
-		// CAUTION
-		self.unlocking = BoundedVec::try_from(result).unwrap();
-		self.unlocking.len() == chunks.len()
-	}
-
-	/// Deletes thawed chunks
-	/// Caller is responsible for updating free/locked balance on the token account.
-	/// Returns: the total amount reaped from `unlocking`
-	pub fn reap_thawed(&mut self, current_epoch: <T>::EpochNumber) -> BalanceOf<T> {
-		let mut total_reaped: BalanceOf<T> = 0u32.into();
-		self.unlocking.retain(|chunk| {
-			if current_epoch.ge(&chunk.thaw_at) {
-				total_reaped = total_reaped.saturating_add(chunk.value);
-				false
-			} else {
-				true
-			}
-		});
-		total_reaped
-	}
-
-	/// Attempt to add a new chunk to unlocking.
-	/// caller is responsible for reaping_thawed chunks beforehand.
-	/// Returns:  () or MaxUnlockingChunksExceeded if the BoundedVec is full.
-	pub fn add(
-		&mut self,
-		amount: BalanceOf<T>,
-		thaw_at: <T>::EpochNumber,
-	) -> Result<(), DispatchError> {
-		let unlock_chunk = UnlockChunk { value: amount, thaw_at };
-		self.unlocking
-			.try_push(unlock_chunk)
-			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
-		Ok(())
-	}
-
-	/// Get the total balance of all unlock chunks
-	pub fn total(&self) -> BalanceOf<T> {
-		self.unlocking
-			.iter()
-			.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
-	}
+#[cfg(any(feature = "runtime-benchmarks", test))]
+#[allow(clippy::unwrap_used)]
+/// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
+/// returns true on success, false on failure (?)
+/// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
+pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChunkList<T> {
+	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
+		.into_iter()
+		.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
+		.collect();
+	// CAUTION
+	BoundedVec::try_from(result).unwrap()
 }

@@ -33,7 +33,7 @@ fn unstake_happy_path() {
 			.unwrap();
 
 		let unlocking = Capacity::get_unstake_unlocking_for(token_account).unwrap();
-		assert_eq!(unlocking.unlocking, expected_unlocking_chunks);
+		assert_eq!(unlocking, expected_unlocking_chunks);
 
 		assert_eq!(
 			StakingDetails::<Test> {

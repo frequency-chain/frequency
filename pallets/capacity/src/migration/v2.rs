@@ -1,6 +1,6 @@
 use crate::{
 	types::{StakingDetails, UnlockChunk},
-	BalanceOf, Config, Pallet, StakingAccountLedger, StakingType, UnlockChunks, UnstakeUnlocks,
+	BalanceOf, Config, Pallet, StakingAccountLedger, StakingType, UnlockChunkList, UnstakeUnlocks,
 };
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, Weight},
@@ -57,8 +57,7 @@ pub fn migrate_to_v2<T: Config>() -> Weight {
 					active: old_details.active,
 					staking_type: StakingType::MaximumCapacity,
 				};
-				let new_unlocks: UnlockChunks<T> =
-					UnlockChunks { unlocking: old_details.unlocking };
+				let new_unlocks: UnlockChunkList<T> = old_details.unlocking;
 				UnstakeUnlocks::<T>::insert(key, new_unlocks);
 				maybe_count += 1;
 				log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
