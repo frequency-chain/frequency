@@ -146,12 +146,13 @@ benchmarks! {
 	propose_to_create_schema_name {
 		let sender: T::AccountId = whitelisted_caller();
 		let schema_id = 1;
+		let model = generate_schema::<T>(100 as usize);
 		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
 		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
-		SchemasPallet::<T>::set_schema_count(1);
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		assert_ok!(SchemasPallet::<T>::add_schema(model, ModelType::AvroBinary, PayloadLocation::OnChain, BoundedVec::default(), None));
 	}: _(RawOrigin::Signed(sender), schema_id, schema_name)
 	verify {
 		assert_eq!(T::ProposalProvider::proposal_count(), 1);
@@ -159,12 +160,13 @@ benchmarks! {
 
 	create_schema_name_via_governance {
 		let schema_id = 1;
+		let model = generate_schema::<T>(100 as usize);
 		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
 		let schema_name = SchemaNamePayload::try_from(name).expect("should resolve");
-		SchemasPallet::<T>::set_schema_count(1);
 		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
+		assert_ok!(SchemasPallet::<T>::add_schema(model, ModelType::AvroBinary, PayloadLocation::OnChain, BoundedVec::default(), None));
 	}: _(RawOrigin::Root, schema_id, schema_name.clone())
 	verify {
 		let versions = SchemasPallet::<T>::get_schema_versions(schema_name.into_inner());

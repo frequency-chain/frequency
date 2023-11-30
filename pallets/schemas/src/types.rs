@@ -47,6 +47,8 @@ pub struct SchemaInfo {
 	pub payload_location: PayloadLocation,
 	/// additional control settings for the schema
 	pub settings: SchemaSettings,
+	/// Defines if a schema has a name or not
+	pub has_name: bool,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]

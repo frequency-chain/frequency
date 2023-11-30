@@ -133,7 +133,7 @@ impl SchemaSettings {
 }
 impl_codec_bitflags!(SchemaSettings, u16, SchemaSetting);
 
-/// RPC Response form a schema name query
+/// RPC Response from a schema name query
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
 pub struct SchemaVersionResponse {

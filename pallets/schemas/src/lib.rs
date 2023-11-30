@@ -202,6 +202,9 @@ pub mod pallet {
 
 		///  SchemaId does not exist
 		SchemaIdDoesNotExist,
+
+		/// SchemaId has a name already
+		SchemaIdAlreadyHasName,
 	}
 
 	#[pallet::pallet]
@@ -600,7 +603,18 @@ pub mod pallet {
 		}
 
 		/// Propose to create a schema name.  Creates a proposal for council approval to create a schema name
-		///
+		/// * [`Error::LessThanMinSchemaModelBytes`] - The schema's length is less than the minimum schema length
+		/// * [`Error::ExceedsMaxSchemaModelBytes`] - The schema's length is greater than the maximum schema length
+		/// * [`Error::InvalidSchema`] - Schema is malformed in some way
+		/// * [`Error::InvalidSchemaNameEncoding`] - The schema name has invalid encoding
+		/// * [`Error::InvalidSchemaNameCharacters`] - The schema name has invalid characters
+		/// * [`Error::InvalidSchemaNameStructure`] - The schema name has invalid structure
+		/// * [`Error::InvalidSchemaNameLength`] - The schema name has invalid length
+		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
+		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
+		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
+		/// * [`Error::SchemaIdDoesNotExist`] - The schema id does not exist
+		/// * [`Error::SchemaIdAlreadyHasName`] - The schema id already has a name
 		#[pallet::call_index(8)]
 		#[pallet::weight(T::WeightInfo::propose_to_create_schema_name())]
 		pub fn propose_to_create_schema_name(
@@ -610,10 +624,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 
-			ensure!(
-				schema_id <= Self::get_current_schema_identifier_maximum(),
-				Error::<T>::SchemaIdDoesNotExist
-			);
+			let _ = Self::parse_and_verify_schema_name(schema_id, &schema_name)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_schema_name_via_governance { schema_id, schema_name }).into(),
@@ -639,6 +650,8 @@ pub mod pallet {
 		/// * [`Error::InvalidSchemaNamespaceLength`] - The schema namespace has invalid length
 		/// * [`Error::InvalidSchemaDescriptorLength`] - The schema descriptor has invalid length
 		/// * [`Error::ExceedsMaxNumberOfVersions`] - The schema name reached max number of versions
+		/// * [`Error::SchemaIdDoesNotExist`] - The schema id does not exist
+		/// * [`Error::SchemaIdAlreadyHasName`] - The schema id already has a name
 		///
 		#[pallet::call_index(9)]
 		#[pallet::weight(T::WeightInfo::create_schema_name_via_governance())]
@@ -649,11 +662,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::CreateSchemaViaGovernanceOrigin::ensure_origin(origin)?;
 
-			ensure!(
-				schema_id <= Self::get_current_schema_identifier_maximum(),
-				Error::<T>::SchemaIdDoesNotExist
-			);
-			let parsed_name = SchemaName::try_parse::<T>(schema_name, true)?;
+			let parsed_name = Self::parse_and_verify_schema_name(schema_id, &schema_name)?;
 			SchemaNameToIds::<T>::try_mutate(
 				&parsed_name.namespace,
 				&parsed_name.descriptor,
@@ -687,6 +696,7 @@ pub mod pallet {
 			schema_name_option: Option<SchemaName>,
 		) -> Result<SchemaId, DispatchError> {
 			let schema_id = Self::get_next_schema_id()?;
+			let has_name = schema_name_option.is_some();
 			let mut set_settings = SchemaSettings::all_disabled();
 			if !settings.is_empty() {
 				for i in settings.into_inner() {
@@ -705,7 +715,8 @@ pub mod pallet {
 				)?;
 			};
 
-			let schema_info = SchemaInfo { model_type, payload_location, settings: set_settings };
+			let schema_info =
+				SchemaInfo { model_type, payload_location, settings: set_settings, has_name };
 			<CurrentSchemaIdentifierMaximum<T>>::set(schema_id);
 			<SchemaInfos<T>>::insert(schema_id, schema_info);
 			<SchemaPayloads<T>>::insert(schema_id, model);
@@ -853,6 +864,20 @@ pub mod pallet {
 					.collect(),
 			};
 			Some(versions)
+		}
+
+		/// Parses the schema name and makes sure the schema does not have a name
+		fn parse_and_verify_schema_name(
+			schema_id: SchemaId,
+			schema_name: &SchemaNamePayload,
+		) -> Result<SchemaName, DispatchError> {
+			let schema_option = Self::get_schema_info(schema_id);
+			ensure!(schema_option.is_some(), Error::<T>::SchemaIdDoesNotExist);
+			if let Some(info) = schema_option {
+				ensure!(!info.has_name, Error::<T>::SchemaIdAlreadyHasName);
+			}
+			let parsed_name = SchemaName::try_parse::<T>(schema_name.clone(), true)?;
+			Ok(parsed_name)
 		}
 	}
 }

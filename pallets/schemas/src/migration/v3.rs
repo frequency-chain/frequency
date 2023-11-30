@@ -1,8 +1,9 @@
 #[cfg(feature = "try-runtime")]
 use crate::types::SCHEMA_STORAGE_VERSION;
 use crate::{
+	migration::v3::old::OldSchemaInfo,
 	pallet::{SchemaInfos, SchemaNameToIds},
-	Config, Pallet, SchemaId, SchemaName, LOG_TARGET,
+	Config, Pallet, SchemaId, SchemaInfo, SchemaName, LOG_TARGET,
 };
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use log;
@@ -44,6 +45,23 @@ pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
 	])
 }
 
+/// old module storages
+pub mod old {
+	use super::*;
+	use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
+
+	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+	/// A structure defining a Schema information (excluding the payload)
+	pub struct OldSchemaInfo {
+		/// The type of model (AvroBinary, Parquet, etc.)
+		pub model_type: ModelType,
+		/// The payload location
+		pub payload_location: PayloadLocation,
+		/// additional control settings for the schema
+		pub settings: SchemaSettings,
+	}
+}
+
 /// migration to v2 implementation
 pub struct MigrateToV3<T>(PhantomData<T>);
 
@@ -83,10 +101,27 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 		let mut reads = 1u64;
 		let mut writes = 0u64;
 		let mut bytes = 0u64;
+
+		SchemaInfos::<T>::translate_values(|old: OldSchemaInfo| -> Option<SchemaInfo> {
+			reads.saturating_inc();
+			writes.saturating_inc();
+			bytes = bytes.saturating_add(old.encode().len() as u64);
+			bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
+
+			Some(SchemaInfo {
+				model_type: old.model_type,
+				payload_location: old.payload_location,
+				settings: old.settings,
+				has_name: false,
+			})
+		});
+
+		log::error!(target: LOG_TARGET, "Finished translating {:?} SchemaInfos!", writes);
+
 		for (schema_id, schema_name) in known_schemas.iter() {
 			reads.saturating_inc();
 
-			if let Some(schema) = SchemaInfos::<T>::get(&schema_id) {
+			if let Some(mut schema) = SchemaInfos::<T>::get(&schema_id) {
 				bytes = bytes.saturating_add(schema.encode().len() as u64);
 				bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
 
@@ -101,6 +136,12 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 										.saturating_add(schema_version_id.encode().len() as u64);
 
 									let _ = schema_version_id.add::<T>(*schema_id);
+
+									// set schema as having a name
+									schema.has_name = true;
+									SchemaInfos::<T>::set(&schema_id, Some(schema));
+									writes.saturating_inc();
+
 									Ok(())
 								},
 							);
