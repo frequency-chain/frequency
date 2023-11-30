@@ -7,14 +7,15 @@ runs:
       uses: taiki-e/install-action@cargo-llvm-cov
     - name: Generate code coverage
       shell: bash
+      # Limited to 12, uses codecov output
       run: |
-        cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
+        cargo llvm-cov -j 12 -v --no-fail-fast --workspace --codecov --output-path codecov.json \
         --ignore-filename-regex "^.*\/(node\/|runtime\/|mock\.rs|weights(\.rs)?|benchmarking\.rs|runtime-api/src/lib\.rs).*$" \
         --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
         --features frequency-lint-check
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v3
       with:
-        files: lcov.info
+        files: codecov.json
         fail_ci_if_error: false # optional (default = false)
         verbose: true # optional (default = false)
