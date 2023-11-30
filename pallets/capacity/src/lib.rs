@@ -351,11 +351,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// removes all thawed UnlockChunks from caller's StakingAccount and unlocks the sum of the thawed values
+		/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and unlocks the sum of the thawed values
 		/// in the caller's token account.
 		///
 		/// ### Errors
-		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks or none are thawed.
+		///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks.
+		///   - Returns `Error::NoThawedTokenAvailable` if there are unstaking chunks, but none are thawed.
 		#[pallet::call_index(1)]
 		#[pallet::weight(T::WeightInfo::withdraw_unstaked())]
 		pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResult {
