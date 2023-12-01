@@ -1,10 +1,8 @@
 use crate::{
 	tests::mock::{new_test_ext, Test},
-	unlock_chunks_from_vec, unlock_chunks_reap_thawed, unlock_chunks_total, Config, Error,
-	UnlockChunkList,
+	unlock_chunks_from_vec, unlock_chunks_reap_thawed, unlock_chunks_total, UnlockChunkList,
 };
 use sp_runtime::BoundedVec;
-use std::ops::Bound;
 
 #[test]
 fn unlock_chunks_reap_thawed_happy_path() {

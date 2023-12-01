@@ -3,8 +3,7 @@ use super::{
 	testing_utils::{register_provider, run_to_block},
 };
 use crate::{
-	unlock_chunks_from_vec, unlock_chunks_reap_thawed, CurrentEpoch, CurrentEpochInfo, EpochInfo,
-	Error, Event, UnstakeUnlocks,
+	unlock_chunks_from_vec, CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnstakeUnlocks,
 };
 use frame_support::{assert_noop, assert_ok};
 

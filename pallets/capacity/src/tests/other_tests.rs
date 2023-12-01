@@ -73,7 +73,7 @@ fn set_staking_account_is_successful() {
 		let mut staking_account = StakingDetails::<Test>::default();
 		staking_account.deposit(55);
 
-		assert_ok!(Capacity::set_staking_account(&staker, &staking_account));
+		assert_ok!(Capacity::set_staking_account_and_lock(&staker, &staking_account));
 
 		assert_eq!(Balances::locks(&staker)[0].amount, 55);
 	});

@@ -97,7 +97,7 @@ benchmarks! {
 		target_details.deposit(staking_amount, capacity_amount);
 		capacity_details.deposit(&staking_amount, &capacity_amount);
 
-		let _ = Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
+		let _ = Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account);
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
 		Capacity::<T>::set_capacity_for(target, capacity_details);
 

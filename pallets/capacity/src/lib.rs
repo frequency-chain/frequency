@@ -476,7 +476,7 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
 		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
-		Self::set_staking_account(&staker, staking_account)?;
+		Self::set_staking_account_and_lock(&staker, staking_account)?;
 
 		Self::set_target_details_for(&staker, target, target_details);
 		Self::set_capacity_for(target, capacity_details);
@@ -485,7 +485,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Sets staking account details after a deposit
-	fn set_staking_account(
+	fn set_staking_account_and_lock(
 		staker: &T::AccountId,
 		staking_account: &StakingDetails<T>,
 	) -> Result<(), DispatchError> {
@@ -495,8 +495,16 @@ impl<T: Config> Pallet<T> {
 			.checked_add(&unlock_chunks_total::<T>(&unlocks))
 			.ok_or(ArithmeticError::Overflow)?;
 		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
-		StakingAccountLedger::<T>::insert(staker, staking_account);
+		Self::set_staking_account(staker, staking_account);
 		Ok(())
+	}
+
+	fn set_staking_account(staker: &T::AccountId, staking_account: &StakingDetails<T>) {
+		if staking_account.active.is_zero() {
+			StakingAccountLedger::<T>::set(staker, None);
+		} else {
+			StakingAccountLedger::<T>::insert(staker, staking_account);
+		}
 	}
 
 	/// Sets target account details.
@@ -521,25 +529,13 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		StakingAccountLedger::<T>::try_mutate_exists(
-			unstaker,
-			|maybe_staking_account| -> Result<BalanceOf<T>, DispatchError> {
-				let mut staking_account =
-					maybe_staking_account.take().ok_or(Error::<T>::NotAStakingAccount)?;
-				ensure!(
-					amount <= staking_account.active,
-					Error::<T>::AmountToUnstakeExceedsAmountStaked
-				);
+		let mut staking_account =
+			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
+		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
-				let actual_unstaked_amount = staking_account.withdraw(amount)?;
-				if staking_account.active.is_zero() {
-					*maybe_staking_account = None;
-				} else {
-					*maybe_staking_account = Some(staking_account);
-				}
-				Ok(actual_unstaked_amount)
-			},
-		)
+		let actual_unstaked_amount = staking_account.withdraw(amount)?;
+		Self::set_staking_account(unstaker, &staking_account);
+		Ok(actual_unstaked_amount)
 	}
 
 	fn add_unlock_chunk(
@@ -582,12 +578,14 @@ impl<T: Config> Pallet<T> {
 			Self::get_unstake_unlocking_for(staker).ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
 		let amount_withdrawn = unlock_chunks_reap_thawed::<T>(&mut unlocks, current_epoch);
 		ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoThawedTokenAvailable);
+
 		if unlocks.is_empty() {
 			UnstakeUnlocks::<T>::set(staker, None);
 		} else {
 			total_unlocking = unlock_chunks_total::<T>(&unlocks);
 			UnstakeUnlocks::<T>::set(staker, Some(unlocks));
 		}
+
 		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
