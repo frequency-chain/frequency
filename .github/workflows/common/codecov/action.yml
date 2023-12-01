@@ -1,11 +1,11 @@
 name: Run Generation of Code Coverage
-description: Runs cargo llvm-cov
+description: Runs cargo grcov
 runs:
   using: "composite"
   steps:
-    - name: Install cargo-llvm-cov
+    - name: Install grcov
       shell: bash
-      run: cargo install grcov
+      run: cargo +nightly-2023-07-13 install grcov
     - name: Build
       shell: bash # Limited to 12 threads max
       run: cargo +nightly-2023-07-13 build -j 12 --features frequency-lint-check
