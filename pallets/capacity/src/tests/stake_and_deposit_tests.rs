@@ -1,7 +1,5 @@
 use super::{mock::*, testing_utils::*};
-use crate::{
-	BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, StakingDetails,
-};
+use crate::{BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, StakingDetails};
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
 use sp_runtime::ArithmeticError;
@@ -412,8 +410,7 @@ fn stake_when_there_are_unlocks_sets_lock_correctly() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target2, 20));
 
 		// should all still be locked.
-		assert_eq!(Balances::locks(&staker)[0].amount, 40);
-		assert_eq!(Balances::locks(&staker)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(Balances::balance_frozen(&FreezeReason::Staked.into(), &staker), 40);
 	})
 }
 

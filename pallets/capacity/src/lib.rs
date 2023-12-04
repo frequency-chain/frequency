@@ -511,7 +511,7 @@ impl<T: Config> Pallet<T> {
 			.active
 			.checked_add(&unlock_chunks_total::<T>(&unlocks))
 			.ok_or(ArithmeticError::Overflow)?;
-		T::Currency::set_freeze(&FreezeReason::Staked, staker, total_to_lock);
+		T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, total_to_lock)?;
 		Self::set_staking_account(staker, staking_account);
 		Ok(())
 	}
@@ -522,8 +522,6 @@ impl<T: Config> Pallet<T> {
 		} else {
 			StakingAccountLedger::<T>::insert(staker, staking_account);
 		}
-
-		Ok(())
 	}
 
 	/// Sets target account details.
@@ -581,7 +579,7 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let account_balance = T::Currency::free_balance(&staker);
+		let account_balance = T::Currency::balance(&staker);
 		account_balance
 			.saturating_sub(T::MinimumTokenBalance::get())
 			.min(proposed_amount)
@@ -608,9 +606,9 @@ impl<T: Config> Pallet<T> {
 		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
-			T::Currency::remove_lock(STAKING_ID, &staker);
+			T::Currency::thaw(&FreezeReason::Staked.into(), staker)?;
 		} else {
-			T::Currency::set_lock(STAKING_ID, &staker, total_locked, WithdrawReasons::all());
+			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, total_locked)?;
 		}
 		Ok(amount_withdrawn)
 	}

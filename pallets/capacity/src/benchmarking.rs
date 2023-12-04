@@ -2,7 +2,7 @@ use super::*;
 use crate::Pallet as Capacity;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account};
-use frame_support::assert_ok;
+use frame_support::{assert_ok, BoundedVec};
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
 

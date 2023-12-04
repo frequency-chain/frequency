@@ -1,8 +1,13 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
-use crate::{CapacityDetails, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk};
+use crate::{
+	CapacityDetails, FreezeReason, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk,
+};
 use common_primitives::msa::MessageSourceId;
-use frame_support::{assert_noop, assert_ok, traits::Get};
+use frame_support::{
+	assert_noop, assert_ok,
+	traits::{fungible::InspectFreeze, Get},
+};
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
 
@@ -174,8 +179,7 @@ fn unstaking_everything_reaps_staking_account() {
 		run_to_block(1);
 		// unstake everything
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(20u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::Staked.into(), &staker));
 
 		// it should reap the staking account right away
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
