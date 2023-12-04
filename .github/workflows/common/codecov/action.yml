@@ -20,12 +20,20 @@ runs:
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
+    # There are a lot of things ignored here to make it all work
+    # See the grcov docs for more information
+    # excl tests, rpc traits, and error enums
     - name: Generate code coverage
       shell: bash
       run: |
         grcov . -s . --binary-path ./target/debug/ -t lcov \
           --ignore-not-existing \
           --excl-start 'mod test* \{' \
+          --excl-stop '^}' \
+          --excl-start '#\[rpc\('
+          --excl-stop '\s*}$' \
+          --excl-start 'pub enum Error<T> \{' \
+          --excl-stop '\s*}$' \
           --ignore "target/*" \
           --ignore "node/*"  \
           --ignore "runtime/*" \
