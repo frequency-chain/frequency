@@ -1,5 +1,9 @@
 name: Run Generation of Code Coverage
 description: Runs cargo grcov
+inputs:
+  code-cov-token:
+    description: "codecov token"
+    required: true
 runs:
   using: "composite"
   steps:
@@ -49,7 +53,7 @@ runs:
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v4.0.0-beta.3
       with:
-        token: ${{ secrets.CODECOV_TOKEN }}
+        token: ${{inputs.code-cov-token}}
         files: ./target/debug/lcov.info
         fail_ci_if_error: false # optional (default = false)
         verbose: true # optional (default = false)
