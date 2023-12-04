@@ -281,6 +281,7 @@ fn schema_name_try_parse_with_strict_invalid_names_should_fail() {
 				input: r#"aa.sdhks"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
+			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
 		];
 		for tc in test_cases {
@@ -339,6 +340,7 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 				input: r#"aa.sdhks"#,
 				expected: Error::<Test>::InvalidSchemaNamespaceLength,
 			},
+			TestCase { input: r#".sdhks"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase { input: r#"aa"#, expected: Error::<Test>::InvalidSchemaNamespaceLength },
 			TestCase { input: r#"hjs."#, expected: Error::<Test>::InvalidSchemaDescriptorLength },
 		];
