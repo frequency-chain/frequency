@@ -7,7 +7,7 @@ coverage:
     project:
       default:
         threshold: 7%            # allows coverage to drop by up to the percent noted and still post a success status
-        informational: true     # If true is specified the resulting status will pass no matter what the coverage is or what other settings are specified
+        informational: false     # If true is specified the resulting status will pass no matter what the coverage is or what other settings are specified
     patch:
       default:
         target: 0% # No target for patches
