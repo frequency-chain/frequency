@@ -67,14 +67,14 @@ fn start_new_epoch_works() {
 }
 
 #[test]
-fn set_staking_account_is_succesful() {
+fn set_staking_account_is_successful() {
 	new_test_ext().execute_with(|| {
 		let staker = 100;
-		let mut staking_account = StakingAccountDetails::<Test>::default();
+		let mut staking_account = StakingDetails::<Test>::default();
 		staking_account.deposit(55);
 
-		Capacity::set_staking_account(&staker, &staking_account)
-			.expect("Failed to set staking account");
+		Capacity::set_staking_account_and_lock(&staker, &staking_account)
+			.expect("Failed to set staking account and lock");
 
 		let frozen_balance =
 			<Test as Config>::Currency::balance_frozen(&(FreezeReason::Staked).into(), &staker);
