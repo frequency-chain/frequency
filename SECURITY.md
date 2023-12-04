@@ -11,7 +11,7 @@ promptly and protect our users.
 
 Instead, please report the vulnerability via [https://github.com/LibertyDSNP/frequency/security](https://github.com/LibertyDSNP/frequency/security).
 
-Or alternatively, you can send email to [security@frequency.xyz](mailto:security@frequency.xyz).  If
+Alternatively, you can send email to [security@frequency.xyz](mailto:security@frequency.xyz).  If
 possible, encrypt your message with our PGP key; you can download it from [OpenGPG key server](https://keys.openpgp.org/vks/v1/by-fingerprint/0E50AE7CFD8195999CF45370B766E94411B9B734)
 or copy from below.
 
@@ -28,7 +28,7 @@ understand the nature and scope of the possible issue:
 - Step-by-step instructions to reproduce the issue
 - Any other details
 
-**Reminder: This process is only for security related vulnerabilities and If this is a generic issue
+**Reminder: This process is only for security related vulnerabilities and if this is a generic issue
 (no security implications) with Frequency or Polkadot-sdk or any other dependencies please open a
 regular GitHub issue.**
 
