@@ -353,6 +353,29 @@ export class ExtrinsicHelper {
     );
   }
 
+  /** Schema v3 Extrinsics */
+  public static createSchemaV3(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: ('AppendOnly' | 'SignatureRequired')[],
+    schemaNme: string | null
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.schemas.createSchemaV3(
+          JSON.stringify(model),
+          modelType,
+          payloadLocation,
+          grant,
+          schemaNme
+        ),
+      keys,
+      ExtrinsicHelper.api.events.schemas.SchemaCreated
+    );
+  }
+
   /** Generic Schema Extrinsics */
   public static createSchemaWithSettingsGov(
     keys: KeyringPair,
@@ -369,6 +392,30 @@ export class ExtrinsicHelper {
           modelType,
           payloadLocation,
           [grant]
+        ),
+      keys,
+      ExtrinsicHelper.api.events.schemas.SchemaCreated
+    );
+  }
+
+  /** Generic Schema Extrinsics v2 */
+  public static createSchemaWithSettingsGovV2(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: 'AppendOnly' | 'SignatureRequired',
+    schemaName: string | null
+  ) {
+    return new Extrinsic(
+      () =>
+        ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernanceV2(
+          keys.publicKey,
+          JSON.stringify(model),
+          modelType,
+          payloadLocation,
+          [grant],
+          schemaName
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated

@@ -1,6 +1,9 @@
 use frame_support::{
+	assert_ok,
+	dispatch::RawOrigin,
 	traits::{ConstU16, ConstU32, EitherOfDiverse},
 	weights::{Weight, WeightToFeeCoefficient, WeightToFeeCoefficients, WeightToFeePolynomial},
+	BoundedVec,
 };
 use frame_system::EnsureRoot;
 use parity_scale_codec::MaxEncodedLen;
@@ -169,4 +172,23 @@ pub fn test_public(n: u8) -> AccountId32 {
 /// for passing to an extrinsic call
 pub fn test_origin_signed(n: u8) -> RuntimeOrigin {
 	RuntimeOrigin::signed(test_public(n))
+}
+
+/// creates a bounded vec schema
+pub fn create_bounded_schema_vec(
+	from_string: &str,
+) -> BoundedVec<u8, <Test as crate::Config>::SchemaModelMaxBytesBoundedVecLimit> {
+	let fields_vec = Vec::from(from_string.as_bytes());
+	BoundedVec::try_from(fields_vec).unwrap()
+}
+
+/// sets max schema size
+pub fn sudo_set_max_schema_size() {
+	assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), 70));
+}
+
+/// struct which encapsulates a test case and expected result
+pub struct TestCase<T> {
+	pub input: &'static str,
+	pub expected: T,
 }

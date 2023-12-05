@@ -534,3 +534,20 @@ export async function assertAddNewKey(
   assertEvent(eventMap, 'system.ExtrinsicSuccess');
   assertEvent(eventMap, 'msa.PublicKeyAdded');
 }
+
+export function generateSchemaPartialName(length: number): string {
+  let result = '';
+  const characters = 'abcdefghijklmnopqrstuvwxyz-';
+  const charactersLength = characters.length;
+  let counter = 0;
+  while (counter < length) {
+    const randomChar = characters.charAt(Math.floor(Math.random() * charactersLength));
+    if ((counter == 0 || counter == length - 1) && randomChar === '-') {
+      // avoid creating invalid name
+      continue;
+    }
+    result += randomChar;
+    counter += 1;
+  }
+  return result;
+}
