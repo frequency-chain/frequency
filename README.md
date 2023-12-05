@@ -334,7 +334,7 @@ Please check out [the information here](./CONTRIBUTING.md).
 # Security Issue Reporting
 
 Do you know of an on-chain vulnerability (or possible one) that can lead to economic loss, privacy loss, or instability of the network?
-Please report it to [security@frequency.xyz](mailto:security@frequency.xyz)
+Please report it by following the steps mentioned in [here](./SECURITY.md).
 
 # Additional Resources
 
