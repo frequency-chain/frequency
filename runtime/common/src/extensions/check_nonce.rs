@@ -98,11 +98,16 @@ where
 			.into())
 		}
 
+		// Is this an existing account ?
+		let existing_account =
+			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
+
 		// Increment account nonce by 1
 		account.nonce += T::Nonce::one();
 
-		// Only create or update the token account if the caller is paying
-		if info.pays_fee == Pays::Yes {
+		// Only create or update the token account if the caller is paying or
+		// account already exists
+		if info.pays_fee == Pays::Yes || existing_account {
 			frame_system::Account::<T>::insert(who, account);
 		}
 
