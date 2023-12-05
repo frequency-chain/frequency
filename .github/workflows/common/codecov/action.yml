@@ -1,20 +1,59 @@
 name: Run Generation of Code Coverage
-description: Runs cargo llvm-cov
+description: Runs cargo grcov
+inputs:
+  code-cov-token:
+    description: "codecov token"
+    required: true
 runs:
   using: "composite"
   steps:
-    - name: Install cargo-llvm-cov
-      uses: taiki-e/install-action@cargo-llvm-cov
+    - name: Install grcov
+      shell: bash
+      run: cargo +nightly-2023-07-13 install grcov
+    - name: Build
+      shell: bash # Limited to 12 threads max
+      run: cargo +nightly-2023-07-13 build -j 12 --features frequency-lint-check
+      env:
+        CARGO_INCREMENTAL: '0'
+        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTDOCFLAGS: "-Cpanic=abort"
+    - name: Test
+      shell: bash # Limited to 12 threads max
+      run: cargo +nightly-2023-07-13 test -j 12 --features frequency-lint-check
+      env:
+        CARGO_INCREMENTAL: '0'
+        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTDOCFLAGS: "-Cpanic=abort"
+    # There are a lot of things ignored here to make it all work
+    # See the grcov docs for more information
+    # excl rpc traits, and error enums
+    # Only one of excl start and stop are allowed.
     - name: Generate code coverage
       shell: bash
       run: |
-        cargo llvm-cov -v --no-fail-fast --workspace --lcov --output-path lcov.info \
-        --ignore-filename-regex "^.*\/(node\/|runtime\/|mock\.rs|weights(\.rs)?|benchmarking\.rs|runtime-api/src/lib\.rs).*$" \
-        --exclude "frequency,frequency-cli,frequency-runtime,frequency-service" \
-        --features frequency-lint-check
+        grcov . -s . --binary-path ./target/debug/ -t lcov \
+          --ignore-not-existing \
+          --excl-start '(pub enum Error<T> \{|#\[rpc\()' \
+          --excl-stop '\s*}$' \
+          --ignore "target/*" \
+          --ignore "node/*"  \
+          --ignore "runtime/*" \
+          --ignore "**/*weights.rs" \
+          --ignore "**/benchmark*.rs" \
+          --ignore "**/*tests.rs" \
+          --ignore "**/tests/*.rs" \
+          --ignore "**/*mock.rs" \
+          --ignore "**/*runtime-api/src/lib.rs" \
+          --ignore "*github.com*" \
+          --ignore "*libcore*" \
+          --ignore "*rustc*" \
+          --ignore "*liballoc*" \
+          --ignore "*cargo*" \
+          -o ./target/debug/lcov.info
     - name: Upload to codecov.io
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4.0.0-beta.3
       with:
-        files: lcov.info
+        token: ${{inputs.code-cov-token}}
+        files: ./target/debug/lcov.info
         fail_ci_if_error: false # optional (default = false)
         verbose: true # optional (default = false)
