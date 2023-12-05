@@ -449,7 +449,14 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn delete_lock(who: &T::AccountId) {
-		let _ = T::Currency::thaw(&FreezeReason::NotYetVested.into(), who);
+		// thaw returns a DispatchResult from frame::balances::lib.rs::update_freezes()
+		// which returns Ok(()), but mutate()->try_mutate_account() can return an error if:
+		// 1. account does not exist
+		// 2. the closure passed to mutate_account() returns an error (data manipulation error, unlikely)
+		// 3. there is an error in increasing or decreasing the providers or consumers
+		// 4. the account balance < ED, and reserved balance is zero ==> dust removal
+		// We can ignore the error here b/c no matter what the lock will be deleted.
+		T::Currency::thaw(&FreezeReason::NotYetVested.into(), who).ok();
 	}
 
 	fn set_schedules_for(
