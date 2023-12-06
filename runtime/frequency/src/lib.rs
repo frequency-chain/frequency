@@ -506,7 +506,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
-	type MaxHolds = BalancesMaxHolds;
+	type MaxHolds = ConstU32<0>;
 	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = RuntimeFreezeReason;

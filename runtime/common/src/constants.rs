@@ -68,6 +68,7 @@ pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_
 	.saturating_div(2)
 	.set_proof_size(cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64);
 pub type ZERO = ConstU32<0>;
+pub type TWO = ConstU32<2>;
 pub type FIFTY = ConstU32<50>;
 pub type HUNDRED = ConstU32<100>;
 
@@ -135,9 +136,8 @@ pub type AuthorshipUncleGenerations = ZERO;
 // --- Balances Pallet ---
 pub type BalancesMaxLocks = FIFTY;
 pub type BalancesMaxReserves = FIFTY;
-pub type BalancesMaxFreezes = FIFTY;
-pub type BalancesMaxHolds = FIFTY;
-// -end- Balances Pallet ---
+pub type BalancesMaxFreezes = TWO; // capacity + time-release
+								   // -end- Balances Pallet ---
 
 // --- Scheduler Pallet ---
 pub type SchedulerMaxScheduledPerBlock = FIFTY;

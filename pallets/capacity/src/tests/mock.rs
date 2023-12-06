@@ -55,7 +55,9 @@ impl frame_system::Config for Test {
 }
 
 impl pallet_balances::Config for Test {
+	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type MaxLocks = ConstU32<10>;
 	type Balance = u64;
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
@@ -63,10 +65,8 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxLocks = ConstU32<50>;
-	type MaxReserves = ConstU32<50>;
-	type MaxFreezes = ConstU32<50>;
-	type MaxHolds = ConstU32<50>;
+	type MaxFreezes = ConstU32<1>;
+	type MaxHolds = ConstU32<0>;
 	type RuntimeHoldReason = ();
 }
 

@@ -85,15 +85,15 @@ impl pallet_balances::Config for Test {
 	type DustRemoval = ();
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = u64;
+	type MaxLocks = ();
 	type WeightInfo = ();
 	type ReserveIdentifier = [u8; 8];
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
-	type MaxLocks = ConstU32<50>;
-	type MaxReserves = ConstU32<50>;
-	type MaxFreezes = ConstU32<50>;
-	type MaxHolds = ConstU32<50>;
+	type MaxReserves = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
+	type MaxFreezes = ConstU32<1>;
+	type MaxHolds = ConstU32<0>;
 	type RuntimeHoldReason = ();
 }
 
