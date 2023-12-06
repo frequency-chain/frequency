@@ -102,13 +102,11 @@ pub mod pallet {
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	/// A reason for freezing funds.
+	/// Creates a freeze reason for this pallet that is aggregated by `construct_runtime`.
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
 		/// The account has staked tokens to the Frequency network.
-		#[codec(index = 0)]
 		Staked,
-		/// Funds are currently locked and are not yet liquid.
-		NotYetVested,
 	}
 
 	/// the storage version for this pallet
