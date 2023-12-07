@@ -37,6 +37,7 @@
 )]
 
 use frame_support::{
+	dispatch::DispatchResult,
 	ensure,
 	pallet_prelude::*,
 	traits::{
@@ -51,7 +52,7 @@ use frame_support::{
 use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
 use sp_runtime::{
 	traits::{BlockNumberProvider, CheckedAdd, StaticLookup, Zero},
-	ArithmeticError, DispatchResult,
+	ArithmeticError,
 };
 use sp_std::vec::Vec;
 
@@ -252,7 +253,7 @@ pub mod module {
 		#[pallet::weight(T::WeightInfo::claim(<T as Config>::MaxReleaseSchedules::get() / 2))]
 		pub fn claim(origin: OriginFor<T>) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-			let locked_amount = Self::do_claim(&who);
+			let locked_amount = Self::do_claim(&who)?;
 
 			Self::deposit_event(Event::Claimed { who, amount: locked_amount });
 			Ok(())
@@ -337,7 +338,7 @@ pub mod module {
 		) -> DispatchResult {
 			ensure_signed(origin)?;
 			let who = T::Lookup::lookup(dest)?;
-			let locked_amount = Self::do_claim(&who);
+			let locked_amount = Self::do_claim(&who)?;
 
 			Self::deposit_event(Event::Claimed { who, amount: locked_amount });
 			Ok(())
@@ -346,15 +347,15 @@ pub mod module {
 }
 
 impl<T: Config> Pallet<T> {
-	fn do_claim(who: &T::AccountId) -> BalanceOf<T> {
+	fn do_claim(who: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
 		let locked = Self::prune_and_get_locked_balance(who);
 		if locked.is_zero() {
-			Self::delete_lock(who);
+			Self::delete_lock(who)?;
 		} else {
-			Self::update_lock(who, locked);
+			Self::update_lock(who, locked)?;
 		}
 
-		locked
+		Ok(locked)
 	}
 
 	/// Deletes schedules that have released all funds up to a block-number.
@@ -400,7 +401,7 @@ impl<T: Config> Pallet<T> {
 
 		T::Currency::transfer(from, to, schedule_amount, Preservation::Expendable)?;
 
-		Self::update_lock(&to, total_amount);
+		Self::update_lock(&to, total_amount)?;
 
 		<ReleaseSchedules<T>>::try_append(to, schedule)
 			.map_err(|_| Error::<T>::MaxReleaseSchedulesExceeded)?;
@@ -418,7 +419,7 @@ impl<T: Config> Pallet<T> {
 
 		// empty release schedules cleanup the storage and unlock the fund
 		if bounded_schedules.is_empty() {
-			Self::delete_release_schedules(who);
+			Self::delete_release_schedules(who)?;
 			return Ok(())
 		}
 
@@ -433,17 +434,18 @@ impl<T: Config> Pallet<T> {
 
 		ensure!(T::Currency::balance(who) >= total_amount, Error::<T>::InsufficientBalanceToLock,);
 
-		Self::update_lock(&who, total_amount);
+		Self::update_lock(&who, total_amount)?;
 		Self::set_schedules_for(who, bounded_schedules);
 
 		Ok(())
 	}
 
-	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) {
-		let _ = T::Currency::set_freeze(&FreezeReason::NotYetVested.into(), who, locked);
+	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
+		T::Currency::set_freeze(&FreezeReason::NotYetVested.into(), who, locked)?;
+		Ok(())
 	}
 
-	fn delete_lock(who: &T::AccountId) {
+	fn delete_lock(who: &T::AccountId) -> DispatchResult {
 		// thaw returns a DispatchResult from frame::balances::lib.rs::update_freezes()
 		// which returns Ok(()), but mutate()->try_mutate_account() can return an error if:
 		// 1. account does not exist
@@ -451,7 +453,8 @@ impl<T: Config> Pallet<T> {
 		// 3. there is an error in increasing or decreasing the providers or consumers
 		// 4. the account balance < ED, and reserved balance is zero ==> dust removal
 		// We can ignore the error here b/c no matter what the lock will be deleted.
-		T::Currency::thaw(&FreezeReason::NotYetVested.into(), who).ok();
+		T::Currency::thaw(&FreezeReason::NotYetVested.into(), who)?;
+		Ok(())
 	}
 
 	fn set_schedules_for(
@@ -461,9 +464,10 @@ impl<T: Config> Pallet<T> {
 		ReleaseSchedules::<T>::insert(who, schedules);
 	}
 
-	fn delete_release_schedules(who: &T::AccountId) {
+	fn delete_release_schedules(who: &T::AccountId) -> DispatchResult {
 		<ReleaseSchedules<T>>::remove(who);
-		Self::delete_lock(who);
+		Self::delete_lock(who)?;
+		Ok(())
 	}
 }
 
