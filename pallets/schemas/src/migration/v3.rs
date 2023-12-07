@@ -22,7 +22,7 @@ pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
 		(4, b"dsnp.reaction".to_vec()),
 		(5, b"dsnp.update".to_vec()),
 		(6, b"dsnp.profile".to_vec()),
-		(7, b"dsnp.public-key".to_vec()),
+		(7, b"dsnp.public-key-key-agreement".to_vec()),
 		(8, b"dsnp.public-follows".to_vec()),
 		(9, b"dsnp.private-follows".to_vec()),
 		(10, b"dsnp.private-connections".to_vec()),
@@ -38,7 +38,7 @@ pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
 		(4, b"dsnp.reaction".to_vec()),
 		(5, b"dsnp.profile".to_vec()),
 		(6, b"dsnp.update".to_vec()),
-		(18, b"dsnp.public-key".to_vec()),
+		(18, b"dsnp.public-key-key-agreement".to_vec()),
 		(13, b"dsnp.public-follows".to_vec()),
 		(14, b"dsnp.private-follows".to_vec()),
 		(15, b"dsnp.private-connections".to_vec()),
@@ -62,7 +62,7 @@ pub mod old {
 	}
 }
 
-/// migration to v2 implementation
+/// migration to v3 implementation
 pub struct MigrateToV3<T>(PhantomData<T>);
 
 impl<T: Config> OnRuntimeUpgrade for MigrateToV3<T> {
