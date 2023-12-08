@@ -98,7 +98,9 @@ where
 			.into())
 		}
 
-		// Is this an existing account ?
+		// Is this an existing account?
+		// extracted from the conditions in which an account gets reaped
+		// https://github.com/paritytech/polkadot-sdk/commit/e993f884fc00f359dd8bf9c81422c5161f3447b5#diff-dff2afa7433478e36eb66a9fe319efe28cfbdf95104b30b03afa0a1c4e3239f3R1082
 		let existing_account =
 			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
 
