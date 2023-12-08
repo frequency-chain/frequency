@@ -627,11 +627,8 @@ fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
 }
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let _ = T::Currency::mint_into(&who, balance.saturated_into());
-	assert_eq!(
-		T::Currency::balance(who).saturated_into::<u64>(),
-		balance.saturated_into::<u64>() + 100u64
-	);
+	let actual_deposit = T::Currency::mint_into(&who, balance.saturated_into());
+	assert_eq!(balance, actual_deposit.unwrap());
 }
 
 fn build_time_release_schedule<T: Config>(
