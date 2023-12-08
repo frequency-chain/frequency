@@ -301,6 +301,33 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 }
 
 #[test]
+fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_transactions() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let who = test_public(1);
+		let len = 0_usize;
+		let free_call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: who.clone() });
+		let free_call_info = free_call.get_dispatch_info();
+		let mut account = frame_system::Account::<Test>::get(who.clone());
+		account.consumers += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+
+		// act
+		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
+			&who.clone(),
+			free_call,
+			&free_call_info,
+			len
+		));
+
+		// assert
+		let account_after = frame_system::Account::<Test>::try_get(who).expect("should resolve");
+		assert_eq!(account_after.nonce, 1);
+	})
+}
+
+#[test]
 fn signed_extension_validation_delete_msa_public_key_success() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, original_key_pair) = create_account();
