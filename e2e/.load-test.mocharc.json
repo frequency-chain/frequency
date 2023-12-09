@@ -4,6 +4,6 @@
   "parallel": false,
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
   "loader": "ts-node/esm",
-  "spec": ["./load-tests/**/*.test.ts"],
+  "spec": ["./msa/**/createMsa.test.ts"],
   "timeout": 60000
 }

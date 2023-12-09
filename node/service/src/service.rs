@@ -219,6 +219,7 @@ async fn start_node_impl(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	use sc_client_api::backend;
+use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
 
@@ -265,6 +266,7 @@ async fn start_node_impl(
 	let rpc_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
+		let backend = backend.offchain_storage();
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -274,7 +276,7 @@ async fn start_node_impl(
 				command_sink: None,
 			};
 
-			crate::rpc::create_full(deps).map_err(Into::into)
+			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		})
 	};
 

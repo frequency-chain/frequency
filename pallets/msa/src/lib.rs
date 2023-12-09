@@ -68,14 +68,20 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 
 use frame_system::pallet_prelude::*;
 use log;
+use numtoa::NumToA;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
+	offchain::{
+		storage::StorageValueRef,
+		storage_lock::{BlockAndTime, StorageLock, Time},
+		Duration,
+	},
 	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	ArithmeticError, DispatchError, MultiSignature,
 };
-use sp_std::prelude::*;
-
+use sp_std::{collections::btree_set::BTreeSet, prelude::*};
+use sp_runtime::traits::BlockNumberProvider;
 use common_primitives::{
 	capacity::TargetValidator,
 	msa::{
@@ -87,6 +93,7 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 
+use common_primitives::msa::KeyInfoResponse;
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
@@ -105,7 +112,6 @@ pub mod types;
 pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
-
 	use super::*;
 
 	#[pallet::config]
@@ -399,6 +405,124 @@ pub mod pallet {
 
 		/// Attempted to add a new signature to a corrupt signature registry
 		SignatureRegistryCorrupted,
+	}
+
+	impl<T: Config> BlockNumberProvider for Pallet<T> {
+		type BlockNumber = BlockNumberFor<T>;
+
+		fn current_block_number() -> Self::BlockNumber {
+			frame_system::Pallet::<T>::block_number()
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn offchain_worker(block_number: BlockNumberFor<T>) {
+			log::info!("Hello World from offchain workers! {:?}", block_number);
+
+			// if block_number < BlockNumberFor::<T>::from(5u32) {
+			// 	return
+			// }
+			const LOCK_TIMEOUT_EXPIRATION: u64 = 2000; // in milli-seconds
+			const ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 5; // in milli-seconds
+
+			// lock the worker thread
+			let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
+				b"Msa::ofw::initial-import-lock",
+				20,
+				Duration::from_millis(LOCK_TIMEOUT_EXPIRATION),
+			);
+			if let Ok(mut guard) = lock.try_lock() {
+				let processed_storage = StorageValueRef::persistent(b"Msa::ofw::initial-imported");
+				let initial_imported = processed_storage.get::<bool>().unwrap_or(None);
+				log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
+
+				if initial_imported.unwrap_or_default() == false {
+					let mut counter = 0u64;
+					let account_keys: Vec<_> = PublicKeyToMsaId::<T>::iter().collect();
+					log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
+
+					for (account_id, msa_id) in account_keys.into_iter() {
+						let mut buff = [0u8; 30];
+						let msa_lock_name =
+							vec![b"Msa::ofw::lock::", msa_id.numtoa(10, &mut buff)].concat();
+
+						let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
+							&msa_lock_name,
+							Duration::from_millis(ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
+						);
+						if let Ok(_) = msa_lock.try_lock() {
+							let msa_key_name =
+								vec![b"Msa::ofw::keys::", msa_id.numtoa(10, &mut buff)].concat();
+							let msa_storage = StorageValueRef::persistent(&msa_key_name);
+
+							let mut msa_keys = msa_storage
+								.get::<BTreeSet<T::AccountId>>()
+								.unwrap_or(None)
+								.unwrap_or(BTreeSet::default());
+
+							if msa_keys.insert(account_id.clone()) {
+								msa_storage.set(&msa_keys);
+							}
+
+							msa_storage.set(&msa_keys);
+						} else {
+							// TODO: add to process later
+						}
+
+						// extend the lock
+						counter += 1;
+						if counter % 1000 == 0 {
+							log::info!("Added {} more keys!", counter);
+							if guard.extend_lock().is_err() {
+								log::warn!("lock is expired in block {:?}", block_number);
+								return
+							}
+						}
+					}
+
+					processed_storage.set(&true);
+					log::info!("Finished adding {} keys!", counter);
+				}
+			} else {
+				log::info!("initiating-import is still locked in {:?}", block_number);
+			};
+			// TODO: now process indexed events
+		}
+	}
+
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		/// Maximum schema size in bytes at genesis
+		pub accounts: u32,
+		/// Phantom type
+		#[serde(skip)]
+		pub _config: PhantomData<T>,
+	}
+
+	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
+		fn default() -> Self {
+			Self { accounts: 350_000, _config: Default::default() }
+		}
+	}
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			log::info!("Genesis {}", self.accounts);
+			for mut n in 1..self.accounts {
+				let mut raw = [0u8; 32];
+				let mut c = 0usize;
+				while n > 0 {
+					raw[c] = (n % 10) as u8;
+					c += 1;
+					n /= 10;
+				}
+				let new_key = AccountId32::new(raw);
+				let public_key = T::AccountId::decode(&mut &new_key.encode()[..]).unwrap();
+				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
+			}
+			log::info!("Genesis done creating");
+		}
 	}
 
 	#[pallet::call]
@@ -1289,20 +1413,27 @@ impl<T: Config> Pallet<T> {
 		Self::get_msa_by_public_key(&key)
 	}
 
-	// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
-	//
-	// Fetches all the keys associated with a message Source Account
-	// NOTE: This should only be called from RPC due to heavy database reads
-	// pub fn fetch_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<T::AccountId>> {
-	// 	let mut response = Vec::new();
-	// 	for key in Self::get_msa_keys(msa_id) {
-	// 		if let Ok(_info) = Self::ensure_valid_msa_key(&key) {
-	// 			response.push(KeyInfoResponse { key, msa_id });
-	// 		}
-	// 	}
+	/// Fetches all the keys associated with a message Source Account
+	/// NOTE: This should only be called from RPC due to heavy database reads
+	pub fn fetch_msa_keys_offchain(
+		msa_id: MessageSourceId,
+	) -> Option<Vec<KeyInfoResponse<T::AccountId>>> {
+		let mut buff = [0u8; 30];
+		let msa_key_name = vec![b"Msa::ofw::keys::", msa_id.numtoa(10, &mut buff)].concat();
+		let msa_storage = StorageValueRef::persistent(&msa_key_name);
 
-	// 	response
-	// }
+		let msa_keys = msa_storage.get::<BTreeSet<T::AccountId>>().unwrap_or(None);
+
+		if let Some(keys) = msa_keys {
+			return Some(
+				keys.iter()
+					.map(|account_id| KeyInfoResponse { msa_id, key: account_id.clone() })
+					.collect(),
+			)
+		}
+
+		None
+	}
 
 	/// Retrieve MSA Id associated with `key` or return `NoKeyExists`
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {

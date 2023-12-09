@@ -64,6 +64,7 @@ pub fn frequency_dev_sealing(
 
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
+		log::info!("OFFCHAIN WORKER is Enabled!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -180,6 +181,7 @@ pub fn frequency_dev_sealing(
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
+		let backend = backend.offchain_storage();
 
 		move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
@@ -189,7 +191,7 @@ pub fn frequency_dev_sealing(
 				command_sink: command_sink.clone(),
 			};
 
-			crate::rpc::create_full(deps).map_err(Into::into)
+			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		}
 	};
 

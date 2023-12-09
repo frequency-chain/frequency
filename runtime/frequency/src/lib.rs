@@ -1052,7 +1052,7 @@ construct_runtime!(
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
 
 		// Frequency related pallets
-		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>, Config<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
@@ -1274,11 +1274,6 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
-		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<AccountId>> {
-		// 	Ok(Msa::fetch_msa_keys(msa_id))
-		// }
-
 		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
 			match schema_id {
 				Some(sid) => Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),
@@ -1291,6 +1286,10 @@ impl_runtime_apis! {
 				Ok(x) => x,
 				Err(_) => None,
 			}
+		}
+
+		fn offchain_get_keys_by_msa_id(msa_id: MessageSourceId) -> Option<Vec<KeyInfoResponse<AccountId>>> {
+			Msa::fetch_msa_keys_offchain(msa_id)
 		}
 	}
 

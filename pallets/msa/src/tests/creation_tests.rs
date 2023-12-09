@@ -7,14 +7,49 @@ use sp_weights::Weight;
 
 use crate::{
 	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum, DispatchResult, Error,
-	Event,
+	Event, PublicKeyToMsaId,
 };
+
+use sp_std::{cmp::*, collections::btree_map::BTreeMap};
 
 use common_primitives::{
 	msa::{DelegatorId, MessageSourceId, ProviderId},
 	node::BlockNumber,
 	utils::wrap_binary_data,
 };
+
+#[test]
+pub fn iteration_test() {
+	new_test_ext().execute_with(|| {
+
+		let b = b"Msa::ofw::keys::100";
+		for i in 0..1000 {
+			let _ = create_account();
+		}
+
+		let mut map: BTreeMap<u64, Vec<AccountId32>> = BTreeMap::new();
+		let mut count = 0u32;
+		for (account_id, msa_id) in PublicKeyToMsaId::<Test>::iter() {
+			map.entry(msa_id)
+				.and_modify(|v| v.push(account_id.clone()))
+				.or_insert(vec![account_id.clone()]);
+			println!("{}", account_id);
+		}
+
+		println!("");
+
+		for (account_id, msa_id) in PublicKeyToMsaId::<Test>::iter() {
+			println!("{}", account_id);
+			count += 1;
+
+			if count % 10 == 0 {
+				let _ = create_account();
+			}
+		}
+
+		assert_eq!(map.len(), 100);
+	});
+}
 
 #[test]
 pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed() {

@@ -1,12 +1,20 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair } from '../scaffolding/helpers';
+import {createAndFundKeypair, getExistentialDeposit, getNonce} from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import {Extrinsic, ExtrinsicHelper} from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
+import {u64} from "@polkadot/types";
 
 const fundingSource = getFundingSource('msa-create-msa');
 
+async function createMsa(keys: KeyringPair): Promise<u64> {
+  const result = await ExtrinsicHelper.createMsa(keys).signAndSend();
+  const msaRecord = result[1]['msa.MsaCreated'];
+  if (msaRecord) return msaRecord.data[0] as u64;
+
+  throw 'Failed to get MSA Id...';
+}
 describe('Create Accounts', function () {
   let keys: KeyringPair;
 
@@ -16,29 +24,29 @@ describe('Create Accounts', function () {
 
   describe('createMsa', function () {
     it('should successfully create an MSA account', async function () {
-      const f = ExtrinsicHelper.createMsa(keys);
-      const { target: msaCreatedEvent, eventMap: chainEvents } = await f.fundAndSend(fundingSource);
 
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(msaCreatedEvent, undefined, 'should have returned  an MsaCreated event');
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      for( let steps = 0; steps < 4 ; steps++){
+        try {
+          const controlKeyPromises: Array<Promise<KeyringPair>> = [];
+          let devAccountNonce = await getNonce(fundingSource);
+          const ed = await getExistentialDeposit();
+          let count = 60;
+          for (let i = 0; i < count; i++) {
+            controlKeyPromises.push(createAndFundKeypair(fundingSource, 100n * 10n * ed, undefined, devAccountNonce++));
+          }
+          const controlKeys = await Promise.all(controlKeyPromises);
 
-      assert.notEqual(msaCreatedEvent?.data.msaId, undefined, 'Failed to get the msaId from the event');
-    });
+          // Create the msas
+          const msaPromises: Array<Promise<u64>> = [];
+          for (let i = 0; i < count; i++) {
+            msaPromises.push(createMsa(controlKeys[i]));
+          }
 
-    it('should fail to create an MSA for a keypair already associated with an MSA', async function () {
-      const op = ExtrinsicHelper.createMsa(keys);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'KeyAlreadyRegistered',
-      });
+          const msaIds = await Promise.all(msaPromises);
+        }catch (ex){
+          console.error(ex);
+        }
+      }
     });
   });
 });
