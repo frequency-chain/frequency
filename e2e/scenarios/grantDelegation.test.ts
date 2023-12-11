@@ -282,7 +282,7 @@ describe('Delegation Scenario Tests', function () {
 
     it('should revoke a delegation by delegator', async function () {
       const revokeDelegationOp = ExtrinsicHelper.revokeDelegationByDelegator(keys, providerId);
-      const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend('current');
+      const { target: revokeDelegationEvent } = await revokeDelegationOp.signAndSend();
       assert.notEqual(revokeDelegationEvent, undefined, 'should have returned DelegationRevoked event');
       assert.deepEqual(revokeDelegationEvent?.data.providerId, providerId, 'provider ids should be equal');
       assert.deepEqual(revokeDelegationEvent?.data.delegatorId, msaId, 'delegator ids should be equal');
@@ -329,7 +329,7 @@ describe('Delegation Scenario Tests', function () {
 
       it('should revoke a delegation by provider', async function () {
         const op = ExtrinsicHelper.revokeDelegationByProvider(msaId as u64, providerKeys);
-        const { target: revokeEvent } = await op.signAndSend('current');
+        const { target: revokeEvent } = await op.signAndSend();
         assert.notEqual(revokeEvent, undefined, 'should have returned a DelegationRevoked event');
         assert.deepEqual(revokeEvent?.data.delegatorId, msaId, 'delegator ids should match');
         assert.deepEqual(revokeEvent?.data.providerId, providerId, 'provider ids should match');
@@ -363,12 +363,10 @@ describe('Delegation Scenario Tests', function () {
         const { target: msaEvent } = await op.fundAndSend(fundingSource);
         const newMsaId = msaEvent?.data.msaId;
         assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
-        await assert.doesNotReject(
-          ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend('current')
-        );
+        await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend());
 
         const retireMsaOp = ExtrinsicHelper.retireMsa(delegatorKeys);
-        const { target: retireMsaEvent } = await retireMsaOp.signAndSend('current');
+        const { target: retireMsaEvent } = await retireMsaOp.signAndSend();
         assert.notEqual(retireMsaEvent, undefined, 'should have returned MsaRetired event');
         assert.deepEqual(retireMsaEvent?.data.msaId, newMsaId, 'msaId should be equal');
       });
