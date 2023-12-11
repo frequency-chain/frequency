@@ -42,38 +42,6 @@ pub mod v2 {
 	>;
 }
 
-/// migrate Locks to Freezes
-// pub fn migrate_to_v3<T: Config>() -> Weight {
-// 	let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
-
-// 	if on_chain_version.lt(&3) {
-// 		log::info!(target: LOG_TARGET, "🔄 Locks->Freezes migration started");
-// 		let mut maybe_count = 0u32;
-// 		// translate_lock_to_freeze(staker, amount);
-// 		let stakers_and_amount: BoundedVec<T::AccountId, BalanceOf<T>> =
-// 			v2::StakingDetails::<T>::iter().collect();
-
-// 		stakers_and_amount.into_iter().for_each(|staker| {
-// 			// Check that the capacity ledger value matches the locked value
-// 			assert_eq!(staker.1, T::OldCurrency::locks(&staker));
-// 			MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(staker, staker.1);
-// 			maybe_count += 1;
-// 			log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
-// 		});
-
-// 		StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
-// 		let reads = (maybe_count + 1) as u64;
-// 		let writes = (maybe_count * 2 + 1) as u64;
-// 		log::info!(target: LOG_TARGET, "🔄 migration finished");
-// 		let weight = T::DbWeight::get().reads_writes(reads, writes);
-// 		log::info!(target: LOG_TARGET, "Migration calculated weight = {:?}", weight);
-// 		weight
-// 	} else {
-// 		// storage was already migrated.
-// 		log::info!(target: LOG_TARGET, "Old Locks->Freezes migration attempted to run. Please remove");
-// 		T::DbWeight::get().reads(1)
-// 	}
-// }
 /// The OnRuntimeUpgrade implementation for this storage migration
 pub struct MigrationToV3<T, OldCurrency>(sp_std::marker::PhantomData<(T, OldCurrency)>);
 impl<T, OldCurrency> MigrationToV3<T, OldCurrency>
@@ -116,17 +84,6 @@ where
 					maybe_count += 1;
 					log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
 				});
-
-			// let stakers_and_amount: BoundedVec<T::AccountId, BalanceOf<T>> =
-			// 	v2::StakingAccountLedger::<T>::into_iter(self).collect();
-
-			// stakers_and_amount.into_iter().for_each(|staker| {
-			// 	// Check that the capacity ledger value matches the locked value
-			// 	assert_eq!(staker.1, T::OldCurrency::locks(&staker));
-			// 	MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(staker, staker.1);
-			// 	maybe_count += 1;
-			// 	log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
-			// });
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
 			let reads = (maybe_count + 1) as u64;
