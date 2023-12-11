@@ -95,7 +95,7 @@ pub mod module {
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
 		/// Funds are currently locked and are not yet liquid.
-		NotYetVested,
+		TimeReleaseVesting,
 	}
 
 	#[pallet::config]
@@ -229,7 +229,7 @@ pub mod module {
 						"Account do not have enough balance"
 					);
 
-					T::Currency::set_freeze(&FreezeReason::NotYetVested.into(), who, total_amount)
+					T::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), who, total_amount)
 						.expect("Failed to set freeze");
 					ReleaseSchedules::<T>::insert(who, bounded_schedules);
 				});
@@ -441,12 +441,12 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn update_lock(who: &T::AccountId, locked: BalanceOf<T>) -> DispatchResult {
-		T::Currency::set_freeze(&FreezeReason::NotYetVested.into(), who, locked)?;
+		T::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), who, locked)?;
 		Ok(())
 	}
 
 	fn delete_lock(who: &T::AccountId) -> DispatchResult {
-		T::Currency::thaw(&FreezeReason::NotYetVested.into(), who)?;
+		T::Currency::thaw(&FreezeReason::TimeReleaseVesting.into(), who)?;
 		Ok(())
 	}
 
