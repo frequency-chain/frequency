@@ -229,8 +229,12 @@ pub mod module {
 						"Account do not have enough balance"
 					);
 
-					T::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), who, total_amount)
-						.expect("Failed to set freeze");
+					T::Currency::set_freeze(
+						&FreezeReason::TimeReleaseVesting.into(),
+						who,
+						total_amount,
+					)
+					.expect("Failed to set freeze");
 					ReleaseSchedules::<T>::insert(who, bounded_schedules);
 				});
 		}

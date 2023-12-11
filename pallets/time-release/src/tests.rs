@@ -120,7 +120,10 @@ fn add_new_release_schedule_merges_with_current_locked_balance_and_until() {
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, another_schedule));
 
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			17u64
 		);
 	});
@@ -229,7 +232,10 @@ fn claim_works() {
 
 		// no locks anymore
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 	});
@@ -245,7 +251,10 @@ fn claim_for_works() {
 		assert_ok!(TimeRelease::claim_for(RuntimeOrigin::signed(ALICE), BOB));
 
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			20u64
 		);
 		assert!(ReleaseSchedules::<Test>::contains_key(&BOB));
@@ -256,7 +265,10 @@ fn claim_for_works() {
 
 		// no locks anymore
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
@@ -289,13 +301,19 @@ fn update_release_schedules_works() {
 		// empty release schedules cleanup the storage and unlock the fund
 		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			10u64
 		);
 		assert_ok!(TimeRelease::update_release_schedules(RuntimeOrigin::root(), BOB, vec![]));
 		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 	});
@@ -305,8 +323,11 @@ fn update_release_schedules_works() {
 fn update_release_schedules_fails_if_unexpected_existing_locks() {
 	ExtBuilder::build().execute_with(|| {
 		assert_ok!(PalletBalances::transfer_allow_death(RuntimeOrigin::signed(ALICE), BOB, 1));
-		let _ =
-			<Test as Config>::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), &BOB, 0u64);
+		let _ = <Test as Config>::Currency::set_freeze(
+			&FreezeReason::TimeReleaseVesting.into(),
+			&BOB,
+			0u64,
+		);
 	});
 }
 
@@ -348,7 +369,10 @@ fn multiple_release_schedule_claim_works() {
 		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
 
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 	});
@@ -404,7 +428,10 @@ fn cliff_release_works() {
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, cliff_schedule));
 		assert_eq!(<Test as Config>::Currency::balance(&BOB), VESTING_AMOUNT);
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			VESTING_AMOUNT
 		);
 
@@ -432,7 +459,10 @@ fn cliff_release_works() {
 		MockBlockNumberProvider::set(VESTING_PERIOD);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 		assert_ok!(PalletBalances::transfer_allow_death(
@@ -484,7 +514,10 @@ fn alice_time_releases_schedule() {
 		// Bob starts with zero balance and zero locks.
 		assert_eq!(get_balance::<Test>(&BOB), 0);
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 
@@ -494,7 +527,10 @@ fn alice_time_releases_schedule() {
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
 		assert_eq!(get_balance::<Test>(&BOB), 24_996);
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			24996
 		);
 		assert_eq!(
@@ -510,7 +546,10 @@ fn alice_time_releases_schedule() {
 		// and nothing happens because the schedule release has yet to start.
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			24_996
 		);
 
@@ -541,7 +580,10 @@ fn alice_time_releases_schedule() {
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		// Since the first issuance the total amount locked increases by the new transfers: 24_996;
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			total_locked
 		);
 
@@ -586,7 +628,10 @@ fn alice_time_releases_schedule() {
 		total_locked += total_transfered;
 		total_locked -= 4_166;
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			total_locked
 		);
 
@@ -616,7 +661,10 @@ fn alice_time_releases_schedule() {
 		);
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::TimeReleaseVesting.into(),
+				&BOB
+			),
 			0
 		);
 	});

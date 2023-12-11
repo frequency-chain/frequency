@@ -1,12 +1,13 @@
-use crate::{
-	BalanceOf, Config, FreezeReason, Pallet, StakingType, BlockNumberFor,
-};
+use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingType};
 use frame_support::{
-	pallet_prelude::{GetStorageVersion, Weight, IsType},
-	traits::{Get, LockableCurrency, OnRuntimeUpgrade, StorageVersion, LockIdentifier, fungible::MutateFreeze},
+	pallet_prelude::{GetStorageVersion, IsType, Weight},
+	traits::{
+		fungible::MutateFreeze, Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade,
+		StorageVersion,
+	},
 };
-use sp_core::hexdisplay::HexDisplay;
 use parity_scale_codec::Encode;
+use sp_core::hexdisplay::HexDisplay;
 
 const LOG_TARGET: &str = "runtime::capacity";
 
@@ -106,12 +107,15 @@ where
 			let mut maybe_count = 0u32;
 			// translate_lock_to_freeze(staker, amount);
 			v2::StakingAccountLedger::<T>::iter()
-			.map(|(account_id, staking_details)| (account_id, staking_details.active))
-			.for_each(|(staker, amount)| {
-				MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(staker, amount.into());
-				maybe_count += 1;
-				log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
-			});
+				.map(|(account_id, staking_details)| (account_id, staking_details.active))
+				.for_each(|(staker, amount)| {
+					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
+						staker,
+						amount.into(),
+					);
+					maybe_count += 1;
+					log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
+				});
 
 			// let stakers_and_amount: BoundedVec<T::AccountId, BalanceOf<T>> =
 			// 	v2::StakingAccountLedger::<T>::into_iter(self).collect();
