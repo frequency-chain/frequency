@@ -52,11 +52,11 @@ where
 {
 	/// Translate capacity staked locked deposit to frozen deposit
 	pub fn translate_lock_to_freeze(account_id: T::AccountId, amount: OldCurrency::Balance) {
-		OldCurrency::remove_lock(STAKING_ID, &account_id);
+		OldCurrency::remove_lock(STAKING_ID, &account_id); // 1r + 1w
 		T::Currency::set_freeze(&FreezeReason::Staked.into(), &account_id, amount.into())
 			.unwrap_or_else(|err| {
 				log::error!(target: LOG_TARGET, "Failed to freeze {:?} from account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
-			});
+			}); // 1r
 	}
 }
 
@@ -70,7 +70,7 @@ where
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
 		if on_chain_version.lt(&3) {
-			log::info!(target: LOG_TARGET, "🔄 Locks->Freezes migration started");
+			log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration started");
 			let mut maybe_count = 0u32;
 			v2::StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
@@ -93,7 +93,7 @@ where
 			weight
 		} else {
 			// storage was already migrated.
-			log::info!(target: LOG_TARGET, "Old Locks->Freezes migration attempted to run. Please remove");
+			log::info!(target: LOG_TARGET, "Old Capacity Locks->Freezes migration attempted to run. Please remove");
 			T::DbWeight::get().reads(1)
 		}
 	}

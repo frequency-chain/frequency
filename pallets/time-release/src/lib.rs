@@ -61,6 +61,9 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
+/// storage migrations
+pub mod migration;
+
 mod types;
 pub use types::*;
 
@@ -97,6 +100,9 @@ pub mod module {
 		/// Funds are currently locked and are not yet liquid.
 		TimeReleaseVesting,
 	}
+
+	/// the storage version for this pallet
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
