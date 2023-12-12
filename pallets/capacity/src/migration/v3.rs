@@ -67,13 +67,11 @@ where
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
 	fn on_runtime_upgrade() -> Weight {
-		// Self::migrate_to_v3()
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
 		if on_chain_version.lt(&3) {
 			log::info!(target: LOG_TARGET, "🔄 Locks->Freezes migration started");
 			let mut maybe_count = 0u32;
-			// translate_lock_to_freeze(staker, amount);
 			v2::StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
 				.for_each(|(staker, amount)| {
@@ -87,6 +85,7 @@ where
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
 			let reads = (maybe_count + 1) as u64;
+			// REVIEW: Are we doing 2 writes per account?
 			let writes = (maybe_count * 2 + 1) as u64;
 			log::info!(target: LOG_TARGET, "🔄 migration finished");
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
@@ -102,7 +101,6 @@ where
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use frame_support::storage::generator::StorageMap;
-		// use parity_scale_codec::Encode;
 		let pallet_prefix = v2::StakingAccountLedger::<T>::module_prefix();
 		let storage_prefix = v2::StakingAccountLedger::<T>::storage_prefix();
 		assert_eq!(&b"Capacity"[..], pallet_prefix);
@@ -128,10 +126,11 @@ where
 		Ok(())
 	}
 }
+
 #[cfg(test)]
 #[cfg(feature = "try-runtime")]
 mod test {
-	use frame_support::traits::WithdrawReasons;
+	use frame_support::traits::{tokens::fungible::InspectFreeze, WithdrawReasons};
 
 	use super::*;
 	use crate::{
@@ -139,6 +138,7 @@ mod test {
 		StakingAccountLedger as OldStakingAccountLedger, StakingDetails as OldStakingDetails,
 		StakingType::MaximumCapacity,
 	};
+	use pallet_balances::{BalanceLock, Reasons};
 
 	type MigrationOf<T> = MigrationToV3<T, pallet_balances::Pallet<T>>;
 
@@ -157,6 +157,11 @@ mod test {
 				amount,
 				WithdrawReasons::all(),
 			);
+			// Confirm lock exists
+			assert_eq!(
+				pallet_balances::Pallet::<T>::locks(&account).get(0),
+				Some(&BalanceLock { id: STAKING_ID, amount: 50u64, reasons: Reasons::All })
+			);
 
 			let old_record =
 				OldStakingDetails::<Test> { active: amount, staking_type: MaximumCapacity };
@@ -169,6 +174,11 @@ mod test {
 			MigrationOf::<T>::post_upgrade(state).unwrap();
 
 			// Check that the old staking locks are now freezes
+			assert_eq!(pallet_balances::Pallet::<T>::locks(&account), vec![]);
+			assert_eq!(
+				<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
+				50u64
+			);
 		})
 	}
 }
