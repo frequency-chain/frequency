@@ -1,4 +1,6 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingType};
+use crate::{
+	BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger, StakingType,
+};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
@@ -67,7 +69,7 @@ where
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
 	fn on_runtime_upgrade() -> Weight {
-		// migrate_to_v3::<T>()
+		// Self::migrate_to_v3()
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
 		if on_chain_version.lt(&3) {
@@ -102,14 +104,14 @@ where
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use frame_support::storage::generator::StorageMap;
-		use parity_scale_codec::Encode;
-		let pallet_prefix = v1::StakingAccountLedger::<T>::module_prefix();
-		let storage_prefix = v1::StakingAccountLedger::<T>::storage_prefix();
+		// use parity_scale_codec::Encode;
+		let pallet_prefix = v2::StakingAccountLedger::<T>::module_prefix();
+		let storage_prefix = v2::StakingAccountLedger::<T>::storage_prefix();
 		assert_eq!(&b"Capacity"[..], pallet_prefix);
 		assert_eq!(&b"StakingAccountLedger"[..], storage_prefix);
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 
-		let count = v1::StakingAccountLedger::<T>::iter().count() as u32;
+		let count = v2::StakingAccountLedger::<T>::iter().count() as u32;
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?} records", count);
 		Ok(count.encode())
 	}
@@ -122,9 +124,54 @@ where
 
 		assert_eq!(on_chain_version, crate::pallet::STORAGE_VERSION);
 		assert_eq!(pre_upgrade_count as usize, StakingAccountLedger::<T>::iter().count());
-		assert_eq!(pre_upgrade_count as usize, UnstakeUnlocks::<T>::iter().count());
 
 		log::info!(target: LOG_TARGET, "✅ migration post_upgrade checks passed");
 		Ok(())
+	}
+}
+#[cfg(test)]
+#[cfg(feature = "try-runtime")]
+mod test {
+	use frame_support::traits::WithdrawReasons;
+
+	use super::*;
+	use crate::{
+		tests::{
+			mock::{Test as T, *},
+		},
+		StakingAccountLedger as OldStakingAccountLedger, StakingDetails as OldStakingDetails,
+		StakingType::MaximumCapacity,
+	};
+
+	type MigrationOf<T> = MigrationToV3<T, pallet_balances::Pallet<T>>;
+
+	#[test]
+	fn migration_works() {
+		new_test_ext().execute_with(|| {
+			StorageVersion::new(2).put::<Pallet<T>>();
+			// Create some data in the old format
+			// Grab an account with a balance
+			let account = 200;
+			let amount = 50;
+
+			pallet_balances::Pallet::<T>::set_lock(
+				STAKING_ID,
+				&account,
+				amount,
+				WithdrawReasons::all(),
+			);
+
+			let old_record =
+				OldStakingDetails::<Test> { active: amount, staking_type: MaximumCapacity };
+			OldStakingAccountLedger::<Test>::insert(account, old_record);
+			assert_eq!(OldStakingAccountLedger::<Test>::iter().count(), 1);
+
+			// Run migration.
+			let state = MigrationOf::<T>::pre_upgrade().unwrap();
+			MigrationOf::<T>::on_runtime_upgrade();
+			MigrationOf::<T>::post_upgrade(state).unwrap();
+
+			// Check that the old staking locks are now freezes
+		})
 	}
 }

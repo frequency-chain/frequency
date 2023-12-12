@@ -110,7 +110,7 @@ pub mod pallet {
 	}
 
 	/// the storage version for this pallet
-	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
