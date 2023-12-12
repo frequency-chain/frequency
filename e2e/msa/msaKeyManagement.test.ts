@@ -167,7 +167,7 @@ describe('MSA Key management', function () {
       assert.notEqual(event, undefined, 'should have added public key');
 
       // Cleanup
-      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, thirdKey.publicKey).signAndSend('current'));
+      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, thirdKey.publicKey).signAndSend());
     });
   });
 
@@ -245,7 +245,7 @@ describe('MSA Key management', function () {
 
     it('should delete secondary key', async function () {
       const op = ExtrinsicHelper.deletePublicKey(keys, secondaryKey.publicKey);
-      const { target: event } = await op.signAndSend('current');
+      const { target: event } = await op.signAndSend();
       assert.notEqual(event, undefined, 'should have returned PublicKeyDeleted event');
     });
 

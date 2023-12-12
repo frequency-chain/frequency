@@ -302,7 +302,7 @@ Storage for keeping records of staking accounting.
 /// Storage for keeping a ledger of staked token amounts for accounts.
 #[pallet::storage]
 pub type StakingAccountLedger<T: Config> =
-  StorageMap<_, Twox64Concat, T::AccountId, StakingAccountDetails<T::Balance>>;
+  StorageMap<_, Twox64Concat, T::AccountId, StakingDetails<T::Balance>>;
 
 ```
 
@@ -355,7 +355,7 @@ The type used for storing information about staking details.
 
 ```rust
 
-pub struct StakingAccountDetails<Balance, BlockNumber> {
+pub struct StakingDetails<Balance, BlockNumber> {
   /// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
   pub active: Balance,
   /// The total amount of tokens in `active` and `unlocking`

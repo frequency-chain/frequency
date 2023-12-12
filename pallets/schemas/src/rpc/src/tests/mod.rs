@@ -2,12 +2,14 @@ mod rpc_mock;
 
 use super::*;
 use rpc_mock::*;
+use std::string::ToString;
 
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use std::sync::Arc;
 use substrate_test_runtime_client::runtime::Block;
 
 const SUCCESSFUL_SCHEMA_ID: u16 = 1;
+const SUCCESSFUL_SCHEMA_NAME: &str = "namespace.descriptor";
 
 sp_api::mock_impl_runtime_apis! {
 	impl SchemasRuntimeApi<Block> for TestRuntimeApi {
@@ -23,10 +25,33 @@ sp_api::mock_impl_runtime_apis! {
 				_ => None,
 			}
 		}
+
+		fn get_schema_versions_by_name(schema_name: Vec<u8>) -> Option<Vec<SchemaVersionResponse>> {
+			let successful_name_bytes = SUCCESSFUL_SCHEMA_NAME.to_string().into_bytes();
+			if successful_name_bytes == schema_name {
+				Some(
+					vec![
+						SchemaVersionResponse {
+							schema_id: 1,
+							schema_version: 1,
+							schema_name: successful_name_bytes.clone()
+						},
+						SchemaVersionResponse {
+							schema_id: 10,
+							schema_version: 2,
+							schema_name: successful_name_bytes.clone()
+						},
+					]
+				)
+			} else {
+				None
+			}
+		}
 	}
 }
 
 type SchemaResult = Result<Option<SchemaResponse>, jsonrpsee::core::Error>;
+type VersionResult = Result<Option<Vec<SchemaVersionResponse>>, jsonrpsee::core::Error>;
 
 #[tokio::test]
 async fn get_schema_with_non_existent_schema_id_should_return_none() {
@@ -55,6 +80,18 @@ async fn get_schema_with_success() {
 	assert_eq!(1, response.schema_id);
 	assert_eq!(ModelType::AvroBinary, response.model_type);
 	assert_eq!(PayloadLocation::OnChain, response.payload_location);
+}
+
+#[tokio::test]
+async fn get_schema_versions_with_success() {
+	let client = Arc::new(TestApi {});
+	let api = SchemasHandler::new(client);
+
+	let result: VersionResult = api.get_versions(SUCCESSFUL_SCHEMA_NAME.to_string());
+
+	assert_eq!(true, result.is_ok());
+	let response = result.unwrap().unwrap();
+	assert_eq!(response.len(), 2);
 }
 
 #[tokio::test]
