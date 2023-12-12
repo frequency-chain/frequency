@@ -69,7 +69,7 @@ fn stake_errors_insufficient_staking_amount_when_staking_below_minimum_staking_a
 		register_provider(target, String::from("Foo"));
 		assert_noop!(
 			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
-			Error::<Test>::InsufficientStakingAmount
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }
@@ -353,7 +353,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 
 		assert_noop!(
 			Capacity::ensure_can_stake(&account, target, amount),
-			Error::<Test>::InsufficientStakingAmount
+			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
 }
@@ -435,8 +435,9 @@ fn impl_deposit_is_successful() {
 			total_available_amount,
 			1u32,
 		);
-
-		assert_ok!(Capacity::deposit(target_msa_id, 5u32.into()),);
+		let amount = BalanceOf::<Test>::from(5u32);
+		let capacity = BalanceOf::<Test>::from(1u32);
+		assert_ok!(Capacity::deposit(target_msa_id, amount, capacity));
 	});
 }
 
@@ -445,8 +446,10 @@ fn impl_deposit_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
 		let amount = BalanceOf::<Test>::from(10u32);
+		let capacity = BalanceOf::<Test>::from(5u32);
+
 		assert_noop!(
-			Capacity::deposit(target_msa_id, amount),
+			Capacity::deposit(target_msa_id, amount, capacity),
 			Error::<Test>::TargetCapacityNotFound
 		);
 	});
