@@ -617,7 +617,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 				total_capacity_issued,
 				last_replenished_epoch: 10,
 			};
-			Capacity::set_capacity_for(&provider_msa_id, &capacity_details);
+			Capacity::set_capacity_for(provider_msa_id, capacity_details);
 
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
@@ -663,7 +663,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 				total_capacity_issued,
 				last_replenished_epoch,
 			};
-			Capacity::set_capacity_for(&provider_msa_id, &capacity_details);
+			Capacity::set_capacity_for(provider_msa_id, capacity_details);
 
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
