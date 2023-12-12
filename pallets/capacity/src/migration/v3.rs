@@ -136,9 +136,7 @@ mod test {
 
 	use super::*;
 	use crate::{
-		tests::{
-			mock::{Test as T, *},
-		},
+		tests::mock::{Test as T, *},
 		StakingAccountLedger as OldStakingAccountLedger, StakingDetails as OldStakingDetails,
 		StakingType::MaximumCapacity,
 	};
