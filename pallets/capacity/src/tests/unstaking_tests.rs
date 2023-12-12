@@ -232,6 +232,7 @@ fn unstaking_everything_reaps_staking_account() {
 		register_provider(target, String::from("WithdrawUnst"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
 
+
 		run_to_block(1);
 		// unstake everything
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));

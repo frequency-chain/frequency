@@ -671,6 +671,18 @@ impl<T: Config> Pallet<T> {
 		Ok((staking_details, stakable_amount))
 	}
 
+	// TODO: this should return StakingAccount, BoostHistory and Balance
+	fn ensure_can_boost(
+		staker: &T::AccountId,
+		target: &MessageSourceId,
+		amount: &BalanceOf<T>,
+	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
+		let (staking_details, stakable_amount) = Self::ensure_can_stake(staker, *target, *amount)?;
+		// TODO: boost history
+		// let boost_history = Self::get_boost_history_for(staker).unwrap_or_defaul();
+		Ok((staking_details, stakable_amount))
+	}
+
 	/// Increase a staking account and target account balances by amount.
 	/// Additionally, it issues Capacity to the MSA target.
 	fn increase_stake_and_issue_capacity(
