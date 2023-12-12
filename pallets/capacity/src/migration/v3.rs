@@ -116,8 +116,8 @@ where
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-		use parity_scale_codec::Decode;
 		use crate::StakingAccountLedger;
+		use parity_scale_codec::Decode;
 		let pre_upgrade_count: u32 = Decode::decode(&mut state.as_slice()).unwrap_or_default();
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
