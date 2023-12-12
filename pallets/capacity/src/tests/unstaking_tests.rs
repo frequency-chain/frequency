@@ -54,9 +54,9 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<Test> {
-				amount: BalanceOf::<Test>::from(60u64),
-				capacity: BalanceOf::<Test>::from(6u64),
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: BalanceOf::<Test>::from(60u32),
+				capacity: BalanceOf::<Test>::from(6u32),
 			}
 		);
 
@@ -176,6 +176,7 @@ fn unstaking_everything_reaps_staking_account() {
 
 		register_provider(target, String::from("WithdrawUnst"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+
 
 		run_to_block(1);
 		// unstake everything

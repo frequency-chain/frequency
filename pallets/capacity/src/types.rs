@@ -1,12 +1,13 @@
 //! Types for the Capacity Pallet
 use super::*;
 use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound};
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{CheckedAdd, CheckedSub, Saturating, Zero},
+	traits::{CheckedAdd, CheckedSub, Saturating},
 	RuntimeDebug,
 };
+use sp_runtime::traits::AtLeast32BitUnsigned;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
@@ -75,27 +76,46 @@ impl<T: Config> Default for StakingDetails<T> {
 
 /// Details about the total token amount targeted to an MSA.
 /// The Capacity that the target will receive.
-#[derive(PartialEq, Eq, Default, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct StakingTargetDetails<Balance> {
+#[derive(Default, PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct StakingTargetDetails<Balance>
+where
+	Balance: Default + Saturating + Copy + CheckedAdd + CheckedSub,
+{
 	/// The total amount of tokens that have been targeted to the MSA.
 	pub amount: Balance,
 	/// The total Capacity that an MSA received.
 	pub capacity: Balance,
 }
 
-impl<Balance: Saturating + Copy + CheckedAdd> StakingTargetDetails<Balance> {
+impl<Balance: Default + Saturating + Copy + CheckedAdd + CheckedSub + PartialOrd>
+	StakingTargetDetails<Balance>
+{
 	/// Increase an MSA target Staking total and Capacity amount.
 	pub fn deposit(&mut self, amount: Balance, capacity: Balance) -> Option<()> {
 		self.amount = amount.checked_add(&self.amount)?;
 		self.capacity = capacity.checked_add(&self.capacity)?;
-
 		Some(())
 	}
 
 	/// Decrease an MSA target Staking total and Capacity amount.
-	pub fn withdraw(&mut self, amount: Balance, capacity: Balance) {
+	/// If the amount would put you below the minimum, zero out the amount.
+	/// Return the actual amounts withdrawn.
+	pub fn withdraw(
+		&mut self,
+		amount: Balance,
+		capacity: Balance,
+		minimum: Balance,
+	) -> (Balance, Balance) {
+		let entire_amount = self.amount;
+		let entire_capacity = self.capacity;
 		self.amount = self.amount.saturating_sub(amount);
-		self.capacity = self.capacity.saturating_sub(capacity);
+		if self.amount.lt(&minimum) {
+			*self = Self::default();
+			return (entire_amount, entire_capacity)
+		} else {
+			self.capacity = self.capacity.saturating_sub(capacity);
+		}
+		(amount, capacity)
 	}
 }
 
@@ -222,4 +242,131 @@ pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChun
 		.collect();
 	// CAUTION
 	BoundedVec::try_from(result).unwrap()
+}
+
+/// The information needed to track a Reward Era
+#[derive( PartialEq, Eq, Clone, Copy, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct RewardEraInfo<RewardEra, BlockNumber>
+	where
+		RewardEra: AtLeast32BitUnsigned + EncodeLike,
+{
+	/// the index of this era
+	pub era_index: RewardEra,
+	/// the starting block of this era
+	pub started_at: BlockNumber,
+}
+
+/// Needed data about a RewardPool for a given RewardEra.
+/// The total_reward_pool balance for the previous era is set when a new era starts,
+/// based on total staked token at the end of the previous era, and remains unchanged.
+/// The unclaimed_balance is initialized to total_reward_pool and deducted whenever a
+/// valid claim occurs.
+#[derive(
+PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+)]
+pub struct RewardPoolInfo<Balance> {
+	/// the total staked for rewards in the associated RewardEra
+	pub total_staked_token: Balance,
+	/// the reward pool for this era
+	pub total_reward_pool: Balance,
+	/// the remaining rewards balance to be claimed
+	pub unclaimed_balance: Balance,
+}
+
+// TODO: Store retarget unlock chunks in their own storage but can be for any stake type
+// TODO: Store unstake unlock chunks in their own storage but can be for any stake type (at first do only boosted unstake)
+
+/// A record of a staked amount for a complete RewardEra
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct StakingHistory<Balance, RewardEra> {
+	/// The era this amount was staked
+	pub reward_era: RewardEra,
+	/// The total amount staked for the era
+	pub total_staked: Balance,
+}
+
+/// Struct with utilities for storing and updating unlock chunks
+#[derive(Debug, TypeInfo, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct RetargetInfo<T: Config> {
+	/// How many times the account has retargeted this RewardEra
+	pub retarget_count: u32,
+	/// The last RewardEra they retargeted
+	pub last_retarget_at: T::RewardEra,
+}
+
+impl<T: Config> Default for RetargetInfo<T> {
+	fn default() -> Self {
+		Self { retarget_count: 0u32, last_retarget_at: Zero::zero() }
+	}
+}
+
+impl<T: Config> RetargetInfo<T> {
+	/// Increment retarget count and return Some() or
+	/// If there are too many, return None
+	pub fn update(&mut self, current_era: T::RewardEra) -> Option<()> {
+		let max_retargets = T::MaxRetargetsPerRewardEra::get();
+		if self.retarget_count.ge(&max_retargets) && self.last_retarget_at.eq(&current_era) {
+			return None
+		}
+		if self.last_retarget_at.lt(&current_era) {
+			self.last_retarget_at = current_era;
+			self.retarget_count = 1;
+		} else {
+			self.retarget_count = self.retarget_count.saturating_add(1u32);
+		}
+		Some(())
+	}
+}
+
+/// A claim to be rewarded `claimed_reward` in token value
+pub struct StakingRewardClaim<T: Config> {
+	/// How much is claimed, in token
+	pub claimed_reward: BalanceOf<T>,
+	/// The end state of the staking account if the operations are valid
+	pub staking_account_end_state: StakingDetails<T>,
+	/// The starting era for the claimed reward period, inclusive
+	pub from_era: T::RewardEra,
+	/// The ending era for the claimed reward period, inclusive
+	pub to_era: T::RewardEra,
+}
+
+/// A trait that provides the Economic Model for Provider Boosting.
+pub trait StakingRewardsProvider<T: Config> {
+	/// the AccountId this provider is using
+	type AccountId;
+
+	/// the range of blocks over which a Reward Pool is determined and rewards are paid out
+	type RewardEra;
+
+	///  The hasher to use for proofs
+	type Hash;
+
+	/// Calculate the size of the reward pool using the current economic model
+	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
+
+	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
+	/// Errors:
+	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
+	fn staking_reward_total(
+		account_id: Self::AccountId,
+		from_era: Self::RewardEra,
+		to_era: Self::RewardEra,
+	) -> Result<BalanceOf<T>, DispatchError>;
+
+	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
+	/// Errors:
+	///     - NotAStakingAccount
+	///     - MaxUnlockingChunksExceeded
+	///     - All other conditions that would prevent a reward from being claimed return 'false'
+	fn validate_staking_reward_claim(
+		account_id: Self::AccountId,
+		proof: Self::Hash,
+		payload: StakingRewardClaim<T>,
+	) -> bool;
+
+	/// Return the boost factor in capacity per token staked.
+	/// This factor is > 0 and < 1 token
+	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
 }

@@ -117,7 +117,7 @@ Stakes some amount of tokens to the network and generates Capacity.
 ///
 /// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
 /// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
-/// - Returns Error::InsufficientStakingAmount if attempting to stake an amount below the minimum amount.
+/// - Returns Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
 /// - Returns Error::BalanceTooLowtoStake if the sender does not have
 ///           free balance amount > MinimumTokenBalance after staking.
 pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
@@ -211,7 +211,7 @@ pub enum Error<T> {
   /// Capacity is not available for the given MSA.
   InsufficientBalance,
   /// Staker is attempting to stake an amount below the minimum amount.
-  InsufficientStakingAmount,
+  StakingAmountBelowMinimum,
   /// Staker is attempting to stake a zero amount.
   ZeroAmountNotAllowed,
   /// Origin has no Staking Account
