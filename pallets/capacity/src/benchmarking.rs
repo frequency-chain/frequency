@@ -47,7 +47,7 @@ benchmarks! {
 
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount, staking_type)
+	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
 	verify {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
