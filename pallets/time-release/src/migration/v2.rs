@@ -1,4 +1,5 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet};
+use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, types};
+use sp_runtime::Saturating;
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
@@ -26,24 +27,24 @@ pub mod v1 {
 	use scale_info::TypeInfo;
 	use sp_runtime::RuntimeDebug;
 
-	pub(crate) type ReleaseScheduleOf<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
+	pub(crate) type ReleaseScheduleOf<T> = types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
 	/// The release schedule.
 	///
 	/// Benefits would be granted gradually, `per_period` amount every `period`
 	/// of blocks after `start`.
-	#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-	pub struct ReleaseSchedule<BlockNumber, Balance: MaxEncodedLen + HasCompact> {
-		/// Vesting starting block
-		pub start: BlockNumber,
-		/// Number of blocks between vest
-		pub period: BlockNumber,
-		/// Number of vest
-		pub period_count: u32,
-		/// Amount of tokens to release per vest
-		#[codec(compact)]
-		pub per_period: Balance,
-	}
+	// #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+	// pub struct ReleaseSchedule<BlockNumber, Balance: MaxEncodedLen + HasCompact> {
+	// 	/// Vesting starting block
+	// 	pub start: BlockNumber,
+	// 	/// Number of blocks between vest
+	// 	pub period: BlockNumber,
+	// 	/// Number of vest
+	// 	pub period_count: u32,
+	// 	/// Amount of tokens to release per vest
+	// 	#[codec(compact)]
+	// 	pub per_period: Balance,
+	// }
 
 	/// Release schedules of an account.
 	///
@@ -97,9 +98,8 @@ where
 					// Get the total amount of tokens in the account's ReleaseSchedules
 					let total_amount = v1::ReleaseSchedules::<T>::get(&account_id) // 1r
 						.iter()
-						.map(|schedule| schedule.
-						.fold(Zero::zero(), |acc, amount| acc.saturating_add(amount));
-
+						.map(|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| schedule.total_amount())
+						.fold(Zero::zero(), |acc: BalanceOf<T>, amount| acc.saturating_add(amount.unwrap_or(Zero::zero())));
 					// Translate the lock to a freeze
 					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
 						account_id,
@@ -167,7 +167,7 @@ mod test {
 
 	#[test]
 	fn migration_works() {
-		new_test_ext().execute_with(|| {
+		ExtBuilder::build().execute_with(|| {
 			StorageVersion::new(2).put::<Pallet<Test>>();
 			// Create some data in the old format
 			// Grab an account with a balance
