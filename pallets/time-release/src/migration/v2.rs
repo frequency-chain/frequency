@@ -1,5 +1,4 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, types};
-use sp_runtime::Saturating;
+use crate::{types, BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
@@ -10,7 +9,7 @@ use frame_support::{
 };
 use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, Saturating};
 
 const LOG_TARGET: &str = "runtime::capacity";
 
@@ -22,10 +21,7 @@ const RELEASE_LOCK_ID: LockIdentifier = *b"timeRels";
 /// Only contains V1 storage format
 pub mod v1 {
 	use super::*;
-	use frame_support::{pallet_prelude::ValueQuery, storage_alias, BoundedVec, Twox64Concat};
-	use parity_scale_codec::{Decode, Encode, HasCompact, MaxEncodedLen};
-	use scale_info::TypeInfo;
-	use sp_runtime::RuntimeDebug;
+	use frame_support::{pallet_prelude::ValueQuery, storage_alias, BoundedVec};
 
 	pub(crate) type ReleaseScheduleOf<T> = types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
@@ -98,8 +94,14 @@ where
 					// Get the total amount of tokens in the account's ReleaseSchedules
 					let total_amount = v1::ReleaseSchedules::<T>::get(&account_id) // 1r
 						.iter()
-						.map(|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| schedule.total_amount())
-						.fold(Zero::zero(), |acc: BalanceOf<T>, amount| acc.saturating_add(amount.unwrap_or(Zero::zero())));
+						.map(
+							|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| {
+								schedule.total_amount()
+							},
+						)
+						.fold(Zero::zero(), |acc: BalanceOf<T>, amount| {
+							acc.saturating_add(amount.unwrap_or(Zero::zero()))
+						});
 					// Translate the lock to a freeze
 					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
 						account_id,
@@ -185,11 +187,6 @@ mod test {
 				pallet_balances::Pallet::<Test>::locks(&account).get(0),
 				Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 50u64, reasons: Reasons::All })
 			);
-
-			// let old_record =
-			// 	OldStakingDetails::<Test> { active: amount, staking_type: MaximumCapacity };
-			// OldStakingAccountLedger::<Test>::insert(account, old_record);
-			// assert_eq!(OldStakingAccountLedger::<Test>::iter().count(), 1);
 
 			// Run migration.
 			let state = MigrationOf::<Test>::pre_upgrade().unwrap();
