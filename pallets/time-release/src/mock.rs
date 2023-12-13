@@ -117,9 +117,11 @@ construct_runtime!(
 pub const ALICE: AccountId = 0;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
+pub const DAVE: AccountId = 4;
 
 pub const ALICE_BALANCE: u64 = 100;
 pub const CHARLIE_BALANCE: u64 = 50;
+pub const DAVE_BALANCE: u64 = 200;
 
 #[derive(Default)]
 pub struct ExtBuilder;
@@ -131,7 +133,7 @@ impl ExtBuilder {
 		MockBlockNumberProvider::set(0);
 
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE)],
+			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE), (DAVE, DAVE_BALANCE)],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

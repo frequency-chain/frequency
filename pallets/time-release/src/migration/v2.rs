@@ -173,8 +173,9 @@ mod test {
 			StorageVersion::new(2).put::<Pallet<Test>>();
 			// Create some data in the old format
 			// Grab an account with a balance
-			let account = 200;
+			let account = DAVE;
 			let amount = 50;
+			assert_eq!(pallet_balances::Pallet::<Test>::free_balance(&account), DAVE_BALANCE);
 
 			pallet_balances::Pallet::<Test>::set_lock(
 				RELEASE_LOCK_ID,
