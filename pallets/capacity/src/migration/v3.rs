@@ -8,6 +8,7 @@ use frame_support::{
 };
 use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
+use sp_runtime::Saturating;
 
 const LOG_TARGET: &str = "runtime::capacity";
 
@@ -30,7 +31,7 @@ where
 		T::Currency::set_freeze(&FreezeReason::Staked.into(), &account_id, amount.into())
 			.unwrap_or_else(|err| {
 				log::error!(target: LOG_TARGET, "Failed to freeze {:?} from account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
-			}); // 1r
+			}); // 1w
 		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
 	}
 }
@@ -47,21 +48,20 @@ where
 		if on_chain_version.lt(&3) {
 			log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration started");
 			let mut maybe_count = 0u32;
-			// TODO: Update amount to include unlocking chunks as well
 			StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
-				.for_each(|(staker, amount)| {
+				.for_each(|(staker, mut amount)| {
+					amount = amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
 					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
 						staker,
 						amount.into(),
-					);
+					); // 1r + 2w
 					maybe_count += 1;
-					log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
+					log::info!(target: LOG_TARGET,"migrated {:?}, amount:{:?}", maybe_count, amount);
 				});
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
-			let reads = (maybe_count + 1) as u64;
-			// REVIEW: Are we doing 2 writes per account?
+			let reads = (maybe_count * 2 + 1) as u64;
 			let writes = (maybe_count * 2 + 1) as u64;
 			log::info!(target: LOG_TARGET, "🔄 migration finished");
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
