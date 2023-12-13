@@ -10,26 +10,25 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{DelegatorId, ProviderId, SchemaGrant},
-	node::{BlockNumber},
+	msa::{DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, SchemaGrant},
+	node::BlockNumber,
+	offchain::get_msa_account_storage_key_name,
 	schema::SchemaId,
 };
-use parity_scale_codec::Decode;
-use parity_scale_codec::Codec;
-use parking_lot::RwLock;
-use common_primitives::msa::{KeyInfoResponse, MessageSourceId};
 use jsonrpsee::{
-	core::{async_trait, RpcResult},
+	core::{async_trait, Error as JsonRpseeError, RpcResult},
 	proc_macros::rpc,
 	tracing::warn,
 };
-use sp_core::Bytes;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use parity_scale_codec::{Codec, Decode};
+use parking_lot::RwLock;
 use rayon::prelude::*;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::Bytes;
 use sp_runtime::traits::Block as BlockT;
-use std::{sync::Arc};
+use std::sync::Arc;
 
 #[cfg(test)]
 mod tests;
@@ -79,8 +78,24 @@ impl<C, M, OffchainDB> MsaHandler<C, M, OffchainDB> {
 	}
 }
 
+/// Errors that occur on the client RPC
+#[derive(Debug)]
+pub enum MsaOffchainRpcError {
+	/// Error acquiring lock
+	ErrorAcquiringLLock,
+	/// Error decoding data
+	ErrorDecodingData,
+}
+
+impl From<MsaOffchainRpcError> for JsonRpseeError {
+	fn from(e: MsaOffchainRpcError) -> Self {
+		JsonRpseeError::Custom(format!("{:?}", e))
+	}
+}
+
 #[async_trait]
-impl<C, Block, OffchainDB, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId> for MsaHandler<C, Block, OffchainDB>
+impl<C, Block, OffchainDB, AccountId> MsaApiServer<<Block as BlockT>::Hash, AccountId>
+	for MsaHandler<C, Block, OffchainDB>
 where
 	Block: BlockT,
 	C: Send + Sync + 'static,
@@ -139,23 +154,24 @@ where
 		&self,
 		msa_id: MessageSourceId,
 	) -> RpcResult<Option<Vec<KeyInfoResponse<AccountId>>>> {
-		let api = self.client.runtime_api();
-		let at = self.client.info().best_hash;
-
-		let key = vec![77u8, 115, 97, 58, 58, 111, 102, 119, 58, 58, 107, 101, 121, 115, 58, 58, 49, 48, 48];
-		let reader = self.offchain.read();
-		let raw :Option<Bytes> = reader.as_ref().unwrap().get(sp_offchain::STORAGE_PREFIX, &key).map(Into::into);
+		let msa_key = get_msa_account_storage_key_name(msa_id);
+		let reader = self.offchain.try_read().ok_or(MsaOffchainRpcError::ErrorAcquiringLLock)?;
+		let raw: Option<Bytes> = reader
+			.as_ref()
+			.ok_or(MsaOffchainRpcError::ErrorAcquiringLLock)?
+			.get(sp_offchain::STORAGE_PREFIX, &msa_key)
+			.map(Into::into);
 		if let Some(rr) = raw {
 			let inside = rr.0;
-			let decoded = Vec::<AccountId>::decode(&mut &inside[..]).unwrap();
-			let res: Vec<KeyInfoResponse<AccountId>> = decoded.into_iter()
+			let decoded = Vec::<AccountId>::decode(&mut &inside[..])
+				.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?;
+			let res: Vec<KeyInfoResponse<AccountId>> = decoded
+				.into_iter()
 				.map(|account_id| KeyInfoResponse { msa_id, key: account_id })
 				.collect();
 
 			return RpcResult::Ok(Some(res))
 		}
-
-		let runtime_api_result = api.offchain_get_keys_by_msa_id(at, msa_id);
-		map_rpc_result(runtime_api_result)
+		RpcResult::Ok(None)
 	}
 }

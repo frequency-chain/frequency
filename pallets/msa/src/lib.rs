@@ -66,22 +66,6 @@ use parity_scale_codec::{Decode, Encode};
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
-use frame_system::pallet_prelude::*;
-use log;
-use numtoa::NumToA;
-use scale_info::TypeInfo;
-use sp_core::crypto::AccountId32;
-use sp_runtime::{
-	offchain::{
-		storage::StorageValueRef,
-		storage_lock::{BlockAndTime, StorageLock, Time},
-		Duration,
-	},
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
-	ArithmeticError, DispatchError, MultiSignature,
-};
-use sp_std::{collections::btree_set::BTreeSet, prelude::*};
-use sp_runtime::traits::BlockNumberProvider;
 use common_primitives::{
 	capacity::TargetValidator,
 	msa::{
@@ -90,10 +74,26 @@ use common_primitives::{
 		SignatureRegistryPointer,
 	},
 	node::ProposalProvider,
+	offchain::*,
 	schema::{SchemaId, SchemaValidator},
 };
+use frame_system::pallet_prelude::*;
+use log;
+use scale_info::TypeInfo;
+use sp_core::crypto::AccountId32;
+use sp_runtime::{
+	offchain::{
+		storage::StorageValueRef,
+		storage_lock::{BlockAndTime, StorageLock, Time},
+		Duration,
+	},
+	traits::{
+		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero,
+	},
+	ArithmeticError, DispatchError, MultiSignature,
+};
+use sp_std::prelude::*;
 
-use common_primitives::msa::KeyInfoResponse;
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
@@ -423,14 +423,12 @@ pub mod pallet {
 			// if block_number < BlockNumberFor::<T>::from(5u32) {
 			// 	return
 			// }
-			const LOCK_TIMEOUT_EXPIRATION: u64 = 2000; // in milli-seconds
-			const ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 5; // in milli-seconds
 
 			// lock the worker thread
 			let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
-				b"Msa::ofw::initial-import-lock",
-				20,
-				Duration::from_millis(LOCK_TIMEOUT_EXPIRATION),
+				MSA_INITIAL_LOCK_NAME,
+				MSA_INITIAL_LOCK_BLOCK_EXPIRATION,
+				Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION),
 			);
 			if let Ok(mut guard) = lock.try_lock() {
 				let processed_storage = StorageValueRef::persistent(b"Msa::ofw::initial-imported");
@@ -443,29 +441,24 @@ pub mod pallet {
 					log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
 
 					for (account_id, msa_id) in account_keys.into_iter() {
-						let mut buff = [0u8; 30];
-						let msa_lock_name =
-							vec![b"Msa::ofw::lock::", msa_id.numtoa(10, &mut buff)].concat();
-
+						let msa_lock_name = get_msa_account_lock_name(msa_id);
 						let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
 							&msa_lock_name,
-							Duration::from_millis(ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
+							Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
 						);
 						if let Ok(_) = msa_lock.try_lock() {
-							let msa_key_name =
-								vec![b"Msa::ofw::keys::", msa_id.numtoa(10, &mut buff)].concat();
-							let msa_storage = StorageValueRef::persistent(&msa_key_name);
+							let msa_storage_name = get_msa_account_storage_key_name(msa_id);
+							let msa_storage = StorageValueRef::persistent(&msa_storage_name);
 
 							let mut msa_keys = msa_storage
-								.get::<BTreeSet<T::AccountId>>()
+								.get::<Vec<T::AccountId>>()
 								.unwrap_or(None)
-								.unwrap_or(BTreeSet::default());
+								.unwrap_or(Vec::default());
 
-							if msa_keys.insert(account_id.clone()) {
+							if !msa_keys.contains(&account_id) {
+								msa_keys.push(account_id.clone());
 								msa_storage.set(&msa_keys);
 							}
-
-							msa_storage.set(&msa_keys);
 						} else {
 							// TODO: add to process later
 						}
@@ -1411,28 +1404,6 @@ impl<T: Config> Pallet<T> {
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
 		Self::get_msa_by_public_key(&key)
-	}
-
-	/// Fetches all the keys associated with a message Source Account
-	/// NOTE: This should only be called from RPC due to heavy database reads
-	pub fn fetch_msa_keys_offchain(
-		msa_id: MessageSourceId,
-	) -> Option<Vec<KeyInfoResponse<T::AccountId>>> {
-		let mut buff = [0u8; 30];
-		let msa_key_name = vec![b"Msa::ofw::keys::", msa_id.numtoa(10, &mut buff)].concat();
-		let msa_storage = StorageValueRef::persistent(&msa_key_name);
-
-		let msa_keys = msa_storage.get::<BTreeSet<T::AccountId>>().unwrap_or(None);
-
-		if let Some(keys) = msa_keys {
-			return Some(
-				keys.iter()
-					.map(|account_id| KeyInfoResponse { msa_id, key: account_id.clone() })
-					.collect(),
-			)
-		}
-
-		None
 	}
 
 	/// Retrieve MSA Id associated with `key` or return `NoKeyExists`

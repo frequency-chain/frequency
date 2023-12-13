@@ -219,7 +219,7 @@ async fn start_node_impl(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	use sc_client_api::backend;
-use sc_client_db::Backend;
+	use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
 

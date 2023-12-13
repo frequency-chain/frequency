@@ -21,7 +21,6 @@ use common_primitives::{
 #[test]
 pub fn iteration_test() {
 	new_test_ext().execute_with(|| {
-
 		let b = b"Msa::ofw::keys::100";
 		for i in 0..1000 {
 			let _ = create_account();

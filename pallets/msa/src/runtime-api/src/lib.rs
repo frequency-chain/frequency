@@ -29,7 +29,7 @@ sp_api::decl_runtime_apis! {
 	/// - MUST be incremented if anything changes
 	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(2)]
+	#[api_version(1)]
 
 	/// Runtime API definition for [MSA](../pallet_msa/index.html)
 	pub trait MsaRuntimeApi<AccountId> where
@@ -44,8 +44,5 @@ sp_api::decl_runtime_apis! {
 		/// Get the list of schema permission grants (if any) that exist in any delegation between the delegator and provider
 		/// The returned list contains both schema id and the block number at which permission was revoked (0 if currently not revoked)
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>;
-
-		/// Get reversed mapped keys from offchain DB
-		fn offchain_get_keys_by_msa_id(msa_id: MessageSourceId) -> Option<Vec<KeyInfoResponse<AccountId>>>;
 	}
 }

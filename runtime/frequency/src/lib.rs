@@ -1288,10 +1288,6 @@ impl_runtime_apis! {
 				Err(_) => None,
 			}
 		}
-
-		fn offchain_get_keys_by_msa_id(msa_id: MessageSourceId) -> Option<Vec<KeyInfoResponse<AccountId>>> {
-			Msa::fetch_msa_keys_offchain(msa_id)
-		}
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {

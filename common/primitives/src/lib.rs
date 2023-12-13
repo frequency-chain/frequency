@@ -35,6 +35,9 @@ pub mod utils;
 /// Structs and traits for the Capacity pallet.
 pub mod capacity;
 
+/// Constants and types for offchain data
+pub mod offchain;
+
 #[cfg(feature = "runtime-benchmarks")]
 /// Benchmarking helper trait
 pub mod benchmarks;
