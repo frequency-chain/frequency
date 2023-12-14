@@ -22,7 +22,7 @@ use common_primitives::{
 pub fn iteration_test() {
 	new_test_ext().execute_with(|| {
 		let b = b"Msa::ofw::keys::100";
-		for i in 0..1000 {
+		for i in 0..500 {
 			let _ = create_account();
 		}
 
@@ -37,16 +37,22 @@ pub fn iteration_test() {
 
 		println!("");
 
+		let mut added = 0u32;
 		for (account_id, msa_id) in PublicKeyToMsaId::<Test>::iter() {
 			println!("{}", account_id);
 			count += 1;
 
 			if count % 10 == 0 {
 				let _ = create_account();
+				added += 1;
 			}
 		}
 
-		assert_eq!(map.len(), 100);
+		let after = PublicKeyToMsaId::<Test>::iter().count();
+
+		assert_eq!(map.len(), 1000);
+		assert_eq!(after, 1100);
+		assert_eq!(count, 1000);
 	});
 }
 

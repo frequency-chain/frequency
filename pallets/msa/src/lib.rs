@@ -101,6 +101,10 @@ pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
+/// Offchain storage for MSA pallet
+pub mod offchain_storage;
+pub use offchain_storage::*;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -256,6 +260,13 @@ pub mod pallet {
 	#[pallet::getter(fn get_payload_signature_pointer)]
 	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
 		StorageValue<_, SignatureRegistryPointer<BlockNumberFor<T>>>;
+
+	/// A temporary storage for looking up relevant events from off-chain index
+	/// At the start of the next block this storage is set to 0
+	#[pallet::storage]
+	#[pallet::whitelist_storage]
+	#[pallet::getter(fn get_msa_event_count)]
+	pub(super) type MSAEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -417,6 +428,12 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_block_number: BlockNumberFor<T>) -> Weight {
+			<MSAEventCount<T>>::set(0u16);
+			// allocates 1 read and 1 write for any access of `MSAEventCount` in every block
+			T::DbWeight::get().reads_writes(1u64, 1u64)
+		}
+
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			log::info!("Hello World from offchain workers! {:?}", block_number);
 
@@ -431,16 +448,17 @@ pub mod pallet {
 				Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION),
 			);
 			if let Ok(mut guard) = lock.try_lock() {
-				let processed_storage = StorageValueRef::persistent(b"Msa::ofw::initial-imported");
+				let processed_storage =
+					StorageValueRef::persistent(MSA_INITIAL_IMPORTED_STORAGE_NAME);
 				let initial_imported = processed_storage.get::<bool>().unwrap_or(None);
 				log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
 
 				if initial_imported.unwrap_or_default() == false {
 					let mut counter = 0u64;
-					let account_keys: Vec<_> = PublicKeyToMsaId::<T>::iter().collect();
-					log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
+					// let account_keys: Vec<_> = PublicKeyToMsaId::<T>::iter().collect();
+					// log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
 
-					for (account_id, msa_id) in account_keys.into_iter() {
+					for (account_id, msa_id) in PublicKeyToMsaId::<T>::iter() {
 						let msa_lock_name = get_msa_account_lock_name(msa_id);
 						let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
 							&msa_lock_name,
@@ -458,6 +476,8 @@ pub mod pallet {
 							if !msa_keys.contains(&account_id) {
 								msa_keys.push(account_id.clone());
 								msa_storage.set(&msa_keys);
+							} else {
+								log::warn!("{:?} already added!", &account_id);
 							}
 						} else {
 							// TODO: add to process later
@@ -537,8 +557,9 @@ pub mod pallet {
 			let (new_msa_id, new_public_key) =
 				Self::create_account(public_key, |_| -> DispatchResult { Ok(()) })?;
 
-			Self::deposit_event(Event::MsaCreated { msa_id: new_msa_id, key: new_public_key });
-
+			let event = Event::MsaCreated { msa_id: new_msa_id, key: new_public_key };
+			Self::index_event(event.clone());
+			Self::deposit_event(event);
 			Ok(())
 		}
 
@@ -601,16 +622,14 @@ pub mod pallet {
 					Ok(())
 				})?;
 
-			Self::deposit_event(Event::MsaCreated {
-				msa_id: new_delegator_msa_id,
-				key: new_delegator_public_key,
-			});
-
+			let event =
+				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
+			Self::index_event(event.clone());
+			Self::deposit_event(event);
 			Self::deposit_event(Event::DelegationGranted {
 				delegator_id: DelegatorId(new_delegator_msa_id),
 				provider_id: ProviderId(provider_msa_id),
 			});
-
 			Ok(())
 		}
 
@@ -788,10 +807,12 @@ pub mod pallet {
 				msa_id,
 				&add_key_payload.new_public_key.clone(),
 				|msa_id| -> DispatchResult {
-					Self::deposit_event(Event::PublicKeyAdded {
+					let event = Event::PublicKeyAdded {
 						msa_id,
 						key: add_key_payload.new_public_key.clone(),
-					});
+					};
+					Self::index_event(event.clone());
+					Self::deposit_event(event);
 					Ok(())
 				},
 			)?;
@@ -826,7 +847,10 @@ pub mod pallet {
 					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
 					// Deposit the event
-					Self::deposit_event(Event::PublicKeyDeleted { key: public_key_to_delete });
+					let event =
+						Event::PublicKeyDeleted { key: public_key_to_delete };
+					Self::index_event(event.clone());
+					Self::deposit_event(event);
 				},
 				None => {
 					log::error!(
@@ -942,7 +966,9 @@ pub mod pallet {
 			match Self::get_msa_by_public_key(&who) {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
-					Self::deposit_event(Event::PublicKeyDeleted { key: who });
+					let event = Event::PublicKeyDeleted { key: who };
+					Self::index_event(event.clone());
+					Self::deposit_event(event);
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
 				None => {
@@ -1550,6 +1576,46 @@ impl<T: Config> Pallet<T> {
 	fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
 		let mortality_size = T::MortalityWindowSize::get();
 		current_block + BlockNumberFor::<T>::from(mortality_size)
+	}
+
+	fn index_event(event: Event<T>) {
+		let block_number: u32 =
+			<frame_system::Pallet<T>>::block_number().try_into().unwrap_or_default();
+		let current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
+		<MSAEventCount<T>>::put(current_event_count);
+		let event_key = [
+			BLOCK_EVENT_KEY,
+			block_number.encode().as_slice(),
+			current_event_count.encode().as_slice(),
+		]
+		.concat();
+		// set the event in offchain storage
+		set_offchain_index(event_key.encode().as_slice(), event);
+
+		let count_key = [BLOCK_EVENT_COUNT_KEY, block_number.encode().as_slice()].concat();
+		// Set the latest count of event in current block
+		set_offchain_index(count_key.encode().as_slice(), current_event_count);
+	}
+
+	fn read_events(block_number: BlockNumberFor<T>) -> Vec<Event<T>> {
+		let current_block: u32 = block_number.try_into().unwrap_or_default();
+		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
+		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
+		let mut events = vec![];
+		let event_count =
+			if let Some(event_count) = optional_event_count { event_count } else { return events };
+
+		for i in 1..event_count + 1 {
+			let key =
+				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
+			let optional_decoded_event = get_offchain_index::<Event<T>>(key.encode().as_slice());
+			if let Some(decoded_event) = optional_decoded_event {
+				events.push(decoded_event);
+			}
+			// read and clear the event from offchain storage
+			remove_offchain_index(key.encode().as_slice());
+		}
+		events
 	}
 }
 
