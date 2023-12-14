@@ -222,7 +222,7 @@ pub type Executive = frame_executive::Executive<
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
-		pallet_time_release::migration::v2::MigrationToV2<Runtime, pallet_balances::Pallet<Runtime>>,
+		pallet_time_release::migration::v2::MigrationToV2<Runtime, pallet_balances::Pallet<Runtime>,>,
 	),
 >;
 

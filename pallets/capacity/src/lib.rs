@@ -587,12 +587,8 @@ impl<T: Config> Pallet<T> {
 
 	// Calculates the total amount of tokens that are currently unlocked for the given staker.
 	pub(crate) fn get_unlocking_total_for(staker: &T::AccountId) -> BalanceOf<T> {
-		let mut total_unlocking: BalanceOf<T> = Zero::zero();
 		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
-		if !unlocks.is_empty() {
-			total_unlocking = unlock_chunks_total::<T>(&unlocks);
-		}
-		total_unlocking
+		unlock_chunks_total::<T>(&unlocks)
 	}
 
 	pub(crate) fn do_withdraw_unstaked(

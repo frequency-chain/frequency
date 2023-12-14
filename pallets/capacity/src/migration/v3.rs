@@ -1,14 +1,17 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger, STORAGE_VERSION};
+use crate::{
+	BalanceOf, BlockNumberFor, Config, Error, FreezeReason, Pallet, StakingAccountLedger,
+	STORAGE_VERSION,
+};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
-		fungible::MutateFreeze, Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade,
-		StorageVersion,
+		fungible::{Inspect, MutateFreeze},
+		Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade, StorageVersion,
 	},
 };
 use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::Saturating;
+use sp_runtime::{DispatchError, Saturating};
 
 const LOG_TARGET: &str = "runtime::capacity";
 
@@ -26,13 +29,28 @@ where
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
 	/// Translate capacity staked locked deposit to frozen deposit
-	pub fn translate_lock_to_freeze(account_id: T::AccountId, amount: OldCurrency::Balance) {
+	pub fn translate_lock_to_freeze(
+		account_id: T::AccountId,
+		amount: OldCurrency::Balance,
+	) -> Result<Weight, DispatchError> {
+		log::info!(
+			"Attempting to migrate {:?} locks for account 0x{:?} total_balance: {:?}, reducible_balance {:?}",
+			amount,
+			HexDisplay::from(&account_id.encode()),
+			<T as Config>::Currency::total_balance(&account_id),
+			<T as Config>::Currency::reducible_balance(&account_id, frame_support::traits::tokens::Preservation::Expendable, frame_support::traits::tokens::Fortitude::Polite),
+		);
 		OldCurrency::remove_lock(STAKING_ID, &account_id); // 1r + 1w
-		T::Currency::set_freeze(&FreezeReason::Staked.into(), &account_id, amount.into())
-			.unwrap_or_else(|err| {
-				log::error!(target: LOG_TARGET, "Failed to freeze {:?} from account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
-			}); // 1w
-		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
+		match <T as Config>::Currency::set_freeze(&FreezeReason::Staked.into(), &account_id, amount.into()) {
+			Ok(_) => {
+				log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
+				Ok(T::DbWeight::get().reads_writes(2, 1))
+			},
+			Err(err) => {
+				log::error!(target: LOG_TARGET, "Failed to freeze {:?} for account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
+				Err(err)
+			},
+		}
 	}
 }
 
@@ -50,14 +68,22 @@ where
 			let mut accounts_migrated_count = 0u32;
 			StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
-				.for_each(|(staker, amount)| {
-					let total_amount = amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
-					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
+				.try_for_each(|(staker, active_amount)| {
+					let total_amount = active_amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
+					match MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
 						staker.clone(),
 						total_amount.into(),
-					); // 1r + 2w
-					accounts_migrated_count += 1;
-					log::info!(target: LOG_TARGET, "migrated amount:{:?} from account 0x{:?}, count: {:?}", total_amount, HexDisplay::from(&staker.encode()), accounts_migrated_count);
+					)  { // 1r + 2w
+						Ok(_) => {
+							accounts_migrated_count += 1;
+							log::info!(target: LOG_TARGET, "migrated count: {:?}", accounts_migrated_count);
+							Ok(())
+						},
+						Err(err) => {
+							log::error!(target: LOG_TARGET, "Failed to migrate account 0x{:?}, reason: {:?}", HexDisplay::from(&staker.encode()), err);
+							Err(err)
+						}
+					}
 				});
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
@@ -120,7 +146,6 @@ mod test {
 	#[test]
 	fn migration_works() {
 		new_test_ext().execute_with(|| {
-			StorageVersion::new(2).put::<Pallet<T>>();
 			// Create some data in the old format
 			// Grab an account with a balance
 			let account = 200;
