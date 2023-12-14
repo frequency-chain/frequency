@@ -26,8 +26,20 @@ where
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
 	/// Translate capacity staked locked deposit to frozen deposit
-	pub fn translate_lock_to_freeze(account_id: T::AccountId, amount: OldCurrency::Balance) {
+	pub fn translate_lock_to_freeze(
+		account_id: &T::AccountId,
+		amount: OldCurrency::Balance,
+	) -> Weight {
+		// 1 read get Locks
+		// 1 read get Freeze
+		// 1 read get Account
+		// 1 write set Account
+		// 1 write set Locks
 		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id); // 1r + 1w
+
+		// 1 read get Freeze
+		// 1 read get Locks
+		// 1 write set Freeze									// TODO: Can we do anything if set_freeze fails?
 		T::Currency::set_freeze(
 			&FreezeReason::TimeReleaseVesting.into(),
 			&account_id,
@@ -42,6 +54,8 @@ where
 				err
 			);
 		});
+
+		T::DbWeight::get().reads_writes(5, 3)
 	}
 }
 
@@ -62,37 +76,49 @@ where
 				target: LOG_TARGET,
 				"Old Time Release Locks->Freezes migration attempted to run. Please remove"
 			);
-			return T::DbWeight::get().reads(1);
+			return T::DbWeight::get().reads(1)
 		}
 
 		log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
-		let mut maybe_count = 0u32;
+		let mut total_weight = T::DbWeight::get().reads_writes(0, 0);
+		let mut total_accounts_migrated = 0u32;
 
 		// Get all the keys(accounts) from the ReleaseSchedules storage
 		ReleaseSchedules::<T>::iter()
 			.map(|(account_id, _)| account_id)
 			.for_each(|account_id| {
-				let total_amount = calculate_total_scheduled_locks_for_account::<T>(&account_id);
+				let (total_amount, cal_fn_weight) = calculate_total_scheduled_locks_for_account::<T>(&account_id);
 
-				MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
-					account_id,
+				let trans_fn_weight = MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
+					&account_id,
 					total_amount.into(),
 				);
 
-				maybe_count += 1;
+				total_weight = total_weight.saturating_add(cal_fn_weight).saturating_add(trans_fn_weight);
 
-				log::info!(target: LOG_TARGET, "total_amount {:?}", total_amount);
-				log::info!(target: LOG_TARGET, "migrated {:?}", maybe_count);
+				total_accounts_migrated += 1;
+
+				log::info!(target: LOG_TARGET, "A total locked amount of {:?} has been migrated from locked to frozen for account: {:?}", total_amount, account_id);
 			});
 
+		log::info!(
+			target: LOG_TARGET,
+			"total accounts migrated from locks to frozen {:?}",
+			total_accounts_migrated
+		);
+
 		StorageVersion::new(2).put::<Pallet<T>>();
-		let reads = (maybe_count * 2 + 1) as u64;
-		// REVIEW: Are we doing 2 writes per account?
-		let writes = (maybe_count * 2 + 1) as u64;
+
+		total_weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
+
 		log::info!(target: LOG_TARGET, "🔄 Time Release migration finished");
-		let weight = T::DbWeight::get().reads_writes(reads, writes);
-		log::info!(target: LOG_TARGET, "Time Release Migration calculated weight = {:?}", weight);
-		weight
+		log::info!(
+			target: LOG_TARGET,
+			"Time Release Migration calculated weight = {:?}",
+			total_weight
+		);
+
+		total_weight
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -125,15 +151,17 @@ where
 
 fn calculate_total_scheduled_locks_for_account<T: Config>(
 	account_id: &T::AccountId,
-) -> BalanceOf<T> {
-	ReleaseSchedules::<T>::get(&account_id) // 1r
+) -> (BalanceOf<T>, Weight) {
+	let total = ReleaseSchedules::<T>::get(&account_id) // 1r
 		.iter()
 		.map(|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| {
 			schedule.total_amount()
 		})
 		.fold(Zero::zero(), |acc: BalanceOf<T>, amount| {
 			acc.saturating_add(amount.unwrap_or(Zero::zero()))
-		})
+		});
+
+	(total, T::DbWeight::get().reads(1))
 }
 
 #[cfg(test)]
