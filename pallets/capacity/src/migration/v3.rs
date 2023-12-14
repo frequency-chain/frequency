@@ -1,4 +1,4 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger};
+use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger, STORAGE_VERSION};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
@@ -45,9 +45,9 @@ where
 	fn on_runtime_upgrade() -> Weight {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
-		if on_chain_version.lt(&3) {
+		if on_chain_version.lt(&STORAGE_VERSION) {
 			log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration started");
-			let mut maybe_count = 0u32;
+			let mut accounts_migrated_count = 0u32;
 			StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
 				.for_each(|(staker, amount)| {
@@ -56,13 +56,13 @@ where
 						staker.clone(),
 						total_amount.into(),
 					); // 1r + 2w
-					maybe_count += 1;
-					log::info!(target: LOG_TARGET, "migrated amount:{:?} from account 0x{:?}, count: {:?}", total_amount, HexDisplay::from(&staker.encode()), maybe_count);
+					accounts_migrated_count += 1;
+					log::info!(target: LOG_TARGET, "migrated amount:{:?} from account 0x{:?}, count: {:?}", total_amount, HexDisplay::from(&staker.encode()), accounts_migrated_count);
 				});
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
-			let reads = (maybe_count * 2 + 1) as u64;
-			let writes = (maybe_count * 2 + 1) as u64;
+			let reads = (accounts_migrated_count * 2 + 1) as u64;
+			let writes = (accounts_migrated_count * 2 + 1) as u64;
 			log::info!(target: LOG_TARGET, "🔄 migration finished");
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
 			log::info!(target: LOG_TARGET, "Migration calculated weight = {:?}", weight);

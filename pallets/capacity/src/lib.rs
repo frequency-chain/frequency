@@ -109,6 +109,8 @@ pub mod pallet {
 		Staked,
 	}
 
+	/// the storage version for the v2 migration
+	pub const STORAGE_VERSION_V2: StorageVersion = StorageVersion::new(2);
 	/// the storage version for this pallet
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
