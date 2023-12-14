@@ -6,6 +6,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use cumulus_pallet_aura_ext::pallet;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
 use sp_api::impl_runtime_apis;
@@ -219,7 +220,9 @@ pub type Executive = frame_executive::Executive<
 	(
 		pallet_messages::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
+		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
+		pallet_time_release::migration::v2::MigrationToV2<Runtime, pallet_balances::Pallet<Runtime>>,
 	),
 >;
 
