@@ -68,10 +68,20 @@ where
 	pub fn translate_lock_to_freeze(account_id: T::AccountId, amount: OldCurrency::Balance) {
 		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id); // 1r + 1w
 														// TODO: Can we do anything if set_freeze fails?
-		T::Currency::set_freeze(&FreezeReason::TimeReleaseVesting.into(), &account_id, amount.into())
-			.unwrap_or_else(|err| {
-				log::error!(target: LOG_TARGET, "Failed to freeze {:?} from account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
-			}); // 1w
+		T::Currency::set_freeze(
+			&FreezeReason::TimeReleaseVesting.into(),
+			&account_id,
+			amount.into(),
+		)
+		.unwrap_or_else(|err| {
+			log::error!(
+				target: LOG_TARGET,
+				"Failed to freeze {:?} from account 0x{:?}, reason: {:?}",
+				amount,
+				HexDisplay::from(&account_id.encode()),
+				err
+			);
+		}); // 1w
 	}
 }
 
@@ -108,7 +118,7 @@ where
 						total_amount.into(),
 					);
 					maybe_count += 1;
-					log::info!(target: LOG_TARGET,"migrated {:?}", maybe_count);
+					log::info!(target: LOG_TARGET, "migrated {:?}", maybe_count);
 				},
 			);
 
@@ -118,11 +128,18 @@ where
 			let writes = (maybe_count * 2 + 1) as u64;
 			log::info!(target: LOG_TARGET, "🔄 Time Release migration finished");
 			let weight = T::DbWeight::get().reads_writes(reads, writes);
-			log::info!(target: LOG_TARGET, "Time Release Migration calculated weight = {:?}", weight);
+			log::info!(
+				target: LOG_TARGET,
+				"Time Release Migration calculated weight = {:?}",
+				weight
+			);
 			weight
 		} else {
 			// storage was already migrated.
-			log::info!(target: LOG_TARGET, "Old Time Release Locks->Freezes migration attempted to run. Please remove");
+			log::info!(
+				target: LOG_TARGET,
+				"Old Time Release Locks->Freezes migration attempted to run. Please remove"
+			);
 			T::DbWeight::get().reads(1)
 		}
 	}
@@ -177,17 +194,14 @@ mod test {
 			let amount = 50;
 			assert_eq!(pallet_balances::Pallet::<Test>::free_balance(&account), DAVE_BALANCE);
 
-			pallet_balances::Pallet::<Test>::set_lock(
-				RELEASE_LOCK_ID,
-				&account,
-				amount,
-				WithdrawReasons::all(),
-			);
-			// Confirm lock exists
-			assert_eq!(
-				pallet_balances::Pallet::<Test>::locks(&account).get(0),
-				Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: 50u64, reasons: Reasons::All })
-			);
+			let schedules = vec![
+				// who, start, period, period_count, per_period
+				(DAVE, 2, 3, 1, 5),
+			];
+			create_schedules(schedules);
+
+
+
 
 			// Run migration.
 			let state = MigrationOf::<Test>::pre_upgrade().unwrap();
@@ -205,4 +219,62 @@ mod test {
 			);
 		})
 	}
+
+	fn create_schedules(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
+		schedules.iter().for_each(|(who, start, period, period_count, per_period)| {
+			let mut bounded_schedules = v1::ReleaseSchedules::<Test>::get(who);
+			let new_schedule = types::ReleaseSchedule {
+				start: *start,
+				period: *period,
+				period_count: *period_count,
+				per_period: *per_period,
+			};
+
+			bounded_schedules
+				.try_push(new_schedule.clone())
+				.expect("Max release schedules exceeded");
+
+			let total_amount = bounded_schedules
+				.iter()
+				.fold(
+					Zero::zero(),
+					|acc_amount: BalanceOf<Test>, schedule| {
+						acc_amount
+							.saturating_add(schedule.total_amount().unwrap_or(Zero::zero()))
+					},
+				);
+
+			assert_eq!(total_amount, new_schedule.total_amount().unwrap_or(Zero::zero()));
+
+			assert!(
+				pallet_balances::Pallet::<Test>::free_balance(who) >= total_amount,
+				"Account do not have enough balance"
+			);
+
+			pallet_balances::Pallet::<Test>::set_lock(
+				RELEASE_LOCK_ID,
+				&who,
+				total_amount,
+				WithdrawReasons::all(),
+			);
+		
+			assert_eq!(
+				pallet_balances::Pallet::<Test>::locks(&who).get(0),
+				Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: total_amount, reasons: Reasons::All })
+			);
+
+			v1::ReleaseSchedules::<Test>::insert(who, bounded_schedules);
+		});
+
+	}
 }
+// 1. we want to test migration is succesful
+//    when user claims their tokens that lock/thaw (generic) is removed.
+// 2. Check that locks are translated to frozen.
+
+// How to set this up:
+// 1. create release schedules for an account
+// 2. set the old locks on the account manually ( looks like genesis build function)
+// 3. assert that the locks are there.
+// 4. run the migration
+// 5. assert that the locks are gone and the freezes are there.
