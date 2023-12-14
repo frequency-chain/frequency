@@ -28,7 +28,6 @@ where
 	/// Translate capacity staked locked deposit to frozen deposit
 	pub fn translate_lock_to_freeze(account_id: T::AccountId, amount: OldCurrency::Balance) {
 		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id); // 1r + 1w
-														// TODO: Can we do anything if set_freeze fails?
 		T::Currency::set_freeze(
 			&FreezeReason::TimeReleaseVesting.into(),
 			&account_id,
