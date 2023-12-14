@@ -35,11 +35,11 @@ where
 		// 1 read get Account
 		// 1 write set Account
 		// 1 write set Locks
-		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id); // 1r + 1w
+		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id);
 
 		// 1 read get Freeze
 		// 1 read get Locks
-		// 1 write set Freeze									// TODO: Can we do anything if set_freeze fails?
+		// 1 write set Freeze
 		T::Currency::set_freeze(
 			&FreezeReason::TimeReleaseVesting.into(),
 			&account_id,
@@ -108,7 +108,6 @@ where
 		);
 
 		StorageVersion::new(2).put::<Pallet<T>>();
-
 		total_weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
 
 		log::info!(target: LOG_TARGET, "🔄 Time Release migration finished");
