@@ -1,11 +1,10 @@
-use crate::{types, BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet};
+use crate::{types, BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, ReleaseSchedules};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
 		fungible::MutateFreeze, Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade,
 		StorageVersion,
 	},
-	Blake2_128Concat,
 };
 use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
@@ -17,27 +16,6 @@ const LOG_TARGET: &str = "runtime::capacity";
 use sp_std::vec::Vec;
 
 const RELEASE_LOCK_ID: LockIdentifier = *b"timeRels";
-
-/// Only contains V1 storage format
-pub mod v1 {
-	use super::*;
-	use frame_support::{pallet_prelude::ValueQuery, storage_alias, BoundedVec};
-
-	pub(crate) type ReleaseScheduleOf<T> = types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
-
-	/// Release schedules of an account.
-	///
-	/// ReleaseSchedules: `map AccountId => Vec<ReleaseSchedule>`
-	/// alias to ReleaseSchedules storage
-	#[storage_alias]
-	pub(crate) type ReleaseSchedules<T: Config> = StorageMap<
-		Pallet<T>,
-		Blake2_128Concat,
-		<T as frame_system::Config>::AccountId,
-		BoundedVec<ReleaseScheduleOf<T>, <T as Config>::MaxReleaseSchedules>,
-		ValueQuery,
-	>;
-}
 
 /// The OnRuntimeUpgrade implementation for this storage migration
 pub struct MigrationToV2<T, OldCurrency>(sp_std::marker::PhantomData<(T, OldCurrency)>);
@@ -64,7 +42,7 @@ where
 				HexDisplay::from(&account_id.encode()),
 				err
 			);
-		}); // 1w
+		});
 	}
 }
 
@@ -84,10 +62,10 @@ where
 			let mut maybe_count = 0u32;
 
 			// Get all the keys(accounts) from the ReleaseSchedules storage
-			v1::ReleaseSchedules::<T>::iter().map(|(account_id, _)| account_id).for_each(
+			ReleaseSchedules::<T>::iter().map(|(account_id, _)| account_id).for_each(
 				|account_id| {
 					// Get the total amount of tokens in the account's ReleaseSchedules
-					let total_amount = v1::ReleaseSchedules::<T>::get(&account_id) // 1r
+					let total_amount = ReleaseSchedules::<T>::get(&account_id) // 1r
 						.iter()
 						.map(
 							|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| {
@@ -135,13 +113,13 @@ where
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use frame_support::storage::generator::StorageMap;
-		let pallet_prefix = v1::ReleaseSchedules::<T>::module_prefix();
-		let storage_prefix = v1::ReleaseSchedules::<T>::storage_prefix();
+		let pallet_prefix = ReleaseSchedules::<T>::module_prefix();
+		let storage_prefix = ReleaseSchedules::<T>::storage_prefix();
 		assert_eq!(&b"TimeRelease"[..], pallet_prefix);
 		assert_eq!(&b"ReleaseSchedules"[..], storage_prefix);
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 
-		let count = v1::ReleaseSchedules::<T>::iter().count() as u32;
+		let count = ReleaseSchedules::<T>::iter().count() as u32;
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?} records", count);
 		Ok(count.encode())
 	}
@@ -219,7 +197,7 @@ mod test {
 
 	fn create_schedules_and_set_lock(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
 		schedules.iter().for_each(|(who, start, period, period_count, per_period)| {
-			let mut bounded_schedules = v1::ReleaseSchedules::<Test>::get(who);
+			let mut bounded_schedules = ReleaseSchedules::<Test>::get(who);
 			let new_schedule = types::ReleaseSchedule {
 				start: *start,
 				period: *period,
@@ -252,7 +230,7 @@ mod test {
 				WithdrawReasons::all(),
 			);
 
-			v1::ReleaseSchedules::<Test>::insert(who, bounded_schedules);
+			ReleaseSchedules::<Test>::insert(who, bounded_schedules);
 		});
 	}
 }
