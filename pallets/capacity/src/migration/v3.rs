@@ -50,14 +50,14 @@ where
 			let mut maybe_count = 0u32;
 			StakingAccountLedger::<T>::iter()
 				.map(|(account_id, staking_details)| (account_id, staking_details.active))
-				.for_each(|(staker, mut amount)| {
-					amount = amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
+				.for_each(|(staker, amount)| {
+					let total_amount = amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
 					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
-						staker,
-						amount.into(),
+						staker.clone(),
+						total_amount.into(),
 					); // 1r + 2w
 					maybe_count += 1;
-					log::info!(target: LOG_TARGET,"migrated {:?}, amount:{:?}", maybe_count, amount);
+					log::info!(target: LOG_TARGET, "migrated amount:{:?} from account 0x{:?}, count: {:?}", total_amount, HexDisplay::from(&staker.encode()), maybe_count);
 				});
 
 			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
