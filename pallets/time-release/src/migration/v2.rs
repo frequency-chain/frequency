@@ -57,57 +57,43 @@ where
 
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
-		if on_chain_version.lt(&crate::module::STORAGE_VERSION) {
-			log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
-			let mut maybe_count = 0u32;
-
-			// Get all the keys(accounts) from the ReleaseSchedules storage
-			ReleaseSchedules::<T>::iter().map(|(account_id, _)| account_id).for_each(
-				|account_id| {
-					// Get the total amount of tokens in the account's ReleaseSchedules
-					let total_amount = ReleaseSchedules::<T>::get(&account_id) // 1r
-						.iter()
-						.map(
-							|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| {
-								schedule.total_amount()
-							},
-						)
-						.fold(Zero::zero(), |acc: BalanceOf<T>, amount| {
-							acc.saturating_add(amount.unwrap_or(Zero::zero()))
-						});
-
-					// Translate the lock to a freeze
-					MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
-						account_id,
-						total_amount.into(),
-					);
-					maybe_count += 1;
-
-					log::info!(target: LOG_TARGET, "total_amount {:?}", total_amount);
-					log::info!(target: LOG_TARGET, "migrated {:?}", maybe_count);
-				},
-			);
-
-			StorageVersion::new(2).put::<Pallet<T>>(); // 1 w
-			let reads = (maybe_count * 2 + 1) as u64;
-			// REVIEW: Are we doing 2 writes per account?
-			let writes = (maybe_count * 2 + 1) as u64;
-			log::info!(target: LOG_TARGET, "🔄 Time Release migration finished");
-			let weight = T::DbWeight::get().reads_writes(reads, writes);
-			log::info!(
-				target: LOG_TARGET,
-				"Time Release Migration calculated weight = {:?}",
-				weight
-			);
-			weight
-		} else {
-			// storage was already migrated.
+		// storage was already migrated.
+		if on_chain_version.ge(&crate::module::STORAGE_VERSION) {
 			log::info!(
 				target: LOG_TARGET,
 				"Old Time Release Locks->Freezes migration attempted to run. Please remove"
 			);
-			T::DbWeight::get().reads(1)
+			return T::DbWeight::get().reads(1);
 		}
+
+		log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
+		let mut maybe_count = 0u32;
+
+		// Get all the keys(accounts) from the ReleaseSchedules storage
+		ReleaseSchedules::<T>::iter()
+			.map(|(account_id, _)| account_id)
+			.for_each(|account_id| {
+				let total_amount = calculate_total_scheduled_locks_for_account::<T>(&account_id);
+
+				MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
+					account_id,
+					total_amount.into(),
+				);
+
+				maybe_count += 1;
+
+				log::info!(target: LOG_TARGET, "total_amount {:?}", total_amount);
+				log::info!(target: LOG_TARGET, "migrated {:?}", maybe_count);
+			});
+
+		StorageVersion::new(2).put::<Pallet<T>>();
+		let reads = (maybe_count * 2 + 1) as u64;
+		// REVIEW: Are we doing 2 writes per account?
+		let writes = (maybe_count * 2 + 1) as u64;
+		log::info!(target: LOG_TARGET, "🔄 Time Release migration finished");
+		let weight = T::DbWeight::get().reads_writes(reads, writes);
+		log::info!(target: LOG_TARGET, "Time Release Migration calculated weight = {:?}", weight);
+		weight
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -126,7 +112,6 @@ where
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
-		use crate::ReleaseSchedules;
 		use parity_scale_codec::Decode;
 		let pre_upgrade_count: u32 = Decode::decode(&mut state.as_slice()).unwrap_or_default();
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
@@ -137,6 +122,19 @@ where
 		log::info!(target: LOG_TARGET, "✅ migration post_upgrade checks passed");
 		Ok(())
 	}
+}
+
+fn calculate_total_scheduled_locks_for_account<T: Config>(
+	account_id: &T::AccountId,
+) -> BalanceOf<T> {
+	ReleaseSchedules::<T>::get(&account_id) // 1r
+		.iter()
+		.map(|schedule: &types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>| {
+			schedule.total_amount()
+		})
+		.fold(Zero::zero(), |acc: BalanceOf<T>, amount| {
+			acc.saturating_add(amount.unwrap_or(Zero::zero()))
+		})
 }
 
 #[cfg(test)]
