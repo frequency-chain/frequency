@@ -40,8 +40,8 @@ pub mod v1 {
 }
 
 /// The OnRuntimeUpgrade implementation for this storage migration
-pub struct MigrationToV3<T, OldCurrency>(sp_std::marker::PhantomData<(T, OldCurrency)>);
-impl<T, OldCurrency> MigrationToV3<T, OldCurrency>
+pub struct MigrationToV2<T, OldCurrency>(sp_std::marker::PhantomData<(T, OldCurrency)>);
+impl<T, OldCurrency> MigrationToV2<T, OldCurrency>
 where
 	T: Config,
 	OldCurrency: 'static + LockableCurrency<T::AccountId, Moment = BlockNumberFor<T>>,
@@ -68,7 +68,7 @@ where
 	}
 }
 
-impl<T: Config, OldCurrency> OnRuntimeUpgrade for MigrationToV3<T, OldCurrency>
+impl<T: Config, OldCurrency> OnRuntimeUpgrade for MigrationToV2<T, OldCurrency>
 where
 	T: Config,
 	OldCurrency: 'static + LockableCurrency<T::AccountId, Moment = BlockNumberFor<T>>,
@@ -76,19 +76,10 @@ where
 {
 	fn on_runtime_upgrade() -> Weight {
 		log::info!(target: LOG_TARGET, "Running storage migration...");
-		let onchain_version = Pallet::<T>::on_chain_storage_version();
-		let current_version = Pallet::<T>::current_storage_version();
-		log::info!(
-			target: LOG_TARGET,
-			"onchain_version= {:?}, current_version={:?}",
-			onchain_version,
-			current_version
-		);
 
-		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
+		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
-		// Pallet::<T>::STORAGE_VERSION.get()
-		if on_chain_version.lt(&2) {
+		if on_chain_version.lt(&crate::module::STORAGE_VERSION) {
 			log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
 			let mut maybe_count = 0u32;
 
@@ -108,7 +99,7 @@ where
 						});
 
 					// Translate the lock to a freeze
-					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
+					MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
 						account_id,
 						total_amount.into(),
 					);
@@ -179,7 +170,7 @@ mod test {
 	use crate::mock::{Test, *};
 	use pallet_balances::{BalanceLock, Reasons};
 
-	type MigrationOf<T> = MigrationToV3<T, pallet_balances::Pallet<T>>;
+	type MigrationOf<T> = MigrationToV2<T, pallet_balances::Pallet<T>>;
 
 	#[test]
 	fn migration_works() {
@@ -199,7 +190,7 @@ mod test {
 					.find(|l| l.id == RELEASE_LOCK_ID),
 				Some(&BalanceLock {
 					id: RELEASE_LOCK_ID,
-					amount: total_amount,
+					amount: 5u64.into(),
 					reasons: Reasons::All
 				})
 			);
