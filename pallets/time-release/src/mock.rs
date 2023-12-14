@@ -133,7 +133,11 @@ impl ExtBuilder {
 		MockBlockNumberProvider::set(0);
 
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE), (DAVE, DAVE_BALANCE)],
+			balances: vec![
+				(ALICE, ALICE_BALANCE),
+				(CHARLIE, CHARLIE_BALANCE),
+				(DAVE, DAVE_BALANCE),
+			],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

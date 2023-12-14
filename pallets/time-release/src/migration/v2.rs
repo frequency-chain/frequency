@@ -112,7 +112,6 @@ where
 			// Get all the keys(accounts) from the ReleaseSchedules storage
 			v1::ReleaseSchedules::<T>::iter().map(|(account_id, _)| account_id).for_each(
 				|account_id| {
-					println!("account_id {:?}", account_id);
 					// Get the total amount of tokens in the account's ReleaseSchedules
 					let total_amount = v1::ReleaseSchedules::<T>::get(&account_id) // 1r
 						.iter()
