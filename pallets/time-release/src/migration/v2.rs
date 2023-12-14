@@ -14,7 +14,7 @@ use sp_runtime::{traits::Zero, Saturating};
 const LOG_TARGET: &str = "runtime::capacity";
 
 #[cfg(feature = "try-runtime")]
-use sp_std::{fmt::Debug, vec::Vec};
+use sp_std::vec::Vec;
 
 const RELEASE_LOCK_ID: LockIdentifier = *b"timeRels";
 
@@ -92,8 +92,19 @@ where
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
 	fn on_runtime_upgrade() -> Weight {
+		log::info!(target: LOG_TARGET, "Running storage migration...");
+		let onchain_version = Pallet::<T>::on_chain_storage_version();
+		let current_version = Pallet::<T>::current_storage_version();
+		log::info!(
+			target: LOG_TARGET,
+			"onchain_version= {:?}, current_version={:?}",
+			onchain_version,
+			current_version
+		);
+
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
+		// Pallet::<T>::STORAGE_VERSION.get()
 		if on_chain_version.lt(&2) {
 			log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
 			let mut maybe_count = 0u32;
@@ -101,6 +112,7 @@ where
 			// Get all the keys(accounts) from the ReleaseSchedules storage
 			v1::ReleaseSchedules::<T>::iter().map(|(account_id, _)| account_id).for_each(
 				|account_id| {
+					println!("account_id {:?}", account_id);
 					// Get the total amount of tokens in the account's ReleaseSchedules
 					let total_amount = v1::ReleaseSchedules::<T>::get(&account_id) // 1r
 						.iter()
@@ -112,12 +124,15 @@ where
 						.fold(Zero::zero(), |acc: BalanceOf<T>, amount| {
 							acc.saturating_add(amount.unwrap_or(Zero::zero()))
 						});
+
 					// Translate the lock to a freeze
 					MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
 						account_id,
 						total_amount.into(),
 					);
 					maybe_count += 1;
+
+					log::info!(target: LOG_TARGET, "total_amount {:?}", total_amount);
 					log::info!(target: LOG_TARGET, "migrated {:?}", maybe_count);
 				},
 			);
@@ -187,40 +202,49 @@ mod test {
 	#[test]
 	fn migration_works() {
 		ExtBuilder::build().execute_with(|| {
-			StorageVersion::new(2).put::<Pallet<Test>>();
-			// Create some data in the old format
-			// Grab an account with a balance
-			let account = DAVE;
-			let amount = 50;
-			assert_eq!(pallet_balances::Pallet::<Test>::free_balance(&account), DAVE_BALANCE);
+			assert_eq!(pallet_balances::Pallet::<Test>::free_balance(&DAVE), DAVE_BALANCE);
 
 			let schedules = vec![
 				// who, start, period, period_count, per_period
 				(DAVE, 2, 3, 1, 5),
 			];
-			create_schedules(schedules);
 
+			create_schedules_and_set_lock(schedules);
 
-
+			assert_eq!(
+				pallet_balances::Pallet::<Test>::locks(&DAVE)
+					.iter()
+					.find(|l| l.id == RELEASE_LOCK_ID),
+				Some(&BalanceLock {
+					id: RELEASE_LOCK_ID,
+					amount: total_amount,
+					reasons: Reasons::All
+				})
+			);
 
 			// Run migration.
 			let state = MigrationOf::<Test>::pre_upgrade().unwrap();
 			MigrationOf::<Test>::on_runtime_upgrade();
 			MigrationOf::<Test>::post_upgrade(state).unwrap();
 
-			// Check that the old staking locks are now freezes
-			assert_eq!(pallet_balances::Pallet::<Test>::locks(&account), vec![]);
+			assert_eq!(
+				pallet_balances::Pallet::<Test>::locks(&DAVE),
+				vec![],
+				"Locks should be empty"
+			);
 			assert_eq!(
 				<Test as Config>::Currency::balance_frozen(
 					&FreezeReason::TimeReleaseVesting.into(),
-					&account
+					&DAVE
 				),
-				50u64
+				5u64,
+				"Frozen balance should be 5 for account {:?}",
+				DAVE
 			);
 		})
 	}
 
-	fn create_schedules(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
+	fn create_schedules_and_set_lock(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
 		schedules.iter().for_each(|(who, start, period, period_count, per_period)| {
 			let mut bounded_schedules = v1::ReleaseSchedules::<Test>::get(who);
 			let new_schedule = types::ReleaseSchedule {
@@ -234,21 +258,18 @@ mod test {
 				.try_push(new_schedule.clone())
 				.expect("Max release schedules exceeded");
 
-			let total_amount = bounded_schedules
-				.iter()
-				.fold(
-					Zero::zero(),
-					|acc_amount: BalanceOf<Test>, schedule| {
-						acc_amount
-							.saturating_add(schedule.total_amount().unwrap_or(Zero::zero()))
-					},
-				);
+			let total_amount = bounded_schedules.iter().fold(
+				Zero::zero(),
+				|acc_amount: BalanceOf<Test>, schedule| {
+					acc_amount.saturating_add(schedule.total_amount().unwrap_or(Zero::zero()))
+				},
+			);
 
 			assert_eq!(total_amount, new_schedule.total_amount().unwrap_or(Zero::zero()));
 
 			assert!(
 				pallet_balances::Pallet::<Test>::free_balance(who) >= total_amount,
-				"Account do not have enough balance"
+				"Account does not have enough balance"
 			);
 
 			pallet_balances::Pallet::<Test>::set_lock(
@@ -257,24 +278,8 @@ mod test {
 				total_amount,
 				WithdrawReasons::all(),
 			);
-		
-			assert_eq!(
-				pallet_balances::Pallet::<Test>::locks(&who).get(0),
-				Some(&BalanceLock { id: RELEASE_LOCK_ID, amount: total_amount, reasons: Reasons::All })
-			);
 
 			v1::ReleaseSchedules::<Test>::insert(who, bounded_schedules);
 		});
-
 	}
 }
-// 1. we want to test migration is succesful
-//    when user claims their tokens that lock/thaw (generic) is removed.
-// 2. Check that locks are translated to frozen.
-
-// How to set this up:
-// 1. create release schedules for an account
-// 2. set the old locks on the account manually ( looks like genesis build function)
-// 3. assert that the locks are there.
-// 4. run the migration
-// 5. assert that the locks are gone and the freezes are there.
