@@ -25,23 +25,6 @@ pub mod v1 {
 
 	pub(crate) type ReleaseScheduleOf<T> = types::ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 
-	/// The release schedule.
-	///
-	/// Benefits would be granted gradually, `per_period` amount every `period`
-	/// of blocks after `start`.
-	// #[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-	// pub struct ReleaseSchedule<BlockNumber, Balance: MaxEncodedLen + HasCompact> {
-	// 	/// Vesting starting block
-	// 	pub start: BlockNumber,
-	// 	/// Number of blocks between vest
-	// 	pub period: BlockNumber,
-	// 	/// Number of vest
-	// 	pub period_count: u32,
-	// 	/// Amount of tokens to release per vest
-	// 	#[codec(compact)]
-	// 	pub per_period: Balance,
-	// }
-
 	/// Release schedules of an account.
 	///
 	/// ReleaseSchedules: `map AccountId => Vec<ReleaseSchedule>`
