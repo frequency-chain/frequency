@@ -408,7 +408,7 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: .
@@ -464,7 +464,7 @@ jobs:
           fetch-depth: 0
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: .
@@ -527,7 +527,7 @@ jobs:
           fileName: ${{env.BIN_FILENAME}}
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
@@ -713,7 +713,7 @@ jobs:
         run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: /tmp
@@ -836,7 +836,7 @@ jobs:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: .
@@ -934,7 +934,7 @@ jobs:
           version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: .
@@ -1026,7 +1026,7 @@ jobs:
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Download Dist Dir
         id: download
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
