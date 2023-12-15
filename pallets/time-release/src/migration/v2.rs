@@ -98,7 +98,7 @@ where
 
 				total_accounts_migrated += 1;
 
-				log::info!(target: LOG_TARGET, "A total locked amount of {:?} has been migrated from locked to frozen for account: {:?}", total_amount, account_id);
+				log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), total_amount);
 			});
 
 		log::info!(

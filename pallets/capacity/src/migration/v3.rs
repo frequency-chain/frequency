@@ -1,16 +1,14 @@
-use crate::{
-	BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger, STORAGE_VERSION,
-};
+use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger};
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
-		fungible::{Inspect, MutateFreeze},
-		Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade, StorageVersion,
+		fungible::MutateFreeze, Get, LockIdentifier, LockableCurrency, OnRuntimeUpgrade,
+		StorageVersion,
 	},
 };
 use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
-use sp_runtime::{DispatchError, Saturating};
+use sp_runtime::Saturating;
 
 const LOG_TARGET: &str = "runtime::capacity";
 
@@ -31,29 +29,21 @@ where
 	pub fn translate_lock_to_freeze(
 		account_id: T::AccountId,
 		amount: OldCurrency::Balance,
-	) -> Result<Weight, DispatchError> {
-		log::info!(
-			"Attempting to migrate {:?} locks for account 0x{:?} total_balance: {:?}, reducible_balance {:?}",
-			amount,
-			HexDisplay::from(&account_id.encode()),
-			<T as Config>::Currency::total_balance(&account_id),
-			<T as Config>::Currency::reducible_balance(&account_id, frame_support::traits::tokens::Preservation::Expendable, frame_support::traits::tokens::Fortitude::Polite),
-		);
-		OldCurrency::remove_lock(STAKING_ID, &account_id); // 1r + 1w
-		match <T as Config>::Currency::set_freeze(
+	) -> Weight {
+		// TODO: Confirm reads and writes
+		OldCurrency::remove_lock(STAKING_ID, &account_id);
+
+		<T as Config>::Currency::set_freeze(
 			&FreezeReason::Staked.into(),
 			&account_id,
 			amount.into(),
-		) {
-			Ok(_) => {
-				log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
-				Ok(T::DbWeight::get().reads_writes(2, 1))
-			},
-			Err(err) => {
-				log::error!(target: LOG_TARGET, "Failed to freeze {:?} for account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
-				Err(err)
-			},
-		}
+		)
+		.unwrap_or_else(|err| {
+			log::error!(target: LOG_TARGET, "Failed to freeze {:?} for account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
+		});
+
+		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
+		T::DbWeight::get().reads_writes(5, 3)
 	}
 }
 
@@ -66,41 +56,44 @@ where
 	fn on_runtime_upgrade() -> Weight {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
-		if on_chain_version.lt(&STORAGE_VERSION) {
-			log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration started");
-			let mut accounts_migrated_count = 0u32;
-			StakingAccountLedger::<T>::iter()
-				.map(|(account_id, staking_details)| (account_id, staking_details.active))
-				.try_for_each(|(staker, active_amount)| {
-					let total_amount = active_amount.saturating_add(Pallet::<T>::get_unlocking_total_for(&staker)); // 1r
-					match MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
-						staker.clone(),
-						total_amount.into(),
-					)  { // 1r + 2w
-						Ok(_) => {
-							accounts_migrated_count += 1;
-							log::info!(target: LOG_TARGET, "migrated count: {:?}", accounts_migrated_count);
-							Ok(())
-						},
-						Err(err) => {
-							log::error!(target: LOG_TARGET, "Failed to migrate account 0x{:?}, reason: {:?}", HexDisplay::from(&staker.encode()), err);
-							Err(err)
-						}
-					}
-				});
-
-			StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
-			let reads = (accounts_migrated_count * 2 + 1) as u64;
-			let writes = (accounts_migrated_count * 2 + 1) as u64;
-			log::info!(target: LOG_TARGET, "🔄 migration finished");
-			let weight = T::DbWeight::get().reads_writes(reads, writes);
-			log::info!(target: LOG_TARGET, "Migration calculated weight = {:?}", weight);
-			weight
-		} else {
-			// storage was already migrated.
+		if on_chain_version.ge(&crate::pallet::STORAGE_VERSION) {
 			log::info!(target: LOG_TARGET, "Old Capacity Locks->Freezes migration attempted to run. Please remove");
-			T::DbWeight::get().reads(1)
+			return T::DbWeight::get().reads(1)
 		}
+
+		log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration started");
+		// The migration started with 1r to get the STORAGE_VERSION
+		let mut total_weight = T::DbWeight::get().reads_writes(1, 0);
+		let mut total_accounts_migrated = 0u32;
+
+		// Get all the keys(accounts) from the StakingAccountLedger
+		StakingAccountLedger::<T>::iter()
+			.map(|(account_id, staking_details)| (account_id, staking_details.active))
+			.for_each(|(account_id, active_amount)| {
+				let (total_unlocking, cal_fn_weight) =
+					Pallet::<T>::get_unlocking_total_for(&account_id);
+				let total_amount = active_amount.saturating_add(total_unlocking);
+
+				let trans_fn_weight = MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
+					account_id.clone(),
+					total_amount.into(),
+				);
+
+				total_weight =
+					total_weight.saturating_add(cal_fn_weight).saturating_add(trans_fn_weight);
+
+				total_accounts_migrated += 1;
+			});
+
+		log::info!(target: LOG_TARGET, "total accounts migrated from locks to freezes: {:?}", total_accounts_migrated);
+
+		StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
+		total_weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
+
+		log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration finished");
+		log::info!(target: LOG_TARGET, "Capacity Migration calculated weight = {:?}", total_weight);
+
+		total_weight
 	}
 
 	#[cfg(feature = "try-runtime")]
