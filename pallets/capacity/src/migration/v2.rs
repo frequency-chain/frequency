@@ -1,6 +1,7 @@
 use crate::{
 	types::{StakingDetails, UnlockChunk},
-	BalanceOf, Config, Pallet, StakingAccountLedger, StakingType, UnlockChunkList, UnstakeUnlocks, STORAGE_VERSION_V2,
+	BalanceOf, Config, Pallet, StakingAccountLedger, StakingType, UnlockChunkList, UnstakeUnlocks,
+	STORAGE_VERSION_V2,
 };
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, Weight},

@@ -41,7 +41,11 @@ where
 			<T as Config>::Currency::reducible_balance(&account_id, frame_support::traits::tokens::Preservation::Expendable, frame_support::traits::tokens::Fortitude::Polite),
 		);
 		OldCurrency::remove_lock(STAKING_ID, &account_id); // 1r + 1w
-		match <T as Config>::Currency::set_freeze(&FreezeReason::Staked.into(), &account_id, amount.into()) {
+		match <T as Config>::Currency::set_freeze(
+			&FreezeReason::Staked.into(),
+			&account_id,
+			amount.into(),
+		) {
 			Ok(_) => {
 				log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
 				Ok(T::DbWeight::get().reads_writes(2, 1))

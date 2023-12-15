@@ -10,7 +10,7 @@ use parity_scale_codec::Encode;
 use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{traits::Zero, Saturating};
 
-const LOG_TARGET: &str = "runtime::capacity";
+const LOG_TARGET: &str = "runtime::time-release";
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
@@ -25,7 +25,7 @@ where
 	OldCurrency: 'static + LockableCurrency<T::AccountId, Moment = BlockNumberFor<T>>,
 	OldCurrency::Balance: IsType<BalanceOf<T>>,
 {
-	/// Translate capacity staked locked deposit to frozen deposit
+	/// Translate time release locked deposit to frozen deposit
 	pub fn translate_lock_to_freeze(
 		account_id: &T::AccountId,
 		amount: OldCurrency::Balance,
