@@ -233,7 +233,7 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: gpg --verify ${{env.RELEASE_BIN_FILENAME}}.asc
       - name: Upload Artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: |
@@ -341,7 +341,7 @@ jobs:
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
@@ -428,7 +428,7 @@ jobs:
         run: npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -607,7 +607,7 @@ jobs:
         run: |
           cat ${{env.OUTPUT_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
