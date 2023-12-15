@@ -1,6 +1,5 @@
 use crate::{
-	BalanceOf, BlockNumberFor, Config, Error, FreezeReason, Pallet, StakingAccountLedger,
-	STORAGE_VERSION,
+	BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger, STORAGE_VERSION,
 };
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
