@@ -127,6 +127,7 @@ start-frequency-interval)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --offchain-worker=always \
+    --enable-offchain-indexing=true \
     --sealing-create-empty-blocks \
     --tmp
   ;;

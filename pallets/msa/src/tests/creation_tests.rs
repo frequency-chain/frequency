@@ -57,6 +57,19 @@ pub fn iteration_test() {
 }
 
 #[test]
+pub fn print_keys() {
+	new_test_ext().execute_with(|| {
+		for _ in 0..1000 {
+			let (key_pair, phrase, seed) = sr25519::Pair::generate_with_phrase(None);
+			println!("public: {:?}", key_pair.public().0);
+			println!("nice: {:?}", key_pair.public());
+			println!("phrase: {:?}", phrase);
+			println!("seed: {:?}", seed);
+		}
+	});
+}
+
+#[test]
 pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed() {
 	new_test_ext().execute_with(|| {
 		// arrange

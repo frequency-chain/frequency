@@ -448,6 +448,7 @@ pub mod pallet {
 			}
 
 			// now process indexed events
+			Self::reverse_map_msa_keys(block_number);
 		}
 	}
 
@@ -469,7 +470,7 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			log::info!("Genesis {}", self.accounts);
-			for mut n in 1..self.accounts {
+			for mut n in 1..=self.accounts {
 				let mut raw = [0u8; 32];
 				let mut c = 0usize;
 				while n > 0 {
@@ -1545,6 +1546,7 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	// TODO: should alos read previous N blocks in case offchain worker skip certain blocks
 	fn read_events(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
 		let current_block: u32 = block_number.try_into().unwrap_or_default();
 		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
@@ -1553,7 +1555,7 @@ impl<T: Config> Pallet<T> {
 		let event_count =
 			if let Some(event_count) = optional_event_count { event_count } else { return events };
 
-		for i in 1..event_count + 1 {
+		for i in 1..=event_count {
 			let key =
 				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
 			let optional_decoded_event =
@@ -1564,6 +1566,7 @@ impl<T: Config> Pallet<T> {
 			// read and clear the event from offchain storage
 			remove_offchain_index(key.encode().as_slice());
 		}
+		// TODO: should it remove the count also?
 		events
 	}
 
@@ -1571,82 +1574,74 @@ impl<T: Config> Pallet<T> {
 	pub fn reverse_map_msa_keys(block_number: BlockNumberFor<T>) {
 		// read the events indexed for the current block
 		let events_to_process: Vec<IndexedEvent<T>> = Self::read_events(block_number);
+		if !events_to_process.is_empty() {
+			log::info!(
+				"found {} indexed events in block {:?}",
+				events_to_process.len(),
+				block_number
+			);
+		}
 
 		// collect a replay of all events by MSA id
-		let mut events_by_msa_id: BTreeMap<
-			MessageSourceId,
-			Vec<(T::AccountId, EventType, BlockNumberFor<T>)>,
-		> = BTreeMap::new();
+		let mut events_by_msa_id: BTreeMap<MessageSourceId, Vec<IndexedEvent<T>>> = BTreeMap::new();
 
 		// collect relevant events
 		for event in events_to_process {
 			match event {
-				IndexedEvent::IndexedMsaCreated { msa_id, key } => {
+				IndexedEvent::IndexedPublicKeyAdded { msa_id, .. } |
+				IndexedEvent::IndexedMsaCreated { msa_id, .. } => {
 					let events = events_by_msa_id.entry(msa_id).or_default();
-					events.push((key, EventType::Add, block_number));
+					events.push(event);
 				},
-				IndexedEvent::IndexedPublicKeyAdded { msa_id, key } => {
+				IndexedEvent::IndexedPublicKeyDeleted { msa_id, .. } => {
 					let events = events_by_msa_id.entry(msa_id).or_default();
-					events.push((key, EventType::Add, block_number));
-				},
-				IndexedEvent::IndexedPublicKeyDeleted { msa_id, key } => {
-					let events = events_by_msa_id.entry(msa_id).or_default();
-					events.push((key, EventType::Remove, block_number));
+					events.push(event);
 				},
 			}
 		}
 
 		// process and save to offchain db
-		if !events_by_msa_id.is_empty() {
-			for (msa_id, events) in events_by_msa_id {
+		for (msa_id, events) in events_by_msa_id {
+			if !events.is_empty() {
 				Self::process_events(msa_id, events);
 			}
 		}
 	}
 
-	fn process_events(
-		msa_id: MessageSourceId,
-		events: Vec<(T::AccountId, EventType, BlockNumberFor<T>)>,
-	) {
+	fn process_events(msa_id: MessageSourceId, events: Vec<IndexedEvent<T>>) {
 		// Lock will specifically prevent multiple offchain workers from
 		// processing the same msa events at the same time
-		let lock_status = offchain_common::lock(b"msa::", msa_id.encode().as_slice(), || {
-			for (key, event_type, block) in &events {
-				match event_type {
-					EventType::Add => {
-						let add_result = process_msa_key_event::<
-							MessageSourceId,
-							T::AccountId,
-							BlockNumberFor<T>,
-						>(MSAPublicKeyDataOperation::Add::<
-							MessageSourceId,
-							T::AccountId,
-							BlockNumberFor<T>,
-						>(msa_id, key.clone(), *block));
-						if let Err(e) = add_result {
-							log::error!("Error adding key to offchain storage: {:?}", e);
-						}
+		// let lock_status = offchain_common::lock(b"msa::", msa_id.encode().as_slice(), || {
+		let msa_lock_name = get_msa_account_lock_name(msa_id);
+		let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
+			&msa_lock_name,
+			Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
+		);
+		let _ = msa_lock.lock();
+		let msa_storage_name = get_msa_account_storage_key_name(msa_id);
+		let msa_storage = StorageValueRef::persistent(&msa_storage_name);
+
+		let mut msa_keys =
+			msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or(Vec::default());
+
+		for event in events {
+			match &event {
+				IndexedEvent::IndexedPublicKeyAdded { key, .. } |
+				IndexedEvent::IndexedMsaCreated { key, .. } =>
+					if !msa_keys.contains(key) {
+						msa_keys.push(key.clone());
+					} else {
+						log::warn!("{:?} already added!", key);
 					},
-					EventType::Remove => {
-						let delete_result = process_msa_key_event::<
-							MessageSourceId,
-							T::AccountId,
-							BlockNumberFor<T>,
-						>(MSAPublicKeyDataOperation::Remove::<
-							MessageSourceId,
-							T::AccountId,
-							BlockNumberFor<T>,
-						>(msa_id, key.clone(), *block));
-						if let Err(e) = delete_result {
-							log::error!("Error deleting key from offchain storage: {:?}", e);
-						}
+				IndexedEvent::IndexedPublicKeyDeleted { key, .. } =>
+					if msa_keys.contains(key) {
+						msa_keys.retain(|k| k != key);
+					} else {
+						log::warn!("{:?} already removed!", key);
 					},
-				}
 			}
-		});
-		if let offchain_common::LockStatus::Locked = lock_status {
-			log::error!("Unable to acquire lock, skipping event processing");
 		}
+		msa_storage.set(&msa_keys);
 	}
 
 	/// returns true if it's already locked
@@ -1659,9 +1654,10 @@ impl<T: Config> Pallet<T> {
 		if let Ok(mut guard) = lock.try_lock() {
 			let processed_storage = StorageValueRef::persistent(MSA_INITIAL_IMPORTED_STORAGE_NAME);
 			let initial_imported = processed_storage.get::<bool>().unwrap_or(None);
-			log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
 
 			if initial_imported.unwrap_or_default() == false {
+				log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
+
 				let mut counter = 0u64;
 				// let account_keys: Vec<_> = PublicKeyToMsaId::<T>::iter().collect();
 				// log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
@@ -1672,23 +1668,20 @@ impl<T: Config> Pallet<T> {
 						&msa_lock_name,
 						Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
 					);
-					if let Ok(_) = msa_lock.try_lock() {
-						let msa_storage_name = get_msa_account_storage_key_name(msa_id);
-						let msa_storage = StorageValueRef::persistent(&msa_storage_name);
+					let _ = msa_lock.lock();
+					let msa_storage_name = get_msa_account_storage_key_name(msa_id);
+					let msa_storage = StorageValueRef::persistent(&msa_storage_name);
 
-						let mut msa_keys = msa_storage
-							.get::<Vec<T::AccountId>>()
-							.unwrap_or(None)
-							.unwrap_or(Vec::default());
+					let mut msa_keys = msa_storage
+						.get::<Vec<T::AccountId>>()
+						.unwrap_or(None)
+						.unwrap_or(Vec::default());
 
-						if !msa_keys.contains(&account_id) {
-							msa_keys.push(account_id.clone());
-							msa_storage.set(&msa_keys);
-						} else {
-							log::warn!("{:?} already added!", &account_id);
-						}
+					if !msa_keys.contains(&account_id) {
+						msa_keys.push(account_id.clone());
+						msa_storage.set(&msa_keys);
 					} else {
-						// TODO: add to process later
+						log::warn!("{:?} already added!", &account_id);
 					}
 
 					// extend the lock

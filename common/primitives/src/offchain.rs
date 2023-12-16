@@ -70,9 +70,8 @@ where
 }
 
 /// Wrapper for offchain get operations
-pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrievalError> {
-	let indexed_value = get_impl::<V>(key);
-	indexed_value
+pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, StorageRetrievalError> {
+	get_impl::<V>(key)
 }
 
 /// Wrapper for offchain_index remove operations
@@ -95,11 +94,11 @@ where
 }
 
 /// Gets a value by the key from persistent storage
-fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<V, StorageRetrievalError> {
+fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, StorageRetrievalError> {
 	let oci_mem = StorageValueRef::persistent(key);
-	if let Ok(Some(data)) = oci_mem.get::<V>() {
-		return Ok(data)
-	} else {
-		return Err(StorageRetrievalError::Undecodable)
+	match oci_mem.get::<V>() {
+		Ok(Some(data)) => Ok(Some(data)),
+		Ok(None) => Ok(None),
+		Err(e) => Err(StorageRetrievalError::Undecodable),
 	}
 }
