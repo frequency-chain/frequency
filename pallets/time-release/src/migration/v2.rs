@@ -31,14 +31,16 @@ where
 		amount: OldCurrency::Balance,
 	) -> Weight {
 		// 1 read get Locks
-		// 1 read get Freeze
+		// 1 read get Freezes
 		// 1 read get Account
 		// 1 write set Account
+		// 1 read get Locks: update_locks: set existed with `contains_key`
 		// 1 write set Locks
 		OldCurrency::remove_lock(RELEASE_LOCK_ID, &account_id);
 
 		// 1 read get Freeze
 		// 1 read get Locks
+		// 1 write set Account: update_freezes->mutate_account->try_mutate_account: set account data
 		// 1 write set Freeze
 		T::Currency::set_freeze(
 			&FreezeReason::TimeReleaseVesting.into(),
@@ -55,7 +57,7 @@ where
 			);
 		});
 
-		T::DbWeight::get().reads_writes(5, 3)
+		T::DbWeight::get().reads_writes(6, 4)
 	}
 }
 
@@ -80,7 +82,8 @@ where
 		}
 
 		log::info!(target: LOG_TARGET, "🔄 Time Release Locks->Freezes migration started");
-		let mut total_weight = T::DbWeight::get().reads_writes(0, 0);
+		// The migration started with 1r to get the on_chain_storage_version
+		let mut total_weight = T::DbWeight::get().reads_writes(1, 0);
 		let mut total_accounts_migrated = 0u32;
 
 		// Get all the keys(accounts) from the ReleaseSchedules storage

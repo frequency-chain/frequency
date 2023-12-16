@@ -30,8 +30,22 @@ where
 		account_id: T::AccountId,
 		amount: OldCurrency::Balance,
 	) -> Weight {
-		// TODO: Confirm reads and writes
+		// 1 read get Locks: remove_lock: set locks
+		// 1 read get Freezes
+		// 1 read get Account
+		//   1 write set Account: update_locks->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
+		//     We could avoid this write by calling the upgrade script before running the migration,
+		//     which would ensure that all accounts are upgraded.
+		// 1 write set Account: update_locks->try_mutate_account: set account data
+		// 1 read get Locks: update_locks: set existed with `contains_key`
+		// 1 write set Locks: update_locks->Locks::remove: remove existed
 		OldCurrency::remove_lock(STAKING_ID, &account_id);
+
+		// 1 read get Freezes: set_freeze: set locks
+		// 1 read get Locks: update_freezes: Locks::get().iter()
+		//   1 write set Account: update_freezes->mutate_account->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
+		// 1 write set Account: update_freezes->mutate_account->try_mutate_account: set account data
+		// 1 write set Freezes: update_freezes: Freezes::insert
 
 		<T as Config>::Currency::set_freeze(
 			&FreezeReason::Staked.into(),
@@ -43,7 +57,7 @@ where
 		});
 
 		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
-		T::DbWeight::get().reads_writes(5, 3)
+		T::DbWeight::get().reads_writes(6, 4)
 	}
 }
 
