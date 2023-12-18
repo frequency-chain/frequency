@@ -150,7 +150,6 @@ where
 }
 
 #[cfg(test)]
-#[cfg(feature = "try-runtime")]
 mod test {
 	use frame_support::traits::{tokens::fungible::InspectFreeze, WithdrawReasons};
 
@@ -190,9 +189,12 @@ mod test {
 			assert_eq!(StakingAccountLedger::<Test>::iter().count(), 1);
 
 			// Run migration.
-			let state = MigrationOf::<T>::pre_upgrade().unwrap();
+			let pre_upgrade_count = StakingAccountLedger::<T>::iter().count() as u32;
 			MigrationOf::<T>::on_runtime_upgrade();
-			MigrationOf::<T>::post_upgrade(state).unwrap();
+
+			let on_chain_version = Pallet::<T>::on_chain_storage_version();
+			assert_eq!(on_chain_version, crate::pallet::STORAGE_VERSION);
+			assert_eq!(pre_upgrade_count as usize, StakingAccountLedger::<T>::iter().count());
 
 			// Check that the old staking locks are now freezes
 			assert_eq!(pallet_balances::Pallet::<T>::locks(&account), vec![]);
