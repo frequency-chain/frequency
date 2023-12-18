@@ -4,6 +4,7 @@ use super::*;
 use crate::Pallet as TimeReleasePallet;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account, whitelisted_caller};
+use frame_support::traits::{Currency, Imbalance};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::{traits::TrailingZeroInput, SaturatedConversion};
 use sp_std::prelude::*;
@@ -16,8 +17,9 @@ pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 const SEED: u32 = 0;
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let actual_deposit = T::Currency::mint_into(&who, balance.saturated_into());
-	assert_eq!(balance, actual_deposit.unwrap());
+	let deposit_result = T::Currency::deposit_creating(who, balance.saturated_into());
+	let actual_deposit = deposit_result.peek();
+	assert_eq!(balance, actual_deposit);
 }
 
 fn lookup_of_account<T: Config>(
@@ -74,7 +76,7 @@ benchmarks! {
 	}: _(RawOrigin::Signed(to.clone()))
 	verify {
 		assert_eq!(
-			T::Currency::balance(&to),
+			T::Currency::free_balance(&to),
 			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i) ,
 		);
 	}
@@ -101,7 +103,7 @@ benchmarks! {
 	}: _(RawOrigin::Root, to_lookup, schedules)
 	verify {
 		assert_eq!(
-			T::Currency::balance(&to),
+			T::Currency::free_balance(&to),
 			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i)
 		);
 	}

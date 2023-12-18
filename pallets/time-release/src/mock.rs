@@ -50,9 +50,9 @@ impl pallet_balances::Config for Test {
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
 	type WeightInfo = ();
-	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxFreezes = ConstU32<1>;
+	type FreezeIdentifier = ();
 	type MaxHolds = ConstU32<0>;
+	type MaxFreezes = ConstU32<0>;
 	type RuntimeHoldReason = ();
 }
 
@@ -99,8 +99,6 @@ impl Config for Test {
 	type WeightInfo = ();
 	type MaxReleaseSchedules = ConstU32<50>;
 	type BlockNumberProvider = MockBlockNumberProvider;
-	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type Balance = Balance;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
@@ -109,7 +107,7 @@ construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>, FreezeReason},
+		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>},
 		PalletBalances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 	}
 );
@@ -117,11 +115,9 @@ construct_runtime!(
 pub const ALICE: AccountId = 0;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
-pub const DAVE: AccountId = 4;
 
 pub const ALICE_BALANCE: u64 = 100;
 pub const CHARLIE_BALANCE: u64 = 50;
-pub const DAVE_BALANCE: u64 = 200;
 
 #[derive(Default)]
 pub struct ExtBuilder;
@@ -133,11 +129,7 @@ impl ExtBuilder {
 		MockBlockNumberProvider::set(0);
 
 		pallet_balances::GenesisConfig::<Test> {
-			balances: vec![
-				(ALICE, ALICE_BALANCE),
-				(CHARLIE, CHARLIE_BALANCE),
-				(DAVE, DAVE_BALANCE),
-			],
+			balances: vec![(ALICE, ALICE_BALANCE), (CHARLIE, CHARLIE_BALANCE)],
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
