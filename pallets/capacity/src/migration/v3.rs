@@ -159,22 +159,22 @@ mod test {
 			// Create some data in the old format
 			// Grab an account with a balance
 			let account = 200;
-			let amount = 50;
+			let locked_amount = 50;
 
 			pallet_balances::Pallet::<T>::set_lock(
 				STAKING_ID,
 				&account,
-				amount,
+				locked_amount,
 				WithdrawReasons::all(),
 			);
 			// Confirm lock exists
 			assert_eq!(
 				pallet_balances::Pallet::<T>::locks(&account).get(0),
-				Some(&BalanceLock { id: STAKING_ID, amount: 50u64, reasons: Reasons::All })
+				Some(&BalanceLock { id: STAKING_ID, amount: locked_amount, reasons: Reasons::All })
 			);
 
 			let test_record =
-				StakingDetails::<Test> { active: amount, staking_type: MaximumCapacity };
+				StakingDetails::<Test> { active: locked_amount, staking_type: MaximumCapacity };
 			StakingAccountLedger::<Test>::insert(account, test_record);
 			assert_eq!(StakingAccountLedger::<Test>::iter().count(), 1);
 
@@ -187,7 +187,7 @@ mod test {
 			assert_eq!(pallet_balances::Pallet::<T>::locks(&account), vec![]);
 			assert_eq!(
 				<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
-				50u64
+				locked_amount
 			);
 		})
 	}
