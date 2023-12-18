@@ -1,7 +1,6 @@
 use crate::{
 	types::{StakingDetails, UnlockChunk},
 	BalanceOf, Config, Pallet, StakingAccountLedger, StakingType, UnlockChunkList, UnstakeUnlocks,
-	STORAGE_VERSION_V2,
 };
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, Weight},
@@ -13,6 +12,8 @@ const LOG_TARGET: &str = "runtime::capacity";
 #[cfg(feature = "try-runtime")]
 use sp_std::{fmt::Debug, vec::Vec};
 
+/// the storage version for the v2 migration
+pub const STORAGE_VERSION_V2: StorageVersion = StorageVersion::new(2);
 /// Only contains V1 storage format
 pub mod v1 {
 	use super::*;

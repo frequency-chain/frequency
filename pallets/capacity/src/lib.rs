@@ -109,8 +109,6 @@ pub mod pallet {
 		Staked,
 	}
 
-	/// the storage version for the v2 migration
-	pub const STORAGE_VERSION_V2: StorageVersion = StorageVersion::new(2);
 	/// the storage version for this pallet
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
@@ -583,12 +581,6 @@ impl<T: Config> Pallet<T> {
 		account_balance
 			.saturating_sub(T::MinimumTokenBalance::get())
 			.min(proposed_amount)
-	}
-
-	// Calculates the total amount of tokens that are currently unlocked for the given staker.
-	pub(crate) fn get_unlocking_total_for(staker: &T::AccountId) -> (BalanceOf<T>, Weight) {
-		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
-		(unlock_chunks_total::<T>(&unlocks), T::DbWeight::get().reads(1))
 	}
 
 	pub(crate) fn do_withdraw_unstaked(

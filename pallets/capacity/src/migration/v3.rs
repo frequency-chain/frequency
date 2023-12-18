@@ -1,4 +1,8 @@
-use crate::{BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet, StakingAccountLedger};
+use crate::{
+	unlock_chunks_total, BalanceOf, BlockNumberFor, Config, FreezeReason, Pallet,
+	StakingAccountLedger, UnstakeUnlocks,
+};
+
 use frame_support::{
 	pallet_prelude::{GetStorageVersion, IsType, Weight},
 	traits::{
@@ -59,6 +63,12 @@ where
 		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
 		T::DbWeight::get().reads_writes(6, 4)
 	}
+
+	/// Calculates the total amount of tokens that are currently unlocked for the given staker.
+	pub fn get_unlocking_total_for(staker: &T::AccountId) -> BalanceOf<T> {
+		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
+		unlock_chunks_total::<T>(&unlocks)
+	}
 }
 
 impl<T: Config, OldCurrency> OnRuntimeUpgrade for MigrationToV3<T, OldCurrency>
@@ -70,7 +80,7 @@ where
 	fn on_runtime_upgrade() -> Weight {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
-		if on_chain_version.ge(&crate::pallet::STORAGE_VERSION) {
+		if on_chain_version.ge(&3) {
 			log::info!(target: LOG_TARGET, "Old Capacity Locks->Freezes migration attempted to run. Please remove");
 			return T::DbWeight::get().reads(1)
 		}
@@ -84,8 +94,7 @@ where
 		StakingAccountLedger::<T>::iter()
 			.map(|(account_id, staking_details)| (account_id, staking_details.active))
 			.for_each(|(account_id, active_amount)| {
-				let (total_unlocking, cal_fn_weight) =
-					Pallet::<T>::get_unlocking_total_for(&account_id);
+				let total_unlocking = Self::get_unlocking_total_for(&account_id);
 				let total_amount = active_amount.saturating_add(total_unlocking);
 
 				let trans_fn_weight = MigrationToV3::<T, OldCurrency>::translate_lock_to_freeze(
@@ -93,8 +102,10 @@ where
 					total_amount.into(),
 				);
 
-				total_weight =
-					total_weight.saturating_add(cal_fn_weight).saturating_add(trans_fn_weight);
+				// Add the read from get_unlocking_total_for() + the weight from translate_lock_to_freeze()
+				total_weight = total_weight
+					.saturating_add(T::DbWeight::get().reads(1))
+					.saturating_add(trans_fn_weight);
 
 				total_accounts_migrated += 1;
 			});
@@ -102,7 +113,7 @@ where
 		log::info!(target: LOG_TARGET, "total accounts migrated from locks to freezes: {:?}", total_accounts_migrated);
 
 		StorageVersion::new(3).put::<Pallet<T>>(); // 1 w
-		total_weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
+		total_weight = total_weight.saturating_add(T::DbWeight::get().reads_writes(0, 1));
 
 		log::info!(target: LOG_TARGET, "🔄 Capacity Locks->Freezes migration finished");
 		log::info!(target: LOG_TARGET, "Capacity Migration calculated weight = {:?}", total_weight);
