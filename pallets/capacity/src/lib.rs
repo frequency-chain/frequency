@@ -106,7 +106,7 @@ pub mod pallet {
 	#[pallet::composite_enum]
 	pub enum FreezeReason {
 		/// The account has staked tokens to the Frequency network.
-		Staked,
+		CapacityStaking,
 	}
 
 	/// the storage version for this pallet
@@ -509,7 +509,7 @@ impl<T: Config> Pallet<T> {
 			.active
 			.checked_add(&unlock_chunks_total::<T>(&unlocks))
 			.ok_or(ArithmeticError::Overflow)?;
-		T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, total_to_lock)?;
+		T::Currency::set_freeze(&FreezeReason::CapacityStaking.into(), staker, total_to_lock)?;
 		Self::set_staking_account(staker, staking_account);
 		Ok(())
 	}
@@ -604,9 +604,9 @@ impl<T: Config> Pallet<T> {
 		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
-			T::Currency::thaw(&FreezeReason::Staked.into(), staker)?;
+			T::Currency::thaw(&FreezeReason::CapacityStaking.into(), staker)?;
 		} else {
-			T::Currency::set_freeze(&FreezeReason::Staked.into(), staker, total_locked)?;
+			T::Currency::set_freeze(&FreezeReason::CapacityStaking.into(), staker, total_locked)?;
 		}
 		Ok(amount_withdrawn)
 	}

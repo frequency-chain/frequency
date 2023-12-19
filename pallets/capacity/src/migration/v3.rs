@@ -34,25 +34,13 @@ where
 		account_id: T::AccountId,
 		amount: OldCurrency::Balance,
 	) -> Weight {
-		// 1 read get Locks: remove_lock: set locks
-		// 1 read get Freezes
-		// 1 read get Account
-		//   1 write set Account: update_locks->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
-		//     We could avoid this write by calling the upgrade script before running the migration,
-		//     which would ensure that all accounts are upgraded.
-		// 1 write set Account: update_locks->try_mutate_account: set account data
-		// 1 read get Locks: update_locks: set existed with `contains_key`
-		// 1 write set Locks: update_locks->Locks::remove: remove existed
-		OldCurrency::remove_lock(STAKING_ID, &account_id);
-
-		// 1 read get Freezes: set_freeze: set locks
+		// 1 read get Freezes: set_freeze: get locks
 		// 1 read get Locks: update_freezes: Locks::get().iter()
-		//   1 write set Account: update_freezes->mutate_account->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
+		// 1 write set Account: update_freezes->mutate_account->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
 		// 1 write set Account: update_freezes->mutate_account->try_mutate_account: set account data
 		// 1 write set Freezes: update_freezes: Freezes::insert
-
 		<T as Config>::Currency::set_freeze(
-			&FreezeReason::Staked.into(),
+			&FreezeReason::CapacityStaking.into(),
 			&account_id,
 			amount.into(),
 		)
@@ -60,11 +48,20 @@ where
 			log::error!(target: LOG_TARGET, "Failed to freeze {:?} for account 0x{:?}, reason: {:?}", amount, HexDisplay::from(&account_id.encode()), err);
 		});
 
+		// 1 read get Locks: remove_lock: set locks
+		// 1 read get Freezes
+		// 1 read get Account
+		// 1 write set Account: update_locks->try_mutate_account->ensure_upgraded: if account is *not* already upgraded.
+		// 1 write set Account: update_locks->try_mutate_account: set account data
+		// [Cached] 1 read get Locks: update_locks: set existed with `contains_key`
+		// 1 write set Locks: update_locks->Locks::remove: remove existed
+		OldCurrency::remove_lock(STAKING_ID, &account_id);
+
 		log::info!(target: LOG_TARGET, "🔄 migrated account 0x{:?}, amount:{:?}", HexDisplay::from(&account_id.encode()), amount.into());
-		T::DbWeight::get().reads_writes(6, 4)
+		T::DbWeight::get().reads_writes(5, 6)
 	}
 
-	/// Calculates the total amount of tokens that are currently unlocked for the given staker.
+	/// Calculates the total amount of tokens that have been unstaked and are not thawed, for the given staker.
 	pub fn get_unlocking_total_for(staker: &T::AccountId) -> BalanceOf<T> {
 		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
 		unlock_chunks_total::<T>(&unlocks)
@@ -200,7 +197,10 @@ mod test {
 			// Check that the old staking locks are now freezes
 			assert_eq!(pallet_balances::Pallet::<T>::locks(&account), vec![]);
 			assert_eq!(
-				<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
+				<Test as Config>::Currency::balance_frozen(
+					&FreezeReason::CapacityStaking.into(),
+					&account
+				),
 				locked_amount
 			);
 		})

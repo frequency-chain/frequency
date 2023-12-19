@@ -38,7 +38,10 @@ fn stake_works() {
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
 			amount
 		);
 	});
@@ -101,7 +104,10 @@ fn stake_increase_stake_amount_works() {
 			&Event::Staked { account, target, amount: initial_amount, capacity }
 		);
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
 			50
 		);
 
@@ -134,7 +140,10 @@ fn stake_increase_stake_amount_works() {
 		);
 
 		assert_eq!(
-			<Test as Config>::Currency::balance_frozen(&FreezeReason::Staked.into(), &account),
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
 			150
 		);
 	});
@@ -410,7 +419,7 @@ fn stake_when_there_are_unlocks_sets_lock_correctly() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target2, 20));
 
 		// should all still be locked.
-		assert_eq!(Balances::balance_frozen(&FreezeReason::Staked.into(), &staker), 40);
+		assert_eq!(Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker), 40);
 	})
 }
 

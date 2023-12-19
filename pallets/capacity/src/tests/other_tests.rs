@@ -76,8 +76,10 @@ fn set_staking_account_is_successful() {
 		Capacity::set_staking_account_and_lock(&staker, &staking_account)
 			.expect("Failed to set staking account and lock");
 
-		let frozen_balance =
-			<Test as Config>::Currency::balance_frozen(&(FreezeReason::Staked).into(), &staker);
+		let frozen_balance = <Test as Config>::Currency::balance_frozen(
+			&(FreezeReason::CapacityStaking).into(),
+			&staker,
+		);
 		assert_eq!(frozen_balance, 55);
 	});
 }

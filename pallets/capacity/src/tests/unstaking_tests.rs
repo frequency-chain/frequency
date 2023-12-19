@@ -179,7 +179,7 @@ fn unstaking_everything_reaps_staking_account() {
 		run_to_block(1);
 		// unstake everything
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
-		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::Staked.into(), &staker));
+		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// it should reap the staking account right away
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
