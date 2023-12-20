@@ -3,9 +3,11 @@ use super::{
 	testing_utils::{register_provider, run_to_block},
 };
 use crate::{
-	unlock_chunks_from_vec, CurrentEpoch, CurrentEpochInfo, EpochInfo, Error, Event, UnstakeUnlocks,
+	self as pallet_capacity, unlock_chunks_from_vec, CurrentEpoch, CurrentEpochInfo, EpochInfo,
+	Error, Event, FreezeReason, UnstakeUnlocks,
 };
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
+use pallet_capacity::Config;
 
 #[test]
 fn withdraw_unstaked_happy_path() {
@@ -45,26 +47,28 @@ fn withdraw_unstaked_correctly_sets_new_lock_state() {
 
 		run_to_block(1);
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 1));
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(20u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(20, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// thaw period in mock is 2 Epochs * 10 blocks = 20 blocks.
 		run_to_block(21);
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 2));
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(19u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(19u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		run_to_block(41);
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 3));
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(17u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(17u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		run_to_block(61);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-		assert_eq!(1, Balances::locks(&staker).len());
-		assert_eq!(14u64, Balances::locks(&staker)[0].amount);
+		assert_eq!(
+			14u64,
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&staker
+			)
+		);
 	})
 }
 

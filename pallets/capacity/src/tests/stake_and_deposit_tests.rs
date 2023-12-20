@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Error, Event, StakingDetails};
+use crate::{BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, StakingDetails};
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
-use frame_support::{assert_noop, assert_ok, traits::WithdrawReasons};
+use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
 use sp_runtime::ArithmeticError;
 
 #[test]
@@ -37,8 +37,13 @@ fn stake_works() {
 		let events = staking_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
-		assert_eq!(Balances::locks(&account)[0].amount, amount);
-		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
+			amount
+		);
 	});
 }
 
@@ -98,9 +103,13 @@ fn stake_increase_stake_amount_works() {
 			events.first().unwrap(),
 			&Event::Staked { account, target, amount: initial_amount, capacity }
 		);
-
-		assert_eq!(Balances::locks(&account)[0].amount, 50);
-		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
+			50
+		);
 
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
@@ -130,8 +139,13 @@ fn stake_increase_stake_amount_works() {
 			&Event::Staked { account, target, amount: additional_amount, capacity }
 		);
 
-		assert_eq!(Balances::locks(&account)[0].amount, 150);
-		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&account
+			),
+			150
+		);
 	});
 }
 
@@ -405,8 +419,7 @@ fn stake_when_there_are_unlocks_sets_lock_correctly() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target2, 20));
 
 		// should all still be locked.
-		assert_eq!(Balances::locks(&staker)[0].amount, 40);
-		assert_eq!(Balances::locks(&staker)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker), 40);
 	})
 }
 

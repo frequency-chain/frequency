@@ -2,7 +2,7 @@ use super::*;
 use crate::Pallet as Capacity;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account};
-use frame_support::{assert_ok, traits::Currency, BoundedVec};
+use frame_support::{assert_ok, BoundedVec};
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
 
@@ -25,8 +25,8 @@ pub fn create_funded_account<T: Config>(
 	let user = account(string, n, SEED);
 	whitelist_account!(user);
 	let balance = T::Currency::minimum_balance() * balance_factor.into();
-	let _ = T::Currency::make_free_balance_be(&user, balance);
-	assert_eq!(T::Currency::free_balance(&user), balance.into());
+	T::Currency::set_balance(&user, balance);
+	assert_eq!(T::Currency::balance(&user), balance.into());
 	user
 }
 
@@ -97,7 +97,7 @@ benchmarks! {
 		target_details.deposit(staking_amount, capacity_amount);
 		capacity_details.deposit(&staking_amount, &capacity_amount);
 
-		let _ = Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account);
+		Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account).expect("Failed to set staking account");
 		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
 		Capacity::<T>::set_capacity_for(target, capacity_details);
 

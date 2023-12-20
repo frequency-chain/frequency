@@ -26,7 +26,7 @@
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{Currency, IsSubType, IsType},
+	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };

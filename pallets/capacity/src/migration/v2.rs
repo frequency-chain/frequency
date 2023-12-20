@@ -12,6 +12,8 @@ const LOG_TARGET: &str = "runtime::capacity";
 #[cfg(feature = "try-runtime")]
 use sp_std::{fmt::Debug, vec::Vec};
 
+/// the storage version for the v2 migration
+pub const STORAGE_VERSION_V2: StorageVersion = StorageVersion::new(2);
 /// Only contains V1 storage format
 pub mod v1 {
 	use super::*;
@@ -47,7 +49,7 @@ pub mod v1 {
 pub fn migrate_to_v2<T: Config>() -> Weight {
 	let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
-	if on_chain_version.lt(&2) {
+	if on_chain_version.lt(&STORAGE_VERSION_V2) {
 		log::info!(target: LOG_TARGET, "🔄 StakingAccountLedger migration started");
 		let mut maybe_count = 0u32;
 		StakingAccountLedger::<T>::translate(
@@ -105,7 +107,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 		let pre_upgrade_count: u32 = Decode::decode(&mut state.as_slice()).unwrap_or_default();
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
-		assert_eq!(on_chain_version, crate::pallet::STORAGE_VERSION);
+		assert_eq!(on_chain_version, 2);
 		assert_eq!(pre_upgrade_count as usize, StakingAccountLedger::<T>::iter().count());
 		assert_eq!(pre_upgrade_count as usize, UnstakeUnlocks::<T>::iter().count());
 

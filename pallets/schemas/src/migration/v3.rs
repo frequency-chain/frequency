@@ -116,7 +116,7 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 			})
 		});
 
-		log::error!(target: LOG_TARGET, "Finished translating {:?} SchemaInfos!", writes);
+		log::info!(target: LOG_TARGET, "Finished translating {:?} SchemaInfos!", writes);
 
 		for (schema_id, schema_name) in known_schemas.iter() {
 			reads.saturating_inc();

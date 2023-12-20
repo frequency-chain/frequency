@@ -217,8 +217,8 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 	(
-		pallet_messages::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
+		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
 	),
 >;
@@ -258,7 +258,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 66,
+	spec_version: 67,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -272,7 +272,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 66,
+	spec_version: 67,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -414,6 +414,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -504,9 +505,9 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type MaxHolds = ConstU32<0>;
-	type MaxFreezes = ConstU32<0>;
+	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type FreezeIdentifier = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -1053,7 +1054,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
-		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 	}
