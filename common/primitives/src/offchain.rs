@@ -18,6 +18,15 @@ pub const MSA_INITIAL_LOCK_NAME: &[u8; 29] = b"Msa::ofw::initial-import-lock";
 /// storage name for initial data import storage
 pub const MSA_INITIAL_IMPORTED_STORAGE_NAME: &[u8; 26] = b"Msa::ofw::initial-imported";
 
+/// Lock name for last processed block number events
+pub const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-block-lock";
+/// lst processed block storage name
+pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
+/// Lock expiration timeout in in milli-seconds for last processed block
+pub const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
+/// Lock expiration block for initial data import msa pallet
+pub const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 2;
+
 /// Lock expiration timeout in in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 5;
 /// Lock name prefix for msa account

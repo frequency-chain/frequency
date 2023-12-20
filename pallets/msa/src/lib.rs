@@ -59,7 +59,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure,
 	pallet_prelude::*,
-	traits::IsSubType,
+	traits::{DefensiveSaturating, IsSubType},
 };
 use parity_scale_codec::{Decode, Encode};
 
@@ -89,15 +89,17 @@ use sp_runtime::{
 		Duration,
 	},
 	traits::{
-		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero,
+		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify,
+		Zero,
 	},
-	ArithmeticError, DispatchError, MultiSignature,
+	ArithmeticError, DispatchError, MultiSignature, Saturating,
 };
 use sp_std::{collections::btree_map::BTreeMap, prelude::*};
 
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
+use keys::*;
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -113,6 +115,8 @@ mod benchmarking;
 mod tests;
 
 pub mod types;
+
+mod keys;
 
 pub mod weights;
 #[frame_support::pallet]
@@ -442,13 +446,12 @@ pub mod pallet {
 			// 	return
 			// }
 
-			let is_locked = Self::index_initial_state(block_number);
+			let is_locked = Self::offchain_index_initial_state(block_number);
 			if is_locked {
 				log::info!("initiating-import is still locked in {:?}", block_number);
+			} else {
+				Self::offchain_apply_updated_keys(block_number);
 			}
-
-			// now process indexed events
-			Self::reverse_map_msa_keys(block_number);
 		}
 	}
 
@@ -463,13 +466,16 @@ pub mod pallet {
 
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { accounts: 350_000, _config: Default::default() }
+			Self { accounts: 400_000, _config: Default::default() }
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			log::info!("Genesis {}", self.accounts);
+			let known_keys: Vec<[u8; 32]> = get_keys();
+			let key_size = known_keys.len();
+			log::info!("Genesis {}", self.accounts as usize + key_size);
+
 			for mut n in 1..=self.accounts {
 				let mut raw = [0u8; 32];
 				let mut c = 0usize;
@@ -482,6 +488,14 @@ pub mod pallet {
 				let public_key = T::AccountId::decode(&mut &new_key.encode()[..]).unwrap();
 				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
 			}
+			log::info!("Finished adding {} random keys", self.accounts);
+
+			for k in known_keys {
+				let new_key = AccountId32::new(k);
+				let public_key = T::AccountId::decode(&mut &new_key.encode()[..]).unwrap();
+				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
+			}
+			log::info!("Finished adding {} known keys", key_size);
 			log::info!("Genesis done creating");
 		}
 	}
@@ -1546,7 +1560,6 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	// TODO: should alos read previous N blocks in case offchain worker skip certain blocks
 	fn read_events(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
 		let current_block: u32 = block_number.try_into().unwrap_or_default();
 		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
@@ -1571,12 +1584,14 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// offchain worker callback for indexing msa keys
-	pub fn reverse_map_msa_keys(block_number: BlockNumberFor<T>) {
+	/// return true if there are events and false if not
+	pub fn reverse_map_msa_keys(block_number: BlockNumberFor<T>) -> bool {
 		// read the events indexed for the current block
 		let events_to_process: Vec<IndexedEvent<T>> = Self::read_events(block_number);
-		if !events_to_process.is_empty() {
+		let events_exists = !events_to_process.is_empty();
+		if events_exists {
 			log::info!(
-				"found {} indexed events in block {:?}",
+				"found {} indexed events for block {:?}",
 				events_to_process.len(),
 				block_number
 			);
@@ -1606,6 +1621,7 @@ impl<T: Config> Pallet<T> {
 				Self::process_events(msa_id, events);
 			}
 		}
+		events_exists
 	}
 
 	fn process_events(msa_id: MessageSourceId, events: Vec<IndexedEvent<T>>) {
@@ -1645,7 +1661,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// returns true if it's already locked
-	pub fn index_initial_state(block_number: BlockNumberFor<T>) -> bool {
+	pub fn offchain_index_initial_state(block_number: BlockNumberFor<T>) -> bool {
 		let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
 			MSA_INITIAL_LOCK_NAME,
 			MSA_INITIAL_LOCK_BLOCK_EXPIRATION,
@@ -1657,11 +1673,9 @@ impl<T: Config> Pallet<T> {
 
 			if initial_imported.unwrap_or_default() == false {
 				log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
+				init_last_processed_block::<T>(block_number);
 
 				let mut counter = 0u64;
-				// let account_keys: Vec<_> = PublicKeyToMsaId::<T>::iter().collect();
-				// log::info!("{} accounts and keys are loaded in memory", &account_keys.len());
-
 				for (account_id, msa_id) in PublicKeyToMsaId::<T>::iter() {
 					let msa_lock_name = get_msa_account_lock_name(msa_id);
 					let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
@@ -1702,6 +1716,44 @@ impl<T: Config> Pallet<T> {
 			return true
 		};
 		false
+	}
+
+	/// apply updated keys
+	pub fn offchain_apply_updated_keys(block_number: BlockNumberFor<T>) {
+		let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
+			LAST_PROCESSED_BLOCK_LOCK_NAME,
+			LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION,
+			Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION),
+		);
+
+		if let Ok(mut guard) = lock.try_lock() {
+			log::info!("processing events in {:?}", block_number);
+
+			let last_processed_block_storage =
+				StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
+			let mut start_block_number = last_processed_block_storage
+				.get::<BlockNumberFor<T>>()
+				.unwrap_or(Some(block_number.saturating_sub(BlockNumberFor::<T>::from(5u32))))
+				.unwrap();
+
+			// since this is the last processed block number we already processed it and starting from the next one
+			start_block_number += BlockNumberFor::<T>::one();
+			while start_block_number <= block_number {
+				if Self::reverse_map_msa_keys(start_block_number) {
+					if guard.extend_lock().is_err() {
+						log::warn!(
+							"last processed block lock is expired in block {:?}",
+							block_number
+						);
+						break
+					}
+				}
+				last_processed_block_storage.set(&start_block_number);
+				start_block_number += BlockNumberFor::<T>::one();
+			}
+		} else {
+			log::info!("skipping processing events on {:?} due to existing lock!", block_number);
+		};
 	}
 }
 

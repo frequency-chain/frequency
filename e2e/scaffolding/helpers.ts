@@ -29,6 +29,7 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
+import { KNOWN_KEYS } from './known_keys';
 
 export interface Account {
   uri: string;
@@ -177,6 +178,17 @@ export function createKeys(name: string = 'first pair'): KeyringPair {
   // metadata specified
   const keyring = new Keyring({ type: 'sr25519' });
   const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
+
+  createdKeys.set(keypair.address, keypair);
+  return keypair;
+}
+
+export function GetKnownKey(index: number): KeyringPair {
+  const mnemonic = KNOWN_KEYS[index];
+  // create & add the pair to the keyring with the type and some additional
+  // metadata specified
+  const keyring = new Keyring({ type: 'sr25519' });
+  const keypair = keyring.addFromMnemonic(mnemonic, undefined, 'sr25519');
 
   createdKeys.set(keypair.address, keypair);
   return keypair;

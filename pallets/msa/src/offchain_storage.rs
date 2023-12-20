@@ -1,11 +1,23 @@
 use crate::{Config, Event};
 pub use common_primitives::msa::MessageSourceId;
 /// Offchain Storage for MSA
-use common_primitives::offchain as offchain_common;
-use parity_scale_codec::{Decode, Encode};
-use sp_std::fmt::Debug;
-
+use common_primitives::offchain::{
+	self as offchain_common, LAST_PROCESSED_BLOCK_LOCK_NAME,
+	LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION, LAST_PROCESSED_BLOCK_STORAGE_NAME,
+};
 use frame_support::RuntimeDebugNoBound;
+use frame_system::pallet_prelude::BlockNumberFor;
+use parity_scale_codec::{Decode, Encode};
+use sp_runtime::{
+	offchain::{
+		storage::StorageValueRef,
+		storage_lock::{StorageLock, Time},
+		Duration,
+	},
+	traits::One,
+	Saturating,
+};
+use sp_std::fmt::Debug;
 
 /// Pallet MSA lock prefix
 pub const MSA_LOCK_PREFIX: &[u8] = b"pallet::msa::";
@@ -88,4 +100,17 @@ impl<T: Config> IndexedEvent<T> {
 			_ => None,
 		}
 	}
+}
+
+/// initilizes the last_process_block value in offchain DB
+pub fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>) {
+	let mut last_processed_block_lock = StorageLock::<'_, Time>::with_deadline(
+		LAST_PROCESSED_BLOCK_LOCK_NAME,
+		Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION),
+	);
+	let _ = last_processed_block_lock.lock();
+	let last_processed_block_storage =
+		StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
+	last_processed_block_storage
+		.set(&current_block_number.saturating_sub(BlockNumberFor::<T>::one()));
 }
