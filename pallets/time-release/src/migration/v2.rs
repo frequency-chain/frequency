@@ -169,12 +169,11 @@ fn calculate_total_scheduled_locks_for_account<T: Config>(
 }
 
 #[cfg(test)]
-#[cfg(feature = "try-runtime")]
 mod test {
 	use frame_support::traits::{tokens::fungible::InspectFreeze, WithdrawReasons};
 
 	use super::*;
-	use crate::mock::{Test, *};
+	use crate::mock::{Test as T, *};
 	use pallet_balances::{BalanceLock, Reasons};
 
 	type MigrationOf<T> = MigrationToV2<T, pallet_balances::Pallet<T>>;
@@ -203,9 +202,12 @@ mod test {
 			);
 
 			// Run migration.
-			let state = MigrationOf::<Test>::pre_upgrade().unwrap();
+			let pre_upgrade_count = ReleaseSchedules::<T>::iter().count() as u32;
 			MigrationOf::<Test>::on_runtime_upgrade();
-			MigrationOf::<Test>::post_upgrade(state).unwrap();
+			let on_chain_version = Pallet::<T>::on_chain_storage_version();
+
+			assert_eq!(on_chain_version, crate::module::STORAGE_VERSION);
+			assert_eq!(pre_upgrade_count as usize, ReleaseSchedules::<T>::iter().count());
 
 			assert_eq!(
 				pallet_balances::Pallet::<Test>::locks(&DAVE),
