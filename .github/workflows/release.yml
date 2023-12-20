@@ -358,7 +358,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
-        uses: actions/configure-pages@v3
+        uses: actions/configure-pages@v4
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
@@ -371,7 +371,7 @@ jobs:
               echo "::warning title=Invalid file permissions automatically fixed::$line"
           done
       - name: Upload Docs
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v3
         with:
           path: ./target/doc
 
@@ -1005,7 +1005,7 @@ jobs:
       - name: Deploy to GitHub Pages
         if: env.TEST_RUN != 'true'
         id: deployment
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
 
   release-js-api-augment:
     needs: wait-for-all-builds
