@@ -62,9 +62,7 @@ pub mod old {
 		pub settings: SchemaSettings,
 	}
 
-	/// Storage for message schema struct data
-	/// - Key: Schema Id
-	/// - Value: [`Schema`](Schema)
+	/// Old Storage for schema info struct data
 	#[storage_alias]
 	pub(crate) type SchemaInfos<T: Config> =
 		StorageMap<Pallet<T>, Twox64Concat, SchemaId, OldSchemaInfo, OptionQuery>;
