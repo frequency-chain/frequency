@@ -6,8 +6,7 @@ use frame_support::{
 	error::BadOrigin,
 	traits::{
 		fungible::{Inspect, InspectFreeze},
-		tokens::Fortitude,
-		Currency, WithdrawReasons,
+		tokens::{Fortitude, WithdrawConsequence},
 	},
 };
 use mock::*;
@@ -16,16 +15,15 @@ use sp_runtime::{traits::Dispatchable, SaturatedConversion, TokenError};
 #[test]
 fn time_release_from_chain_spec_works() {
 	ExtBuilder::build().execute_with(|| {
-		assert_ok!(PalletBalances::ensure_can_withdraw(
-			&CHARLIE,
-			10,
-			WithdrawReasons::TRANSFER,
-			20
-		));
+		// Charlie has 30 tokens in total
+		// 20 are frozen
+		// 10 are free
+		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 10), WithdrawConsequence::Success);
 
-		assert!(PalletBalances::ensure_can_withdraw(&CHARLIE, 11, WithdrawReasons::TRANSFER, 19)
-			.is_err());
+		// Charlie cannot withdraw more than 10 tokens
+		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 11), WithdrawConsequence::Frozen);
 
+		// Check that the release schedules built at genesis are correct
 		assert_eq!(
 			TimeRelease::release_schedules(&CHARLIE),
 			vec![
@@ -41,16 +39,24 @@ fn time_release_from_chain_spec_works() {
 
 		MockBlockNumberProvider::set(13);
 
+		// 15 tokens will be released after 13 blocks
+		// 25 = 10(free) + 15(released)
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(CHARLIE)));
-		assert_ok!(PalletBalances::ensure_can_withdraw(&CHARLIE, 25, WithdrawReasons::TRANSFER, 5));
-		assert!(PalletBalances::ensure_can_withdraw(&CHARLIE, 26, WithdrawReasons::TRANSFER, 4)
-			.is_err());
+		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 25), WithdrawConsequence::Success);
+		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 26), WithdrawConsequence::Frozen);
 
 		MockBlockNumberProvider::set(14);
 
+		// The final 5 tokens are released after 14 = (5[start] + 3[period] x 3[period count]) blocks
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(CHARLIE)));
 
-		assert_ok!(PalletBalances::ensure_can_withdraw(&CHARLIE, 30, WithdrawReasons::TRANSFER, 0));
+		// Charlie can now withdraw all 30 tokens
+		// However, if Charlie doesn't leave an ED, the account will be reaped
+		assert_eq!(
+			PalletBalances::can_withdraw(&CHARLIE, 30),
+			WithdrawConsequence::ReducedToZero(0)
+		);
+		assert_eq!(PalletBalances::can_withdraw(&CHARLIE, 29), WithdrawConsequence::Success);
 	});
 }
 
@@ -135,9 +141,7 @@ fn cannot_use_fund_if_not_claimed() {
 		let schedule =
 			ReleaseSchedule { start: 10u32, period: 10u32, period_count: 1u32, per_period: 50u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule));
-		assert!(
-			PalletBalances::ensure_can_withdraw(&BOB, 1, WithdrawReasons::TRANSFER, 49).is_err()
-		);
+		assert_eq!(PalletBalances::can_withdraw(&BOB, 1), WithdrawConsequence::Frozen);
 	});
 }
 

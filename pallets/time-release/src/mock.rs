@@ -120,7 +120,7 @@ pub const CHARLIE: AccountId = 3;
 pub const DAVE: AccountId = 4;
 
 pub const ALICE_BALANCE: u64 = 100;
-pub const CHARLIE_BALANCE: u64 = 50;
+pub const CHARLIE_BALANCE: u64 = 30;
 pub const DAVE_BALANCE: u64 = 200;
 
 #[derive(Default)]
