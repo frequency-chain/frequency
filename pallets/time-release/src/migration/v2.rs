@@ -75,7 +75,7 @@ where
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
 
 		// storage was already migrated.
-		if on_chain_version.ge(&crate::module::STORAGE_VERSION) {
+		if on_chain_version.ge(&2) {
 			log::info!(
 				target: LOG_TARGET,
 				"Old Time Release Locks->Freezes migration attempted to run. Please remove"
