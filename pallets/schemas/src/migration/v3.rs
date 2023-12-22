@@ -49,6 +49,7 @@ pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
 pub mod old {
 	use super::*;
 	use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
+	use frame_support::storage_alias;
 
 	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 	/// A structure defining a Schema information (excluding the payload)
@@ -60,6 +61,11 @@ pub mod old {
 		/// additional control settings for the schema
 		pub settings: SchemaSettings,
 	}
+
+	/// Old Storage for schema info struct data
+	#[storage_alias]
+	pub(crate) type SchemaInfos<T: Config> =
+		StorageMap<Pallet<T>, Twox64Concat, SchemaId, OldSchemaInfo, OptionQuery>;
 }
 
 /// migration to v3 implementation
@@ -73,7 +79,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV3<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
-		let count = SchemaInfos::<T>::iter().count() as u32;
+		let count = old::SchemaInfos::<T>::iter().count() as u32;
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
 		Ok(count.encode())
 	}
