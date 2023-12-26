@@ -79,6 +79,10 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV3<T> {
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
+		let on_chain_version = Pallet::<T>::on_chain_storage_version();
+		if on_chain_version >= 3 {
+			return Ok(Vec::new())
+		}
 		let count = old::SchemaInfos::<T>::iter().count() as u32;
 		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
 		Ok(count.encode())
@@ -87,6 +91,10 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV3<T> {
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
+		let on_chain_version = Pallet::<T>::on_chain_storage_version();
+		if on_chain_version >= 3 {
+			return Ok(())
+		}
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		assert_eq!(onchain_version, SCHEMA_STORAGE_VERSION);
 		log::info!(target: LOG_TARGET, "Finished post_upgrade");

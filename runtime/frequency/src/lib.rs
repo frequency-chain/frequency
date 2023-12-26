@@ -36,7 +36,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
-	pallet_prelude::DispatchResultWithPostInfo,
+	pallet_prelude::{DispatchResultWithPostInfo, Get, GetStorageVersion},
 	parameter_types,
 	traits::{ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -70,10 +70,11 @@ pub use common_runtime::{
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
-use frame_support::traits::Contains;
+use frame_support::traits::{Contains, OnRuntimeUpgrade};
 
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
+use pallet_schemas::Config;
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -217,12 +218,79 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 	(
+		pallet_messages::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
+		MigratePalletsCurrentStorage<Runtime>,
 	),
 >;
 
+pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+impl<
+		T: Config
+			+ pallet_preimage::Config
+			+ pallet_democracy::Config
+			+ pallet_scheduler::Config
+			+ pallet_balances::Config
+			+ pallet_collator_selection::Config
+			+ pallet_multisig::Config,
+	> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T>
+{
+	fn on_runtime_upgrade() -> Weight {
+		let mut writes = 0u64;
+		if pallet_preimage::Pallet::<T>::on_chain_storage_version() !=
+			pallet_preimage::Pallet::<T>::current_storage_version()
+		{
+			pallet_preimage::Pallet::<T>::current_storage_version()
+				.put::<pallet_preimage::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_preimage");
+		}
+		if pallet_democracy::Pallet::<T>::on_chain_storage_version() !=
+			pallet_democracy::Pallet::<T>::current_storage_version()
+		{
+			pallet_democracy::Pallet::<T>::current_storage_version()
+				.put::<pallet_democracy::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_democracy");
+		}
+		if pallet_scheduler::Pallet::<T>::on_chain_storage_version() !=
+			pallet_scheduler::Pallet::<T>::current_storage_version()
+		{
+			pallet_scheduler::Pallet::<T>::current_storage_version()
+				.put::<pallet_scheduler::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_scheduler");
+		}
+		if pallet_balances::Pallet::<T>::on_chain_storage_version() !=
+			pallet_balances::Pallet::<T>::current_storage_version()
+		{
+			pallet_balances::Pallet::<T>::current_storage_version()
+				.put::<pallet_balances::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_balances");
+		}
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
+			pallet_collator_selection::Pallet::<T>::current_storage_version()
+		{
+			pallet_collator_selection::Pallet::<T>::current_storage_version()
+				.put::<pallet_collator_selection::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_collator_selection");
+		}
+		if pallet_multisig::Pallet::<T>::on_chain_storage_version() !=
+			pallet_multisig::Pallet::<T>::current_storage_version()
+		{
+			pallet_multisig::Pallet::<T>::current_storage_version()
+				.put::<pallet_multisig::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_multisig");
+		}
+
+		T::DbWeight::get().reads_writes(6, writes)
+	}
+}
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
