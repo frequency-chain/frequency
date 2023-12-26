@@ -77,7 +77,7 @@ where
 	fn on_runtime_upgrade() -> Weight {
 		let on_chain_version = Pallet::<T>::on_chain_storage_version(); // 1r
 
-		if on_chain_version.ge(&3) {
+		if on_chain_version >= 3 {
 			log::info!(target: LOG_TARGET, "Old Capacity Locks->Freezes migration attempted to run. Please remove");
 			return T::DbWeight::get().reads(1)
 		}
@@ -121,6 +121,11 @@ where
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use frame_support::storage::generator::StorageMap;
+		let on_chain_version = Pallet::<T>::on_chain_storage_version();
+		if on_chain_version >= 3 {
+			return Ok(Vec::new())
+		}
+
 		let pallet_prefix = StakingAccountLedger::<T>::module_prefix();
 		let storage_prefix = StakingAccountLedger::<T>::storage_prefix();
 		assert_eq!(&b"Capacity"[..], pallet_prefix);
@@ -137,6 +142,9 @@ where
 		use parity_scale_codec::Decode;
 		let pre_upgrade_count: u32 = Decode::decode(&mut state.as_slice()).unwrap_or_default();
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
+		if on_chain_version >= 3 {
+			return Ok(())
+		}
 
 		assert_eq!(on_chain_version, crate::pallet::STORAGE_VERSION);
 		assert_eq!(pre_upgrade_count as usize, StakingAccountLedger::<T>::iter().count());
