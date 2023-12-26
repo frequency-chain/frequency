@@ -11,15 +11,15 @@ runs:
       shell: bash
       run: cargo +nightly-2023-07-13 install grcov
     - name: Build
-      shell: bash # Limited to 12 threads max
-      run: cargo +nightly-2023-07-13 build -j 12 --features frequency-lint-check
+      shell: bash # Limited to 10 threads max
+      run: cargo +nightly-2023-07-13 build -j 10 --features frequency-lint-check
       env:
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
     - name: Test
-      shell: bash # Limited to 12 threads max
-      run: cargo +nightly-2023-07-13 test -j 12 --features frequency-lint-check
+      shell: bash # Limited to 10 threads max
+      run: cargo +nightly-2023-07-13 test -j 10 --features frequency-lint-check
       env:
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"

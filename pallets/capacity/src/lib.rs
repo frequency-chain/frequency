@@ -50,7 +50,10 @@
 
 use frame_support::{
 	ensure,
-	traits::{Currency, Get, Hooks, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{
+		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
+		Get, Hooks,
+	},
 	weights::{constants::RocksDbWeight, Weight},
 };
 
@@ -83,11 +86,9 @@ mod tests;
 /// storage migrations
 pub mod migration;
 pub mod weights;
-
 type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+	<<T as Config>::Currency as InspectFungible<<T as frame_system::Config>::AccountId>>::Balance;
 
-const STAKING_ID: LockIdentifier = *b"netstkng";
 use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
@@ -100,19 +101,33 @@ pub mod pallet {
 	};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
+	/// A reason for freezing funds.
+	/// Creates a freeze reason for this pallet that is aggregated by `construct_runtime`.
+	#[pallet::composite_enum]
+	pub enum FreezeReason {
+		/// The account has staked tokens to the Frequency network.
+		CapacityStaking,
+	}
+
 	/// the storage version for this pallet
-	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
+		/// The overarching freeze reason.
+		type RuntimeFreezeReason: From<FreezeReason>;
+
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// Function that allows a balance to be locked.
-		type Currency: LockableCurrency<Self::AccountId, Moment = BlockNumberFor<Self>>;
+		/// Functions that allow a fungible balance to be changed or frozen.
+		type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+			+ Mutate<Self::AccountId>
+			+ InspectFreeze<Self::AccountId>
+			+ InspectFungible<Self::AccountId>;
 
 		/// Function that checks if an MSA is a valid target.
 		type TargetValidator: TargetValidator;
@@ -494,7 +509,7 @@ impl<T: Config> Pallet<T> {
 			.active
 			.checked_add(&unlock_chunks_total::<T>(&unlocks))
 			.ok_or(ArithmeticError::Overflow)?;
-		T::Currency::set_lock(STAKING_ID, &staker, total_to_lock, WithdrawReasons::all());
+		T::Currency::set_freeze(&FreezeReason::CapacityStaking.into(), staker, total_to_lock)?;
 		Self::set_staking_account(staker, staking_account);
 		Ok(())
 	}
@@ -562,7 +577,7 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let account_balance = T::Currency::free_balance(&staker);
+		let account_balance = T::Currency::balance(&staker);
 		account_balance
 			.saturating_sub(T::MinimumTokenBalance::get())
 			.min(proposed_amount)
@@ -589,9 +604,9 @@ impl<T: Config> Pallet<T> {
 		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
-			T::Currency::remove_lock(STAKING_ID, &staker);
+			T::Currency::thaw(&FreezeReason::CapacityStaking.into(), staker)?;
 		} else {
-			T::Currency::set_lock(STAKING_ID, &staker, total_locked, WithdrawReasons::all());
+			T::Currency::set_freeze(&FreezeReason::CapacityStaking.into(), staker, total_locked)?;
 		}
 		Ok(amount_withdrawn)
 	}

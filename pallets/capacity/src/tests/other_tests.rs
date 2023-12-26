@@ -1,6 +1,6 @@
-use frame_support::{
-	assert_ok,
-	traits::{Currency, Get},
+use frame_support::traits::{
+	fungible::{Inspect, InspectFreeze},
+	Get,
 };
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::traits::Zero;
@@ -8,8 +8,8 @@ use sp_runtime::traits::Zero;
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo, StakingDetails,
-	StakingTargetDetails,
+	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo, FreezeReason,
+	StakingDetails, StakingTargetDetails,
 };
 
 use super::{mock::*, testing_utils::*};
@@ -73,9 +73,14 @@ fn set_staking_account_is_successful() {
 		let mut staking_account = StakingDetails::<Test>::default();
 		staking_account.deposit(55);
 
-		assert_ok!(Capacity::set_staking_account_and_lock(&staker, &staking_account));
+		Capacity::set_staking_account_and_lock(&staker, &staking_account)
+			.expect("Failed to set staking account and lock");
 
-		assert_eq!(Balances::locks(&staker)[0].amount, 55);
+		let frozen_balance = <Test as Config>::Currency::balance_frozen(
+			&(FreezeReason::CapacityStaking).into(),
+			&staker,
+		);
+		assert_eq!(frozen_balance, 55);
 	});
 }
 
@@ -130,7 +135,7 @@ fn it_configures_staking_minimum_greater_than_or_equal_to_existential_deposit() 
 	new_test_ext().execute_with(|| {
 		let minimum_staking_balance_config: BalanceOf<Test> =
 			<Test as Config>::MinimumStakingAmount::get();
-		assert!(minimum_staking_balance_config >= <Test as Config>::Currency::minimum_balance())
+		assert!(minimum_staking_balance_config >= <Test as Config>::Currency::minimum_balance());
 	});
 }
 

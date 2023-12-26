@@ -33,7 +33,7 @@ frame_support::construct_runtime!(
 			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
-			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>},
+			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 			FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>},
 			Utility: pallet_utility::{Pallet, Call, Storage, Event},
@@ -91,8 +91,8 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ConstU64<1>;
 	type AccountStore = System;
 	type MaxReserves = ();
-	type FreezeIdentifier = ();
-	type MaxFreezes = ConstU32<0>;
+	type FreezeIdentifier = RuntimeFreezeReason;
+	type MaxFreezes = ConstU32<1>;
 	type MaxHolds = ConstU32<0>;
 	type RuntimeHoldReason = ();
 }
@@ -216,6 +216,7 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 use pallet_balances::Call as BalancesCall;

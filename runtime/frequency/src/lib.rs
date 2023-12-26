@@ -36,7 +36,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
-	pallet_prelude::DispatchResultWithPostInfo,
+	pallet_prelude::{DispatchResultWithPostInfo, Get, GetStorageVersion},
 	parameter_types,
 	traits::{ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
@@ -70,10 +70,11 @@ pub use common_runtime::{
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
-use frame_support::traits::Contains;
+use frame_support::traits::{Contains, OnRuntimeUpgrade};
 
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
+use pallet_schemas::Config;
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
@@ -219,10 +220,77 @@ pub type Executive = frame_executive::Executive<
 	(
 		pallet_messages::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
+		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
+		MigratePalletsCurrentStorage<Runtime>,
 	),
 >;
 
+pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+impl<
+		T: Config
+			+ pallet_preimage::Config
+			+ pallet_democracy::Config
+			+ pallet_scheduler::Config
+			+ pallet_balances::Config
+			+ pallet_collator_selection::Config
+			+ pallet_multisig::Config,
+	> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T>
+{
+	fn on_runtime_upgrade() -> Weight {
+		let mut writes = 0u64;
+		if pallet_preimage::Pallet::<T>::on_chain_storage_version() !=
+			pallet_preimage::Pallet::<T>::current_storage_version()
+		{
+			pallet_preimage::Pallet::<T>::current_storage_version()
+				.put::<pallet_preimage::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_preimage");
+		}
+		if pallet_democracy::Pallet::<T>::on_chain_storage_version() !=
+			pallet_democracy::Pallet::<T>::current_storage_version()
+		{
+			pallet_democracy::Pallet::<T>::current_storage_version()
+				.put::<pallet_democracy::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_democracy");
+		}
+		if pallet_scheduler::Pallet::<T>::on_chain_storage_version() !=
+			pallet_scheduler::Pallet::<T>::current_storage_version()
+		{
+			pallet_scheduler::Pallet::<T>::current_storage_version()
+				.put::<pallet_scheduler::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_scheduler");
+		}
+		if pallet_balances::Pallet::<T>::on_chain_storage_version() !=
+			pallet_balances::Pallet::<T>::current_storage_version()
+		{
+			pallet_balances::Pallet::<T>::current_storage_version()
+				.put::<pallet_balances::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_balances");
+		}
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
+			pallet_collator_selection::Pallet::<T>::current_storage_version()
+		{
+			pallet_collator_selection::Pallet::<T>::current_storage_version()
+				.put::<pallet_collator_selection::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_collator_selection");
+		}
+		if pallet_multisig::Pallet::<T>::on_chain_storage_version() !=
+			pallet_multisig::Pallet::<T>::current_storage_version()
+		{
+			pallet_multisig::Pallet::<T>::current_storage_version()
+				.put::<pallet_multisig::Pallet<T>>();
+			writes += 1;
+			log::info!("Setting version on pallet_multisig");
+		}
+
+		T::DbWeight::get().reads_writes(6, writes)
+	}
+}
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -258,7 +326,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 66,
+	spec_version: 67,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -272,7 +340,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 66,
+	spec_version: 67,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -414,6 +482,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -504,9 +573,9 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
 	type MaxHolds = ConstU32<0>;
-	type MaxFreezes = ConstU32<0>;
+	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
-	type FreezeIdentifier = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -1053,7 +1122,7 @@ construct_runtime!(
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,
-		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>} = 64,
+		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 	}
