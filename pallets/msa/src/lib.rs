@@ -482,14 +482,16 @@ pub mod pallet {
 					n /= 10;
 				}
 				let new_key = AccountId32::new(raw);
-				let public_key = T::AccountId::decode(&mut &new_key.encode()[..]).unwrap();
+				let public_key =
+					T::AccountId::decode(&mut &new_key.encode()[..]).expect("should decode");
 				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
 			}
 			log::info!("Finished adding {} random keys", self.accounts);
 
 			for k in known_keys {
 				let new_key = AccountId32::new(k);
-				let public_key = T::AccountId::decode(&mut &new_key.encode()[..]).unwrap();
+				let public_key =
+					T::AccountId::decode(&mut &new_key.encode()[..]).expect("should decode");
 				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
 			}
 			log::info!("Finished adding {} known keys", key_size);
@@ -1690,7 +1692,7 @@ impl<T: Config> Pallet<T> {
 			let processed_storage = StorageValueRef::persistent(MSA_INITIAL_INDEXED_STORAGE_NAME);
 			let is_initial_indexed = processed_storage.get::<bool>().unwrap_or(None);
 
-			if is_initial_indexed.unwrap_or_default() == false {
+			if !is_initial_indexed.unwrap_or_default() {
 				log::info!("Msa::ofw::initial-indexed is {:?}", is_initial_indexed);
 
 				// setting last processed block so we can start indexing from that block after
@@ -1740,7 +1742,7 @@ impl<T: Config> Pallet<T> {
 					.unwrap_or(Some(block_number.saturating_sub(BlockNumberFor::<T>::from(
 						NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK,
 					))))
-					.unwrap();
+					.unwrap_or_default();
 
 			// since this is the last processed block number we already processed it and starting from the next one
 			start_block_number += BlockNumberFor::<T>::one();

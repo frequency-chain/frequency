@@ -5,6 +5,7 @@ use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use sp_api::offchain::testing::TestPersistentOffchainDB;
 use sp_runtime::traits::Zero;
 use std::{sync::Arc, vec};
 use substrate_test_runtime_client::runtime::{AccountId, Block};
@@ -48,7 +49,7 @@ sp_api::mock_impl_runtime_apis! {
 #[tokio::test]
 async fn check_delegations_can_success_with_multiple() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.check_delegations(
 		vec![DELEGATE_A, DELEGATE_B],
@@ -65,7 +66,7 @@ async fn check_delegations_can_success_with_multiple() {
 #[tokio::test]
 async fn check_delegations_with_good_and_bad_responses() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.check_delegations(
 		vec![DELEGATE_A, DELEGATE_B],
@@ -82,7 +83,7 @@ async fn check_delegations_with_good_and_bad_responses() {
 #[tokio::test]
 async fn check_delegations_with_bad_delegate_msa() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.check_delegations(
 		vec![DelegatorId(NOT_EXIST_MSA)],
@@ -99,7 +100,7 @@ async fn check_delegations_with_bad_delegate_msa() {
 #[tokio::test]
 async fn check_delegations_with_bad_provider() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.check_delegations(
 		vec![DELEGATE_A, DELEGATE_B],
@@ -116,7 +117,7 @@ async fn check_delegations_with_bad_provider() {
 #[tokio::test]
 async fn check_delegations_returns_fail_if_after_block() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.check_delegations(
 		vec![DELEGATE_A, DELEGATE_B],
@@ -133,7 +134,7 @@ async fn check_delegations_returns_fail_if_after_block() {
 #[tokio::test]
 async fn get_granted_schemas_by_msa_id_with_success() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, PROVIDER_WITH_DELEGATE_A);
 
@@ -145,7 +146,7 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 #[tokio::test]
 async fn get_granted_schemas_by_msa_id_with_none() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B);
 
@@ -163,7 +164,7 @@ async fn get_granted_schemas_by_msa_id_with_none() {
 #[tokio::test]
 async fn get_granted_schemas_by_msa_id_with_no_delegation() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A);
 
@@ -175,7 +176,7 @@ async fn get_granted_schemas_by_msa_id_with_no_delegation() {
 #[tokio::test]
 async fn get_granted_schemas_by_msa_id_with_bad_provider_id() {
 	let client = Arc::new(TestApi {});
-	let api = MsaHandler::<TestApi, Block>::new(client);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, ProviderId(NOT_EXIST_MSA));
 

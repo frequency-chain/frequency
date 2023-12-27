@@ -71,7 +71,10 @@ pub struct MsaHandler<C, M, OffchainDB> {
 	_marker: std::marker::PhantomData<M>,
 }
 
-impl<C, M, OffchainDB> MsaHandler<C, M, OffchainDB> {
+impl<C, M, OffchainDB> MsaHandler<C, M, OffchainDB>
+where
+	OffchainDB: Send + Sync,
+{
 	/// Create new instance with the given reference to the client.
 	pub fn new(client: Arc<C>, offchain: Option<OffchainDB>) -> Self {
 		Self { client, offchain: Arc::new(RwLock::new(offchain)), _marker: Default::default() }

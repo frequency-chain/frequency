@@ -4,6 +4,7 @@
 // Originally from https://github.com/paritytech/cumulus/blob/master/parachain-template/node/src/service.rs
 
 // std
+use sc_client_api::Backend;
 use std::{sync::Arc, time::Duration};
 
 use cumulus_client_cli::CollatorOptions;
