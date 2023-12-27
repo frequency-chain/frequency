@@ -2,8 +2,8 @@ use crate::{Config, Event};
 pub use common_primitives::msa::MessageSourceId;
 /// Offchain Storage for MSA
 use common_primitives::offchain::{
-	self as offchain_common, LAST_PROCESSED_BLOCK_LOCK_NAME,
-	LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION, LAST_PROCESSED_BLOCK_STORAGE_NAME,
+	self as offchain_common, get_msa_account_lock_name, get_msa_account_storage_key_name,
+	MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION,
 };
 use frame_support::RuntimeDebugNoBound;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -17,7 +17,7 @@ use sp_runtime::{
 	traits::One,
 	Saturating,
 };
-use sp_std::fmt::Debug;
+use sp_std::{fmt::Debug, vec::Vec};
 
 /// Pallet MSA lock prefix
 pub const MSA_LOCK_PREFIX: &[u8] = b"pallet::msa::";
@@ -30,6 +30,33 @@ pub const MSA_INDEX_KEY: &[u8] = b"frequency::msa::";
 
 /// Offchain index for MSA events count
 pub const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
+
+/// Lock expiration timeout in in milli-seconds for initial data import msa pallet
+pub const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION: u64 = 3000;
+
+/// Lock expiration block for initial data import msa pallet
+pub const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 20;
+
+/// Lock name for initial data index for msa pallet
+pub const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
+
+/// storage name for initial data import storage
+pub const MSA_INITIAL_INDEXED_STORAGE_NAME: &[u8; 25] = b"Msa::ofw::initial-indexed";
+
+/// Lock name for last processed block number events
+pub const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-block-lock";
+
+/// lst processed block storage name
+pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
+
+/// Lock expiration timeout in in milli-seconds for last processed block
+pub const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
+
+/// Lock expiration block for initial data import msa pallet
+pub const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 2;
+
+/// number of previous blocks to check to mitigate offchain worker skips processing any block
+pub const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
 
 /// Set offchain index value, used to store MSA Events to be process by offchain worker
 pub fn set_offchain_index<V>(key: &[u8], value: V)
@@ -102,7 +129,7 @@ impl<T: Config> IndexedEvent<T> {
 	}
 }
 
-/// initilizes the last_process_block value in offchain DB
+/// Initializes the last_process_block value in offchain DB
 pub fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>) {
 	let mut last_processed_block_lock = StorageLock::<'_, Time>::with_deadline(
 		LAST_PROCESSED_BLOCK_LOCK_NAME,
@@ -111,6 +138,30 @@ pub fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor
 	let _ = last_processed_block_lock.lock();
 	let last_processed_block_storage =
 		StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
+
+	// setting current_block-1 as the last processed so that we start indexing from current_block
 	last_processed_block_storage
 		.set(&current_block_number.saturating_sub(BlockNumberFor::<T>::one()));
+}
+
+/// Add a key into MSA offchain DB
+pub fn add_key_to_offchain_msa<T: Config>(key: T::AccountId, msa_id: MessageSourceId) {
+	let msa_lock_name = get_msa_account_lock_name(msa_id);
+	let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
+		&msa_lock_name,
+		Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
+	);
+	let _ = msa_lock.lock();
+	let msa_storage_name = get_msa_account_storage_key_name(msa_id);
+	let msa_storage = StorageValueRef::persistent(&msa_storage_name);
+
+	let mut msa_keys =
+		msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or(Vec::default());
+
+	if !msa_keys.contains(&key) {
+		msa_keys.push(key.clone());
+		msa_storage.set(&msa_keys);
+	} else {
+		log::warn!("{:?} already added!", &key);
+	}
 }

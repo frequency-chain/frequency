@@ -2,33 +2,11 @@ use crate::msa::MessageSourceId;
 use numtoa::NumToA;
 use parity_scale_codec::{Decode, Encode};
 use sp_io::offchain_index;
-use sp_runtime::offchain::{
-	storage::{StorageRetrievalError, StorageValueRef},
-	storage_lock::{StorageLock, Time},
-	Duration,
-};
+use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_std::{fmt::Debug, vec, vec::Vec};
 
-/// Lock expiration timeout in in milli-seconds for initial data import msa pallet
-pub const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION: u64 = 2000;
-/// Lock expiration block for initial data import msa pallet
-pub const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 20;
-/// Lock name for initial data import msa pallet
-pub const MSA_INITIAL_LOCK_NAME: &[u8; 29] = b"Msa::ofw::initial-import-lock";
-/// storage name for initial data import storage
-pub const MSA_INITIAL_IMPORTED_STORAGE_NAME: &[u8; 26] = b"Msa::ofw::initial-imported";
-
-/// Lock name for last processed block number events
-pub const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-block-lock";
-/// lst processed block storage name
-pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
-/// Lock expiration timeout in in milli-seconds for last processed block
-pub const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
-/// Lock expiration block for initial data import msa pallet
-pub const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 2;
-
 /// Lock expiration timeout in in milli-seconds for msa pallet per msa account
-pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 5;
+pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 50;
 /// Lock name prefix for msa account
 pub const MSA_ACCOUNT_LOCK_NAME_PREFIX: &[u8; 16] = b"Msa::ofw::lock::";
 /// Offchain storage prefix for msa account
@@ -44,11 +22,6 @@ pub fn get_msa_account_storage_key_name(msa_id: MessageSourceId) -> Vec<u8> {
 	vec![MSA_ACCOUNT_STORAGE_NAME_PREFIX, msa_id.numtoa(10, &mut buff)].concat()
 }
 
-/// PUNEET
-const DB_LOCK: &[u8] = b"lock::pallet::";
-
-const LOCK_DEADLINE: u64 = 1000;
-
 /// Locks the execution of the function
 #[derive(Debug)]
 pub enum LockStatus {
@@ -56,26 +29,6 @@ pub enum LockStatus {
 	Locked,
 	/// Lock is released
 	Released,
-}
-
-/// Locks the execution of the function
-pub fn lock<F>(pallet: &[u8], suffix: &[u8], f: F) -> LockStatus
-where
-	F: Fn(),
-{
-	let locked_tx = [DB_LOCK, pallet, suffix].concat();
-	let locked_tx_key = locked_tx.encode();
-	let mut lock = StorageLock::<Time>::with_deadline(
-		locked_tx_key.as_slice(),
-		Duration::from_millis(LOCK_DEADLINE),
-	);
-	let lock_status = if let Ok(_guard) = lock.try_lock() {
-		f();
-		LockStatus::Released
-	} else {
-		LockStatus::Locked
-	};
-	lock_status
 }
 
 /// Wrapper for offchain get operations
@@ -108,6 +61,6 @@ fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, StorageRetrieval
 	match oci_mem.get::<V>() {
 		Ok(Some(data)) => Ok(Some(data)),
 		Ok(None) => Ok(None),
-		Err(e) => Err(StorageRetrievalError::Undecodable),
+		Err(_) => Err(StorageRetrievalError::Undecodable),
 	}
 }

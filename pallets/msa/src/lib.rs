@@ -59,7 +59,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	ensure,
 	pallet_prelude::*,
-	traits::{DefensiveSaturating, IsSubType},
+	traits::IsSubType,
 };
 use parity_scale_codec::{Decode, Encode};
 
@@ -74,7 +74,6 @@ use common_primitives::{
 		SignatureRegistryPointer,
 	},
 	node::ProposalProvider,
-	offchain as offchain_common,
 	offchain::*,
 	schema::{SchemaId, SchemaValidator},
 };
@@ -440,17 +439,15 @@ pub mod pallet {
 		}
 
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
-			log::info!("Hello World from offchain workers! {:?}", block_number);
+			log::info!("Running offchain workers! {:?}", block_number);
 
-			// if block_number < BlockNumberFor::<T>::from(5u32) {
-			// 	return
-			// }
-
-			let is_locked = Self::offchain_index_initial_state(block_number);
-			if is_locked {
-				log::info!("initiating-import is still locked in {:?}", block_number);
-			} else {
-				Self::offchain_apply_updated_keys(block_number);
+			match Self::offchain_index_initial_state(block_number) {
+				LockStatus::Locked => {
+					log::info!("initiating-index is still locked in {:?}", block_number);
+				},
+				LockStatus::Released => {
+					Self::offchain_apply_updated_keys(block_number);
+				},
 			}
 		}
 	}
@@ -1565,8 +1562,7 @@ impl<T: Config> Pallet<T> {
 		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
 		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
 		let mut events = vec![];
-		let event_count =
-			if let Some(event_count) = optional_event_count { event_count } else { return events };
+		let event_count = optional_event_count.unwrap_or_default();
 
 		for i in 1..=event_count {
 			let key =
@@ -1575,12 +1571,30 @@ impl<T: Config> Pallet<T> {
 				get_offchain_index::<IndexedEvent<T>>(key.encode().as_slice());
 			if let Some(decoded_event) = optional_decoded_event {
 				events.push(decoded_event);
+			} else {
+				log::warn!(
+					"Indexed event does not exist for block {:?} and number {}",
+					current_block,
+					i
+				);
 			}
-			// read and clear the event from offchain storage
+		}
+		events
+	}
+
+	/// cleans the events from offchain storage
+	fn clean_events(block_number: BlockNumberFor<T>) {
+		let current_block: u32 = block_number.try_into().unwrap_or_default();
+		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
+		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
+		let event_count = optional_event_count.unwrap_or_default();
+		for i in 1..=event_count {
+			let key =
+				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
+
 			remove_offchain_index(key.encode().as_slice());
 		}
-		// TODO: should it remove the count also?
-		events
+		remove_offchain_index(count_key.encode().as_slice());
 	}
 
 	/// offchain worker callback for indexing msa keys
@@ -1621,6 +1635,11 @@ impl<T: Config> Pallet<T> {
 				Self::process_events(msa_id, events);
 			}
 		}
+
+		if events_exists {
+			Self::clean_events(block_number);
+		}
+
 		events_exists
 	}
 
@@ -1660,51 +1679,35 @@ impl<T: Config> Pallet<T> {
 		msa_storage.set(&msa_keys);
 	}
 
-	/// returns true if it's already locked
-	pub fn offchain_index_initial_state(block_number: BlockNumberFor<T>) -> bool {
+	/// returns the LockStatus
+	pub fn offchain_index_initial_state(block_number: BlockNumberFor<T>) -> LockStatus {
 		let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
 			MSA_INITIAL_LOCK_NAME,
 			MSA_INITIAL_LOCK_BLOCK_EXPIRATION,
 			Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION),
 		);
 		if let Ok(mut guard) = lock.try_lock() {
-			let processed_storage = StorageValueRef::persistent(MSA_INITIAL_IMPORTED_STORAGE_NAME);
-			let initial_imported = processed_storage.get::<bool>().unwrap_or(None);
+			let processed_storage = StorageValueRef::persistent(MSA_INITIAL_INDEXED_STORAGE_NAME);
+			let is_initial_indexed = processed_storage.get::<bool>().unwrap_or(None);
 
-			if initial_imported.unwrap_or_default() == false {
-				log::info!("Msa::ofw::initial-imported is {:?}", initial_imported);
+			if is_initial_indexed.unwrap_or_default() == false {
+				log::info!("Msa::ofw::initial-indexed is {:?}", is_initial_indexed);
+
+				// setting last processed block so we can start indexing from that block after
+				// initial index is done
 				init_last_processed_block::<T>(block_number);
 
 				let mut counter = 0u64;
 				for (account_id, msa_id) in PublicKeyToMsaId::<T>::iter() {
-					let msa_lock_name = get_msa_account_lock_name(msa_id);
-					let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
-						&msa_lock_name,
-						Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
-					);
-					let _ = msa_lock.lock();
-					let msa_storage_name = get_msa_account_storage_key_name(msa_id);
-					let msa_storage = StorageValueRef::persistent(&msa_storage_name);
+					add_key_to_offchain_msa::<T>(account_id, msa_id);
 
-					let mut msa_keys = msa_storage
-						.get::<Vec<T::AccountId>>()
-						.unwrap_or(None)
-						.unwrap_or(Vec::default());
-
-					if !msa_keys.contains(&account_id) {
-						msa_keys.push(account_id.clone());
-						msa_storage.set(&msa_keys);
-					} else {
-						log::warn!("{:?} already added!", &account_id);
-					}
-
-					// extend the lock
+					// extend the initial index lock
 					counter += 1;
 					if counter % 1000 == 0 {
 						log::info!("Added {} more keys!", counter);
 						if guard.extend_lock().is_err() {
 							log::warn!("lock is expired in block {:?}", block_number);
-							return false
+							return LockStatus::Released
 						}
 					}
 				}
@@ -1713,9 +1716,9 @@ impl<T: Config> Pallet<T> {
 				log::info!("Finished adding {} keys!", counter);
 			}
 		} else {
-			return true
+			return LockStatus::Locked
 		};
-		false
+		LockStatus::Released
 	}
 
 	/// apply updated keys
@@ -1731,10 +1734,13 @@ impl<T: Config> Pallet<T> {
 
 			let last_processed_block_storage =
 				StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
-			let mut start_block_number = last_processed_block_storage
-				.get::<BlockNumberFor<T>>()
-				.unwrap_or(Some(block_number.saturating_sub(BlockNumberFor::<T>::from(5u32))))
-				.unwrap();
+			let mut start_block_number =
+				last_processed_block_storage
+					.get::<BlockNumberFor<T>>()
+					.unwrap_or(Some(block_number.saturating_sub(BlockNumberFor::<T>::from(
+						NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK,
+					))))
+					.unwrap();
 
 			// since this is the last processed block number we already processed it and starting from the next one
 			start_block_number += BlockNumberFor::<T>::one();
