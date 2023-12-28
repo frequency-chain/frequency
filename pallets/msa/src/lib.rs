@@ -82,18 +82,12 @@ use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
-	offchain::{
-		storage::StorageValueRef,
-		storage_lock::{BlockAndTime, StorageLock, Time},
-		Duration,
-	},
 	traits::{
-		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, One, SignedExtension, Verify,
-		Zero,
+		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero,
 	},
-	ArithmeticError, DispatchError, MultiSignature, Saturating,
+	ArithmeticError, DispatchError, MultiSignature,
 };
-use sp_std::{collections::btree_map::BTreeMap, prelude::*};
+use sp_std::prelude::*;
 
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
@@ -441,12 +435,12 @@ pub mod pallet {
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			log::info!("Running offchain workers! {:?}", block_number);
 
-			match Self::offchain_index_initial_state(block_number) {
+			match offchain_index_initial_state::<T>(block_number) {
 				LockStatus::Locked => {
 					log::info!("initiating-index is still locked in {:?}", block_number);
 				},
 				LockStatus::Released => {
-					Self::offchain_apply_updated_keys(block_number);
+					apply_offchain_events::<T>(block_number);
 				},
 			}
 		}
@@ -519,7 +513,7 @@ pub mod pallet {
 				Self::create_account(public_key, |_| -> DispatchResult { Ok(()) })?;
 
 			let event = Event::MsaCreated { msa_id: new_msa_id, key: new_public_key };
-			Self::index_event(IndexedEvent::map(&event, new_msa_id));
+			offchain_index_event::<T>(&event, new_msa_id);
 			Self::deposit_event(event);
 			Ok(())
 		}
@@ -585,7 +579,7 @@ pub mod pallet {
 
 			let event =
 				Event::MsaCreated { msa_id: new_delegator_msa_id, key: new_delegator_public_key };
-			Self::index_event(IndexedEvent::map(&event, new_delegator_msa_id));
+			offchain_index_event::<T>(&event, new_delegator_msa_id);
 			Self::deposit_event(event);
 			Self::deposit_event(Event::DelegationGranted {
 				delegator_id: DelegatorId(new_delegator_msa_id),
@@ -772,7 +766,7 @@ pub mod pallet {
 						msa_id,
 						key: add_key_payload.new_public_key.clone(),
 					};
-					Self::index_event(IndexedEvent::map(&event, msa_id));
+					offchain_index_event::<T>(&event, msa_id);
 					Self::deposit_event(event);
 					Ok(())
 				},
@@ -809,7 +803,7 @@ pub mod pallet {
 
 					// Deposit the event
 					let event = Event::PublicKeyDeleted { key: public_key_to_delete };
-					Self::index_event(IndexedEvent::map(&event, who_msa_id));
+					offchain_index_event::<T>(&event, who_msa_id);
 					Self::deposit_event(event);
 				},
 				None => {
@@ -927,7 +921,7 @@ pub mod pallet {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
 					let event = Event::PublicKeyDeleted { key: who };
-					Self::index_event(IndexedEvent::map(&event, msa_id));
+					offchain_index_event::<T>(&event, msa_id);
 					Self::deposit_event(event);
 					Self::deposit_event(Event::MsaRetired { msa_id });
 				},
@@ -1536,232 +1530,6 @@ impl<T: Config> Pallet<T> {
 	fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
 		let mortality_size = T::MortalityWindowSize::get();
 		current_block + BlockNumberFor::<T>::from(mortality_size)
-	}
-
-	fn index_event(event_option: Option<IndexedEvent<T>>) {
-		if let Some(event) = event_option {
-			let block_number: u32 =
-				<frame_system::Pallet<T>>::block_number().try_into().unwrap_or_default();
-			let current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
-			<MSAEventCount<T>>::put(current_event_count);
-			let event_key = [
-				BLOCK_EVENT_KEY,
-				block_number.encode().as_slice(),
-				current_event_count.encode().as_slice(),
-			]
-			.concat();
-			// set the event in offchain storage
-			set_offchain_index(event_key.encode().as_slice(), event);
-
-			let count_key = [BLOCK_EVENT_COUNT_KEY, block_number.encode().as_slice()].concat();
-			// Set the latest count of event in current block
-			set_offchain_index(count_key.encode().as_slice(), current_event_count);
-		}
-	}
-
-	fn read_events(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
-		let current_block: u32 = block_number.try_into().unwrap_or_default();
-		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
-		let mut events = vec![];
-		let event_count = optional_event_count.unwrap_or_default();
-
-		for i in 1..=event_count {
-			let key =
-				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
-			let optional_decoded_event =
-				get_offchain_index::<IndexedEvent<T>>(key.encode().as_slice());
-			if let Some(decoded_event) = optional_decoded_event {
-				events.push(decoded_event);
-			} else {
-				log::warn!(
-					"Indexed event does not exist for block {:?} and number {}",
-					current_block,
-					i
-				);
-			}
-		}
-		events
-	}
-
-	/// cleans the events from offchain storage
-	fn clean_events(block_number: BlockNumberFor<T>) {
-		let current_block: u32 = block_number.try_into().unwrap_or_default();
-		let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-		let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
-		let event_count = optional_event_count.unwrap_or_default();
-		for i in 1..=event_count {
-			let key =
-				[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
-
-			remove_offchain_index(key.encode().as_slice());
-		}
-		remove_offchain_index(count_key.encode().as_slice());
-	}
-
-	/// offchain worker callback for indexing msa keys
-	/// return true if there are events and false if not
-	pub fn reverse_map_msa_keys(block_number: BlockNumberFor<T>) -> bool {
-		// read the events indexed for the current block
-		let events_to_process: Vec<IndexedEvent<T>> = Self::read_events(block_number);
-		let events_exists = !events_to_process.is_empty();
-		if events_exists {
-			log::info!(
-				"found {} indexed events for block {:?}",
-				events_to_process.len(),
-				block_number
-			);
-		}
-
-		// collect a replay of all events by MSA id
-		let mut events_by_msa_id: BTreeMap<MessageSourceId, Vec<IndexedEvent<T>>> = BTreeMap::new();
-
-		// collect relevant events
-		for event in events_to_process {
-			match event {
-				IndexedEvent::IndexedPublicKeyAdded { msa_id, .. } |
-				IndexedEvent::IndexedMsaCreated { msa_id, .. } => {
-					let events = events_by_msa_id.entry(msa_id).or_default();
-					events.push(event);
-				},
-				IndexedEvent::IndexedPublicKeyDeleted { msa_id, .. } => {
-					let events = events_by_msa_id.entry(msa_id).or_default();
-					events.push(event);
-				},
-			}
-		}
-
-		// process and save to offchain db
-		for (msa_id, events) in events_by_msa_id {
-			if !events.is_empty() {
-				Self::process_events(msa_id, events);
-			}
-		}
-
-		if events_exists {
-			Self::clean_events(block_number);
-		}
-
-		events_exists
-	}
-
-	fn process_events(msa_id: MessageSourceId, events: Vec<IndexedEvent<T>>) {
-		// Lock will specifically prevent multiple offchain workers from
-		// processing the same msa events at the same time
-		// let lock_status = offchain_common::lock(b"msa::", msa_id.encode().as_slice(), || {
-		let msa_lock_name = get_msa_account_lock_name(msa_id);
-		let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
-			&msa_lock_name,
-			Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
-		);
-		let _ = msa_lock.lock();
-		let msa_storage_name = get_msa_account_storage_key_name(msa_id);
-		let msa_storage = StorageValueRef::persistent(&msa_storage_name);
-
-		let mut msa_keys =
-			msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or(Vec::default());
-
-		for event in events {
-			match &event {
-				IndexedEvent::IndexedPublicKeyAdded { key, .. } |
-				IndexedEvent::IndexedMsaCreated { key, .. } =>
-					if !msa_keys.contains(key) {
-						msa_keys.push(key.clone());
-					} else {
-						log::warn!("{:?} already added!", key);
-					},
-				IndexedEvent::IndexedPublicKeyDeleted { key, .. } =>
-					if msa_keys.contains(key) {
-						msa_keys.retain(|k| k != key);
-					} else {
-						log::warn!("{:?} already removed!", key);
-					},
-			}
-		}
-		msa_storage.set(&msa_keys);
-	}
-
-	/// returns the LockStatus
-	pub fn offchain_index_initial_state(block_number: BlockNumberFor<T>) -> LockStatus {
-		let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
-			MSA_INITIAL_LOCK_NAME,
-			MSA_INITIAL_LOCK_BLOCK_EXPIRATION,
-			Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION),
-		);
-		if let Ok(mut guard) = lock.try_lock() {
-			let processed_storage = StorageValueRef::persistent(MSA_INITIAL_INDEXED_STORAGE_NAME);
-			let is_initial_indexed = processed_storage.get::<bool>().unwrap_or(None);
-
-			if !is_initial_indexed.unwrap_or_default() {
-				log::info!("Msa::ofw::initial-indexed is {:?}", is_initial_indexed);
-
-				// setting last processed block so we can start indexing from that block after
-				// initial index is done
-				init_last_processed_block::<T>(block_number);
-
-				let mut counter = 0u64;
-				for (account_id, msa_id) in PublicKeyToMsaId::<T>::iter() {
-					add_key_to_offchain_msa::<T>(account_id, msa_id);
-
-					// extend the initial index lock
-					counter += 1;
-					if counter % 1000 == 0 {
-						log::info!("Added {} more keys!", counter);
-						if guard.extend_lock().is_err() {
-							log::warn!("lock is expired in block {:?}", block_number);
-							return LockStatus::Released
-						}
-					}
-				}
-
-				processed_storage.set(&true);
-				log::info!("Finished adding {} keys!", counter);
-			}
-		} else {
-			return LockStatus::Locked
-		};
-		LockStatus::Released
-	}
-
-	/// apply updated keys
-	pub fn offchain_apply_updated_keys(block_number: BlockNumberFor<T>) {
-		let mut lock = StorageLock::<BlockAndTime<Self>>::with_block_and_time_deadline(
-			LAST_PROCESSED_BLOCK_LOCK_NAME,
-			LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION,
-			Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION),
-		);
-
-		if let Ok(mut guard) = lock.try_lock() {
-			log::info!("processing events in {:?}", block_number);
-
-			let last_processed_block_storage =
-				StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
-			let mut start_block_number =
-				last_processed_block_storage
-					.get::<BlockNumberFor<T>>()
-					.unwrap_or(Some(block_number.saturating_sub(BlockNumberFor::<T>::from(
-						NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK,
-					))))
-					.unwrap_or_default();
-
-			// since this is the last processed block number we already processed it and starting from the next one
-			start_block_number += BlockNumberFor::<T>::one();
-			while start_block_number <= block_number {
-				if Self::reverse_map_msa_keys(start_block_number) {
-					if guard.extend_lock().is_err() {
-						log::warn!(
-							"last processed block lock is expired in block {:?}",
-							block_number
-						);
-						break
-					}
-				}
-				last_processed_block_storage.set(&start_block_number);
-				start_block_number += BlockNumberFor::<T>::one();
-			}
-		} else {
-			log::info!("skipping processing events on {:?} due to existing lock!", block_number);
-		};
 	}
 }
 
