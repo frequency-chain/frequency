@@ -1,6 +1,6 @@
 [package]
 name = "pallet-messages-rpc"
-version = "0.0.0"
+version = "1.10.0+polkadot1.1.0"
 description = "A package that adds RPC to Messages pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
