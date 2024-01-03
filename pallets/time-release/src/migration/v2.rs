@@ -92,7 +92,7 @@ where
 		ReleaseSchedules::<T>::iter()
 			.map(|(account_id, _)| account_id)
 			.for_each(|account_id| {
-				let (total_amount, cal_fn_weight) = calculate_total_scheduled_locks_for_account::<T>(&account_id);
+				let (total_amount, cal_fn_weight) = calculate_total_scheduled_frozen_for_account::<T>(&account_id);
 
 				let trans_fn_weight = MigrationToV2::<T, OldCurrency>::translate_lock_to_freeze(
 					&account_id,
@@ -164,7 +164,7 @@ where
 	}
 }
 
-fn calculate_total_scheduled_locks_for_account<T: Config>(
+fn calculate_total_scheduled_frozen_for_account<T: Config>(
 	account_id: &T::AccountId,
 ) -> (BalanceOf<T>, Weight) {
 	let total = ReleaseSchedules::<T>::get(&account_id) // 1r
@@ -199,7 +199,7 @@ mod test {
 				(DAVE, 2, 3, 1, 5),
 			];
 
-			create_schedules_and_set_lock(schedules);
+			create_schedules_and_set_freeze(schedules);
 
 			assert_eq!(
 				pallet_balances::Pallet::<Test>::locks(&DAVE)
@@ -237,7 +237,7 @@ mod test {
 		})
 	}
 
-	fn create_schedules_and_set_lock(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
+	fn create_schedules_and_set_freeze(schedules: Vec<(AccountId, u32, u32, u32, u64)>) {
 		schedules.iter().for_each(|(who, start, period, period_count, per_period)| {
 			let mut bounded_schedules = ReleaseSchedules::<Test>::get(who);
 			let new_schedule = types::ReleaseSchedule {

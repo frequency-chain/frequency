@@ -1,6 +1,6 @@
 [package]
 name = "pallet-time-release"
-description = "Provides scheduled balance locking mechanism, in a *graded release* way."
+description = "Provides scheduled balance freezing mechanism, in a *graded release* way."
 authors = ["Frequency"]
 edition = "2021"
 homepage = "https://frequency.xyz"
