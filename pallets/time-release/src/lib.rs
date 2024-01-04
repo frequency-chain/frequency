@@ -232,7 +232,7 @@ pub mod module {
 
 					assert!(
 						T::Currency::balance(who) >= total_amount,
-						"Account do not have enough balance"
+						"Account does not have enough balance."
 					);
 
 					T::Currency::set_freeze(

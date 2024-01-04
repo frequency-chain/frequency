@@ -4,8 +4,8 @@ This pallet is a fork of the [ORML-vesting]( [vesting](https://github.com/open-w
 
 ## Overview
 
-Time-release module provides a means of scheduled balance freeze on an account. It uses the *graded release* way, which thaws a specific amount of balance every period of time, until all balance thawed.
+The `time-release` module offers a method for scheduling a balance freeze on an account. It employs a *graded release* approach, which thaws a specific amount of balance every period of time, until all balance is thawed.
 
 ### Release Schedule
 
-The schedule of a release on hold is described by data structure `ReleaseSchedule`: from the block number of `start`, for every `period` amount of blocks, `per_period` amount of balance would thawed, until number of periods `period_count` reached. Note in release schedules, *time* is measured by block number. All `ReleaseSchedule`s under an account could be queried in chain state.
+The schedule of a release on hold is described by the data structure `ReleaseSchedule`. Starting from the specified block number denoted as `start`, the schedule operates on a periodic basis. For each `period` amount of blocks, a designated `per_period` amount of balance is unfrozen. This process continues until the specified number of periods, denoted as `period_count`, is reached. It's important to highlight that in release schedules, the concept of time is measured in terms of block numbers. Accessing all `ReleaseSchedule` instances associated with an account is possible through querying the chain state.
