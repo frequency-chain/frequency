@@ -4,9 +4,9 @@
 //!
 //! ## Overview
 //!
-//! Time-release module provides a means of scheduled balance freeze on an account. It
-//! uses the *graded release* way, which thaws a specific amount of balance
-//! every period of time, until all balances are thawed.
+//! Time-release module provides a means of scheduled release (thaw) of a frozen balance in an account.
+//! It uses the *graded release* approach, which thaws a specific amount of balance per period (measured
+//! in blocks), until all frozen balances are thawed.
 //!
 //! ### Release Schedule
 //!

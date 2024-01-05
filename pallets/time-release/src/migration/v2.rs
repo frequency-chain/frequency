@@ -76,7 +76,7 @@ where
 
 		// storage was already migrated.
 		if on_chain_version.ge(&2) {
-			log::info!(
+			log::warn!(
 				target: LOG_TARGET,
 				"Old Time Release Locks->Freezes migration attempted to run. Please remove"
 			);
