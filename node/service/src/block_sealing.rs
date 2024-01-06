@@ -75,7 +75,7 @@ pub fn frequency_dev_sealing(
 					transaction_pool.clone(),
 				)),
 				network_provider: network.clone(),
-				enable_http_requests: false,
+				enable_http_requests: true,
 				custom_extensions: |_| vec![],
 			});
 

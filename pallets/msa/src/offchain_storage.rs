@@ -8,6 +8,9 @@ use common_primitives::offchain::{
 use frame_support::RuntimeDebugNoBound;
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
+use sp_core::serde::Deserialize;
+extern crate alloc;
+use alloc::string::String;
 use sp_runtime::{
 	offchain::{
 		storage::StorageValueRef,
@@ -51,6 +54,16 @@ const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 2;
 
 /// number of previous blocks to check to mitigate offchain worker skips processing any block
 const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
+
+/// number of blocks to explore when trying to find the block number from block hash
+const NUMBER_OF_BLOCKS_TO_EXPLORE: u32 = 1000;
+
+/// HTTP request deadline in milliseconds
+const HTTP_REQUEST_DEADLINE_MILLISECONDS: u64 = 2000;
+
+/// LOCAL RPC URL and port
+/// warning: this should be updated if rpc port is set to anything different from 9944
+const RPC_REQUEST_URL: &'static str = "http://localhost:9944";
 
 /// stores the event into offchain DB using offchain indexing
 pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId) {
@@ -370,4 +383,76 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 		}
 	}
 	msa_storage.set(&msa_keys);
+}
+
+#[derive(Deserialize, Encode, Decode, Default, Debug)]
+struct FinalizedResult {
+	result: String,
+}
+
+/// get finalized
+pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
+	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
+	// deadline to 2s to complete the external call.
+	// You can also wait indefinitely for the response, however you may still get a timeout
+	// coming from the host machine.
+	let deadline =
+		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MILLISECONDS));
+	let body = vec![b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}"];
+	let request = sp_runtime::offchain::http::Request::post(RPC_REQUEST_URL, body);
+	let pending = request
+		.add_header("Content-Type", "application/json")
+		.deadline(deadline)
+		.send()
+		.map_err(|_| sp_runtime::offchain::http::Error::IoError)?;
+
+	let response = pending
+		.try_wait(deadline)
+		.map_err(|_| sp_runtime::offchain::http::Error::DeadlineReached)??;
+	// Let's check the status code before we proceed to reading the response.
+	if response.code != 200 {
+		log::warn!("Unexpected status code: {}", response.code);
+		return Err(sp_runtime::offchain::http::Error::Unknown)
+	}
+
+	// Next we want to fully read the response body and collect it to a vector of bytes.
+	// Note that the return object allows you to read the body in chunks as well
+	// with a way to control the deadline.
+	let body = response.body().collect::<Vec<u8>>();
+
+	// Create a str slice from the body.
+	let body_str = sp_std::str::from_utf8(&body).map_err(|_| {
+		log::warn!("No UTF8 body");
+		sp_runtime::offchain::http::Error::Unknown
+	})?;
+
+	log::debug!("{}", body_str);
+	let gh_info: FinalizedResult =
+		serde_json::from_str(body_str).map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
+
+	let decoded_from_hex = hex::decode(&gh_info.result[2..])
+		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
+
+	let val = T::Hash::decode(&mut &decoded_from_hex[..])
+		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
+	Ok(val)
+}
+
+/// iterates on imported blocks to find the block_number from block_hash
+pub fn find_block_number_from_block_hash<T: Config>(
+	block_hash: T::Hash,
+	current_block: BlockNumberFor<T>,
+) -> Option<BlockNumberFor<T>> {
+	let mut finalized_block_number = None;
+	let mut current_block_number = current_block;
+	let last_block_number =
+		current_block.saturating_sub(BlockNumberFor::<T>::from(NUMBER_OF_BLOCKS_TO_EXPLORE));
+	while current_block_number > last_block_number {
+		if block_hash == frame_system::Pallet::<T>::block_hash(current_block_number) {
+			finalized_block_number = Some(current_block_number);
+			break
+		}
+		current_block_number.saturating_dec();
+	}
+	return finalized_block_number
 }

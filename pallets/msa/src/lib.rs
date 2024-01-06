@@ -434,13 +434,38 @@ pub mod pallet {
 
 		fn offchain_worker(block_number: BlockNumberFor<T>) {
 			log::info!("Running offchain workers! {:?}", block_number);
+			let last_finalized_hash = match fetch_finalized::<T>() {
+				Ok(hash) => hash,
+				Err(e) => {
+					log::error!("failure to get the finalized hash {:?}", e);
+					return
+				},
+			};
 
-			match offchain_index_initial_state::<T>(block_number) {
+			let finalized_block_number =
+				match find_block_number_from_block_hash::<T>(last_finalized_hash, block_number) {
+					Some(number) => number,
+					None => {
+						log::error!(
+							"Not able to find any imported block with {:?} hash and {:?} block",
+							last_finalized_hash,
+							block_number
+						);
+						return
+					},
+				};
+			log::info!(
+				"last finalized block number {:?} and hash {:?}",
+				finalized_block_number,
+				last_finalized_hash
+			);
+
+			match offchain_index_initial_state::<T>(finalized_block_number) {
 				LockStatus::Locked => {
 					log::info!("initiating-index is still locked in {:?}", block_number);
 				},
 				LockStatus::Released => {
-					apply_offchain_events::<T>(block_number);
+					apply_offchain_events::<T>(finalized_block_number);
 				},
 			}
 		}
