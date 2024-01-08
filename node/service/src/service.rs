@@ -36,6 +36,7 @@ use cumulus_relay_chain_interface::{OverseerHandle, RelayChainError, RelayChainI
 
 // Substrate Imports
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
+use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::{
 	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
@@ -45,6 +46,7 @@ use sc_network::{NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
+use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_blockchain::HeaderBackend;
 use sp_keystore::KeystorePtr;
 use substrate_prometheus_endpoint::Registry;
@@ -263,6 +265,32 @@ async fn start_node_impl(
 			sybil_resistance_level: CollatorSybilResistance::Resistant,
 		})
 		.await?;
+
+	// Start off-chain workers if enabled
+	if parachain_config.offchain_worker.enabled {
+		log::info!("OFFCHAIN WORKER is Enabled!");
+		let offchain_workers =
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				is_validator: validator,
+				keystore: Some(params.keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: Some(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				enable_http_requests: true,
+				custom_extensions: |_| vec![],
+			});
+
+		// Spawn a task to handle off-chain notifications.
+		// This task is responsible for processing off-chain events or data for the blockchain.
+		task_manager.spawn_handle().spawn(
+			"offchain-workers-runner",
+			"offchain-work",
+			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
+		);
+	}
 
 	let rpc_builder = {
 		let client = client.clone();
