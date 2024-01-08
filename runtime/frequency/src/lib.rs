@@ -222,6 +222,10 @@ pub type Executive = frame_executive::Executive<
 		pallet_capacity::migration::v2::MigrateToV2<Runtime>,
 		pallet_capacity::migration::v3::MigrationToV3<Runtime, pallet_balances::Pallet<Runtime>>,
 		pallet_schemas::migration::v3::MigrateToV3<Runtime>,
+		pallet_time_release::migration::v2::MigrationToV2<
+			Runtime,
+			pallet_balances::Pallet<Runtime>,
+		>,
 		MigratePalletsCurrentStorage<Runtime>,
 	),
 >;
@@ -532,6 +536,7 @@ pub type MaxReleaseSchedules = ConstU32<{ MAX_RELEASE_SCHEDULES }>;
 // the descriptions of these configs.
 impl pallet_time_release::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
 	type Currency = Balances;
 	type MinReleaseTransfer = MinReleaseTransfer;
 	type TransferOrigin = EnsureSigned<AccountId>;
@@ -541,6 +546,7 @@ impl pallet_time_release::Config for Runtime {
 	type BlockNumberProvider = RelaychainDataProvider<Runtime>;
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
@@ -1115,7 +1121,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
 		// FRQC Update
-		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>} = 40,
+		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, FreezeReason} = 40,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>, Config<T>} = 60,

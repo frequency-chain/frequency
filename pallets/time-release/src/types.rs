@@ -33,17 +33,17 @@ impl<BlockNumber: AtLeast32Bit + Copy, Balance: AtLeast32Bit + MaxEncodedLen + C
 		self.period.checked_mul(&self.period_count.into())?.checked_add(&self.start)
 	}
 
-	/// Returns all locked amount, `None` if calculation overflows.
+	/// Returns all frozen amount, `None` if calculation overflows.
 	pub fn total_amount(&self) -> Option<Balance> {
 		self.per_period.checked_mul(&self.period_count.into())
 	}
 
-	/// Returns locked amount for a given `time`.
+	/// Returns frozen amount for a given `time`.
 	///
 	/// Note this func assumes schedule is a valid one(non-zero period and
 	/// non-overflow total amount), and it should be guaranteed by callers.
 	#[allow(clippy::expect_used)]
-	pub fn locked_amount(&self, time: BlockNumber) -> Balance {
+	pub fn frozen_amount(&self, time: BlockNumber) -> Balance {
 		// full = (time - start) / period
 		// unrealized = period_count - full
 		// per_period * unrealized

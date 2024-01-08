@@ -81,7 +81,7 @@ lint-audit:
 format-lint: format lint
 
 .PHONY: ci-local
-ci-local: check lint lint-audit test e2e-tests
+ci-local: check lint lint-audit test js e2e-tests
 
 .PHONY: upgrade
 upgrade-local:
