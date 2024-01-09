@@ -1,4 +1,4 @@
-use crate::{pallet::MSAEventCount, Config, Event, Pallet, PublicKeyToMsaId};
+use crate::{pallet::OffchainIndexEventCount, Config, Event, Pallet, PublicKeyToMsaId};
 pub use common_primitives::msa::MessageSourceId;
 /// Offchain Storage for MSA
 use common_primitives::offchain::{
@@ -8,9 +8,10 @@ use common_primitives::offchain::{
 use frame_support::RuntimeDebugNoBound;
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
-use sp_core::serde::Deserialize;
+use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
 use alloc::string::String;
+use sp_io::offchain_index;
 use sp_runtime::{
 	offchain::{
 		storage::StorageValueRef,
@@ -59,19 +60,21 @@ const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
 const NUMBER_OF_BLOCKS_TO_EXPLORE: u32 = 1000;
 
 /// HTTP request deadline in milliseconds
-const HTTP_REQUEST_DEADLINE_MILLISECONDS: u64 = 2000;
+pub const HTTP_REQUEST_DEADLINE_MILLISECONDS: u64 = 2000;
 
 /// LOCAL RPC URL and port
 /// warning: this should be updated if rpc port is set to anything different from 9944
-const RPC_REQUEST_URL: &'static str = "http://localhost:9944";
+pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &'static str = "http://localhost:9944";
+/// request body for getting last finalized block from rpc
+pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] = b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
 
 /// stores the event into offchain DB using offchain indexing
 pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId) {
 	if let Some(event) = IndexedEvent::map(event, msa_id) {
 		let block_number: u32 =
 			<frame_system::Pallet<T>>::block_number().try_into().unwrap_or_default();
-		let current_event_count: u16 = <MSAEventCount<T>>::get().saturating_add(1);
-		<MSAEventCount<T>>::put(current_event_count);
+		let current_event_count: u16 = <OffchainIndexEventCount<T>>::get().saturating_add(1);
+		<OffchainIndexEventCount<T>>::put(current_event_count);
 		let event_key = [
 			BLOCK_EVENT_KEY,
 			block_number.encode().as_slice(),
@@ -173,7 +176,7 @@ fn set_offchain_index<V>(key: &[u8], value: V)
 where
 	V: Encode + Clone + Decode + Eq + Debug,
 {
-	offchain_common::set_offchain_index_value(key, value.encode().as_slice());
+	offchain_index::set(key, value.encode().as_slice());
 }
 
 /// Get offchain index value, used to store MSA Events to be process by offchain worker
@@ -302,9 +305,9 @@ fn clean_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 		let key =
 			[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
 
-		offchain_common::remove_offchain_index_value(key.encode().as_slice());
+		offchain_index::clear(key.encode().as_slice());
 	}
-	offchain_common::remove_offchain_index_value(count_key.encode().as_slice());
+	offchain_index::clear(count_key.encode().as_slice());
 }
 
 /// offchain worker callback for indexing msa keys
@@ -385,9 +388,9 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 	msa_storage.set(&msa_keys);
 }
 
-#[derive(Deserialize, Encode, Decode, Default, Debug)]
-struct FinalizedResult {
-	result: String,
+#[derive(Serialize, Deserialize, Encode, Decode, Default, Debug)]
+pub struct FinalizedBlockResponse {
+	pub result: String,
 }
 
 /// get finalized
@@ -398,8 +401,8 @@ pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::htt
 	// coming from the host machine.
 	let deadline =
 		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MILLISECONDS));
-	let body = vec![b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}"];
-	let request = sp_runtime::offchain::http::Request::post(RPC_REQUEST_URL, body);
+	let body = vec![RPC_FINALIZED_BLOCK_REQUEST_BODY];
+	let request = sp_runtime::offchain::http::Request::post(RPC_FINALIZED_BLOCK_REQUEST_URL, body);
 	let pending = request
 		.add_header("Content-Type", "application/json")
 		.deadline(deadline)
@@ -427,7 +430,7 @@ pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::htt
 	})?;
 
 	log::debug!("{}", body_str);
-	let gh_info: FinalizedResult =
+	let gh_info: FinalizedBlockResponse =
 		serde_json::from_str(body_str).map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 
 	let decoded_from_hex = hex::decode(&gh_info.result[2..])

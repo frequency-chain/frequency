@@ -181,7 +181,10 @@ pub fn frequency_dev_sealing(
 	let rpc_extensions_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
-		let backend = backend.offchain_storage();
+		let backend = match config.offchain_worker.enabled {
+			true => backend.offchain_storage(),
+			false => None,
+		};
 
 		move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {

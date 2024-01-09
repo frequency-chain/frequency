@@ -1,7 +1,6 @@
 use crate::msa::MessageSourceId;
 use numtoa::NumToA;
-use parity_scale_codec::{Decode, Encode};
-use sp_io::offchain_index;
+use parity_scale_codec::Decode;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_std::{fmt::Debug, vec, vec::Vec};
 
@@ -36,25 +35,6 @@ pub fn get_index_value<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, Stora
 	get_impl::<V>(key)
 }
 
-/// Wrapper for offchain_index remove operations
-pub fn remove_offchain_index_value(key: &[u8]) {
-	offchain_index::clear(key);
-}
-
-/// Wrapper for offchain_index set operations
-pub fn set_offchain_index_value(key: &[u8], value: &[u8]) {
-	offchain_index::set(key, value);
-}
-
-/// Sets a value by the key to offchain index
-pub fn set_index_value<V>(key: &[u8], value: V)
-where
-	V: Encode + Debug,
-{
-	let oci_mem = StorageValueRef::persistent(key);
-	oci_mem.set(&value);
-}
-
 /// Gets a value by the key from persistent storage
 fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, StorageRetrievalError> {
 	let oci_mem = StorageValueRef::persistent(key);
@@ -62,5 +42,91 @@ fn get_impl<V: Decode + Debug>(key: &[u8]) -> Result<Option<V>, StorageRetrieval
 		Ok(Some(data)) => Ok(Some(data)),
 		Ok(None) => Ok(None),
 		Err(_) => Err(StorageRetrievalError::Undecodable),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use sp_core::offchain::{testing, OffchainDbExt, OffchainWorkerExt};
+	use sp_io::TestExternalities;
+
+	#[test]
+	fn get_msa_account_lock_name_should_return_expected_value() {
+		let msa_id: MessageSourceId = 2_000_000;
+		let result = get_msa_account_lock_name(msa_id);
+		assert_eq!(result, b"Msa::ofw::lock::2000000".to_vec());
+	}
+
+	#[test]
+	fn get_msa_account_storage_name_should_return_expected_value() {
+		let msa_id: MessageSourceId = 2_000_000;
+		let result = get_msa_account_storage_key_name(msa_id);
+		assert_eq!(result, b"Msa::ofw::keys::2000000".to_vec());
+	}
+
+	#[test]
+	fn get_index_for_not_set_should_return_none() {
+		let (offchain, _state) = testing::TestOffchainExt::new();
+		let mut t = TestExternalities::default();
+		t.register_extension(OffchainDbExt::new(offchain.clone()));
+		t.register_extension(OffchainWorkerExt::new(offchain));
+
+		t.execute_with(|| {
+			let key = b"my_key";
+			let result = get_index_value::<MessageSourceId>(key);
+			assert_eq!(result, Ok(None));
+		});
+	}
+
+	#[test]
+	fn get_index_for_set_should_return_expected() {
+		// arrange
+		let (offchain, _state) = testing::TestOffchainExt::new();
+		let mut t = TestExternalities::default();
+		t.register_extension(OffchainDbExt::new(offchain.clone()));
+		t.register_extension(OffchainWorkerExt::new(offchain));
+
+		t.execute_with(|| {
+			let key = b"my_key1";
+			let msa_id: MessageSourceId = 1000000;
+			let oci_mem = StorageValueRef::persistent(key);
+			oci_mem.set(&msa_id);
+
+			// act
+			let result = get_index_value::<MessageSourceId>(key);
+
+			// assert
+			assert_eq!(result, Ok(Some(msa_id)));
+		});
+	}
+
+	#[test]
+	fn get_index_for_not_decodable_should_return_error() {
+		let (offchain, _state) = testing::TestOffchainExt::new();
+		let mut t = TestExternalities::default();
+		t.register_extension(OffchainDbExt::new(offchain.clone()));
+		t.register_extension(OffchainWorkerExt::new(offchain));
+
+		#[derive(Debug, Decode, PartialEq)]
+		struct Testing {
+			pub a: u64,
+			pub b: u32,
+			pub c: u16,
+		}
+
+		t.execute_with(|| {
+			// arrange
+			let key = b"my_key2";
+			let msa_id: MessageSourceId = 1000000;
+			let oci_mem = StorageValueRef::persistent(key);
+			oci_mem.set(&msa_id);
+
+			// act
+			let result = get_index_value::<Testing>(key);
+
+			// assert
+			assert_eq!(result, Err(StorageRetrievalError::Undecodable));
+		});
 	}
 }

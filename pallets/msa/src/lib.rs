@@ -263,8 +263,8 @@ pub mod pallet {
 	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_msa_event_count)]
-	pub(super) type MSAEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
+	#[pallet::getter(fn get_offchain_index_event_count)]
+	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -427,7 +427,7 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_block_number: BlockNumberFor<T>) -> Weight {
-			<MSAEventCount<T>>::set(0u16);
+			<OffchainIndexEventCount<T>>::set(0u16);
 			// allocates 1 read and 1 write for any access of `MSAEventCount` in every block
 			T::DbWeight::get().reads_writes(1u64, 1u64)
 		}

@@ -5,7 +5,9 @@ use rpc_mock::*;
 
 use common_primitives::node::BlockNumber;
 use pallet_msa_runtime_api::MsaRuntimeApi;
+use parity_scale_codec::Encode;
 use sp_api::offchain::testing::TestPersistentOffchainDB;
+use sp_core::{offchain::OffchainStorage, sr25519::Public};
 use sp_runtime::traits::Zero;
 use std::{sync::Arc, vec};
 use substrate_test_runtime_client::runtime::{AccountId, Block};
@@ -183,4 +185,51 @@ async fn get_granted_schemas_by_msa_id_with_bad_provider_id() {
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
 	assert!(response.is_none());
+}
+
+#[tokio::test]
+async fn get_keys_by_msa_id_with_disabled_offchain_should_fail() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
+
+	let result = api.get_keys_by_msa_id(NOT_EXIST_MSA);
+
+	assert_eq!(true, result.is_err());
+	assert_eq!("Custom error: OffchainIndexingNotEnabled", result.unwrap_err().to_string());
+}
+
+#[tokio::test]
+async fn get_keys_by_msa_id_with_empty_value_should_work() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(
+		client,
+		Some(TestPersistentOffchainDB::new()),
+	);
+
+	let result = api.get_keys_by_msa_id(NOT_EXIST_MSA);
+
+	assert_eq!(true, result.is_ok());
+	let response = result.unwrap();
+	assert_eq!(None, response);
+}
+
+#[tokio::test]
+async fn get_keys_by_msa_id_with_value_should_work() {
+	let msa_id: MessageSourceId = 10;
+	let accounts = vec![Public([1u8; 32])];
+	let client = Arc::new(TestApi {});
+	let mut db = TestPersistentOffchainDB::new();
+	db.set(
+		sp_offchain::STORAGE_PREFIX,
+		&get_msa_account_storage_key_name(msa_id),
+		&accounts.encode(),
+	);
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, Some(db));
+
+	let result = api.get_keys_by_msa_id(msa_id);
+
+	assert_eq!(true, result.is_ok());
+	let response = result.unwrap();
+	assert_eq!(true, response.is_some());
+	assert_eq!(vec![KeyInfoResponse { msa_id, key: accounts[0] }], response.unwrap());
 }

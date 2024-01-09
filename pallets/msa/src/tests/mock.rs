@@ -12,6 +12,8 @@ use frame_system::EnsureRoot;
 use pallet_collective;
 use parity_scale_codec::MaxEncodedLen;
 use sp_core::{sr25519, sr25519::Public, Encode, Pair, H256};
+use sp_core::offchain::{OffchainDbExt, OffchainWorkerExt, testing};
+use sp_io::TestExternalities;
 use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, MultiSignature,
@@ -209,6 +211,18 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	set_max_public_keys_per_msa(255);
 	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
+	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+pub fn new_test_with_offchain_ext() -> sp_io::TestExternalities {
+	set_max_signature_stored(8000);
+	set_max_public_keys_per_msa(255);
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	let (offchain, _state) = testing::TestOffchainExt::new();
+	ext.register_extension(OffchainDbExt::new(offchain.clone()));
+	ext.register_extension(OffchainWorkerExt::new(offchain));
 	ext.execute_with(|| System::set_block_number(1));
 	ext
 }

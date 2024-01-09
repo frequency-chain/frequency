@@ -88,6 +88,8 @@ pub enum MsaOffchainRpcError {
 	ErrorAcquiringLLock,
 	/// Error decoding data
 	ErrorDecodingData,
+	/// Offchain indexing is not enabled
+	OffchainIndexingNotEnabled,
 }
 
 impl From<MsaOffchainRpcError> for JsonRpseeError {
@@ -161,7 +163,7 @@ where
 		let reader = self.offchain.try_read().ok_or(MsaOffchainRpcError::ErrorAcquiringLLock)?;
 		let raw: Option<Bytes> = reader
 			.as_ref()
-			.ok_or(MsaOffchainRpcError::ErrorAcquiringLLock)?
+			.ok_or(MsaOffchainRpcError::OffchainIndexingNotEnabled)?
 			.get(sp_offchain::STORAGE_PREFIX, &msa_key)
 			.map(Into::into);
 		if let Some(rr) = raw {
@@ -173,8 +175,8 @@ where
 				.map(|account_id| KeyInfoResponse { msa_id, key: account_id })
 				.collect();
 
-			return RpcResult::Ok(Some(res))
+			return Ok(Some(res))
 		}
-		RpcResult::Ok(None)
+		Ok(None)
 	}
 }

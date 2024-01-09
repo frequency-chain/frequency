@@ -295,7 +295,10 @@ async fn start_node_impl(
 	let rpc_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
-		let backend = backend.offchain_storage();
+		let backend = match parachain_config.offchain_worker.enabled {
+			true => backend.offchain_storage(),
+			false => None,
+		};
 
 		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
