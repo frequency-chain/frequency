@@ -39,13 +39,13 @@ const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 20;
 const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
 
 /// storage name for initial data import storage
-const MSA_INITIAL_INDEXED_STORAGE_NAME: &[u8; 25] = b"Msa::ofw::initial-indexed";
+pub const MSA_INITIAL_INDEXED_STORAGE_NAME: &[u8; 25] = b"Msa::ofw::initial-indexed";
 
 /// Lock name for last processed block number events
 const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-block-lock";
 
 /// lst processed block storage name
-const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
+pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
 
 /// Lock expiration timeout in in milli-seconds for last processed block
 const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
@@ -66,7 +66,8 @@ pub const HTTP_REQUEST_DEADLINE_MILLISECONDS: u64 = 2000;
 /// warning: this should be updated if rpc port is set to anything different from 9944
 pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &'static str = "http://localhost:9944";
 /// request body for getting last finalized block from rpc
-pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] = b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
+pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] =
+	b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
 
 /// stores the event into offchain DB using offchain indexing
 pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId) {
@@ -82,11 +83,11 @@ pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId
 		]
 		.concat();
 		// set the event in offchain storage
-		set_offchain_index(event_key.encode().as_slice(), event);
+		set_offchain_index(&event_key, event);
 
 		let count_key = [BLOCK_EVENT_COUNT_KEY, block_number.encode().as_slice()].concat();
 		// Set the latest count of event in current block
-		set_offchain_index(count_key.encode().as_slice(), current_event_count);
+		set_offchain_index(&count_key, current_event_count);
 	}
 }
 
@@ -146,13 +147,12 @@ pub fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 
 		let last_processed_block_storage =
 			StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
+		let default_starting_block_number = block_number
+			.saturating_sub(BlockNumberFor::<T>::from(NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK));
 		let mut start_block_number = last_processed_block_storage
 			.get::<BlockNumberFor<T>>()
-			.unwrap_or(Some(
-				block_number
-					.saturating_sub(BlockNumberFor::<T>::from(NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK)),
-			))
-			.unwrap_or_default();
+			.unwrap_or(Some(default_starting_block_number))
+			.unwrap_or(default_starting_block_number);
 
 		// since this is the last processed block number we already processed it and starting from the next one
 		start_block_number += BlockNumberFor::<T>::one();
@@ -245,8 +245,9 @@ fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>)
 		StorageValueRef::persistent(LAST_PROCESSED_BLOCK_STORAGE_NAME);
 
 	// setting current_block-1 as the last processed so that we start indexing from current_block
-	last_processed_block_storage
-		.set(&current_block_number.saturating_sub(BlockNumberFor::<T>::one()));
+	let target_block: BlockNumberFor<T> =
+		current_block_number.saturating_sub(BlockNumberFor::<T>::one());
+	last_processed_block_storage.set(&target_block);
 }
 
 /// Add a key into MSA offchain DB
@@ -274,14 +275,14 @@ fn add_key_to_offchain_msa<T: Config>(key: T::AccountId, msa_id: MessageSourceId
 fn read_offchain_events<T: Config>(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
 	let current_block: u32 = block_number.try_into().unwrap_or_default();
 	let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-	let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
+	let optional_event_count = get_offchain_index::<u16>(&count_key);
 	let mut events = vec![];
 	let event_count = optional_event_count.unwrap_or_default();
 
 	for i in 1..=event_count {
 		let key =
 			[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
-		let optional_decoded_event = get_offchain_index::<IndexedEvent<T>>(key.encode().as_slice());
+		let optional_decoded_event = get_offchain_index::<IndexedEvent<T>>(&key);
 		if let Some(decoded_event) = optional_decoded_event {
 			events.push(decoded_event);
 		} else {
@@ -387,9 +388,10 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 	}
 	msa_storage.set(&msa_keys);
 }
-
+/// Response type of rpc to get finalized block
 #[derive(Serialize, Deserialize, Encode, Decode, Default, Debug)]
 pub struct FinalizedBlockResponse {
+	/// Hex encoded hash of last finalized block
 	pub result: String,
 }
 
@@ -430,10 +432,11 @@ pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::htt
 	})?;
 
 	log::debug!("{}", body_str);
-	let gh_info: FinalizedBlockResponse =
+	let finalized_block_response: FinalizedBlockResponse =
 		serde_json::from_str(body_str).map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 
-	let decoded_from_hex = hex::decode(&gh_info.result[2..])
+	// skipping 0x on front
+	let decoded_from_hex = hex::decode(&finalized_block_response.result[2..])
 		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 
 	let val = T::Hash::decode(&mut &decoded_from_hex[..])

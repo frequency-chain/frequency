@@ -45,6 +45,7 @@ pallet-collective = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }
 pretty_assertions = { workspace = true }
+parking_lot = "0.12.1"
 
 [features]
 default = ["std"]
