@@ -92,7 +92,6 @@ use sp_std::prelude::*;
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
-use keys::*;
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -108,8 +107,6 @@ mod benchmarking;
 mod tests;
 
 pub mod types;
-
-mod keys;
 
 pub mod weights;
 #[frame_support::pallet]
@@ -468,53 +465,6 @@ pub mod pallet {
 					apply_offchain_events::<T>(finalized_block_number);
 				},
 			}
-		}
-	}
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		/// Maximum schema size in bytes at genesis
-		pub accounts: u32,
-		/// Phantom type
-		#[serde(skip)]
-		pub _config: PhantomData<T>,
-	}
-
-	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
-		fn default() -> Self {
-			Self { accounts: 400_000, _config: Default::default() }
-		}
-	}
-	#[pallet::genesis_build]
-	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) {
-			let known_keys: Vec<[u8; 32]> = get_keys();
-			let key_size = known_keys.len();
-			log::info!("Genesis {}", self.accounts as usize + key_size);
-
-			for mut n in 1..=self.accounts {
-				let mut raw = [0u8; 32];
-				let mut c = 0usize;
-				while n > 0 {
-					raw[c] = (n % 10) as u8;
-					c += 1;
-					n /= 10;
-				}
-				let new_key = AccountId32::new(raw);
-				let public_key =
-					T::AccountId::decode(&mut &new_key.encode()[..]).expect("should decode");
-				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
-			}
-			log::info!("Finished adding {} random keys", self.accounts);
-
-			for k in known_keys {
-				let new_key = AccountId32::new(k);
-				let public_key =
-					T::AccountId::decode(&mut &new_key.encode()[..]).expect("should decode");
-				let _ = Pallet::<T>::create_account(public_key, |_| -> DispatchResult { Ok(()) });
-			}
-			log::info!("Finished adding {} known keys", key_size);
-			log::info!("Genesis done creating");
 		}
 	}
 

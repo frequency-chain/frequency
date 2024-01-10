@@ -330,7 +330,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 68,
+	spec_version: 69,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +344,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-rococo"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 68,
+	spec_version: 69,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1124,7 +1124,7 @@ construct_runtime!(
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, FreezeReason} = 40,
 
 		// Frequency related pallets
-		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>, Config<T>} = 60,
+		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>, Config<T>} = 62,
 		StatefulStorage: pallet_stateful_storage::{Pallet, Call, Storage, Event<T>} = 63,

@@ -16,57 +16,6 @@ use common_primitives::{
 	utils::wrap_binary_data,
 };
 
-// #[test]
-// pub fn iteration_test() {
-// 	new_test_ext().execute_with(|| {
-// 		let b = b"Msa::ofw::keys::100";
-// 		for i in 0..500 {
-// 			let _ = create_account();
-// 		}
-//
-// 		let mut map: BTreeMap<u64, Vec<AccountId32>> = BTreeMap::new();
-// 		let mut count = 0u32;
-// 		for (account_id, msa_id) in PublicKeyToMsaId::<Test>::iter() {
-// 			map.entry(msa_id)
-// 				.and_modify(|v| v.push(account_id.clone()))
-// 				.or_insert(vec![account_id.clone()]);
-// 			println!("{}", account_id);
-// 		}
-//
-// 		println!("");
-//
-// 		let mut added = 0u32;
-// 		for (account_id, msa_id) in PublicKeyToMsaId::<Test>::iter() {
-// 			println!("{}", account_id);
-// 			count += 1;
-//
-// 			if count % 10 == 0 {
-// 				let _ = create_account();
-// 				added += 1;
-// 			}
-// 		}
-//
-// 		let after = PublicKeyToMsaId::<Test>::iter().count();
-//
-// 		assert_eq!(map.len(), 1000);
-// 		assert_eq!(after, 1100);
-// 		assert_eq!(count, 1000);
-// 	});
-// }
-
-// #[test]
-// pub fn print_keys() {
-// 	new_test_ext().execute_with(|| {
-// 		for _ in 0..1000 {
-// 			let (key_pair, phrase, seed) = sr25519::Pair::generate_with_phrase(None);
-// 			println!("public: {:?}", key_pair.public().0);
-// 			println!("nice: {:?}", key_pair.public());
-// 			println!("phrase: {:?}", phrase);
-// 			println!("seed: {:?}", seed);
-// 		}
-// 	});
-// }
-
 #[test]
 pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed() {
 	new_test_ext().execute_with(|| {

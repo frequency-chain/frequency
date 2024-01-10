@@ -241,6 +241,5 @@ fn testnet_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
-		msa: Default::default(),
 	}
 }
