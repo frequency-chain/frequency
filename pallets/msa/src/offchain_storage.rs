@@ -33,7 +33,7 @@ const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
 const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION: u64 = 3000;
 
 /// Lock expiration block for initial data import msa pallet
-const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 20;
+const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 30;
 
 /// Lock name for initial data index for msa pallet
 const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
@@ -50,8 +50,8 @@ pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-proces
 /// Lock expiration timeout in in milli-seconds for last processed block
 const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
 
-/// Lock expiration block for initial data import msa pallet
-const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 2;
+/// Lock expiration for last processed block
+const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 20;
 
 /// number of previous blocks to check to mitigate offchain worker skips processing any block
 const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
