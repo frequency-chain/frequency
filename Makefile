@@ -75,7 +75,7 @@ lint:
 	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
 
 lint-audit:
-	cargo deny check -c .cargo-deny.toml
+	cargo deny check -c deny.toml
 
 .PHONY: format-lint
 format-lint: format lint

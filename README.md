@@ -295,7 +295,7 @@ make benchmarks
     the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
 
 - Alternatively, run `make format-lint` to run both at the same time.
-- Run `cargo-deny` to audit `Cargo.lock` files for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
+- Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
 
 # Runtime
 
