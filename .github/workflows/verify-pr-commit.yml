@@ -187,7 +187,7 @@ jobs:
           cargo install --force cargo-deny
           cargo generate-lockfile
       - name: Run Cargo Deny
-        run: cargo deny check --hide-inclusion-graph -c .cargo-deny.toml
+        run: cargo deny check --hide-inclusion-graph -c deny.toml
 
   verify-rust-code-format:
     needs: changes

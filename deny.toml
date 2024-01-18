@@ -128,8 +128,10 @@ copyleft = "allow"
 # Blanket approval or denial for OSI-approved or FSF Free/Libre licenses
 # * both - The license will be approved if it is both OSI-approved *AND* FSF
 # * either - The license will be approved if it is either OSI-approved *OR* FSF
-# * osi-only - The license will be approved if is OSI-approved *AND NOT* FSF
-# * fsf-only - The license will be approved if is FSF *AND NOT* OSI-approved
+# * osi - The license will be approved if it is OSI approved
+# * fsf - The license will be approved if it is FSF Free
+# * osi-only - The license will be approved if it is OSI-approved *AND NOT* FSF
+# * fsf-only - The license will be approved if it is FSF *AND NOT* OSI-approved
 # * neither - This predicate is ignored and the default lint level is used
 allow-osi-fsf-free = "either"
 # Lint level used when no other predicates are matched
@@ -198,11 +200,11 @@ wildcards = "allow"
 # * all - Both lowest-version and simplest-path are used
 highlight = "all"
 # The default lint level for `default` features for crates that are members of
-# the workspace that is being checked. This can be overriden by allowing/denying
+# the workspace that is being checked. This can be overridden by allowing/denying
 # `default` on a crate-by-crate basis if desired.
 workspace-default-features = "allow"
 # The default lint level for `default` features for external crates that are not
-# members of the workspace. This can be overriden by allowing/denying `default`
+# members of the workspace. This can be overridden by allowing/denying `default`
 # on a crate-by-crate basis if desired.
 external-default-features = "allow"
 # List of crates that are allowed. Use with care!
