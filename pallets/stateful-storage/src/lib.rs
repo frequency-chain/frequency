@@ -273,8 +273,14 @@ pub mod pallet {
 		) -> DispatchResult {
 			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_schema_for_write(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
-			Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id = Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
+			let is_signed = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Itemized,
+				is_signed,
+				is_pruning,
+			)?;
 			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
 		}
@@ -296,8 +302,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, false)?;
-			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id =
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let is_signed = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, is_signed, false)?;
 			Self::update_paginated(
 				state_owner_msa_id,
 				schema_id,
@@ -324,8 +332,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, true)?;
-			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id =
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let is_signed = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, is_signed, true)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}
