@@ -44,7 +44,7 @@ export default {
           type: "MessageSourceId",
         },
       ],
-      type: "Option<Vec<KeyInfoResponse>>",
+      type: "Option<KeyInfoResponse>",
     },
   },
   types: {
@@ -52,7 +52,7 @@ export default {
     DelegatorId: "MessageSourceId",
     ProviderId: "MessageSourceId",
     KeyInfoResponse: {
-      key: "AccountId",
+      msa_keys: "Vec<AccountId>",
       msa_id: "MessageSourceId",
     },
     SchemaGrantResponse: {

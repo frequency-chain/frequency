@@ -16,6 +16,7 @@ twox-hash = { version = "1.6.3", default-features = false, features = ["digest_0
 thiserror = "1.0.40"
 apache-avro = { version = "0.14.0", default-features = false }
 rand = "0.8.5"
+parking_lot = "0.12.1"
 
 # substrate wasm
 parity-scale-codec = { version = "3.6.1", default-features = false }
@@ -98,7 +99,7 @@ parachain-info = {git = "https://github.com/paritytech/polkadot-sdk", branch = "
 # client
 derive_more = "0.99.17"
 futures = "0.3.25"
-hex = "0.4.3"
+hex = { version = "0.4.3", default-features = false }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
 jsonrpsee = { version = "0.16.2", default-features = false }

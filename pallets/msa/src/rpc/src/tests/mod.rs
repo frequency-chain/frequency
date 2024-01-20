@@ -216,7 +216,7 @@ async fn get_keys_by_msa_id_with_empty_value_should_work() {
 #[tokio::test]
 async fn get_keys_by_msa_id_with_value_should_work() {
 	let msa_id: MessageSourceId = 10;
-	let accounts = vec![Public([1u8; 32])];
+	let accounts = vec![Public([1u8; 32]), Public([2u8; 32]), Public([5u8; 32])];
 	let client = Arc::new(TestApi {});
 	let mut db = TestPersistentOffchainDB::new();
 	db.set(
@@ -231,5 +231,5 @@ async fn get_keys_by_msa_id_with_value_should_work() {
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(true, response.is_some());
-	assert_eq!(vec![KeyInfoResponse { msa_id, key: accounts[0] }], response.unwrap());
+	assert_eq!(KeyInfoResponse { msa_id, msa_keys: accounts }, response.unwrap());
 }

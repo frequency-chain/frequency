@@ -5,7 +5,7 @@ use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_std::{fmt::Debug, vec, vec::Vec};
 
 /// Lock expiration timeout in in milli-seconds for msa pallet per msa account
-pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION: u64 = 50;
+pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account
 pub const MSA_ACCOUNT_LOCK_NAME_PREFIX: &[u8; 16] = b"Msa::ofw::lock::";
 /// Offchain storage prefix for msa account

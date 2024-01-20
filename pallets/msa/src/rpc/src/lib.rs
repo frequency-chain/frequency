@@ -61,7 +61,7 @@ pub trait MsaApi<BlockHash, AccountId> {
 	fn get_keys_by_msa_id(
 		&self,
 		msa_id: MessageSourceId,
-	) -> RpcResult<Option<Vec<KeyInfoResponse<AccountId>>>>;
+	) -> RpcResult<Option<KeyInfoResponse<AccountId>>>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -85,7 +85,7 @@ where
 #[derive(Debug)]
 pub enum MsaOffchainRpcError {
 	/// Error acquiring lock
-	ErrorAcquiringLLock,
+	ErrorAcquiringLock,
 	/// Error decoding data
 	ErrorDecodingData,
 	/// Offchain indexing is not enabled
@@ -158,9 +158,9 @@ where
 	fn get_keys_by_msa_id(
 		&self,
 		msa_id: MessageSourceId,
-	) -> RpcResult<Option<Vec<KeyInfoResponse<AccountId>>>> {
+	) -> RpcResult<Option<KeyInfoResponse<AccountId>>> {
 		let msa_key = get_msa_account_storage_key_name(msa_id);
-		let reader = self.offchain.try_read().ok_or(MsaOffchainRpcError::ErrorAcquiringLLock)?;
+		let reader = self.offchain.try_read().ok_or(MsaOffchainRpcError::ErrorAcquiringLock)?;
 		let raw: Option<Bytes> = reader
 			.as_ref()
 			.ok_or(MsaOffchainRpcError::OffchainIndexingNotEnabled)?
@@ -168,14 +168,9 @@ where
 			.map(Into::into);
 		if let Some(rr) = raw {
 			let inside = rr.0;
-			let decoded = Vec::<AccountId>::decode(&mut &inside[..])
+			let keys = Vec::<AccountId>::decode(&mut &inside[..])
 				.map_err(|_| MsaOffchainRpcError::ErrorDecodingData)?;
-			let res: Vec<KeyInfoResponse<AccountId>> = decoded
-				.into_iter()
-				.map(|account_id| KeyInfoResponse { msa_id, key: account_id })
-				.collect();
-
-			return Ok(Some(res))
+			return Ok(Some(KeyInfoResponse { msa_id, msa_keys: keys }))
 		}
 		Ok(None)
 	}

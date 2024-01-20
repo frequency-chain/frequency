@@ -135,7 +135,6 @@ start-frequency-interval)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --sealing-create-empty-blocks \
     $offchain_params \
     --tmp
   ;;

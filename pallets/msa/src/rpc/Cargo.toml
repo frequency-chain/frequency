@@ -24,7 +24,7 @@ sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-core = { workspace = true }
 sp-offchain = { workspace = true }
-parking_lot = "0.12.1"
+parking_lot = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }

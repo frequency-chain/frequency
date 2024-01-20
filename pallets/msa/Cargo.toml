@@ -33,7 +33,7 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = [
 	"alloc",
 ] }
-hex = { version = "0.4", default-features = false, features = [
+hex = { workspace = true, default-features = false, features = [
 	"alloc",
 ] }
 
@@ -45,7 +45,7 @@ pallet-collective = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }
 pretty_assertions = { workspace = true }
-parking_lot = "0.12.1"
+parking_lot = { workspace = true }
 
 [features]
 default = ["std"]

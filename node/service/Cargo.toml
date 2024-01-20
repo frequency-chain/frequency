@@ -14,7 +14,7 @@ parity-scale-codec = { workspace = true }
 
 derive_more = { workspace = true }
 futures = { workspace = true }
-hex = { workspace = true }
+hex = { workspace = true, default-features = true }
 hex-literal = { workspace = true }
 
 jsonrpsee = { workspace = true, features = ["server"] }

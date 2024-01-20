@@ -3,7 +3,7 @@ pub use common_primitives::msa::MessageSourceId;
 /// Offchain Storage for MSA
 use common_primitives::offchain::{
 	self as offchain_common, get_msa_account_lock_name, get_msa_account_storage_key_name,
-	LockStatus, MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION,
+	LockStatus, MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS,
 };
 use frame_support::RuntimeDebugNoBound;
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -30,10 +30,10 @@ const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
 const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
 
 /// Lock expiration timeout in in milli-seconds for initial data import msa pallet
-const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION: u64 = 3000;
+const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 3000;
 
 /// Lock expiration block for initial data import msa pallet
-const MSA_INITIAL_LOCK_BLOCK_EXPIRATION: u32 = 30;
+const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 30;
 
 /// Lock name for initial data index for msa pallet
 const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
@@ -48,10 +48,10 @@ const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-blo
 pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
 
 /// Lock expiration timeout in in milli-seconds for last processed block
-const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION: u64 = 5000;
+const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 5000;
 
 /// Lock expiration for last processed block
-const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION: u32 = 20;
+const LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 20;
 
 /// number of previous blocks to check to mitigate offchain worker skips processing any block
 const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
@@ -60,7 +60,7 @@ const NUMBER_OF_PREVIOUS_BLOCKS_TO_CHECK: u32 = 5u32;
 const NUMBER_OF_BLOCKS_TO_EXPLORE: u32 = 1000;
 
 /// HTTP request deadline in milliseconds
-pub const HTTP_REQUEST_DEADLINE_MILLISECONDS: u64 = 2000;
+pub const HTTP_REQUEST_DEADLINE_MS: u64 = 2000;
 
 /// LOCAL RPC URL and port
 /// warning: this should be updated if rpc port is set to anything different from 9944
@@ -69,6 +69,19 @@ pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &'static str = "http://localhost:9944
 pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] =
 	b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
 
+/// offchain worker main execution function
+pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {
+	if let Some(finalized_block_number) = get_finalized_block_number::<T>(block_number) {
+		match offchain_index_initial_state::<T>(finalized_block_number) {
+			LockStatus::Locked => {
+				log::info!("initiating-index is still locked in {:?}", block_number);
+			},
+			LockStatus::Released => {
+				apply_offchain_events::<T>(finalized_block_number);
+			},
+		}
+	};
+}
 /// stores the event into offchain DB using offchain indexing
 pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId) {
 	if let Some(event) = IndexedEvent::map(event, msa_id) {
@@ -93,11 +106,11 @@ pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId
 
 /// Offchain indexes all existing data in chain state
 /// returns the LockStatus
-pub fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> LockStatus {
+fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> LockStatus {
 	let mut lock = StorageLock::<BlockAndTime<Pallet<T>>>::with_block_and_time_deadline(
 		MSA_INITIAL_LOCK_NAME,
-		MSA_INITIAL_LOCK_BLOCK_EXPIRATION,
-		Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION),
+		MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS,
+		Duration::from_millis(MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS),
 	);
 	if let Ok(mut guard) = lock.try_lock() {
 		let processed_storage = StorageValueRef::persistent(MSA_INITIAL_INDEXED_STORAGE_NAME);
@@ -112,7 +125,10 @@ pub fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) 
 
 			let mut counter = 0u64;
 			for (account_id, msa_id) in PublicKeyToMsaId::<T>::iter() {
-				add_key_to_offchain_msa::<T>(account_id, msa_id);
+				process_offchain_events::<T>(
+					msa_id,
+					vec![IndexedEvent::IndexedPublicKeyAdded { key: account_id, msa_id }],
+				);
 
 				// extend the initial index lock
 				counter += 1;
@@ -135,11 +151,11 @@ pub fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) 
 }
 
 /// apply offchain event into offchain DB
-pub fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
+fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 	let mut lock = StorageLock::<BlockAndTime<Pallet<T>>>::with_block_and_time_deadline(
 		LAST_PROCESSED_BLOCK_LOCK_NAME,
-		LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION,
-		Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION),
+		LAST_PROCESSED_BLOCK_LOCK_BLOCK_EXPIRATION_BLOCKS,
+		Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION_MS),
 	);
 
 	if let Ok(mut guard) = lock.try_lock() {
@@ -167,7 +183,7 @@ pub fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 			start_block_number += BlockNumberFor::<T>::one();
 		}
 	} else {
-		log::info!("skipping processing events on {:?} due to existing lock!", block_number);
+		log::info!("skip processing events on {:?} due to existing lock!", block_number);
 	};
 }
 
@@ -238,7 +254,7 @@ impl<T: Config> IndexedEvent<T> {
 fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>) {
 	let mut last_processed_block_lock = StorageLock::<'_, Time>::with_deadline(
 		LAST_PROCESSED_BLOCK_LOCK_NAME,
-		Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION),
+		Duration::from_millis(LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION_MS),
 	);
 	let _ = last_processed_block_lock.lock();
 	let last_processed_block_storage =
@@ -248,28 +264,6 @@ fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>)
 	let target_block: BlockNumberFor<T> =
 		current_block_number.saturating_sub(BlockNumberFor::<T>::one());
 	last_processed_block_storage.set(&target_block);
-}
-
-/// Add a key into MSA offchain DB
-fn add_key_to_offchain_msa<T: Config>(key: T::AccountId, msa_id: MessageSourceId) {
-	let msa_lock_name = get_msa_account_lock_name(msa_id);
-	let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
-		&msa_lock_name,
-		Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
-	);
-	let _ = msa_lock.lock();
-	let msa_storage_name = get_msa_account_storage_key_name(msa_id);
-	let msa_storage = StorageValueRef::persistent(&msa_storage_name);
-
-	let mut msa_keys =
-		msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or(Vec::default());
-
-	if !msa_keys.contains(&key) {
-		msa_keys.push(key.clone());
-		msa_storage.set(&msa_keys);
-	} else {
-		log::warn!("{:?} already added!", &key);
-	}
 }
 
 fn read_offchain_events<T: Config>(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
@@ -306,9 +300,9 @@ fn clean_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 		let key =
 			[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
 
-		offchain_index::clear(key.encode().as_slice());
+		offchain_index::clear(&key);
 	}
-	offchain_index::clear(count_key.encode().as_slice());
+	offchain_index::clear(&count_key);
 }
 
 /// offchain worker callback for indexing msa keys
@@ -356,11 +350,10 @@ fn reverse_map_msa_keys<T: Config>(block_number: BlockNumberFor<T>) -> bool {
 fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<IndexedEvent<T>>) {
 	// Lock will specifically prevent multiple offchain workers from
 	// processing the same msa events at the same time
-	// let lock_status = offchain_common::lock(b"msa::", msa_id.encode().as_slice(), || {
 	let msa_lock_name = get_msa_account_lock_name(msa_id);
 	let mut msa_lock = StorageLock::<'_, Time>::with_deadline(
 		&msa_lock_name,
-		Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION),
+		Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS),
 	);
 	let _ = msa_lock.lock();
 	let msa_storage_name = get_msa_account_storage_key_name(msa_id);
@@ -395,14 +388,14 @@ pub struct FinalizedBlockResponse {
 	pub result: String,
 }
 
-/// get finalized
-pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
+/// fetches finalized block hash from rpc
+fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
 	// You can also wait indefinitely for the response, however you may still get a timeout
 	// coming from the host machine.
 	let deadline =
-		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MILLISECONDS));
+		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MS));
 	let body = vec![RPC_FINALIZED_BLOCK_REQUEST_BODY];
 	let request = sp_runtime::offchain::http::Request::post(RPC_FINALIZED_BLOCK_REQUEST_URL, body);
 	let pending = request
@@ -444,21 +437,46 @@ pub fn fetch_finalized<T: Config>() -> Result<T::Hash, sp_runtime::offchain::htt
 	Ok(val)
 }
 
-/// iterates on imported blocks to find the block_number from block_hash
-pub fn find_block_number_from_block_hash<T: Config>(
-	block_hash: T::Hash,
+/// fetch finalized block hash and convert it to block number
+fn get_finalized_block_number<T: Config>(
 	current_block: BlockNumberFor<T>,
 ) -> Option<BlockNumberFor<T>> {
 	let mut finalized_block_number = None;
+	let last_finalized_hash = match fetch_finalized_block_hash::<T>() {
+		Ok(hash) => hash,
+		Err(e) => {
+			log::error!("failure to get the finalized hash {:?}", e);
+			return finalized_block_number
+		},
+	};
+
+	// iterates on imported blocks to find the block_number from block_hash
 	let mut current_block_number = current_block;
 	let last_block_number =
 		current_block.saturating_sub(BlockNumberFor::<T>::from(NUMBER_OF_BLOCKS_TO_EXPLORE));
 	while current_block_number > last_block_number {
-		if block_hash == frame_system::Pallet::<T>::block_hash(current_block_number) {
+		if last_finalized_hash == frame_system::Pallet::<T>::block_hash(current_block_number) {
 			finalized_block_number = Some(current_block_number);
 			break
 		}
 		current_block_number.saturating_dec();
 	}
-	return finalized_block_number
+
+	match finalized_block_number {
+		None => {
+			log::error!(
+				"Not able to find any imported block with {:?} hash and {:?} block",
+				last_finalized_hash,
+				current_block
+			);
+		},
+		Some(inner) => {
+			log::info!(
+				"last finalized block number {:?} and hash {:?}",
+				inner,
+				last_finalized_hash
+			);
+		},
+	}
+	finalized_block_number
 }
