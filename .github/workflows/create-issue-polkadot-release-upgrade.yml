@@ -14,6 +14,9 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Check if release starts with p
+        run: |
+          [[ $RELEASE_TRACK_FILENAME == p* ]]
       - name: Set Env Vars
         run: |
           release_version=$(cat ${{env.RELEASE_TRACK_FILENAME}})
