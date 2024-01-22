@@ -14,7 +14,7 @@ use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::{sr25519, Get, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{AccountId32, MultiSignature};
 
 #[test]
 fn apply_item_actions_with_invalid_msa_should_fail() {
@@ -763,24 +763,47 @@ fn apply_item_actions_with_signature_having_corrupted_state_should_fail() {
 }
 
 #[test]
-fn apply_item_actions_on_signature_schema_fails() {
+fn apply_item_actions_on_signature_schema_fails_for_non_owner() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let caller_1 = test_public(1);
-		let msa_id = 1;
+		// Note: normal use case for this test would be called by a delegate;
+		// we don't bother setting up the delegation because the call should fail
+		// before we check the delegation, as long as the owner_msa_id != caller_msa_id
+		let (caller_msa_id, caller_keys) = get_signature_account();
+		let owner_msa_id = caller_msa_id.saturating_add(1);
+		let caller_1: AccountId32 = caller_keys.public().into();
 		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
 		let payload = vec![1; 5];
 		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
 		assert_err!(
 			StatefulStoragePallet::apply_item_actions(
 				RuntimeOrigin::signed(caller_1),
-				msa_id,
+				owner_msa_id,
 				schema_id,
 				NONEXISTENT_PAGE_HASH,
 				BoundedVec::try_from(actions1).unwrap(),
 			),
 			Error::<Test>::UnsupportedOperationForSchema
 		);
+	});
+}
+
+#[test]
+fn apply_item_actions_on_signature_schema_succeeds_for_owner() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (msa_id, caller_keys) = get_signature_account();
+		let caller_1: AccountId32 = caller_keys.public().into();
+		let schema_id = ITEMIZED_SIGNATURE_REQUIRED_SCHEMA;
+		let payload = vec![1; 5];
+		let actions1 = vec![ItemAction::Add { data: payload.try_into().unwrap() }];
+		assert_ok!(StatefulStoragePallet::apply_item_actions(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			NONEXISTENT_PAGE_HASH,
+			BoundedVec::try_from(actions1).unwrap(),
+		));
 	});
 }
 
