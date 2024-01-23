@@ -33,7 +33,7 @@ const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
 const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 3000;
 
 /// Lock expiration block for initial data import msa pallet
-const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 30;
+const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 40;
 
 /// Lock name for initial data index for msa pallet
 const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
@@ -237,14 +237,14 @@ enum IndexedEvent<T: Config> {
 
 impl<T: Config> IndexedEvent<T> {
 	/// maps a pallet event to indexed event type
-	pub fn map(event: &Event<T>, msa_id: MessageSourceId) -> Option<Self> {
+	pub fn map(event: &Event<T>, event_msa_id: MessageSourceId) -> Option<Self> {
 		match event {
 			Event::MsaCreated { msa_id, key } =>
 				Some(Self::IndexedMsaCreated { msa_id: *msa_id, key: key.clone() }),
 			Event::PublicKeyAdded { msa_id, key } =>
 				Some(Self::IndexedPublicKeyAdded { msa_id: *msa_id, key: key.clone() }),
 			Event::PublicKeyDeleted { key } =>
-				Some(Self::IndexedPublicKeyDeleted { msa_id, key: key.clone() }),
+				Some(Self::IndexedPublicKeyDeleted { msa_id: event_msa_id, key: key.clone() }),
 			_ => None,
 		}
 	}
@@ -294,7 +294,7 @@ fn read_offchain_events<T: Config>(block_number: BlockNumberFor<T>) -> Vec<Index
 fn clean_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 	let current_block: u32 = block_number.try_into().unwrap_or_default();
 	let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-	let optional_event_count = get_offchain_index::<u16>(count_key.encode().as_slice());
+	let optional_event_count = get_offchain_index::<u16>(&count_key);
 	let event_count = optional_event_count.unwrap_or_default();
 	for i in 1..=event_count {
 		let key =
