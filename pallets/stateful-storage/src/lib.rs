@@ -279,11 +279,11 @@ pub mod pallet {
 			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
 			let caller_msa_id = Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
-			let is_signed = caller_msa_id == state_owner_msa_id;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
 			Self::check_schema_for_write(
 				schema_id,
 				PayloadLocation::Itemized,
-				is_signed,
+				caller_is_state_owner,
 				is_pruning,
 			)?;
 			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
@@ -314,8 +314,13 @@ pub mod pallet {
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
 			let caller_msa_id =
 				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
-			let is_signed = caller_msa_id == state_owner_msa_id;
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, is_signed, false)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Paginated,
+				caller_is_state_owner,
+				false,
+			)?;
 			Self::update_paginated(
 				state_owner_msa_id,
 				schema_id,
@@ -349,8 +354,13 @@ pub mod pallet {
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
 			let caller_msa_id =
 				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
-			let is_signed = caller_msa_id == state_owner_msa_id;
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, is_signed, true)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Paginated,
+				caller_is_state_owner,
+				true,
+			)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}
