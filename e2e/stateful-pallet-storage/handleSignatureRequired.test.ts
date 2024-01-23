@@ -3,7 +3,6 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
   DOLLARS,
-  createDelegator,
   createDelegatorAndDelegation,
   createProviderKeysAndId,
   generateItemizedActions,

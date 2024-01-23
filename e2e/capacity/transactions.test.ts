@@ -32,7 +32,6 @@ import {
   getOrCreateAvroChatMessageItemizedSchema,
   getOrCreateParquetBroadcastSchema,
   getOrCreateAvroChatMessagePaginatedSchema,
-  generateItemizedSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
@@ -387,7 +386,7 @@ describe('Capacity Transactions', function () {
           const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedSchemaId);
 
           const add_actions = [add_action, update_action];
-          const payload = await generateItemizedSignaturePayloadV2({
+          const payload = await generateItemizedSignaturePayload({
             targetHash: target_hash,
             schemaId: itemizedSchemaId,
             actions: add_actions,
