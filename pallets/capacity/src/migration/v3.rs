@@ -164,7 +164,6 @@ mod test {
 		StakingAccountLedger, StakingDetails,
 		StakingType::MaximumCapacity,
 	};
-	use frame_support::storage::generator::StorageMap;
 	use pallet_balances::{BalanceLock, Reasons};
 
 	type MigrationOf<T> = MigrationToV3<T, pallet_balances::Pallet<T>>;
