@@ -252,7 +252,7 @@ pub mod pallet {
 		/// Applies the Add or Delete Actions on the requested Itemized page.
 		/// This is treated as a transaction so either all actions succeed or none will be executed.
 		///
-		/// Note: if called by the schema owner, call may succeed even on `SignatureRequired` schemas.
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
 		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
 		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
 		/// submitting this extrinsic on behalf of a user would fail.
@@ -292,7 +292,7 @@ pub mod pallet {
 
 		/// Creates or updates an Paginated storage with new payload
 		///
-		/// Note: if called by the schema owner, call may succeed even on `SignatureRequired` schemas.
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
 		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
 		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
 		/// submitting this extrinsic on behalf of a user would fail.
@@ -328,7 +328,7 @@ pub mod pallet {
 
 		/// Deletes a Paginated storage
 		///
-		/// Note: if called by the schema owner, call may succeed even on `SignatureRequired` schemas.
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
 		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
 		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
 		/// submitting this extrinsic on behalf of a user would fail.
