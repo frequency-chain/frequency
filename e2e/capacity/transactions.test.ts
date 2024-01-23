@@ -39,7 +39,6 @@ import {
   getTestHandle,
   assertHasMessage,
   assertAddNewKey,
-  drainKeys,
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { ipfsCid } from '../messages/ipfs';
@@ -589,11 +588,20 @@ describe('Capacity Transactions', function () {
         it('successfully pays with Capacity for eligible transaction - claimHandle [balance < ED]', async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
           // Empty the account to ensure the balance is less than ED
-          await drainKeys([capacityKeys], fundingSource.address);
+          await ExtrinsicHelper.emptyAccount(capacityKeys, fundingSource.address).signAndSend();
           // Confirm that the available balance is less than ED
+          // The available balance is the free balance minus the frozen balance
           const capacityAcctInfo = await ExtrinsicHelper.getAccountInfo(capacityKeys.address);
           assert.equal(capacityAcctInfo.data.frozen.toBigInt(), amountStaked);
-          assert.equal(capacityAcctInfo.data.free.toBigInt(), 0n);
+          assert.equal(capacityAcctInfo.data.free.toBigInt(), amountStaked);
+
+          // Confirm that a transfer fails because the available balance is 0
+          // This assert never returns if the nonce is not specified
+          const failTransferObj = ExtrinsicHelper.transferFunds(capacityKeys, fundingSource, 1n * CENTS);
+          assert.rejects(failTransferObj.signAndSend(-1), {
+            name: 'RpcError',
+            message: '1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low',
+          });
 
           const handle = getTestHandle();
           const expiration = (await getBlockNumber()) + 10;
