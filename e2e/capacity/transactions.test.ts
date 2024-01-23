@@ -39,6 +39,7 @@ import {
   getTestHandle,
   assertHasMessage,
   assertAddNewKey,
+  drainKeys,
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { ipfsCid } from '../messages/ipfs';
@@ -556,6 +557,43 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - claimHandle', async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+
+          const handle = getTestHandle();
+          const expiration = (await getBlockNumber()) + 10;
+          const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+          const handlePayload = {
+            baseHandle: handle_vec,
+            expiration: expiration,
+          };
+          const claimHandlePayload = ExtrinsicHelper.api.registry.createType(
+            'CommonPrimitivesHandlesClaimHandlePayload',
+            handlePayload
+          );
+          const claimHandle = ExtrinsicHelper.claimHandle(capacityKeys, claimHandlePayload);
+          const { eventMap } = await claimHandle.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'handles.HandleClaimed');
+        });
+      });
+
+      describe('when capacity eligible transaction is from the handles pallet and balance less than ED', function () {
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
+
+        before(async function () {
+          capacityKeys = createKeys('CapacityKeys');
+          capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
+        });
+
+        it('successfully pays with Capacity for eligible transaction - claimHandle [balance < ED]', async function () {
+          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+          // Empty the account to ensure the balance is less than ED
+          await drainKeys([capacityKeys], fundingSource.address);
+          // Confirm that the available balance is less than ED
+          const capacityAcctInfo = await ExtrinsicHelper.getAccountInfo(capacityKeys.address);
+          assert.equal(capacityAcctInfo.data.frozen.toBigInt(), amountStaked);
+          assert.equal(capacityAcctInfo.data.free.toBigInt(), 0n);
 
           const handle = getTestHandle();
           const expiration = (await getBlockNumber()) + 10;
