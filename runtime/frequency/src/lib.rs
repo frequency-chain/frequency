@@ -120,16 +120,18 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
@@ -145,9 +147,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 impl BaseCallFilter {
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
-			pallet_utility::Call::batch { calls, .. } |
-			pallet_utility::Call::batch_all { calls, .. } |
-			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
+			pallet_utility::Call::batch { calls, .. }
+			| pallet_utility::Call::batch_all { calls, .. }
+			| pallet_utility::Call::force_batch { calls, .. } => {
+				calls.iter().any(Self::is_batch_call_allowed)
+			},
 			_ => true,
 		}
 	}
@@ -155,17 +159,17 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all nested `batch` calls from utility batch
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
 
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
 			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. })
+			| RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. })
+			| RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
@@ -243,48 +247,48 @@ impl<
 {
 	fn on_runtime_upgrade() -> Weight {
 		let mut writes = 0u64;
-		if pallet_preimage::Pallet::<T>::on_chain_storage_version() !=
-			pallet_preimage::Pallet::<T>::current_storage_version()
+		if pallet_preimage::Pallet::<T>::on_chain_storage_version()
+			!= pallet_preimage::Pallet::<T>::current_storage_version()
 		{
 			pallet_preimage::Pallet::<T>::current_storage_version()
 				.put::<pallet_preimage::Pallet<T>>();
 			writes += 1;
 			log::info!("Setting version on pallet_preimage");
 		}
-		if pallet_democracy::Pallet::<T>::on_chain_storage_version() !=
-			pallet_democracy::Pallet::<T>::current_storage_version()
+		if pallet_democracy::Pallet::<T>::on_chain_storage_version()
+			!= pallet_democracy::Pallet::<T>::current_storage_version()
 		{
 			pallet_democracy::Pallet::<T>::current_storage_version()
 				.put::<pallet_democracy::Pallet<T>>();
 			writes += 1;
 			log::info!("Setting version on pallet_democracy");
 		}
-		if pallet_scheduler::Pallet::<T>::on_chain_storage_version() !=
-			pallet_scheduler::Pallet::<T>::current_storage_version()
+		if pallet_scheduler::Pallet::<T>::on_chain_storage_version()
+			!= pallet_scheduler::Pallet::<T>::current_storage_version()
 		{
 			pallet_scheduler::Pallet::<T>::current_storage_version()
 				.put::<pallet_scheduler::Pallet<T>>();
 			writes += 1;
 			log::info!("Setting version on pallet_scheduler");
 		}
-		if pallet_balances::Pallet::<T>::on_chain_storage_version() !=
-			pallet_balances::Pallet::<T>::current_storage_version()
+		if pallet_balances::Pallet::<T>::on_chain_storage_version()
+			!= pallet_balances::Pallet::<T>::current_storage_version()
 		{
 			pallet_balances::Pallet::<T>::current_storage_version()
 				.put::<pallet_balances::Pallet<T>>();
 			writes += 1;
 			log::info!("Setting version on pallet_balances");
 		}
-		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
-			pallet_collator_selection::Pallet::<T>::current_storage_version()
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version()
+			!= pallet_collator_selection::Pallet::<T>::current_storage_version()
 		{
 			pallet_collator_selection::Pallet::<T>::current_storage_version()
 				.put::<pallet_collator_selection::Pallet<T>>();
 			writes += 1;
 			log::info!("Setting version on pallet_collator_selection");
 		}
-		if pallet_multisig::Pallet::<T>::on_chain_storage_version() !=
-			pallet_multisig::Pallet::<T>::current_storage_version()
+		if pallet_multisig::Pallet::<T>::on_chain_storage_version()
+			!= pallet_multisig::Pallet::<T>::current_storage_version()
 		{
 			pallet_multisig::Pallet::<T>::current_storage_version()
 				.put::<pallet_multisig::Pallet<T>>();
@@ -1350,11 +1354,6 @@ impl_runtime_apis! {
 	}
 
 	impl pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId> for Runtime {
-		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) -> Vec<KeyInfoResponse<AccountId>> {
-		// 	Ok(Msa::fetch_msa_keys(msa_id))
-		// }
-
 		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool {
 			match schema_id {
 				Some(sid) => Msa::ensure_valid_schema_grant(provider, delegator, sid, block_number).is_ok(),

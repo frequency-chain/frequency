@@ -29,6 +29,13 @@ sp-std = { workspace = true }
 sp-weights = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = [
+	"alloc",
+] }
+hex = { workspace = true, default-features = false, features = [
+	"alloc",
+] }
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
@@ -38,6 +45,7 @@ pallet-collective = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }
 pretty_assertions = { workspace = true }
+parking_lot = { workspace = true }
 
 [features]
 default = ["std"]

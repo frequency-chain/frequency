@@ -14,6 +14,13 @@ base_dir=/tmp/frequency
 docker_onboard="${DOCKER_ONBOARD:-false}"
 frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
 chain="${RELAY_CHAIN_SPEC:-./resources/rococo-local.json}"
+# offchain options
+offchain_params="--offchain-worker=never"
+
+if [ "$2" == "with-offchain" ]; then
+  offchain_params="--offchain-worker=always --enable-offchain-indexing=true"
+fi
+
 
 case $cmd in
 
@@ -64,6 +71,7 @@ start-frequency)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    $offchain_params \
   ;;
 
 start-frequency-instant)
@@ -93,12 +101,13 @@ start-frequency-instant)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    $offchain_params \
     --tmp
   ;;
 
 start-frequency-interval)
   defaultInterval=12
-  interval=${2-$defaultInterval}
+  interval=${3-$defaultInterval}
   printf "\nBuilding Frequency without relay.  Running with interval sealing with interval of $interval seconds...\n"
   cargo build --features frequency-no-relay
 
@@ -126,6 +135,7 @@ start-frequency-interval)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    $offchain_params \
     --tmp
   ;;
 
@@ -158,6 +168,7 @@ start-frequency-manual)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+   $offchain_params \
     --tmp
   ;;
 
@@ -181,6 +192,7 @@ start-frequency-container)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+   $offchain_params \
   ;;
 
 register-frequency-rococo-local)

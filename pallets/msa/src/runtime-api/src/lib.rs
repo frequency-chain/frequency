@@ -35,9 +35,6 @@ sp_api::decl_runtime_apis! {
 	pub trait MsaRuntimeApi<AccountId> where
 		AccountId: Codec,
 	{
-		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// fn get_msa_keys(msa_id: MessageSourceId) ->	Vec<KeyInfoResponse<AccountId>>;
-
 		/// Check to see if a delegation existed between the given delegator and provider at a given block
 		fn has_delegation(delegator: DelegatorId, provider: ProviderId, block_number: BlockNumber, schema_id: Option<SchemaId>) -> bool;
 

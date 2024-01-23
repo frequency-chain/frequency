@@ -39,8 +39,9 @@ pub struct FullDeps<C, P> {
 }
 
 /// Instantiate all RPC extensions.
-pub fn create_full<C, P>(
+pub fn create_full<OffchainDB, C, P>(
 	deps: FullDeps<C, P>,
+	offchain: Option<OffchainDB>,
 ) -> Result<RpcExtension, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: ProvideRuntimeApi<Block>
@@ -61,6 +62,7 @@ where
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_handles_runtime_api::HandlesRuntimeApi<Block>,
+	OffchainDB: sp_core::offchain::OffchainStorage + 'static,
 	P: TransactionPool + Sync + Send + 'static,
 {
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -82,7 +84,7 @@ where
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
-	module.merge(MsaHandler::new(client.clone()).into_rpc())?;
+	module.merge(MsaHandler::new(client.clone(), offchain).into_rpc())?;
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
 	module.merge(CapacityPaymentHandler::new(client.clone()).into_rpc())?;
