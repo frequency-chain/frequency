@@ -145,9 +145,6 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 
 		// assert
 		assert_eq!(Msa::get_msa_by_public_key(&key), None);
-
-		// *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418 is completed
-		// assert_eq!(Msa::get_msa_keys(msa_id).into_inner(), vec![])
 	});
 }
 

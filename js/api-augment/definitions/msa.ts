@@ -1,16 +1,5 @@
 export default {
   rpc: {
-    // // *Temporarily Removed* until https://github.com/LibertyDSNP/frequency/issues/418
-    // getMsaKeys: {
-    //   description: "Fetch Keys for an MSA Id",
-    //   params: [
-    //     {
-    //       name: "msa_id",
-    //       type: "MessageSourceId",
-    //     },
-    //   ],
-    //   type: "Vec<KeyInfoResponse>",
-    // },
     checkDelegations: {
       description: "Test a list of MSAs to see if they have delegated to the provider MSA",
       params: [
@@ -47,14 +36,24 @@ export default {
       ],
       type: "Option<Vec<SchemaGrantResponse>>",
     },
+    getKeysByMsaId: {
+      description: "Fetch Keys for an MSA Id",
+      params: [
+        {
+          name: "msa_id",
+          type: "MessageSourceId",
+        },
+      ],
+      type: "Option<KeyInfoResponse>",
+    },
   },
   types: {
     MessageSourceId: "u64",
     DelegatorId: "MessageSourceId",
     ProviderId: "MessageSourceId",
     KeyInfoResponse: {
-      key: "AccountId",
-      msaId: "MessageSourceId",
+      msa_keys: "Vec<AccountId>",
+      msa_id: "MessageSourceId",
     },
     SchemaGrantResponse: {
       schema_id: "SchemaId",

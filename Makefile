@@ -27,7 +27,19 @@ start-interval:
 	./scripts/init.sh start-frequency-interval
 
 start-interval-short:
-	./scripts/init.sh start-frequency-interval 1
+	./scripts/init.sh start-frequency-interval 0 1
+
+start-with-offchain:
+	./scripts/init.sh start-frequency-instant with-offchain
+
+start-frequency-with-offchain:
+	./scripts/init.sh start-frequency with-offchain
+
+start-manual-with-offchain:
+	./scripts/init.sh start-frequency-manual with-offchain
+
+start-interval-with-offchain:
+	./scripts/init.sh start-frequency-interval with-offchain
 
 .PHONY: stop
 stop-relay:

@@ -1394,6 +1394,7 @@ dependencies = [
  "frame-support",
  "frame-system",
  "impl-serde",
+ "numtoa",
  "parity-scale-codec",
  "scale-info",
  "serde",
@@ -1401,6 +1402,7 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-core",
+ "sp-io",
  "sp-runtime",
  "sp-std",
 ]
@@ -3911,9 +3913,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.22"
+version = "0.3.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4d6250322ef6e60f93f9a2162799302cd6f68f79f6e5d85c8c16f14d1d958178"
+checksum = "bb2c4422095b67ee78da96fbb51a4cc413b3b25883c7717ff7ca1ab31022c9c9"
 dependencies = [
  "bytes",
  "fnv",
@@ -4161,7 +4163,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite 0.2.13",
- "socket2 0.5.5",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -6683,13 +6685,17 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
+ "hex",
  "log",
  "pallet-collective",
  "pallet-handles",
  "pallet-schemas",
  "parity-scale-codec",
+ "parking_lot 0.12.1",
  "pretty_assertions",
  "scale-info",
+ "serde",
+ "serde_json",
  "sp-core",
  "sp-io",
  "sp-keyring",
@@ -6708,10 +6714,13 @@ dependencies = [
  "jsonrpsee",
  "pallet-msa-runtime-api",
  "parity-scale-codec",
+ "parking_lot 0.12.1",
  "rayon",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
+ "sp-core",
+ "sp-offchain",
  "sp-runtime",
  "sp-std",
  "substrate-test-runtime-client",

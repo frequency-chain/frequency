@@ -36,6 +36,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
   - [Run Tests](#run-tests)
     - [E2E Tests](#e2e-tests)
   - [Run Benchmarks](#run-benchmarks)
+  - [Run with offchain features](#run-with-offchain-features)
 - [Format, Lint and Audit Source Code](#format-lint-and-audit-source-code)
 - [Runtime](#runtime)
   - [Verify Runtime](#verify-runtime)
@@ -284,6 +285,12 @@ To run the end-to-end tests, run `make e2e-tests`.
 
 ```sh
 make benchmarks
+```
+
+## Run with offchain features
+
+```sh
+make start-frequency-with-offchain
 ```
 
 # Format, Lint and Audit Source Code

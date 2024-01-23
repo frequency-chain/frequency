@@ -257,14 +257,14 @@ pub trait SchemaGrantValidator<BlockNumber> {
 	) -> DispatchResult;
 }
 
-/// RPC Response for getting getting MSA ids
+/// RPC Response for getting getting MSA keys
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {
-	/// The `AccountId` associated with the `msa_id`
-	pub key: AccountId,
 	/// The MSA associated with the `key`
 	pub msa_id: MessageSourceId,
+	/// The list of `AccountId` associated with the `msa_id`
+	pub msa_keys: Vec<AccountId>,
 }
 
 #[cfg(test)]
