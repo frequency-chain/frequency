@@ -36,7 +36,7 @@ where
 		fee: Self::Balance,
 	) -> Result<Self::Balance, TransactionValidityError> {
 		ensure!(
-			Curr::balance(key) >= Curr::minimum_balance(),
+			Curr::total_balance(key) >= Curr::minimum_balance(),
 			TransactionValidityError::Invalid(InvalidTransaction::Payment)
 		);
 

@@ -575,6 +575,51 @@ describe('Capacity Transactions', function () {
         });
       });
 
+      describe('when capacity eligible transaction and balance less than ED', function () {
+        let capacityKeys: KeyringPair;
+        let capacityProvider: u64;
+
+        before(async function () {
+          capacityKeys = createKeys('CapacityKeys');
+          capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
+        });
+
+        it('successfully pays with Capacity for eligible transaction - claimHandle [balance < ED]', async function () {
+          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+          // Empty the account to ensure the balance is less than ED
+          await ExtrinsicHelper.emptyAccount(capacityKeys, fundingSource.address).signAndSend();
+          // Confirm that the available balance is less than ED
+          // The available balance is the free balance minus the frozen balance
+          const capacityAcctInfo = await ExtrinsicHelper.getAccountInfo(capacityKeys.address);
+          assert.equal(capacityAcctInfo.data.frozen.toBigInt(), amountStaked);
+          assert.equal(capacityAcctInfo.data.free.toBigInt(), amountStaked);
+
+          // Confirm that a transfer fails because the available balance is 0
+          const failTransferObj = ExtrinsicHelper.transferFunds(capacityKeys, fundingSource, 1n * CENTS);
+          assert.rejects(failTransferObj.signAndSend('current'), {
+            name: 'RpcError',
+            message: '1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low',
+          });
+
+          const handle = getTestHandle();
+          const expiration = (await getBlockNumber()) + 10;
+          const handle_vec = new Bytes(ExtrinsicHelper.api.registry, handle);
+          const handlePayload = {
+            baseHandle: handle_vec,
+            expiration: expiration,
+          };
+          const claimHandlePayload = ExtrinsicHelper.api.registry.createType(
+            'CommonPrimitivesHandlesClaimHandlePayload',
+            handlePayload
+          );
+          const claimHandle = ExtrinsicHelper.claimHandle(capacityKeys, claimHandlePayload);
+          const { eventMap } = await claimHandle.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'handles.HandleClaimed');
+        });
+      });
+
       // When a user attempts to pay for a non-capacity transaction with Capacity,
       // it should error and drop the transaction from the transaction-pool.
       it('fails to pay with Capacity for a non-capacity transaction', async function () {
