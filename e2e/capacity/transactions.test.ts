@@ -576,7 +576,7 @@ describe('Capacity Transactions', function () {
         });
       });
 
-      describe('when capacity eligible transaction is from the handles pallet and balance less than ED', function () {
+      describe('when capacity eligible transaction and balance less than ED', function () {
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;
 
