@@ -596,9 +596,8 @@ describe('Capacity Transactions', function () {
           assert.equal(capacityAcctInfo.data.free.toBigInt(), amountStaked);
 
           // Confirm that a transfer fails because the available balance is 0
-          // This assert never returns if the nonce is not specified
           const failTransferObj = ExtrinsicHelper.transferFunds(capacityKeys, fundingSource, 1n * CENTS);
-          assert.rejects(failTransferObj.signAndSend(-1), {
+          assert.rejects(failTransferObj.signAndSend('current'), {
             name: 'RpcError',
             message: '1010: Invalid Transaction: Inability to pay some fees , e.g. account balance too low',
           });
