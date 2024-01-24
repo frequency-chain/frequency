@@ -20,6 +20,7 @@ const fundingSource = getFundingSource('stateful-storage-handle-itemized');
 describe('📗 Stateful Pallet Storage', function () {
   let schemaId_deletable: SchemaId;
   let schemaId_unsupported: SchemaId;
+  let delegatorKeys: KeyringPair;
   let msa_id: MessageSourceId;
   let providerId: MessageSourceId;
   let providerKeys: KeyringPair;
@@ -46,7 +47,12 @@ describe('📗 Stateful Pallet Storage', function () {
     assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
     schemaId_unsupported = event2!.data.schemaId;
     // Create a MSA for the delegator and delegate to the provider
-    [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId_deletable, providerId, providerKeys);
+    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
+      fundingSource,
+      schemaId_deletable,
+      providerId,
+      providerKeys
+    );
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
     // Create an MSA that is not a provider to be used for testing failure cases
     [badMsaId] = await createMsa(fundingSource);
@@ -104,7 +110,7 @@ describe('📗 Stateful Pallet Storage', function () {
       const add_actions = [add_action];
       const fake_schema_id = new u16(ExtrinsicHelper.api.registry, 65_534);
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
-        providerKeys,
+        delegatorKeys,
         fake_schema_id,
         msa_id,
         add_actions,
@@ -123,7 +129,7 @@ describe('📗 Stateful Pallet Storage', function () {
       };
       const add_actions = [add_action];
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
-        providerKeys,
+        delegatorKeys,
         schemaId_unsupported,
         msa_id,
         add_actions,
@@ -224,7 +230,7 @@ describe('📗 Stateful Pallet Storage', function () {
       const remove_actions = [remove_action_1];
       const fake_schema_id = new u16(ExtrinsicHelper.api.registry, 65_534);
       const itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(
-        providerKeys,
+        delegatorKeys,
         fake_schema_id,
         msa_id,
         remove_actions,
@@ -243,7 +249,7 @@ describe('📗 Stateful Pallet Storage', function () {
       };
       const remove_actions = [remove_action_1];
       const itemized_remove_result_1 = ExtrinsicHelper.applyItemActions(
-        providerKeys,
+        delegatorKeys,
         schemaId_unsupported,
         msa_id,
         remove_actions,

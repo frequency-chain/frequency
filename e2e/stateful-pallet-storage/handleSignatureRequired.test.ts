@@ -3,10 +3,11 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
   DOLLARS,
-  createDelegator,
+  createDelegatorAndDelegation,
   createProviderKeysAndId,
-  generateItemizedSignaturePayload,
-  generateItemizedSignaturePayloadV2,
+  generateItemizedActions,
+  generateItemizedActionsSignedPayload,
+  generateItemizedActionsSignedPayloadV2,
   generatePaginatedDeleteSignaturePayload,
   generatePaginatedDeleteSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayload,
@@ -28,65 +29,76 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
   let itemizedSchemaId: SchemaId;
   let paginatedSchemaId: SchemaId;
   let msa_id: MessageSourceId;
-  let providerId: MessageSourceId;
-  let providerKeys: KeyringPair;
+  let undelegatedProviderId: MessageSourceId;
+  let undelegatedProviderKeys: KeyringPair;
+  let delegatedProviderId: MessageSourceId;
+  let delegatedProviderKeys: KeyringPair;
   let delegatorKeys: KeyringPair;
 
   before(async function () {
+    // Create a provider. This provider will NOT be granted delegations;
+    // methods requiring a payload signature do not require a delegation
+    [undelegatedProviderKeys, undelegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
+    assert.notEqual(undelegatedProviderKeys, undefined, 'setup should populate undelegatedProviderKeys');
+
     // Create a provider for the MSA, the provider will be used to grant delegation
-    [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
-    assert.notEqual(providerId, undefined, 'setup should populate providerId');
-    assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
+    [delegatedProviderKeys, delegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    assert.notEqual(delegatedProviderId, undefined, 'setup should populate delegatedProviderId');
+    assert.notEqual(delegatedProviderKeys, undefined, 'setup should populate delegatedProviderKeys');
 
     // Create a schema for Itemized PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Itemized');
+    const createSchema = ExtrinsicHelper.createSchemaV3(
+      undelegatedProviderKeys,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Itemized',
+      ['AppendOnly', 'SignatureRequired'],
+      'test.ItemizedSignatureRequired'
+    );
     const { target: event } = await createSchema.signAndSend();
     itemizedSchemaId = event!.data.schemaId;
 
     // Create a schema for Paginated PayloadLocation
-    const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated');
+    const createSchema2 = ExtrinsicHelper.createSchemaV3(
+      undelegatedProviderKeys,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Paginated',
+      ['SignatureRequired'],
+      'test.PaginatedSignatureRequired'
+    );
     const { target: event2 } = await createSchema2.signAndSend();
     assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
     paginatedSchemaId = event2!.data.schemaId;
 
     // Create a MSA for the delegator
-    [delegatorKeys, msa_id] = await createDelegator(fundingSource);
+    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
+      fundingSource,
+      [itemizedSchemaId, paginatedSchemaId],
+      delegatedProviderId,
+      delegatedProviderKeys
+    );
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
   });
 
   describe('Itemized With Signature Storage Tests', function () {
-    it('should be able to call applyItemizedActionWithSignature and apply actions', async function () {
-      // Add and update actions
-      const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
-
-      const add_action = {
-        Add: payload_1,
-      };
-
-      const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
-
-      const update_action = {
-        Add: payload_2,
-      };
-
-      const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
-
-      const add_actions = [add_action, update_action];
-      const payload = await generateItemizedSignaturePayload({
-        msaId: msa_id,
-        targetHash: target_hash,
-        schemaId: itemizedSchemaId,
-        actions: add_actions,
-      });
-      const itemizedPayloadData = ExtrinsicHelper.api.registry.createType(
-        'PalletStatefulStorageItemizedSignaturePayload',
-        payload
+    it('provider should be able to call applyItemizedActionWithSignature and apply actions', async function () {
+      const { payload, signature } = await generateItemizedActionsSignedPayload(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedSchemaId,
+        delegatorKeys,
+        msa_id
       );
+
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
-        providerKeys,
-        signPayloadSr25519(delegatorKeys, itemizedPayloadData),
+        undelegatedProviderKeys,
+        signature,
         payload
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
@@ -108,37 +120,155 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
     });
 
-    it('should be able to call applyItemizedActionWithSignatureV2 and apply actions', async function () {
-      // Add and update actions
-      const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
+    it('delegator (owner) should be able to call applyItemizedActionWithSignature and apply actions', async function () {
+      const { payload, signature } = await generateItemizedActionsSignedPayload(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedSchemaId,
+        delegatorKeys,
+        msa_id
+      );
 
-      const add_action = {
-        Add: payload_1,
-      };
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
+        delegatorKeys,
+        delegatorKeys,
+        signature,
+        payload
+      );
+      const { target: pageUpdateEvent1, eventMap: chainEvents } =
+        await itemized_add_result_1.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent1,
+        undefined,
+        'should have returned a PalletStatefulStorageItemizedActionApplied event'
+      );
+    });
 
-      const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
+    it('provider should be able to call applyItemizedActionWithSignatureV2 and apply actions', async function () {
+      const { payload, signature } = await generateItemizedActionsSignedPayloadV2(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedSchemaId,
+        delegatorKeys,
+        msa_id
+      );
 
-      const update_action = {
-        Add: payload_2,
-      };
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
+        delegatorKeys,
+        undelegatedProviderKeys,
+        signature,
+        payload
+      );
+      const { target: pageUpdateEvent1, eventMap: chainEvents } =
+        await itemized_add_result_1.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent1,
+        undefined,
+        'should have returned a PalletStatefulStorageItemizedActionApplied event'
+      );
+    });
+
+    it('delegator (owner) should be able to call applyItemizedActionWithSignatureV2 and apply actions', async function () {
+      const { payload, signature } = await generateItemizedActionsSignedPayloadV2(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedSchemaId,
+        delegatorKeys,
+        msa_id
+      );
+
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
+        delegatorKeys,
+        delegatorKeys,
+        signature,
+        payload
+      );
+      const { target: pageUpdateEvent1, eventMap: chainEvents } =
+        await itemized_add_result_1.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent1,
+        undefined,
+        'should have returned a PalletStatefulStorageItemizedActionApplied event'
+      );
+    });
+
+    it('provider should not be able to call applyItemizedAction', async function () {
+      const add_actions = generateItemizedActions([
+        { action: 'Add', value: 'Hello, world from Frequency' },
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]);
 
       const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
 
-      const add_actions = [add_action, update_action];
-      const payload = await generateItemizedSignaturePayloadV2({
-        targetHash: target_hash,
-        schemaId: itemizedSchemaId,
-        actions: add_actions,
-      });
-      const itemizedPayloadData = ExtrinsicHelper.api.registry.createType(
-        'PalletStatefulStorageItemizedSignaturePayloadV2',
-        payload
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
+        undelegatedProviderKeys,
+        itemizedSchemaId,
+        msa_id,
+        add_actions,
+        target_hash
       );
-      const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
+      await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
+
+      const itemized_add_result_2 = ExtrinsicHelper.applyItemActions(
+        delegatedProviderKeys,
+        itemizedSchemaId,
+        msa_id,
+        add_actions,
+        target_hash
+      );
+      await assert.rejects(itemized_add_result_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
+    });
+
+    it('owner should be able to call applyItemizedAction', async function () {
+      const add_actions = generateItemizedActions([
+        { action: 'Add', value: 'Hello, world from Frequency' },
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]);
+
+      const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
+
+      const itemized_add_result_1 = ExtrinsicHelper.applyItemActions(
         delegatorKeys,
-        providerKeys,
-        signPayloadSr25519(delegatorKeys, itemizedPayloadData),
-        payload
+        itemizedSchemaId,
+        msa_id,
+        add_actions,
+        target_hash
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
@@ -161,7 +291,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
   });
 
   describe('Paginated With Signature Storage Tests', function () {
-    it('should be able to call upsert a page and delete it successfully', async function () {
+    it('provider should be able to call upsert a page and delete it successfully', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -179,7 +309,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const upsert_result = ExtrinsicHelper.upsertPageWithSignature(
         delegatorKeys,
-        providerKeys,
+        undelegatedProviderKeys,
         signPayloadSr25519(delegatorKeys, upsertPayloadData),
         upsertPayload
       );
@@ -214,7 +344,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const remove_result = ExtrinsicHelper.deletePageWithSignature(
         delegatorKeys,
-        providerKeys,
+        undelegatedProviderKeys,
         signPayloadSr25519(delegatorKeys, deletePayloadData),
         deletePayload
       );
@@ -234,10 +364,88 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      assert.equal(result.length, 0, 'should returned no paginated pages');
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
+      assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
-    it('should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully', async function () {
+    it('delegator (owner) should be able to call upsert a page and delete it successfully', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      // Add and update actions
+      let target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const upsertPayload = await generatePaginatedUpsertSignaturePayload({
+        msaId: msa_id,
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+        payload: new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
+      });
+      const upsertPayloadData = ExtrinsicHelper.api.registry.createType(
+        'PalletStatefulStoragePaginatedUpsertSignaturePayload',
+        upsertPayload
+      );
+      const upsert_result = ExtrinsicHelper.upsertPageWithSignature(
+        delegatorKeys,
+        delegatorKeys,
+        signPayloadSr25519(delegatorKeys, upsertPayloadData),
+        upsertPayload
+      );
+      const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents1['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents1['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent,
+        undefined,
+        'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
+      );
+
+      // Remove the page
+      target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const deletePayload = await generatePaginatedDeleteSignaturePayload({
+        msaId: msa_id,
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+      });
+      const deletePayloadData = ExtrinsicHelper.api.registry.createType(
+        'PalletStatefulStoragePaginatedDeleteSignaturePayload',
+        deletePayload
+      );
+      const remove_result = ExtrinsicHelper.deletePageWithSignature(
+        delegatorKeys,
+        delegatorKeys,
+        signPayloadSr25519(delegatorKeys, deletePayloadData),
+        deletePayload
+      );
+      const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents2['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents2['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(pageRemove, undefined, 'should have returned a event');
+
+      // no pages should exist
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
+      assert.notEqual(result, undefined, 'should have returned a valid response');
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
+      assert.equal(thePage, undefined, 'inserted page should not exist');
+    });
+
+    it('provider should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -254,7 +462,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const upsert_result = ExtrinsicHelper.upsertPageWithSignatureV2(
         delegatorKeys,
-        providerKeys,
+        undelegatedProviderKeys,
         signPayloadSr25519(delegatorKeys, upsertPayloadData),
         upsertPayload
       );
@@ -288,7 +496,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const remove_result = ExtrinsicHelper.deletePageWithSignatureV2(
         delegatorKeys,
-        providerKeys,
+        undelegatedProviderKeys,
         signPayloadSr25519(delegatorKeys, deletePayloadData),
         deletePayload
       );
@@ -308,7 +516,188 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      assert.equal(result.length, 0, 'should returned no paginated pages');
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
+      assert.equal(thePage, undefined, 'inserted page should not exist');
+    });
+
+    it('delegator (owner) should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      // Add and update actions
+      let target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const upsertPayload = await generatePaginatedUpsertSignaturePayloadV2({
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+        payload: new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
+      });
+      const upsertPayloadData = ExtrinsicHelper.api.registry.createType(
+        'PalletStatefulStoragePaginatedUpsertSignaturePayloadV2',
+        upsertPayload
+      );
+      const upsert_result = ExtrinsicHelper.upsertPageWithSignatureV2(
+        delegatorKeys,
+        delegatorKeys,
+        signPayloadSr25519(delegatorKeys, upsertPayloadData),
+        upsertPayload
+      );
+      const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents1['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents1['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent,
+        undefined,
+        'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
+      );
+
+      // Remove the page
+      target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+      const deletePayload = await generatePaginatedDeleteSignaturePayloadV2({
+        targetHash: target_hash,
+        schemaId: paginatedSchemaId,
+        pageId: page_id,
+      });
+      const deletePayloadData = ExtrinsicHelper.api.registry.createType(
+        'PalletStatefulStoragePaginatedDeleteSignaturePayloadV2',
+        deletePayload
+      );
+      const remove_result = ExtrinsicHelper.deletePageWithSignatureV2(
+        delegatorKeys,
+        delegatorKeys,
+        signPayloadSr25519(delegatorKeys, deletePayloadData),
+        deletePayload
+      );
+      const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents2['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents2['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(pageRemove, undefined, 'should have returned a event');
+
+      // no pages should exist
+      const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
+      assert.notEqual(result, undefined, 'should have returned a valid response');
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
+      assert.equal(thePage, undefined, 'inserted page should not exist');
+    });
+
+    it('provider should not be able to call upsertPage directly', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+
+      const upsert = ExtrinsicHelper.upsertPage(
+        undelegatedProviderKeys,
+        paginatedSchemaId,
+        msa_id,
+        page_id,
+        new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
+        target_hash
+      );
+      await assert.rejects(upsert.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
+
+      const upsert_2 = ExtrinsicHelper.upsertPage(
+        delegatedProviderKeys,
+        paginatedSchemaId,
+        msa_id,
+        page_id,
+        new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
+        target_hash
+      );
+      await assert.rejects(upsert_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
+    });
+
+    it('owner should be able to call upsertPage directly', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+
+      const upsert_result = ExtrinsicHelper.upsertPage(
+        delegatorKeys,
+        paginatedSchemaId,
+        msa_id,
+        page_id,
+        new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
+        target_hash
+      );
+      const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents1['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents1['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent,
+        undefined,
+        'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
+      );
+    });
+
+    it('delegate should not be able to call removePage directly', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+
+      const remove_op = ExtrinsicHelper.removePage(
+        undelegatedProviderKeys,
+        paginatedSchemaId,
+        msa_id,
+        page_id,
+        target_hash
+      );
+      await assert.rejects(remove_op.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
+
+      const remove_op_2 = ExtrinsicHelper.removePage(
+        delegatedProviderKeys,
+        paginatedSchemaId,
+        msa_id,
+        page_id,
+        target_hash
+      );
+      await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
+    });
+
+    it('owner should be able to call removePage directly', async function () {
+      const page_id = new u16(ExtrinsicHelper.api.registry, 1);
+
+      const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
+
+      const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
+      const { target: pageUpdateEvent, eventMap: chainEvents1 } = await remove_result.fundAndSend(fundingSource);
+      assert.notEqual(
+        chainEvents1['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
+      assert.notEqual(
+        chainEvents1['transactionPayment.TransactionFeePaid'],
+        undefined,
+        'should have returned a TransactionFeePaid event'
+      );
+      assert.notEqual(
+        pageUpdateEvent,
+        undefined,
+        'should have returned a PalletStatefulStoragePaginatedPageDeleted event'
+      );
     });
   });
 });

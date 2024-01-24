@@ -15,7 +15,7 @@ use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::{sr25519, Get, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{AccountId32, MultiSignature};
 use sp_std::hash::Hasher;
 use twox_hash::XxHash64;
 
@@ -671,11 +671,15 @@ fn upsert_page_with_signature_having_valid_inputs_should_work() {
 }
 
 #[test]
-fn insert_page_fails_for_signature_schema() {
+fn upsert_page_on_signature_schema_fails_for_non_owner() {
 	new_test_ext().execute_with(|| {
 		// setup
-		let caller_1 = test_public(1);
-		let msa_id = 1;
+		// Note: normal use case for this test would be called by a delegate;
+		// we don't bother setting up the delegation because the call should fail
+		// before we check the delegation, as long as the owner_msa_id != caller_msa_id
+		let (caller_msa_id, caller_keys) = get_signature_account();
+		let caller_1: AccountId32 = caller_keys.public().into();
+		let owner_msa_id = caller_msa_id.saturating_add(1);
 		let schema_id = PAGINATED_SIGNED_SCHEMA;
 		let page_id = 11;
 		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
@@ -684,7 +688,7 @@ fn insert_page_fails_for_signature_schema() {
 		assert_err!(
 			StatefulStoragePallet::upsert_page(
 				RuntimeOrigin::signed(caller_1),
-				msa_id,
+				owner_msa_id,
 				schema_id,
 				page_id,
 				NONEXISTENT_PAGE_HASH,
@@ -692,6 +696,28 @@ fn insert_page_fails_for_signature_schema() {
 			),
 			Error::<Test>::UnsupportedOperationForSchema
 		);
+	});
+}
+
+#[test]
+fn upsert_page_on_signature_schema_succeeds_for_owner() {
+	new_test_ext().execute_with(|| {
+		// setup
+		let (msa_id, caller_keys) = get_signature_account();
+		let caller_1: AccountId32 = caller_keys.public().into();
+		let schema_id = PAGINATED_SIGNED_SCHEMA;
+		let page_id = 11;
+		let payload = generate_payload_bytes::<PaginatedPageSize>(None);
+
+		// assert
+		assert_ok!(StatefulStoragePallet::upsert_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id,
+			NONEXISTENT_PAGE_HASH,
+			payload.into(),
+		));
 	});
 }
 
