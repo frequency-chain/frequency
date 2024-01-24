@@ -25,8 +25,6 @@ import { getFundingSource } from '../scaffolding/funding';
 
 const fundingSource = getFundingSource('stateful-storage-handle-sig-req');
 
-
-
 describe('📗 Stateful Pallet Storage Signature Required', function () {
   let itemizedSchemaId: SchemaId;
   let paginatedSchemaId: SchemaId;
@@ -50,18 +48,37 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     assert.notEqual(delegatedProviderKeys, undefined, 'setup should populate delegatedProviderKeys');
 
     // Create a schema for Itemized PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchemaV3(undelegatedProviderKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Itemized', ['AppendOnly', 'SignatureRequired'], 'test.ItemizedSignatureRequired');
+    const createSchema = ExtrinsicHelper.createSchemaV3(
+      undelegatedProviderKeys,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Itemized',
+      ['AppendOnly', 'SignatureRequired'],
+      'test.ItemizedSignatureRequired'
+    );
     const { target: event } = await createSchema.signAndSend();
     itemizedSchemaId = event!.data.schemaId;
 
     // Create a schema for Paginated PayloadLocation
-    const createSchema2 = ExtrinsicHelper.createSchemaV3(undelegatedProviderKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated', ['SignatureRequired'], 'test.PaginatedSignatureRequired');
+    const createSchema2 = ExtrinsicHelper.createSchemaV3(
+      undelegatedProviderKeys,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Paginated',
+      ['SignatureRequired'],
+      'test.PaginatedSignatureRequired'
+    );
     const { target: event2 } = await createSchema2.signAndSend();
     assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
     paginatedSchemaId = event2!.data.schemaId;
 
     // Create a MSA for the delegator
-    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(fundingSource, [itemizedSchemaId, paginatedSchemaId], delegatedProviderId, delegatedProviderKeys);
+    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
+      fundingSource,
+      [itemizedSchemaId, paginatedSchemaId],
+      delegatedProviderId,
+      delegatedProviderKeys
+    );
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
   });
@@ -71,12 +88,12 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       const { payload, signature } = await generateItemizedActionsSignedPayload(
         generateItemizedActions([
           { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency'}
+          { action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
         itemizedSchemaId,
         delegatorKeys,
         msa_id
-      )
+      );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
@@ -107,12 +124,12 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       const { payload, signature } = await generateItemizedActionsSignedPayload(
         generateItemizedActions([
           { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency'}
+          { action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
         itemizedSchemaId,
         delegatorKeys,
         msa_id
-      )
+      );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
@@ -137,18 +154,18 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         undefined,
         'should have returned a PalletStatefulStorageItemizedActionApplied event'
       );
-    })
+    });
 
     it('provider should be able to call applyItemizedActionWithSignatureV2 and apply actions', async function () {
       const { payload, signature } = await generateItemizedActionsSignedPayloadV2(
         generateItemizedActions([
           { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency'}
+          { action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
         itemizedSchemaId,
         delegatorKeys,
         msa_id
-      )
+      );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
         delegatorKeys,
@@ -179,12 +196,12 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       const { payload, signature } = await generateItemizedActionsSignedPayloadV2(
         generateItemizedActions([
           { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency'}
+          { action: 'Add', value: 'Hello, world again from Frequency' },
         ]),
         itemizedSchemaId,
         delegatorKeys,
         msa_id
-      )
+      );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignatureV2(
         delegatorKeys,
@@ -214,8 +231,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     it('provider should not be able to call applyItemizedAction', async function () {
       const add_actions = generateItemizedActions([
         { action: 'Add', value: 'Hello, world from Frequency' },
-        { action: 'Add', value: 'Hello, world again from Frequency' }
-      ])
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]);
 
       const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
 
@@ -224,23 +241,25 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         itemizedSchemaId,
         msa_id,
         add_actions,
-        target_hash);
-        await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
+        target_hash
+      );
+      await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
 
       const itemized_add_result_2 = ExtrinsicHelper.applyItemActions(
         delegatedProviderKeys,
         itemizedSchemaId,
         msa_id,
         add_actions,
-        target_hash);
-        await assert.rejects(itemized_add_result_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
-      });
+        target_hash
+      );
+      await assert.rejects(itemized_add_result_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
+    });
 
     it('owner should be able to call applyItemizedAction', async function () {
       const add_actions = generateItemizedActions([
         { action: 'Add', value: 'Hello, world from Frequency' },
-        { action: 'Add', value: 'Hello, world again from Frequency' }
-      ])
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]);
 
       const target_hash = await getCurrentItemizedHash(msa_id, itemizedSchemaId);
 
@@ -249,7 +268,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         itemizedSchemaId,
         msa_id,
         add_actions,
-        target_hash);
+        target_hash
+      );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
       assert.notEqual(
@@ -344,7 +364,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      const thePage = result.toArray().find((page) => page.page_id === page_id)
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
@@ -421,7 +441,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      const thePage = result.toArray().find((page) => page.page_id === page_id)
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
@@ -496,7 +516,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      const thePage = result.toArray().find((page) => page.page_id === page_id)
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
@@ -571,7 +591,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
-      const thePage = result.toArray().find((page) => page.page_id === page_id)
+      const thePage = result.toArray().find((page) => page.page_id === page_id);
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
@@ -586,7 +606,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         msa_id,
         page_id,
         new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
-        target_hash,
+        target_hash
       );
       await assert.rejects(upsert.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
 
@@ -596,7 +616,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         msa_id,
         page_id,
         new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
-        target_hash,
+        target_hash
       );
       await assert.rejects(upsert_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
     });
@@ -612,7 +632,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         msa_id,
         page_id,
         new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
-        target_hash,
+        target_hash
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
       assert.notEqual(
@@ -642,7 +662,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         paginatedSchemaId,
         msa_id,
         page_id,
-        target_hash,
+        target_hash
       );
       await assert.rejects(remove_op.fundAndSend(fundingSource), { name: 'UnauthorizedDelegate' });
 
@@ -651,7 +671,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         paginatedSchemaId,
         msa_id,
         page_id,
-        target_hash,
+        target_hash
       );
       await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
     });
@@ -661,13 +681,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
 
-      const remove_result = ExtrinsicHelper.removePage(
-        delegatorKeys,
-        paginatedSchemaId,
-        msa_id,
-        page_id,
-        target_hash,
-      );
+      const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await remove_result.fundAndSend(fundingSource);
       assert.notEqual(
         chainEvents1['system.ExtrinsicSuccess'],

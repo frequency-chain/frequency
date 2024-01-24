@@ -217,7 +217,13 @@ describe('📗 Stateful Pallet Storage', function () {
 
     it('🛑 should fail call to remove page with invalid schema location', async function () {
       const page_id = 0;
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, schemaId_unsupported, msa_id, page_id, 0);
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(
+        delegatorKeys,
+        schemaId_unsupported,
+        msa_id,
+        page_id,
+        0
+      );
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
         name: 'SchemaPayloadLocationMismatch',
         section: 'statefulStorage',

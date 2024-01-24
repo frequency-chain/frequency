@@ -100,15 +100,19 @@ export async function generateItemizedSignaturePayload(
   };
 }
 
-export function generateItemizedActions(items: { action: 'Add' | 'Update', value: string }[]) {
+export function generateItemizedActions(items: { action: 'Add' | 'Update'; value: string }[]) {
   return items.map(({ action, value }) => {
     const actionObj = {};
     actionObj[action] = new Bytes(ExtrinsicHelper.api.registry, value);
     return actionObj;
-  })
+  });
 }
 
-export async function generateItemizedActionsPayloadAndSignature(payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2, payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2', signingKeys: KeyringPair) {
+export async function generateItemizedActionsPayloadAndSignature(
+  payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
+  payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2',
+  signingKeys: KeyringPair
+) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
   const payload = ExtrinsicHelper.api.registry.createType(payloadType, payloadData);
   const signature = signPayloadSr25519(signingKeys, payload);
@@ -116,25 +120,43 @@ export async function generateItemizedActionsPayloadAndSignature(payloadInput: I
   return { payload: payloadData, signature };
 }
 
-export async function generateItemizedActionsSignedPayload(actions: any[], schemaId: SchemaId, signingKeys: KeyringPair, msaId: MessageSourceId) {
+export async function generateItemizedActionsSignedPayload(
+  actions: any[],
+  schemaId: SchemaId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
   const payloadInput: ItemizedSignaturePayload = {
     msaId,
     targetHash: await getCurrentItemizedHash(msaId, schemaId),
     schemaId,
-    actions
-  }
+    actions,
+  };
 
-  return generateItemizedActionsPayloadAndSignature(payloadInput, 'PalletStatefulStorageItemizedSignaturePayload', signingKeys);
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayload',
+    signingKeys
+  );
 }
 
-export async function generateItemizedActionsSignedPayloadV2(actions: any[], schemaId: SchemaId, signingKeys: KeyringPair, msaId: MessageSourceId) {
+export async function generateItemizedActionsSignedPayloadV2(
+  actions: any[],
+  schemaId: SchemaId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
   const payloadInput: ItemizedSignaturePayloadV2 = {
     targetHash: await getCurrentItemizedHash(msaId, schemaId),
     schemaId,
-    actions
-  }
+    actions,
+  };
 
-  return generateItemizedActionsPayloadAndSignature(payloadInput, 'PalletStatefulStorageItemizedSignaturePayloadV2', signingKeys);
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayloadV2',
+    signingKeys
+  );
 }
 
 export async function generatePaginatedUpsertSignaturePayload(

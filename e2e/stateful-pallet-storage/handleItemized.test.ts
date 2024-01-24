@@ -47,7 +47,12 @@ describe('📗 Stateful Pallet Storage', function () {
     assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
     schemaId_unsupported = event2!.data.schemaId;
     // Create a MSA for the delegator and delegate to the provider
-    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId_deletable, providerId, providerKeys);
+    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
+      fundingSource,
+      schemaId_deletable,
+      providerId,
+      providerKeys
+    );
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
     // Create an MSA that is not a provider to be used for testing failure cases
     [badMsaId] = await createMsa(fundingSource);
