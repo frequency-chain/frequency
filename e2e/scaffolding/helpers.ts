@@ -1,6 +1,6 @@
 import { Keyring } from '@polkadot/api';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { u16, u32, u64, Option } from '@polkadot/types';
+import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
 import { Codec } from '@polkadot/types/types';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
@@ -24,6 +24,7 @@ import {
   MessageResponse,
   MessageSourceId,
   PageHash,
+  SchemaId,
 } from '@frequency-chain/api-augment/interfaces';
 import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
@@ -87,7 +88,7 @@ export async function generateAddKeyPayload(
 }
 
 export async function generateItemizedSignaturePayload(
-  payloadInputs: ItemizedSignaturePayload,
+  payloadInputs: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
   expirationOffset: number = 100,
   blockNumber?: number
 ): Promise<ItemizedSignaturePayload> {
@@ -99,17 +100,63 @@ export async function generateItemizedSignaturePayload(
   };
 }
 
-export async function generateItemizedSignaturePayloadV2(
-  payloadInputs: ItemizedSignaturePayloadV2,
-  expirationOffset: number = 100,
-  blockNumber?: number
-): Promise<ItemizedSignaturePayloadV2> {
-  const { expiration, ...payload } = payloadInputs;
+export function generateItemizedActions(items: { action: 'Add' | 'Update'; value: string }[]) {
+  return items.map(({ action, value }) => {
+    const actionObj = {};
+    actionObj[action] = new Bytes(ExtrinsicHelper.api.registry, value);
+    return actionObj;
+  });
+}
 
-  return {
-    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
-    ...payload,
+export async function generateItemizedActionsPayloadAndSignature(
+  payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
+  payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2',
+  signingKeys: KeyringPair
+) {
+  const payloadData = await generateItemizedSignaturePayload(payloadInput);
+  const payload = ExtrinsicHelper.api.registry.createType(payloadType, payloadData);
+  const signature = signPayloadSr25519(signingKeys, payload);
+
+  return { payload: payloadData, signature };
+}
+
+export async function generateItemizedActionsSignedPayload(
+  actions: any[],
+  schemaId: SchemaId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
+  const payloadInput: ItemizedSignaturePayload = {
+    msaId,
+    targetHash: await getCurrentItemizedHash(msaId, schemaId),
+    schemaId,
+    actions,
   };
+
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayload',
+    signingKeys
+  );
+}
+
+export async function generateItemizedActionsSignedPayloadV2(
+  actions: any[],
+  schemaId: SchemaId,
+  signingKeys: KeyringPair,
+  msaId: MessageSourceId
+) {
+  const payloadInput: ItemizedSignaturePayloadV2 = {
+    targetHash: await getCurrentItemizedHash(msaId, schemaId),
+    schemaId,
+    actions,
+  };
+
+  return generateItemizedActionsPayloadAndSignature(
+    payloadInput,
+    'PalletStatefulStorageItemizedSignaturePayloadV2',
+    signingKeys
+  );
 }
 
 export async function generatePaginatedUpsertSignaturePayload(
@@ -270,7 +317,7 @@ export async function createDelegator(source: KeyringPair, amount?: bigint): Pro
 
 export async function createDelegatorAndDelegation(
   source: KeyringPair,
-  schemaId: u16,
+  schemaId: u16 | u16[],
   providerId: u64,
   providerKeys: KeyringPair
 ): Promise<[KeyringPair, u64]> {
@@ -280,7 +327,7 @@ export async function createDelegatorAndDelegation(
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
-    schemaIds: [schemaId],
+    schemaIds: Array.isArray(schemaId) ? schemaId : [schemaId],
   });
   const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 

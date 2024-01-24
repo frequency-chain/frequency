@@ -252,6 +252,11 @@ pub mod pallet {
 		/// Applies the Add or Delete Actions on the requested Itemized page.
 		/// This is treated as a transaction so either all actions succeed or none will be executed.
 		///
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
+		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
+		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
+		/// submitting this extrinsic on behalf of a user would fail.
+		///
 		/// # Events
 		/// * [`Event::ItemizedPageUpdated`]
 		/// * [`Event::ItemizedPageDeleted`]
@@ -273,13 +278,24 @@ pub mod pallet {
 		) -> DispatchResult {
 			let key = ensure_signed(origin)?;
 			let is_pruning = actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_schema_for_write(schema_id, PayloadLocation::Itemized, false, is_pruning)?;
-			Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id = Self::check_msa_and_grants(key, state_owner_msa_id, schema_id)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Itemized,
+				caller_is_state_owner,
+				is_pruning,
+			)?;
 			Self::update_itemized(state_owner_msa_id, schema_id, target_hash, actions)?;
 			Ok(())
 		}
 
 		/// Creates or updates an Paginated storage with new payload
+		///
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
+		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
+		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
+		/// submitting this extrinsic on behalf of a user would fail.
 		///
 		/// # Events
 		/// * [`Event::PaginatedPageUpdated`]
@@ -296,8 +312,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, false)?;
-			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id =
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Paginated,
+				caller_is_state_owner,
+				false,
+			)?;
 			Self::update_paginated(
 				state_owner_msa_id,
 				schema_id,
@@ -309,6 +332,11 @@ pub mod pallet {
 		}
 
 		/// Deletes a Paginated storage
+		///
+		/// Note: if called by the state owner, call may succeed even on `SignatureRequired` schemas.
+		/// The fact that the entire (signed) transaction is submitted by the owner's keypair is
+		/// considered equivalent to supplying a separate signature. Note in that case that a delegate
+		/// submitting this extrinsic on behalf of a user would fail.
 		///
 		/// # Events
 		/// * [`Event::PaginatedPageDeleted`]
@@ -324,8 +352,15 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			ensure!(page_id <= T::MaxPaginatedPageId::get(), Error::<T>::PageIdExceedsMaxAllowed);
-			Self::check_schema_for_write(schema_id, PayloadLocation::Paginated, false, true)?;
-			Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_msa_id =
+				Self::check_msa_and_grants(provider_key, state_owner_msa_id, schema_id)?;
+			let caller_is_state_owner = caller_msa_id == state_owner_msa_id;
+			Self::check_schema_for_write(
+				schema_id,
+				PayloadLocation::Paginated,
+				caller_is_state_owner,
+				true,
+			)?;
 			Self::delete_paginated(state_owner_msa_id, schema_id, page_id, target_hash)?;
 			Ok(())
 		}

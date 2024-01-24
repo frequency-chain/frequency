@@ -21,6 +21,7 @@ const fundingSource = getFundingSource('stateful-storage-handle-paginated');
 describe('📗 Stateful Pallet Storage', function () {
   let schemaId: SchemaId;
   let schemaId_unsupported: SchemaId;
+  let delegatorKeys: KeyringPair;
   let msa_id: MessageSourceId;
   let providerId: MessageSourceId;
   let providerKeys: KeyringPair;
@@ -44,7 +45,7 @@ describe('📗 Stateful Pallet Storage', function () {
     schemaId_unsupported = event2!.data.schemaId;
 
     // Create a MSA for the delegator and delegate to the provider
-    [, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
+    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
 
     // Create an MSA that is not a provider to be used for testing failure cases
@@ -142,7 +143,7 @@ describe('📗 Stateful Pallet Storage', function () {
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
       const fake_schema_id = new u16(ExtrinsicHelper.api.registry, badSchemaId);
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(
-        providerKeys,
+        delegatorKeys,
         fake_schema_id,
         msa_id,
         page_id,
@@ -160,7 +161,7 @@ describe('📗 Stateful Pallet Storage', function () {
       const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(
-        providerKeys,
+        delegatorKeys,
         schemaId_unsupported,
         msa_id,
         page_id,
@@ -207,7 +208,7 @@ describe('📗 Stateful Pallet Storage', function () {
   describe('Paginated Storage Removal Negative Tests 😊/😥', function () {
     it('🛑 should fail call to remove page with invalid schemaId', async function () {
       const page_id = 0;
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, badSchemaId, msa_id, page_id, 0);
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badSchemaId, msa_id, page_id, 0);
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
         name: 'InvalidSchemaId',
         section: 'statefulStorage',
@@ -216,7 +217,13 @@ describe('📗 Stateful Pallet Storage', function () {
 
     it('🛑 should fail call to remove page with invalid schema location', async function () {
       const page_id = 0;
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId_unsupported, msa_id, page_id, 0);
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(
+        delegatorKeys,
+        schemaId_unsupported,
+        msa_id,
+        page_id,
+        0
+      );
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
         name: 'SchemaPayloadLocationMismatch',
         section: 'statefulStorage',

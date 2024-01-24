@@ -11,7 +11,7 @@ use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::{sr25519, Get, Pair};
-use sp_runtime::MultiSignature;
+use sp_runtime::{AccountId32, MultiSignature};
 
 #[test]
 fn delete_page_id_out_of_bounds_errors() {
@@ -1001,4 +1001,63 @@ fn delete_page_with_signature_v2_having_valid_inputs_should_remove_page() {
 			.into(),
 		);
 	})
+}
+
+#[test]
+fn delete_page_on_signature_schema_fails_for_non_owner() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		// Note: normal use case for this test would be called by a delegate;
+		// we don't bother setting up the delegation because the call should fail
+		// before we check the delegation, as long as the owner_msa_id != caller_msa_id
+		let (caller_msa_id, caller_keys) = get_signature_account();
+		let owner_msa_id = caller_msa_id.saturating_add(1);
+		let caller_1: AccountId32 = caller_keys.public().into();
+		let schema_id = PAGINATED_SIGNED_SCHEMA;
+		let page_id = 1;
+		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		<StatefulChildTree>::write(
+			&owner_msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&(schema_id, page_id),
+			&page,
+		);
+		assert_err!(
+			StatefulStoragePallet::delete_page(
+				RuntimeOrigin::signed(caller_1),
+				owner_msa_id,
+				schema_id,
+				page_id,
+				page.get_hash()
+			),
+			Error::<Test>::UnsupportedOperationForSchema
+		);
+	});
+}
+
+#[test]
+fn delete_page_on_signature_schema_succeeds_for_owner() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (msa_id, caller_keys) = get_signature_account();
+		let caller_1: AccountId32 = caller_keys.public().into();
+		let schema_id = PAGINATED_SIGNED_SCHEMA;
+		let page_id = 1;
+		let page = generate_page::<PaginatedPageSize>(Some(1), Some(100));
+		<StatefulChildTree>::write(
+			&msa_id,
+			PALLET_STORAGE_PREFIX,
+			PAGINATED_STORAGE_PREFIX,
+			&(schema_id, page_id),
+			&page,
+		);
+		assert_ok!(StatefulStoragePallet::delete_page(
+			RuntimeOrigin::signed(caller_1),
+			msa_id,
+			schema_id,
+			page_id,
+			page.get_hash()
+		));
+	});
 }
