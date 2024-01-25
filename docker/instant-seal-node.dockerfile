@@ -2,7 +2,7 @@
 # locally in instant seal mode. Requires to run from repository root and to copy
 # the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
-FROM --platform=linux/amd64 ubuntu:20.04 AS base
+FROM --platform=linux/amd64 ubuntu:22.04 AS base
 
 LABEL maintainer="Frequency"
 LABEL description="Frequency collator node in instant seal mode"
@@ -10,7 +10,7 @@ LABEL description="Frequency collator node in instant seal mode"
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # This is the 2nd stage: a very small image where we copy the Frequency binary
-FROM --platform=linux/amd64 ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
 	mkdir -p /data /frequency/.local/share && \
