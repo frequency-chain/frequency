@@ -1,5 +1,4 @@
-FROM --platform=linux/amd64 ubuntu:20.04
-# FROM ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
 LABEL description="Frequency CI Base Image"
