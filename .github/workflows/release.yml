@@ -27,7 +27,7 @@ env:
 jobs:
   validate-release-version:
     name: Validate Release Version
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Validate
@@ -46,7 +46,7 @@ jobs:
   create-release-branch:
     needs: validate-release-version
     name: Create Release Branch
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
@@ -114,7 +114,7 @@ jobs:
   version-code:
     needs: run-all-benchmarks
     name: Version Code
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
@@ -385,7 +385,7 @@ jobs:
       BIN_DIR: target/release
       RELEASE_FILENAME_PREFIX: frequency-rococo-local
       ARCH: amd64
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
@@ -440,14 +440,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-20.04]
+        os: [ubuntu-22.04]
         network: [mainnet]
         include:
           - network: mainnet
             spec: frequency
             build-profile: release
             release-file-name-prefix: frequency
-          - os: ubuntu-20.04
+          - os: ubuntu-22.04
             arch: amd64
     runs-on: ${{matrix.os}}
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
@@ -495,7 +495,7 @@ jobs:
   compare-metadata:
     needs: build-binaries
     name: Compare Metadata
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     env:
       BIN_DIR: target/release
       BIN_FILENAME: frequency.amd64
@@ -631,7 +631,7 @@ jobs:
         build-js-api-augment,
       ]
     name: Wait for All Builds to Finish
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     outputs:
       runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
       runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
@@ -643,7 +643,7 @@ jobs:
   release-artifacts:
     needs: wait-for-all-builds
     name: Release Built Artifacts
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo
@@ -817,7 +817,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
@@ -915,7 +915,7 @@ jobs:
             docker-platform: linux/amd64
     env:
       DOCKER_HUB_PROFILE: frequencychain
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Set Env Vars
@@ -992,7 +992,7 @@ jobs:
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     permissions:
       contents: read
@@ -1010,7 +1010,7 @@ jobs:
   release-js-api-augment:
     needs: wait-for-all-builds
     name: Release JS API Augment
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     steps:
       - name: Check Out Repo

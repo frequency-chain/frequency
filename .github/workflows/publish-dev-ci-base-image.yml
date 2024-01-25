@@ -18,7 +18,7 @@ jobs:
       # IMAGE_NAME: ci-base-image-dind
       IMAGE_NAME: ci-base-image
       BRANCH_NAME: ${{github.ref_name}}
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
