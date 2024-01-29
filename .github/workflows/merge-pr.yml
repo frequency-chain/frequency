@@ -10,7 +10,7 @@ on:
 jobs:
   changes:
     name: Determine Changed Files
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:1.0.0
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
@@ -83,7 +83,7 @@ jobs:
       IMAGE_NAME: ci-base-image
       IMAGE_VERSION: 1.0.0
       BRANCH_NAME: main
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
