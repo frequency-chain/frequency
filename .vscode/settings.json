@@ -15,9 +15,12 @@
     ],
     // Set the features to use for cargo commands
     "rust-analyzer.cargo.features": [
-        "frequency-no-relay"
+        "frequency-no-relay",
+        "runtime-benchmarks",
+        "frequency-lint-check"
     ],
     "lldb.launch.preRunCommands": [
        "script lldb.debugger.HandleCommand('settings set target.source-map /rustc/{} \"{}/lib/rustlib/src/rust\"'.format(os.popen('rustc --version --verbose').read().split('commit-hash: ')[1].split('\\n')[0].strip(), os.popen('rustc --print sysroot').readline().strip()))"
-    ]
+    ],
+    "rust-analyzer.diagnostics.useRustcErrorCode": true
 }

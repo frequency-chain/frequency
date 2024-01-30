@@ -16,8 +16,8 @@ pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 const SEED: u32 = 0;
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let actual_deposit = T::Currency::mint_into(&who, balance.saturated_into());
-	assert_eq!(balance, actual_deposit.unwrap());
+	let actual_deposit = T::Currency::set_balance(&who, balance.saturated_into());
+	assert_eq!(balance, actual_deposit);
 }
 
 fn lookup_of_account<T: Config>(
