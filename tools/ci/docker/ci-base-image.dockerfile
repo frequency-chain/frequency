@@ -2,6 +2,7 @@ FROM --platform=linux/amd64 ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
 LABEL description="Frequency CI Base Image"
+# Image version is set by the CI pipeline
 ARG IMAGE_VERSION
 LABEL version="{IMAGE_VERSION}"
 
