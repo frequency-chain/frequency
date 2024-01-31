@@ -4,7 +4,7 @@
 FROM --platform=linux/amd64 ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
-LABEL org.opencontainers.image.description="Frequency CI Base Image"
+LABEL description="Frequency CI Base Image"
 # Image version is set by the CI pipeline in merge-pr.yml
 ARG IMAGE_VERSION
 LABEL version="{IMAGE_VERSION}"

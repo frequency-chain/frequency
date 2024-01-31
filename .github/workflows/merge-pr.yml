@@ -11,7 +11,7 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.1.0
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
@@ -28,7 +28,7 @@ jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.1.0
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
     runs-on: [self-hosted, Linux, X64, build, v2]
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:1.1.0
+    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -80,6 +80,9 @@ jobs:
     if: needs.changes.outputs.ci-base-image == 'true'
     name: Publish CI Base Image
     env:
+      # NOTE: IMAGE_VERSION should be updated if ci-base-image.dockerfile is updated
+      # ci-base-image is published IF and ONLY IF ci-base-image.dockerfile changes
+      # IMAGE_VERSION reflects the latest version of ci-base-image.dockerfile that has been published
       IMAGE_NAME: ci-base-image
       IMAGE_VERSION: 1.1.0
       BRANCH_NAME: main
