@@ -8,6 +8,7 @@ on:
     branches:
       - disabled-as-this-branch-does-not-exist
       # - 1639-upgrade-to-polkadot-release-v100
+      - 1862-ci-base-image-should-get-a-version-bump-with-the-new-base-os-image-=-ubuntu-2204
 env:
   BIN_DIR: target/release
 
@@ -47,4 +48,4 @@ jobs:
           push: true
           file: tools/ci/docker/ci-base-image.dockerfile
           tags: |
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:1862-test-container-description
