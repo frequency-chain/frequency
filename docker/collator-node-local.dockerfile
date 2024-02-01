@@ -9,7 +9,7 @@ WORKDIR /frequency
 RUN apt-get update && \
 	apt-get install -y jq apt-utils apt-transport-https \
 		software-properties-common readline-common curl vim wget gnupg gnupg2 \
-		gnupg-agent ca-certificates tini && \
+		gnupg-agent ca-certificates tini file && \
 	rm -rf /var/lib/apt/lists/*
 
 # For local testing only
