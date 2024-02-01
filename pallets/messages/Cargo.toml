@@ -30,8 +30,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-# Pinning a specific commit to fix an unwrap-panic issue: REVIEW: remove when cid > 0.10.1 
-cid = { git = "https://github.com/multiformats/rust-cid", rev = "86c79126d851316350ad106d0df3e4ae69071874", default-features = false }
+cid = { version = "0.11", default-features = false }
 multibase = { version ="0.9", default-features = false }
 
 [dev-dependencies]
