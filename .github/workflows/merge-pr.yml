@@ -81,7 +81,7 @@ jobs:
     name: Publish CI Base Image
     env:
       IMAGE_NAME: ci-base-image
-      IMAGE_VERSION: 1.0.0
+      IMAGE_VERSION: 1.1.0
       BRANCH_NAME: main
     runs-on: ubuntu-22.04
     steps:
