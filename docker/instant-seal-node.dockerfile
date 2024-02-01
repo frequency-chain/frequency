@@ -13,8 +13,10 @@ RUN apt-get update && apt-get install -y ca-certificates jq curl && update-ca-ce
 FROM --platform=linux/amd64 ubuntu:22.04
 
 # We want jq and curl in the final image, but we don't need the support files
-RUN apt-get update && apt-get install -y jq curl && apt-get clean
-RUN rm -rf /usr/share/doc /usr/share/man /usr/share/zsh
+RUN apt-get update && \
+	apt-get install -y jq curl && \
+	apt-get clean && \
+	rm -rf /usr/share/doc /usr/share/man /usr/share/zsh
 
 RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
 	mkdir -p /data /frequency/.local/share && \
