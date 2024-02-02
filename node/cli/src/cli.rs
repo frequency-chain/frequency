@@ -49,10 +49,6 @@ pub enum Subcommand {
 	#[clap(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
-	/// Try some testing command against a specified runtime state.
-	#[cfg(feature = "try-runtime")]
-	TryRuntime(try_runtime_cli::TryRuntimeCmd),
-
 	/// Get current runtime spec version.
 	ExportRuntimeVersion(ExportRuntimeVersionCmd),
 }
