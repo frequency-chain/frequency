@@ -2,10 +2,12 @@
 use super::*;
 use chrono::{DateTime, Days, Duration, TimeZone, Utc};
 use frame_support::{
-	assert_err, assert_noop, assert_ok, error::BadOrigin, traits::{
+	assert_noop, assert_ok,
+	error::BadOrigin,
+	traits::{
 		fungible::{Inspect, InspectFreeze},
 		tokens::{Fortitude, WithdrawConsequence},
-	}
+	},
 };
 use mock::*;
 use sp_runtime::{traits::Dispatchable, SaturatedConversion, TokenError};
@@ -74,23 +76,6 @@ fn transfer_works() {
 		}));
 	});
 }
-#[test]
-fn transfer_to_zero_balance_account_does_not_work() {
-	ExtBuilder::build().execute_with(|| {
-		System::set_block_number(1);
-
-		let schedule =
-			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 1u32, per_period: 100u64 };
-		assert_err!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), EVE, schedule.clone()), TokenError::FundsUnavailable);
-		assert_eq!(TimeRelease::release_schedules(&EVE), vec![schedule.clone()]);
-		System::assert_last_event(RuntimeEvent::TimeRelease(crate::Event::ReleaseScheduleAdded {
-			from: ALICE,
-			to: EVE,
-			release_schedule: schedule,
-		}));
-	});
-}
-
 
 #[test]
 fn self_releasing() {

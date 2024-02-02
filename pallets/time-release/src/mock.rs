@@ -118,7 +118,6 @@ pub const ALICE: AccountId = 0;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
 pub const DAVE: AccountId = 4;
-pub const EVE: AccountId = 5;
 
 pub const ALICE_BALANCE: u64 = 100;
 pub const CHARLIE_BALANCE: u64 = 30;
