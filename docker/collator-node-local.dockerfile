@@ -17,7 +17,7 @@ RUN apt-get update && \
 COPY target/release/frequency ./target/release/
 RUN chmod +x target/release/frequency
 
-RUN ls -l ./target/release
+RUN ls ./target/release
 
 # Checks
 RUN ls -lah /
