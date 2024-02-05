@@ -94,7 +94,7 @@ impl BlockNumberProvider for MockBlockNumberProvider {
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type Currency = PalletBalances;
-	type MinReleaseTransfer = ConstU64<5>;
+	type MinReleaseTransfer = ConstU64<0>;
 	type TransferOrigin = EnsureAliceOrBob;
 	type WeightInfo = ();
 	type MaxReleaseSchedules = ConstU32<50>;

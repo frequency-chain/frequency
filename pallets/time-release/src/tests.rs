@@ -342,7 +342,7 @@ fn transfer_check_for_min() {
 			ReleaseSchedule { start: 1u32, period: 1u32, period_count: 1u32, per_period: 3u64 };
 		assert_noop!(
 			TimeRelease::transfer(RuntimeOrigin::signed(BOB), ALICE, schedule),
-			Error::<Test>::AmountLow
+			TokenError::FundsUnavailable
 		);
 	});
 }
