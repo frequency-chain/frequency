@@ -210,7 +210,7 @@ jobs:
         run: sha256sum ${{env.RELEASE_BIN_FILENAME}} > ${{env.RELEASE_BIN_FILENAME}}.sha256
       - name: Import GPG key
         id: import-gpg
-        uses: crazy-max/ghaction-import-gpg@82a020f1f7f605c65dd2449b392a52c3fcfef7ef
+        uses: crazy-max/ghaction-import-gpg@01dd5d3ca463c7f10f7f4f7b4f177225ac661ee4
         with:
           gpg_private_key: ${{secrets.FREQUENCY_PGP_SECRET_SUBKEYS}}
           passphrase: ${{secrets.FREQUENCY_PGP_MASTER_KEY_PASSWORD}}
@@ -882,7 +882,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
+        uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
@@ -981,7 +981,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
-        uses: peter-evans/dockerhub-description@dc67fad7001ef9e8e3c124cb7a64e16d0a63d864
+        uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
         with:
           username: ${{secrets.DOCKERHUB_USERNAME_FC}}
           password: ${{secrets.DOCKERHUB_TOKEN_FC}}
