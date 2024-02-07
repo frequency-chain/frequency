@@ -1,5 +1,6 @@
 name: Create Upgrade Issue for New Polkadot Release
 on:
+  workflow_dispatch:
   push:
     branches:
       - ci/latest-polkadot-full-release
