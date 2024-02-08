@@ -7,7 +7,7 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start
+.PHONY: start, start-relay, start-frequency, start-frequency-docker, start-manual, start-interval, start-interval-short, start-with-offchain, start-frequency-with-offchain, start-manual-with-offchain, start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
 
@@ -41,7 +41,7 @@ start-manual-with-offchain:
 start-interval-with-offchain:
 	./scripts/init.sh start-frequency-interval with-offchain
 
-.PHONY: stop
+.PHONY: stop, stop-relay, stop-frequency-docker
 stop-relay:
 	./scripts/init.sh stop-relay-chain
 
@@ -69,7 +69,7 @@ onboard:
 offboard:
 	./scripts/init.sh offboard-frequency-rococo-local
 
-.PHONY: specs
+.PHONY: specs-rococo-2000, specs-rococo-local
 specs-rococo-2000:
 	./scripts/generate_specs.sh 2000 rococo-2000 release
 
@@ -80,7 +80,7 @@ specs-rococo-local:
 format:
 	cargo +nightly-2023-07-13 fmt
 
-.PHONY: lint
+.PHONY: lint, lint-audit
 lint:
 	cargo +nightly-2023-07-13 fmt --check
 	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
@@ -95,7 +95,7 @@ format-lint: format lint
 .PHONY: ci-local
 ci-local: check lint lint-audit test js e2e-tests
 
-.PHONY: upgrade
+.PHONY: upgrade-local, upgrade-no-relay
 upgrade-local:
 	./scripts/init.sh upgrade-frequency-rococo-local
 
@@ -196,7 +196,7 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check
+.PHONY: check, check-no-relay, check-local, check-rococo, check-mainnet
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -216,7 +216,7 @@ check-mainnet:
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build
+.PHONY: build, build-benchmarks, build-no-relay, build-local, build-rococo, build-mainnet, build-rococo-release, build-mainnet-release
 build:
 	cargo build --features frequency-no-relay
 
@@ -241,7 +241,7 @@ build-rococo-release:
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
 
-.PHONY: test
+.PHONY: test, e2e-tests, e2e-tests-serial, e2e-tests-only, e2e-tests-load, e2e-tests-load-only, e2e-tests-rococo, e2e-tests-rococo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
@@ -266,17 +266,29 @@ e2e-tests-rococo:
 e2e-tests-rococo-local:
 	./scripts/run_e2e_tests.sh -c rococo_local
 
-.PHONY: try-runtime
-try-runtime:
-	cargo run --release --features frequency-lint-check,try-runtime try-runtime --help
+.PHONY: try-runtime-create-snapshot-rococo, try-runtime-create-snapshot-mainnet, try-runtime-upgrade-rococo, try-runtime-upgrade-mainnet, try-runtime-use-snapshot-rococo, try-runtime-use-snapshot-mainnet
+try-runtime-create-snapshot-rococo:
+	try-runtime create-snapshot --uri wss://rpc.rococo.frequency.xyz:443 rococo-all-pallets.state
+
+# mainnet snapshot takes as many as 24 hours to complete
+try-runtime-create-snapshot-mainnet:
+	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
 
 try-runtime-upgrade-rococo:
-	cargo build --release --features frequency-rococo-testnet,try-runtime
-	cargo run --release --features frequency-lint-check,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://rpc.rococo.frequency.xyz:443
+	cargo build --release --features frequency-rococo-testnet,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
 
 try-runtime-upgrade-mainnet:
-	cargo build --release --features frequency,try-runtime
-	cargo run --release --features frequency-lint-check,try-runtime try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks live --uri wss://1.rpc.frequency.xyz:443
+	cargo build --release --features frequency,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+
+try-runtime-use-snapshot-rococo:
+	cargo build --release --features frequency-rococo-testnet,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path rococo-all-pallets.state
+
+try-runtime-use-snapshot-mainnet:
+	cargo build --release --features frequency,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
 
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
