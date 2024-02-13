@@ -20,7 +20,7 @@ that will allow us to store these messages on chain.
 Storing messages on chain using **BlockNumber** and **SchemaId** as main and secondary keys
 using [StorageDoubleMap](https://paritytech.github.io/substrate/master/frame_support/storage/trait.StorageDoubleMap.html) data structure provided in Substrate.
 
-![Data-Page-3 drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/main_storage_type.png?raw=true)
+![Data-Page-3 drawio](../docs/images/main_storage_type.png?raw=true)
 
 
 ### Main Storage types
@@ -125,12 +125,12 @@ any messages, to eliminate unnecessary DB reads. We can use a BitArray per Schem
 we would need to store this indexing data off-chain, and we can create jobs to create or update
 it periodically.
 
-![Data-OnChainAnnouncements drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/message_storage_bitvector.png?raw=true)
+![Data-OnChainAnnouncements drawio](../docs/images/message_storage_bitvector.png?raw=true)
 ## Alternatives and Rationale
 Storing messages on chain using a map of `schemaId` and `staring` index to a sequential fixed sized
 bucket.
 
-![Data-Page-2 drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/message_storage_alternative.png?raw=true)
+![Data-Page-2 drawio](../docs/images/message_storage_alternative.png?raw=true)
 
 ### Main Storage types
 - **Messages**
