@@ -74,7 +74,7 @@ jobs:
   run-all-benchmarks:
     needs: create-release-branch
     name: Run All Benchmarks
-    runs-on: ubicloud
+    runs-on: ubicloud-standard-2
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -296,7 +296,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: ubicloud
+    runs-on: ubicloud-standard-2
     steps:
       - name: Install Required Packages
         run: |
@@ -362,7 +362,7 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: ubicloud
+    runs-on: ubicloud-standard-2
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
