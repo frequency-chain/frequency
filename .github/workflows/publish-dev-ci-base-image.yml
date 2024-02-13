@@ -25,6 +25,20 @@ jobs:
         run: |
           brew install --cask docker
           open -a /Applications/Docker.app
+      - name: Check Docker Daemon
+        run: |
+          # Make sure Docker Daemon is running
+          if ! docker info; then
+            echo "Restarting Docker"
+            osascript -e 'quit app "Docker"'
+            sleep 5
+            open -a Docker
+            # Wait for Docker to be ready
+            while ! docker info >/dev/null 2>&1; do
+              sleep 1
+            done
+          fi
+
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up QEMU
