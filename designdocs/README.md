@@ -36,7 +36,7 @@ There are three core data models in Frequency and each corresponds to a pallet.
   - The metadata and payload or payload reference that a user sends that matches a particular schema.
   - What and when a message is sent
 
-![Basic Data Model drawio](https://github.com/LibertyDSNP/DesignDocs/blob/main/img/BasicDataModel.drawio.png?raw=true)
+![Basic Data Model drawio](../docs/images/BasicDataModel.drawio.png?raw=true)
 
 ## Frequency Glossary
 
