@@ -192,12 +192,17 @@ describe('Sudo required', function () {
 
           // Setup some keys and a provider for capacity staking
           const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(fundingSource, stakeKeys, 'StakeProvider', accountBalance);
+          const stakeProviderId: u64 = await createMsaAndProvider(
+            fundingSource,
+            stakeKeys,
+            'StakeProvider',
+            accountBalance
+          );
 
           // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
           const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
           const { target: proposalEvent } = await proposalExt.signAndSend();
-          assert.notEqual(proposalEvent, undefined, 'should return a Proposal event')
+          assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
 
           // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
           let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
@@ -214,7 +219,7 @@ describe('Sudo required', function () {
           // Slash the provider
           const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
           const { target: slashEvent } = await slashExt.sudoSignAndSend();
-          assert.notEqual(slashEvent, undefined, 'should return a Treasury event')
+          assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
           // Confirm that the tokens were slashed from the stakeKeys account using the query API
           stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
@@ -232,7 +237,12 @@ describe('Sudo required', function () {
 
           // Setup some keys and a provider for capacity staking
           const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(fundingSource, stakeKeys, 'StakeProvider', accountBalance);
+          const stakeProviderId: u64 = await createMsaAndProvider(
+            fundingSource,
+            stakeKeys,
+            'StakeProvider',
+            accountBalance
+          );
 
           // Create a stake that will result in overlapping tokens being frozen
           await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
@@ -241,8 +251,8 @@ describe('Sudo required', function () {
           // The proposal should fail because the stakeKeys account has overlapping tokens frozen
           const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
           await assert.rejects(proposalExt.signAndSend());
-        })
-      })
+        });
+      });
     });
   });
 });
