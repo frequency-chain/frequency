@@ -23,21 +23,29 @@ jobs:
     steps:
       - name: Install and Start Docker
         run: |
+          brew install colima
           brew install --cask docker
-          open -a /Applications/Docker.app
+          # open -a /Applications/Docker.app --args --unattended --accept-license
+          colima start
+
       - name: Check Docker Daemon
         run: |
+          docker --version
+          cat /var/log/docker.log || echo "Docker log not found"
+          ps aux | grep Docker
+
           # Make sure Docker Daemon is running
-          if ! docker info; then
-            echo "Restarting Docker"
-            osascript -e 'quit app "Docker"'
-            sleep 5
-            open -a Docker
-            # Wait for Docker to be ready
-            while ! docker info >/dev/null 2>&1; do
-              sleep 1
-            done
-          fi
+          echo "We are waiting for Docker to be up and running. It can take over 2 minutes..."
+          count=0
+          while ! /Applications/Docker.app/Contents/Resources/bin/docker info >/dev/null 2>&1; do
+            sleep 1
+            echo -n "."
+            count=$((count + 1))
+            if [ $count -gt 600 ]; then
+              echo "\cDocker failed to start"
+              exit 1
+            fi
+          done 
 
       - name: Check Out Repo
         uses: actions/checkout@v4
