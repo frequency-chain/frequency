@@ -21,6 +21,10 @@ jobs:
       BRANCH_NAME: ${{github.ref_name}}
     runs-on: macos-14
     steps:
+      - name: Install and Start Docker
+        run: |
+          brew install --cask docker
+          open -a /Applications/Docker.app
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set up QEMU
