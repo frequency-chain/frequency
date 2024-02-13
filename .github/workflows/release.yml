@@ -74,7 +74,7 @@ jobs:
   run-all-benchmarks:
     needs: create-release-branch
     name: Run All Benchmarks
-    runs-on: [self-hosted, Linux, X64, benchmark]
+    runs-on: ubicloud
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -154,9 +154,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, build, v2], [self-hosted, Linux, ARM64,  build, v2]]
-        os: [[self-hosted, Linux, X64, build, v2]]
         network: [dev, local, testnet, mainnet]
+        # os: [[ubicloud, Linux, X64, build, v2], [ubicloud, Linux, ARM64,  build, v2]]
+        os: [ubicloud]
         include:
           - network: dev
             spec: frequency-no-relay
@@ -174,9 +174,9 @@ jobs:
             spec: frequency
             build-profile: release
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, build, v2]
+          - os: [ubicloud, Linux, X64, build, v2]
             arch: amd64
-          # - os: [self-hosted, Linux, ARM64]
+          # - os: [ubicloud, Linux, ARM64]
           #   arch: arm64
     runs-on: ${{matrix.os}}
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
@@ -296,7 +296,7 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     steps:
       - name: Install Required Packages
         run: |
@@ -362,7 +362,7 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo

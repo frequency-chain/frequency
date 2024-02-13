@@ -132,7 +132,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       NETWORK: mainnet
@@ -207,7 +207,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -223,7 +223,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -237,7 +237,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -249,7 +249,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -264,7 +264,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -332,7 +332,7 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     steps:
       - name: Install Required Packages
         run: |
@@ -661,7 +661,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -829,7 +829,7 @@ jobs:
       needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
     needs: should-run-benchmarks
     name: Run Benchmarks
-    runs-on: [self-hosted, Linux, X64, benchmark]
+    runs-on: ubicloud
     steps:
       - name: Print Info
         run: |
