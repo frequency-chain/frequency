@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
+      - 779-build-arm-binaries-and-containers-for-linux-and-macos
       # - 1639-upgrade-to-polkadot-release-v100
 env:
   BIN_DIR: target/release
@@ -18,7 +19,7 @@ jobs:
       # IMAGE_NAME: ci-base-image-dind
       IMAGE_NAME: ci-base-image
       BRANCH_NAME: ${{github.ref_name}}
-    runs-on: ubuntu-22.04
+    runs-on: macos-14
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -44,6 +45,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: tools/ci/docker
+          platforms: linux/amd64,linux/arm64
           push: true
           file: tools/ci/docker/ci-base-image.dockerfile
           tags: |
