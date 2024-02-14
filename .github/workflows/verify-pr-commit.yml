@@ -373,7 +373,7 @@ jobs:
           cargo install --locked --git https://github.com/chevdor/srtool-cli
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Sudo permission on /build
-        run: sudo chown -R $USER /build
+        run: sudo mkdir -p /build && sudo chown -R $USER /build
       - name: Test srtool-cli Install
         run: |
           echo "PATH: $PATH"
