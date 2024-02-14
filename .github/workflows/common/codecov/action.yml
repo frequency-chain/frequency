@@ -9,7 +9,7 @@ runs:
   steps:
     - name: Install grcov
       shell: bash
-      run: cargo +nightly-2023-07-13 install grcov
+      run: cargo +nightly-2023-07-13 install --locked grcov
     - name: Build
       shell: bash # Limited to 10 threads max
       run: cargo +nightly-2023-07-13 build -j 10 --features frequency-lint-check
