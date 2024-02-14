@@ -372,6 +372,8 @@ jobs:
           rustup show
           cargo install --locked --git https://github.com/chevdor/srtool-cli
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Sudo permission on /build
+        run: sudo chown -R $USER /build
       - name: Test srtool-cli Install
         run: |
           echo "PATH: $PATH"
@@ -384,7 +386,6 @@ jobs:
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}
-            --user root
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
