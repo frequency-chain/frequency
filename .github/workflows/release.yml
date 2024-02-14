@@ -319,7 +319,7 @@ jobs:
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       - name: Install srtool-cli
         run: |
-          cargo install --git https://github.com/chevdor/srtool-cli
+          cargo install --locked --git https://github.com/chevdor/srtool-cli
           srtool --version
       - name: Build Deterministic WASM
         run: |
@@ -666,7 +666,7 @@ jobs:
           echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
       - name: Install Tera CLI
         run: |
-          cargo install --git https://github.com/chevdor/tera-cli
+          cargo install --locked --git https://github.com/chevdor/tera-cli
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Verify Tera CLI Install
         run: |
