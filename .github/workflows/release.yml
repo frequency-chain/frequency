@@ -333,14 +333,13 @@ jobs:
         run: |
           cargo install --locked --git https://github.com/chevdor/srtool-cli
           srtool --version
-      - name: Sudo permission on /build
-        run: sudo mkdir -p /build && sudo chown -R $USER /build
       - name: Build Deterministic WASM
         run: |
           RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}}
+            --package=${{matrix.package}} \
+            --root
       - name: Rename WASM file
         run: |
           cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
