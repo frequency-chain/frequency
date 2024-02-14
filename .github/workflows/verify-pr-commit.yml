@@ -358,7 +358,7 @@ jobs:
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
           rustup show
-          cargo install --git https://github.com/chevdor/srtool-cli
+          cargo install --locked --git https://github.com/chevdor/srtool-cli
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Test srtool-cli Install
         run: |
