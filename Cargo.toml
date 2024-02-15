@@ -109,7 +109,9 @@ rayon = "1.5.3"
 serde_json = { version = "1.0.86", default-features = false }
 tokio = { version = "1.25.0", default-features = false }
 unicode-normalization = { version = "0.1.22", default-features = false }
-clap = { version = "4.2.5", features = ["derive"] }
+# Constrain clap to minor version "~4.4" (was previously not constrained by "~"; can be reverted after we move to rustc >= 1.74)
+# (last good version in Cargo.lock was 4.4.11)
+clap = { version = "~4.4", features = ["derive"] }
 
 frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.1.0" }
