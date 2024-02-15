@@ -830,7 +830,7 @@ jobs:
       needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
     needs: should-run-benchmarks
     name: Run Benchmarks
-    runs-on: ubicloud-standard-4
+    runs-on: [self-hosted, Linux, X64, benchmark]
     steps:
       - name: Print Info
         run: |
