@@ -1,24 +1,22 @@
 {
-  "name": "Frequency Rococo",
+  "name": "Frequency Paseo",
   "id": "frequency-rococo",
   "chainType": "Live",
-  "bootNodes": [
-    "/dns4/0.boot.rococo.frequency.xyz/tcp/30333/ws/p2p/12D3KooWArmKDbY8Y6XXHGodosWAjRWWxSw5YxWEjSZTBNjJXVSC"
-  ],
+  "bootNodes": ["TBD"],
   "telemetryEndpoints": [
     [
       "/dns/telemetry.frequency.xyz/tcp/443/x-parity-wss/%2Fsubmit%2F",
       0
     ]
   ],
-  "protocolId": "frequency-rococo",
+  "protocolId": "frequency-paseo",
   "properties": {
     "ss58Format": 42,
     "tokenDecimals": 8,
     "tokenSymbol": "XRQCY"
   },
-  "relay_chain": "rococo",
-  "para_id": 4044,
+  "relay_chain": "paseo",
+  "para_id": 0,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
@@ -27,7 +25,7 @@
       },
       "parachainSystem": null,
       "parachainInfo": {
-        "parachainId": 4044
+        "parachainId": 0
       },
       "sudo": {
         "key": "5GhDid9V5rpReBSAK6sSEmCzeiUXTgAmAoMJQUuK5gFzPXoq"
