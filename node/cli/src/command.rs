@@ -73,8 +73,8 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-rococo-local")]
 		"frequency-rococo-local" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
-		#[cfg(feature = "frequency-rococo-testnet")]
-		"frequency-rococo-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
+		#[cfg(feature = "frequency-testnet")]
+		"frequency-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
 			if path.is_empty() {
@@ -99,14 +99,14 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					}
 					#[cfg(not(feature = "frequency-rococo-local"))]
 					return Err("Frequency Local runtime is not available.".into())
-				} else if cfg!(feature = "frequency-rococo-testnet") {
-					#[cfg(feature = "frequency-rococo-testnet")]
+				} else if cfg!(feature = "frequency-testnet") {
+					#[cfg(feature = "frequency-testnet")]
 					{
 						return Ok(Box::new(
 							chain_spec::frequency_rococo::load_frequency_rococo_spec(),
 						))
 					}
-					#[cfg(not(feature = "frequency-rococo-testnet"))]
+					#[cfg(not(feature = "frequency-testnet"))]
 					return Err("Frequency Rococo runtime is not available.".into())
 				} else {
 					return Err("No chain spec is available.".into())
@@ -123,13 +123,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				#[cfg(not(feature = "frequency"))]
 				return Err("Frequency runtime is not available.".into())
 			} else if ChainIdentity::FrequencyRococo == spec.identify() {
-				#[cfg(feature = "frequency-rococo-testnet")]
+				#[cfg(feature = "frequency-testnet")]
 				{
 					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
 						path_buf,
 					)?))
 				}
-				#[cfg(not(feature = "frequency-rococo-testnet"))]
+				#[cfg(not(feature = "frequency-testnet"))]
 				return Err("Frequency Rococo runtime is not available.".into())
 			} else if ChainIdentity::FrequencyLocal == spec.identify() {
 				#[cfg(feature = "frequency-rococo-local")]

@@ -34,9 +34,9 @@ frequency-rococo-local = [
   "frequency-service/frequency-rococo-local",
   "frequency-cli/frequency-rococo-local"
 ]
-frequency-rococo-testnet = [
-  "frequency-service/frequency-rococo-testnet",
-  "frequency-cli/frequency-rococo-testnet"
+frequency-testnet = [
+  "frequency-service/frequency-testnet",
+  "frequency-cli/frequency-testnet"
 ]
 frequency-lint-check = [
   "frequency-service/frequency-lint-check",

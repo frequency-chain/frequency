@@ -222,7 +222,7 @@ try-runtime = [
 	"pallet-utility/try-runtime",
 ]
 frequency = ["common-runtime/frequency"]
-frequency-rococo-testnet = ["common-runtime/frequency-rococo-testnet"]
+frequency-testnet = ["common-runtime/frequency-testnet"]
 frequency-rococo-local = ["common-runtime/frequency-rococo-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
 # Following features are used in generating lean wasms

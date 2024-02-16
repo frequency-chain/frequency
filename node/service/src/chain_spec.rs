@@ -14,7 +14,7 @@ pub type DummyChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 pub mod frequency;
 
 #[cfg(any(
-	feature = "frequency-rococo-testnet",
+	feature = "frequency-testnet",
 	feature = "frequency-rococo-local",
 	feature = "frequency-no-relay"
 ))]

@@ -47,7 +47,7 @@ pallet-time-release = { path = "../../pallets/time-release", default-features = 
 [features]
 default = ["std"]
 frequency = []
-frequency-rococo-testnet = []
+frequency-testnet = []
 frequency-rococo-local = []
 frequency-no-relay = []
 runtime-benchmarks = [

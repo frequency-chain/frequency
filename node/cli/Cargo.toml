@@ -84,12 +84,12 @@ on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
 frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
-frequency-rococo-testnet = ["frequency-service/frequency-rococo-testnet"]
+frequency-testnet = ["frequency-service/frequency-testnet"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
   "frequency-rococo-local",
-  "frequency-rococo-testnet",
+  "frequency-testnet",
   "frequency-service/frequency-lint-check"
 ]
 
