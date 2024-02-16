@@ -41,3 +41,6 @@ rustflags = [
 	"-Dclippy::unwrap_used",
 	"-Dclippy::expect_used",
 ]
+
+[net]
+git-fetch-with-cli = true
