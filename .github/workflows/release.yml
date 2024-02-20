@@ -168,7 +168,7 @@ jobs:
           - network: rococo
             spec: frequency-testnet
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             spec: frequency
             build-profile: release
@@ -808,7 +808,7 @@ jobs:
         include:
           - network: rococo
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             build-profile: release
             release-file-name-prefix: frequency
