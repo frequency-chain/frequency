@@ -166,7 +166,7 @@ jobs:
             build-profile: release
             release-file-name-prefix: frequency-rococo-local
           - network: rococo
-            spec: frequency-rococo-testnet
+            spec: frequency-testnet
             build-profile: release
             release-file-name-prefix: frequency-rococo
           - network: mainnet

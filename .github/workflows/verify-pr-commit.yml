@@ -97,7 +97,7 @@ jobs:
             spec: frequency-rococo-local
             branch_alias: main
           - network: rococo
-            spec: frequency-rococo-testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -126,7 +126,7 @@ jobs:
             spec: frequency-rococo-local
             branch_alias: main
           - network: rococo
-            spec: frequency-rococo-testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -725,7 +725,7 @@ jobs:
         run: |
           echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_ROCOCO=frequency.rococo.frequency-rococo-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_ROCOCO=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries

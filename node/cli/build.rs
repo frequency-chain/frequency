@@ -30,22 +30,14 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-no-relay",
-	any(
-		feature = "frequency",
-		feature = "frequency-rococo-local",
-		feature = "frequency-testnet"
-	)
+	any(feature = "frequency", feature = "frequency-rococo-local", feature = "frequency-testnet")
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-rococo-local",
-	any(
-		feature = "frequency",
-		feature = "frequency-no-relay",
-		feature = "frequency-testnet"
-	)
+	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-testnet")
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
