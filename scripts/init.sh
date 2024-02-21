@@ -30,8 +30,20 @@ start-relay-chain)
   docker-compose up -d relay_alice relay_bob
   ;;
 
+start-paseo-relay-chain)
+  echo "Starting local relay chain with Alice and Bob..."
+  cd docker
+  docker-compose up -d paseo_alice paseo_bob
+  ;;
+
 stop-relay-chain)
   echo "Stopping relay chain..."
+  cd docker
+  docker-compose down
+  ;;
+
+stop-paseo-relay-chain)
+  echo "Stopping paseo chain..."
   cd docker
   docker-compose down
   ;;
@@ -50,7 +62,7 @@ stop-frequency-docker)
 
 start-frequency)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --features frequency-rococo-local
+  cargo build --features frequency-local
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -238,7 +250,7 @@ upgrade-frequency-rococo-local)
   # Due to defaults and profile=debug, the target directory will be $root_dir/target/debug
   cargo build \
     --package frequency-runtime \
-    --features frequency-rococo-local
+    --features frequency-local
 
   wasm_location=$root_dir/target/debug/wbuild/frequency-runtime/frequency_runtime.compact.compressed.wasm
 

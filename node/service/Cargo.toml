@@ -127,12 +127,12 @@ runtime-benchmarks = [
 ]
 frequency = ["frequency-runtime"]
 frequency-no-relay = ["frequency-runtime"]
-frequency-rococo-local = ["frequency-runtime"]
+frequency-local = ["frequency-runtime"]
 frequency-testnet = ["frequency-runtime"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
-  "frequency-rococo-local",
+  "frequency-local",
   "frequency-testnet",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]

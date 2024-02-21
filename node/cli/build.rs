@@ -2,7 +2,7 @@ use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_change
 
 #[cfg(not(any(
 	feature = "frequency",
-	feature = "frequency-rococo-local",
+	feature = "frequency-local",
 	feature = "frequency-no-relay",
 	feature = "frequency-testnet"
 )))]
@@ -10,7 +10,7 @@ compile_error!(
 	r#"You must enable one of these features:
 - Mainnet: "frequency"
 - Frequency Rococo: "frequency-testnet"
-- Local: "frequency-rococo-local"
+- Local: "frequency-local"
 - No Relay: "frequency-no-relay",
 - All: "frequency-lint-check"#
 );
@@ -21,7 +21,7 @@ compile_error!(
 	feature = "frequency",
 	any(
 		feature = "frequency-no-relay",
-		feature = "frequency-rococo-local",
+		feature = "frequency-local",
 		feature = "frequency-testnet"
 	)
 ))]
@@ -30,13 +30,13 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-no-relay",
-	any(feature = "frequency", feature = "frequency-rococo-local", feature = "frequency-testnet")
+	any(feature = "frequency", feature = "frequency-local", feature = "frequency-testnet")
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
-	feature = "frequency-rococo-local",
+	feature = "frequency-local",
 	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-testnet")
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
@@ -44,7 +44,7 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-testnet",
-	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-rococo-local",)
+	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-local",)
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
