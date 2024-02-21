@@ -7,7 +7,10 @@ LABEL maintainer="Frequency"
 LABEL description="Frequency CI Base Image"
 # Image version is set by the CI pipeline in merge-pr.yml
 ARG IMAGE_VERSION
-LABEL version="{IMAGE_VERSION}"
+LABEL version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.description "Frequency CI Base Image"
+ARG RUST_VERSION
+LABEL rust.version="${RUST_VERSION}"
 
 WORKDIR /ci
 RUN apt-get update && \
