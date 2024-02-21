@@ -73,7 +73,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     ```sh
     make check-no-relay
     make check-local
-    make check-rococo
+    make check-testnet
     make check-mainnet
     ```
 
