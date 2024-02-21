@@ -200,7 +200,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Check
         run: |
-          cargo +nightly fmt --check
+          cargo +nightly-2023-07-13 fmt --check
 
   lint-rust-code:
     needs: changes
@@ -213,7 +213,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Lint
         run: |
-          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly clippy \
+          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy \
             --features runtime-benchmarks,frequency-lint-check \
             -- \
             -D warnings
@@ -229,8 +229,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Docs
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly doc --no-deps --features frequency
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
