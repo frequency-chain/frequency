@@ -33,7 +33,7 @@ start-relay-chain)
 start-paseo-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
   cd docker
-  docker-compose up -d paseo_alice paseo_bob
+  docker-compose up -d relay_paseo_alice relay_paseo_bob
   ;;
 
 stop-relay-chain)

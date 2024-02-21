@@ -14,7 +14,7 @@ start:
 start-relay:
 	./scripts/init.sh start-relay-chain
 
-start-paseo-relay-chain:
+start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
 
 start-frequency:
