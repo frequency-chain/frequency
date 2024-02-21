@@ -73,7 +73,7 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     ```sh
     make check-no-relay
     make check-local
-    make check-rococo
+    make check-testnet
     make check-mainnet
     ```
 
@@ -94,11 +94,11 @@ We run benchmarks with and recommend the same [reference hardware specified by P
     ```sh
     make build-no-relay
     make build-local
-    make build-rococo
+    make build-testnet
     make build-mainnet
     ```
 
-    To build local, rococo (testnet) or mainnet features respectively.
+    To build local, rococo/paseo (testnet) or mainnet features respectively.
 
 At this point you should have `./target/debug` directory generated locally with compiled project files. (or `./target/release` for `make build-*-release`)
 

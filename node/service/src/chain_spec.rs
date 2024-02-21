@@ -15,7 +15,7 @@ pub mod frequency;
 
 #[cfg(any(
 	feature = "frequency-testnet",
-	feature = "frequency-rococo-local",
+	feature = "frequency-local",
 	feature = "frequency-no-relay"
 ))]
 pub mod frequency_rococo;

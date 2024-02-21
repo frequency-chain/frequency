@@ -83,12 +83,12 @@ try-runtime = ["frequency-service/try-runtime", "try-runtime-cli", "try-runtime-
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
-frequency-rococo-local = ["frequency-service/frequency-rococo-local"]
+frequency-local = ["frequency-service/frequency-local"]
 frequency-testnet = ["frequency-service/frequency-testnet"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
-  "frequency-rococo-local",
+  "frequency-local",
   "frequency-testnet",
   "frequency-service/frequency-lint-check"
 ]

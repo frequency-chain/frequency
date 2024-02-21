@@ -14,6 +14,9 @@ start:
 start-relay:
 	./scripts/init.sh start-relay-chain
 
+start-paseo-relay:
+	./scripts/init.sh start-paseo-relay-chain
+
 start-frequency:
 	./scripts/init.sh start-frequency
 
@@ -44,6 +47,9 @@ start-interval-with-offchain:
 .PHONY: stop, stop-relay, stop-frequency-docker
 stop-relay:
 	./scripts/init.sh stop-relay-chain
+
+stop-paseo-relay:
+	./scripts/init.sh stop-paseo-relay-chain
 
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
@@ -227,7 +233,7 @@ build-no-relay:
 	cargo build --features frequency-no-relay
 
 build-local:
-	cargo build --features frequency-rococo-local
+	cargo build --features frequency-local
 
 build-testnet:
 	cargo build --features frequency-testnet

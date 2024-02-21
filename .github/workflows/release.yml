@@ -164,11 +164,11 @@ jobs:
           - network: local
             spec: frequency-rococo-local
             build-profile: release
-            release-file-name-prefix: frequency-rococo-local
+            release-file-name-prefix: frequency-local
           - network: rococo
-            spec: frequency-rococo-testnet
+            spec: frequency-testnet
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             spec: frequency
             build-profile: release
@@ -383,7 +383,7 @@ jobs:
       CHAIN_SPEC: frequency-rococo-local
       BUILD_PROFILE: release
       BIN_DIR: target/release
-      RELEASE_FILENAME_PREFIX: frequency-rococo-local
+      RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
     runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
@@ -808,7 +808,7 @@ jobs:
         include:
           - network: rococo
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             build-profile: release
             release-file-name-prefix: frequency
@@ -901,7 +901,7 @@ jobs:
           - node: collator-node-local
             network: local
             build-profile: release
-            release-file-name-prefix: frequency-rococo-local
+            release-file-name-prefix: frequency-local
           - node: instant-seal-node
             network: dev
             build-profile: release
