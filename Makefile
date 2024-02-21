@@ -48,7 +48,7 @@ start-interval-with-offchain:
 stop-relay:
 	./scripts/init.sh stop-relay-chain
 
-stop-paseo-relay-chain:
+stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
 stop-frequency-docker:
