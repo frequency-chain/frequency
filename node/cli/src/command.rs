@@ -80,6 +80,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-paseo" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_paseo_spec())),
+		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
