@@ -90,11 +90,11 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
           - network: rococo
             spec: frequency-testnet
@@ -119,11 +119,11 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
           - network: rococo
             spec: frequency-testnet

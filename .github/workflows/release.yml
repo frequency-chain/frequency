@@ -162,7 +162,7 @@ jobs:
             build-profile: release
             release-file-name-prefix: frequency-dev
           - network: local
-            spec: frequency-rococo-local
+            spec: frequency-local
             build-profile: release
             release-file-name-prefix: frequency-local
           - network: rococo
