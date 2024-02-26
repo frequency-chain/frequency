@@ -264,7 +264,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: ubicloud-standard-8
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
