@@ -65,7 +65,7 @@ jobs:
 
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
-    runs-on: ubicloud-standard-4
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
