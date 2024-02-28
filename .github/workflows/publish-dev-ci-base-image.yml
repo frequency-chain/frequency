@@ -7,7 +7,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
-      # - 1854-upgrade-to-stablechain
+      # - 1639-upgrade-to-polkadot-release-v100
 env:
   BIN_DIR: target/release
 
