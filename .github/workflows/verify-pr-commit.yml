@@ -368,7 +368,7 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.76.0" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}

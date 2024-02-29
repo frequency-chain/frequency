@@ -311,7 +311,7 @@ make start-frequency-with-offchain
 1. Check out the commit at which the runtime was built.
 2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify the runtime:
     ```sh
-    SRTOOL_TAG="1.76.0" srtool build \
+    SRTOOL_TAG="1.75.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
             --profile=release \
             --package=frequency-runtime \
