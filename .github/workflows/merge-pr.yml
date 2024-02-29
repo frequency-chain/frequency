@@ -84,7 +84,7 @@ jobs:
       # ci-base-image is published IF and ONLY IF ci-base-image.dockerfile changes
       # IMAGE_VERSION reflects the latest version of ci-base-image.dockerfile that has been published
       IMAGE_NAME: ci-base-image
-      IMAGE_VERSION: 1.1.0
+      IMAGE_VERSION: 1.2.0
       BRANCH_NAME: main
     runs-on: ubuntu-22.04
     steps:
@@ -96,6 +96,9 @@ jobs:
           platforms: "amd64"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Get Rust Version
+        id: rust_version
+        run: echo "::set-output name=RUST_VERSION::$(rustc --version)"
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -118,4 +121,6 @@ jobs:
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
-          build-args: IMAGE_VERSION=${{env.IMAGE_VERSION}}
+          build-args: |
+           IMAGE_VERSION=${{env.IMAGE_VERSION}}
+           RUST_VERSION=${{steps.rust_version.outputs.RUST_VERSION}}
