@@ -156,7 +156,7 @@ jobs:
       matrix:
         # os: [[self-hosted, Linux, X64, build, v2], [self-hosted, Linux, ARM64,  build, v2]]
         os: [[self-hosted, Linux, X64, build, v2]]
-        network: [dev, local, rococo, mainnet]
+        network: [dev, local, testnet, mainnet]
         include:
           - network: dev
             spec: frequency-no-relay
@@ -166,7 +166,7 @@ jobs:
             spec: frequency-local
             build-profile: release
             release-file-name-prefix: frequency-local
-          - network: rococo
+          - network: testnet
             spec: frequency-testnet
             build-profile: release
             release-file-name-prefix: frequency-testnet
@@ -392,7 +392,6 @@ jobs:
     name: Build JS API Augment
     env:
       NETWORK: local
-      CHAIN_SPEC: frequency-rococo-local
       BUILD_PROFILE: release
       BIN_DIR: target/release
       RELEASE_FILENAME_PREFIX: frequency-local
@@ -435,7 +434,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
           chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -822,9 +821,9 @@ jobs:
       fail-fast: true
       matrix:
         arch: [amd64]
-        network: [rococo, mainnet]
+        network: [testnet, mainnet]
         include:
-          - network: rococo
+          - network: testnet
             build-profile: release
             release-file-name-prefix: frequency-testnet
           - network: mainnet
@@ -1066,4 +1065,3 @@ jobs:
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
-

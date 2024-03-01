@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Output Metadata
         # Run the cargo command and ignore any extra lines outside of the json result
-        run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-local -- export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+        run: CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo run --features frequency-local -- export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
