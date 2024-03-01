@@ -27,7 +27,7 @@
       },
       "parachainSystem": null,
       "parachainInfo": {
-        "parachainId": 0
+        "parachainId": 4000
       },
       "sudo": {
         "key": "5GhDid9V5rpReBSAK6sSEmCzeiUXTgAmAoMJQUuK5gFzPXoq"
