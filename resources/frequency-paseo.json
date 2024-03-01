@@ -2,7 +2,9 @@
   "name": "Frequency Paseo",
   "id": "frequency-paseo",
   "chainType": "Live",
-  "bootNodes": ["TBD"],
+  "bootNodes": [
+    "/dns4/0.boot.testnet.amplica.io/tcp/30333/ws/p2p/12D3KooWArmKDbY8Y6XXHGodosWAjRWWxSw5YxWEjSZTBNjJXVSC"
+  ],
   "telemetryEndpoints": [
     [
       "/dns/telemetry.frequency.xyz/tcp/443/x-parity-wss/%2Fsubmit%2F",
@@ -16,7 +18,7 @@
     "tokenSymbol": "XRQCY"
   },
   "relay_chain": "paseo",
-  "para_id": 0,
+  "para_id": 4000,
   "codeSubstitutes": {},
   "genesis": {
     "runtime": {
