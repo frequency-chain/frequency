@@ -76,7 +76,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			return Ok(Box::new(chain_spec::frequency_rococo::development_config())),
 		#[cfg(feature = "frequency-local")]
 		"frequency-rococo-local" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
+			return Ok(Box::new(chain_spec::frequency_rococo::local_rococo_testnet_config())),
+		#[cfg(feature = "frequency-local")]
+		"frequency-paseo-local" =>
+			return Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-paseo" => return Ok(Box::new(chain_spec::frequency_paseo::frequency_paseo_testnet())),
 		#[cfg(feature = "frequency-testnet")]
@@ -101,7 +104,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				} else if cfg!(feature = "frequency-local") {
 					#[cfg(feature = "frequency-local")]
 					{
-						return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config()))
+						return Ok(Box::new(
+							chain_spec::frequency_paseo::local_paseo_testnet_config(),
+						))
 					}
 					#[cfg(not(feature = "frequency-local"))]
 					return Err("Frequency Local runtime is not available.".into())

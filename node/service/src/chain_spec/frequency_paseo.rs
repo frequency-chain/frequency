@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
 use common_runtime::constants::{
-	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS,
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
@@ -13,8 +13,9 @@ use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
+use sp_core::sr25519;
 
-use super::{get_properties, Extensions};
+use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
 #[allow(clippy::unwrap_used)]
 /// Generates the Frequency Paseo chain spec from the raw json
@@ -182,6 +183,82 @@ pub fn frequency_paseo_testnet() -> ChainSpec {
 		Extensions {
 			relay_chain: "paseo".into(), // You MUST set this to the correct network!
 			para_id: para_id.into(),
+		},
+	)
+}
+
+/// Generates the chain spec for a local testnet
+pub fn local_paseo_testnet_config() -> ChainSpec {
+	// Give your base currency a unit name and decimal places
+	let properties =
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
+
+	ChainSpec::from_genesis(
+		// Name
+		"Frequency Local Testnet",
+		// ID
+		"frequency-paseo-local",
+		ChainType::Local,
+		move || {
+			testnet_genesis(
+				// initial collators.
+				vec![
+					(
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_collator_keys_from_seed("Alice"),
+					),
+					(
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_collator_keys_from_seed("Bob"),
+					),
+				],
+				// Sudo
+				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+				// Endowed Accounts
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
+				],
+				// Council members
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+				],
+				// Technical Committee members
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+				],
+				// ParaId
+				2000.into(),
+			)
+		},
+		// Bootnodes
+		Vec::new(),
+		// Telemetry
+		None,
+		// Protocol ID
+		Some("frequency-paseo-local"),
+		// Fork ID
+		None,
+		// Properties
+		Some(properties),
+		// Extensions
+		Extensions {
+			relay_chain: "paseo-local".into(), // You MUST set this to the correct network!
+			para_id: 2000,
 		},
 	)
 }
