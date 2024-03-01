@@ -23,16 +23,6 @@ pub fn load_frequency_rococo_spec() -> ChainSpec {
 	.unwrap()
 }
 
-//TODO: replace with raw paseo json
-#[allow(clippy::unwrap_used)]
-/// Generates the Frequency Paseo chain spec from the raw json
-pub fn load_frequency_paseo_spec() -> ChainSpec {
-	ChainSpec::from_json_bytes(
-		&include_bytes!("../../../../resources/frequency-rococo.raw.json")[..],
-	)
-	.unwrap()
-}
-
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).

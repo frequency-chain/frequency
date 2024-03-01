@@ -78,8 +78,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency-rococo-local" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
-		"frequency-paseo" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_paseo_spec())),
+		"frequency-paseo" => return Ok(Box::new(chain_spec::frequency_paseo::frequency_paseo_testnet())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
