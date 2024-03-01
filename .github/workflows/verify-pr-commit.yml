@@ -298,7 +298,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, rococo, mainnet]
+        # Remember, runtimes are separate for each relay chain
+        # We do not release frequency-*-local runtimes however
+        network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
@@ -306,14 +308,21 @@ jobs:
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-rococo
+            wasm-core-version: frequency-testnet
           - network: rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-testnet
-            wasm-core-version: frequency-rococo
+            wasm-core-version: frequency-testnet
+          - network: paseo
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
           - network: mainnet
             build-profile: release
             package: frequency-runtime
