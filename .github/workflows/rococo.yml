@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Rococo E2E Tests
 run-name: Rococo E2E Testing ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:

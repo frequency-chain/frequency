@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Verify PR Commit
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
