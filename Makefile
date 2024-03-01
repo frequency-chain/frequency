@@ -84,13 +84,13 @@ specs-rococo-local:
 
 .PHONY: format
 format:
-	cargo +nightly-2023-07-13 fmt
+	cargo +nightly-2024-02-04 fmt
 
 .PHONY: lint, lint-audit
 lint:
-	cargo +nightly-2023-07-13 fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
-	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
+	cargo +nightly-2024-02-04 fmt --check
+	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
+	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-02-04  doc --no-deps --features frequency
 
 lint-audit:
 	cargo deny check -c deny.toml
