@@ -253,13 +253,16 @@ jobs:
     outputs:
       runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
+      runtime_filename_paseo: ${{steps.set-env-vars.outputs.runtime_filename_paseo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     # env:
     #   HOME: /root
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, rococo, mainnet]
+        # Remember, runtimes are separate for each relay chain
+        # We do not release frequency-*-local runtimes however
+        network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
