@@ -65,19 +65,19 @@ local-block:
 
 .PHONY: register
 register:
-	./scripts/init.sh register-frequency-rococo-local
+	./scripts/init.sh register-frequency-paseo-local
 
 .PHONY: onboard
 onboard:
-	./scripts/init.sh onboard-frequency-rococo-local
+	./scripts/init.sh onboard-frequency-paseo-local
 
 .PHONY: offboard
 offboard:
-	./scripts/init.sh offboard-frequency-rococo-local
+	./scripts/init.sh offboard-frequency-paseo-local
 
-.PHONY: specs-rococo-2000, specs-rococo-local
-specs-rococo-2000:
-	./scripts/generate_specs.sh 2000 rococo-2000 release
+.PHONY: specs-paseo-2000, specs-paseo-local
+specs-paseo-2000:
+	./scripts/generate_specs.sh 2000 paseo-2000 release
 
 specs-rococo-local:
 	./scripts/generate_relay_specs.sh
@@ -103,7 +103,7 @@ ci-local: check lint lint-audit test js e2e-tests
 
 .PHONY: upgrade-local, upgrade-no-relay
 upgrade-local:
-	./scripts/init.sh upgrade-frequency-rococo-local
+	./scripts/init.sh upgrade-frequency-paseo-local
 
 upgrade-no-relay:
 	./scripts/init.sh upgrade-frequency-no-relay
@@ -202,7 +202,7 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check, check-no-relay, check-local, check-rococo, check-mainnet
+.PHONY: check, check-no-relay, check-local, check-testnet, check-mainnet
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -210,9 +210,9 @@ check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-rococo-local
+	SKIP_WASM_BUILD= cargo check --features frequency-paseo-local
 
-check-rococo:
+check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
 
 check-mainnet:
@@ -222,7 +222,7 @@ check-mainnet:
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build, build-benchmarks, build-no-relay, build-local, build-rococo, build-mainnet, build-rococo-release, build-mainnet-release
+.PHONY: build, build-benchmarks, build-no-relay, build-local, build-testnet, build-mainnet, build-testnet-release, build-mainnet-release
 build:
 	cargo build --features frequency-no-relay
 

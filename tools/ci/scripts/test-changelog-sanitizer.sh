@@ -6,7 +6,7 @@ set -x
 changelog='### Major Changes|n|
 
   - Restrict Pays:No call in batches #1452|n|
-  - refactor: feature frequency-local => frequency-rococo-local #1511|n|
+  - refactor: feature frequency-local => frequency-paseo-local #1511|n|
 
   |n||n|### Uncategorized Changes|n||n| - [Handles] Testing Cleanup #1445|n|
   - fix type definition mismatch for schemas #1443|n|

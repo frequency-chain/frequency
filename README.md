@@ -216,7 +216,7 @@ This option runs one collator node as local host process and two relay chain val
 1. Start relay chain validator nodes.
 
     ```sh
-    make start-relay
+    make start-paseo-relay
     ```
 
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
@@ -241,7 +241,7 @@ This option runs one collator node as local host process and two relay chain val
 
 1. Off-board Frequency from relay chain: `make offboard`
 2. To stop Frequency running in the terminal: `[Ctrl+C] `
-3. Stop the relay chain. `make stop-relay`
+3. Stop the relay chain. `make stop-paseo-relay`
 4. Run to remove unused volumes. `make docker-prune`
 5. Clean up temporary directory to avoid any conflicts with next onboarding:
    `rm -fr /tmp/frequency`
