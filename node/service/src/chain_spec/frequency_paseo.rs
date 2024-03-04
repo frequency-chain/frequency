@@ -64,8 +64,6 @@ pub mod public_testnet_keys {
 		"0x140c17ced6e4fba8b62a6935052cfb7c5a8ad8ecc43dee1f4fc7c30c1ca3cb14";
 	pub const FRQ_COUNCIL9: &str =
 		"0xfc61655783e14b361d2b9601c657c3c5361a2cf32aa1a448fc83b1a356808a1a";
-	pub const FRQ_COUNCIL10: &str =
-		"0x1caccabbe8095a35292782cffc29145030264f9706753923a5c237e8f5aceb1a";
 }
 
 pub fn frequency_paseo_testnet() -> ChainSpec {
