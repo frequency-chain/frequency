@@ -200,7 +200,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Check
         run: |
-          cargo +nightly-2024-02-04 fmt --check
+          cargo +nightly-2024-03-01 fmt --check
 
   lint-rust-code:
     needs: changes
@@ -229,8 +229,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Docs
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-02-04
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-02-04 doc --no-deps --features frequency
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
