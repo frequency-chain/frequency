@@ -23,7 +23,7 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "1.70.0" # Match to /rust-toolchain.toml
+  RUST_TOOLCHAIN: "stable" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
@@ -335,7 +335,7 @@ jobs:
           srtool --version
       - name: Build Deterministic WASM
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.70.0" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}
@@ -373,8 +373,8 @@ jobs:
         uses: actions/configure-pages@v4
       - name: Build Docs
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
-          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --workspace --features frequency
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
+          RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
         run: |
