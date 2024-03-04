@@ -584,7 +584,8 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
+# TODO: change ref bin to frequency-local
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v3
