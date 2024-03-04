@@ -66,6 +66,7 @@ pub mod public_testnet_keys {
 		"0xfc61655783e14b361d2b9601c657c3c5361a2cf32aa1a448fc83b1a356808a1a";
 }
 
+#[allow(clippy::unwrap_used)]
 pub fn frequency_paseo_testnet() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_ROCOCO_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
