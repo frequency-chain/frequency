@@ -93,10 +93,6 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-          - network: local
-            git_branch: main
-            spec: frequency-local
-            branch_alias: main
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
@@ -122,10 +118,6 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-          - network: local
-            git_branch: main
-            spec: frequency-local
-            branch_alias: main
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
