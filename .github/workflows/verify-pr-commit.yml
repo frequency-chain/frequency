@@ -760,7 +760,7 @@ jobs:
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_ROCOCO}}
           echo "Expected genesis state: $expected_genesis_state"
-          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} --chain=frequency-rococo export-genesis-state)
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-rococo)
           echo "Actual genesis state: $actual_genesis_state"
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
@@ -769,7 +769,7 @@ jobs:
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_PASEO}}
           echo "Expected genesis state: $expected_genesis_state"
-          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}}  --chain=frequency-paseo export-genesis-state)
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-paseo)
           echo "Actual genesis state: $actual_genesis_state"
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
