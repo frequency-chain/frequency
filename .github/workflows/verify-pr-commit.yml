@@ -125,7 +125,7 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-local
+            spec: frequency-rococo-local
             branch_alias: main
           - network: testnet
             spec: frequency-testnet
