@@ -93,10 +93,9 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-# TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
           - network: testnet
             spec: frequency-testnet
@@ -585,8 +584,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
-# TODO: change ref bin to frequency-local
+          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v3
@@ -603,13 +601,12 @@ jobs:
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
-#TODO change REF_BIN_FILENAME --chain to frequency-paseo-local
       - name: Compare Metadata
         id: compare-metadata
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          ./$REF_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata-ref.json
+          ./$REF_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
           ./$TEST_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
@@ -735,9 +732,8 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
-        # TODO: UPDATE EXPECTED_GENESIS_STATE_PASEO
         run: |
-          echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000bc06db8753ece68bea77e2f0564b0579c324a75e530d722f962a55a7af3c176003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c111314002024-03-04" >> $GITHUB_ENV
+          echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000bc06db8753ece68bea77e2f0564b0579c324a75e530d722f962a55a7af3c176003170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "BIN_FILENAME_TESTNET=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
