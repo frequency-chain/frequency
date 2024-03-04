@@ -77,6 +77,8 @@ pub use types::*;
 pub use weights::*;
 pub mod types;
 
+// REMOVE: test code coverage
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
