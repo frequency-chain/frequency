@@ -202,7 +202,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Check
         run: |
-          cargo +nightly-2023-07-13 fmt --check
+          cargo +nightly-2024-03-01 fmt --check
 
   lint-rust-code:
     needs: changes
@@ -215,7 +215,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Lint
         run: |
-          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo +nightly-2023-07-13 clippy \
+          SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy \
             --features runtime-benchmarks,frequency-lint-check \
             -- \
             -D warnings
@@ -231,8 +231,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Docs
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
-          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2023-07-13 doc --no-deps --features frequency
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
+          RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
@@ -379,7 +379,7 @@ jobs:
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         run: |
-          RUST_LOG=debug SRTOOL_TAG="1.70.0" srtool build \
+          RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
             --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
             --profile=${{matrix.build-profile}} \
             --package=${{matrix.package}}
