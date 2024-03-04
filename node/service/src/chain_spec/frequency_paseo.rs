@@ -138,8 +138,6 @@ pub fn frequency_paseo_testnet() -> ChainSpec {
 					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
 					// 5HmcreGLq25iA7fiyb6An4YVWC3k1Cq8SQgYn2Qpeepq24nV
 					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
-					// 5CiJXZxsko8YZGhTZAwrhREUzjCVEGwNE7Fgrf1twbt8WsmY
-					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
 					// Treasury $$
 					common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
 				],
@@ -154,7 +152,6 @@ pub fn frequency_paseo_testnet() -> ChainSpec {
 					public_testnet_keys::FRQ_COUNCIL7.parse::<AccountId>().unwrap().into(),
 					public_testnet_keys::FRQ_COUNCIL8.parse::<AccountId>().unwrap().into(),
 					public_testnet_keys::FRQ_COUNCIL9.parse::<AccountId>().unwrap().into(),
-					public_testnet_keys::FRQ_COUNCIL10.parse::<AccountId>().unwrap().into(),
 				],
 				// Technical Committee Members
 				vec![
