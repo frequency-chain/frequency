@@ -84,7 +84,7 @@ jobs:
       # ci-base-image is published IF and ONLY IF ci-base-image.dockerfile changes
       # IMAGE_VERSION reflects the latest version of ci-base-image.dockerfile that has been published
       IMAGE_NAME: ci-base-image
-      IMAGE_VERSION: 1.2.0
+      IMAGE_VERSION: 1.3.0
       BRANCH_NAME: main
     runs-on: ubuntu-22.04
     steps:
