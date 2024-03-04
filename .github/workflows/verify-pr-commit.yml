@@ -93,9 +93,10 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
+# TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
-            spec: frequency-local
+            spec: frequency-rococo-local
             branch_alias: main
           - network: testnet
             spec: frequency-testnet
