@@ -199,6 +199,8 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Install nightly-2023-07-13-x86_64-unknown-linux-gnu
+        run: rustup toolchain install nightly-2023-07-13-x86_64-unknown-linux-gnu 
       - name: Check
         run: |
           cargo +nightly-2023-07-13 fmt --check

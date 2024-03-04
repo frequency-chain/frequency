@@ -28,6 +28,9 @@ runs:
     # See the grcov docs for more information
     # excl rpc traits, and error enums
     # Only one of excl start and stop are allowed.
+    - name: Install nightly-2023-07-13-x86_64-unknown-linux-gnu
+      shell: bash
+      run: rustup toolchain install nightly-2023-07-13-x86_64-unknown-linux-gnu
     - name: Generate code coverage
       shell: bash
       run: |
