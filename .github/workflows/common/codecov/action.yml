@@ -22,6 +22,7 @@ runs:
       shell: bash # Limited to 10 threads max
       run: cargo test -j 10 --features frequency-lint-check
       env:
+        RUSTC_BOOTSTRAP: 1
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
