@@ -96,7 +96,7 @@ jobs:
 # TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
           - network: testnet
             spec: frequency-testnet
@@ -125,7 +125,7 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
           - network: testnet
             spec: frequency-testnet
@@ -585,8 +585,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
-# TODO: change ref bin to frequency-local
+          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v3
@@ -609,7 +608,7 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          ./$REF_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata-ref.json
+          ./$REF_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
           ./$TEST_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
