@@ -18,6 +18,7 @@ jobs:
     env:
       # IMAGE_NAME: ci-base-image-dind
       IMAGE_NAME: ci-base-image
+      IMAGE_VERSION: 1.2.0
       BRANCH_NAME: ${{github.ref_name}}
     runs-on: macos-14
     steps:
@@ -55,6 +56,10 @@ jobs:
           platforms: "amd64"
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Get Rust Version
+        id: rust_version
+        run: |
+          echo "::set-output name=RUST_VERSION::$(rustc --version)"
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
         with:
@@ -76,3 +81,6 @@ jobs:
           file: tools/ci/docker/ci-base-image.dockerfile
           tags: |
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
+          build-args: |
+            IMAGE_VERSION=${{env.IMAGE_VERSION}}
+            RUST_VERSION=${{steps.rust_version.outputs.RUST_VERSION}}

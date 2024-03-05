@@ -7,7 +7,10 @@ LABEL maintainer="Frequency"
 LABEL description="Frequency CI Base Image"
 # Image version is set by the CI pipeline in merge-pr.yml
 ARG IMAGE_VERSION
-LABEL version="{IMAGE_VERSION}"
+LABEL version="${IMAGE_VERSION}"
+LABEL org.opencontainers.image.description "Frequency CI Base Image"
+ARG RUST_VERSION
+LABEL rust.version="${RUST_VERSION}"
 
 WORKDIR /ci
 RUN apt-get update && \
@@ -20,8 +23,8 @@ RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
 ENV PATH="/home/runner/.cargo/bin:/root/.cargo/bin:${PATH}"
 ENV RUSTUP_HOME="/root/.cargo"
 ENV CARGO_HOME="/root/.cargo"
-RUN rustup toolchain install nightly-2023-07-13
-RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2023-07-13
-RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2023-07-13
+RUN rustup toolchain install nightly-2024-03-01
+RUN rustup target add x86_64-unknown-linux-gnu --toolchain nightly-2024-03-01
+RUN rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
 
 RUN git config --system --add safe.directory /__w/frequency/frequency

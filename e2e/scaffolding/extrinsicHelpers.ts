@@ -795,4 +795,20 @@ export class ExtrinsicHelper {
       currentBlock = await getBlockNumber();
     }
   }
+
+  public static submitProposal(keys: KeyringPair, spendAmount: AnyNumber | Compact<u128>) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.treasury.proposeSpend(spendAmount, keys.address),
+      keys,
+      ExtrinsicHelper.api.events.treasury.Proposed
+    );
+  }
+
+  public static rejectProposal(keys: KeyringPair, proposalId: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.treasury.rejectProposal(proposalId),
+      keys,
+      ExtrinsicHelper.api.events.treasury.Rejected
+    );
+  }
 }
