@@ -236,7 +236,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${-${{github.run_id}}
           path: |
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
@@ -355,7 +355,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-wasm-${{matrix.network}}-${{github.run_id}}
           path: ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           if-no-files-found: error
 
@@ -421,7 +421,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: .
       - name: List Downloaded Binaries
         run: |
@@ -477,8 +477,9 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-binary-*-${{github.run_id}}
           path: .
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -540,8 +541,9 @@ jobs:
       - name: Download Test Binary
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
+          merge-multiple: true
       - name: Rename and Move Binaries
         run: |
           mkdir -p ${{env.BIN_DIR}}
@@ -618,9 +620,9 @@ jobs:
         run: |
           cat ${{env.OUTPUT_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-metadata-${{github.run_id}}
           path: ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           if-no-files-found: error
       - name: Stop Local Nodes
@@ -727,8 +729,9 @@ jobs:
         id: download
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-*-${{github.run_id}}
           path: /tmp
+          merge-multiple: true
       - name: List Downloaded Artifacts
         working-directory: /tmp
         run: |
@@ -855,8 +858,9 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: .
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -953,8 +957,9 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: .
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
