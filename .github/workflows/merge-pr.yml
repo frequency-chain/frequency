@@ -123,5 +123,5 @@ jobs:
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
           build-args: |
-           IMAGE_VERSION=${{env.IMAGE_VERSION}}
-           RUST_VERSION=${{steps.rust_version.outputs.RUST_VERSION}}
+            IMAGE_VERSION=${{env.IMAGE_VERSION}}
+            RUST_VERSION=${{steps.rust_version.outputs.RUST_VERSION}}
