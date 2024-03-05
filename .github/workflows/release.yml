@@ -236,7 +236,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{github.run_id}}
           path: |
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
