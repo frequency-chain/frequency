@@ -421,7 +421,7 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
@@ -469,7 +469,7 @@ jobs:
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
@@ -554,7 +554,7 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
@@ -588,7 +588,7 @@ jobs:
           echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
@@ -667,7 +667,7 @@ jobs:
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
@@ -677,7 +677,7 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -742,7 +742,7 @@ jobs:
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}
