@@ -200,7 +200,6 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// TRIGGER METADATA CHANGE LABEL
 		/// Adds a message for a resource hosted on IPFS. The input consists of
 		/// both a Base32-encoded [CID](https://docs.ipfs.tech/concepts/content-addressing/#version-1-v1)
 		/// as well as a 32-bit content length. The stored payload will contain the
@@ -387,7 +386,7 @@ impl<T: Config> Pallet<T> {
 					})
 					.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
-				return messages;
+				return messages
 			},
 		}
 	}
