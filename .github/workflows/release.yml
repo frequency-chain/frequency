@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Release
 run-name: Cut Release ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
@@ -155,20 +156,20 @@ jobs:
       matrix:
         # os: [[self-hosted, Linux, X64, build, v2], [self-hosted, Linux, ARM64,  build, v2]]
         os: [[self-hosted, Linux, X64, build, v2]]
-        network: [dev, local, rococo, mainnet]
+        network: [dev, local, testnet, mainnet]
         include:
           - network: dev
             spec: frequency-no-relay
             build-profile: release
             release-file-name-prefix: frequency-dev
           - network: local
-            spec: frequency-rococo-local
+            spec: frequency-local
             build-profile: release
-            release-file-name-prefix: frequency-rococo-local
-          - network: rococo
-            spec: frequency-rococo-testnet
+            release-file-name-prefix: frequency-local
+          - network: testnet
+            spec: frequency-testnet
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             spec: frequency
             build-profile: release
@@ -252,13 +253,16 @@ jobs:
     outputs:
       runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
       runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
+      runtime_filename_paseo: ${{steps.set-env-vars.outputs.runtime_filename_paseo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     # env:
     #   HOME: /root
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, rococo, mainnet]
+        # Remember, runtimes are separate for each relay chain
+        # We do not release frequency-*-local runtimes however
+        network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
@@ -267,15 +271,23 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-dev_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-rococo
+            wasm-core-version: frequency-testnet
           - network: rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-rococo_runtime
-            features: frequency-rococo-testnet
-            wasm-core-version: frequency-rococo
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
+          - network: paseo
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            release-wasm-file-name-prefix: frequency-paseo_runtime
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
           - network: mainnet
             build-profile: release
             package: frequency-runtime
@@ -380,10 +392,9 @@ jobs:
     name: Build JS API Augment
     env:
       NETWORK: local
-      CHAIN_SPEC: frequency-rococo-local
       BUILD_PROFILE: release
       BIN_DIR: target/release
-      RELEASE_FILENAME_PREFIX: frequency-rococo-local
+      RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
     runs-on: ubuntu-22.04
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
@@ -423,7 +434,7 @@ jobs:
           mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}
           chmod 755 ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -634,8 +645,9 @@ jobs:
     runs-on: ubuntu-22.04
     outputs:
       runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
-      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
       runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
+      runtime_filename_paseo: ${{needs.build-runtimes.outputs.runtime_filename_paseo}}
+      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
     steps:
       - name: Proceed Forward
         run: echo "All build jobs have finished, proceeding with the release"
@@ -732,7 +744,10 @@ jobs:
         run: |
           runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
           runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
+          echo "runtime_info_rococo=$runtime_info_testnet" >> $GITHUB_OUTPUT
+          runtime_filename_paseo=${{needs.wait-for-all-builds.outputs.runtime_filename_paseo}}
+          runtime_info_paseo=$(subwasm info $runtime_filename_paseo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
+          echo "runtime_info_paseo=$runtime_info_testnet" >> $GITHUB_OUTPUT
           runtime_filename_mainnet=${{needs.wait-for-all-builds.outputs.runtime_filename_mainnet}}
           runtime_info_mainnet=$(subwasm info $runtime_filename_mainnet | sed -Ez '$ s/\n+$//' | tr '\n' '|')
           echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
@@ -740,13 +755,15 @@ jobs:
         working-directory: tools/ci/release-notes
         env:
           CHANGELOG: ${{steps.sanitize-changelog.outputs.sanitized}}
-          RUNTIME_INFO_TESTNET: ${{steps.get-runtimes-info.outputs.runtime_info_rococo}}
+          RUNTIME_INFO_PASEO: ${{steps.get-runtimes-info.outputs.runtime_info_paseo}}
+          RUNTIME_INFO_ROCOCO: ${{steps.get-runtimes-info.outputs.runtime_info_rococo}}
           RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
         run: |
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
             "${CHANGELOG}" \
-            "${RUNTIME_INFO_TESTNET}" \
             "${RUNTIME_INFO_MAINNET}" \
+            "${RUNTIME_INFO_PASEO}" \
+            "${RUNTIME_INFO_ROCOCO}" \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
@@ -804,11 +821,11 @@ jobs:
       fail-fast: true
       matrix:
         arch: [amd64]
-        network: [rococo, mainnet]
+        network: [testnet, mainnet]
         include:
-          - network: rococo
+          - network: testnet
             build-profile: release
-            release-file-name-prefix: frequency-rococo
+            release-file-name-prefix: frequency-testnet
           - network: mainnet
             build-profile: release
             release-file-name-prefix: frequency
@@ -901,7 +918,7 @@ jobs:
           - node: collator-node-local
             network: local
             build-profile: release
-            release-file-name-prefix: frequency-rococo-local
+            release-file-name-prefix: frequency-local
           - node: instant-seal-node
             network: dev
             build-profile: release
@@ -1048,4 +1065,3 @@ jobs:
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
-

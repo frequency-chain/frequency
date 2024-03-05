@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Verify PR Commit
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -90,14 +91,15 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
+# TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
             spec: frequency-rococo-local
             branch_alias: main
-          - network: rococo
-            spec: frequency-rococo-testnet
+          - network: testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -119,14 +121,14 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
           - network: local
             git_branch: main
             spec: frequency-rococo-local
             branch_alias: main
-          - network: rococo
-            spec: frequency-rococo-testnet
+          - network: testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -282,7 +284,7 @@ jobs:
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
       matrix:
-        network: [rococo, mainnet]
+        network: [testnet, mainnet]
     runs-on: ubuntu-22.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -297,7 +299,9 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, rococo, mainnet]
+        # Remember, runtimes are separate for each relay chain
+        # We do not release frequency-*-local runtimes however
+        network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
@@ -305,14 +309,21 @@ jobs:
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-rococo
+            wasm-core-version: frequency-testnet
           - network: rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
-            features: frequency-rococo-testnet
-            wasm-core-version: frequency-rococo
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
+          - network: paseo
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
           - network: mainnet
             build-profile: release
             package: frequency-runtime
@@ -395,7 +406,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -424,7 +435,7 @@ jobs:
         run: |
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -573,8 +584,9 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
           echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
+# TODO: change ref bin to frequency-local
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v3
@@ -591,6 +603,7 @@ jobs:
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
+#TODO change REF_BIN_FILENAME --chain to frequency-paseo-local
       - name: Compare Metadata
         id: compare-metadata
         working-directory: ${{env.BIN_DIR}}
@@ -598,7 +611,7 @@ jobs:
           set -x
           ./$REF_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
-          ./$TEST_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata.json
+          ./$TEST_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
           matches=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
           echo "Metadata matches?: $match"
@@ -723,9 +736,10 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
+          echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000d1912c5cd40e89fe2f4e1391801d17f6905cf84d961cbf4abb49139f03c2d85503170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_ROCOCO=frequency.rococo.frequency-rococo-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_TESTNET=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
@@ -741,18 +755,27 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          chmod 755 $BIN_FILENAME_ROCOCO
+          chmod 755 $BIN_FILENAME_TESTNET
           chmod 755 $BIN_FILENAME_MAINNET
-      - name: Test Rococo Genesis State
+      - name: Test Frequency Rococo Genesis State
         working-directory: ${{env.BIN_DIR}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_ROCOCO}}
           echo "Expected genesis state: $expected_genesis_state"
-          actual_genesis_state=$(./${{env.BIN_FILENAME_ROCOCO}} export-genesis-state)
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-rococo)
           echo "Actual genesis state: $actual_genesis_state"
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
-      - name: Test Mainnet Genesis State
+      - name: Test Frequency Paseo Genesis State
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_PASEO}}
+          echo "Expected genesis state: $expected_genesis_state"
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-paseo)
+          echo "Actual genesis state: $actual_genesis_state"
+          [ $actual_genesis_state = $expected_genesis_state ] || \
+            (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
+      - name: Test Frequency Mainnet Genesis State
         working-directory: ${{env.BIN_DIR}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_MAINNET}}

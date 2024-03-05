@@ -14,11 +14,18 @@ pub type DummyChainSpec = sc_service::GenericChainSpec<(), Extensions>;
 pub mod frequency;
 
 #[cfg(any(
-	feature = "frequency-rococo-testnet",
-	feature = "frequency-rococo-local",
+	feature = "frequency-testnet",
+	feature = "frequency-local",
 	feature = "frequency-no-relay"
 ))]
 pub mod frequency_rococo;
+
+#[cfg(any(
+	feature = "frequency-testnet",
+	feature = "frequency-local",
+	feature = "frequency-no-relay"
+))]
+pub mod frequency_paseo;
 
 #[allow(clippy::expect_used)]
 /// Helper function to generate a crypto pair from seed
