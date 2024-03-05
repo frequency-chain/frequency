@@ -169,7 +169,7 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-${{github.run_id}}
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
@@ -449,7 +449,7 @@ jobs:
         run: npm pack
         working-directory: js/api-augment/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
