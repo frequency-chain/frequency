@@ -9,18 +9,20 @@ runs:
   steps:
     - name: Install grcov
       shell: bash
-      run: cargo +nightly-2024-03-01 install --locked grcov
+      run: cargo install --locked grcov
     - name: Build
       shell: bash # Limited to 10 threads max
-      run: cargo +nightly-2024-03-01 build -j 10 --features frequency-lint-check
+      run: cargo build -j 10 --features frequency-lint-check
       env:
+        RUSTC_BOOTSTRAP: 1
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
     - name: Test
       shell: bash # Limited to 10 threads max
-      run: cargo +nightly-2024-03-01 test -j 10 --features frequency-lint-check
+      run: cargo test -j 10 --features frequency-lint-check
       env:
+        RUSTC_BOOTSTRAP: 1
         CARGO_INCREMENTAL: '0'
         RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
