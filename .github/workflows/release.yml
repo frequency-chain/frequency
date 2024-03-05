@@ -744,10 +744,10 @@ jobs:
         run: |
           runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
           runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_rococo=$runtime_info_testnet" >> $GITHUB_OUTPUT
+          echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
           runtime_filename_paseo=${{needs.wait-for-all-builds.outputs.runtime_filename_paseo}}
           runtime_info_paseo=$(subwasm info $runtime_filename_paseo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_paseo=$runtime_info_testnet" >> $GITHUB_OUTPUT
+          echo "runtime_info_paseo=$runtime_info_paseo" >> $GITHUB_OUTPUT
           runtime_filename_mainnet=${{needs.wait-for-all-builds.outputs.runtime_filename_mainnet}}
           runtime_info_mainnet=$(subwasm info $runtime_filename_mainnet | sed -Ez '$ s/\n+$//' | tr '\n' '|')
           echo "runtime_info_mainnet=$runtime_info_mainnet" >> $GITHUB_OUTPUT
