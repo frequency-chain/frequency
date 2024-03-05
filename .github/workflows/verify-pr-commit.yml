@@ -93,7 +93,6 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-          # TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
             spec: frequency-local
@@ -604,7 +603,6 @@ jobs:
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
-      #TODO change REF_BIN_FILENAME --chain to frequency-paseo-local
       - name: Compare Metadata
         id: compare-metadata
         working-directory: ${{env.BIN_DIR}}
