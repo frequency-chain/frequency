@@ -93,7 +93,7 @@ jobs:
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-# TODO change follow spec to frequency-rococo-local
+          # TODO change follow spec to frequency-rococo-local
           - network: local
             git_branch: main
             spec: frequency-local
@@ -284,7 +284,8 @@ jobs:
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
       matrix:
-        network: [testnet, mainnet]
+        # Should match `verify-build-runtimes`
+        network: [dev, rococo, paseo, mainnet]
     runs-on: ubuntu-22.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -301,6 +302,7 @@ jobs:
       matrix:
         # Remember, runtimes are separate for each relay chain
         # We do not release frequency-*-local runtimes however
+        # Also should match `verify-build-runtimes-dummy`
         network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
@@ -602,7 +604,7 @@ jobs:
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
-#TODO change REF_BIN_FILENAME --chain to frequency-paseo-local
+      #TODO change REF_BIN_FILENAME --chain to frequency-paseo-local
       - name: Compare Metadata
         id: compare-metadata
         working-directory: ${{env.BIN_DIR}}
