@@ -107,7 +107,7 @@ pub fn development_config() -> ChainSpec {
 }
 
 /// Generates the chain spec for a local testnet
-pub fn local_testnet_config() -> ChainSpec {
+pub fn local_rococo_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
 		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());

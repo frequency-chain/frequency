@@ -8,8 +8,9 @@ Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_
 
 ## Deployed
 
-- Frequency-Rococo: [TBD]()
-- Frequency-Mainnet: [TBD]()
+- Frequency-Paseo Testnet: [TBD]()
+- Frequency-Rococo Testnet: [TBD]()
+- Frequency Mainnet: [TBD]()
 
 ## What's Changed
 
@@ -22,18 +23,28 @@ Full changelog: https://github.com/LibertyDSNP/frequency/compare/{{env.PREVIOUS_
 
 The information about the runtimes included in this release can be found below.
 
-### Rococo
+### Mainnet
 
-{% set runtime = env.RUNTIME_ROCOCO_INFO | split(pat='|') -%}
+{% set runtime = env.RUNTIME_MAINNET_INFO | split(pat='|') -%}
 ```
 {% for line in runtime -%}
 	{{ line | safe }}
 {% endfor -%}
 ```
 
-### Mainnet
+### Frequency Paseo Testnet
 
-{% set runtime = env.RUNTIME_MAINNET_INFO | split(pat='|') -%}
+{% set runtime = env.RUNTIME_PASEO_INFO | split(pat='|') -%}
+```
+{% for line in runtime -%}
+	{{ line | safe }}
+{% endfor -%}
+```
+
+
+### Frequency Rococo Testnet
+
+{% set runtime = env.RUNTIME_ROCOCO_INFO | split(pat='|') -%}
 ```
 {% for line in runtime -%}
 	{{ line | safe }}

@@ -1,3 +1,4 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Verify PR Commit
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
@@ -62,16 +63,16 @@ jobs:
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          labels: |
-            ${{env.PR_LABEL_METADATA_CHANGED}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABELS_TO_REMOVE: ${{env.PR_LABEL_METADATA_CHANGED}}
       - name: Clear Metadata Version Not Incremented Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED)
-        uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+        uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          labels: |
-            ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABELS_TO_REMOVE: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
 
   # Workaround to handle skipped required check inside matrix
   # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
@@ -90,14 +91,14 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
-          - network: rococo
-            spec: frequency-rococo-testnet
+          - network: testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -119,14 +120,14 @@ jobs:
             branch_alias: pr
           - network: local
             git_branch: ${{github.head_ref}}
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: pr
           - network: local
             git_branch: main
-            spec: frequency-rococo-local
+            spec: frequency-local
             branch_alias: main
-          - network: rococo
-            spec: frequency-rococo-testnet
+          - network: testnet
+            spec: frequency-testnet
             branch_alias: pr
           - network: mainnet
             spec: frequency
@@ -167,9 +168,9 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{matrix.branch_alias}}-${{github.run_id}}
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
@@ -282,7 +283,8 @@ jobs:
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
       matrix:
-        network: [rococo, mainnet]
+        # Should match `verify-build-runtimes`
+        network: [dev, rococo, paseo, mainnet]
     runs-on: ubuntu-22.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -297,7 +299,10 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, rococo, mainnet]
+        # Remember, runtimes are separate for each relay chain
+        # We do not release frequency-*-local runtimes however
+        # Also should match `verify-build-runtimes-dummy`
+        network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
@@ -305,14 +310,21 @@ jobs:
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-rococo
+            wasm-core-version: frequency-testnet
           - network: rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
-            features: frequency-rococo-testnet
-            wasm-core-version: frequency-rococo
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
+          - network: paseo
+            build-profile: release
+            package: frequency-runtime
+            runtime-dir: runtime/frequency
+            built-wasm-file-name-prefix: frequency_runtime
+            features: frequency-testnet
+            wasm-core-version: frequency-testnet
           - network: mainnet
             build-profile: release
             package: frequency-runtime
@@ -395,7 +407,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -410,13 +422,14 @@ jobs:
         working-directory: js/api-augment
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-local-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -424,7 +437,7 @@ jobs:
         run: |
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-rococo-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -438,7 +451,7 @@ jobs:
         run: npm pack
         working-directory: js/api-augment/dist
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
@@ -458,10 +471,11 @@ jobs:
           echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -543,13 +557,14 @@ jobs:
           echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-mainnet-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -573,14 +588,15 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.local.frequency-rococo-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-rococo-local.main" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-local-*-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -596,18 +612,19 @@ jobs:
         working-directory: ${{env.BIN_DIR}}
         run: |
           set -x
-          ./$REF_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata-ref.json
+          ./$REF_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata-ref.json
           metadata_ref=$(cat metadata-ref.json | jq -r .result)
-          ./$TEST_BIN_FILENAME export-metadata --chain=frequency-rococo-local --tmp metadata.json
+          ./$TEST_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata.json
           metadata=$(cat metadata.json | jq -r .result)
           matches=$([ "$metadata" = "$metadata_ref" ] && echo 'true' || echo 'false')
           echo "Metadata matches?: $match"
           echo "metadata_matches=$matches" >> $GITHUB_OUTPUT
       - name: Assign Metadata Changed Label
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
-        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf
+        uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          labels: ${{env.PR_LABEL_METADATA_CHANGED}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABELS_TO_ADD: ${{env.PR_LABEL_METADATA_CHANGED}}
       - name: Check Spec Version
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
         id: check-spec-version
@@ -624,9 +641,10 @@ jobs:
         if: |
           (steps.compare-metadata.outputs.metadata_matches != 'true') &&
             (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
-        uses: actions-ecosystem/action-add-labels@18f1af5e3544586314bbe15c0273249c770b2daf
+        uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          labels: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LABELS_TO_ADD: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
       - name: Fail CI
         if: |
           (steps.compare-metadata.outputs.metadata_matches != 'true') &&
@@ -655,17 +673,18 @@ jobs:
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-dev-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -723,16 +742,18 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
+          echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000d1912c5cd40e89fe2f4e1391801d17f6905cf84d961cbf4abb49139f03c2d85503170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_ROCOCO=0x000000000000000000000000000000000000000000000000000000000000000000e3495742b019f5ad49dff7de4040bc965b75eaf46769c24db1027d4ff86fc92703170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_ROCOCO=frequency.rococo.frequency-rococo-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_TESTNET=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
           echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
-          name: artifacts-${{github.run_id}}
+          pattern: artifacts-binary-*-${{github.run_id}}
           path: ${{env.BIN_DIR}}
+          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -741,18 +762,27 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          chmod 755 $BIN_FILENAME_ROCOCO
+          chmod 755 $BIN_FILENAME_TESTNET
           chmod 755 $BIN_FILENAME_MAINNET
-      - name: Test Rococo Genesis State
+      - name: Test Frequency Rococo Genesis State
         working-directory: ${{env.BIN_DIR}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_ROCOCO}}
           echo "Expected genesis state: $expected_genesis_state"
-          actual_genesis_state=$(./${{env.BIN_FILENAME_ROCOCO}} export-genesis-state)
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-rococo)
           echo "Actual genesis state: $actual_genesis_state"
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
-      - name: Test Mainnet Genesis State
+      - name: Test Frequency Paseo Genesis State
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_PASEO}}
+          echo "Expected genesis state: $expected_genesis_state"
+          actual_genesis_state=$(./${{env.BIN_FILENAME_TESTNET}} export-genesis-state --chain=frequency-paseo)
+          echo "Actual genesis state: $actual_genesis_state"
+          [ $actual_genesis_state = $expected_genesis_state ] || \
+            (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
+      - name: Test Frequency Mainnet Genesis State
         working-directory: ${{env.BIN_DIR}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_MAINNET}}
@@ -812,7 +842,7 @@ jobs:
           ref: ${{github.event.pull_request.head.sha}}
       - name: Get Current Job Log URL
         id: jobs
-        uses: Tiryoh/gha-jobid-action@20caeb4d0b3bb798032fffd362747d4d5d58b976
+        uses: Tiryoh/gha-jobid-action@7528cee9716384209bafcbd000d6689e851c5dda
         with:
           github_token: ${{secrets.GITHUB_TOKEN}}
           job_name: "Run Benchmarks"

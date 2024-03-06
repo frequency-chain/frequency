@@ -370,10 +370,10 @@ pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
 pub type CapacityMaxEpochLength = ConstU32<7_200>; // one day, assuming 12 second blocks.
 
-#[cfg(not(any(feature = "frequency-rococo-local", feature = "frequency-no-relay")))]
+#[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]
 pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days given the above
 
-#[cfg(any(feature = "frequency-rococo-local", feature = "frequency-no-relay"))]
+#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
 pub type CapacityUnstakingThawPeriod = ConstU16<2>; // 2 Epochs
 
 // Needs parameter_types! for the Perbil
