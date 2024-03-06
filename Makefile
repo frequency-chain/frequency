@@ -14,6 +14,9 @@ start:
 start-relay:
 	./scripts/init.sh start-relay-chain
 
+start-paseo-relay:
+	./scripts/init.sh start-paseo-relay-chain
+
 start-frequency:
 	./scripts/init.sh start-frequency
 
@@ -44,6 +47,9 @@ start-interval-with-offchain:
 .PHONY: stop, stop-relay, stop-frequency-docker
 stop-relay:
 	./scripts/init.sh stop-relay-chain
+
+stop-paseo-relay:
+	./scripts/init.sh stop-paseo-relay-chain
 
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
@@ -207,7 +213,7 @@ check-local:
 	SKIP_WASM_BUILD= cargo check --features frequency-rococo-local
 
 check-rococo:
-	SKIP_WASM_BUILD= cargo check --features frequency-rococo-testnet
+	SKIP_WASM_BUILD= cargo check --features frequency-testnet
 
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features frequency
@@ -227,16 +233,16 @@ build-no-relay:
 	cargo build --features frequency-no-relay
 
 build-local:
-	cargo build --features frequency-rococo-local
+	cargo build --features frequency-local
 
-build-rococo:
-	cargo build --features frequency-rococo-testnet
+build-testnet:
+	cargo build --features frequency-testnet
 
 build-mainnet:
 	cargo build --features frequency
 
-build-rococo-release:
-	cargo build --locked --features frequency-rococo-testnet --release
+build-testnet-release:
+	cargo build --locked --features frequency-testnet --release
 
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
@@ -275,7 +281,7 @@ try-runtime-create-snapshot-mainnet:
 	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
 
 try-runtime-upgrade-rococo:
-	cargo build --release --features frequency-rococo-testnet,try-runtime && \
+	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
 
 try-runtime-upgrade-mainnet:
@@ -283,7 +289,7 @@ try-runtime-upgrade-mainnet:
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
 
 try-runtime-use-snapshot-rococo:
-	cargo build --release --features frequency-rococo-testnet,try-runtime && \
+	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path rococo-all-pallets.state
 
 try-runtime-use-snapshot-mainnet:

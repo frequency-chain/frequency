@@ -30,13 +30,13 @@ frequency-no-relay = [
   "frequency-service/frequency-no-relay",
   "frequency-cli/frequency-no-relay"
 ]
-frequency-rococo-local = [
-  "frequency-service/frequency-rococo-local",
-  "frequency-cli/frequency-rococo-local"
+frequency-local = [
+  "frequency-service/frequency-local",
+  "frequency-cli/frequency-local"
 ]
-frequency-rococo-testnet = [
-  "frequency-service/frequency-rococo-testnet",
-  "frequency-cli/frequency-rococo-testnet"
+frequency-testnet = [
+  "frequency-service/frequency-testnet",
+  "frequency-cli/frequency-testnet"
 ]
 frequency-lint-check = [
   "frequency-service/frequency-lint-check",
