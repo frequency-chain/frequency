@@ -1,80 +1,31 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
 use common_runtime::constants::{
-	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS,
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use sc_service::ChainType;
+use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
-use sp_core::sr25519;
 
 use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
 
-#[allow(clippy::unwrap_used)]
-/// Generates the Frequency Paseo chain spec from the raw json
-pub fn load_frequency_paseo_spec() -> ChainSpec {
-	ChainSpec::from_json_bytes(
-		&include_bytes!("../../../../resources/frequency-paseo.raw.json")[..],
-	)
-	.unwrap()
-}
-
-/// Generate the session keys from individual elements.
-///
-/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
-	frequency_runtime::SessionKeys { aura: keys }
-}
-
-pub mod public_testnet_keys {
-	pub const COLLATOR_1_SR25519: &str =
-		"0x5c0f55ba602f76d69b5cc075d81f6d27db9157c90dc4be492f4edbe7d7c96d18";
-	pub const COLLATOR_2_SR25519: &str =
-		"0x202be6542ed50679271280b8c37140681bbd5acfd0e508668297029f871b9f0c";
-	pub const ROCOCO_FRQ_SUDO: &str =
-		"0xccca4a5b784105460c5466cbb8d11b34f29ffcf6c725d07b65940e697763763c";
-	pub const TECH_COUNCIL1: &str =
-		"0x847c1ac02474b90cf1e9d8e722318b75fd56d370e6f35e9c983fe671e788d23a";
-	pub const TECH_COUNCIL2: &str =
-		"0x52b580c22c5ff6f586a0966fbd2373de279d1aa1b2d05dff47616b5a338fce27";
-	pub const TECH_COUNCIL3: &str =
-		"0x6a13f08b279cb33b249954190bcee832747b9aa9dc14cc290f82d73d496cfc0a";
-	pub const FRQ_COUNCIL1: &str =
-		"0xa608f3e0030c157b6e2a540c5f0c7dbd6004793813cad2c9fbda0c84c093c301";
-	pub const FRQ_COUNCIL2: &str =
-		"0x52d76db441043a5d47d9bf83e6fd2d5acb86b8547062571ee7b68255b6bada10";
-	pub const FRQ_COUNCIL3: &str =
-		"0x809d0a4e6683ebff9d74c7f6ba9fe504a64a7227d74eb45ee85556cc01013a63";
-	pub const FRQ_COUNCIL4: &str =
-		"0x8e47c13fd0f028f56378e202523fa44508fd64df89fddb482fc0b128989e9f0b";
-	pub const FRQ_COUNCIL5: &str =
-		"0xf23d555b95ca8c752b531e48848bfb4d3aa2b4eea407484ccee947501e77d04f";
-	pub const FRQ_COUNCIL6: &str =
-		"0xe87a126794cb727b5a7760922f81fbf0f80fd64b7e86e6ae4fee0be4289c7512";
-	pub const FRQ_COUNCIL7: &str =
-		"0x14a6bff08e9637457a165779765417feca01a2119dec98ec134f8ae470111318";
-	pub const FRQ_COUNCIL8: &str =
-		"0x140c17ced6e4fba8b62a6935052cfb7c5a8ad8ecc43dee1f4fc7c30c1ca3cb14";
-	pub const FRQ_COUNCIL9: &str =
-		"0xfc61655783e14b361d2b9601c657c3c5361a2cf32aa1a448fc83b1a356808a1a";
-}
-
-/// Generates the chain spec for a local testnet
-pub fn local_paseo_testnet_config() -> ChainSpec {
+/// Generates the chain spec for a development (no relay)
+pub fn development_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
-		get_properties(FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
+		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name
-		"Frequency Local Testnet",
+		"Frequency Development (No Relay)",
 		// ID
-		"frequency-paseo-local",
-		ChainType::Local,
+		"dev",
+		ChainType::Development,
 		move || {
 			testnet_genesis(
 				// initial collators.
@@ -118,7 +69,7 @@ pub fn local_paseo_testnet_config() -> ChainSpec {
 					get_account_id_from_seed::<sr25519::Public>("Dave"),
 				],
 				// ParaId
-				2000.into(),
+				1000.into(),
 			)
 		},
 		// Bootnodes
@@ -126,17 +77,24 @@ pub fn local_paseo_testnet_config() -> ChainSpec {
 		// Telemetry
 		None,
 		// Protocol ID
-		Some("frequency-paseo-local"),
+		Some("dev"),
 		// Fork ID
 		None,
 		// Properties
 		Some(properties),
 		// Extensions
 		Extensions {
-			relay_chain: "paseo-local".into(), // You MUST set this to the correct network!
-			para_id: 2000,
+			relay_chain: "dev".into(), // You MUST set this to the correct network!
+			para_id: 1000,
 		},
 	)
+}
+
+/// Generate the session keys from individual elements.
+///
+/// The input must be a tuple of individual keys (a single arg for now since we have just one key).
+fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
+	frequency_runtime::SessionKeys { aura: keys }
 }
 
 #[allow(clippy::expect_used)]

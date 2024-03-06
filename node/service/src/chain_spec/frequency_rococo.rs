@@ -1,7 +1,7 @@
 #![allow(missing_docs)]
 use common_primitives::node::AccountId;
 use common_runtime::constants::{
-	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
+	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
@@ -26,7 +26,7 @@ pub fn load_frequency_rococo_spec() -> ChainSpec {
 /// Generate the session keys from individual elements.
 ///
 /// The input must be a tuple of individual keys (a single arg for now since we have just one key).
-pub fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
+fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 	frequency_runtime::SessionKeys { aura: keys }
 }
 
@@ -34,7 +34,7 @@ pub fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 pub fn local_rococo_testnet_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
-		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
+		get_properties(FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 
 	ChainSpec::from_genesis(
 		// Name

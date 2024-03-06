@@ -10,7 +10,7 @@ use frame_support::{
 	PalletId,
 };
 
-pub const FREQUENCY_ROCOCO_TOKEN: &str = "XRQCY";
+pub const FREQUENCY_TESTNET_TOKEN: &str = "XRQCY";
 pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
 pub const TOKEN_DECIMALS: u8 = 8;

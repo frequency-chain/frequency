@@ -73,7 +73,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-no-relay")]
 		"dev" | "frequency-no-relay" =>
-			return Ok(Box::new(chain_spec::frequency_paseo::development_config())),
+			return Ok(Box::new(chain_spec::frequency_dev::development_config())),
 		#[cfg(feature = "frequency-local")]
 		"frequency-rococo-local" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::local_rococo_testnet_config())),
@@ -98,7 +98,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				} else if cfg!(feature = "frequency-no-relay") {
 					#[cfg(feature = "frequency-no-relay")]
 					{
-						return Ok(Box::new(chain_spec::frequency_paseo::development_config()));
+						return Ok(Box::new(chain_spec::frequency_dev::development_config()));
 					}
 					#[cfg(not(feature = "frequency-no-relay"))]
 					return Err("Frequency Development (no relay) runtime is not available.".into());
