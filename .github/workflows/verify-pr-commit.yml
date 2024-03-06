@@ -170,7 +170,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{matrix.branch_alias}}-${{github.run_id}}
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
@@ -424,12 +424,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-local-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
-          merge-multiple: true
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -559,12 +559,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-mainnet-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
-          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
@@ -594,7 +594,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-local-*-${{github.run_id}}
           path: ${{env.BIN_DIR}}
           merge-multiple: true
       - name: List Downloaded Binaries
@@ -675,12 +675,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-dev-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
-          merge-multiple: true
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Download api-augment tarball
