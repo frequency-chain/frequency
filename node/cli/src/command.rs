@@ -254,7 +254,17 @@ impl SubstrateCli for RelayChainCli {
 	}
 
 	fn load_spec(&self, id: &str) -> std::result::Result<Box<dyn sc_service::ChainSpec>, String> {
-		polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter()).load_spec(id)
+		match id {
+			// TODO: Remove once on a Polkadot-SDK with Paseo-Local
+			#[cfg(feature = "frequency-local")]
+			"paseo-local" => return Ok(Box::new(chain_spec::frequency_paseo::load_paseo_local_spec())),
+			// TODO: Remove once on a Polkadot-SDK with Paseo
+			#[cfg(feature = "frequency-testnet")]
+			"paseo" => return Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
+			_ =>
+				return polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
+					.load_spec(id),
+		}
 	}
 }
 

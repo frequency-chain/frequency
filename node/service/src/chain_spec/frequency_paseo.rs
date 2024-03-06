@@ -5,14 +5,19 @@ use common_runtime::constants::{
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
+use polkadot_service::chain_spec::Extensions as RelayChainExtensions;
 use sc_service::ChainType;
 use sp_runtime::traits::AccountIdConversion;
+
+use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
+
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
 use sp_core::sr25519;
 
-use super::{get_account_id_from_seed, get_collator_keys_from_seed, get_properties, Extensions};
+// Generic chain spec, in case when we don't have the native runtime.
+pub type RelayChainSpec = sc_service::GenericChainSpec<(), RelayChainExtensions>;
 
 #[allow(clippy::unwrap_used)]
 /// Generates the Frequency Paseo chain spec from the raw json
@@ -21,6 +26,22 @@ pub fn load_frequency_paseo_spec() -> ChainSpec {
 		&include_bytes!("../../../../resources/frequency-paseo.raw.json")[..],
 	)
 	.unwrap()
+}
+
+// TODO: Remove once on a Polkadot-SDK with Paseo
+#[allow(clippy::unwrap_used)]
+/// Generates the Paseo Relay chain spec from the json
+pub fn load_paseo_spec() -> RelayChainSpec {
+	RelayChainSpec::from_json_bytes(&include_bytes!("../../../../resources/paseo.json")[..])
+		.unwrap()
+}
+
+// TODO: Remove once on a Polkadot-SDK with Paseo-Local
+#[allow(clippy::unwrap_used)]
+/// Generates the Paseo-Local Relay chain spec from the json
+pub fn load_paseo_local_spec() -> RelayChainSpec {
+	RelayChainSpec::from_json_bytes(&include_bytes!("../../../../resources/paseo-local.json")[..])
+		.unwrap()
 }
 
 /// Generate the session keys from individual elements.
