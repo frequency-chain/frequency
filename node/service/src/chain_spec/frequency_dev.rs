@@ -27,7 +27,7 @@ pub fn development_config() -> ChainSpec {
 		"dev",
 		ChainType::Development,
 		move || {
-			testnet_genesis(
+			development_genesis(
 				// initial collators.
 				vec![
 					(
@@ -98,7 +98,7 @@ fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 }
 
 #[allow(clippy::expect_used)]
-fn testnet_genesis(
+fn development_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
 	endowed_accounts: Vec<AccountId>,
