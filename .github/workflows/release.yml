@@ -421,11 +421,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-${{env.NETWORK}}-${{github.run_id}}
           path: .
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
@@ -439,7 +440,7 @@ jobs:
         run: npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: js-api-augment-${{github.run_id}}
           path: js/api-augment/dist
@@ -477,12 +478,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
           path: .
-          merge-multiple: true
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
@@ -509,6 +510,7 @@ jobs:
     name: Compare Metadata
     runs-on: ubuntu-22.04
     env:
+      NETWORK: mainnet
       BIN_DIR: target/release
       BIN_FILENAME: frequency.amd64
       TEST_BIN_FILENAME: frequency.amd64
@@ -520,7 +522,6 @@ jobs:
     steps:
       - name: Set Env Vars
         run: |
-          export NETWORK=mainnet; echo "NETWORK=$NETWORK" >> $GITHUB_ENV
           echo "OUTPUT_FILENAME=metadata-compare-$NETWORK.txt" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -539,13 +540,17 @@ jobs:
           fileName: ${{env.BIN_FILENAME}}
           out-file-path: ${{env.REF_DOWNLOAD_DIR}}
       - name: Download Test Binary
+        id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-${{env.NETWORK}}-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
-          merge-multiple: true
       - name: Rename and Move Binaries
         run: |
+          download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
+          echo "Download dir: $download_dir"
+          echo "Downloaded binaries: $(ls -l $download_dir)"
           mkdir -p ${{env.BIN_DIR}}
           mv ${{env.REF_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.REF_BIN_FILENAME}}
           mv ${{env.TEST_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
@@ -858,12 +863,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
           path: .
-          merge-multiple: true
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
@@ -931,9 +936,6 @@ jobs:
             network: dev
             build-profile: release
             release-file-name-prefix: frequency-dev
-          - arch: amd64
-            build-profile: release
-            docker-platform: linux/amd64
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-22.04
@@ -957,12 +959,12 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
+          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
           path: .
-          merge-multiple: true
-      - name: List Downloaded Binaries
+      - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
+          mv "${download_dir}"/artifacts*/* "${download_dir}"
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
