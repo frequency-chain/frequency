@@ -8,7 +8,7 @@ on:
   push:
     branches:
       - disabled-as-this-branch-does-not-exist
-      - 779-build-arm-binaries-and-containers-for-linux-and-macos
+      # - 779-build-arm-binaries-and-containers-for-linux-and-macos
       # - 1639-upgrade-to-polkadot-release-v100
 env:
   BIN_DIR: target/release
