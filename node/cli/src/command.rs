@@ -81,10 +81,10 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"frequency-paseo-local" =>
 			return Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
-		"frequency-paseo" =>
+		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
 		#[cfg(feature = "frequency-testnet")]
-		"frequency-testnet" | "frequency-rococo" | "rococo" | "testnet" =>
+		"frequency-rococo" | "rococo" =>
 			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
 			if path.is_empty() {
@@ -115,7 +115,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					#[cfg(feature = "frequency-testnet")]
 					{
 						return Ok(Box::new(
-							chain_spec::frequency_rococo::load_frequency_rococo_spec(),
+							chain_spec::frequency_paseo::load_frequency_paseo_spec(),
 						));
 					}
 					#[cfg(not(feature = "frequency-testnet"))]
