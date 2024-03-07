@@ -119,7 +119,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 						));
 					}
 					#[cfg(not(feature = "frequency-testnet"))]
-					return Err("Frequency Rococo runtime is not available.".into());
+					return Err("Frequency Paseo runtime is not available.".into());
 				} else {
 					return Err("No chain spec is available.".into());
 				}
@@ -148,7 +148,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyPaseo == spec.identify() {
 				#[cfg(feature = "frequency-testnet")]
 				{
-					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
 						path_buf,
 					)?));
 				}
@@ -157,7 +157,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyLocal == spec.identify() {
 				#[cfg(feature = "frequency-local")]
 				{
-					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
 						path_buf,
 					)?));
 				}
@@ -166,7 +166,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyDev == spec.identify() {
 				#[cfg(feature = "frequency-no-relay")]
 				{
-					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
+					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
 						path_buf,
 					)?));
 				}
