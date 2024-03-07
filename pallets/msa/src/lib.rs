@@ -1208,6 +1208,7 @@ impl<T: Config> Pallet<T> {
 
 			// Insert any new ones that are not in the existing list
 			PermittedDelegationSchemas::<T>::try_insert_schemas(delegation, insert_ids)?;
+			delegation.revoked_at = BlockNumberFor::<T>::zero();
 			Ok(())
 		})
 	}
@@ -1348,7 +1349,7 @@ impl<T: Config> Pallet<T> {
 
 		let schema_permissions = provider_info.schema_permissions;
 		if schema_permissions.is_empty() {
-			return Err(Error::<T>::SchemaNotGranted.into())
+			return Err(Error::<T>::SchemaNotGranted.into());
 		}
 
 		let mut schema_list = Vec::new();
@@ -1570,7 +1571,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		};
 
 		if info.revoked_at == BlockNumberFor::<T>::zero() {
-			return Ok(info)
+			return Ok(info);
 		}
 		ensure!(info.revoked_at >= requested_block, Error::<T>::DelegationRevoked);
 
@@ -1607,7 +1608,7 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 			.ok_or(Error::<T>::SchemaNotGranted)?;
 
 		if *schema_permission_revoked_at_block_number == BlockNumberFor::<T>::zero() {
-			return Ok(())
+			return Ok(());
 		}
 
 		ensure!(
@@ -1718,7 +1719,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 			.and_provides(signing_public_key)
-			.build()
+			.build();
 	}
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider,
@@ -1772,7 +1773,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build();
 	}
 }
 

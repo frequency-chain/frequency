@@ -360,6 +360,73 @@ pub fn revoke_delegation_by_provider_happy_path() {
 }
 
 #[test]
+pub fn grant_new_after_revoke_restores_valid_delegation() {
+	new_test_ext().execute_with(|| {
+		let (delegator_pair, _) = sr25519::Pair::generate();
+		let delegator_account = delegator_pair.public();
+
+		let (provider_msa_id, provider_pair) = create_account();
+		let provider_account = provider_pair.public();
+
+		assert_ok!(Msa::create_provider(
+			RuntimeOrigin::signed(provider_account.into()),
+			Vec::from("provider")
+		));
+
+		// 3. create delegator MSA and provider to provider
+		let (signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id.clone());
+
+		// 3.5 create the user's MSA + add provider as provider
+		assert_ok!(Msa::create_sponsored_account_with_delegation(
+			RuntimeOrigin::signed(AccountId32::from(provider_account)),
+			delegator_account.into(),
+			signature,
+			add_provider_payload
+		));
+		let retrieved_delegator = Msa::get_owner_of(&AccountId32::from(delegator_account)).unwrap();
+
+		//  4. set some block number to ensure it's not a default value
+		System::set_block_number(System::block_number() + 1);
+
+		// 5. assert_ok! fn as 2 to remove provider 1
+		assert_ok!(Msa::revoke_delegation_by_provider(
+			RuntimeOrigin::signed(AccountId32::from(provider_account)),
+			retrieved_delegator
+		));
+
+		// 6. verify that the provider is revoked
+		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		assert_eq!(
+			provider_info,
+			Some(Delegation { revoked_at: 2, schema_permissions: Default::default() })
+		);
+
+		// 7. set some block number to ensure it's not a default value
+		System::set_block_number(System::block_number() + 1);
+
+		// 8. create new delegation payload and signature
+		let (signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
+
+		// 9. Add a new delegation to the same provider for the same MSA
+		assert_ok!(Msa::grant_delegation(
+			RuntimeOrigin::signed(AccountId32::from(provider_account)),
+			delegator_account.into(),
+			signature,
+			add_provider_payload
+		));
+
+		// 10. Verify that delegation is now valid
+		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		assert_eq!(
+			provider_info,
+			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
+		)
+	})
+}
+
+#[test]
 pub fn revoke_delegation_by_provider_has_correct_costs() {
 	new_test_ext().execute_with(|| {
 		let call = MsaCall::<Test>::revoke_delegation_by_provider { delegator: 2 };
