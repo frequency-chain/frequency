@@ -368,16 +368,21 @@ describe('Delegation Scenario Tests', function () {
         assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
         await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend());
 
-        await assert.doesNotReject(ExtrinsicHelper.grantDelegation(
-          delegatorKeys,
-          providerKeys,
-          signPayloadSr25519(delegatorKeys, addProviderData),
-          payload
-        ).signAndSend());
-        const delegation = await ExtrinsicHelper.apiPromise.query.msa.delegatorAndProviderToDelegation(newMsaId!, providerId);
+        await assert.doesNotReject(
+          ExtrinsicHelper.grantDelegation(
+            delegatorKeys,
+            providerKeys,
+            signPayloadSr25519(delegatorKeys, addProviderData),
+            payload
+          ).signAndSend()
+        );
+        const delegation = await ExtrinsicHelper.apiPromise.query.msa.delegatorAndProviderToDelegation(
+          newMsaId!,
+          providerId
+        );
         assert(delegation.isSome, 'delegation should exist');
         assert.equal(delegation.unwrap().revokedAt.toNumber(), 0, 'delegation revokedAt should be zero');
-      })
+      });
 
       it('should revoke a delegation by delegator and retire msa', async function () {
         const delegatorKeys = createKeys();
