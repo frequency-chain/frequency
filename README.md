@@ -59,7 +59,9 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 
 ## Hardware
 
-We run benchmarks with and recommend the same [reference hardware specified by Parity for Validators](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
+Benchmarks are run on an AWS `c6i.4xlarge` and recommend collators have generally the same [reference hardware specified by Parity for Validators](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
+
+Non-Collator nodes may have less power, but low memory configurations may lead to out of memory errors.
 
 # Build
 
