@@ -48,8 +48,6 @@
 	missing_docs
 )]
 
-// REMOVE: need to touch rs file for testing
-
 use frame_support::{
 	ensure,
 	traits::{
