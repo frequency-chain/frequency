@@ -137,7 +137,7 @@ jobs:
       - run: echo "Cross Build ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}"
       - uses: actions/checkout@v4
       - name: Build Binary
-        uses: houseabsolute/actions-rust-cross@a0b2ccd63176060d61d875a04fabe94da5c75921
+        uses: ./.github/workflows/common/rust-cross
         with:
           command: "build"
           target: ${{ matrix.platform.target }}
