@@ -135,6 +135,11 @@ jobs:
           - stable
     steps:
       - run: echo "Cross Build ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}"
+      - name: Install Required Packages
+        if: matrix.platform.os_name == 'Linux-x86_64'
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler libclang-dev clang cmake
       - uses: actions/checkout@v4
       - name: Build Binary
         uses: ./.github/workflows/common/rust-cross
@@ -142,7 +147,7 @@ jobs:
           command: "build"
           target: ${{ matrix.platform.target }}
           toolchain: ${{ matrix.toolchain }}
-          args: "--release --features frequency-no-relay"
+          args: "--features frequency-no-relay"
           strip: true
       # - name: Rename Binary (linux and macos)
       #   run: mv target/${{ matrix.platform.target }}/release/frequency ${{ matrix.platform.binary }}
