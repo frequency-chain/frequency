@@ -46,10 +46,9 @@ runs:
       id: determine-cross-compile
       shell: bash
       run: |
-        pwd
-        ls -l
+        echo $PATH
         file set-cross-compile.sh
-        set-cross-compile.sh ${{ inputs.target }}
+        ./.github/workflows/common/rust-cross/set-cross-compile.sh ${{ inputs.target }}
     - name: Install toolchain
       shell: bash
       # uses: dtolnay/rust-toolchain@master
