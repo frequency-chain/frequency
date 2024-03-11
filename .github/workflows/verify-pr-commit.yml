@@ -110,7 +110,7 @@ jobs:
     # needs: changes
     # if: needs.changes.outputs.rust == 'true'
     name: ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}
-    runs-on: ${{ matrix.platform.os }}
+    runs-on: [self-hosted, Linux, X64, build, v2]
     strategy:
       fail-fast: false
       matrix:
@@ -134,7 +134,8 @@ jobs:
         toolchain:
           - stable
     steps:
-      - run: echo "Cross Build ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}"
+      - name: Cross Build Worrkflow
+        run: echo "Cross Build ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}"
       - name: Install Required Packages for Linux
         if: matrix.platform.os_name == 'Linux-x86_64' || matrix.platform.os_name == 'Linux-aarch64'
         run: |
