@@ -135,11 +135,17 @@ jobs:
           - stable
     steps:
       - run: echo "Cross Build ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}"
-      - name: Install Required Packages
+      - name: Install Required Packages for Linux
         if: matrix.platform.os_name == 'Linux-x86_64' || matrix.platform.os_name == 'Linux-aarch64'
         run: |
           sudo apt-get update
           sudo apt install -y protobuf-compiler libclang-dev clang cmake
+          export PROTOC=/usr/bin/protoc
+      - name: Install Required Packages for macOS
+        if: matrix.platform.os_name == 'macOS-x86_64' || matrix.platform.os_name == 'macOS-aarch64'
+        run: |
+          brew install protobuf
+          export PROTOC=/opt/homebrew/bin/protoc
       - uses: actions/checkout@v4
       - name: Build Binary
         uses: ./.github/workflows/common/rust-cross
