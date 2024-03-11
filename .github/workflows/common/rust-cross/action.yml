@@ -55,8 +55,9 @@ runs:
       run: |
         rustup toolchain install ${{ inputs.toolchain }}
         rustup target add ${{ inputs.target }}
-        rustup target add wasm32-unknown-unknown
         rustup default ${{ inputs.toolchain }}
+        rustup target add wasm32-unknown-unknown --toolchain ${{ inputs.toolchain }}
+        rustup show
     - name: Determine cross version
       id: determine-cross-version
       shell: bash
