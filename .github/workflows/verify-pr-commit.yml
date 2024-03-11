@@ -117,7 +117,7 @@ jobs:
         platform:
           - os_name: Linux-aarch64
             os: ubuntu-22.04
-            target: aarch64-unknown-linux-musl
+            target: aarch64-unknown-linux-gnu
             binary: frequency
           - os_name: Linux-x86_64
             os: ubuntu-22.04
@@ -144,6 +144,7 @@ jobs:
           echo "PROTOC=$PROTOC" >> $GITHUB_ENV
           echo '********************************************************'
           echo $PROTOC
+          protoc --version
           echo '********************************************************'
       - name: Install Required Packages for macOS
         if: matrix.platform.os_name == 'macOS-x86_64' || matrix.platform.os_name == 'macOS-aarch64'
@@ -153,6 +154,7 @@ jobs:
           echo "PROTOC=$PROTOC" >> $GITHUB_ENV
           echo '********************************************************'
           echo $PROTOC
+          protoc --version
           echo '********************************************************'
       - uses: actions/checkout@v4
       - name: Build Binary
