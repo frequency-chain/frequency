@@ -62,7 +62,7 @@ runs:
     - name: Determine cross version
       id: determine-cross-version
       shell: bash
-      run: determine-cross-version.sh "${{ inputs.cross-version }}"
+      run: ./.github/workflows/common/rust-cross/determine-cross-version.sh "${{ inputs.cross-version }}"
       env:
         GITHUB_TOKEN: ${{ inputs.GITHUB_TOKEN }}
       if: ${{ steps.determine-cross-compile.outputs.needs-cross == 'true' }}
