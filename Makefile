@@ -90,7 +90,7 @@ format:
 lint:
 	cargo +nightly-2024-03-01 fmt --check
 	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
-	RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-03-01  doc --no-deps --features frequency
+	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-audit:
 	cargo deny check -c deny.toml

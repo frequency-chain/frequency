@@ -286,6 +286,9 @@ describe('Delegation Scenario Tests', function () {
       assert.notEqual(revokeDelegationEvent, undefined, 'should have returned DelegationRevoked event');
       assert.deepEqual(revokeDelegationEvent?.data.providerId, providerId, 'provider ids should be equal');
       assert.deepEqual(revokeDelegationEvent?.data.delegatorId, msaId, 'delegator ids should be equal');
+      const delegation = await ExtrinsicHelper.apiPromise.query.msa.delegatorAndProviderToDelegation(msaId, providerId);
+      assert(delegation.isSome);
+      assert.notEqual(delegation.unwrap().revokedAt.toNumber(), 0, 'delegation revokedAt should not be zero');
     });
 
     it('should fail to revoke a delegation that has already been revoked (InvalidDelegation)', async function () {
@@ -348,6 +351,37 @@ describe('Delegation Scenario Tests', function () {
           // Due to parallelization, this could be off by a few blocks
           assert(Math.abs(Number(diff.toString())) < 20);
         });
+      });
+
+      it('should re-grant a previously revoked delegation', async function () {
+        const delegatorKeys = createKeys();
+        const payload = await generateDelegationPayload({ authorizedMsaId: providerId, schemaIds: [schemaId] });
+        const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
+        const op = ExtrinsicHelper.createSponsoredAccountWithDelegation(
+          delegatorKeys,
+          providerKeys,
+          signPayloadSr25519(delegatorKeys, addProviderData),
+          payload
+        );
+        const { target: msaEvent } = await op.fundAndSend(fundingSource);
+        const newMsaId = msaEvent?.data.msaId;
+        assert.notEqual(newMsaId, undefined, 'should have returned an MSA');
+        await assert.doesNotReject(ExtrinsicHelper.revokeDelegationByProvider(newMsaId!, providerKeys).signAndSend());
+
+        await assert.doesNotReject(
+          ExtrinsicHelper.grantDelegation(
+            delegatorKeys,
+            providerKeys,
+            signPayloadSr25519(delegatorKeys, addProviderData),
+            payload
+          ).signAndSend()
+        );
+        const delegation = await ExtrinsicHelper.apiPromise.query.msa.delegatorAndProviderToDelegation(
+          newMsaId!,
+          providerId
+        );
+        assert(delegation.isSome, 'delegation should exist');
+        assert.equal(delegation.unwrap().revokedAt.toNumber(), 0, 'delegation revokedAt should be zero');
       });
 
       it('should revoke a delegation by delegator and retire msa', async function () {

@@ -1,5 +1,5 @@
 [toolchain]
-channel = "stable"
+channel = "1.76.0"
 components = [ "clippy", "rust-docs", "rustfmt","rustc-dev", "rustc"]
 targets = [ "wasm32-unknown-unknown" ]
 profile = "minimal"

@@ -27,6 +27,9 @@ pub mod frequency_rococo;
 ))]
 pub mod frequency_paseo;
 
+#[cfg(any(feature = "frequency-no-relay"))]
+pub mod frequency_dev;
+
 #[allow(clippy::expect_used)]
 /// Helper function to generate a crypto pair from seed
 pub fn get_public_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Public {
