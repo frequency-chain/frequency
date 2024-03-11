@@ -141,11 +141,13 @@ jobs:
           sudo apt-get update
           sudo apt install -y protobuf-compiler libclang-dev clang cmake
           export PROTOC=/usr/bin/protoc
+          echo "PROTOC=$PROTOC" >> $GITHUB_ENV
       - name: Install Required Packages for macOS
         if: matrix.platform.os_name == 'macOS-x86_64' || matrix.platform.os_name == 'macOS-aarch64'
         run: |
           brew install protobuf
           export PROTOC=/opt/homebrew/bin/protoc
+          echo "PROTOC=$PROTOC" >> $GITHUB_ENV
       - uses: actions/checkout@v4
       - name: Build Binary
         uses: ./.github/workflows/common/rust-cross
