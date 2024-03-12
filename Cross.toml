@@ -1,10 +1,8 @@
 [build]
-dockerfile = "./tools/ci/docker/aaarch64-unknown-linux-gnu.dockerfile"
+dockerfile = "./tools/ci/docker/aarch64-unknown-linux-gnu.dockerfile"
 
 # [target.aarch64-unknown-linux-gnu]
 # pre-build = [
 # 	"apt-get update && apt-get install -y protobuf-compiler",
 # 	"rm -rf /var/lib/apt/lists/*",
 # ]
-# [target.aarch64-unknown-linux-gnu]
-# image = "ghcr.io/libertydsnp/frequency/aarch64-unknown-linux-gnu:latest"
