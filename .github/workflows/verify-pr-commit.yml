@@ -112,6 +112,8 @@ jobs:
     name: ${{ matrix.platform.os_name }} with rust ${{ matrix.toolchain }}
     runs-on: [self-hosted, Linux, X64, build, v2]
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    env:
+      CROSS_CONTAINER_IN_CONTAINER: true
     strategy:
       fail-fast: false
       matrix:
