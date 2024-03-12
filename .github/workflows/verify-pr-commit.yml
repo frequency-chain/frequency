@@ -114,6 +114,7 @@ jobs:
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       CROSS_CONTAINER_IN_CONTAINER: true
+      CROSS_REMOTE: true
     strategy:
       fail-fast: false
       matrix:
