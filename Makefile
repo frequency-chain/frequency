@@ -195,7 +195,7 @@ benchmarks-capacity:
 
 .PHONY: docs
 docs:
-	RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
+	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
 
 # Cleans unused docker resources and artifacts
 .PHONY: docs
