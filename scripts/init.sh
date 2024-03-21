@@ -13,7 +13,7 @@ base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
 frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
-chain="${RELAY_CHAIN_SPEC:-./resources/paseo-local.raw.json}"
+chain="${RELAY_CHAIN_SPEC:-./resources/paseo-local.json}"
 # offchain options
 offchain_params="--offchain-worker=never"
 
