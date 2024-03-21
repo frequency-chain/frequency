@@ -37,7 +37,7 @@ jobs:
         run: |
           version=${{env.NEW_RELEASE_TAG_FROM_UI}}
           echo "Release version entered in UI: $version"
-          regex='^v([0-9]+)\.(0|([1-9][0-9]+))\.(0|([1-9][0-9]+))(-rc[1-9][0-9]*)?$'
+          regex='^v([0-9]+)\.(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))(-rc[1-9][0-9]*)?$'
           if [[ ! $version =~ $regex ]]; then
             echo "ERROR: Entered version $version is not valid."
             echo "Please use v#.#.#[-rc#] format."
