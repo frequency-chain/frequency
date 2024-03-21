@@ -65,19 +65,19 @@ local-block:
 
 .PHONY: register
 register:
-	./scripts/init.sh register-frequency-rococo-local
+	./scripts/init.sh register-frequency-paseo-local
 
 .PHONY: onboard
 onboard:
-	./scripts/init.sh onboard-frequency-rococo-local
+	./scripts/init.sh onboard-frequency-paseo-local
 
 .PHONY: offboard
 offboard:
-	./scripts/init.sh offboard-frequency-rococo-local
+	./scripts/init.sh offboard-frequency-paseo-local
 
-.PHONY: specs-rococo-2000, specs-rococo-local
-specs-rococo-2000:
-	./scripts/generate_specs.sh 2000 rococo-2000 release
+.PHONY: specs-paseo-2000, specs-paseo-local
+specs-paseo-2000:
+	./scripts/generate_specs.sh 2000 paseo-2000 release
 
 specs-rococo-local:
 	./scripts/generate_relay_specs.sh
