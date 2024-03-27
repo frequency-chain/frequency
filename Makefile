@@ -247,7 +247,7 @@ build-testnet-release:
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
 
-.PHONY: test, e2e-tests, e2e-tests-serial, e2e-tests-only, e2e-tests-load, e2e-tests-load-only, e2e-tests-rococo, e2e-tests-rococo-local
+.PHONY: test, e2e-tests, e2e-tests-serial, e2e-tests-only, e2e-tests-load, e2e-tests-load-only, e2e-tests-rococo, e2e-tests-rococo-local, e2e-tests-testnet-paseo, e2e-tests-paseo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
@@ -272,9 +272,18 @@ e2e-tests-rococo:
 e2e-tests-rococo-local:
 	./scripts/run_e2e_tests.sh -c rococo_local
 
-.PHONY: try-runtime-create-snapshot-rococo, try-runtime-create-snapshot-mainnet, try-runtime-upgrade-rococo, try-runtime-upgrade-mainnet, try-runtime-use-snapshot-rococo, try-runtime-use-snapshot-mainnet
+e2e-tests-testnet-paseo:
+	./scripts/run_e2e_tests.sh -c paseo_testnet
+
+e2e-tests-paseo-local:
+	./scripts/run_e2e_tests.sh -c paseo_local
+
+.PHONY: try-runtime-create-snapshot-rococo, try-runtime-create-snapshot-mainnet, try-runtime-upgrade-rococo, try-runtime-upgrade-mainnet, try-runtime-use-snapshot-rococo, try-runtime-use-snapshot-mainnet, try-runtime-create-snapshot-paseo-testnet, try-runtime-use-snapshot-paseo-testnet, try-runtime-upgrade-paseo-testnet
 try-runtime-create-snapshot-rococo:
 	try-runtime create-snapshot --uri wss://rpc.rococo.frequency.xyz:443 rococo-all-pallets.state
+
+try-runtime-create-snapshot-paseo-testnet:
+	try-runtime create-snapshot --uri wss://0.rpc.testnet.amplica.io:443 testnet-paseo-all-pallets.state
 
 # mainnet snapshot takes as many as 24 hours to complete
 try-runtime-create-snapshot-mainnet:
@@ -284,6 +293,10 @@ try-runtime-upgrade-rococo:
 	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
 
+try-runtime-upgrade-paseo-testnet:
+	cargo build --release --features frequency-testnet,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://0.rpc.testnet.amplica.io:443
+
 try-runtime-upgrade-mainnet:
 	cargo build --release --features frequency,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
@@ -291,6 +304,10 @@ try-runtime-upgrade-mainnet:
 try-runtime-use-snapshot-rococo:
 	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path rococo-all-pallets.state
+
+try-runtime-use-snapshot-paseo-testnet:
+	cargo build --release --features frequency-testnet,try-runtime && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path testnet-paseo-all-pallets.state
 
 try-runtime-use-snapshot-mainnet:
 	cargo build --release --features frequency,try-runtime && \

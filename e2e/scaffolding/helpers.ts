@@ -5,7 +5,15 @@ import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@pol
 import { Codec } from '@polkadot/types/types';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
-import { verbose, isTestnet } from './env';
+import {
+  verbose,
+  isTestnet,
+  getGraphChangeSchema,
+  getBroadcastSchema,
+  getDummySchema,
+  getAvroChatMessageItemizedSchema,
+  getAvroChatMessagePaginatedSchema,
+} from './env';
 import {
   AddKeyData,
   AddProviderPayload,
@@ -449,9 +457,9 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
 }
 
 export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<u16> {
-  if (isTestnet()) {
-    const ROCOCO_GRAPH_CHANGE_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 53);
-    return ROCOCO_GRAPH_CHANGE_SCHEMA_ID;
+  const existingSchemaId = getGraphChangeSchema();
+  if (existingSchemaId) {
+    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchema(
       source,
@@ -469,9 +477,9 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
 }
 
 export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Promise<u16> {
-  if (isTestnet()) {
-    const ROCOCO_PARQUET_BROADCAST_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 51);
-    return ROCOCO_PARQUET_BROADCAST_SCHEMA_ID;
+  const existingSchemaId = getBroadcastSchema();
+  if (existingSchemaId) {
+    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, 'Parquet', 'IPFS');
     const { target: event } = await createSchema.fundAndSend(source);
@@ -484,9 +492,9 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
 }
 
 export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> {
-  if (isTestnet()) {
-    const ROCOCO_DUMMY_SCHEMA_ID: u16 = new u16(ExtrinsicHelper.api.registry, 52);
-    return ROCOCO_DUMMY_SCHEMA_ID;
+  const existingSchemaId = getDummySchema();
+  if (existingSchemaId) {
+    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     const createDummySchema = ExtrinsicHelper.createSchema(
       source,
@@ -504,9 +512,9 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
 }
 
 export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringPair): Promise<u16> {
-  if (isTestnet()) {
-    const ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED: u16 = new u16(ExtrinsicHelper.api.registry, 55);
-    return ROCOCO_AVRO_CHAT_MESSAGE_PAGINATED;
+  const existingSchemaId = getAvroChatMessagePaginatedSchema();
+  if (existingSchemaId) {
+    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     // Create a schema for Paginated PayloadLocation
     const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated');
@@ -520,9 +528,9 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
 }
 
 export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPair): Promise<u16> {
-  if (isTestnet()) {
-    const ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED: u16 = new u16(ExtrinsicHelper.api.registry, 54);
-    return ROCOCO_AVRO_CHAT_MESSAGE_ITEMIZED;
+  const existingSchemaId = getAvroChatMessageItemizedSchema();
+  if (existingSchemaId) {
+    return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     // Create a schema for Paginated PayloadLocation
     const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Itemized');

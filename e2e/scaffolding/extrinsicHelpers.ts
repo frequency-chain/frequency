@@ -786,7 +786,7 @@ export class ExtrinsicHelper {
   public static async runToBlock(blockNumber: number) {
     let currentBlock = await getBlockNumber();
     while (currentBlock < blockNumber) {
-      // In Rococo, just wait
+      // In Testnet, just wait
       if (hasRelayChain()) {
         await new Promise((r) => setTimeout(r, 4_000));
       } else {
