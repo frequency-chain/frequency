@@ -33,12 +33,12 @@
   "author": "LibertyDSNP",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^10.9.1",
-    "@polkadot/rpc-provider": "^10.9.1",
-    "@polkadot/types": "^10.9.1"
+    "@polkadot/api": "^10.12.4",
+    "@polkadot/rpc-provider": "^10.12.4",
+    "@polkadot/types": "^10.12.4"
   },
   "devDependencies": {
-    "@polkadot/typegen": "^10.9.1",
+    "@polkadot/typegen": "^10.12.4",
     "@types/mocha": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^6.7.3",
     "@typescript-eslint/parser": "^6.7.3",
