@@ -3,7 +3,7 @@ name: Release
 run-name: Cut Release ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
-  cancel-in-progress: true
+  cancel-in-progress: false
 on:
   push:
     tags:
