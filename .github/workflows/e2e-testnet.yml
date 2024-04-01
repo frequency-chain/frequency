@@ -5,6 +5,9 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
+  push:
+    branches:
+      - "ci-update/e2e-paseo"
   workflow_dispatch:
     inputs:
       release-version:
@@ -12,7 +15,7 @@ on:
         required: true
 
 env:
-  TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  TAG_FROM_UI: "v1.11.1"
 
 jobs:
   run-e2e:
