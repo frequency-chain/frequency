@@ -1,32 +1,31 @@
 {
-    "$schema": "https://json.schemastore.org/tsconfig",
-    "display": "Base",
-    "compilerOptions": {
-        "allowSyntheticDefaultImports": true,
-        "esModuleInterop": true,
-        "moduleResolution": "node",
-        "module": "esnext",
-        "noImplicitAny": true,
-        "outDir": "dist",
-        "resolveJsonModule": true,
-        "sourceMap": false,
-        "strict": true,
-        "skipLibCheck": true,
-        "target": "es2022",
-        "typeRoots": [
-            "node_modules/@types"
-        ],
-        "paths": {
-            "@frequency-chain/api-augment/*": [
-                "./interfaces/*"
-            ],
-            "@polkadot/api/augment": ["./interfaces/augment-api.ts"],
-            "@polkadot/types/augment": ["./interfaces/augment-types.ts"],
-            "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
-        }
-    },
-    "ts-node": {
-        "experimentalSpecifierResolution": "node"
-    },
-    "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"],
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Base",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "module": "esnext",
+    "noImplicitAny": true,
+    "outDir": "dist",
+    "resolveJsonModule": true,
+    "sourceMap": false,
+    "strict": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "typeRoots": ["node_modules/@types"],
+    "paths": {
+      "@frequency-chain/api-augment/*": ["./interfaces/*"],
+      "@polkadot/api/augment": ["./interfaces/augment-api.ts"],
+      "@polkadot/types/augment": ["./interfaces/augment-types.ts"],
+      "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
+    }
+  },
+  "exclude": [
+    "node_modules/**",
+    "./test/**",
+    "./scripts/**",
+    "**/*.test.ts",
+    "./dist/**"
+  ]
 }
