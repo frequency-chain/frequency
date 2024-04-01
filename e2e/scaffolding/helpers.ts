@@ -7,7 +7,6 @@ import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import {
   verbose,
-  isTestnet,
   getGraphChangeSchema,
   getBroadcastSchema,
   getDummySchema,
