@@ -370,7 +370,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
