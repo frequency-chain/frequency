@@ -218,7 +218,7 @@ This option runs one collator node as local host process and two relay chain val
 1. Start relay chain validator nodes.
 
    ```sh
-   make start-relay
+   make start-paseo-relay
    ```
 
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was

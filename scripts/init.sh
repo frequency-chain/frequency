@@ -24,12 +24,6 @@ fi
 
 case $cmd in
 
-start-relay-chain)
-  echo "Starting local relay chain with Alice and Bob..."
-  cd docker
-  docker-compose up -d relay_alice relay_bob
-  ;;
-
 start-paseo-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
   cd docker

@@ -11,9 +11,6 @@ clean:
 start:
 	./scripts/init.sh start-frequency-instant
 
-start-relay:
-	./scripts/init.sh start-relay-chain
-
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
 
