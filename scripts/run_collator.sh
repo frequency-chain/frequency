@@ -19,7 +19,7 @@ alice="${HOST_ALICE:-127.0.0.1}"
 bob="${HOST_BOB:-127.0.0.1}"
 alice_rpc_port="${ALICE_RPC_PORT:-9946}"
 bob_rpc_port="${BOB_RPC_PORT:-9947}"
-chain="${RELAY_CHAIN_SPEC:-./resources/rococo-local.json}"
+chain="${RELAY_CHAIN_SPEC:-./resources/paseo-local.json}"
 
 get_bootnode () {
     node="$1"
