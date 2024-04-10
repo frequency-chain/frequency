@@ -30,12 +30,6 @@ start-paseo-relay-chain)
   docker-compose up -d relay_paseo_alice relay_paseo_bob
   ;;
 
-stop-relay-chain)
-  echo "Stopping relay chain..."
-  cd docker
-  docker-compose down
-  ;;
-
 stop-paseo-relay-chain)
   echo "Stopping paseo chain..."
   cd docker

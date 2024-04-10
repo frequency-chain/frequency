@@ -41,10 +41,6 @@ start-manual-with-offchain:
 start-interval-with-offchain:
 	./scripts/init.sh start-frequency-interval with-offchain
 
-.PHONY: stop, stop-relay, stop-frequency-docker
-stop-relay:
-	./scripts/init.sh stop-relay-chain
-
 stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
