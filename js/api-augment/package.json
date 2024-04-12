@@ -25,8 +25,8 @@
     "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9944 -o ./metadata.json",
     "generate:defs": "node --import=tsx/esm node_modules/.bin/polkadot-types-from-defs --package @frequency-chain/api-augment --input ./interfaces --endpoint ./metadata.json",
     "generate:meta": "node --import=tsx/esm node_modules/.bin/polkadot-types-from-chain --package @frequency-chain/api-augment --endpoint ./metadata.json --output ./interfaces",
-    "test": "mocha --import=tsx/register  ./test/**/*.test.ts",
-    "test:only": "mocha --import=tsx/register",
+    "test": "mocha --import=tsx  ./test/**/*.test.ts",
+    "test:only": "mocha --import=tsx",
     "format": "tsc --noEmit --pretty && eslint --fix \"**/*.ts\"",
     "lint": "tsc --noEmit --pretty && eslint \"**/*.ts\""
   },
