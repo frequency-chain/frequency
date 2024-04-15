@@ -80,7 +80,7 @@ case "${CHAIN}" in
         NPM_RUN_COMMAND="test:relay"
         CHAIN_ENVIRONMENT="paseo-testnet"
 
-        read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
+        read -p "Enter the seed phrase for the Frequency Paseo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
     ;;
     "rococo_local")
         PROVIDER_URL="ws://127.0.0.1:9944"
