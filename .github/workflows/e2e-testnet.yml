@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
-name: Rococo E2E Tests
-run-name: Rococo E2E Testing ${{github.event.inputs.release-version || github.ref_name}}
+name: Testnet Paseo E2E Tests
+run-name: Testnet Paseo E2E Testing ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
@@ -12,7 +12,7 @@ on:
         required: true
 
 env:
-  TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  TAG_FROM_UI: "v1.11.1"
 
 jobs:
   run-e2e:
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{env.TAG_FROM_UI}}
+          # ref: ${{env.TAG_FROM_UI}}
       - name: Set Env Vars
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
@@ -51,7 +51,7 @@ jobs:
       - name: Run e2e Tests
         working-directory: e2e
         env:
-          CHAIN_ENVIRONMENT: rococo-testnet
-          WS_PROVIDER_URL: wss://rpc.rococo.frequency.xyz
-          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.ROCOCO_E2E_TEST_SEED_PHRASE }}
+          CHAIN_ENVIRONMENT: paseo-testnet
+          WS_PROVIDER_URL: wss://0.rpc.testnet.amplica.io
+          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.PASEO_E2E_TEST_SEED_PHRASE }}
         run: npm run test:relay

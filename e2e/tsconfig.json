@@ -16,10 +16,6 @@
     "target": "es2022",
     "typeRoots": ["node_modules/@types"]
   },
-  "ts-node": {
-    "esm": true,
-    "experimentalSpecifierResolution": "node"
-  },
   "include": ["./**/*.ts"],
   "exclude": ["node_modules/**", "./dist/**"]
 }
