@@ -693,7 +693,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@6fd5cc6eaf7567dbd0f9666061215bb476f012fc
+        uses: mikepenz/release-changelog-builder-action@32e3c96f29a6532607f638797455e9e98cfc703d
         env:
           GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
