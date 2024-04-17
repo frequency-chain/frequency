@@ -28,7 +28,7 @@ End users with Message Source Accounts (MSAs) may receive FRQCY from different s
 * The exact formula for calculating rewards is determined in advance and used in the implementation of this design.
 
 ## Economic Model
-By "economic model" we mean the formulas and inputs used to manage Provider Boost rewards to achieve the goals of decentralization, economic stabiilty, and sustainability.
+"Economic model" means the formulas and inputs used to manage Provider Boost rewards to achieve the goals of decentralization, economic stabiilty, and sustainability.
 
 ## Goals
 To specify the following:
