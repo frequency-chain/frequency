@@ -35,6 +35,7 @@ describe('Capacity Staking Tests', function () {
   describe('scenario: user staking, unstaking, and withdraw-unstaked', function () {
     let stakeKeys: KeyringPair;
     let stakeProviderId: u64;
+
     before(async function () {
       stakeKeys = createKeys('StakeKeys');
       stakeProviderId = await createMsaAndProvider(fundingSource, stakeKeys, 'StakeProvider', accountBalance);
@@ -117,6 +118,7 @@ describe('Capacity Staking Tests', function () {
 
       trackedFrozenBalance -= tokenMinStake;
     });
+
     describe('when staking to multiple times', function () {
       describe('and targeting same provider', function () {
         it('successfully increases the amount that was targeted to provider', async function () {

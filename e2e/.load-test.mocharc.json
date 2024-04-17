@@ -3,7 +3,7 @@
   "extension": ["ts"],
   "parallel": false,
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
-  "loader": "ts-node/esm",
+  "import": "tsx/esm",
   "spec": ["./load-tests/**/*.test.ts"],
   "timeout": 60000
 }

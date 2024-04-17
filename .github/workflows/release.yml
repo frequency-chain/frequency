@@ -3,7 +3,7 @@ name: Release
 run-name: Cut Release ${{github.event.inputs.release-version || github.ref_name}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
-  cancel-in-progress: true
+  cancel-in-progress: false
 on:
   push:
     tags:
@@ -37,7 +37,7 @@ jobs:
         run: |
           version=${{env.NEW_RELEASE_TAG_FROM_UI}}
           echo "Release version entered in UI: $version"
-          regex='^v([0-9]+)\.(0|([1-9][0-9]+))\.(0|([1-9][0-9]+))(-rc[1-9][0-9]*)?$'
+          regex='^v([0-9]+)\.(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))(-rc[1-9][0-9]*)?$'
           if [[ ! $version =~ $regex ]]; then
             echo "ERROR: Entered version $version is not valid."
             echo "Please use v#.#.#[-rc#] format."
@@ -370,7 +370,7 @@ jobs:
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
       - name: Setup Pages
-        uses: actions/configure-pages@v4
+        uses: actions/configure-pages@v5
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
@@ -410,7 +410,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json
@@ -775,7 +775,7 @@ jobs:
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
@@ -786,7 +786,7 @@ jobs:
             /tmp/metadata-compare-*
       - name: Publish Full Release on GitHub
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
         with:
           body_path: tools/ci/release-notes/release-notes.md
           tag_name: ${{env.NEW_RELEASE_TAG}}
@@ -1044,7 +1044,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 18
+          node-version: 20
           cache: "npm"
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/api-augment/package-lock.json

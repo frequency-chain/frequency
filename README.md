@@ -72,35 +72,35 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
 3. `rust-toolchain.toml` specifies the standard toolchain to use. If you have `rustup` installed, it will automatically install the correct toolchain when you run any cargo command.
 4. Running `make check` will run cargo checks for all Frequency features. This is the recommended way to check your code before committing. Alternatively, you can run following for specific features:
 
-    ```sh
-    make check-no-relay
-    make check-local
-    make check-testnet
-    make check-mainnet
-    ```
+   ```sh
+   make check-no-relay
+   make check-local
+   make check-testnet
+   make check-mainnet
+   ```
 
 5. Build [Wasm](https://webassembly.org) and native code.
 
-    _Note, if you get errors complaining about missing
-    dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
-    manager(e.g. [Homebrew](https://brew.sh/) on macOS) and re-run the command again._
+   _Note, if you get errors complaining about missing
+   dependencies (protobuf, cmake, yarn, node, jq, etc.) install them with your favorite package
+   manager(e.g. [Homebrew](https://brew.sh/) on macOS) and re-run the command again._
 
-    ```sh
-    rustup update
-    cargo clean
-    make build
-    ```
+   ```sh
+   rustup update
+   cargo clean
+   make build
+   ```
 
-    Above will build Frequency with all features. Alternatively you may run following command to build with specific features:
+   Above will build Frequency with all features. Alternatively you may run following command to build with specific features:
 
-    ```sh
-    make build-no-relay
-    make build-local
-    make build-testnet
-    make build-mainnet
-    ```
+   ```sh
+   make build-no-relay
+   make build-local
+   make build-testnet
+   make build-mainnet
+   ```
 
-    To build local, rococo/paseo (testnet) or mainnet features respectively.
+   To build local, rococo/paseo (testnet) or mainnet features respectively.
 
 At this point you should have `./target/debug` directory generated locally with compiled project files. (or `./target/release` for `make build-*-release`)
 
@@ -159,6 +159,7 @@ _Note, Running Frequency via following options does not require binary to be bui
 This option runs just one collator node without the need for a relay chain.
 
 ### Manual Sealing
+
 a. Blocks can be triggered by calling the `engine_createBlock` RPC
 
 ```sh
@@ -170,7 +171,7 @@ curl http://localhost:9944 -H "Content-Type:application/json;charset=utf-8" -d  
     }'
 ```
 
-b.  Use the "start-manual" make target to call the RPC
+b. Use the "start-manual" make target to call the RPC
 Great for testing multiple items in the same block or other block formation tests.
 
 ```sh
@@ -194,10 +195,9 @@ docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
-| **Node**                |             **Ports**             | **Explorer URL**                                                                          |
-| ----------------------- | :-------------------------------: | ----------------------------------------------------------------------------------------- |
-| Frequency Collator Node | ws and rpc:`9944`, p2p:`3033`     | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
-
+| **Node**                |           **Ports**            | **Explorer URL**                                                                          |
+| ----------------------- | :----------------------------: | ----------------------------------------------------------------------------------------- |
+| Frequency Collator Node | ws and rpc:`9944`, p2p:`30333` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
 ### Interval Sealing
 
@@ -217,27 +217,28 @@ This option runs one collator node as local host process and two relay chain val
 
 1. Start relay chain validator nodes.
 
-    ```sh
-    make start-relay
-    ```
+   ```sh
+   make start-relay
+   ```
 
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
    previously registered on a running relay chain and no new registration is required,
    then you can skip the above step._
-    ```sh
-    make register
-    ```
+
+   ```sh
+   make register
+   ```
 
 1. Start Frequency as parachain. This step will generate genesis/wasm and start the parachain collator.
 
-    ```sh
-    make start-frequency
-    ```
+   ```sh
+   make start-frequency
+   ```
 
 1. Onboard Frequency to the relay chain
-    ```sh
-    make onboard
-    ```
+   ```sh
+   make onboard
+   ```
 
 #### Stop and Clean Environment
 
@@ -264,11 +265,11 @@ Stop:
 make stop-frequency-docker
 ```
 
-| **Node**             | **Ports**                           | **Explorer URL**                                                                          |
-| -------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| Frequency Relay Node | ws and rpc: `9944`, p2p:`30333`     | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
-| Alice Relay Node     | ws and rpc: `9946`, p2p:`30335`     | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
-| Bob Relay Node       | ws and rpc: `9947`, p2p:`30336`     | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
+| **Node**             | **Ports**                       | **Explorer URL**                                                                          |
+| -------------------- | ------------------------------- | ----------------------------------------------------------------------------------------- |
+| Frequency Relay Node | ws and rpc: `9944`, p2p:`30333` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| Alice Relay Node     | ws and rpc: `9946`, p2p:`30335` | [127.0.0.1:9946](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9946#/explorer) |
+| Bob Relay Node       | ws and rpc: `9947`, p2p:`30336` | [127.0.0.1:9947](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9947#/explorer) |
 
 ## Run Tests
 
@@ -300,8 +301,8 @@ make start-frequency-with-offchain
 - Format code with `make format` according to style guidelines and configurations in `rustfmt.toml`.
 - Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 
-    _Note, if you get errors complaining about the wasm build, then you may need to install
-    the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
+  \_Note, if you get errors complaining about the wasm build, then you may need to install
+  the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
 
 - Alternatively, run `make format-lint` to run both at the same time.
 - Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
@@ -312,24 +313,26 @@ make start-frequency-with-offchain
 
 1. Check out the commit at which the runtime was built.
 2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify the runtime:
-    ```sh
-    SRTOOL_TAG="1.75.0" srtool build \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
-            --profile=release \
-            --package=frequency-runtime \
-            --root
-    ```
+   ```sh
+   SRTOOL_TAG="1.75.0" srtool build \
+           --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
+           --profile=release \
+           --package=frequency-runtime \
+           --root
+   ```
 
 ## Local Runtime Upgrade
 
 To upgrade the runtime, run the following command:
 
 ### Local Relay Chain
+
 ```sh
 make upgrade-local
 ```
 
 ### Standalone Chain (No Relay)
+
 ```sh
 make upgrade-no-relay
 ```
