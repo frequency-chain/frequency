@@ -72,5 +72,5 @@ Rewards are not prorated; they are calculated only for balances held for an enti
 ## Claiming Rewards
 * Provider Boost Rewards are not minted until they are explicitly <i>claimed</i> by the Provider Boost account holder, by calling a non-free extrinsic.
 * Rewards must be claimed within a certain number of Provider Boost Eras.
-* When claimed, all available, unexpired Rewards for each previous Era are minted and transferred to the MSA of the Provider Boost Account. 
+* When claimed, all available, unexpired Rewards for each previous Era are minted and transferred to the same account that locked them. 
 * **Is there a cap on how much can be claimed at once?**
