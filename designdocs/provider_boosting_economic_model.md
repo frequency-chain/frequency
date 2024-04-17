@@ -33,9 +33,9 @@ End users with Message Source Accounts (MSAs) may receive FRQCY from different s
 ## Goals
 To specify the following:
 * In words or pseudo-code how the reward pool and individual rewards are calculated
-* When reward amounts are minted
-* How much Capacity is generated for the targeted Provider for a Provider Boost.
-* What to do with any left over funds set aside for Provider Boost Rewards.
+* How and when rewards are minted and transferred
+* What to do with leftover and/or unclaimed funds set aside for Provider Boost Rewards.
+* Limitations on receiving rewards and reward amounts
 
 ## Non-Goals
 This document does not:
@@ -44,30 +44,30 @@ This document does not:
 
 ## Proposal:
 ### Inputs to Provider Boost Reward Calculation
-* R<sub>era</sub> is a predetermined number of tokens available each Boost Era for Rewards
-* S<sub>u</sub> is the amount an MSA holder has locked for Provider Boost Era <i>e</i>
-* S<sub>T</sub> is the total that all MSA holders have locked for Provider Boost Era <i>e</i>
-* R<sub>max</sub> is the maximum percentage of a Provider-Boosted amount that can be paid out in Era <i>e</i>
+* R<sub>era</sub> is a predetermined amount of FRQCY available each Boost Era for Rewards
+* L<sub>u</sub> is the amount an MSA holder has locked for Provider Boost Era <i>e</i>
+* L<sub>T</sub> is the total that all MSA holders have locked for Provider Boost Era <i>e</i>
+* P<sub>max</sub> is the maximum percentage of a Provider-Boosted amount that can be paid out in Era <i>e</i>
 
 ### Formula
 The Provider Boost reward in FRQCY tokens for a given Era <i>e</i> is
 
-R = <i>min</i>(R<sub>era</sub>*S<sub>u</sub>/S<sub>T</sub>, S<sub>u</sub>*R<sub>max</sub>)
+R = <i>min</i>(R<sub>era</sub>*L<sub>u</sub>/L<sub>T</sub>, L<sub>u</sub>*P<sub>max</sub>)
 
-Put into words, if the pool of Rewards per Era is R<sub>era</sub> FRQCY, then the Reward amount in FRQCY earned by a given Provider Booster will be proportional to how much they've locked for Provider Boosting out of the total, OR R<sub>max</sub> times the amount locked, whichever is less.
+Put into words, if the pool of Rewards per Era is R<sub>era</sub> FRQCY, then the Reward amount in FRQCY earned by a given Provider Booster will be proportional to how much they've locked for Provider Boosting out of the total, OR P<sub>max</sub> times the amount locked, whichever is less.
 
-Put another way, there is a fixed number of tokens to be rewarded each Era, split up according to each Provider Boost account holder's percentage of the staked total.  However, the reward percentage each Era for every individual account is capped at 10%.
+Put another way, there is a fixed number of tokens to be rewarded each Era (R<sub>era</sub>), split up according to each Provider Boost account holder's percentage of the locked total.  However, the reward return each Era for every individual account (P<sub>max</sub>) is capped at some rate, for example, 10%.
 
 ### Examples:
 Given the following values:
 * R<sub>era</sub> = 2 Million FRQCY
 * R<sub>max</sub> is 10%
 
-1. Ang has locked up 100 FRQCY for Provider Boosting. The total locked by everyone, S<sub>T</sub> for era <i>e</i>,  is 10 Million FRQCY. The left side of the minimum is `2e6 * 100 / 10.0e6 = 100/5 = 20` (that is, 20% of what Ang has locked).   The right side is `100 * 10% = 10`.  Since 10 is less than 20, the reward amount is 10 FRQCY.
-2. Bey has locked up 1000 FRQCY for Provider Boosting.  The total locked by everyone, S<sub>T</sub> for era <i>e</i>,  is 50 Million FRQCY.   The left side of the minimum s `2e6 * 1000 / 50.0e6 = 1000/25 = 40` (that is, 4% of what Bey has locked).  The right side is `1000 * 10% = 100`.  Since 40 is less than 100, Bey's Provider Boost reward is 40 FRQCY.
+1. Ang has locked 100 FRQCY (L<sub>u</sub>) for Provider Boosting. The total locked by everyone, L<sub>T</sub> for era <i>e</i>,  is 10 Million FRQCY. The left side of the minimum is `2e6 * 100 / 10.0e6 = 100/5 = 20` (that is, 20% of what Ang has locked).   The right side is `100 * 10% = 10`.  Since 10 is less than 20, the reward amount is 10 FRQCY.
+2. Bey has locked 1000 FRQCY  (L<sub>u</sub>)  for Provider Boosting.  The total locked by everyone, L<sub>T</sub> for era <i>e</i>,  is 50 Million FRQCY.   The left side of the minimum s `2e6 * 1000 / 50.0e6 = 1000/25 = 40` (that is, 4% of what Bey has locked).  The right side is `1000 * 10% = 100`.  Since 40 is less than 100, Bey's Provider Boost reward is 40 FRQCY.
 
 ## Rewards are not issued for a partial Era
-Rewards are not prorated; they are calculated only for balances held for an entire Era.  For example, if an amount is staked at the end of Era 100, and unstaked in Era 101, _no_ Reward will be issued. If an amount is staked in Era 100, and unstaked in Era 102, a Provider Boost Reward is available _only_ for Era 101.
+Rewards are not prorated; they are calculated only for balances held for an entire Era.  For example, if an amount is locked at the end of Era 100, and unlocked in Era 101, _no_ Reward will be issued. If an amount is locked in Era 100, and unlocked in Era 102, a Provider Boost Reward is available _only_ for Era 101.
 
 ## Claiming Rewards
 * Provider Boost Rewards are not minted until they are explicitly <i>claimed</i> by the Provider Boost account holder, by calling a non-free extrinsic.
