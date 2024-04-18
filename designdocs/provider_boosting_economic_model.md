@@ -22,7 +22,7 @@ To build a self-sustaining Frequency network where control is decentralized, a v
 
 How is that so?  Capacity is how Frequency intends Providers to pay for the vast majority of their on-chain messages. In the proposed system, Providers receive Capacity when users lock up some FRQCY. These Providers would then lose Capacity if those users unlock. If a Provider's Capacity from Provider Boosting is significant, this gives Provider Boosters some power over their targeted Providers. If a Provider is utilizing all or nearly all their Capacity almost every Epoch -- which they should do if trying to be economical --  then even a small percentage of lost Capacity will literally cost them to replace it.  This gives those end-users relying upon - and Boosting - their Providers the ability to exercise direct market power they did not previously have.
 
-Users with Message Source Accounts (MSAs) may receive FRQCY from different sources. Providers may offer airdrops in return for such bringing in new users or sharing links on other platforms, then encourage their users to participate in Provider Boosting.  Rewards could potentially be exchanged for non-transferable, in-app-only benefits such as premium features, special emoji, avatar customization, and the like, similarly to platforms such as [Steam](https://store.steampowered.com).  
+Account holders on Frequency may receive FRQCY from different sources. Providers may offer airdrops in return for such bringing in new users or sharing links on other platforms, then encourage their users to participate in Provider Boosting.  Rewards could potentially be exchanged for non-transferable, in-app-only benefits such as premium features, special emoji, avatar customization, and the like, similarly to platforms such as [Steam](https://store.steampowered.com).  
 
 ## Assumptions
 * The exact formula for calculating rewards is determined in advance and used in the implementation of this design.
@@ -45,8 +45,8 @@ This document does not:
 ## Proposal:
 ### Inputs to Provider Boost Reward Calculation
 * R<sub>era</sub> is a predetermined amount of FRQCY available each Boost Era for Rewards
-* L<sub>u</sub> is the amount an MSA holder has locked for Provider Boost Era <i>e</i>
-* L<sub>T</sub> is the total that all MSA holders have locked for Provider Boost Era <i>e</i>
+* L<sub>u</sub> is the amount a given Provider Boost account has locked for Provider Boost Era <i>e</i>
+* L<sub>T</sub> is the total that all Provider Boost accounts have locked for Provider Boost Era <i>e</i>
 * P<sub>max</sub> is the maximum percentage of a Provider-Boosted amount that can be paid out in Era <i>e</i>
 
 ### Formula
