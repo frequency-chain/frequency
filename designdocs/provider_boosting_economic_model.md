@@ -24,6 +24,9 @@ How is that so?  Capacity is how Frequency intends Providers to pay for the vast
 
 Account holders on Frequency may receive FRQCY from different sources. Providers may offer airdrops in return for such bringing in new users or sharing links on other platforms, then encourage their users to participate in Provider Boosting.  Rewards could potentially be exchanged for non-transferable, in-app-only benefits such as premium features, special emoji, avatar customization, and the like, similarly to platforms such as [Steam](https://store.steampowered.com).  
 
+### Provider Boost Accounts are not required to have MSA
+Any Frequency account with an existential balance + the minimum staking amount in FRQCY may participate in in the Provider Boost program.  An MSA is optional.
+
 ## Assumptions
 * The exact formula for calculating rewards is determined in advance and used in the implementation of this design.
 
