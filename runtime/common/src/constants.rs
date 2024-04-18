@@ -254,10 +254,10 @@ pub type AuraMaxAuthorities = ConstU32<100_000>;
 // --- Collator Selection Pallet ---
 // Values for each runtime environment are independently configurable.
 // Example CollatorMaxInvulnerables are 16 in production(mainnet),
-// 5 in rococo testnet and 5 in rococo local
+// 5 in testnet and 5 in local
 
 pub type CollatorMaxCandidates = ConstU32<50>;
-pub type CollatorMinCandidates = ConstU32<1>;
+pub type CollatorMinCandidates = ConstU32<{ prod_or_testnet_or_local!(1, 0, 0) }>;
 pub type CollatorMaxInvulnerables = ConstU32<{ prod_or_testnet_or_local!(16, 5, 5) }>;
 pub type CollatorKickThreshold =
 	ConstU32<{ prod_or_testnet_or_local!(6 * HOURS, 6 * HOURS, 6 * HOURS) }>;
