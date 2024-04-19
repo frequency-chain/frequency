@@ -1,12 +1,10 @@
 use super::{mock::*, testing_utils::*};
-use crate::{
-	BoostingAccountDetails, Error, Event, RewardPoolInfo, StakingAccountDetails, StakingHistory,
-};
-use common_primitives::{capacity::StakingType::ProviderBoost, msa::MessageSourceId};
+use crate::{StakingDetails, Error, Event, StakingType, FreezeReason};
+use common_primitives::{msa::MessageSourceId};
 use frame_support::{
-	assert_noop, assert_ok,
-	traits::{Len, WithdrawReasons},
+	assert_noop, assert_ok, traits::fungible::InspectFreeze
 };
+use crate::Config;
 
 #[test]
 fn provider_boost_works() {
@@ -19,11 +17,17 @@ fn provider_boost_works() {
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
 		// Check that StakingAccountLedger is updated.
-		let boost_account: BoostingAccountDetails<Test> =
-			Capacity::get_boost_details_for(account).unwrap();
+		let boost_account: StakingDetails<Test> =
+			Capacity::get_staking_account_for(account).unwrap();
 
-		assert_eq!(boost_account.staking_details.total, 200);
-		assert_eq!(boost_account.staking_details.active, 200);
+		// Check that the staking account has the correct staking type.
+		assert_eq!(boost_account.active, 200);
+		assert_eq!(boost_account.staking_type, StakingType::ProviderBoost);
+
+		// Check that the capacity generated is correct. (5% of amount staked, since 10% is what's in the mock)
+		let capacity_details = Capacity::get_capacity_for(target).unwrap();
+		assert_eq!(capacity_details.total_capacity_issued, 1u64);
+
 		// assert_eq!(boost_account.unlocking.len(), 0);
 		// assert_eq!(staking_account.last_rewards_claimed_at, None);
 		// assert_eq!(staking_account.stake_change_unlocking.len(), 0);
@@ -34,12 +38,12 @@ fn provider_boost_works() {
 			&Event::ProviderBoosted { account, target, amount, capacity }
 		);
 
-		assert_eq!(Balances::locks(&account)[0].amount, amount);
-		assert_eq!(Balances::locks(&account)[0].reasons, WithdrawReasons::all().into());
+		assert_eq!(<Test as Config>::Currency::balance_frozen(&FreezeReason::CapacityStaking.into(), &account),
+				   200u64
+		);
 
 		let target_details = Capacity::get_target_for(account, target).unwrap();
 		assert_eq!(target_details.amount, amount);
-		assert_eq!(target_details.staking_type, ProviderBoost);
 	});
 }
 
@@ -51,16 +55,17 @@ fn provider_boost_updates_boost_account_details() {
 		let amount = 500;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
-		let boost_details: BoostingAccountDetails<Test> =
-			Capacity::get_boost_details_for(account).unwrap();
-		assert_eq!(boost_details.staking_details.active, 500);
-		assert_eq!(boost_details.staking_details.total, 500);
-		assert!(boost_details.last_rewards_claimed_at.is_none());
-		assert_eq!(boost_details.boost_history.len(), 1);
+		let boost_details: StakingDetails<Test> =
+			Capacity::get_staking_account_for(account).unwrap();
+		assert_eq!(boost_details.active, 500);
 
-		let expected_history = StakingHistory { reward_era: 0, total_staked: 500 };
-		let actual_history = boost_details.boost_history.get(0).unwrap();
-		assert_eq!(actual_history, &expected_history);
+		// TODO: staking history checks
+		// let staking_history: StakingHistory<Test> = Capacity::get_staking_history_for(account).unwrap();
+		// assert!(staking_history.last_rewards_claimed_at.is_none());
+		// assert_eq!(staking_history.boost_history.len(), 1);
+		// let expected_history = StakingHistory { reward_era: 0, total_staked: 500 };
+		// let actual_history = staking_history.get(0).unwrap();
+		// assert_eq!(actual_history, &expected_history);
 	})
 }
 
