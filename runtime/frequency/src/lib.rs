@@ -294,6 +294,7 @@ pub type Executive = frame_executive::Executive<
 			Runtime,
 			pallet_balances::Pallet<Runtime>,
 		>,
+		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
 		MigratePalletsCurrentStorage<Runtime>,
 	),
 >;
@@ -555,9 +556,9 @@ impl pallet_capacity::Config for Runtime {
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type RewardEra = RewardEra;
+	type RewardEra = u32;
 	type EraLength = ConstU32<{ 14 * DAYS }>;
-	type StakingRewardsPastErasMax = ConstU32<26u32>; // 1 year
+	type StakingRewardsPastErasMax = ConstU32<30u32>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<16>;
 }
