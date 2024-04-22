@@ -27,7 +27,7 @@ fn provider_boost_works() {
 		// Check that the capacity generated is correct. (5% of amount staked, since 10% is what's in the mock)
 		let capacity_details = Capacity::get_capacity_for(target).unwrap();
 		assert_eq!(capacity_details.total_capacity_issued, 1u64);
-		
+
 		let events = staking_events();
 		assert_eq!(
 			events.first().unwrap(),
@@ -41,6 +41,27 @@ fn provider_boost_works() {
 		let target_details = Capacity::get_target_for(account, target).unwrap();
 		assert_eq!(target_details.amount, amount);
 	});
+}
+
+#[test]
+fn provider_boost_updates_boost_account_details() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 500;
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+		let boost_details: BoostingAccountDetails<Test> =
+			Capacity::get_boost_details_for(account).unwrap();
+		assert_eq!(boost_details.staking_details.active, 500);
+		assert_eq!(boost_details.staking_details.total, 500);
+		assert!(boost_details.last_rewards_claimed_at.is_none());
+		assert_eq!(boost_details.boost_history.len(), 1);
+
+		let expected_history = StakingHistory { reward_era: 0, total_staked: 500 };
+		let actual_history = boost_details.boost_history.get(0).unwrap();
+		assert_eq!(actual_history, &expected_history);
+	})
 }
 
 #[test]

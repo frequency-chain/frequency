@@ -60,7 +60,7 @@ pub fn create_capacity_account_and_fund(
 	capacity_details.total_capacity_issued = available;
 	capacity_details.last_replenished_epoch = last_replenished;
 
-	Capacity::set_capacity_for(&target_msa_id, &capacity_details);
+	Capacity::set_capacity_for(target_msa_id, capacity_details.clone());
 
 	capacity_details.clone()
 }
@@ -74,7 +74,7 @@ pub fn setup_provider(
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(*target, provider_name);
 	if amount.gt(&0u64) {
-		if staking_type == MaximumCapacity {
+		if staking_type == StakingType::MaximumCapacity {
 			assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker.clone()), *target, *amount,));
 		} else {
 			assert_ok!(Capacity::provider_boost(
@@ -85,6 +85,7 @@ pub fn setup_provider(
 		}
 		let target = Capacity::get_target_for(staker, target).unwrap();
 		assert_eq!(target.amount, *amount);
-		assert_eq!(target.staking_type, staking_type);
+		let account_staking_type = Capacity::get_staking_account_for(staker).unwrap().staking_type;
+		assert_eq!(account_staking_type, staking_type);
 	}
 }

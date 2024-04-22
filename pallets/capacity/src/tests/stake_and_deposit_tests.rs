@@ -375,6 +375,33 @@ fn ensure_can_stake_is_successful() {
 	});
 }
 
+// TODO: check this is still needed
+// for tests of Capacity::increase_stake_and_issue_capacity
+// increases stake and issues capacity, then asserts expected amounts.
+fn assert_successful_increase_stake(
+	target: MessageSourceId,
+	staked: u64,
+	expected_target_token: u64,
+	expected_capacity: u64,
+) {
+	let staker = 10_000; // has 10_000 token
+	let mut staking_account = StakingAccountDetails::<Test>::default();
+
+	assert_ok!(Capacity::increase_stake_and_issue_capacity(
+		&staker,
+		&mut staking_account,
+		target,
+		staked,
+	));
+
+	assert_eq!(staking_account.total, staked);
+	assert_eq!(staking_account.active, staked);
+	assert_eq!(staking_account.unlocking.len(), 0);
+
+	assert_capacity_and_target_details(&target, expected_target_token, expected_capacity, &staker);
+}
+
+
 #[test]
 fn increase_stake_and_issue_capacity_is_successful() {
 	new_test_ext().execute_with(|| {

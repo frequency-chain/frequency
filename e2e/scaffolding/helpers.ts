@@ -447,22 +447,6 @@ export async function boostProvider(source: KeyringPair, keys: KeyringPair, prov
     return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.ProviderBoosted');
   }
 }
-export async function boostProvider(source: KeyringPair, keys: KeyringPair, providerId: u64, tokensToStake: bigint): Promise<void> {
-  const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
-  const [stakeEvent] = await stakeOp.fundAndSend(source);
-  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
-
-  if (stakeEvent && ExtrinsicHelper.api.events.capacity.ProviderBoosted.is(stakeEvent)) {
-    let stakedCapacity = stakeEvent.data.capacity;
-
-    let expectedCapacity = tokensToStake/TokenPerCapacity/BoostAdjustment;
-
-    assert.equal(stakedCapacity, expectedCapacity, `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`);
-  }
-  else {
-    return Promise.reject('stakeToProvider: stakeEvent should be ExtrinsicHelper.api.events.capacity.ProviderBoosted');
-  }
-}
 
 export async function getNextEpochBlock() {
   const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();

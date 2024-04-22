@@ -47,7 +47,7 @@ benchmarks! {
 
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount, staking_type)
+	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
 	verify {
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
@@ -64,11 +64,6 @@ benchmarks! {
 		}
 		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
-		// set new unlock chunks using tuples of (value, thaw_at)
-		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
-		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
-
-		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
