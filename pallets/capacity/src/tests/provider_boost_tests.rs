@@ -65,6 +65,18 @@ fn provider_boost_updates_boost_account_details() {
 }
 
 #[test]
+fn provider_boost_updates_reward_pool_history() {
+	// TODO: staking history checks
+	// let staking_history: StakingHistory<Test> = Capacity::get_staking_history_for(account).unwrap();
+	// assert!(staking_history.last_rewards_claimed_at.is_none());
+	// assert_eq!(staking_history.boost_history.len(), 1);
+	// let expected_history = StakingHistory { reward_era: 0, total_staked: 500 };
+	// let actual_history = staking_history.get(0).unwrap();
+	// assert_eq!(actual_history, &expected_history);
+	assert!(true);
+}
+
+#[test]
 fn provider_boost_updates_boost_account_details() {
 	new_test_ext().execute_with(|| {
 		let account = 600;
