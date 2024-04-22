@@ -74,18 +74,20 @@ notice = "warn"
 # A list of advisory IDs to ignore. Note that ignored advisories will still
 # output a note when they are encountered.
 ignore = [
-    # Substrate Dependency deprecation. Eventually there will be an update
-    #   See https://github.com/paritytech/parity-wasm/pull/334
-    #   See https://github.com/paritytech/substrate/issues/12088
-    "RUSTSEC-2022-0061",
-    # Substrate dependency deprecation
-    #   See https://github.com/paritytech/substrate/issues/12430
-    "RUSTSEC-2021-0139",
-    # Substrate depednency
-    #    Windows issue, does not effect Frequency
-    "RUSTSEC-2021-0145",
-    # There is no suitable replacement for mach and the mach2 crate has not been vetted.
-    "RUSTSEC-2020-0168",
+  # Substrate Dependency deprecation. Eventually there will be an update
+  #   See https://github.com/paritytech/parity-wasm/pull/334
+  #   See https://github.com/paritytech/substrate/issues/12088
+  "RUSTSEC-2022-0061",
+  # Substrate dependency deprecation
+  #   See https://github.com/paritytech/substrate/issues/12430
+  "RUSTSEC-2021-0139",
+  # Substrate depednency
+  #    Windows issue, does not effect Frequency
+  "RUSTSEC-2021-0145",
+  # There is no suitable replacement for mach and the mach2 crate has not been vetted.
+  "RUSTSEC-2020-0168",
+  # Only use of rustls@v0.20.9 is in futures-rustls which does not use the effected code
+  "RUSTSEC-2024-0336",
 ]
 # Threshold for security vulnerabilities, any vulnerability with a CVSS score
 # lower than the range specified will be ignored. Note that ignored advisories
