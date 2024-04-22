@@ -1,7 +1,7 @@
 use super::*;
 use crate::Pallet as Capacity;
 
-use frame_benchmarking::{account, benchmarks, whitelist_account};
+use frame_benchmarking::{account, benchmarks, whitelist_account };
 use frame_support::{assert_ok, BoundedVec};
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
@@ -64,12 +64,18 @@ benchmarks! {
 		}
 		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
+		// set new unlock chunks using tuples of (value, thaw_at)
+		let new_unlocks: Vec<(u32, u32)> = Vec::from([(50u32, 3u32), (50u32, 5u32)]);
+		assert_eq!(true, staking_account.set_unlock_chunks(&new_unlocks));
+
+		Capacity::<T>::set_staking_account(&caller.clone(), &staking_account);
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
 		let total = T::MaxUnlockingChunks::get();
-		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
+		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
+		// assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
 	}
 
 	on_initialize {
@@ -123,6 +129,46 @@ benchmarks! {
 	verify {
 		assert_eq!(Capacity::<T>::get_epoch_length(), 9u32.into());
 		assert_last_event::<T>(Event::<T>::EpochLengthUpdated {blocks: epoch_length}.into());
+	}
+
+	change_staking_target {
+		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
+		let from_msa = 33;
+		let to_msa = 34;
+		// amount in addition to minimum
+		let from_msa_amount = 32u32;
+		let to_msa_amount = 1u32;
+
+		register_provider::<T>(from_msa, "frommsa");
+		register_provider::<T>(to_msa, "tomsa");
+		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount);
+		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount);
+		let restake_amount = 11u32;
+
+	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount.into())
+	verify {
+		assert_last_event::<T>(Event::<T>::StakingTargetChanged {
+			account: caller,
+			from_msa,
+			to_msa,
+			amount: restake_amount.into()
+		}.into());
+	}
+
+	provider_boost {
+		let caller: T::AccountId = create_funded_account::<T>("boostaccount", SEED, 260u32);
+		let boost_amount: BalanceOf<T> = 200u32.into(); // enough for 1 Cap boosted
+		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
+		let target = 1;
+
+		register_provider::<T>(target, "Foo");
+
+	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)
+	verify {
+		assert!(BoostingAccountLedger::<T>::contains_key(&caller));
+		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
+		assert!(CapacityLedger::<T>::contains_key(target));
+		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount: boost_amount, target, capacity}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
