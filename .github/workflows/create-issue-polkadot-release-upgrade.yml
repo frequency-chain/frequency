@@ -6,6 +6,8 @@ on:
       - ci/latest-polkadot-full-release
     paths:
       - .github/.latest-polkadot-full-release.txt
+permissions:
+  issues: write
 env:
   RELEASE_PAGE_PREFIX_URL: https://github.com/paritytech/polkadot-sdk/releases
   RELEASE_TRACK_FILENAME: .github/.latest-polkadot-full-release.txt
@@ -23,7 +25,5 @@ jobs:
         uses: JasonEtco/create-an-issue@e27dddc79c92bc6e4562f268fffa5ed752639abd
         # Check if release starts with p
         if: ${{ startsWith(env.NEW_POLKADOT_RELEASE_VERSION, 'p') }}
-        env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           filename: .github/issues/new-polkadot-release.template.md
