@@ -37,13 +37,41 @@ pub fn set_up_epoch<T: Config>(current_block: BlockNumberFor<T>, current_epoch: 
 	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
 }
 
+// caller stakes the given amount to the given target
+pub fn setup_provider_stake<T:Config>(caller: &T::AccountId, target: &MessageSourceId, staking_amount: BalanceOf<T>) {
+	let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
+
+	let mut staking_account = StakingDetails::<T>::default();
+	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
+	let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
+
+	staking_account.deposit(staking_amount);
+	target_details.deposit(staking_amount, capacity_amount);
+	capacity_details.deposit(&staking_amount, &capacity_amount);
+
+	Capacity::<T>::set_staking_account_and_lock(caller, &staking_account).expect("Failed to set staking account");
+	Capacity::<T>::set_target_details_for(caller, *target, target_details);
+	Capacity::<T>::set_capacity_for(target.clone(), capacity_details);
+}
+
+// fill up unlock chunks to max bound - 1
+fn fill_unlock_chunks<T: Config>(caller: &T::AccountId) {
+	let count = T::MaxUnlockingChunks::get()-1;
+	let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
+	for _i in 0..count {
+		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
+		assert_ok!(unlocking.try_push(unlock_chunk));
+	}
+	UnstakeUnlocks::<T>::set(caller, Some(unlocking));
+}
+
 benchmarks! {
 	stake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
 		let target = 1;
-		let staking_type = StakingType::MaximumCapacity;
+		let staking_type = MaximumCapacity;
 
 		register_provider::<T>(target, "Foo");
 
@@ -57,12 +85,7 @@ benchmarks! {
 
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
-		for _i in 0..T::MaxUnlockingChunks::get() {
-			let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
-			assert_ok!(unlocking.try_push(unlock_chunk));
-		}
-		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
+		fill_unlock_chunks::<T>(&caller);
 
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
@@ -91,31 +114,31 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
-		let mut staking_account = StakingDetails::<T>::default();
-		let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
-		let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
+		setup_provider_stake::<T>(&caller, &target, staking_amount);
+		fill_unlock_chunks::<T>(&caller);
 
-		staking_account.deposit(staking_amount);
-		target_details.deposit(staking_amount, capacity_amount);
-		capacity_details.deposit(&staking_amount, &capacity_amount);
+		// let mut staking_account = StakingDetails::<T>::default();
+		// let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
+		// let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
+		//
+		// staking_account.deposit(staking_amount);
+		// target_details.deposit(staking_amount, capacity_amount);
+		// capacity_details.deposit(&staking_amount, &capacity_amount);
+		//
+		// Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account).expect("Failed to set staking account");
+		// Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
+		// Capacity::<T>::set_capacity_for(target, capacity_details);
 
-		Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account).expect("Failed to set staking account");
-		Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
-		Capacity::<T>::set_capacity_for(target, capacity_details);
-
-		// fill up unlock chunks to max bound - 1
-		let count = T::MaxUnlockingChunks::get()-1;
-		let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
-		for _i in 0..count {
-			let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
-			assert_ok!(unlocking.try_push(unlock_chunk));
-		}
-		UnstakeUnlocks::<T>::set(&caller, Some(unlocking));
 
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
 	verify {
-		assert_last_event::<T>(Event::<T>::UnStaked {account: caller, target: target, amount: unstaking_amount.into(), capacity: Capacity::<T>::calculate_capacity_reduction(unstaking_amount.into(), staking_amount, capacity_amount) }.into());
+		assert_last_event::<T>(Event::<T>::UnStaked {
+			account: caller.clone(),
+			target,
+			amount: unstaking_amount.into(),
+			capacity: Capacity::<T>::calculate_capacity_reduction(unstaking_amount.into(), staking_amount,capacity_amount)
+		}.into());
 	}
 
 	set_epoch_length {
@@ -136,8 +159,8 @@ benchmarks! {
 
 		register_provider::<T>(from_msa, "frommsa");
 		register_provider::<T>(to_msa, "tomsa");
-		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount);
-		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount);
+		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount.into());
+		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount.into());
 		let restake_amount = 11u32;
 
 	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount.into())
@@ -160,13 +183,13 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)
 	verify {
-		assert!(BoostingAccountLedger::<T>::contains_key(&caller));
+		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
 		assert!(CapacityLedger::<T>::contains_key(target));
 		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount: boost_amount, target, capacity}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
-		crate::tests::mock::new_test_ext(),
-		crate::tests::mock::Test);
+		tests::mock::new_test_ext(),
+		tests::mock::Test);
 }

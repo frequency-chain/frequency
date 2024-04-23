@@ -44,27 +44,6 @@ fn provider_boost_works() {
 }
 
 #[test]
-fn provider_boost_updates_boost_account_details() {
-	new_test_ext().execute_with(|| {
-		let account = 600;
-		let target: MessageSourceId = 1;
-		let amount = 500;
-		register_provider(target, String::from("Foo"));
-		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
-		let boost_details: BoostingAccountDetails<Test> =
-			Capacity::get_boost_details_for(account).unwrap();
-		assert_eq!(boost_details.staking_details.active, 500);
-		assert_eq!(boost_details.staking_details.total, 500);
-		assert!(boost_details.last_rewards_claimed_at.is_none());
-		assert_eq!(boost_details.boost_history.len(), 1);
-
-		let expected_history = StakingHistory { reward_era: 0, total_staked: 500 };
-		let actual_history = boost_details.boost_history.get(0).unwrap();
-		assert_eq!(actual_history, &expected_history);
-	})
-}
-
-#[test]
 fn provider_boost_updates_reward_pool_history() {
 	// TODO: staking history checks
 	// let staking_history: StakingHistory<Test> = Capacity::get_staking_history_for(account).unwrap();
@@ -77,7 +56,7 @@ fn provider_boost_updates_reward_pool_history() {
 }
 
 #[test]
-fn provider_boost_updates_boost_account_details() {
+fn provider_boost_updates_staking_details() {
 	new_test_ext().execute_with(|| {
 		let account = 600;
 		let target: MessageSourceId = 1;

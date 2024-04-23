@@ -4,7 +4,7 @@ use frame_support::{assert_ok, traits::Hooks};
 #[allow(unused)]
 use sp_runtime::traits::SignedExtension;
 
-use crate::{BalanceOf, CapacityDetails, Config, Event, StakingType};
+use crate::{BalanceOf, CapacityDetails, Config, CurrentEraInfo, Event, RewardEraInfo, RewardPoolInfo, StakingRewardPool, StakingType};
 use common_primitives::msa::MessageSourceId;
 
 pub fn staking_events() -> Vec<Event<Test>> {
@@ -88,4 +88,11 @@ pub fn setup_provider(
 		let account_staking_type = Capacity::get_staking_account_for(staker).unwrap().staking_type;
 		assert_eq!(account_staking_type, staking_type);
 	}
+}
+
+pub fn set_era_and_reward_pool_at_block(era_index: u32, started_at: u32, total_staked_token: u64, total_reward_pool: u64) {
+	let era_info = RewardEraInfo { era_index, started_at };
+	CurrentEraInfo::<Test>::set(era_info);	
+	let pool_info = RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance: 0 };
+	StakingRewardPool::<T>::insert(era_index, pool_info);
 }
