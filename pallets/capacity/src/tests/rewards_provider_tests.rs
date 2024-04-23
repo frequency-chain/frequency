@@ -72,3 +72,27 @@ fn test_staking_reward_total_era_out_of_range() {
 		assert_err!(Capacity::staking_reward_total(1, 5u32, 13u32), Error::<Test>::EraOutOfRange);
 	});
 }
+
+// This tests Capacity implementation of the trait, but uses the mock's constants.
+#[test]
+fn test_staking_reward_for_era() {
+	struct TestCase {
+		total_staked: u64,
+		amount_staked: u64,
+		expected_reward: u64,
+	}
+	let reward_pool_size = Capacity::reward_pool_size(1);
+	let test_cases: Vec<TestCase> = vec![
+		TestCase { total_staked: 1_000_000, amount_staked: 0, expected_reward: 0 }, // shouldn't happen, but JIC
+		TestCase { total_staked: 1_000_000, amount_staked: 30, expected_reward: 0 }, // rounded result
+		TestCase { total_staked: 1_000_000, amount_staked: 150, expected_reward: 1 }, // it rounds the result
+		TestCase { total_staked: 1_000_000, amount_staked: 1000, expected_reward: 4 }, // hits the cap starting with this example
+		TestCase { total_staked: 1_000_000, amount_staked: 11000, expected_reward: 42 }, // > 0.0038% of total, reward = 11000*.0038
+	];
+	for tc in test_cases {
+		assert_eq!(
+			Capacity::staking_reward_for_era(tc.amount_staked, tc.total_staked, reward_pool_size),
+			tc.expected_reward
+		);
+	}
+}

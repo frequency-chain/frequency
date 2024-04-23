@@ -16,7 +16,7 @@ use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32, BuildStorage, DispatchError, Perbill,
+	AccountId32, BuildStorage, DispatchError, Perbill, Percent, Permill,
 };
 use sp_std::ops::Mul;
 
@@ -176,6 +176,7 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+	pub const TestRewardCap: Permill = Permill::from_parts(3_800);
 }
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -198,8 +199,10 @@ impl pallet_capacity::Config for Test {
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
-	type RewardsProvider = TestStakingRewardsProvider;
+	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
+	type RewardPoolEachEra = ConstU64<25_000>;
+	type RewardPercentCap = TestRewardCap;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

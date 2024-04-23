@@ -365,6 +365,12 @@ pub trait StakingRewardsProvider<T: Config> {
 		to_era: Self::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError>;
 
+	fn staking_reward_for_era(
+		amount_staked: BalanceOf<T>,
+		total_staked: BalanceOf<T>,
+		reward_pool_size: BalanceOf<T>,
+	) -> BalanceOf<T>;
+
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
 	/// Errors:

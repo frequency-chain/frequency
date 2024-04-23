@@ -60,7 +60,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, DispatchError, Perbill,
+	ArithmeticError, DispatchError, Perbill, Permill,
 };
 
 pub use common_primitives::{
@@ -99,7 +99,10 @@ pub mod pallet {
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use parity_scale_codec::EncodeLike;
-	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
+	use sp_runtime::{
+		traits::{AtLeast32BitUnsigned, MaybeDisplay},
+		Percent,
+	};
 
 	/// A reason for freezing funds.
 	/// Creates a freeze reason for this pallet that is aggregated by `construct_runtime`.
@@ -203,6 +206,14 @@ pub mod pallet {
 		/// A staker may not retarget more than MaxRetargetsPerRewardEra
 		#[pallet::constant]
 		type MaxRetargetsPerRewardEra: Get<u32>;
+
+		/// The fixed size of the reward pool in each Reward Era.
+		#[pallet::constant]
+		type RewardPoolEachEra: Get<BalanceOf<Self>>;
+
+		/// the percentage cap per-era of a reward based on the provider boost stake
+		#[pallet::constant]
+		type RewardPercentCap: Get<Permill>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -1109,13 +1120,8 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 
 	// Calculate the size of the reward pool for the current era, based on current staked token
 	// and the other determined factors of the current economic model
-	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T> {
-		if total_staked.is_zero() {
-			return BalanceOf::<T>::zero()
-		}
-
-		// For now reward pool size is set to 10% of total staked token
-		total_staked.checked_div(&BalanceOf::<T>::from(10u8)).unwrap_or_default()
+	fn reward_pool_size(_total_staked: BalanceOf<T>) -> BalanceOf<T> {
+		T::RewardPoolEachEra::get()
 	}
 
 	// Performs range checks plus a reward calculation based on economic model for the era range
@@ -1139,6 +1145,20 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 
 		let num_eras = to_era.saturating_sub(from_era);
 		Ok(per_era.saturating_mul(num_eras.into()))
+	}
+
+	fn staking_reward_for_era(
+		amount_staked: BalanceOf<T>,
+		total_staked: BalanceOf<T>,
+		reward_pool_size: BalanceOf<T>,
+	) -> BalanceOf<T> {
+		let capped_reward = T::RewardPercentCap::get().mul(amount_staked);
+
+		let proportional_reward = reward_pool_size
+			.saturating_mul(amount_staked)
+			.checked_div(&total_staked)
+			.unwrap_or_else(|| Zero::zero());
+		proportional_reward.min(capped_reward)
 	}
 
 	fn validate_staking_reward_claim(
