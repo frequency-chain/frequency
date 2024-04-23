@@ -1,6 +1,7 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Check Polkadot Releases
 on:
+  workflow_dispatch:
   schedule:
     - cron: "0 0 * * *" # midnight (UTC)
 env:
@@ -9,7 +10,7 @@ env:
   RELEASE_TRACK_FILENAME: .github/.latest-polkadot-full-release.txt
 jobs:
   record-polkadot-latest-release-version:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Timestamp
         run: date
@@ -17,6 +18,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{env.TRACKING_GIT_BRANCH}}
+          # While you can write to a branch without it, it will not trigger the workflow
           token: ${{secrets.GHA_RECORD_POLKADOT_RELEASE}}
       - name: Print Recorded Latest Polkadot Release
         run: |
@@ -31,7 +33,7 @@ jobs:
           echo "-------------------------------------"
           cat ${{env.RELEASE_TRACK_FILENAME}}
       - name: Commit Latest Release Version
-        id: commit-updated-weights
+        id: commit-updated-release
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Record new Polkadot release version"
