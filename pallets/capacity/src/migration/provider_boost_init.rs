@@ -6,7 +6,6 @@ use frame_support::{
 use frame_support::{
     traits::Get,
 };
-use sp_runtime::TryRuntimeError;
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
