@@ -13,7 +13,7 @@ env:
   RELEASE_TRACK_FILENAME: .github/.latest-polkadot-full-release.txt
 jobs:
   create-issue:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -25,5 +25,7 @@ jobs:
         uses: JasonEtco/create-an-issue@e27dddc79c92bc6e4562f268fffa5ed752639abd
         # Check if release starts with p
         if: ${{ startsWith(env.NEW_POLKADOT_RELEASE_VERSION, 'p') }}
+        env:
+          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
         with:
           filename: .github/issues/new-polkadot-release.template.md
