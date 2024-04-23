@@ -1,7 +1,8 @@
 use super::mock::*;
 use crate::{
-	CurrentEraInfo, Error, RewardEraInfo, RewardPoolInfo, StakingAccountDetails,
+	CurrentEraInfo, Error, RewardEraInfo, RewardPoolInfo, StakingDetails,
 	StakingRewardClaim, StakingRewardPool, StakingRewardsProvider,
+	StakingType::*
 };
 use frame_support::assert_err;
 
@@ -17,11 +18,7 @@ fn test_staking_reward_total_happy_path() {
 		let proof = H256::random();
 		let payload: StakingRewardClaim<Test> = StakingRewardClaim {
 			claimed_reward: 1,
-			staking_account_end_state: StakingAccountDetails {
-				active: 1,
-				total: 1,
-				unlocking: Default::default(),
-			},
+			staking_account_end_state: StakingDetails { active: 1, staking_type: MaximumCapacity},
 			from_era: 1,
 			to_era: 5,
 		};

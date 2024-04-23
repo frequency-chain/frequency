@@ -366,7 +366,7 @@ pub trait StakingRewardsProvider<T: Config> {
 		payload: StakingRewardClaim<T>,
 	) -> bool;
 
-	/// Return the boost factor in capacity per token staked.
-	/// This factor is > 0 and < 1 token
+	/// Return the effective amount when staked for a Provider Boost
+	/// The amount is multiplied by a factor > 0 and < 1.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
 }
