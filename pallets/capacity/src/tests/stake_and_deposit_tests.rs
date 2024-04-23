@@ -3,6 +3,7 @@ use crate::{BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, Stak
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
 use sp_runtime::ArithmeticError;
+use crate::StakingType::MaximumCapacity;
 
 #[test]
 fn stake_works() {
@@ -299,7 +300,7 @@ fn ensure_can_stake_errors_with_zero_amount_not_allowed() {
 		let target: MessageSourceId = 1;
 		let amount = 0;
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount),
+			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
 			Error::<Test>::ZeroAmountNotAllowed
 		);
 	});
@@ -337,7 +338,7 @@ fn ensure_can_stake_errors_invalid_target() {
 		let amount = 1;
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount),
+			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
 			Error::<Test>::InvalidTarget
 		);
 	});
@@ -352,7 +353,7 @@ fn ensure_can_stake_errors_insufficient_staking_amount() {
 		register_provider(target, String::from("Foo"));
 
 		assert_noop!(
-			Capacity::ensure_can_stake(&account, target, amount),
+			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
 			Error::<Test>::StakingAmountBelowMinimum
 		);
 	});
@@ -368,7 +369,7 @@ fn ensure_can_stake_is_successful() {
 
 		let staking_details = StakingDetails::<Test>::default();
 		assert_ok!(
-			Capacity::ensure_can_stake(&account, target, amount),
+			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
 			(staking_details, BalanceOf::<Test>::from(10u64))
 		);
 	});

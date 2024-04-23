@@ -2,15 +2,8 @@ use super::{
 	mock::*,
 	testing_utils::{setup_provider, staking_events},
 };
-use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Error, Event, RetargetInfo, RewardEraInfo,
-	StakingAccountDetails, StakingAccountLedger, StakingTargetDetails,
-};
+use crate::*;
 use common_primitives::{
-	capacity::{
-		StakingType,
-		StakingType::{MaximumCapacity, ProviderBoost},
-	},
 	msa::MessageSourceId,
 };
 use frame_support::{assert_noop, assert_ok, traits::Get};
@@ -40,10 +33,9 @@ fn assert_target_details(
 	msa_id: MessageSourceId,
 	amount: u64,
 	capacity: u64,
-	staking_type: StakingType,
 ) {
 	let expected_from_target_details: TestTargetDetails =
-		StakingTargetDetails { amount, capacity, staking_type };
+		StakingTargetDetails { amount, capacity };
 	let from_target_details = Capacity::get_target_for(staker, msa_id).unwrap();
 	assert_eq!(from_target_details, expected_from_target_details);
 }
@@ -61,7 +53,7 @@ fn do_retarget_happy_path() {
 		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
 
 		// retarget half the stake to to_msa
-		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount, &staking_type));
+		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount));
 
 		// expect from stake amounts to be halved
 		assert_capacity_details(from_msa, 1, 300, 1);
@@ -69,9 +61,9 @@ fn do_retarget_happy_path() {
 		// expect to stake amounts to be increased by the retarget amount
 		assert_capacity_details(to_msa, 3, 600, 3);
 
-		assert_target_details(staker, from_msa, 300, 1, staking_type.clone());
+		assert_target_details(staker, from_msa, 300, 1);
 
-		assert_target_details(staker, to_msa, 600, 3, staking_type.clone());
+		assert_target_details(staker, to_msa, 600, 3);
 	})
 }
 
@@ -93,7 +85,6 @@ fn do_retarget_flip_flop() {
 					&from_msa,
 					&to_msa,
 					&to_amount,
-					&ProviderBoost
 				));
 			} else {
 				assert_ok!(Capacity::do_retarget(
@@ -101,7 +92,6 @@ fn do_retarget_flip_flop() {
 					&to_msa,
 					&from_msa,
 					&to_amount,
-					&ProviderBoost
 				));
 			}
 		}
@@ -126,12 +116,12 @@ fn check_retarget_rounding_errors() {
 		assert_capacity_details(to_msa, 1, 301, 1);
 		// 666+301= 967,  3+1=4
 
-		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &301u64, &ProviderBoost));
+		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &301u64));
 		assert_capacity_details(to_msa, 3, 602, 3);
 		assert_capacity_details(from_msa, 1, 365, 1);
 		// 602+365 = 967, 3+1 = 4
 
-		assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &151u64, &ProviderBoost));
+		assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &151u64));
 		assert_capacity_details(to_msa, 2, 451, 2);
 		assert_capacity_details(from_msa, 2, 516, 2);
 		// 451+516 = 967, 2+2 = 4
@@ -174,10 +164,10 @@ fn check_retarget_multiple_stakers() {
 		// total capacity should be 73
 		assert_total_capacity(vec![from_msa, to_msa], 73);
 
-		assert_ok!(Capacity::do_retarget(&staker_10k, &from_msa, &to_msa, &amt2, &ProviderBoost));
-		assert_ok!(Capacity::do_retarget(&staker_600, &from_msa, &to_msa, &amt1, &MaximumCapacity));
-		assert_ok!(Capacity::do_retarget(&staker_500, &to_msa, &from_msa, &amt1, &ProviderBoost));
-		assert_ok!(Capacity::do_retarget(&staker_400, &to_msa, &from_msa, &amt1, &MaximumCapacity));
+		assert_ok!(Capacity::do_retarget(&staker_10k, &from_msa, &to_msa, &amt2));
+		assert_ok!(Capacity::do_retarget(&staker_600, &from_msa, &to_msa, &amt1));
+		assert_ok!(Capacity::do_retarget(&staker_500, &to_msa, &from_msa, &amt1));
+		assert_ok!(Capacity::do_retarget(&staker_400, &to_msa, &from_msa, &amt1));
 		assert_total_capacity(vec![from_msa, to_msa], 73);
 	})
 }
@@ -196,7 +186,7 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 		// total staked to from_msa is now 22u64.
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(300u64), from_msa, 12u64,));
 
-		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &amount, &MaximumCapacity));
+		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &amount));
 
 		let expected_from_details: TestCapacityDetails = CapacityDetails {
 			remaining_capacity: 1,
@@ -223,7 +213,6 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 		let expected_to_target_details: TestTargetDetails = StakingTargetDetails {
 			amount: 2 * amount,
 			capacity: 2,
-			staking_type: StakingType::MaximumCapacity,
 		};
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
@@ -271,7 +260,7 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 		setup_provider(&staker, &to_msa, &10u64, ProviderBoost);
 
 		let retarget_amount = 10u64;
-		for _i in 0..(max_chunks) {
+		for _i in 0..max_chunks {
 			assert_ok!(Capacity::change_staking_target(
 				RuntimeOrigin::signed(staker),
 				from_msa,
@@ -330,7 +319,7 @@ fn change_staking_target_test_parametric_validity() {
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,
-			StakingAccountDetails { active: 20, total: 20, unlocking: Default::default() },
+			StakingDetails { active: 20, staking_type: ProviderBoost },
 		);
 		let from_account_not_staking = 100u64;
 		let from_target_not_staked: MessageSourceId = 1;
