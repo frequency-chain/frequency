@@ -22,7 +22,7 @@ jobs:
           release_version=$(cat ${{env.RELEASE_TRACK_FILENAME}})
           echo "NEW_POLKADOT_RELEASE_VERSION=$release_version" >> $GITHUB_ENV
       - name: Create GitHub Issue
-        uses: JasonEtco/create-an-issue@e27dddc79c92bc6e4562f268fffa5ed752639abd
+        uses: JasonEtco/create-an-issue@1b14a70e4d8dc185e5cc76d3bec9eab20257b2c5
         # Check if release starts with p
         if: ${{ startsWith(env.NEW_POLKADOT_RELEASE_VERSION, 'p') }}
         env:
