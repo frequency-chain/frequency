@@ -132,7 +132,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: ubicloud-standard-4
+    runs-on: ubicloud-standard-16
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       NETWORK: mainnet
@@ -249,7 +249,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: ubicloud-standard-4
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -332,12 +332,8 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: ubicloud-standard-4
+    runs-on: ubicloud-standard-8
     steps:
-      # - name: Install Required Packages
-      #   run: |
-      #     sudo apt-get update
-      #     sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Install Rust Toolchain
@@ -662,7 +658,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubicloud-standard-4
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
