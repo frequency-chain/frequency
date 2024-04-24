@@ -334,10 +334,10 @@ jobs:
             wasm-core-version: frequency
     runs-on: ubicloud-standard-4
     steps:
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y wget file build-essential curl
+      # - name: Install Required Packages
+      #   run: |
+      #     sudo apt-get update
+      #     sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Install Rust Toolchain
