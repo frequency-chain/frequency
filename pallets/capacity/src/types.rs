@@ -79,7 +79,7 @@ impl<T: Config> Default for StakingDetails<T> {
 pub struct StakingTargetDetails<Balance> {
 	/// The total amount of tokens that have been targeted to the MSA.
 	pub amount: Balance,
-	/// The total Capacity that an MSA received. 
+	/// The total Capacity that an MSA received.
 	pub capacity: Balance,
 }
 
