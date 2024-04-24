@@ -120,10 +120,9 @@ fn unstaking_all_by_one_staker_reaps_target() {
 		assert!(Capacity::get_staking_account_for(token_account).is_none());
 
 		// Assert target details is reaped
-		let target_details_result = Capacity::get_target_for(token_account, target);
-		assert!(target_details_result.is_none());
+		assert!(Capacity::get_target_for(token_account, target).is_none());
 
-		// Assert that capacity account is zeroed out (not reaped)
+		// Assert that capacity account is adjusted correctly
 		capacity_details = Capacity::get_capacity_for(target).unwrap();
 		assert_eq!(capacity_details, CapacityDetails {
 			remaining_capacity: 10,
