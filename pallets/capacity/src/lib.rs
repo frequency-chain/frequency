@@ -528,7 +528,11 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		target_details: StakingTargetDetails<BalanceOf<T>>,
 	) {
-		StakingTargetLedger::<T>::insert(staker, target, target_details);
+		if target_details.amount.is_zero() {
+			StakingTargetLedger::<T>::remove(staker, target);
+		} else {
+			StakingTargetLedger::<T>::insert(staker, target, target_details);
+		}
 	}
 
 	/// Sets targets Capacity.
@@ -622,11 +626,19 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		let capacity_to_withdraw = Self::calculate_capacity_reduction(
-			amount,
-			capacity_details.total_tokens_staked,
-			capacity_details.total_capacity_issued,
-		);
+		
+		// I'm not sure this is right.  This could result in a different capacity
+		// being withdrawn for the same staked amount than used by proportion.
+		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
+			staking_target_details.capacity
+		} else{
+			Self::calculate_capacity_reduction(
+				amount,
+				capacity_details.total_tokens_staked,
+				capacity_details.total_capacity_issued,
+			);
+		};
+
 		staking_target_details.withdraw(amount, capacity_to_withdraw);
 		capacity_details.withdraw(capacity_to_withdraw, amount);
 
