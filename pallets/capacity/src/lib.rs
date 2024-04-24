@@ -627,8 +627,6 @@ impl<T: Config> Pallet<T> {
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
 		
-		// I'm not sure this is right.  This could result in a different capacity
-		// being withdrawn for the same staked amount than used by proportion.
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
 		} else{
