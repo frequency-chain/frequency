@@ -43,4 +43,4 @@ rustflags = [
 ]
 
 [net]
-git-fetch-with-cli = true
+retry = 5
