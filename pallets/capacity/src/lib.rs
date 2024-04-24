@@ -636,7 +636,7 @@ impl<T: Config> Pallet<T> {
 				amount,
 				capacity_details.total_tokens_staked,
 				capacity_details.total_capacity_issued,
-			);
+			)
 		};
 
 		staking_target_details.withdraw(amount, capacity_to_withdraw);
