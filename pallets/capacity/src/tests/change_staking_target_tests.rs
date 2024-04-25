@@ -3,9 +3,7 @@ use super::{
 	testing_utils::{setup_provider, staking_events},
 };
 use crate::*;
-use common_primitives::{
-	msa::MessageSourceId,
-};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
@@ -28,14 +26,8 @@ fn assert_capacity_details(
 	assert_eq!(from_capacity_details, expected_from_details);
 }
 
-fn assert_target_details(
-	staker: u64,
-	msa_id: MessageSourceId,
-	amount: u64,
-	capacity: u64,
-) {
-	let expected_from_target_details: TestTargetDetails =
-		StakingTargetDetails { amount, capacity };
+fn assert_target_details(staker: u64, msa_id: MessageSourceId, amount: u64, capacity: u64) {
+	let expected_from_target_details: TestTargetDetails = StakingTargetDetails { amount, capacity };
 	let from_target_details = Capacity::get_target_for(staker, msa_id).unwrap();
 	assert_eq!(from_target_details, expected_from_target_details);
 }
@@ -80,19 +72,9 @@ fn do_retarget_flip_flop() {
 
 		for i in 0..4 {
 			if i % 2 == 0 {
-				assert_ok!(Capacity::do_retarget(
-					&staker,
-					&from_msa,
-					&to_msa,
-					&to_amount,
-				));
+				assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount,));
 			} else {
-				assert_ok!(Capacity::do_retarget(
-					&staker,
-					&to_msa,
-					&from_msa,
-					&to_amount,
-				));
+				assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &to_amount,));
 			}
 		}
 		assert_capacity_details(from_msa, 3, 600, 3);
@@ -210,10 +192,8 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 
 		assert!(Capacity::get_target_for(staker, from_msa).is_none());
 
-		let expected_to_target_details: TestTargetDetails = StakingTargetDetails {
-			amount: 2 * amount,
-			capacity: 2,
-		};
+		let expected_to_target_details: TestTargetDetails =
+			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
 
@@ -288,6 +268,7 @@ fn change_staking_target_garbage_collects_thawed_chunks() {
 		let staking_account = 200u64;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
+
 		setup_provider(&staking_account, &from_target, &staked_amount, ProviderBoost);
 		setup_provider(&staking_account, &to_target, &staked_amount, ProviderBoost);
 
