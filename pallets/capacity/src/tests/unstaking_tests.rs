@@ -103,13 +103,16 @@ fn unstaking_all_by_one_staker_reaps_target() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account2), target, staking_amount2));
 
 		let mut capacity_details = Capacity::get_capacity_for(target).unwrap();
-		assert_eq!(capacity_details, CapacityDetails {
-			remaining_capacity: 20,
-			total_tokens_staked: 201,
-			total_capacity_issued: 20,
-			last_replenished_epoch: 0,
-		});
-		
+		assert_eq!(
+			capacity_details,
+			CapacityDetails {
+				remaining_capacity: 20,
+				total_tokens_staked: 201,
+				total_capacity_issued: 20,
+				last_replenished_epoch: 0,
+			}
+		);
+
 		assert_ok!(Capacity::unstake(
 			RuntimeOrigin::signed(token_account),
 			target,
@@ -124,12 +127,15 @@ fn unstaking_all_by_one_staker_reaps_target() {
 
 		// Assert that capacity account is adjusted correctly
 		capacity_details = Capacity::get_capacity_for(target).unwrap();
-		assert_eq!(capacity_details, CapacityDetails {
-			remaining_capacity: 10,
-			total_tokens_staked: 101,
-			total_capacity_issued: 10,
-			last_replenished_epoch: 0,
-		});
+		assert_eq!(
+			capacity_details,
+			CapacityDetails {
+				remaining_capacity: 10,
+				total_tokens_staked: 101,
+				total_capacity_issued: 10,
+				last_replenished_epoch: 0,
+			}
+		);
 	})
 }
 

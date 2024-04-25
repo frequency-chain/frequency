@@ -626,10 +626,9 @@ impl<T: Config> Pallet<T> {
 		let mut capacity_details =
 			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
-		} else{
+		} else {
 			Self::calculate_capacity_reduction(
 				amount,
 				capacity_details.total_tokens_staked,
