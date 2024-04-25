@@ -4,10 +4,9 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{CheckedAdd, CheckedSub, Saturating},
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating},
 	RuntimeDebug,
 };
-use sp_runtime::traits::AtLeast32BitUnsigned;
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
@@ -245,10 +244,22 @@ pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChun
 }
 
 /// The information needed to track a Reward Era
-#[derive( PartialEq, Eq, Clone, Copy, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(
+	PartialEq,
+	Eq,
+	Clone,
+	Copy,
+	Default,
+	PartialOrd,
+	Encode,
+	Decode,
+	RuntimeDebug,
+	TypeInfo,
+	MaxEncodedLen,
+)]
 pub struct RewardEraInfo<RewardEra, BlockNumber>
-	where
-		RewardEra: AtLeast32BitUnsigned + EncodeLike,
+where
+	RewardEra: AtLeast32BitUnsigned + EncodeLike,
 {
 	/// the index of this era
 	pub era_index: RewardEra,
@@ -262,7 +273,7 @@ pub struct RewardEraInfo<RewardEra, BlockNumber>
 /// The unclaimed_balance is initialized to total_reward_pool and deducted whenever a
 /// valid claim occurs.
 #[derive(
-PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
+	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
 )]
 pub struct RewardPoolInfo<Balance> {
 	/// the total staked for rewards in the associated RewardEra
