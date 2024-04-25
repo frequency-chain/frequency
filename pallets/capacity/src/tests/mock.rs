@@ -1,6 +1,9 @@
 use crate as pallet_capacity;
 
-use crate::{BalanceOf, StakingRewardClaim, StakingRewardsProvider};
+use crate::{
+	tests::testing_utils::set_era_and_reward_pool_at_block, BalanceOf, StakingRewardClaim,
+	StakingRewardsProvider,
+};
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
@@ -15,7 +18,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill,
 };
-use sp_std::ops::{Div, Mul};
+use sp_std::ops::Mul;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -140,8 +143,9 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
 
-	fn reward_pool_size(total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
-		total_staked.div(10u64)
+	// To reflect new economic model behavior of having a constant RewardPool amount.
+	fn reward_pool_size(_total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
+		10_000u64.into()
 	}
 
 	fn staking_reward_total(
@@ -216,6 +220,9 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| System::set_block_number(1));
+	ext.execute_with(|| {
+		System::set_block_number(1);
+		set_era_and_reward_pool_at_block(1, 0, 0);
+	});
 	ext
 }
