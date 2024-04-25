@@ -53,11 +53,11 @@ It does not give regard to what the economic model actually is, since that is ye
 
 ## Staking Token Rewards
 
-### StakingAccountDetails --> StakingDetails
+### StakingDetails --> StakingDetails
 New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
 MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`. 
 
-This is a second version of this storage, to replace StakingAccountDetails, and StakingAccountDetails data will need to be migrated.
+This is a second version of this storage, to replace StakingDetails, and StakingDetails data will need to be migrated.
 ```rust
 pub struct StakingDetails<T: Config> {
     pub active: BalanceOf<T>,

@@ -1,11 +1,9 @@
 use super::{
 	mock::*,
-	testing_utils::{set_era_and_reward_pool_at_block, setup_provider, staking_events},
+	testing_utils::{setup_provider, staking_events},
 };
 use crate::*;
-use common_primitives::{
-	msa::MessageSourceId,
-};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
 // staker is unused unless amount > 0
@@ -28,14 +26,8 @@ fn assert_capacity_details(
 	assert_eq!(from_capacity_details, expected_from_details);
 }
 
-fn assert_target_details(
-	staker: u64,
-	msa_id: MessageSourceId,
-	amount: u64,
-	capacity: u64,
-) {
-	let expected_from_target_details: TestTargetDetails =
-		StakingTargetDetails { amount, capacity };
+fn assert_target_details(staker: u64, msa_id: MessageSourceId, amount: u64, capacity: u64) {
+	let expected_from_target_details: TestTargetDetails = StakingTargetDetails { amount, capacity };
 	let from_target_details = Capacity::get_target_for(staker, msa_id).unwrap();
 	assert_eq!(from_target_details, expected_from_target_details);
 }
@@ -49,7 +41,6 @@ fn do_retarget_happy_path() {
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
 		let staking_type = ProviderBoost;
-		set_era_and_reward_pool_at_block(10, 500, 0, 10_000);
 		setup_provider(&staker, &from_msa, &from_amount, staking_type.clone());
 		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
 
@@ -76,25 +67,14 @@ fn do_retarget_flip_flop() {
 		let from_amount = 600u64;
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(10, 500, 0, 10_000);
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
 
 		for i in 0..4 {
 			if i % 2 == 0 {
-				assert_ok!(Capacity::do_retarget(
-					&staker,
-					&from_msa,
-					&to_msa,
-					&to_amount,
-				));
+				assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount,));
 			} else {
-				assert_ok!(Capacity::do_retarget(
-					&staker,
-					&to_msa,
-					&from_msa,
-					&to_amount,
-				));
+				assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &to_amount,));
 			}
 		}
 		assert_capacity_details(from_msa, 3, 600, 3);
@@ -111,7 +91,6 @@ fn check_retarget_rounding_errors() {
 		let from_amount = 666u64;
 		let to_amount = 301u64;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(10, 500, 0, 10_000);
 
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
@@ -155,7 +134,6 @@ fn check_retarget_multiple_stakers() {
 		let amt1 = 192u64;
 		let amt2 = 313u64;
 
-		set_era_and_reward_pool_at_block(10, 500, 0, 10_000);
 		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_600.clone()), from_msa, 479u64,));
@@ -214,10 +192,8 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 
 		assert!(Capacity::get_target_for(staker, from_msa).is_none());
 
-		let expected_to_target_details: TestTargetDetails = StakingTargetDetails {
-			amount: 2 * amount,
-			capacity: 2,
-		};
+		let expected_to_target_details: TestTargetDetails =
+			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
 		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
 
@@ -233,7 +209,6 @@ fn change_staking_starget_emits_event_on_success() {
 		let from_amount = 20u64;
 		let to_amount = from_amount / 2;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(10, 500, 0, 10_000);
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
 
@@ -258,7 +233,6 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 		let staker = 200u64;
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
-		set_era_and_reward_pool_at_block(0, 0, 0, 10_000);
 
 		let max_chunks: u32 = <Test as Config>::MaxRetargetsPerRewardEra::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
@@ -294,7 +268,6 @@ fn change_staking_target_garbage_collects_thawed_chunks() {
 		let staking_account = 200u64;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
-		set_era_and_reward_pool_at_block(0, 0, 0, 10_000);
 
 		setup_provider(&staking_account, &from_target, &staked_amount, ProviderBoost);
 		setup_provider(&staking_account, &to_target, &staked_amount, ProviderBoost);
@@ -324,7 +297,6 @@ fn change_staking_target_test_parametric_validity() {
 	new_test_ext().execute_with(|| {
 		let staked_amount = 10u64;
 		let from_account = 200u64;
-		set_era_and_reward_pool_at_block(0, 0, 0, 10_000);
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,

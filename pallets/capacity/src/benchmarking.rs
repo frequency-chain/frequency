@@ -1,7 +1,7 @@
 use super::*;
 use crate::Pallet as Capacity;
 
-use frame_benchmarking::{account, benchmarks, whitelist_account };
+use frame_benchmarking::{account, benchmarks, whitelist_account};
 use frame_support::{assert_ok, BoundedVec};
 use frame_system::RawOrigin;
 use parity_scale_codec::alloc::vec::Vec;
@@ -38,28 +38,34 @@ pub fn set_up_epoch<T: Config>(current_block: BlockNumberFor<T>, current_epoch: 
 }
 
 // caller stakes the given amount to the given target
-pub fn setup_provider_stake<T:Config>(caller: &T::AccountId, target: &MessageSourceId, staking_amount: BalanceOf<T>) {
+pub fn setup_provider_stake<T: Config>(
+	caller: &T::AccountId,
+	target: &MessageSourceId,
+	staking_amount: BalanceOf<T>,
+) {
 	let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
 
 	let mut staking_account = StakingDetails::<T>::default();
 	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
-	let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
+	let mut capacity_details =
+		CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
 
 	staking_account.deposit(staking_amount);
 	target_details.deposit(staking_amount, capacity_amount);
 	capacity_details.deposit(&staking_amount, &capacity_amount);
 
-	Capacity::<T>::set_staking_account_and_lock(caller, &staking_account).expect("Failed to set staking account");
+	Capacity::<T>::set_staking_account_and_lock(caller, &staking_account)
+		.expect("Failed to set staking account");
 	Capacity::<T>::set_target_details_for(caller, *target, target_details);
-	Capacity::<T>::set_capacity_for(target.clone(), capacity_details);
+	Capacity::<T>::set_capacity_for(*target, capacity_details);
 }
 
 // fill up unlock chunks to max bound - 1
-fn fill_unlock_chunks<T: Config>(caller: &T::AccountId) {
-	let count = T::MaxUnlockingChunks::get()-1;
+fn fill_unlock_chunks<T: Config>(caller: &T::AccountId, count: u32) {
 	let mut unlocking: UnlockChunkList<T> = BoundedVec::default();
 	for _i in 0..count {
-		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> = UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
+		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> =
+			UnlockChunk { value: 1u32.into(), thaw_at: 3u32.into() };
 		assert_ok!(unlocking.try_push(unlock_chunk));
 	}
 	UnstakeUnlocks::<T>::set(caller, Some(unlocking));
@@ -85,15 +91,14 @@ benchmarks! {
 
 	withdraw_unstaked {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		fill_unlock_chunks::<T>(&caller);
+		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get());
 
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
 		let total = T::MaxUnlockingChunks::get();
-		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: 100u32.into() }.into());
-		// assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
+		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
 	}
 
 	on_initialize {
@@ -115,22 +120,7 @@ benchmarks! {
 		let block_number = 4u32;
 
 		setup_provider_stake::<T>(&caller, &target, staking_amount);
-		fill_unlock_chunks::<T>(&caller);
-
-		// let mut staking_account = StakingDetails::<T>::default();
-		// let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
-		// let mut capacity_details = CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
-		//
-		// staking_account.deposit(staking_amount);
-		// target_details.deposit(staking_amount, capacity_amount);
-		// capacity_details.deposit(&staking_amount, &capacity_amount);
-		//
-		// Capacity::<T>::set_staking_account_and_lock(&caller.clone(), &staking_account).expect("Failed to set staking account");
-		// Capacity::<T>::set_target_details_for(&caller.clone(), target, target_details);
-		// Capacity::<T>::set_capacity_for(target, capacity_details);
-
-
-
+		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get() - 1);
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
 	verify {
 		assert_last_event::<T>(Event::<T>::UnStaked {
