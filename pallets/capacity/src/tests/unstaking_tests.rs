@@ -1,7 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, FreezeReason, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk,
+	CapacityDetails, FreezeReason, RewardPoolInfo, StakingDetails, StakingTargetDetails,
+	StakingType, UnlockChunk,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
@@ -231,7 +232,6 @@ fn unstaking_everything_reaps_staking_account() {
 		register_provider(target, String::from("WithdrawUnst"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
 
-
 		run_to_block(1);
 		// unstake everything
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
@@ -254,6 +254,57 @@ fn unstake_when_not_staking_to_target_errors() {
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(staker), 2, 20),
 			Error::<Test>::StakerTargetRelationshipNotFound
+		);
+	})
+}
+
+#[test]
+fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
+	new_test_ext().execute_with(|| {
+		// two accounts staking to the same target
+		let account1 = 600;
+		let target: MessageSourceId = 1;
+		let amount1 = 500;
+		let unstake_amount = 200;
+		register_provider(target, String::from("Foo"));
+		run_to_block(5); // ensures Capacity::on_initialize is run
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account1), target, amount1));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account1), target, unstake_amount));
+
+		let reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
+		assert_eq!(
+			reward_pool,
+			RewardPoolInfo {
+				total_staked_token: 300,
+				total_reward_pool: 10_000, // TODO: get the constant value and use it
+				unclaimed_balance: 10_000,
+			}
+		);
+	});
+}
+
+#[test]
+fn unstake_fills_up_common_unlock_for_any_target() {
+	new_test_ext().execute_with(|| {
+		let staker = 10_000;
+
+		let target1 = 1;
+		let target2 = 2;
+		register_provider(target1, String::from("Test Target"));
+		register_provider(target2, String::from("Test Target"));
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target2, 2_000));
+
+		// max unlock chunks in mock is 4
+		for _i in 0..2 {
+			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50));
+			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target2, 50));
+		}
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50),
+			Error::<Test>::MaxUnlockingChunksExceeded
 		);
 	})
 }
