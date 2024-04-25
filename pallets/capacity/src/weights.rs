@@ -39,7 +39,6 @@ pub trait WeightInfo {
 	fn unstake() -> Weight;
 	fn set_epoch_length() -> Weight;
 	fn change_staking_target() -> Weight;
-
 	fn provider_boost() -> Weight;
 }
 
@@ -101,6 +100,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	}
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:1)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
@@ -109,7 +110,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn unstake() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `271`
+		//  Measured:  `343`
 		//  Estimated: `5071`
 		// Minimum execution time: 24_044_000 picoseconds.
 		Weight::from_parts(25_140_000, 5071)
@@ -126,19 +127,49 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(4_889_000, 0)
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-
-	/// Storage:
-	/// Proof:
+	/// Storage: `Capacity::Retargets` (r:1 w:1)
+	/// Proof: `Capacity::Retargets` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:0)
+	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingTargetLedger` (r:2 w:2)
+	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CapacityLedger` (r:2 w:2)
+	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn change_staking_target() -> Weight {
-		Weight::from_parts(1_000_000, 0)
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `315`
+		//  Estimated: `7601`
+		// Minimum execution time: 24_000_000 picoseconds.
+		Weight::from_parts(25_000_000, 7601)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
-
-	/// Storage:
-	/// Proof:
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
+	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
+	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CapacityLedger` (r:1 w:1)
+	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
+	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn provider_boost() -> Weight {
-		Weight::from_parts(1_000_000, 0)
-			.saturating_add(T::DbWeight::get().writes(1_u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `247`
+		//  Estimated: `6249`
+		// Minimum execution time: 34_000_000 picoseconds.
+		Weight::from_parts(35_000_000, 6249)
+			.saturating_add(T::DbWeight::get().reads(8_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
 }
 
@@ -199,6 +230,8 @@ impl WeightInfo for () {
 	}
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:1)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
@@ -207,7 +240,7 @@ impl WeightInfo for () {
 	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn unstake() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `271`
+		//  Measured:  `343`
 		//  Estimated: `5071`
 		// Minimum execution time: 24_044_000 picoseconds.
 		Weight::from_parts(25_140_000, 5071)
@@ -224,19 +257,49 @@ impl WeightInfo for () {
 		Weight::from_parts(4_889_000, 0)
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-
-	/// Storage:
-	/// Proof:
+	/// Storage: `Capacity::Retargets` (r:1 w:1)
+	/// Proof: `Capacity::Retargets` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:0)
+	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingTargetLedger` (r:2 w:2)
+	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CapacityLedger` (r:2 w:2)
+	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
 	fn change_staking_target() -> Weight {
-		Weight::from_parts(1_000_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `315`
+		//  Estimated: `7601`
+		// Minimum execution time: 24_000_000 picoseconds.
+		Weight::from_parts(25_000_000, 7601)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
-
-	/// Storage:
-	/// Proof:
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
+	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
+	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CapacityLedger` (r:1 w:1)
+	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
+	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Freezes` (r:1 w:1)
+	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Locks` (r:1 w:0)
+	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn provider_boost() -> Weight {
-		Weight::from_parts(1_000_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+		// Proof Size summary in bytes:
+		//  Measured:  `247`
+		//  Estimated: `6249`
+		// Minimum execution time: 34_000_000 picoseconds.
+		Weight::from_parts(35_000_000, 6249)
+			.saturating_add(RocksDbWeight::get().reads(8_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 }
 
