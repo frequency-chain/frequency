@@ -4,7 +4,10 @@ use frame_support::{assert_ok, traits::Hooks};
 #[allow(unused)]
 use sp_runtime::traits::SignedExtension;
 
-use crate::{BalanceOf, CapacityDetails, Config, Event, StakingType};
+use crate::{
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Event, RewardEraInfo, RewardPoolInfo,
+	StakingRewardPool, StakingType,
+};
 use common_primitives::msa::MessageSourceId;
 
 pub fn staking_events() -> Vec<Event<Test>> {
@@ -88,4 +91,17 @@ pub fn setup_provider(
 		let account_staking_type = Capacity::get_staking_account_for(staker).unwrap().staking_type;
 		assert_eq!(account_staking_type, staking_type);
 	}
+}
+
+// Currently the reward pool is a constant, however it could change in the future.
+pub fn set_era_and_reward_pool_at_block(era_index: u32, started_at: u32, total_staked_token: u64) {
+	let era_info = RewardEraInfo { era_index, started_at };
+	let total_reward_pool = 10_000u64;
+	CurrentEraInfo::<Test>::set(era_info);
+	let pool_info = RewardPoolInfo {
+		total_staked_token,
+		total_reward_pool,
+		unclaimed_balance: total_reward_pool,
+	};
+	StakingRewardPool::<Test>::insert(era_index, pool_info);
 }

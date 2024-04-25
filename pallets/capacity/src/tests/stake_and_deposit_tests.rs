@@ -1,9 +1,11 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, StakingDetails};
+use crate::{
+	BalanceOf, CapacityDetails, Config, Error, Event, FreezeReason, StakingDetails,
+	StakingType::MaximumCapacity,
+};
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
 use sp_runtime::ArithmeticError;
-use crate::StakingType::MaximumCapacity;
 
 #[test]
 fn stake_works() {
