@@ -37,6 +37,24 @@ pub fn set_up_epoch<T: Config>(current_block: BlockNumberFor<T>, current_epoch: 
 	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
 }
 
+pub fn set_era_and_reward_pool_at_block<T: Config>(
+	era_index: T::RewardEra,
+	started_at: BlockNumberFor<T>,
+	total_staked_token: BalanceOf<T>,
+) {
+	let era_info: RewardEraInfo<T::RewardEra, BlockNumberFor<T>> =
+		RewardEraInfo { era_index, started_at };
+	let total_reward_pool: BalanceOf<T> =
+		T::MinimumStakingAmount::get().saturating_add(1_100u32.into());
+	CurrentEraInfo::<T>::set(era_info);
+	let pool_info: RewardPoolInfo<BalanceOf<T>> = RewardPoolInfo {
+		total_staked_token,
+		total_reward_pool,
+		unclaimed_balance: total_reward_pool,
+	};
+	StakingRewardPool::<T>::insert(era_index, pool_info);
+}
+
 // caller stakes the given amount to the given target
 pub fn setup_provider_stake<T: Config>(
 	caller: &T::AccountId,
@@ -79,6 +97,7 @@ benchmarks! {
 		let target = 1;
 		let staking_type = MaximumCapacity;
 
+		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
@@ -119,6 +138,7 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
+		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		setup_provider_stake::<T>(&caller, &target, staking_amount);
 		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get() - 1);
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
@@ -144,16 +164,17 @@ benchmarks! {
 		let from_msa = 33;
 		let to_msa = 34;
 		// amount in addition to minimum
-		let from_msa_amount = 32u32;
-		let to_msa_amount = 1u32;
+		let from_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(31u32.into());
+		let to_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
 
+		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(from_msa, "frommsa");
 		register_provider::<T>(to_msa, "tomsa");
-		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount.into());
-		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount.into());
-		let restake_amount = 11u32;
+		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount);
+		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount);
+		let restake_amount: BalanceOf<T> = from_msa_amount.saturating_sub(10u32.into());
 
-	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount.into())
+	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount)
 	verify {
 		assert_last_event::<T>(Event::<T>::StakingTargetChanged {
 			account: caller,
@@ -165,10 +186,11 @@ benchmarks! {
 
 	provider_boost {
 		let caller: T::AccountId = create_funded_account::<T>("boostaccount", SEED, 260u32);
-		let boost_amount: BalanceOf<T> = 200u32.into(); // enough for 1 Cap boosted
+		let boost_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
 		let target = 1;
 
+		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)

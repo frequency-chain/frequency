@@ -541,7 +541,7 @@ pub mod pallet {
 		/// - [`Error::InvalidTarget`] if `to` does not belong to a registered Provider.
 		/// - [`Error::MaxRetargetsExceeded`] if origin has reached the maximimum number of retargets for the current RewardEra.
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::unstake())]
+		#[pallet::weight(T::WeightInfo::change_staking_target())]
 		pub fn change_staking_target(
 			origin: OriginFor<T>,
 			from: MessageSourceId,

@@ -143,6 +143,7 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
 
+	// To reflect new economic model behavior of having a constant RewardPool amount.
 	fn reward_pool_size(_total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
 		10_000u64.into()
 	}
