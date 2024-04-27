@@ -324,7 +324,7 @@ jobs:
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
           tag: "1.77.0"
-          runtime_dir: ${{ matrix.runtime_dir }}
+          runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |
           cp -p ${{ steps.srtool_build.outputs.wasm }} \
