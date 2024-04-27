@@ -319,27 +319,26 @@ jobs:
           release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
-      - name: Install srtool-cli
-        run: |
-          cargo install --locked --git https://github.com/chevdor/srtool-cli
-          srtool --version
       - name: Build Deterministic WASM
-        run: |
-          RUST_LOG=debug SRTOOL_TAG="1.77.0" srtool build --image \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}} \
-            --root
+        uses: ./.github/workflows/common/srtool
+        env:
+          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
+        with:
+          profile: ${{matrix.build-profile}}
+          package: ${{matrix.package}}
+          chain: ${{matrix.chain}}
+          tag: "1.77.0"
       - name: Rename WASM file
         run: |
-          cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
+          cp -p ${{ steps.srtool_build.outputs.wasm }} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
           subwasm --version
       - name: Test WASM file
         run: |
+          file ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)

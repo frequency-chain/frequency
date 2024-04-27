@@ -305,6 +305,7 @@ jobs:
         network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
+            chain: dev
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -312,6 +313,7 @@ jobs:
             features: frequency-no-relay
             wasm-core-version: frequency-testnet
           - network: rococo
+            chain: frequency-rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -319,6 +321,7 @@ jobs:
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: paseo
+            chain: frequency-paseo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -326,6 +329,7 @@ jobs:
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
+            chain: frequency
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -362,36 +366,28 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
-      - name: Install srtool-cli
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: |
-          rustup show
-          cargo install --locked --git https://github.com/chevdor/srtool-cli
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - name: Test srtool-cli Install
-        run: |
-          echo "PATH: $PATH"
-          which srtool
-          srtool --version
       - name: Build Deterministic WASM
         if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: |
-          RUST_LOG=debug SRTOOL_TAG="1.77.0" srtool build \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}} \
-            --root
+        uses: ./.github/workflows/common/srtool
+        env:
+          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
+        with:
+          profile: ${{matrix.build-profile}}
+          package: ${{matrix.package}}
+          chain: ${{matrix.chain}}
+          tag: "1.77.0"
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+        run: |
+          file ${{ steps.srtool_build.outputs.wasm }}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
           subwasm --version
       - name: Test WASM file
         run: |
-          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+          subwasm info ${{ steps.srtool_build.outputs.wasm }}
+          subwasm info ${{ steps.srtool_build.outputs.wasm }} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
 
   verify-js-api-augment:

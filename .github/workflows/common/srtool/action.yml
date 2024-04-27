@@ -1,0 +1,235 @@
+# This is a copy of the action file from https://github.com/chevdor/srtool-actions/blob/48e9baed50ca414936dfac59d34d8b9bbe581abd/action.yml
+# It is pulled in and modified for the following reasons:
+# 1. We needed to add an additional environment variable to the docker run (CARGO_NET_RETRY=10)
+# 2. Local for direct auditing of the action building the runtime
+# QUESTION: Do we need to modify to use --root?
+
+name: "Srtool"
+description: "Build WASM Runtime with SRTOOL"
+author: chevdor
+branding:
+  icon: "package"
+  color: "blue"
+
+inputs:
+  chain:
+    description: >
+      Name of the chain, ie. polkadot
+    required: true
+
+  package:
+    description: >
+      Runtime package to build, ie. polkadot-runtime.
+      If your runtime follows this pattern, you don't have and should not provide this input.
+
+      If not provided, it will be set to <chain>-runtime
+    required: false
+
+  image:
+    description: >
+      You can use an alternate image, use with caution!
+    default: "paritytech/srtool"
+    required: true
+
+  tag:
+    description: >
+      Tag of the srtool image to use. Omit to use the latest (recommended)
+    required: false
+
+  workdir:
+    description: >
+      Path of the project, this is where your main Cargo.toml is located. This is relative to $GITHUB_WORKSPACE.
+    default: "."
+    required: false
+
+  runtime_dir:
+    description: >
+      Location of the runtime in your repo. The default is 'runtime/<chain_name>'
+    required: false
+
+  profile:
+    description: >
+      Which profile to use with cargo build.
+    required: false
+    default: "release"
+
+outputs:
+  json:
+    description: >
+      The full json output of srtool. If you need more information than this action provides by default,
+      you can use this json output and extract some content using 'jq'.
+    value: ${{ steps.build.outputs.json }}
+
+  proposal_hash:
+    description: The proposal hash as it will show on-chain
+    value: ${{ steps.build.outputs.proposal_hash }}
+
+  version:
+    description: The version of srtool
+    value: ${{ steps.build.outputs.version }}
+
+  info:
+    description: Some information from srtool about the current project
+    value: ${{ steps.build.outputs.info }}
+
+  ipfs:
+    description: ipfs hash
+    value: ${{ steps.build.outputs.ipfs }}
+
+  wasm:
+    description: Path of the produced compact runtime
+    value: ${{ steps.build.outputs.wasm }}
+
+  wasm_compressed:
+    description: Path of the produced compressed runtime
+    value: ${{ steps.build.outputs.wasm_compressed }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: check_latest_srtool
+      name: Check the version of the latest srtool
+      shell: bash
+      run: |
+        echo ::group::Inputs
+        echo "- image: ${{ inputs.image }}"
+        echo "- chain: ${{ inputs.chain }}"
+        echo ::endgroup::
+
+        RUSTC_VERSION_URL=https://raw.githubusercontent.com/${{ inputs.image }}/master/RUSTC_VERSION
+        echo Fetching RUSTC_VERSION from $RUSTC_VERSION_URL
+        RUSTC_VERSION=`curl -s $RUSTC_VERSION_URL`
+
+        SRTOOL_VERSION_URL=https://raw.githubusercontent.com/${{ inputs.image }}/master/VERSION
+        echo Fetching SRTOOL_VERSION from $SRTOOL_VERSION_URL
+        SRTOOL_VERSION=`curl -s $SRTOOL_VERSION_URL`
+
+        echo "RUSTC_VERSION=$RUSTC_VERSION" >> $GITHUB_ENV
+        echo "SRTOOL_VERSION=$SRTOOL_VERSION" >> $GITHUB_ENV
+        echo "SRTOOL_LATEST=$RUSTC_VERSION" >> $GITHUB_ENV
+
+    - id: env_setup
+      name: Setting Env
+      shell: bash
+      run: |
+        echo ::group::Debug
+        echo "RUSTC_VERSION=$RUSTC_VERSION"
+        echo "SRTOOL_VERSION=$SRTOOL_VERSION"
+        echo "SRTOOL_LATEST=$RUSTC_VERSION"
+        echo ::endgroup::
+
+        echo ::group::Environment setup
+        SRTOOL_TAG=${{ inputs.tag || env.SRTOOL_LATEST }}
+        echo "SRTOOL_TAG=$SRTOOL_TAG" >> $GITHUB_ENV
+        echo "SRTOOL_IMAGE=${{ inputs.image }}:$SRTOOL_TAG" >> $GITHUB_ENV
+        echo "WORKDIR=${{ github.workspace }}/${{ inputs.workdir }}" >> $GITHUB_ENV
+
+        RUNTIME_DIR=${{ inputs.runtime_dir }}
+        RUNTIME_DIR=${RUNTIME_DIR:-'runtime/'${{ inputs.chain }}}
+        echo "RUNTIME_DIR=$RUNTIME_DIR" >> $GITHUB_ENV
+
+        PACKAGE=${{ inputs.package }}
+        PACKAGE=${PACKAGE:-${{ inputs.chain }}'-runtime'}
+        echo "PACKAGE=$PACKAGE" >> $GITHUB_ENV
+
+        echo "BUILD_OPTS=${{ env.BUILD_OPTS }}" >> $GITHUB_ENV
+
+        PROFILE=${{ inputs.profile }}
+        echo "PROFILE=$PROFILE" >> $GITHUB_ENV
+
+        PARACHAIN_PALLET_ID=${{ env.PARACHAIN_PALLET_ID }}
+        PARACHAIN_PALLET_ID=${PARACHAIN_PALLET_ID:-0x01}
+        AUTHORIZE_UPGRADE_PREFIX=${{ env.AUTHORIZE_UPGRADE_PREFIX }}
+        AUTHORIZE_UPGRADE_PREFIX=${AUTHORIZE_UPGRADE_PREFIX:-0x02}
+        echo "PARACHAIN_PALLET_ID=$PARACHAIN_PALLET_ID" >> $GITHUB_ENV
+        echo "AUTHORIZE_UPGRADE_PREFIX=$AUTHORIZE_UPGRADE_PREFIX" >> $GITHUB_ENV
+
+        echo ::endgroup::
+
+    - id: env_check
+      name: Checking Env
+      shell: bash
+      run: |
+        echo ::group::Environment check
+
+        echo ℹ️ SRTOOL_LATEST: ${{ env.SRTOOL_LATEST }}
+        echo ℹ️ image: ${{ env.SRTOOL_IMAGE }}
+        echo ℹ️ chain: ${{ inputs.chain }}
+        echo ℹ️ package: ${{ env.PACKAGE }}
+        echo ℹ️ Github Workspace: ${{ github.workspace }}
+        echo ℹ️ workdir: ${{ env.WORKDIR }}
+        echo ℹ️ runtime_dir: ${{ env.RUNTIME_DIR }}
+        echo ℹ️ build_opts: ${{ env.BUILD_OPTS }}
+        echo ℹ️ parachain_pallet_id: ${{ env.PARACHAIN_PALLET_ID }}
+        echo ℹ️ profile: ${{ env.PROFILE }}
+        echo ℹ️ authorize_upgrade_prefix: ${{ env.AUTHORIZE_UPGRADE_PREFIX }}
+        echo ℹ️ .git folder: `ls -ald ${{ env.WORKDIR }}/.git`
+        echo ℹ️ Cargo.toml: `ls -al ${{ env.WORKDIR }}/Cargo.toml`
+
+        echo ::endgroup::
+
+    - id: pulling_srtool
+      name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
+      shell: bash
+      run: |
+        echo ::group::Pulling the srtool docker image: ${{ env.SRTOOL_IMAGE }}
+        docker pull ${{ env.SRTOOL_IMAGE }}
+        echo ::endgroup::
+
+    - id: version
+      shell: bash
+      run: |
+        echo ::group::Srtool version
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} version -cM"
+        JSON=`$CMD`
+        echo $JSON | jq .
+        echo "version=$JSON" >> $GITHUB_OUTPUT
+        echo ::endgroup::
+
+    - id: info
+      shell: bash
+      run: |
+        echo ::group::srtool info
+        CMD="docker run -i --rm -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE }} info -cM"
+        JSON=`$CMD`
+        echo $JSON | jq .
+        echo "info=$JSON" >> $GITHUB_OUTPUT
+        echo ::endgroup::
+
+    - id: build
+      name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
+      shell: bash
+      env:
+        # https://github.com/paritytech/polkadot-sdk/pull/2217
+        WASM_BUILD_STD: "0"
+      run: |
+        echo ::group::Srtool build of chain ${{ inputs.chain }}
+        CMD="docker run -i --rm  -e CARGO_NET_RETRY=10 -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -e BUILD_OPTS -e
+        PARACHAIN_PALLET_ID -e AUTHORIZE_UPGRADE_PREFIX -e PROFILE -e WASM_BUILD_STD -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE
+        }} build --app --json -cM"
+
+        echo ::debug::build::docker_run $CMD
+        # here we keep streaming the progress and fetch the last line for the json result
+        stdbuf -oL $CMD | {
+          while IFS= read -r line
+          do
+            echo ║ $line
+            JSON="$line"
+          done
+
+          echo "json=$JSON" >> $GITHUB_OUTPUT
+          echo $JSON | jq .
+
+          PROP=`echo $JSON | jq -r .runtimes.compact.prop`
+          echo "proposal_hash=$PROP" >> $GITHUB_OUTPUT
+
+          WASM=`echo $JSON | jq -r .runtimes.compact.wasm`
+          echo "wasm=$WASM" >> $GITHUB_OUTPUT
+
+          Z_WASM=`echo $JSON | jq -r .runtimes.compressed.wasm`
+          echo "wasm_compressed=$Z_WASM" >> $GITHUB_OUTPUT
+
+          IPFS=`echo $JSON | jq -r .runtimes.compact.ipfs`
+          echo "ipfs=$IPFS" >> $GITHUB_OUTPUT
+        }
+        echo ::endgroup::
