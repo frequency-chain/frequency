@@ -364,6 +364,7 @@ jobs:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
       - name: Build Deterministic WASM
+        id: srtool_build
         if: steps.cache-wasm.outputs.cache-hit != 'true'
         uses: ./.github/workflows/common/srtool
         env:

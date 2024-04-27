@@ -316,6 +316,7 @@ jobs:
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
       - name: Build Deterministic WASM
+        id: srtool_build
         uses: ./.github/workflows/common/srtool
         env:
           BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
