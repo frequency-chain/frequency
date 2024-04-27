@@ -237,10 +237,6 @@ jobs:
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host.
-  # See https://github.com/LibertyDSNP/frequency/issues/1543
   build-runtimes:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
@@ -328,6 +324,7 @@ jobs:
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
           tag: "1.77.0"
+          runtime_dir: ${{ matrix.runtime_dir }}
       - name: Rename WASM file
         run: |
           cp -p ${{ steps.srtool_build.outputs.wasm }} \

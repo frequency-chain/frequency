@@ -289,9 +289,6 @@ jobs:
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host
   verify-build-runtimes:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
@@ -375,6 +372,7 @@ jobs:
           profile: ${{matrix.build-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
+          runtime_dir: ${{ matrix.runtime_dir }}
           tag: "1.77.0"
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
