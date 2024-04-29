@@ -208,7 +208,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type RewardPoolEachEra: Get<BalanceOf<Self>>;
 
-		/// the percentage cap per-era of a reward based on the provider boost stake
+		/// the percentage cap per era of an individual Provider Boost reward
 		#[pallet::constant]
 		type RewardPercentCap: Get<Permill>;
 	}
@@ -1144,6 +1144,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		Ok(per_era.saturating_mul(num_eras.into()))
 	}
 
+	// Calculate a reward for one era using the chosen economic model formula + values
 	fn staking_reward_for_era(
 		amount_staked: BalanceOf<T>,
 		total_staked: BalanceOf<T>,

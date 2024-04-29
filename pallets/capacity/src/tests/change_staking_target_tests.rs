@@ -48,14 +48,14 @@ fn do_retarget_happy_path() {
 		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount));
 
 		// expect from stake amounts to be halved
-		assert_capacity_details(from_msa, 1, 300, 1);
+		assert_capacity_details(from_msa, 15, 300, 15);
 
 		// expect to stake amounts to be increased by the retarget amount
-		assert_capacity_details(to_msa, 3, 600, 3);
+		assert_capacity_details(to_msa, 30, 600, 30);
 
-		assert_target_details(staker, from_msa, 300, 1);
+		assert_target_details(staker, from_msa, 300, 15);
 
-		assert_target_details(staker, to_msa, 600, 3);
+		assert_target_details(staker, to_msa, 600, 30);
 	})
 }
 
@@ -77,8 +77,8 @@ fn do_retarget_flip_flop() {
 				assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &to_amount,));
 			}
 		}
-		assert_capacity_details(from_msa, 3, 600, 3);
-		assert_capacity_details(to_msa, 1, 300, 1);
+		assert_capacity_details(from_msa, 30, 600, 30);
+		assert_capacity_details(to_msa, 15, 300, 15);
 	})
 }
 
@@ -94,18 +94,18 @@ fn check_retarget_rounding_errors() {
 
 		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
 		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
-		assert_capacity_details(from_msa, 3, 666, 3);
-		assert_capacity_details(to_msa, 1, 301, 1);
+		assert_capacity_details(from_msa, 33, 666, 33);
+		assert_capacity_details(to_msa, 15, 301, 15);
 		// 666+301= 967,  3+1=4
 
 		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &301u64));
-		assert_capacity_details(to_msa, 3, 602, 3);
-		assert_capacity_details(from_msa, 1, 365, 1);
+		assert_capacity_details(from_msa, 18, 365, 18);
+		assert_capacity_details(to_msa, 30, 602, 30);
 		// 602+365 = 967, 3+1 = 4
 
 		assert_ok!(Capacity::do_retarget(&staker, &to_msa, &from_msa, &151u64));
-		assert_capacity_details(to_msa, 2, 451, 2);
-		assert_capacity_details(from_msa, 2, 516, 2);
+		assert_capacity_details(from_msa, 26, 516, 26);
+		assert_capacity_details(to_msa, 22, 451, 22);
 		// 451+516 = 967, 2+2 = 4
 	})
 }
@@ -121,6 +121,7 @@ fn assert_total_capacity(msas: Vec<MessageSourceId>, total: u64) {
 	assert_eq!(total, sum);
 }
 
+// Tests that the total stake remains the same after retargets
 #[test]
 fn check_retarget_multiple_stakers() {
 	new_test_ext().execute_with(|| {
@@ -136,21 +137,31 @@ fn check_retarget_multiple_stakers() {
 
 		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_600.clone()), from_msa, 479u64,));
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker_400.clone()), to_msa, 211u64,));
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(staker_600.clone()),
+			from_msa,
+			479u64,
+		));
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(staker_400.clone()),
+			to_msa,
+			211u64,
+		));
 
-		// 647 * .1 * .05 = 3 (rounded down)
-		// 293 * .1 * .05 = 1 (rounded down)
-		// 479 * .1 = 48 (rounded up)
-		// 211 * .1 = 21 (rounded down)
-		// total capacity should be 73
-		assert_total_capacity(vec![from_msa, to_msa], 73);
+		// 647 * .10 * .5 = 32 (rounded)
+		// 293 * .10 * .5 = 15 (rounded)
+		// 479 * .10 * .5 = 24 (round)
+		// 211 * .10 * .5 = 10 (rounded down)
+		// total capacity should be sum of above
+		let expected_total = 81u64;
+
+		assert_total_capacity(vec![from_msa, to_msa], expected_total);
 
 		assert_ok!(Capacity::do_retarget(&staker_10k, &from_msa, &to_msa, &amt2));
 		assert_ok!(Capacity::do_retarget(&staker_600, &from_msa, &to_msa, &amt1));
 		assert_ok!(Capacity::do_retarget(&staker_500, &to_msa, &from_msa, &amt1));
 		assert_ok!(Capacity::do_retarget(&staker_400, &to_msa, &from_msa, &amt1));
-		assert_total_capacity(vec![from_msa, to_msa], 73);
+		assert_total_capacity(vec![from_msa, to_msa], expected_total);
 	})
 }
 
