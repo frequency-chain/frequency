@@ -99,10 +99,7 @@ pub mod pallet {
 
 	use frame_support::{pallet_prelude::*, Twox64Concat};
 	use parity_scale_codec::EncodeLike;
-	use sp_runtime::{
-		traits::{AtLeast32BitUnsigned, MaybeDisplay},
-		Percent,
-	};
+	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	/// A reason for freezing funds.
 	/// Creates a freeze reason for this pallet that is aggregated by `construct_runtime`.

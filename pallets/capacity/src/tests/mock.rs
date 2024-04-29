@@ -160,6 +160,15 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		}
 	}
 
+	// use the pallet version of the era calculation.
+	fn staking_reward_for_era(
+		amount_staked: BalanceOf<Test>,
+		total_staked: BalanceOf<Test>,
+		reward_pool_size: BalanceOf<Test>,
+	) -> BalanceOf<Test> {
+		Capacity::staking_reward_for_era(amount_staked, total_staked, reward_pool_size)
+	}
+
 	fn validate_staking_reward_claim(
 		_account_id: Self::AccountId,
 		_proof: Self::Hash,

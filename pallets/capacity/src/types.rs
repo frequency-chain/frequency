@@ -365,6 +365,7 @@ pub trait StakingRewardsProvider<T: Config> {
 		to_era: Self::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError>;
 
+	/// Calculate the staking reward for a single era
 	fn staking_reward_for_era(
 		amount_staked: BalanceOf<T>,
 		total_staked: BalanceOf<T>,

@@ -9,7 +9,7 @@ use sp_core::H256;
 use sp_std::ops::Div;
 
 #[test]
-fn test_staking_reward_total_happy_path() {
+fn staking_reward_total_happy_path() {
 	new_test_ext().execute_with(|| {
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 11, started_at: 100 });
 		// this calls the implementation in the pallet
@@ -26,7 +26,7 @@ fn test_staking_reward_total_happy_path() {
 }
 
 #[test]
-fn test_payout_eligible() {
+fn payout_eligible_happy_path() {
 	new_test_ext().execute_with(|| {
 		let is_eligible = Capacity::payout_eligible(1);
 		assert!(!is_eligible);
@@ -75,13 +75,12 @@ fn test_staking_reward_total_era_out_of_range() {
 
 // This tests Capacity implementation of the trait, but uses the mock's constants.
 #[test]
-fn test_staking_reward_for_era() {
+fn staking_reward_for_era_implementation() {
 	struct TestCase {
 		total_staked: u64,
 		amount_staked: u64,
 		expected_reward: u64,
 	}
-	let reward_pool_size = Capacity::reward_pool_size(1);
 	let test_cases: Vec<TestCase> = vec![
 		TestCase { total_staked: 1_000_000, amount_staked: 0, expected_reward: 0 }, // shouldn't happen, but JIC
 		TestCase { total_staked: 1_000_000, amount_staked: 30, expected_reward: 0 }, // rounded result
@@ -91,7 +90,7 @@ fn test_staking_reward_for_era() {
 	];
 	for tc in test_cases {
 		assert_eq!(
-			Capacity::staking_reward_for_era(tc.amount_staked, tc.total_staked, reward_pool_size),
+			Capacity::staking_reward_for_era(tc.amount_staked, tc.total_staked, 1),
 			tc.expected_reward
 		);
 	}
