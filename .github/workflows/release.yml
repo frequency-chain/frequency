@@ -156,6 +156,7 @@ jobs:
       fail-fast: true
       matrix:
         network: [dev, local, testnet, mainnet]
+        arch: [amd64]
         include:
           - network: dev
             spec: frequency-no-relay
