@@ -19,6 +19,9 @@ on:
         description: "Release version (v#.#.#[-rc#])"
         required: true
 
+permissions:
+  contents: write
+
 env:
   NEW_RELEASE_TAG_FROM_UI: v0.0.1-rc3
   NEW_RELEASE_TAG: v0.0.1-rc3
@@ -55,9 +58,7 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
-          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
-          ref: ubicloud
       - name: Create Release Branch?
         id: create-release-branch
         run: |
