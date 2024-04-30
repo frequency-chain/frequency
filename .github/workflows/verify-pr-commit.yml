@@ -17,7 +17,6 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -59,7 +58,6 @@ jobs:
   clear-metadata-labels:
     name: Clear Metadata Labels
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
@@ -453,7 +451,6 @@ jobs:
     needs: build-binaries
     name: Verify Node Docker Images
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -516,7 +513,6 @@ jobs:
     if: needs.changes.outputs.ci-docker-image == 'true'
     name: Verify CI Docker Image
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -540,7 +536,6 @@ jobs:
     needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -572,7 +567,6 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -730,7 +724,6 @@ jobs:
     needs: build-binaries
     name: Verify Genesis State
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |

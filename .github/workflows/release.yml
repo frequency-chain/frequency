@@ -34,7 +34,6 @@ jobs:
   validate-release-version:
     name: Validate Release Version
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -53,7 +52,6 @@ jobs:
     needs: validate-release-version
     name: Create Release Branch
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -120,7 +118,6 @@ jobs:
     needs: run-all-benchmarks
     name: Version Code
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -454,7 +451,6 @@ jobs:
           - os: ubuntu-22.04
             arch: amd64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -835,7 +831,6 @@ jobs:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -931,7 +926,6 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -1009,7 +1003,6 @@ jobs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     permissions:
       contents: read
       pages: write
@@ -1027,7 +1020,6 @@ jobs:
     needs: wait-for-all-builds
     name: Release JS API Augment
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
