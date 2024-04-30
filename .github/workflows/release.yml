@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Release
-run-name: Cut Release ${{github.event.inputs.release-version || github.ref_name}}
+run-name: Cut Release v0.0.1-rc3
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: false
@@ -11,6 +11,8 @@ on:
       - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+" # ex. v1.1.0-rc1
       - "v0.0.1" # used for testing only
       - "v0.0.1-rc[0-9]+" # used for testing only
+    branches:
+      - ubicloud
   workflow_dispatch:
     inputs:
       release-version:
@@ -18,11 +20,11 @@ on:
         required: true
 
 env:
-  NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
-  NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
-  RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
+  NEW_RELEASE_TAG_FROM_UI: v0.0.1-rc3
+  NEW_RELEASE_TAG: v0.0.1-rc3
+  RELEASE_BRANCH_NAME: release-v0.0.1-rc3
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
-  TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
+  TEST_RUN: true
   RUST_TOOLCHAIN: "1.76.0" # Match to /rust-toolchain.toml
 
 jobs:
@@ -55,6 +57,7 @@ jobs:
         with:
           token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
+          ref: ubicloud
       - name: Create Release Branch?
         id: create-release-branch
         run: |
