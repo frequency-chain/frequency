@@ -130,7 +130,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: ubicloud-standard-32
+    runs-on: ubicloud-standard-16
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       NETWORK: mainnet
