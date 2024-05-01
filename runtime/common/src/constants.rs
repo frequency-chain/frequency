@@ -317,7 +317,7 @@ parameter_types! {
 	pub const MaxPaginatedPageSizeBytes: u32 = 1 * 1024;
 }
 /// The maximum number of pages in a Paginated storage model
-pub type MaxPaginatedPageId = ConstU16<16>;
+pub type MaxPaginatedPageId = ConstU16<32>;
 /// The maximum number of actions in itemized actions
 pub type MaxItemizedActionsCount = ConstU32<5>;
 /// The number of blocks for Stateful mortality is 24 hours
