@@ -17,6 +17,9 @@ on:
         description: "Release version (v#.#.#[-rc#])"
         required: true
 
+permissions:
+  contents: write
+
 env:
   NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
   NEW_RELEASE_TAG: ${{github.event.inputs.release-version || github.ref_name}}
@@ -29,7 +32,6 @@ jobs:
   validate-release-version:
     name: Validate Release Version
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -48,12 +50,10 @@ jobs:
     needs: validate-release-version
     name: Create Release Branch
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
-          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           fetch-depth: 0
       - name: Create Release Branch?
         id: create-release-branch
@@ -116,7 +116,6 @@ jobs:
     needs: run-all-benchmarks
     name: Version Code
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -154,9 +153,8 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        # os: [[self-hosted, Linux, X64, build, v2], [self-hosted, Linux, ARM64,  build, v2]]
-        os: [[self-hosted, Linux, X64, build, v2]]
         network: [dev, local, testnet, mainnet]
+        arch: [amd64]
         include:
           - network: dev
             spec: frequency-no-relay
@@ -174,11 +172,7 @@ jobs:
             spec: frequency
             build-profile: release
             release-file-name-prefix: frequency
-          - os: [self-hosted, Linux, X64, build, v2]
-            arch: amd64
-          # - os: [self-hosted, Linux, ARM64]
-          #   arch: arm64
-    runs-on: ${{matrix.os}}
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
@@ -243,10 +237,6 @@ jobs:
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.asc
           if-no-files-found: error
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host.
-  # See https://github.com/LibertyDSNP/frequency/issues/1543
   build-runtimes:
     needs: version-code
     name: Build Runtime for ${{matrix.network}}
@@ -296,12 +286,8 @@ jobs:
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-8
     steps:
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y wget file build-essential
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
@@ -329,26 +315,28 @@ jobs:
           release_wasm_filename=${{matrix.release-wasm-file-name-prefix}}-v${{env.RUNTIME_SPEC_VERSION}}.${{env.NEW_RELEASE_TAG}}.compact.compressed.wasm
           echo "RELEASE_WASM_FILENAME=$release_wasm_filename" >> $GITHUB_ENV
           echo "runtime_filename_${{matrix.network}}=$release_wasm_filename" >> $GITHUB_OUTPUT
-      - name: Install srtool-cli
-        run: |
-          cargo install --locked --git https://github.com/chevdor/srtool-cli
-          srtool --version
       - name: Build Deterministic WASM
-        run: |
-          RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}}
+        id: srtool_build
+        uses: ./.github/workflows/common/srtool
+        env:
+          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
+        with:
+          profile: ${{matrix.build-profile}}
+          package: ${{matrix.package}}
+          chain: ${{matrix.chain}}
+          tag: "1.77.0"
+          runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |
-          cp -p ./${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} \
+          cp -p ${{ steps.srtool_build.outputs.wasm }} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
           subwasm --version
       - name: Test WASM file
         run: |
+          file ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
           subwasm info ${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
@@ -362,7 +350,7 @@ jobs:
   build-rust-developer-docs:
     needs: version-code
     name: Build Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -462,7 +450,6 @@ jobs:
           - os: ubuntu-22.04
             arch: amd64
     runs-on: ${{matrix.os}}
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -843,7 +830,6 @@ jobs:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -939,7 +925,6 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
@@ -1017,7 +1002,6 @@ jobs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     permissions:
       contents: read
       pages: write
@@ -1035,7 +1019,6 @@ jobs:
     needs: wait-for-all-builds
     name: Release JS API Augment
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

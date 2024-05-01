@@ -12,7 +12,6 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
@@ -28,7 +27,7 @@ jobs:
 
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -65,7 +64,7 @@ jobs:
 
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo

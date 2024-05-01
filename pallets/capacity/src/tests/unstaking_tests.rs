@@ -85,6 +85,60 @@ fn unstake_happy_path() {
 	});
 }
 
+// This test checks that when two accounts stake to a target, and one
+// account unstakes everything, that all the capacity generated is removed AND that
+// the remaining capacity is correct
+#[test]
+fn unstaking_all_by_one_staker_reaps_target() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let token_account2 = 400;
+		let staking_amount1 = 100;
+		let staking_amount2 = 101;
+		let target: MessageSourceId = 1;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount1));
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account2), target, staking_amount2));
+
+		let mut capacity_details = Capacity::get_capacity_for(target).unwrap();
+		assert_eq!(
+			capacity_details,
+			CapacityDetails {
+				remaining_capacity: 20,
+				total_tokens_staked: 201,
+				total_capacity_issued: 20,
+				last_replenished_epoch: 0,
+			}
+		);
+
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			staking_amount1
+		));
+
+		// Assert that the staking details is reaped
+		assert!(Capacity::get_staking_account_for(token_account).is_none());
+
+		// Assert target details is reaped
+		assert!(Capacity::get_target_for(token_account, target).is_none());
+
+		// Assert that capacity account is adjusted correctly
+		capacity_details = Capacity::get_capacity_for(target).unwrap();
+		assert_eq!(
+			capacity_details,
+			CapacityDetails {
+				remaining_capacity: 10,
+				total_tokens_staked: 101,
+				total_capacity_issued: 10,
+				last_replenished_epoch: 0,
+			}
+		);
+	})
+}
+
 #[test]
 fn unstake_errors_unstaking_amount_is_zero() {
 	new_test_ext().execute_with(|| {

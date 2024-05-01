@@ -490,7 +490,7 @@ fn create_schema_v3_requires_valid_schema_size() {
 				expected: (Error::<Test>::LessThanMinSchemaModelBytes, 3),
 			},
 			TestCase {
-				input: r#"{"id": "long", "title": "I am a very very very long schema", "properties": "just way too long to live a long life", "description": "Just a never ending stream of bytes that goes on for a minute too long"}"#,
+				input: r#"{"id": "long", "title": "I am a very very very very long schema", "properties": "just way too long to live a long life", "description": "Just a never ending stream of bytes that goes on for a minute too long"}"#,
 				expected: (Error::<Test>::ExceedsMaxSchemaModelBytes, 2),
 			},
 		];
