@@ -12,7 +12,6 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     outputs:
       ci-base-image: ${{steps.filter.outputs.ci-base-image}}
     steps:
