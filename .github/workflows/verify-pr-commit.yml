@@ -17,7 +17,6 @@ jobs:
   changes:
     name: Determine Changed Files
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -59,7 +58,6 @@ jobs:
   clear-metadata-labels:
     name: Clear Metadata Labels
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
@@ -132,7 +130,7 @@ jobs:
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-16
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     env:
       NETWORK: mainnet
@@ -207,7 +205,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -223,7 +221,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -237,7 +235,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-4
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -249,7 +247,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -264,7 +262,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-8
     container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
@@ -289,9 +287,6 @@ jobs:
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
-  # Could not port this job to container because this creates docker-in-docker
-  # situation and fails when srtool-ci container is trying to process files in
-  # the mapped volume which don't exist on the host
   verify-build-runtimes:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
@@ -305,6 +300,7 @@ jobs:
         network: [dev, rococo, paseo, mainnet]
         include:
           - network: dev
+            chain: dev
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -312,6 +308,7 @@ jobs:
             features: frequency-no-relay
             wasm-core-version: frequency-testnet
           - network: rococo
+            chain: frequency-rococo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -319,6 +316,7 @@ jobs:
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: paseo
+            chain: frequency-paseo
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
@@ -326,18 +324,15 @@ jobs:
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
+            chain: frequency
             build-profile: release
             package: frequency-runtime
             runtime-dir: runtime/frequency
             built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubicloud-standard-8
     steps:
-      - name: Install Required Packages
-        run: |
-          sudo apt-get update
-          sudo apt install -y wget file build-essential curl
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Install Rust Toolchain
@@ -366,35 +361,30 @@ jobs:
       #   with:
       #     path: ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
       #     key: runtimes-${{runner.os}}-${{matrix.network}}-${{github.head_ref}}
-      - name: Install srtool-cli
-        if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: |
-          rustup show
-          cargo install --locked --git https://github.com/chevdor/srtool-cli
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
-      - name: Test srtool-cli Install
-        run: |
-          echo "PATH: $PATH"
-          which srtool
-          srtool --version
       - name: Build Deterministic WASM
+        id: srtool_build
         if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: |
-          RUST_LOG=debug SRTOOL_TAG="1.75.0" srtool build \
-            --build-opts="'--features on-chain-release-build,no-metadata-docs,${{matrix.features}}'" \
-            --profile=${{matrix.build-profile}} \
-            --package=${{matrix.package}}
+        uses: ./.github/workflows/common/srtool
+        env:
+          BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
+        with:
+          profile: ${{matrix.build-profile}}
+          package: ${{matrix.package}}
+          chain: ${{matrix.chain}}
+          runtime_dir: ${{ matrix.runtime-dir }}
+          tag: "1.77.0"
       - name: Check Deterministic WASM Build Exists
         if: steps.cache-wasm.outputs.cache-hit != 'true'
-        run: file ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
+        run: |
+          file ${{ steps.srtool_build.outputs.wasm }}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.19.1 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
           subwasm --version
       - name: Test WASM file
         run: |
-          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}}
-          subwasm info ${{env.WASM_DIR}}/${{env.BUILT_WASM_FILENAME}} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
+          subwasm info ${{ steps.srtool_build.outputs.wasm }}
+          subwasm info ${{ steps.srtool_build.outputs.wasm }} | grep "Core version:.*${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" || \
             (echo "ERROR: WASM Core version didn't match ${{matrix.wasm-core-version}}-${{env.RUNTIME_SPEC_VERSION}}" && exit 1)
 
   verify-js-api-augment:
@@ -461,7 +451,6 @@ jobs:
     needs: build-binaries
     name: Verify Node Docker Images
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -524,7 +513,6 @@ jobs:
     if: needs.changes.outputs.ci-docker-image == 'true'
     name: Verify CI Docker Image
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -548,7 +536,6 @@ jobs:
     needs: build-binaries
     name: Execute Binary Checks
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -580,7 +567,6 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -661,7 +647,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: [self-hosted, Linux, X64, build, v2]
+    runs-on: ubuntu-22.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -738,7 +724,6 @@ jobs:
     needs: build-binaries
     name: Verify Genesis State
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
     steps:
       - name: Set Env Vars
         run: |
