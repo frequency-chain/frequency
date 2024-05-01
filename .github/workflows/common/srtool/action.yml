@@ -2,7 +2,6 @@
 # It is pulled in and modified for the following reasons:
 # 1. We needed to add an additional environment variable to the docker run (CARGO_NET_RETRY=10)
 # 2. Local for direct auditing of the action building the runtime
-# QUESTION: Do we need to modify to use --root?
 
 name: "Srtool"
 description: "Build WASM Runtime with SRTOOL"
