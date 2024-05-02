@@ -45,22 +45,54 @@ fn test_staking_reward_total_era_out_of_range() {
 // This tests Capacity implementation of the trait, but uses the mock's constants,
 // to ensure that it's correctly specified in the pallet.
 #[test]
-fn staking_reward_for_era_implementation() {
+fn era_staking_reward_implementation() {
 	struct TestCase {
 		total_staked: u64,    // by all boosters
 		amount_staked: u64,   // by a single booster
 		expected_reward: u64, // for a single era
+		reward_pool: u64,     // reward pool size
 	}
 	let test_cases: Vec<TestCase> = vec![
-		TestCase { total_staked: 1_000_000, amount_staked: 0, expected_reward: 0 }, // shouldn't happen, but JIC
-		TestCase { total_staked: 1_000_000, amount_staked: 30, expected_reward: 0 }, // rounded result
-		TestCase { total_staked: 1_000_000, amount_staked: 150, expected_reward: 1 }, // it rounds the result
-		TestCase { total_staked: 1_000_000, amount_staked: 1000, expected_reward: 4 }, // hits the cap starting with this example
-		TestCase { total_staked: 1_000_000, amount_staked: 11000, expected_reward: 42 }, // > 0.0038% of total, reward = 11000*.0038
+		TestCase {
+			total_staked: 1_000_000,
+			amount_staked: 0,
+			expected_reward: 0,
+			reward_pool: 10_000,
+		}, // shouldn't happen, but JIC
+		TestCase {
+			total_staked: 1_000_000,
+			amount_staked: 30,
+			expected_reward: 0,
+			reward_pool: 10_000,
+		}, // truncated result
+		TestCase {
+			total_staked: 1_000_000,
+			amount_staked: 150,
+			expected_reward: 1,
+			reward_pool: 10_000,
+		}, // truncated result
+		TestCase {
+			total_staked: 1_000_000,
+			amount_staked: 1000,
+			expected_reward: 4,
+			reward_pool: 10_000,
+		}, // hits the cap starting with this example
+		TestCase {
+			total_staked: 1_000_000,
+			amount_staked: 11000,
+			expected_reward: 42,
+			reward_pool: 10_000,
+		}, // > 0.0038% of total, reward = 11000*.0038
+		TestCase {
+			total_staked: 20_000_000,
+			amount_staked: 888_889,
+			expected_reward: 3378,
+			reward_pool: 11_000_000,
+		}, //  testnet/mainnet values
 	];
 	for tc in test_cases {
 		assert_eq!(
-			Capacity::staking_reward_for_era(tc.amount_staked, tc.total_staked, 10_000),
+			Capacity::era_staking_reward(tc.amount_staked, tc.total_staked, tc.reward_pool),
 			tc.expected_reward
 		);
 	}

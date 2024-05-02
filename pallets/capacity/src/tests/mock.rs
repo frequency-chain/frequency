@@ -142,9 +142,10 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type AccountId = u64;
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
+	type Balance = BalanceOf<Test>;
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
-	fn reward_pool_size(_total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
+	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
 		10_000u64.into()
 	}
 
@@ -152,7 +153,7 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		account_id: Self::AccountId,
 		_from_era: Self::RewardEra,
 		_to_era: Self::RewardEra,
-	) -> Result<BalanceOf<Test>, DispatchError> {
+	) -> Result<Self::Balance, DispatchError> {
 		if account_id > 2u64 {
 			Ok(10u64)
 		} else {
@@ -161,12 +162,12 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	}
 
 	// use the pallet version of the era calculation.
-	fn staking_reward_for_era(
-		amount_staked: BalanceOf<Test>,
-		total_staked: BalanceOf<Test>,
-		reward_pool_size: BalanceOf<Test>,
-	) -> BalanceOf<Test> {
-		Capacity::staking_reward_for_era(amount_staked, total_staked, reward_pool_size)
+	fn era_staking_reward(
+		amount_staked: Self::Balance,
+		total_staked: Self::Balance,
+		reward_pool_size: Self::Balance,
+	) -> Self::Balance {
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
 	}
 
 	fn validate_staking_reward_claim(
@@ -177,7 +178,7 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		true
 	}
 
-	fn capacity_boost(amount: BalanceOf<Test>) -> BalanceOf<Test> {
+	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
 		Perbill::from_percent(50u32).mul(amount)
 	}
 }

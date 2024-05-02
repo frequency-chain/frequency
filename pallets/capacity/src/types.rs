@@ -353,6 +353,9 @@ pub trait StakingRewardsProvider<T: Config> {
 	///  The hasher to use for proofs
 	type Hash;
 
+	/// The type for currency
+	type Balance;
+
 	/// Calculate the size of the reward pool using the current economic model
 	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
@@ -365,11 +368,12 @@ pub trait StakingRewardsProvider<T: Config> {
 		to_era: Self::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError>;
 
-	/// Calculate the staking reward for a single era
-	fn staking_reward_for_era(
-		amount_staked: BalanceOf<T>,
-		total_staked: BalanceOf<T>,
-		reward_pool_size: BalanceOf<T>,
+	/// Calculate the staking reward for a single era.  We don't care about the era number,
+	/// just the values.
+	fn era_staking_reward(
+		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
+		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
+		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
 	) -> BalanceOf<T>;
 
 	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.

@@ -1114,19 +1114,20 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 	type AccountId = T::AccountId;
 	type RewardEra = T::RewardEra;
 	type Hash = T::Hash;
+	type Balance = BalanceOf<T>;
 
 	// Calculate the size of the reward pool for the current era, based on current staked token
 	// and the other determined factors of the current economic model
-	fn reward_pool_size(_total_staked: BalanceOf<T>) -> BalanceOf<T> {
+	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
 		T::RewardPoolEachEra::get()
 	}
 
 	// Performs range checks plus a reward calculation based on economic model for the era range
 	fn staking_reward_total(
-		_account_id: T::AccountId,
-		from_era: T::RewardEra,
-		to_era: T::RewardEra,
-	) -> Result<BalanceOf<T>, DispatchError> {
+		_account_id: Self::AccountId,
+		from_era: Self::RewardEra,
+		to_era: Self::RewardEra,
+	) -> Result<Self::Balance, DispatchError> {
 		let era_range = from_era.saturating_sub(to_era);
 		ensure!(
 			era_range.le(&T::StakingRewardsPastErasMax::get().into()),
@@ -1144,31 +1145,31 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		Ok(per_era.saturating_mul(num_eras.into()))
 	}
 
-	// Calculate a reward for one era using the chosen economic model formula + values
-	fn staking_reward_for_era(
-		amount_staked: BalanceOf<T>,
-		total_staked: BalanceOf<T>,
-		reward_pool_size: BalanceOf<T>,
-	) -> BalanceOf<T> {
-		let capped_reward = T::RewardPercentCap::get().mul(amount_staked);
-
-		let proportional_reward = reward_pool_size
-			.saturating_mul(amount_staked)
-			.checked_div(&total_staked)
+	/// Calculate the staking reward for a single era.  We don't care about the era number,
+	/// just the values.
+	fn era_staking_reward(
+		era_amount_staked: Self::Balance,
+		era_total_staked: Self::Balance,
+		era_reward_pool_size: Self::Balance,
+	) -> Self::Balance {
+		let capped_reward = T::RewardPercentCap::get().mul(era_amount_staked);
+		let proportional_reward = era_reward_pool_size
+			.saturating_mul(era_amount_staked)
+			.checked_div(&era_total_staked)
 			.unwrap_or_else(|| Zero::zero());
 		proportional_reward.min(capped_reward)
 	}
 
 	fn validate_staking_reward_claim(
-		_account_id: T::AccountId,
-		_proof: T::Hash,
+		_account_id: Self::AccountId,
+		_proof: Self::Hash,
 		_payload: StakingRewardClaim<T>,
 	) -> bool {
 		true
 	}
 
 	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
-	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T> {
+	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
 		Perbill::from_percent(50u32).mul(amount)
 	}
 }
