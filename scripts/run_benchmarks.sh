@@ -18,6 +18,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_timestamp \
   pallet_treasury \
   pallet_utility \
+  pallet_proxy \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \

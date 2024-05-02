@@ -3,6 +3,7 @@
 pub mod constants;
 pub mod extensions;
 pub mod fee;
+pub mod proxy;
 pub mod weights;
 
 /// Macro to set a value (e.g. when using the `parameter_types` macro) to either a production value
