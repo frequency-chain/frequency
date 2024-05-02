@@ -1,5 +1,5 @@
 use crate::prod_or_testnet_or_local;
-use common_primitives::node::BlockNumber;
+use common_primitives::node::{Balance, BlockNumber};
 use parity_scale_codec::{Encode, MaxEncodedLen};
 
 use frame_support::{
@@ -268,6 +268,20 @@ parameter_types! {
 	pub const MessagesMaxPayloadSizeBytes: u32 = 1024 * 3; // 3K
 }
 // -end- Collator Selection Pallet ---
+
+// --- Proxy Pallet ---
+// Copied from Polkadot Runtime v1.2.0
+parameter_types! {
+	// One storage item; key size 32, value size 8; .
+	pub const ProxyDepositBase: Balance = currency::deposit(1, 8);
+	// Additional storage item size of 33 bytes.
+	pub const ProxyDepositFactor: Balance = currency::deposit(0, 33);
+	pub const MaxProxies: u16 = 32;
+	pub const AnnouncementDepositBase: Balance = currency::deposit(1, 8);
+	pub const AnnouncementDepositFactor: Balance = currency::deposit(0, 66);
+	pub const MaxPending: u16 = 32;
+}
+// -end- Proxy Pallet ---
 
 // --- Messages Pallet ---
 impl Clone for MessagesMaxPayloadSizeBytes {

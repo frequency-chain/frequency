@@ -134,7 +134,8 @@ benchmarks-pallet_scheduler \
 benchmarks-pallet_session \
 benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
-benchmarks-pallet_utility
+benchmarks-pallet_utility \
+benchmarks-pallet_proxy
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -155,7 +156,8 @@ benchmarks-pallet_scheduler-local \
 benchmarks-pallet_session-local \
 benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
-benchmarks-pallet_utility-local
+benchmarks-pallet_utility-local \
+benchmarks-pallet_proxy-local
 
 .PHONY: benchmarks
 benchmarks:

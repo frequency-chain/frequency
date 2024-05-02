@@ -31,6 +31,7 @@ use common_primitives::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
+	proxy::ProxyType,
 };
 
 use frame_support::{
@@ -38,7 +39,7 @@ use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
 	pallet_prelude::{DispatchResultWithPostInfo, Get, GetStorageVersion},
 	parameter_types,
-	traits::{ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly},
+	traits::{ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly, InstanceFilter},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 	Twox128,
 };
@@ -178,6 +179,73 @@ impl BaseCallFilter {
 
 	fn is_pays_no_call(call: &RuntimeCall) -> bool {
 		call.get_dispatch_info().pays_fee == Pays::No
+	}
+}
+
+// Proxy Pallet Filters
+impl InstanceFilter<RuntimeCall> for ProxyType {
+	fn filter(&self, c: &RuntimeCall) -> bool {
+		match self {
+			ProxyType::Any => true,
+			ProxyType::NonTransfer => matches!(
+				c,
+				// Sorted
+				// Skip: RuntimeCall::Balances
+				RuntimeCall::Capacity(..)
+				| RuntimeCall::CollatorSelection(..)
+				| RuntimeCall::Council(..)
+				| RuntimeCall::Democracy(..)
+				| RuntimeCall::FrequencyTxPayment(..) // Capacity Tx never transfer
+				| RuntimeCall::Handles(..)
+				| RuntimeCall::Messages(..)
+				| RuntimeCall::Msa(..)
+				| RuntimeCall::Multisig(..)
+				// Skip: ParachainSystem(..)
+				| RuntimeCall::Preimage(..)
+				| RuntimeCall::Scheduler(..)
+				| RuntimeCall::Schemas(..)
+				| RuntimeCall::Session(..)
+				| RuntimeCall::StatefulStorage(..)
+				// Skip: RuntimeCall::Sudo
+				// Skip: RuntimeCall::System
+				| RuntimeCall::TechnicalCommittee(..)
+				// Specifically omitting TimeRelease `transfer`, and `update_release_schedules`
+				| RuntimeCall::TimeRelease(pallet_time_release::Call::claim{..})
+				| RuntimeCall::TimeRelease(pallet_time_release::Call::claim_for{..})
+				// Skip: RuntimeCall::Timestamp
+				| RuntimeCall::Treasury(..)
+				| RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
+			),
+			ProxyType::Governance => matches!(
+				c,
+				RuntimeCall::Treasury(..) |
+					RuntimeCall::Democracy(..) |
+					RuntimeCall::TechnicalCommittee(..) |
+					RuntimeCall::Council(..) |
+					RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
+			),
+			ProxyType::Staking => {
+				matches!(
+					c,
+					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
+						RuntimeCall::CollatorSelection(
+							pallet_collator_selection::Call::set_candidacy_bond { .. }
+						)
+				)
+			},
+			ProxyType::CancelProxy => {
+				matches!(c, RuntimeCall::Proxy(pallet_proxy::Call::reject_announcement { .. }))
+			},
+		}
+	}
+	fn is_superset(&self, o: &Self) -> bool {
+		match (self, o) {
+			(x, y) if x == y => true,
+			(ProxyType::Any, _) => true,
+			(_, ProxyType::Any) => false,
+			(ProxyType::NonTransfer, _) => true,
+			_ => false,
+		}
 	}
 }
 
@@ -330,7 +398,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 78,
+	spec_version: 77,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +412,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 78,
+	spec_version: 77,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -987,6 +1055,24 @@ impl pallet_collator_selection::Config for Runtime {
 	type WeightInfo = weights::pallet_collator_selection::SubstrateWeight<Runtime>;
 }
 
+// https://paritytech.github.io/polkadot-sdk/master/pallet_proxy/pallet/trait.Config.html
+impl pallet_proxy::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type Currency = Balances;
+	type ProxyType = ProxyType;
+	type ProxyDepositBase = ProxyDepositBase;
+	type ProxyDepositFactor = ProxyDepositFactor;
+	type MaxProxies = MaxProxies;
+	type MaxPending = MaxPending;
+	type CallHasher = BlakeTwo256;
+	type AnnouncementDepositBase = AnnouncementDepositBase;
+	type AnnouncementDepositFactor = AnnouncementDepositFactor;
+	type WeightInfo = weights::pallet_proxy::WeightInfo<Runtime>;
+}
+
+// End Proxy Pallet Config
+
 impl pallet_messages::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
@@ -1123,6 +1209,9 @@ construct_runtime!(
 		// FRQC Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, FreezeReason} = 40,
 
+		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
+		Proxy: pallet_proxy = 43,
+
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
@@ -1155,6 +1244,7 @@ mod benches {
 		[pallet_collator_selection, CollatorSelection]
 		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
+		[pallet_proxy, Proxy]
 
 		// Frequency
 		[pallet_msa, Msa]
