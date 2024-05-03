@@ -16,7 +16,7 @@ use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32, BuildStorage, DispatchError, Perbill,
+	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
 use sp_std::ops::Mul;
 
@@ -143,9 +143,10 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	type AccountId = u64;
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
+	type Balance = BalanceOf<Test>;
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
-	fn reward_pool_size(_total_staked: BalanceOf<Test>) -> BalanceOf<Test> {
+	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
 		10_000u64.into()
 	}
 
@@ -153,12 +154,21 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		account_id: Self::AccountId,
 		_from_era: Self::RewardEra,
 		_to_era: Self::RewardEra,
-	) -> Result<BalanceOf<Test>, DispatchError> {
+	) -> Result<Self::Balance, DispatchError> {
 		if account_id > 2u64 {
 			Ok(10u64)
 		} else {
 			Ok(1u64)
 		}
+	}
+
+	// use the pallet version of the era calculation.
+	fn era_staking_reward(
+		amount_staked: Self::Balance,
+		total_staked: Self::Balance,
+		reward_pool_size: Self::Balance,
+	) -> Self::Balance {
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
 	}
 
 	fn validate_staking_reward_claim(
@@ -169,14 +179,15 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 		true
 	}
 
-	fn capacity_boost(amount: BalanceOf<Test>) -> BalanceOf<Test> {
-		Perbill::from_percent(5u32).mul(amount)
+	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
+		Perbill::from_percent(50u32).mul(amount)
 	}
 }
 
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -199,8 +210,10 @@ impl pallet_capacity::Config for Test {
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
 	type StakingRewardsPastErasMax = ConstU32<5>;
-	type RewardsProvider = TestStakingRewardsProvider;
+	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
+	type RewardPoolEachEra = ConstU64<10_000>;
+	type RewardPercentCap = TestRewardCap;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
