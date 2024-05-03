@@ -251,7 +251,7 @@ This option runs one collator node as local host process and two relay chain val
 
 ### All in Docker Container
 
-:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/frequency-chain/frequency/issues/432
+:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/frequency-chain/frequency/issues/779
 
 Start:
 
