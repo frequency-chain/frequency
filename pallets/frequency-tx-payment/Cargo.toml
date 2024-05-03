@@ -6,33 +6,29 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-frequency-tx-payment"
 publish = false
-repository = "https://github.com/libertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-  "derive",
-]}
+parity-scale-codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-capacity = {default-features = false, path = "../capacity"}
-pallet-msa = {default-features = false, path = "../msa"}
+pallet-capacity = { default-features = false, path = "../capacity" }
+pallet-msa = { default-features = false, path = "../msa" }
 pallet-transaction-payment = { workspace = true }
-scale-info = { workspace = true, features = [
-  "derive",
-]}
+scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-log = { workspace = true } 
+log = { workspace = true }
 
 # Frequency related dependencies
-common-primitives = {default-features = false, path = "../../common/primitives"}
+common-primitives = { default-features = false, path = "../../common/primitives" }
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
@@ -40,7 +36,7 @@ pallet-balances = { workspace = true }
 pallet-utility = { workspace = true }
 
 # Frequency related dev dependencies
-pallet-msa = {path = '../msa'}
+pallet-msa = { path = '../msa' }
 
 
 [features]

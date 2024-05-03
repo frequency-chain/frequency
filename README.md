@@ -251,7 +251,7 @@ This option runs one collator node as local host process and two relay chain val
 
 ### All in Docker Container
 
-:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/LibertyDSNP/frequency/issues/432
+:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/frequency-chain/frequency/issues/432
 
 Start:
 
@@ -370,11 +370,11 @@ lsof -i -P | grep -i "listen" | grep frequency
 <!-- MARKDOWN LINKS & IMAGES -->
 <!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
 
-[issues-shield]: https://img.shields.io/github/issues/LibertyDSNP/frequency.svg?style=for-the-badge
-[issues-url]: https://github.com/LibertyDSNP/frequency/issues
-[codecov-shield]: https://img.shields.io/codecov/c/github/LibertyDSNP/frequency?style=for-the-badge
-[codecov-url]: https://app.codecov.io/gh/LibertyDSNP/frequency
-[release-shield]: https://img.shields.io/github/v/release/LibertyDSNP/frequency?style=for-the-badge
-[release-url]: https://github.com/LibertyDSNP/frequency/releases
+[issues-shield]: https://img.shields.io/github/issues/frequency-chain/frequency.svg?style=for-the-badge
+[issues-url]: https://github.com/frequency-chain/frequency/issues
+[codecov-shield]: https://img.shields.io/codecov/c/github/frequency-chain/frequency?style=for-the-badge
+[codecov-url]: https://app.codecov.io/gh/frequency-chain/frequency
+[release-shield]: https://img.shields.io/github/v/release/frequency-chain/frequency?style=for-the-badge
+[release-url]: https://github.com/frequency-chain/frequency/releases
 [docker-shield]: https://img.shields.io/docker/v/frequencychain/parachain-node-mainnet/latest?color=1c90ed&label=Docker&style=for-the-badge
 [docker-url]: https://hub.docker.com/u/frequencychain

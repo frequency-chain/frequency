@@ -6,20 +6,16 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-messages"
 publish = false
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-  "derive",
-] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 log = { workspace = true }
-scale-info = { workspace = true, features = [
-  "derive",
-] }
+scale-info = { workspace = true, features = ["derive"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
@@ -31,7 +27,7 @@ sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 cid = { version = "0.11", default-features = false }
-multibase = { version ="0.9", default-features = false }
+multibase = { version = "0.9", default-features = false }
 
 [dev-dependencies]
 common-runtime = { path = '../../runtime/common', default-features = false }

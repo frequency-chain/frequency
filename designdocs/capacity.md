@@ -4,7 +4,7 @@
 
 Feeless transactions are essential in reaching mass adoption as it removes the overhead costs of transactions for app developers to acquire a far-reaching user base.
 
-In this document, I will introduce the concept of [Capacity](https://forums.projectliberty.io/t/05-what-is-capacity-frequency-economics-part-1/248), a non-transferable resource that is associated with an MSA account of a [Registered Provider](https://github.com/LibertyDSNP/frequency/blob/main/designdocs/provider_registration.md), and how Capacity can be acquired through staking, refills, and used to perform transactions such as:
+In this document, I will introduce the concept of [Capacity](https://forums.projectliberty.io/t/05-what-is-capacity-frequency-economics-part-1/248), a non-transferable resource that is associated with an MSA account of a [Registered Provider](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_registration.md), and how Capacity can be acquired through staking, refills, and used to perform transactions such as:
 
 - Create an MSA.
 - Add a key to an MSA.
@@ -15,7 +15,7 @@ In this document, I will introduce the concept of [Capacity](https://forums.proj
 
 ## Proposal
 
-Frequency explains how Capacity can be acquired through staking, refills, and used to perform certain transactions.  This approach is addressed in each section below:
+Frequency explains how Capacity can be acquired through staking, refills, and used to perform certain transactions. This approach is addressed in each section below:
 
 - [Implementation of acquiring Capacity through staking](#staking)
 - [Implementation of replenishing Capacity](#replenish)
@@ -23,13 +23,13 @@ Frequency explains how Capacity can be acquired through staking, refills, and us
 - [Block space allocation for Capacity transactions](#block-space)
 - [Implementation of spending Capacity to perform transactions](#capacity-transactions)
 
- **Implementation of how to acquire through staking:** <a id='staking'></a>
+  **Implementation of how to acquire through staking:** <a id='staking'></a>
 
 This section is limited to the interfaces for staking and un-staking tokens.
 
 As a Registered Provider, you can receive Capacity by staking your tokens to the network or when others stake their tokens to the network.
 
-When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards.  Rewards are deferred to a supplemental [staking design doc](https://github.com/LibertyDSNP/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
+When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards. Rewards are deferred to a supplemental [staking design doc](https://github.com/frequency-chain/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
 
 Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked (up to the amount staked), but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful, all thawed tokens become unlocked and increase the ability to make more scheduled requests.
 
@@ -168,7 +168,7 @@ Acceptance Criteria are listed below but can evolve:
 4. Issued Capacity to the target is reduced by using a weighted average:
 
    - `CapacityReduction =
-         TotalCapacity * (1 - (UnstakingAmount / TotalStakedAmount))`
+    TotalCapacity * (1 - (UnstakingAmount / TotalStakedAmount))`
 
 5. Remaining Capacity is reduced by the same amount as above.
 6. The amount unstaked cannot exceed the amount staked.
@@ -460,9 +460,10 @@ traits Nontransferable {
 **Implementation of how to Replenish** <a id='replenish'></a>
 Replenishable means that all Capacity is replenished after a fixed period called an Epoch Period. An Epoch Period is composed of a set number of blocks. In the example below, the Epoch Period is three blocks. The initial Epoch Period will be around 100 blocks. This Epoch Period may be modified through governance.
 
-To support scaling, Capacity is replenished lazily for each Capacity Target.  When the Target attempts to post a message, their remaining capacity and last_replenished_epoch is checked. If they are out of capacity _and_ their last_replenished_epoch is less than the current epoch, then the Target's capacity is automatically replenished to their total allowed, minus the amount needed for the current transaction.  The last_replenished_epoch is then set to the current epoch.
+To support scaling, Capacity is replenished lazily for each Capacity Target. When the Target attempts to post a message, their remaining capacity and last*replenished_epoch is checked. If they are out of capacity \_and* their last_replenished_epoch is less than the current epoch, then the Target's capacity is automatically replenished to their total allowed, minus the amount needed for the current transaction. The last_replenished_epoch is then set to the current epoch.
 
 Consumers of Capacity may choose a strategy for posting transactions:
+
 1. Query capacity remaining before posting any capacity-based transaction to ensure transactions never fail
 2. Occasionally query, cache and track epoch info and capacity usage off-chain for faster transaction submission, at the risk of some transactions failing due to being out of sync
 
@@ -493,7 +494,7 @@ Acceptance Criteria are listed below but can evolve:
 
 ### Traits
 
-Replenishable trait implemented on Capacity-Pallet. This trait is used to replenish the Capacity of a  Registered Provider.
+Replenishable trait implemented on Capacity-Pallet. This trait is used to replenish the Capacity of a Registered Provider.
 
 ```rust
 
@@ -637,11 +638,11 @@ Acceptance Criteria are listed below but can evolve:
 1. Only run validation, pre-dispatch, and post-dispatch on calls that match Capacity Transactions.
 2. Adding the Capacity transaction weight to the block-weight total should not cause an overflow.
 3. Given Call is a Capacity transaction, it checks that the extrinsic does not exceed the size of the `max_total` allocated weight.
-4. Given Call is a Capacity Transaction, it checks that adding the transaction *length* will not exceed the [max length](https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html) for the Normal dispatch class.
+4. Given Call is a Capacity Transaction, it checks that adding the transaction _length_ will not exceed the [max length](https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html) for the Normal dispatch class.
 5. Given the call is a Capacity transaction, checks that adding the weight of the transaction will not exceed the `max_total` weight of Normal transactions
-    1. base_weight + transaction weight + total weight < current total weight of normal transactions.
+   1. base_weight + transaction weight + total weight < current total weight of normal transactions.
 6. Given Call is a Capacity transaction, check that adding the transaction weight will not exceed the `max_total` weight of Capacity Transactions.
-    1. base_weight + transaction weight + total weight < current total weight of Capacity transactions.
+   1. base_weight + transaction weight + total weight < current total weight of Capacity transactions.
 7. Increases `CurrentBlockUsedCapacity` storage.
 
 SignedExtension post-dispatch
@@ -887,7 +888,7 @@ Acceptance Criteria are listed below but can evolve:
 
 **Create a new Epoch based on the moving average of used Capacity**
 
-To manage congestion, the following solution uses the moving average of Capacity used after each block to calculate the next Epoch Period. Unlike the previous implementation, a new Epoch  is created after the moving average of used Capacity goes below a configurable threshold called `config::MovingAverageBound`. An essential difference from the other solutions is that it becomes less predictable to know when a new Epoch Period starts.
+To manage congestion, the following solution uses the moving average of Capacity used after each block to calculate the next Epoch Period. Unlike the previous implementation, a new Epoch is created after the moving average of used Capacity goes below a configurable threshold called `config::MovingAverageBound`. An essential difference from the other solutions is that it becomes less predictable to know when a new Epoch Period starts.
 
 To compute the moving average, an additional configuration is necessary to set the window size of the moving average called `config::MovingAverageWindowSize`.
 

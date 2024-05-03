@@ -6,23 +6,21 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-stateful-storage"
 publish = false
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-  "derive",
-] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
-twox-hash = { workspace = true,  features = ["digest_0_10"] }
+twox-hash = { workspace = true, features = ["digest_0_10"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
-frame-system = { workspace =  true }
+frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -41,12 +39,13 @@ runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
-  "common-primitives/runtime-benchmarks"
+  "common-primitives/runtime-benchmarks",
 ]
 std = [
   'parity-scale-codec/std',
   'scale-info/std',
-  'sp-std/std', 'sp-core/std',
+  'sp-std/std',
+  'sp-core/std',
   'sp-io/std',
   'sp-runtime/std',
   'frame-support/std',

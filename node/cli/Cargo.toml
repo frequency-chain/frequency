@@ -5,7 +5,7 @@ edition = "2021"
 homepage = "https://frequency.xyz/"
 license = "Apache-2.0"
 name = "frequency-cli"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [dependencies]
@@ -56,7 +56,7 @@ polkadot-service = { workspace = true }
 # Cumulus
 cumulus-client-cli = { workspace = true }
 cumulus-client-service = { workspace = true }
-cumulus-primitives-parachain-inherent = { workspace =true }
+cumulus-primitives-parachain-inherent = { workspace = true }
 cumulus-primitives-core = { workspace = true }
 
 [build-dependencies]
@@ -71,15 +71,19 @@ cli = [
   "sc-service",
   "frame-benchmarking-cli",
   "frame-benchmarking",
-  "try-runtime-cli"
+  "try-runtime-cli",
 ]
 default = ["std", "cli"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
   "frequency-runtime/runtime-benchmarks",
-  "frame-benchmarking-cli/runtime-benchmarks"
+  "frame-benchmarking-cli/runtime-benchmarks",
 ]
-try-runtime = ["frequency-service/try-runtime", "try-runtime-cli", "try-runtime-cli/try-runtime"]
+try-runtime = [
+  "frequency-service/try-runtime",
+  "try-runtime-cli",
+  "try-runtime-cli/try-runtime",
+]
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]
 frequency-no-relay = ["frequency-service/frequency-no-relay"]
@@ -90,6 +94,5 @@ frequency-lint-check = [
   "frequency-no-relay",
   "frequency-local",
   "frequency-testnet",
-  "frequency-service/frequency-lint-check"
+  "frequency-service/frequency-lint-check",
 ]
-

@@ -5,7 +5,7 @@ edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency-runtime"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]

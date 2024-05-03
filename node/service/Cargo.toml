@@ -5,7 +5,7 @@ edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency-service"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [dependencies]
@@ -114,9 +114,7 @@ substrate-build-script-utils = { workspace = true }
 [dev-dependencies]
 substrate-test-runtime-client = { workspace = true }
 sc-client-api = { workspace = true }
-scale-info = { workspace = true, features = [
-"derive",
-] }
+scale-info = { workspace = true, features = ["derive"] }
 
 [features]
 default = ["std"]

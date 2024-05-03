@@ -28,7 +28,7 @@ jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -65,7 +65,7 @@ jobs:
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

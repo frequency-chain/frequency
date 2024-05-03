@@ -131,7 +131,7 @@ jobs:
             spec: frequency
             branch_alias: pr
     runs-on: ubicloud-standard-16
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     env:
       NETWORK: mainnet
     steps:
@@ -177,7 +177,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -193,7 +193,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -206,7 +206,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -222,7 +222,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -236,7 +236,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -248,7 +248,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -263,7 +263,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -391,7 +391,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -778,10 +778,10 @@ jobs:
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
 
   should-run-benchmarks:
-    if: github.repository == 'LibertyDSNP/frequency'
+    if: github.repository == 'frequency-chain/frequency'
     name: Run Benchmarks?
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     outputs:
       should_run_benchmarks: ${{steps.run-benchmarks.outputs.run}}
       pallets: ${{steps.run-benchmarks.outputs.pallets}}
@@ -810,7 +810,7 @@ jobs:
           fi
 
   run-benchmarks:
-    if: github.repository == 'LibertyDSNP/frequency' &&
+    if: github.repository == 'frequency-chain/frequency' &&
       needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
     needs: should-run-benchmarks
     name: Run Benchmarks
