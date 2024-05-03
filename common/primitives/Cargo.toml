@@ -6,26 +6,20 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "common-primitives"
 publish = false
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]
 targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-  "derive",
-] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 impl-serde = { workspace = true }
-scale-info = { workspace = true, features = [
-  "derive",
-] }
+scale-info = { workspace = true, features = ["derive"] }
 serde = { workspace = true, features = ["derive"] }
-serde_json = { workspace = true, features = [
-  "alloc",
-] }
+serde_json = { workspace = true, features = ["alloc"] }
 enumflags2 = { workspace = true }
 smallvec = { workspace = true }
 sp-api = { workspace = true }

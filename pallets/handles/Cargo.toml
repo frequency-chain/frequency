@@ -7,15 +7,15 @@ license = "Apache-2.0"
 name = "pallet-handles"
 version = "0.0.0"
 publish = false
-repository = "https://github.com/libertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = ["derive",] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 log = { workspace = true }
-scale-info = { workspace = true, features = ["derive",] }
+scale-info = { workspace = true, features = ["derive"] }
 numtoa = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -27,7 +27,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-handles-utils = { default-features = false, path = "src/handles-utils"}
+handles-utils = { default-features = false, path = "src/handles-utils" }
 [dev-dependencies]
 env_logger = { workspace = true }
 pretty_assertions = { workspace = true }
@@ -40,7 +40,7 @@ runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "frame-support/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
-  "common-primitives/runtime-benchmarks"
+  "common-primitives/runtime-benchmarks",
 ]
 std = [
   'parity-scale-codec/std',

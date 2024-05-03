@@ -6,7 +6,7 @@ edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "frequency"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [[bin]]
@@ -28,17 +28,17 @@ runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
 frequency-no-relay = [
   "frequency-service/frequency-no-relay",
-  "frequency-cli/frequency-no-relay"
+  "frequency-cli/frequency-no-relay",
 ]
 frequency-local = [
   "frequency-service/frequency-local",
-  "frequency-cli/frequency-local"
+  "frequency-cli/frequency-local",
 ]
 frequency-testnet = [
   "frequency-service/frequency-testnet",
-  "frequency-cli/frequency-testnet"
+  "frequency-cli/frequency-testnet",
 ]
 frequency-lint-check = [
   "frequency-service/frequency-lint-check",
-  "frequency-cli/frequency-lint-check"
+  "frequency-cli/frequency-lint-check",
 ]

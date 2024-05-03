@@ -6,7 +6,7 @@ authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://frequency.xyz"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 edition = "2021"
 
 [dependencies]
@@ -18,8 +18,4 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 
 [features]
 default = ["std"]
-std = [
-	'sp-std/std',
-	'sp-api/std',
-	'common-primitives/std',
-]
+std = ['sp-std/std', 'sp-api/std', 'common-primitives/std']

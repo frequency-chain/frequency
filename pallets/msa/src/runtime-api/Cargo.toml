@@ -6,13 +6,11 @@ authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://frequency.xyz"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 edition = "2021"
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-	"derive"
-] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 # Substrate
 sp-api = { workspace = true }
 sp-std = { workspace = true }
@@ -23,9 +21,9 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 [features]
 default = ["std"]
 std = [
-	"parity-scale-codec/std",
-	"sp-api/std",
-	"sp-std/std",
-	"frame-support/std",
-	'common-primitives/std'
+  "parity-scale-codec/std",
+  "sp-api/std",
+  "sp-std/std",
+  "frame-support/std",
+  'common-primitives/std',
 ]

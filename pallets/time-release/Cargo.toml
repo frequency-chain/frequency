@@ -5,17 +5,13 @@ authors = ["Frequency"]
 edition = "2021"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 publish = false
 version = "0.0.0"
 
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-	"max-encoded-len",
-] }
-scale-info = { workspace = true, features = [
-	"derive",
-] }
+parity-scale-codec = { workspace = true, features = ["max-encoded-len"] }
+scale-info = { workspace = true, features = ["derive"] }
 
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -34,22 +30,22 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 [features]
 default = ["std"]
 std = [
-	"parity-scale-codec/std",
-	"frame-support/std",
-	"frame-system/std",
-	"scale-info/std",
-	"sp-io/std",
-	"sp-runtime/std",
-	"sp-std/std",
-	"frame-benchmarking/std",
-	"common-primitives/std",
-	"pallet-balances/std",
+  "parity-scale-codec/std",
+  "frame-support/std",
+  "frame-system/std",
+  "scale-info/std",
+  "sp-io/std",
+  "sp-runtime/std",
+  "sp-std/std",
+  "frame-benchmarking/std",
+  "common-primitives/std",
+  "pallet-balances/std",
 ]
 runtime-benchmarks = [
-	"frame-support/runtime-benchmarks",
-	"frame-system/runtime-benchmarks",
-	"sp-runtime/runtime-benchmarks",
-	"frame-benchmarking/runtime-benchmarks",
-	"common-primitives/runtime-benchmarks",
+  "frame-support/runtime-benchmarks",
+  "frame-system/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
+  "frame-benchmarking/runtime-benchmarks",
+  "common-primitives/runtime-benchmarks",
 ]
 try-runtime = ["frame-support/try-runtime", "frame-system/try-runtime"]

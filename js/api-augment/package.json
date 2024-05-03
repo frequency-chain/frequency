@@ -2,14 +2,14 @@
   "name": "@frequency-chain/api-augment",
   "version": "0.0.0",
   "bugs": {
-    "url": "https://github.com/LibertyDSNP/frequency/issues"
+    "url": "https://github.com/frequency-chain/frequency/issues"
   },
   "description": "RPC configuration for Frequency for use with Polkadotjs API",
   "main": "index.js",
   "type": "module",
   "repository": {
     "type": "git",
-    "url": "https://github.com/LibertyDSNP/frequency.git",
+    "url": "https://github.com/frequency-chain/frequency.git",
     "directory": "js/api-augment"
   },
   "scripts": {
@@ -30,7 +30,7 @@
     "format": "tsc --noEmit --pretty && eslint --fix \"**/*.ts\"",
     "lint": "tsc --noEmit --pretty && eslint \"**/*.ts\""
   },
-  "author": "LibertyDSNP",
+  "author": "frequency-chain",
   "license": "Apache-2.0",
   "dependencies": {
     "@polkadot/api": "^10.12.4",

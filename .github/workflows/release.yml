@@ -173,7 +173,7 @@ jobs:
             build-profile: release
             release-file-name-prefix: frequency
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     env:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
@@ -213,7 +213,7 @@ jobs:
       - name: List GPG Keys
         run: gpg -k; gpg -K
       # The error in this step may be due to expired signing subkey
-      # See https://github.com/LibertyDSNP/frequency/issues/1695
+      # See https://github.com/frequency-chain/frequency/issues/1695
       - name: Generate Binary Signature
         working-directory: ${{env.BIN_DIR}}
         run: |
@@ -351,7 +351,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -385,7 +385,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Set Env Vars
         run: |
@@ -491,7 +491,7 @@ jobs:
   # Could not port this job to container because the reference node will be started in a
   # parallel container to the job polkadot-js-tools container and the latter will not
   # be able to connect to the former without runner supporting DinD mode first.
-  # See https://github.com/LibertyDSNP/frequency/issues/1543
+  # See https://github.com/frequency-chain/frequency/issues/1543
   compare-metadata:
     needs: build-binaries
     name: Compare Metadata
@@ -650,7 +650,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -803,7 +803,7 @@ jobs:
           github-token: ${{secrets.GHA_WORKFLOW_TRIGGER}}
           script: |
             await github.rest.actions.createWorkflowDispatch({
-              owner: 'LibertyDSNP',
+              owner: 'frequency-chain',
               repo: 'metadata-portal',
               workflow_id: 'auto-sign.yml',
               ref: 'main'
@@ -997,7 +997,7 @@ jobs:
           repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
           readme-filepath: docker/${{matrix.node}}.overview.md
 
-  # Published to https://libertydsnp.github.io/frequency/
+  # Published to https://frequency-chain.github.io/frequency/
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs

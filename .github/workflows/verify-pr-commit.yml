@@ -52,8 +52,6 @@ jobs:
               - '**/*.rs'
               - '**/Cargo.toml'
               - 'e2e/**/*.{ts,json}'
-            ci-docker-image:
-              - 'tools/ci/docker/ci-base-image.dockerfile'
 
   clear-metadata-labels:
     name: Clear Metadata Labels
@@ -131,7 +129,7 @@ jobs:
             spec: frequency
             branch_alias: pr
     runs-on: ubicloud-standard-16
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     env:
       NETWORK: mainnet
     steps:
@@ -177,7 +175,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -193,7 +191,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -206,7 +204,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -222,7 +220,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -236,7 +234,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -248,7 +246,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -263,7 +261,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-8
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -391,7 +389,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -507,30 +505,6 @@ jobs:
           context: .
           push: false
           file: docker/${{env.IMAGE_NAME}}.dockerfile
-
-  verify-ci-docker-image:
-    needs: changes
-    if: needs.changes.outputs.ci-docker-image == 'true'
-    name: Verify CI Docker Image
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: "amd64"
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build CI image
-        env:
-          IMAGE_PATH: tools/ci/docker
-          IMAGE_NAME: ci-base-image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          file: ${{env.IMAGE_PATH}}/${{env.IMAGE_NAME}}.dockerfile
 
   execute-binary-checks:
     needs: build-binaries
@@ -778,10 +752,10 @@ jobs:
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
 
   should-run-benchmarks:
-    if: github.repository == 'LibertyDSNP/frequency'
+    if: github.repository == 'frequency-chain/frequency'
     name: Run Benchmarks?
     runs-on: ubuntu-22.04
-    container: ghcr.io/libertydsnp/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     outputs:
       should_run_benchmarks: ${{steps.run-benchmarks.outputs.run}}
       pallets: ${{steps.run-benchmarks.outputs.pallets}}
@@ -810,7 +784,7 @@ jobs:
           fi
 
   run-benchmarks:
-    if: github.repository == 'LibertyDSNP/frequency' &&
+    if: github.repository == 'frequency-chain/frequency' &&
       needs.should-run-benchmarks.outputs.should_run_benchmarks == 'true'
     needs: should-run-benchmarks
     name: Run Benchmarks
