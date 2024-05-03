@@ -286,6 +286,10 @@ pub mod pallet {
 		CountedStorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
 	// TODO: storage for staking history
+	#[pallet::storage]
+	#[pallet::getter(fn get_staking_history_for)]
+	pub type ProviderBoostHistories<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
 	/// stores how many times an account has retargeted, and when it last retargeted.
 	#[pallet::storage]
@@ -1005,7 +1009,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Returns whether `account_id` may claim and and be paid token rewards.
-	pub fn payout_eligible(account_id: T::AccountId) -> bool {
+	pub(crate) fn payout_eligible(account_id: T::AccountId) -> bool {
 		let _staking_account =
 			Self::get_staking_account_for(account_id).ok_or(Error::<T>::NotAStakingAccount);
 		false
@@ -1024,7 +1028,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Performs the work of withdrawing the requested amount from the old staker-provider target details, and
 	/// from the Provider's capacity details, and depositing it into the new staker-provider target details.
-	pub fn do_retarget(
+	pub(crate) fn do_retarget(
 		staker: &T::AccountId,
 		from_msa: &MessageSourceId,
 		to_msa: &MessageSourceId,
@@ -1046,6 +1050,27 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_target_details_for(staker, *to_msa, to_msa_target);
 		Self::set_capacity_for(*to_msa, capacity_details);
+		Ok(())
+	}
+
+	/// updates or inserts a new boost history record for current_era.   Pass 'add' = true for an increase (provider_boost),
+	/// pass 'false' for a decrease (unstake)
+	pub(crate) fn upsert_boost_history(account: &T::AccountId, current_era: T::RewardEra, boost_amount: BalanceOf<T>, add: bool) -> Result<(), DispatchError> {
+		let mut boost_history = Self::get_staking_history_for(account).unwrap_or_default();
+
+		// they've unstaked everything.
+		if boost_history.total_staked.eq(boost_amount) && !add {
+			ProviderBoostHistories::<T>::set(account, None);
+		}
+
+		boost_history.reward_era = current_era;
+
+		if add {
+			boost_history.total_staked = boost_history.total_staked.saturating_add(boost_amount);
+		} else {
+			boost_history.total_staked = boost_history.total_staked.saturating_sub(boost_amount);
+		}
+		ProviderBoostHistories::<T>::set(account, Some(boost_history.clone()));
 		Ok(())
 	}
 }

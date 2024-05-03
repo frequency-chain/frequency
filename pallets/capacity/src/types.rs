@@ -3,10 +3,10 @@ use super::*;
 use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound};
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
-use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating},
-	RuntimeDebug,
-};
+use sp_core::crypto::UncheckedInto;
+use sp_runtime::{traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating}, RuntimeDebug, BoundedBTreeMap};
+
+
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
@@ -287,14 +287,63 @@ pub struct RewardPoolInfo<Balance> {
 // TODO: Store retarget unlock chunks in their own storage but can be for any stake type
 // TODO: Store unstake unlock chunks in their own storage but can be for any stake type (at first do only boosted unstake)
 
-/// A record of a staked amount for a complete RewardEra
+/// A record of staked amounts for a complete RewardEra
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct StakingHistory<Balance, RewardEra> {
-	/// The era this amount was staked
-	pub reward_era: RewardEra,
-	/// The total amount staked for the era
-	pub total_staked: Balance,
+pub struct ProviderBoostHistory<T: Config>(BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::StakingRewardsPastErasMax>);
+
+impl<T: Config>  ProviderBoostHistory<T> {
+	pub fn new() -> Self {
+		ProviderBoostHistory(BoundedBTreeMap::new())
+	}
+	
+	/// Adds `add_amount` to the entry for `reward_era`.
+	/// Updates entry, or creates a new entry if it does not exist
+	/// returns the total number of history items
+	pub fn add_era_balance(&mut self, reward_era: &T::RewardEra, add_amount: &BalanceOf<T>) -> Option<usize> {
+		if let Some(mut entry) = self.0.get_mut(&reward_era) {
+			// update			
+			entry.saturating_add(*add_amount);
+		} else {
+			// insert
+			self.remove_oldest_entry_if_full(); // this guarantees a try_insert never fails
+			self.0.try_insert(*reward_era, *add_amount).unwrap_or(None)?;
+		}
+		
+		Some(self.count())
+	}
+	
+	/// Subtracts `subtract_amount` from the entry for `reward_era`. Zero values are still retained.
+	/// Returns None if there is no entry for the reward era.
+	/// Otherwise returns Some(history_count)
+	fn subtract_era_balance(&mut self, reward_era: &T::RewardEra, subtract_amount: &BalanceOf<T>) -> Option<usize> {
+		if let Some(mut entry) = self.0.get_mut(reward_era) {
+			entry.saturating_sub(*subtract_amount);
+		} else {
+			return None
+		}
+		Some(self.count())
+	}
+	
+	pub fn get_staking_amount_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
+		self.0.get(reward_era)
+	}
+	
+	/// Returns the number of history items
+	pub fn count(&self) -> usize {
+		self.0.len()
+	}
+	
+	/// Removes the oldest item if we're at bounds.
+	fn remove_oldest_entry_if_full(&mut self) {
+		if self.0.len().eq(&(T::StakingRewardsPastErasMax::get() as usize)) {
+			let (earliest_key, _earliest_val) = self.0.first_key_value().unwrap();
+			self.0.remove(earliest_key);
+		}
+	}
+	
 }
+
+
 
 /// Struct with utilities for storing and updating unlock chunks
 #[derive(Debug, TypeInfo, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen)]
