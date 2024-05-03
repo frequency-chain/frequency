@@ -43,7 +43,10 @@ use common_primitives::{
 };
 
 pub use common_runtime::{
-	constants::{currency::EXISTENTIAL_DEPOSIT, *},
+	constants::{
+		currency::{CENTS, EXISTENTIAL_DEPOSIT},
+		*,
+	},
 	fee::WeightToFee,
 	proxy::ProxyType,
 };
@@ -507,6 +510,9 @@ impl pallet_capacity::Config for Runtime {
 	type StakingRewardsPastErasMax = ConstU32<30u32>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<16>;
+	// Value determined by desired inflation rate limits for chosen economic model
+	type RewardPoolEachEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
+	type RewardPercentCap = CapacityRewardCap;
 }
 
 impl pallet_schemas::Config for Runtime {
