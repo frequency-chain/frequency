@@ -9,26 +9,10 @@ on:
       - main
 
 jobs:
-  changes:
-    name: Determine Changed Files
-    runs-on: ubuntu-22.04
-    outputs:
-      ci-base-image: ${{steps.filter.outputs.ci-base-image}}
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v4
-      - name: Check for Changed Files
-        uses: dorny/paths-filter@ebc4d7e9ebcb0b1eb21480bb8f43113e996ac77a
-        id: filter
-        with:
-          filters: |
-            ci-base-image:
-              - 'tools/ci/docker/ci-base-image.dockerfile'
-
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -65,7 +49,7 @@ jobs:
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -74,53 +58,3 @@ jobs:
         uses: ./.github/workflows/common/codecov
         with:
           code-cov-token: ${{ secrets.CODECOV_TOKEN }}
-
-  publish-ci-base-image:
-    needs: changes
-    if: needs.changes.outputs.ci-base-image == 'true'
-    name: Publish CI Base Image
-    env:
-      # NOTE: IMAGE_VERSION should be updated if ci-base-image.dockerfile is updated
-      # ci-base-image is published IF and ONLY IF ci-base-image.dockerfile changes
-      # IMAGE_VERSION reflects the latest version of ci-base-image.dockerfile that has been published
-      IMAGE_NAME: ci-base-image
-      IMAGE_VERSION: 1.3.0
-      BRANCH_NAME: main
-    runs-on: ubuntu-22.04
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: "amd64"
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Get Rust Version
-        id: rust_version
-        run: echo "::set-output name=RUST_VERSION::$(rustc --version)"
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
-      - name: Sanitize repo owner slug
-        uses: actions/github-script@v7
-        id: repo_slug
-        with:
-          result-encoding: string
-          script: return `ghcr.io/${context.repo.owner.toLowerCase()}/${context.repo.repo.toLowerCase()}`
-      - name: Build and Push Docker Image
-        uses: docker/build-push-action@v5
-        with:
-          context: tools/ci/docker
-          push: true
-          file: tools/ci/docker/ci-base-image.dockerfile
-          tags: |
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.BRANCH_NAME}}
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
-            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:${{env.IMAGE_VERSION}}
-          build-args: |
-            IMAGE_VERSION=${{env.IMAGE_VERSION}}
-            RUST_VERSION=${{steps.rust_version.outputs.RUST_VERSION}}
