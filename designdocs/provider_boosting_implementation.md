@@ -181,7 +181,12 @@ pub trait StakingRewardsProvider<T: Config> {
     /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
     /// Errors: None
     fn validate_staking_reward_claim(account_id: T::AccountID, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
-}
+
+    /// Calculate a reward for a single era based on a chosen economic model
+    fn era_staking_reward(amount_staked: Self::Balance,
+		total_staked: Self::Balance,
+		reward_pool_size: Self::Balance,
+    ) -> Self::Balance}
 ```
 
 ### NEW: Config items

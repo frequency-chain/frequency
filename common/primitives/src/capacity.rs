@@ -15,9 +15,9 @@ impl TargetValidator for () {
 	}
 }
 
-/// A trait for Non-transferable asset.
+/// A trait for Non-transferable asset
 pub trait Nontransferable {
-	/// Scalar type for representing staked token and capacity balances.
+	/// Scalar type for representing balance of an account.
 	type Balance: Balance;
 
 	/// The balance Capacity for an MSA.
