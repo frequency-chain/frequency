@@ -890,28 +890,28 @@ impl<T: Config> Pallet<T> {
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
 		} else {
-            if staking_type.eq(&StakingType::ProviderBoost) {
-                Perbill::from_rational(amount, staking_target_details.amount)
-                    .mul_ceil(staking_target_details.capacity)
-            } else {
-                Self::calculate_capacity_reduction(
-                    amount,
-                    capacity_details.total_tokens_staked,
-                    capacity_details.total_capacity_issued,
-                )
-            };
-            // this call will return an amount > than requested if the resulting StakingTargetDetails balance
-            // is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
+			if staking_type.eq(&StakingType::ProviderBoost) {
+				Perbill::from_rational(amount, staking_target_details.amount)
+					.mul_ceil(staking_target_details.capacity)
+			} else {
+				Self::calculate_capacity_reduction(
+					amount,
+					capacity_details.total_tokens_staked,
+					capacity_details.total_capacity_issued,
+				)
+			}
+			// this call will return an amount > than requested if the resulting StakingTargetDetails balance
+			// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 		};
 
-        // TODO: update this function
-        let (actual_amount, actual_capacity) = staking_target_details.withdraw(
-            amount,
-            capacity_to_withdraw,
-            T::MinimumStakingAmount::get(),
-        );
-        staking_target_details.withdraw(amount, actual_capacity);
-        capacity_details.withdraw(actual_capacity, actual_amount);
+		// TODO: update this function
+		let (actual_amount, actual_capacity) = staking_target_details.withdraw(
+			amount,
+			capacity_to_withdraw,
+			T::MinimumStakingAmount::get(),
+		);
+
+		capacity_details.withdraw(actual_capacity, actual_amount);
 
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
