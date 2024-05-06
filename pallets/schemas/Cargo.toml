@@ -6,7 +6,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "pallet-schemas"
 publish = false
-repository = "https://github.com/libertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
 [package.metadata.docs.rs]
@@ -14,20 +14,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [dependencies]
-parity-scale-codec = { workspace = true, features = [
-  "derive",
-] }
+parity-scale-codec = { workspace = true, features = ["derive"] }
 log = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 numtoa = { workspace = true, optional = true }
-scale-info = { workspace = true, features = [
-  "derive",
-] }
-serde_json = { workspace = true, features = [
-  "alloc",
-] }
+scale-info = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["alloc"] }
 smallvec = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }

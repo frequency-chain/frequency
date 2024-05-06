@@ -8,7 +8,7 @@ license = "Apache-2.0"
 name = "handles-utils"
 version = "0.0.0"
 publish = false
-repository = "https://github.com/libertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 
 [dependencies]
 phf = { workspace = true, features = ["macros"] }

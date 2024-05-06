@@ -6,7 +6,7 @@ authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
 homepage = "https://frequency.xyz"
-repository = "https://github.com/LibertyDSNP/frequency/"
+repository = "https://github.com/frequency-chain/frequency/"
 edition = "2021"
 
 [dependencies]
@@ -23,16 +23,16 @@ frame-support = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
-substrate-test-runtime-client = { workspace	= true }
+substrate-test-runtime-client = { workspace = true }
 sc-client-api = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"sp-api/std",
-	"sp-runtime/std",
-	'frame-support/std',
-	"pallet-messages-runtime-api/std",
-	'common-primitives/std',
-	"common-helpers/std",
+  "sp-api/std",
+  "sp-runtime/std",
+  'frame-support/std',
+  "pallet-messages-runtime-api/std",
+  'common-primitives/std',
+  "common-helpers/std",
 ]
