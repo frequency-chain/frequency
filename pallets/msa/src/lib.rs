@@ -20,7 +20,7 @@
 //! ## Assumptions
 //!
 //! - Total MSA keys should be less than the constant `Config::MSA::MaxPublicKeysPerMsa`.
-//! - Maximum schemas, for which provider has publishing rights, be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
+//! - Maximum schemas, for which any single provider has publishing rights on behalf of a single user, must be less than `Config::MSA::MaxSchemaGrantsPerDelegation`
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
 // Strong Documentation Lints
