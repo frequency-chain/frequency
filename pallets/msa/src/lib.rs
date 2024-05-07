@@ -862,13 +862,16 @@ pub mod pallet {
 			origin: OriginFor<T>,
 			provider_name: Vec<u8>,
 		) -> DispatchResult {
+			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
+				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
 					provider_key: proposer.clone(),
-					provider_name,
+					provider_name: bounded_name.into(),
 				})
 				.into(),
 			);
