@@ -1,5 +1,5 @@
 use frame_support::{
-	assert_ok,
+	assert_noop, assert_ok,
 	traits::{ChangeMembers, Hash},
 };
 
@@ -8,7 +8,7 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
 
-use crate::tests::mock::*;
+use crate::{tests::mock::*, Error};
 
 #[test]
 fn create_provider_via_governance_happy_path() {
@@ -119,5 +119,19 @@ fn propose_to_be_provider_happy_path() {
 
 		// Confirm that the MSA is now a provider
 		assert!(Msa::is_registered_provider(_new_msa_id));
+	})
+}
+
+#[test]
+fn propose_to_be_provider_long_name_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Create a new MSA account and request that it become a provider
+		let (_new_msa_id, key_pair) = create_account();
+		let proposal_res = Msa::propose_to_be_provider(
+			RuntimeOrigin::signed(key_pair.public().into()),
+			Vec::from("this_is_a_really_long_name_that_should_fail"),
+		);
+
+		assert_noop!(proposal_res, Error::<Test>::ExceedsMaxProviderNameSize);
 	})
 }
