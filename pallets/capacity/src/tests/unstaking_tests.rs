@@ -15,7 +15,6 @@ use sp_core::bounded::BoundedVec;
 #[test]
 fn unstake_happy_path() {
 	new_test_ext().execute_with(|| {
-		// TODO: ProviderBoost after unstake affects reward pool info #1699
 		let token_account = 200;
 		let target: MessageSourceId = 1;
 		let staking_amount = 100;
@@ -277,7 +276,7 @@ fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
 			reward_pool,
 			RewardPoolInfo {
 				total_staked_token: 300,
-				total_reward_pool: 10_000, // TODO: get the constant value and use it
+				total_reward_pool: 10_000,
 				unclaimed_balance: 10_000,
 			}
 		);

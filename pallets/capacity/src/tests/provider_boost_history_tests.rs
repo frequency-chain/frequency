@@ -1,11 +1,12 @@
 use crate::{
 	tests::{
-		mock::{new_test_ext, Capacity, Test},
-		testing_utils::setup_provider,
+		mock::{new_test_ext, Capacity, RuntimeOrigin, Test},
+		testing_utils::{run_to_block, setup_provider, system_run_to_block},
 	},
 	Config, ProviderBoostHistory,
 	StakingType::{MaximumCapacity, ProviderBoost},
 };
+use frame_support::assert_ok;
 use sp_runtime::traits::{Get, Zero};
 
 #[test]
@@ -17,6 +18,32 @@ fn provider_boost_adds_to_staking_history() {
 		setup_provider(&staker, &target, &1_000u64, ProviderBoost);
 		let history = Capacity::get_staking_history_for(staker);
 		assert!(history.is_some());
+	})
+}
+
+#[test]
+fn multiple_provider_boosts_updates_history_correctly() {
+	new_test_ext().execute_with(|| {
+		let staker = 10_000u64;
+		let target = 1u64;
+		setup_provider(&staker, &target, &500u64, ProviderBoost);
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, 200));
+
+		// should update era 1 history
+		let mut history = Capacity::get_staking_history_for(staker).unwrap();
+		assert_eq!(history.count(), 1);
+		assert_eq!(history.get_staking_amount_for_era(&1u32).unwrap(), &700u64);
+
+		system_run_to_block(9);
+		run_to_block(10);
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, 200));
+
+		// should add an era 2 history
+		history = Capacity::get_staking_history_for(staker).unwrap();
+		assert_eq!(history.count(), 2);
+		assert_eq!(history.get_staking_amount_for_era(&2u32).unwrap(), &900u64);
 	})
 }
 

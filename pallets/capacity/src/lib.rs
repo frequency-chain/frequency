@@ -287,7 +287,6 @@ pub mod pallet {
 	pub type StakingRewardPool<T: Config> =
 		CountedStorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
-	// TODO: storage for staking history
 	#[pallet::storage]
 	#[pallet::getter(fn get_staking_history_for)]
 	pub type ProviderBoostHistories<T: Config> =
@@ -668,12 +667,9 @@ impl<T: Config> Pallet<T> {
 		target: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
-		// FIXME: if one is boosting additional amounts, this will fail.
 		let (mut staking_details, stakable_amount) =
 			Self::ensure_can_stake(staker, *target, *amount, ProviderBoost)?;
 		staking_details.staking_type = ProviderBoost;
-		// TODO: update when boost history is implemented fully
-		// let boost_history = Self::get_boost_history_for(staker).unwrap_or_default();
 		Ok((staking_details, stakable_amount))
 	}
 
@@ -725,7 +721,6 @@ impl<T: Config> Pallet<T> {
 			Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
 		reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_add(*amount);
 
-		// TODO:  add boost history record for era when boost history is implemented
 		Self::set_staking_account_and_lock(staker, staking_details)?;
 		Self::set_target_details_for(staker, *target, target_details);
 		Self::set_capacity_for(*target, capacity_details);
@@ -911,7 +906,6 @@ impl<T: Config> Pallet<T> {
 			// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 		};
 
-		// TODO: update this function
 		let (actual_amount, actual_capacity) = staking_target_details.withdraw(
 			amount,
 			capacity_to_withdraw,
@@ -1178,7 +1172,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		let current_era_info = Self::get_current_era();
 		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
 
-		// TODO: update when staking history is implemented
+		// TODO: update after staking history is implemented
 		// For now rewards 1 unit per era for a valid range since there is no history storage
 		let per_era = BalanceOf::<T>::one();
 
