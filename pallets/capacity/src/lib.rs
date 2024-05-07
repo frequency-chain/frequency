@@ -194,6 +194,8 @@ pub mod pallet {
 		type EraLength: Get<u32>;
 
 		/// The maximum number of eras over which one can claim rewards
+		/// Note that you can claim rewards even if you no longer are boosting, because you
+		/// may claim rewards for past eras up to the history limit.
 		#[pallet::constant]
 		type StakingRewardsPastErasMax: Get<u32>;
 
@@ -675,18 +677,6 @@ impl<T: Config> Pallet<T> {
 		Ok((staking_details, stakable_amount))
 	}
 
-	// TODO: this should return StakingAccount, BoostHistory and Balance
-	fn ensure_can_boost(
-		staker: &T::AccountId,
-		target: &MessageSourceId,
-		amount: &BalanceOf<T>,
-	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
-		let (staking_details, stakable_amount) = Self::ensure_can_stake(staker, *target, *amount)?;
-		// TODO: boost history
-		// let boost_history = Self::get_boost_history_for(staker).unwrap_or_defaul();
-		Ok((staking_details, stakable_amount))
-	}
-
 	/// Increase a staking account and target account balances by amount.
 	/// Additionally, it issues Capacity to the MSA target.
 	fn increase_stake_and_issue_capacity(
@@ -740,6 +730,7 @@ impl<T: Config> Pallet<T> {
 		Self::set_target_details_for(staker, *target, target_details);
 		Self::set_capacity_for(*target, capacity_details);
 		Self::set_reward_pool(era, &reward_pool);
+		Self::upsert_boost_history(staker, era, *amount, true)?;
 		Ok(capacity)
 	}
 
@@ -929,6 +920,14 @@ impl<T: Config> Pallet<T> {
 
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
+		if staking_type.eq(&ProviderBoost) {
+			// update staking history
+			let era = Self::get_current_era().era_index;
+			let mut pbh =
+				Self::get_staking_history_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
+			pbh.subtract_era_balance(&era, &actual_amount);
+			ProviderBoostHistories::set(unstaker, Some(pbh));
+		}
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
 
@@ -1009,6 +1008,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Returns whether `account_id` may claim and and be paid token rewards.
+	#[allow(unused)]
 	pub(crate) fn payout_eligible(account_id: T::AccountId) -> bool {
 		let _staking_account =
 			Self::get_staking_account_for(account_id).ok_or(Error::<T>::NotAStakingAccount);
@@ -1055,22 +1055,21 @@ impl<T: Config> Pallet<T> {
 
 	/// updates or inserts a new boost history record for current_era.   Pass 'add' = true for an increase (provider_boost),
 	/// pass 'false' for a decrease (unstake)
-	pub(crate) fn upsert_boost_history(account: &T::AccountId, current_era: T::RewardEra, boost_amount: BalanceOf<T>, add: bool) -> Result<(), DispatchError> {
+	pub(crate) fn upsert_boost_history(
+		account: &T::AccountId,
+		current_era: T::RewardEra,
+		boost_amount: BalanceOf<T>,
+		add: bool,
+	) -> Result<(), DispatchError> {
 		let mut boost_history = Self::get_staking_history_for(account).unwrap_or_default();
 
-		// they've unstaked everything.
-		if boost_history.total_staked.eq(boost_amount) && !add {
-			ProviderBoostHistories::<T>::set(account, None);
-		}
-
-		boost_history.reward_era = current_era;
-
-		if add {
-			boost_history.total_staked = boost_history.total_staked.saturating_add(boost_amount);
+		let upsert_result = if add {
+			boost_history.add_era_balance(&current_era, &boost_amount)
 		} else {
-			boost_history.total_staked = boost_history.total_staked.saturating_sub(boost_amount);
-		}
-		ProviderBoostHistories::<T>::set(account, Some(boost_history.clone()));
+			boost_history.subtract_era_balance(&current_era, &boost_amount)
+		};
+		ensure!(upsert_result.is_some(), Error::<T>::EraOutOfRange);
+		ProviderBoostHistories::<T>::set(account, Some(boost_history));
 		Ok(())
 	}
 }
