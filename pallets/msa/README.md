@@ -14,7 +14,7 @@ All users on Frequency must have an MSA in order to:
 
 ### MSA Id and Keys
 
-Once a user creates an MSA, they are assigned an MSA Id–a unique number permanently assigned to the number at the time of creation as well as one or more control keys attached for control.
+Once a user creates an MSA, they are assigned an MSA Id, a unique number the time of creation with one or more keys attached for control.
 (A control key may only be attached to ONE MSA at any single point in time.)
 
 ### Actions
