@@ -31,7 +31,7 @@ describe('MSA Initializer Load Tests', function () {
     let blockNumber = await getBlockNumber();
     console.log('Starting Block Number:', blockNumber);
 
-    let signatureCallTests: Array<KeyringPair> = [];
+    let signatureCallTests: KeyringPair[] = [];
 
     // Make 50k signatures via 50k/2 loops
     const loopCount = 25_000;
@@ -89,7 +89,7 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
   const fundingSource = getFundingSource('load-signature-registry');
 
   // Create and fund the control keys
-  const controlKeyPromises: Array<Promise<KeyringPair>> = [];
+  const controlKeyPromises: Promise<KeyringPair>[] = [];
   let devAccountNonce = await getNonce(fundingSource);
   const ed = await getExistentialDeposit();
   for (let i = 0; i < count; i++) {
@@ -100,7 +100,7 @@ async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
   const controlKeys = await Promise.all(controlKeyPromises);
 
   // Create the msas
-  const msaPromises: Array<Promise<GeneratedMsa>> = [];
+  const msaPromises: Promise<GeneratedMsa>[] = [];
   for (let i = 0; i < count; i++) {
     msaPromises.push(
       createMsa(controlKeys[i]).then((id) => ({

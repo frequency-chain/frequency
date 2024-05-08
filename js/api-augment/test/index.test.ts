@@ -3,7 +3,7 @@ import { options } from "../index.js";
 import { ApiPromise } from "@polkadot/api";
 import { MockProvider } from "@polkadot/rpc-provider/mock";
 import { TypeRegistry } from "@polkadot/types";
-import metadataRaw from "../metadata.json" assert { type: "json" };
+import metadataRaw from "../metadata.json" with { type: "json" };
 
 describe("index", function () {
   let mock: MockProvider;

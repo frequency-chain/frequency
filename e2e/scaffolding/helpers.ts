@@ -43,7 +43,7 @@ export interface Account {
   keys: KeyringPair;
 }
 
-export type Sr25519Signature = { Sr25519: `0x${string}` };
+export interface Sr25519Signature { Sr25519: `0x${string}` }
 
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
@@ -219,7 +219,7 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 }
 
 // Keep track of all the funded keys so that we can drain them at the end of the test
-const createdKeys: Map<string, KeyringPair> = new Map();
+const createdKeys = new Map<string, KeyringPair>();
 
 export function drainFundedKeys(dest: string) {
   return drainKeys([...createdKeys.values()], dest);
@@ -290,7 +290,7 @@ export async function createAndFundKeypairs(
   const nonce = await getNonce(source);
   const existentialDeposit = await getExistentialDeposit();
 
-  const wait: Array<Promise<KeyringPair>> = keyNames.map((keyName, i) => {
+  const wait: Promise<KeyringPair>[] = keyNames.map((keyName, i) => {
     const keypair = createKeys(keyName + ` ${i}th`);
 
     return fundKeypair(source, keypair, existentialDeposit + amountOverExDep, nonce + i).then(() => keypair);

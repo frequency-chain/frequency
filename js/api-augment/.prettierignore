@@ -6,3 +6,5 @@ multimodules/*
 /*.d.ts
 /*.map
 /*.js
+*.md
+eslint.config.mjs
