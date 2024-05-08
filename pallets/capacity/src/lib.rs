@@ -194,6 +194,8 @@ pub mod pallet {
 		type EraLength: Get<u32>;
 
 		/// The maximum number of eras over which one can claim rewards
+		/// Note that you can claim rewards even if you no longer are boosting, because you
+		/// may claim rewards for past eras up to the history limit.
 		#[pallet::constant]
 		type StakingRewardsPastErasMax: Get<u32>;
 
@@ -285,7 +287,10 @@ pub mod pallet {
 	pub type StakingRewardPool<T: Config> =
 		CountedStorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
-	// TODO: storage for staking history
+	#[pallet::storage]
+	#[pallet::getter(fn get_staking_history_for)]
+	pub type ProviderBoostHistories<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
 	/// stores how many times an account has retargeted, and when it last retargeted.
 	#[pallet::storage]
@@ -662,12 +667,9 @@ impl<T: Config> Pallet<T> {
 		target: &MessageSourceId,
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
-		// FIXME: if one is boosting additional amounts, this will fail.
 		let (mut staking_details, stakable_amount) =
 			Self::ensure_can_stake(staker, *target, *amount, ProviderBoost)?;
 		staking_details.staking_type = ProviderBoost;
-		// TODO: update when boost history is implemented fully
-		// let boost_history = Self::get_boost_history_for(staker).unwrap_or_default();
 		Ok((staking_details, stakable_amount))
 	}
 
@@ -719,11 +721,11 @@ impl<T: Config> Pallet<T> {
 			Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
 		reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_add(*amount);
 
-		// TODO:  add boost history record for era when boost history is implemented
 		Self::set_staking_account_and_lock(staker, staking_details)?;
 		Self::set_target_details_for(staker, *target, target_details);
 		Self::set_capacity_for(*target, capacity_details);
 		Self::set_reward_pool(era, &reward_pool);
+		Self::upsert_boost_history(staker, era, *amount, true)?;
 		Ok(capacity)
 	}
 
@@ -904,7 +906,6 @@ impl<T: Config> Pallet<T> {
 			// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 		};
 
-		// TODO: update this function
 		let (actual_amount, actual_capacity) = staking_target_details.withdraw(
 			amount,
 			capacity_to_withdraw,
@@ -913,6 +914,14 @@ impl<T: Config> Pallet<T> {
 
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
+		if staking_type.eq(&ProviderBoost) {
+			// update staking history
+			let era = Self::get_current_era().era_index;
+			let mut pbh =
+				Self::get_staking_history_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
+			pbh.subtract_era_balance(&era, &actual_amount);
+			ProviderBoostHistories::set(unstaker, Some(pbh));
+		}
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
 
@@ -993,7 +1002,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Returns whether `account_id` may claim and and be paid token rewards.
-	pub fn payout_eligible(account_id: T::AccountId) -> bool {
+	#[allow(unused)]
+	pub(crate) fn payout_eligible(account_id: T::AccountId) -> bool {
 		let _staking_account =
 			Self::get_staking_account_for(account_id).ok_or(Error::<T>::NotAStakingAccount);
 		false
@@ -1012,7 +1022,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Performs the work of withdrawing the requested amount from the old staker-provider target details, and
 	/// from the Provider's capacity details, and depositing it into the new staker-provider target details.
-	pub fn do_retarget(
+	pub(crate) fn do_retarget(
 		staker: &T::AccountId,
 		from_msa: &MessageSourceId,
 		to_msa: &MessageSourceId,
@@ -1034,6 +1044,26 @@ impl<T: Config> Pallet<T> {
 
 		Self::set_target_details_for(staker, *to_msa, to_msa_target);
 		Self::set_capacity_for(*to_msa, capacity_details);
+		Ok(())
+	}
+
+	/// updates or inserts a new boost history record for current_era.   Pass 'add' = true for an increase (provider_boost),
+	/// pass 'false' for a decrease (unstake)
+	pub(crate) fn upsert_boost_history(
+		account: &T::AccountId,
+		current_era: T::RewardEra,
+		boost_amount: BalanceOf<T>,
+		add: bool,
+	) -> Result<(), DispatchError> {
+		let mut boost_history = Self::get_staking_history_for(account).unwrap_or_default();
+
+		let upsert_result = if add {
+			boost_history.add_era_balance(&current_era, &boost_amount)
+		} else {
+			boost_history.subtract_era_balance(&current_era, &boost_amount)
+		};
+		ensure!(upsert_result.is_some(), Error::<T>::EraOutOfRange);
+		ProviderBoostHistories::<T>::set(account, Some(boost_history));
 		Ok(())
 	}
 }
@@ -1142,7 +1172,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		let current_era_info = Self::get_current_era();
 		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
 
-		// TODO: update when staking history is implemented
+		// TODO: update after staking history is implemented
 		// For now rewards 1 unit per era for a valid range since there is no history storage
 		let per_era = BalanceOf::<T>::one();
 

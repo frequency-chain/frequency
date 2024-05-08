@@ -5,6 +5,7 @@ mod eras_tests;
 mod migrate_v2_tests;
 pub mod mock;
 pub mod other_tests;
+mod provider_boost_history_tests;
 mod provider_boost_tests;
 pub mod replenishment_tests;
 mod rewards_provider_tests;
