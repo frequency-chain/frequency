@@ -21,11 +21,5 @@
       "@polkadot/types/lookup": ["./interfaces/types-lookup.ts"]
     }
   },
-  "exclude": [
-    "node_modules/**",
-    "./test/**",
-    "./scripts/**",
-    "**/*.test.ts",
-    "./dist/**"
-  ]
+  "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"]
 }
