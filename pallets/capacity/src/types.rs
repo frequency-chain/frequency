@@ -4,9 +4,10 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Saturating},
-	RuntimeDebug,
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating},
+	BoundedBTreeMap, RuntimeDebug,
 };
+
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
@@ -287,13 +288,109 @@ pub struct RewardPoolInfo<Balance> {
 // TODO: Store retarget unlock chunks in their own storage but can be for any stake type
 // TODO: Store unstake unlock chunks in their own storage but can be for any stake type (at first do only boosted unstake)
 
-/// A record of a staked amount for a complete RewardEra
+/// A record of staked amounts for a complete RewardEra
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-pub struct StakingHistory<Balance, RewardEra> {
-	/// The era this amount was staked
-	pub reward_era: RewardEra,
-	/// The total amount staked for the era
-	pub total_staked: Balance,
+#[scale_info(skip_type_params(T))]
+pub struct ProviderBoostHistory<T: Config>(
+	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::StakingRewardsPastErasMax>,
+);
+
+impl<T: Config> Default for ProviderBoostHistory<T> {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
+impl<T: Config> ProviderBoostHistory<T> {
+	/// Constructs a new empty ProviderBoostHistory
+	pub fn new() -> Self {
+		ProviderBoostHistory(BoundedBTreeMap::new())
+	}
+
+	/// Adds `add_amount` to the entry for `reward_era`.
+	/// Updates entry, or creates a new entry if it does not exist
+	/// returns the total number of history items
+	pub fn add_era_balance(
+		&mut self,
+		reward_era: &T::RewardEra,
+		add_amount: &BalanceOf<T>,
+	) -> Option<usize> {
+		if let Some(entry) = self.0.get_mut(&reward_era) {
+			// update
+			*entry = entry.saturating_add(*add_amount);
+		} else {
+			// insert
+			self.remove_oldest_entry_if_full(); // this guarantees a try_insert never fails
+			let current_staking_amount = self.get_last_staking_amount();
+			if self
+				.0
+				.try_insert(*reward_era, current_staking_amount.saturating_add(*add_amount))
+				.is_err()
+			{
+				return None;
+			};
+		}
+
+		Some(self.count())
+	}
+
+	/// Subtracts `subtract_amount` from the entry for `reward_era`. Zero values are still retained.
+	/// Returns None if there is no entry for the reward era.
+	/// Otherwise returns Some(history_count)
+	pub fn subtract_era_balance(
+		&mut self,
+		reward_era: &T::RewardEra,
+		subtract_amount: &BalanceOf<T>,
+	) -> Option<usize> {
+		if self.count().is_zero() {
+			return None;
+		};
+		if let Some(entry) = self.0.get_mut(reward_era) {
+			*entry = entry.saturating_sub(*subtract_amount);
+		} else {
+			self.remove_oldest_entry_if_full();
+			let current_staking_amount = self.get_last_staking_amount();
+			if self
+				.0
+				.try_insert(*reward_era, current_staking_amount.saturating_sub(*subtract_amount))
+				.is_err()
+			{
+				return None
+			}
+		}
+		Some(self.count())
+	}
+
+	/// Return how much is staked for the given era.  If there is no entry for that era, return None.
+	pub fn get_staking_amount_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
+		self.0.get(reward_era)
+	}
+
+	/// Returns the number of history items
+	pub fn count(&self) -> usize {
+		self.0.len()
+	}
+
+	fn remove_oldest_entry_if_full(&mut self) {
+		if self.is_full() {
+			// compiler errors with unwrap
+			if let Some((earliest_key, _earliest_val)) = self.0.first_key_value() {
+				self.0.remove(&earliest_key.clone());
+			}
+		}
+	}
+
+	fn get_last_staking_amount(&self) -> BalanceOf<T> {
+		// compiler errors with unwrap
+		if let Some((_last_key, last_value)) = self.0.last_key_value() {
+			return *last_value;
+		};
+		Zero::zero()
+	}
+
+	fn is_full(&self) -> bool {
+		self.count().eq(&(T::StakingRewardsPastErasMax::get() as usize))
+	}
 }
 
 /// Struct with utilities for storing and updating unlock chunks
