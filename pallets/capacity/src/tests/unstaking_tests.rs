@@ -15,7 +15,6 @@ use sp_core::bounded::BoundedVec;
 #[test]
 fn unstake_happy_path() {
 	new_test_ext().execute_with(|| {
-		// TODO: ProviderBoost after unstake affects reward pool info #1699
 		let token_account = 200;
 		let target: MessageSourceId = 1;
 		let staking_amount = 100;
@@ -277,7 +276,7 @@ fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
 			reward_pool,
 			RewardPoolInfo {
 				total_staked_token: 300,
-				total_reward_pool: 10_000, // TODO: get the constant value and use it
+				total_reward_pool: 10_000,
 				unclaimed_balance: 10_000,
 			}
 		);
@@ -306,5 +305,38 @@ fn unstake_fills_up_common_unlock_for_any_target() {
 			Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50),
 			Error::<Test>::MaxUnlockingChunksExceeded
 		);
+	})
+}
+
+#[test]
+fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
+	new_test_ext().execute_with(|| {
+		let staker = 10_000;
+		let target1 = 1;
+		register_provider(target1, String::from("Test Target"));
+
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
+		let mut pbh = Capacity::get_staking_history_for(staker).unwrap();
+		assert_eq!(pbh.count(), 1);
+
+		// If unstaking in the next era, this should add a new staking history entry.
+		system_run_to_block(9);
+		run_to_block(11);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50));
+		pbh = Capacity::get_staking_history_for(staker).unwrap();
+		assert_eq!(pbh.count(), 2);
+		assert_eq!(pbh.get_staking_amount_for_era(&2u32).unwrap(), &950u64);
+	})
+}
+
+#[test]
+fn unstake_maximum_does_not_change_provider_boost_history() {
+	new_test_ext().execute_with(|| {
+		let staker = 10_000;
+		let target1 = 1;
+		register_provider(target1, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target1, 1_000));
+		assert!(Capacity::get_staking_history_for(staker).is_none());
 	})
 }

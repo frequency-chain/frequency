@@ -63,7 +63,7 @@ fn provider_boost_updates_reward_pool_history() {
 			reward_pool,
 			RewardPoolInfo {
 				total_staked_token: 700,
-				total_reward_pool: 10_000, // TODO: get the constant value and use it
+				total_reward_pool: 10_000,
 				unclaimed_balance: 10_000,
 			}
 		);
