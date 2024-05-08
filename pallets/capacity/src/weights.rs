@@ -8,7 +8,7 @@
 //! WASM-EXECUTION: `Compiled`, CHAIN: `Some("frequency-bench")`, DB CACHE: `1024`
 
 // Executed Command:
-// ./scripts/../target/release/frequency
+// ./scripts/../target/bench-dev/frequency
 // benchmark
 // pallet
 // --pallet=pallet_capacity
@@ -78,7 +78,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn withdraw_unstaked() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `285`
+		//  Measured:  `226`
 		//  Estimated: `6249`
 		// Minimum execution time: 25_054_000 picoseconds.
 		Weight::from_parts(25_867_000, 6249)
@@ -141,8 +141,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `315`
 		//  Estimated: `7601`
-		// Minimum execution time: 24_000_000 picoseconds.
-		Weight::from_parts(25_000_000, 7601)
+		// Minimum execution time: 29_000_000 picoseconds.
+		Weight::from_parts(31_000_000, 7601)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -162,14 +162,16 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostHistories` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostHistories` (`max_values`: None, `max_size`: Some(641), added: 3116, mode: `MaxEncodedLen`)
 	fn provider_boost() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `247`
 		//  Estimated: `6249`
-		// Minimum execution time: 34_000_000 picoseconds.
-		Weight::from_parts(35_000_000, 6249)
-			.saturating_add(T::DbWeight::get().reads(8_u64))
-			.saturating_add(T::DbWeight::get().writes(5_u64))
+		// Minimum execution time: 45_000_000 picoseconds.
+		Weight::from_parts(48_000_000, 6249)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 }
 
@@ -208,7 +210,7 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
 	fn withdraw_unstaked() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `285`
+		//  Measured:  `226`
 		//  Estimated: `6249`
 		// Minimum execution time: 25_054_000 picoseconds.
 		Weight::from_parts(25_867_000, 6249)
@@ -242,10 +244,10 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `343`
 		//  Estimated: `5071`
-		// Minimum execution time: 23_861_000 picoseconds.
-		Weight::from_parts(24_530_000, 5071)
-			.saturating_add(RocksDbWeight::get().reads(4_u64))
-			.saturating_add(RocksDbWeight::get().writes(4_u64))
+		// Minimum execution time: 28_000_000 picoseconds.
+		Weight::from_parts(29_000_000, 5071)
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 	/// Storage: `Capacity::EpochLength` (r:0 w:1)
 	/// Proof: `Capacity::EpochLength` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -271,8 +273,8 @@ impl WeightInfo for () {
 		// Proof Size summary in bytes:
 		//  Measured:  `315`
 		//  Estimated: `7601`
-		// Minimum execution time: 24_000_000 picoseconds.
-		Weight::from_parts(25_000_000, 7601)
+		// Minimum execution time: 29_000_000 picoseconds.
+		Weight::from_parts(31_000_000, 7601)
 			.saturating_add(RocksDbWeight::get().reads(7_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
@@ -292,14 +294,16 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostHistories` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostHistories` (`max_values`: None, `max_size`: Some(641), added: 3116, mode: `MaxEncodedLen`)
 	fn provider_boost() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `247`
 		//  Estimated: `6249`
-		// Minimum execution time: 34_000_000 picoseconds.
-		Weight::from_parts(35_000_000, 6249)
-			.saturating_add(RocksDbWeight::get().reads(8_u64))
-			.saturating_add(RocksDbWeight::get().writes(5_u64))
+		// Minimum execution time: 45_000_000 picoseconds.
+		Weight::from_parts(48_000_000, 6249)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
 }
 

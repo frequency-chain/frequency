@@ -194,9 +194,6 @@ benchmarks-multi:
 benchmarks-multi-local:
 	./scripts/run_benchmarks.sh -t bench-dev $(PALLETS)
 
-benchmarks-capacity:
-	./scripts/run_benchmark.sh -p capacity
-
 .PHONY: docs
 docs:
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo doc --no-deps --features frequency
