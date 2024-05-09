@@ -22,13 +22,6 @@ export default tseslint.config(
       "@typescript-eslint/no-unused-vars": "off",
       "@typescript-eslint/no-explicit-any": "off",
       semi: ["error", "always"],
-      quotes: [
-        "error",
-        "double",
-        {
-          avoidEscape: true,
-        },
-      ],
       "mocha/no-setup-in-describe": "off",
       "no-use-before-define": "off",
       "no-unused-vars": "off",
