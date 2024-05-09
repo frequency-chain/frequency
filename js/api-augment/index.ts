@@ -1,9 +1,9 @@
-import { ExtDef } from "@polkadot/types/extrinsic/signedExtensions/types";
-import "./interfaces/types-lookup.js";
-import "./interfaces/augment-api.js";
-import "./interfaces/augment-types.js";
-import "./interfaces/index.js";
-import * as definitions from "./interfaces/definitions.js";
+import { ExtDef } from '@polkadot/types/extrinsic/signedExtensions/types';
+import './interfaces/types-lookup.js';
+import './interfaces/augment-api.js';
+import './interfaces/augment-types.js';
+import './interfaces/index.js';
+import * as definitions from './interfaces/definitions.js';
 
 /**
  * Build up the types for ApiPromise.create

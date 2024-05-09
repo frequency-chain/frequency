@@ -1,11 +1,11 @@
-import assert from "assert";
-import { options } from "../index.js";
-import { ApiPromise } from "@polkadot/api";
-import { MockProvider } from "@polkadot/rpc-provider/mock";
-import { TypeRegistry } from "@polkadot/types";
-import metadataRaw from "../metadata.json" assert { type: "json" };
+import assert from 'assert';
+import { options } from '../index.js';
+import { ApiPromise } from '@polkadot/api';
+import { MockProvider } from '@polkadot/rpc-provider/mock';
+import { TypeRegistry } from '@polkadot/types';
+import metadataRaw from '../metadata.json' with { type: 'json' };
 
-describe("index", function () {
+describe('index', function () {
   let mock: MockProvider;
   let api: ApiPromise;
 
@@ -24,20 +24,20 @@ describe("index", function () {
     await mock.disconnect();
   });
 
-  it("should know about runtime apis", function () {
+  it('should know about runtime apis', function () {
     const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
     assert.deepEqual(topLevelRuntimeApis, [
-      "AdditionalRuntimeApi",
-      "CapacityTransactionPaymentRuntimeApi",
-      "HandlesRuntimeApi",
-      "MessagesRuntimeApi",
-      "MsaRuntimeApi",
-      "SchemasRuntimeApi",
-      "StatefulStorageRuntimeApi",
+      'AdditionalRuntimeApi',
+      'CapacityTransactionPaymentRuntimeApi',
+      'HandlesRuntimeApi',
+      'MessagesRuntimeApi',
+      'MsaRuntimeApi',
+      'SchemasRuntimeApi',
+      'StatefulStorageRuntimeApi',
     ]);
   });
 
-  it("should have rpc calls", async function () {
+  it('should have rpc calls', async function () {
     assert.notEqual(api.rpc.messages, undefined);
     assert.notEqual(api.rpc.msa, undefined);
     assert.notEqual(api.rpc.schemas, undefined);

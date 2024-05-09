@@ -1,3 +1,4 @@
+import '@frequency-chain/api-augment';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -23,46 +24,64 @@ import { u8aWrapBytes } from '@polkadot/util';
 import type { Call } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
 
-export type ReleaseSchedule = {
+export interface ReleaseSchedule {
   start: number;
   period: number;
   periodCount: number;
   perPeriod: bigint;
-};
+}
 
-export type AddKeyData = { msaId?: u64; expiration?: any; newPublicKey?: any };
-export type AddProviderPayload = { authorizedMsaId?: u64; schemaIds?: u16[]; expiration?: any };
-export type ItemizedSignaturePayload = {
+export interface AddKeyData {
+  msaId?: u64;
+  expiration?: any;
+  newPublicKey?: any;
+}
+export interface AddProviderPayload {
+  authorizedMsaId?: u64;
+  schemaIds?: u16[];
+  expiration?: any;
+}
+export interface ItemizedSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
   targetHash?: u32;
   expiration?: any;
   actions?: any;
-};
-export type ItemizedSignaturePayloadV2 = { schemaId?: u16; targetHash?: u32; expiration?: any; actions?: any };
-export type PaginatedUpsertSignaturePayload = {
+}
+export interface ItemizedSignaturePayloadV2 {
+  schemaId?: u16;
+  targetHash?: u32;
+  expiration?: any;
+  actions?: any;
+}
+export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
   pageId?: u16;
   targetHash?: u32;
   expiration?: any;
   payload?: any;
-};
-export type PaginatedUpsertSignaturePayloadV2 = {
+}
+export interface PaginatedUpsertSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
   targetHash?: u32;
   expiration?: any;
   payload?: any;
-};
-export type PaginatedDeleteSignaturePayload = {
+}
+export interface PaginatedDeleteSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
   pageId?: u16;
   targetHash?: u32;
   expiration?: any;
-};
-export type PaginatedDeleteSignaturePayloadV2 = { schemaId?: u16; pageId?: u16; targetHash?: u32; expiration?: any };
+}
+export interface PaginatedDeleteSignaturePayloadV2 {
+  schemaId?: u16;
+  pageId?: u16;
+  targetHash?: u32;
+  expiration?: any;
+}
 
 export class EventError extends Error {
   name: string = '';
@@ -136,10 +155,10 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
-export type ParsedEventResult<C extends Codec[] = Codec[], N = unknown> = {
+export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
   target?: ParsedEvent<C, N>;
   eventMap: EventMap;
-};
+}
 
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
@@ -285,8 +304,6 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 export class ExtrinsicHelper {
   public static api: ApiRx;
   public static apiPromise: ApiPromise;
-
-  constructor() {}
 
   public static async initialize(providerUrl?: string | string[] | undefined) {
     ExtrinsicHelper.api = await connect(providerUrl);

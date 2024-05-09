@@ -1,56 +1,56 @@
 export default {
   rpc: {
     getPaginatedStorage: {
-      description: "Gets pages of stateful storage",
+      description: 'Gets pages of stateful storage',
       params: [
         {
-          name: "msa_id",
-          type: "MessageSourceId",
+          name: 'msa_id',
+          type: 'MessageSourceId',
         },
         {
-          name: "schema_id",
-          type: "SchemaId",
+          name: 'schema_id',
+          type: 'SchemaId',
         },
       ],
-      type: "Vec<PaginatedStorageResponse>",
+      type: 'Vec<PaginatedStorageResponse>',
     },
     getItemizedStorage: {
-      description: "Gets itemized of stateful storage",
+      description: 'Gets itemized of stateful storage',
       params: [
         {
-          name: "msa_id",
-          type: "MessageSourceId",
+          name: 'msa_id',
+          type: 'MessageSourceId',
         },
         {
-          name: "schema_id",
-          type: "SchemaId",
+          name: 'schema_id',
+          type: 'SchemaId',
         },
       ],
-      type: "ItemizedStoragePageResponse",
+      type: 'ItemizedStoragePageResponse',
     },
   },
   types: {
-    PageId: "u16",
-    PageHash: "u32",
-    PageNonce: "u16",
+    PageId: 'u16',
+    PageHash: 'u32',
+    PageNonce: 'u16',
     ItemizedStorageResponse: {
-      index: "u16",
-      payload: "Vec<u8>",
+      index: 'u16',
+      payload: 'Vec<u8>',
     },
     PaginatedStorageResponse: {
-      page_id: "PageId",
-      msa_id: "MessageSourceId",
-      schema_id: "SchemaId",
-      content_hash: "PageHash",
-      nonce: "PageNonce",
-      payload: "Vec<u8>",
+      page_id: 'PageId',
+      msa_id: 'MessageSourceId',
+      schema_id: 'SchemaId',
+      content_hash: 'PageHash',
+      nonce: 'PageNonce',
+      payload: 'Vec<u8>',
     },
     ItemizedStoragePageResponse: {
-      msa_id: "MessageSourceId",
-      schema_id: "SchemaId",
-      content_hash: "PageHash",
-      nonce: "PageNonce",
-      items: "Vec<ItemizedStorageResponse>",
+      msa_id: 'MessageSourceId',
+      schema_id: 'SchemaId',
+      content_hash: 'PageHash',
+      nonce: 'PageNonce',
+      items: 'Vec<ItemizedStorageResponse>',
     },
   },
   runtime: {
@@ -58,32 +58,32 @@ export default {
       {
         methods: {
           get_paginated_storage: {
-            description: "Fetch the stateful paginated storage by msa_id and schema_id",
+            description: 'Fetch the stateful paginated storage by msa_id and schema_id',
             params: [
               {
-                name: "msa_id",
-                type: "MessageSourceId",
+                name: 'msa_id',
+                type: 'MessageSourceId',
               },
               {
-                name: "schema_id",
-                type: "SchemaId",
+                name: 'schema_id',
+                type: 'SchemaId',
               },
             ],
-            type: "Result<Vec<PaginatedStorageResponse>, SpRuntimeDispatchError>",
+            type: 'Result<Vec<PaginatedStorageResponse>, SpRuntimeDispatchError>',
           },
           get_itemized_storage: {
-            description: "Fetch the stateful itemized storage by msa_id and schema_id",
+            description: 'Fetch the stateful itemized storage by msa_id and schema_id',
             params: [
               {
-                name: "msa_id",
-                type: "MessageSourceId",
+                name: 'msa_id',
+                type: 'MessageSourceId',
               },
               {
-                name: "schema_id",
-                type: "SchemaId",
+                name: 'schema_id',
+                type: 'SchemaId',
               },
             ],
-            type: "Result<ItemizedStoragePageResponse, SpRuntimeDispatchError>",
+            type: 'Result<ItemizedStoragePageResponse, SpRuntimeDispatchError>',
           },
         },
         version: 1,
