@@ -31,8 +31,16 @@ export interface ReleaseSchedule {
   perPeriod: bigint;
 }
 
-export interface AddKeyData { msaId?: u64; expiration?: any; newPublicKey?: any }
-export interface AddProviderPayload { authorizedMsaId?: u64; schemaIds?: u16[]; expiration?: any }
+export interface AddKeyData {
+  msaId?: u64;
+  expiration?: any;
+  newPublicKey?: any;
+}
+export interface AddProviderPayload {
+  authorizedMsaId?: u64;
+  schemaIds?: u16[];
+  expiration?: any;
+}
 export interface ItemizedSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -40,7 +48,12 @@ export interface ItemizedSignaturePayload {
   expiration?: any;
   actions?: any;
 }
-export interface ItemizedSignaturePayloadV2 { schemaId?: u16; targetHash?: u32; expiration?: any; actions?: any }
+export interface ItemizedSignaturePayloadV2 {
+  schemaId?: u16;
+  targetHash?: u32;
+  expiration?: any;
+  actions?: any;
+}
 export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -63,7 +76,12 @@ export interface PaginatedDeleteSignaturePayload {
   targetHash?: u32;
   expiration?: any;
 }
-export interface PaginatedDeleteSignaturePayloadV2 { schemaId?: u16; pageId?: u16; targetHash?: u32; expiration?: any }
+export interface PaginatedDeleteSignaturePayloadV2 {
+  schemaId?: u16;
+  pageId?: u16;
+  targetHash?: u32;
+  expiration?: any;
+}
 
 export class EventError extends Error {
   name: string = '';

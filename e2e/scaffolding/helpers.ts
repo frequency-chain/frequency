@@ -43,7 +43,9 @@ export interface Account {
   keys: KeyringPair;
 }
 
-export interface Sr25519Signature { Sr25519: `0x${string}` }
+export interface Sr25519Signature {
+  Sr25519: `0x${string}`;
+}
 
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
