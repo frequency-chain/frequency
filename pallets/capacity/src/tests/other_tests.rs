@@ -215,25 +215,3 @@ fn impl_balance_returns_zero_when_target_capacity_is_not_found() {
 		assert_eq!(Capacity::balance(msa_id), BalanceOf::<Test>::zero());
 	});
 }
-
-use sp_std::ops::Div;
-#[test]
-fn temp() {
-	new_test_ext().execute_with(|| {
-		let current_block: BlockNumberFor<Test> = 100_000u32.into();
-		let history_limit: u32 = <Test as Config>::StakingRewardsPastErasMax::get();
-		let total_reward_pool: BalanceOf<Test> = <Test as Config>::RewardPoolEachEra::get();
-		let unclaimed_balance: BalanceOf<Test> = total_reward_pool.div(2);
-		let total_staked_token: BalanceOf<Test> = unclaimed_balance.div(2);
-
-		let era_index = history_limit + 1;
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index, started_at: current_block });
-
-		for i in 0..history_limit {
-			StakingRewardPool::<Test>::insert(
-				i,
-				RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance },
-			);
-		}
-	})
-}
