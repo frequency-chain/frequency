@@ -8,9 +8,8 @@ use sp_runtime::traits::Zero;
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, CurrentEraInfo, EpochInfo,
-	FreezeReason, RewardEraInfo, RewardPoolInfo, StakingDetails, StakingRewardPool,
-	StakingTargetDetails,
+	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo, FreezeReason,
+	StakingDetails, StakingTargetDetails,
 };
 
 use super::{mock::*, testing_utils::*};
