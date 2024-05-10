@@ -1,6 +1,6 @@
 # Schemas Pallet
 
-The Schemas Pallet provides functionality for handling schemas.
+The Schemas Pallet provides universal schema registration for data flowing through Frequency.
 
 ## Summary
 
