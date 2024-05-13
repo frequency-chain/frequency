@@ -120,15 +120,38 @@ benchmarks! {
 		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
 	}
 
-	on_initialize {
+	start_new_epoch_if_needed {
 		let current_block: BlockNumberFor<T> = 100_000u32.into();
 		let current_epoch: T::EpochNumber = 10_000u32.into();
 		set_up_epoch::<T>(current_block, current_epoch);
-	}: {
-		Capacity::<T>::on_initialize(current_block);
+	}:  {
+		Capacity::<T>::start_new_epoch_if_needed(current_block)
 	} verify {
 		assert_eq!(current_epoch.saturating_add(1u32.into()), Capacity::<T>::get_current_epoch());
 		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
+	}
+
+	start_new_reward_era_if_needed {
+		let current_block: BlockNumberFor<T> = 1_209_600u32.into();
+		let history_limit: u32 = <T as Config>::StakingRewardsPastErasMax::get();
+		let total_reward_pool: BalanceOf<T> = <T as Config>::RewardPoolEachEra::get();
+		let unclaimed_balance: BalanceOf<T> = 5_000u32.into();
+		let total_staked_token: BalanceOf<T> = 5_000u32.into();
+		let started_at: BlockNumberFor<T> = current_block.saturating_sub(<T as Config>::EraLength::get().into());
+
+		let current_era: T::RewardEra = (history_limit + 1u32).into();
+		CurrentEraInfo::<T>::set(RewardEraInfo{ era_index: current_era, started_at });
+
+		for i in 0..history_limit {
+			let era: T::RewardEra = i.into();
+			StakingRewardPool::<T>::insert(era, RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance});
+		}
+	}: {
+		Capacity::<T>::start_new_reward_era_if_needed(current_block);
+	} verify {
+		let new_era_info = Capacity::<T>::get_current_era();
+		assert_eq!(current_era.saturating_add(1u32.into()), new_era_info.era_index);
+		assert_eq!(current_block, new_era_info.started_at);
 	}
 	unstake {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
