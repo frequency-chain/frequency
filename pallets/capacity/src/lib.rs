@@ -930,9 +930,7 @@ impl<T: Config> Pallet<T> {
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(One::one()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
-			T::WeightInfo::on_initialize()
-				.saturating_add(T::DbWeight::get().reads(1))
-				.saturating_add(T::DbWeight::get().writes(2))
+			T::WeightInfo::start_new_epoch_if_needed()
 		} else {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
 			T::DbWeight::get().reads(2).saturating_add(RocksDbWeight::get().writes(1))
@@ -944,6 +942,7 @@ impl<T: Config> Pallet<T> {
 			Self::get_current_era(); // 1r
 
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
+			// 1r
 			let new_era_info = RewardEraInfo {
 				era_index: current_era_info.era_index.saturating_add(One::one()),
 				started_at: current_block,
@@ -970,10 +969,7 @@ impl<T: Config> Pallet<T> {
 				unclaimed_balance: total_reward_pool,
 			};
 			StakingRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
-
-			T::WeightInfo::on_initialize()
-				.saturating_add(T::DbWeight::get().reads(3))
-				.saturating_add(T::DbWeight::get().writes(3))
+			T::WeightInfo::start_new_reward_era_if_needed()
 		} else {
 			T::DbWeight::get().reads(1)
 		}
