@@ -25,7 +25,7 @@ For example, two schemas might both only have a hash for contents, but one is a 
 Mainnet schemas must be approved by the Frequency Council.
 This is to prevent malicious schemas and increase the documentation around the schemas available.
 
-On Testnets, schemas can be created by anyone, so there is _no_ guarantees around schema correctness or quality.
+On Testnets, schemas can be created by anyone, so there are _no_ guarantees around schema correctness or quality.
 If you want to use a particular schema on a testnet, it is suggested that you use specific Schema Ids or publish the needed schema yourself.
 
 ### Actions
@@ -44,7 +44,7 @@ The Schemas pallet provides for:
 | Name/Description                                                                                      | Caller                                          | Payment | Key Events                                                                                                                               | Runtime Added |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
 | `set_max_schema_model_bytes`<br />Governance action to alter the maximum byte length of Schema models | Governance                                      | Tokens  | [`SchemaMaxSizeChanged`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaMaxSizeChanged) | 1             |
-| `propose_to_create_schema_v2`<br />Creates a Council proposal a new schema to the Frequency Council   | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 66            |
+| `propose_to_create_schema_v2`<br />Creates a proposal to the Frequency Council for a new schema    | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 66            |
 | `create_schema_via_governance_v2`<br />Governance called version of `create_schema_v3`                | Frequency Council                               | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 66            |
 | `create_schema_v3`<br />Creates a new Schema.                                                         | Mainnet: Governance<br />Testnet: Token Account | Tokens  | [`SchemaCreated`](https://frequency-chain.github.io/frequency/pallet_schemas/pallet/enum.Event.html#variant.SchemaCreated)               | 1             |
 | `propose_to_create_schema_name`<br />Creates a Council proposal to set the name of a Schema           | Token Account                                   | Tokens  | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                 | 1             |
