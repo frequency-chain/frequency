@@ -20,6 +20,27 @@ For example, two schemas might both only have a hash for contents, but one is a 
 - Settings: Various options for the Schema like signature requirements.
 - Payload Location: The location the data for this Schema is stored.
 
+#### Model Types
+
+- [`Parquet`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.ModelType.html#variant.Parquet): Designed for lists and when a Provider is collecting items from many different MSAs and publishing them together.
+- [`AvroBinary`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.ModelType.html#variant.AvroBinary): Useful for most generic data structures.
+
+#### Settings
+
+- [`AppendOnly`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.SchemaSetting.html#variant.AppendOnly)
+  - Prior data is immutable and all new data is appended to existing data.
+  - For Payload Locations: `Itemized` or `Paginated`
+- [`SignatureRequired`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.SchemaSetting.html#variant.SignatureRequired)
+  - An MSA control key signature is required instead of a delegation.
+  - For Payload Locations: `Itemized` or `Paginated`
+
+#### Payload Locations
+
+- [`OnChain`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.PayloadLocation.html#variant.OnChain): Data is stored directly in the Messages pallet data storage, usually as `AvroBinary`.
+- [`IPFS`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.PayloadLocation.html#variant.IPFS): Data is stored in IPFS and Messages pallet stores the CID.
+- [`Itemized`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.PayloadLocation.html#variant.Itemized): Data is stored in the Stateful Storage pallet as an array of individual items.
+- [`Paginated`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.PayloadLocation.html#variant.Paginated): Data is stored in the Stateful Storage pallet as a list of paged blobs.
+
 ### Mainnet vs Testnet Schema Creation
 
 Mainnet schemas must be approved by the Frequency Council.

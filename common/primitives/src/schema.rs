@@ -51,7 +51,7 @@ pub enum SchemaSetting {
 	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
 	AppendOnly,
 	/// Schema may enforce signature requirement on payload.
-	/// Applied to schemas of type `PayloadLocation::Paginated`.
+	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
 	SignatureRequired,
 }
 
