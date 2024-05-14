@@ -29,7 +29,7 @@ For example, two schemas might both only have a hash for contents, but one is a 
 
 - [`AppendOnly`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.SchemaSetting.html#variant.AppendOnly)
   - Prior data is immutable and all new data is appended to existing data.
-  - For Payload Locations: `Itemized` or `Paginated`
+  - For Payload Locations: `Itemized`
 - [`SignatureRequired`](https://frequency-chain.github.io/frequency/common_primitives/schema/enum.SchemaSetting.html#variant.SignatureRequired)
   - An MSA control key signature is required instead of a delegation.
   - For Payload Locations: `Itemized` or `Paginated`

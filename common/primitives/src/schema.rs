@@ -48,7 +48,7 @@ pub enum PayloadLocation {
 #[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub enum SchemaSetting {
 	/// Schema setting to enforce append-only behavior on payload.
-	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
+	/// Applied to schemas of type `PayloadLocation::Itemized`.
 	AppendOnly,
 	/// Schema may enforce signature requirement on payload.
 	/// Applied to schemas of type `PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
