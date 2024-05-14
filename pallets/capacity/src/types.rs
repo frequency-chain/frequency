@@ -4,7 +4,7 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating},
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
 
@@ -366,6 +366,27 @@ impl<T: Config> ProviderBoostHistory<T> {
 		self.0.get(reward_era)
 	}
 
+	/// Returns how much was staked during the given era. If there is no history entry for `reward_era`,
+	/// returns the next earliest entry's staking balance. Note there is no sense of what the current
+	/// era is; subsequent calls could return a different result if 'reward_era' is the current era and
+	/// there has been a boost or unstake.
+	pub fn get_amount_staked_for_era(&self, reward_era: &T::RewardEra) -> BalanceOf<T> {
+		// this gives an ordered-by-key Iterator
+		let mut bmap_iter = self.0.iter();
+		let mut eligible_amount: BalanceOf<T> = Zero::zero();
+		while let Some((era, balance)) = bmap_iter.next() {
+			if era.eq(reward_era) {
+				return *balance
+			}
+			// there was a boost or unstake in this era.
+			else if era.gt(reward_era) {
+				return eligible_amount;
+			} // eligible_amount has been staked through reward_era
+			eligible_amount = *balance;
+		}
+		eligible_amount
+	}
+
 	/// Returns the number of history items
 	pub fn count(&self) -> usize {
 		self.0.len()
@@ -488,4 +509,19 @@ pub trait StakingRewardsProvider<T: Config> {
 	/// Return the effective amount when staked for a Provider Boost
 	/// The amount is multiplied by a factor > 0 and < 1.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
+}
+
+/// Result of checking a Boost History item to see if it's eligible for a reward.
+#[derive(Copy, Clone, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct UnclaimedRewardInfo<T: Config> {
+	/// The Reward Era for which this reward was earned
+	pub reward_era: T::RewardEra,
+	/// When this reward expires, i.e. can no longer be claimed
+	pub expires_at_block: BlockNumberFor<T>,
+	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
+	/// staked in this era.
+	pub staked_amount: BalanceOf<T>,
+	/// The amount in token of the reward (only if it can be calculated using only on chain data)
+	pub earned_amount: BalanceOf<T>,
 }

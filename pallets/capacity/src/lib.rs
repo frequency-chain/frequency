@@ -60,7 +60,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, DispatchError, Perbill, Permill,
+	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
 };
 
 pub use common_primitives::{
@@ -1061,6 +1061,31 @@ impl<T: Config> Pallet<T> {
 		ensure!(upsert_result.is_some(), Error::<T>::EraOutOfRange);
 		ProviderBoostHistories::<T>::set(account, Some(boost_history));
 		Ok(())
+	}
+
+	#[allow(unused)]
+	pub(crate) fn check_for_unclaimed_rewards(
+		_current_block: BlockNumberFor<T>,
+		account: &T::AccountId,
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::StakingRewardsPastErasMax>, DispatchError> {
+		// let era_info = Self::get_current_era();
+		// let staking_history =
+		// 	Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?;
+		// let max_history = T::StakingRewardsPastErasMax::get();
+		// let era_length = T::EraLength::get();
+		// let res: [UnclaimedRewardInfo<T>] = staking_history.0.iter().map(|era, value|{
+		// 	let expires_at_era = 0;
+		// 	let expires_at_block = 0;
+		// 	let earned_amount = 0;
+		//
+		// 	UnclaimedRewardInfo {
+		// 		expires_at_block,
+		// 		earned_amount,
+		// 		reward_era: era,
+		// 		staked_amount: value, // wrong
+		// 	}
+		// }).collect();
+		Err(Error::<T>::NotAStakingAccount.into())
 	}
 }
 
