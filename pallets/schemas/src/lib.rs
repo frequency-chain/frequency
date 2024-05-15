@@ -1,45 +1,18 @@
-//! # Schemas Pallet
-//! The Schemas pallet provides functionality for handling schemas.
+//! Schema Management for Message and Stateful Storage
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `SchemasRuntimeApi`](../pallet_schemas_runtime_api/trait.SchemasRuntimeApi.html)
 //! - [Custom RPC API: `SchemasApiServer`](../pallet_schemas_rpc/trait.SchemasApiServer.html)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
-//!
-//! ## Overview
-//!
-//! This pallet provides an on chain repository for schemas, thereby allowing participants of the
-//! network to flexibly interact and exchange messages with each other without facing the challenge
-//! of sharing, managing and validating messages as well as schemas between them.
-//!
-//! <b>NOTE</b>: In this pallet we define the <b>payload</b> structure that is used in <a href="../pallet_messages/index.html">Messages Pallet</a>.
-//!
-//! The Schema pallet provides functions for:
-//!
-//! - Registering a new schema.
-//! - Setting maximum schema model size by governance.
-//! - Retrieving latest registered schema id.
-//! - Retrieving schemas by their id.
-//!
-//!
-//! ## Terminology
-//!
-//! - **Schema:** The structure that defines how a Message is stored and structured.
-//! - **Schema Model:** Serialization/Deserialization details of the schema
-//! - **Schema Model Type:** The type of the following Serialization/Deserialization. It can be
-//!   Avro, Parquet or ...
+#![doc = include_str!("../README.md")]
 //!
 //! ## Implementations
 //!
 //! - [`SchemaValidator`](../common_primitives/schema/trait.SchemaValidator.html): Functions for accessing and validating Schemas. This implementation is what is used in the runtime.
 //! - [`SchemaProvider`](../common_primitives/schema/trait.SchemaProvider.html): Allows another pallet to resolve schema information.
-//!
-//! ## Genesis config
-//!
-//! The Schemas pallet depends on the [`GenesisConfig`].
-//!
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
