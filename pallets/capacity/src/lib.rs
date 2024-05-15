@@ -187,6 +187,7 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ EncodeLike
 			+ Into<BalanceOf<Self>>
+			+ Into<BlockNumberFor<Self>>
 			+ TypeInfo;
 
 		/// The number of blocks in a RewardEra
@@ -1065,27 +1066,63 @@ impl<T: Config> Pallet<T> {
 
 	#[allow(unused)]
 	pub(crate) fn check_for_unclaimed_rewards(
-		_current_block: BlockNumberFor<T>,
 		account: &T::AccountId,
 	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::StakingRewardsPastErasMax>, DispatchError> {
-		// let era_info = Self::get_current_era();
-		// let staking_history =
-		// 	Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?;
-		// let max_history = T::StakingRewardsPastErasMax::get();
-		// let era_length = T::EraLength::get();
-		// let res: [UnclaimedRewardInfo<T>] = staking_history.0.iter().map(|era, value|{
-		// 	let expires_at_era = 0;
-		// 	let expires_at_block = 0;
-		// 	let earned_amount = 0;
-		//
-		// 	UnclaimedRewardInfo {
-		// 		expires_at_block,
-		// 		earned_amount,
-		// 		reward_era: era,
-		// 		staked_amount: value, // wrong
-		// 	}
-		// }).collect();
-		Err(Error::<T>::NotAStakingAccount.into())
+		let mut unclaimed_rewards: BoundedVec<
+			UnclaimedRewardInfo<T>,
+			T::StakingRewardsPastErasMax,
+		> = BoundedVec::new();
+		let staking_history =
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // 1r
+
+		if staking_history.count().is_zero() {
+			return Ok(unclaimed_rewards);
+		}
+
+		let era_info = Self::get_current_era(); // 1r
+										// early exit if they just staked this era
+		if staking_history.count().eq(&1usize) &&
+			staking_history.get_entry_for_era(&era_info.era_index).is_some()
+		{
+			return Ok(unclaimed_rewards);
+		}
+
+		let max_history: u32 = T::StakingRewardsPastErasMax::get(); // 1r
+		let era_length: u32 = T::EraLength::get(); // 1r
+		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
+		let end_era = era_info.era_index.saturating_sub(One::one());
+		while reward_era.ne(&end_era) {
+			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
+			if !staked_amount.is_zero() {
+				let expires_at_era = reward_era.saturating_add(max_history.into());
+				let reward_pool =
+					Self::get_reward_pool_for_era(reward_era).ok_or(Error::<T>::EraOutOfRange)?; // 1r
+				let expires_at_block = if expires_at_era.eq(&era_info.era_index) {
+					era_info.started_at + era_length.into() // expires at end of this era
+				} else {
+					let eras_to_expiration = expires_at_era.saturating_sub(era_info.era_index);
+					let blocks_to_expiration = eras_to_expiration * era_length.into();
+					let started_at = era_info.started_at;
+					started_at + blocks_to_expiration.into()
+				};
+
+				let earned_amount = <T>::RewardsProvider::era_staking_reward(
+					staked_amount,
+					reward_pool.total_staked_token,
+					reward_pool.total_reward_pool,
+				);
+				unclaimed_rewards
+					.try_push(UnclaimedRewardInfo {
+						reward_era,
+						expires_at_block,
+						staked_amount,
+						earned_amount,
+					})
+					.map_err(|_e| Error::<T>::MaxRetargetsExceeded)?; // TODO: a better error
+			}
+			reward_era = reward_era.saturating_add(One::one());
+		} // 1r * up to StakingRewardsPastErasMax
+		Ok(unclaimed_rewards)
 	}
 }
 

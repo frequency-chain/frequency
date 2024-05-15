@@ -1,10 +1,12 @@
 use super::mock::*;
 use crate::{
-	CurrentEraInfo, Error, RewardEraInfo, StakingDetails, StakingRewardClaim,
-	StakingRewardsProvider, StakingType::*,
+	CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory, RewardEraInfo,
+	StakingDetails, StakingRewardClaim, StakingRewardsProvider, StakingType::*,
+	UnclaimedRewardInfo,
 };
-use frame_support::assert_err;
+use frame_support::{assert_err, traits::Len};
 
+use crate::tests::testing_utils::{run_to_block, set_era_and_reward_pool, system_run_to_block};
 use sp_core::H256;
 
 #[test]
@@ -96,4 +98,57 @@ fn era_staking_reward_implementation() {
 			tc.expected_reward
 		);
 	}
+}
+
+#[test]
+fn check_for_unclaimed_rewards_returns_empty_set_when_no_staking() {
+	new_test_ext().execute_with(|| {
+		let account = 500u64;
+		let history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+		ProviderBoostHistories::<Test>::set(account, Some(history));
+		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		assert!(rewards.is_empty())
+	})
+}
+#[test]
+fn check_for_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
+	new_test_ext().execute_with(|| {
+		system_run_to_block(5);
+		set_era_and_reward_pool(5u32, 1u32, 1000u64);
+		let account = 500u64;
+		let mut history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+		history.add_era_balance(&5u32, &100u64);
+		ProviderBoostHistories::<Test>::set(account, Some(history));
+		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		assert!(rewards.is_empty())
+	})
+}
+
+#[test]
+fn check_for_unclaimed_rewards_has_eligible_rewards() {
+	new_test_ext().execute_with(|| {
+		system_run_to_block(99);
+		run_to_block(102);
+		let account = 10_000u64;
+		let mut history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+		for era in 4u32..15u32 {
+			set_era_and_reward_pool(era, (era * 10u32).into(), 1_000_000u64);
+		}
+		history.add_era_balance(&4u32, &1_000u64);
+		history.add_era_balance(&12u32, &1_000u64);
+		history.add_era_balance(&14u32, &1_000u64); // ineligible, in current era
+
+		ProviderBoostHistories::<Test>::set(account, Some(history));
+		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		assert_eq!(rewards.len(), 4usize);
+		assert_eq!(
+			rewards.get(3).unwrap(),
+			&UnclaimedRewardInfo {
+				reward_era: 13,
+				expires_at_block: 130,
+				staked_amount: 2_000,
+				earned_amount: 8,
+			}
+		)
+	})
 }

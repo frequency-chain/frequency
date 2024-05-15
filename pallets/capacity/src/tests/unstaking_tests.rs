@@ -11,7 +11,6 @@ use frame_support::{
 };
 use pallet_capacity::{BalanceOf, Config, Error, Event};
 use sp_core::bounded::BoundedVec;
-use sp_runtime::BoundedBTreeMap;
 
 #[test]
 fn unstake_happy_path() {
@@ -326,7 +325,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50));
 		pbh = Capacity::get_staking_history_for(staker).unwrap();
 		assert_eq!(pbh.count(), 2);
-		assert_eq!(pbh.get_staking_amount_for_era(&2u32).unwrap(), &950u64);
+		assert_eq!(pbh.get_entry_for_era(&2u32).unwrap(), &950u64);
 	})
 }
 
@@ -342,6 +341,8 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 	})
 }
 
+// Simulate a series of stake/unstake events over 10 eras then check for
+// correct staking values, including for eras that do not have an explicit entry.
 #[test]
 fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
@@ -351,7 +352,6 @@ fn get_amount_staked_for_era_works() {
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 5u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 15u64);
-
 	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 15u64);
 
 	staking_history.subtract_era_balance(&14u32, &7u64);
@@ -360,7 +360,7 @@ fn get_amount_staked_for_era_works() {
 
 	staking_history.add_era_balance(&15u32, &10u64);
 
-	let mut expected_balance = 18u64;
+	let expected_balance = 18u64;
 	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), expected_balance);
 
 	// unstake everything
@@ -375,9 +375,10 @@ fn get_amount_staked_for_era_works() {
 	assert_eq!(staking_history.get_amount_staked_for_era(&20u32), 0u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&31u32), 0u64);
 
-	// ensure reporting from "the past" is still correct.
+	// ensure reporting from earlier is still correct.
 	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 8u64);
 
-	// querying for an era that has been cleared due to the hitting the bound (StakingRewardsPastErasMax = 5 in mock) is zero.
+	// querying for an era that has been cleared due to the hitting the bound
+	// (StakingRewardsPastErasMax = 5 in mock) returns zero.
 	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 0u64);
 }

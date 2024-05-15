@@ -261,6 +261,7 @@ pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChun
 pub struct RewardEraInfo<RewardEra, BlockNumber>
 where
 	RewardEra: AtLeast32BitUnsigned + EncodeLike,
+	BlockNumber: AtLeast32BitUnsigned + EncodeLike,
 {
 	/// the index of this era
 	pub era_index: RewardEra,
@@ -361,16 +362,17 @@ impl<T: Config> ProviderBoostHistory<T> {
 		Some(self.count())
 	}
 
-	/// Return how much is staked for the given era.  If there is no entry for that era, return None.
-	pub fn get_staking_amount_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
+	/// A wrapper for the key/value retrieval of the BoundedBTreeMap.
+	pub(crate) fn get_entry_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
 		self.0.get(reward_era)
 	}
 
-	/// Returns how much was staked during the given era. If there is no history entry for `reward_era`,
-	/// returns the next earliest entry's staking balance. Note there is no sense of what the current
-	/// era is; subsequent calls could return a different result if 'reward_era' is the current era and
-	/// there has been a boost or unstake.
-	pub fn get_amount_staked_for_era(&self, reward_era: &T::RewardEra) -> BalanceOf<T> {
+	/// Returns how much was staked during the given era, even if there is no explicit entry for that era.
+	/// If there is no history entry for `reward_era`, returns the next earliest entry's staking balance.
+	///
+	/// Note there is no sense of what the current era is; subsequent calls could return a different result
+	/// if 'reward_era' is the current era and there has been a boost or unstake.
+	pub(crate) fn get_amount_staked_for_era(&self, reward_era: &T::RewardEra) -> BalanceOf<T> {
 		// this gives an ordered-by-key Iterator
 		let mut bmap_iter = self.0.iter();
 		let mut eligible_amount: BalanceOf<T> = Zero::zero();
@@ -512,7 +514,9 @@ pub trait StakingRewardsProvider<T: Config> {
 }
 
 /// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(Copy, Clone, Encode, Decode, Default, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(
+	Copy, Clone, Encode, Eq, Decode, Default, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct UnclaimedRewardInfo<T: Config> {
 	/// The Reward Era for which this reward was earned

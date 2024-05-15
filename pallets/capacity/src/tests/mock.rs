@@ -1,7 +1,7 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool_at_block, BalanceOf, StakingRewardClaim,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, StakingRewardClaim,
 	StakingRewardsProvider,
 };
 use common_primitives::{
@@ -235,7 +235,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {
 		System::set_block_number(1);
-		set_era_and_reward_pool_at_block(1, 0, 0);
+		set_era_and_reward_pool(1, 0, 0);
 	});
 	ext
 }
