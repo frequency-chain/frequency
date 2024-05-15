@@ -56,18 +56,20 @@ jobs:
   clear-metadata-labels:
     name: Clear Metadata Labels
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
     steps:
       - name: Clear Metadata Changed Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_CHANGED)
         uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           LABELS_TO_REMOVE: ${{env.PR_LABEL_METADATA_CHANGED}}
       - name: Clear Metadata Version Not Incremented Label
         if: contains(github.event.pull_request.labels.*.name, env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED)
         uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           LABELS_TO_REMOVE: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
 
   # Workaround to handle skipped required check inside matrix
@@ -541,6 +543,8 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-22.04
+    permissions:
+      pull-requests: write
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -583,7 +587,7 @@ jobs:
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
         uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           LABELS_TO_ADD: ${{env.PR_LABEL_METADATA_CHANGED}}
       - name: Check Spec Version
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
@@ -603,7 +607,7 @@ jobs:
             (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
         uses: RobinJesba/GitHub-Labeler-Action@2f69380bbf2ee60b2f0893ef0f40582c9a34a64d
         with:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
           LABELS_TO_ADD: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
       - name: Fail CI
         if: |
@@ -789,6 +793,10 @@ jobs:
     needs: should-run-benchmarks
     name: Run Benchmarks
     runs-on: [self-hosted, Linux, X64, benchmark]
+    permissions:
+      contents: write
+      statuses: write
+      pull-requests: write
     steps:
       - name: Print Info
         run: |
@@ -797,13 +805,12 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
-          token: ${{secrets.GHA_GIT_COMMIT || github.token}}
           ref: ${{github.event.pull_request.head.sha}}
       - name: Get Current Job Log URL
         id: jobs
-        uses: Tiryoh/gha-jobid-action@7528cee9716384209bafcbd000d6689e851c5dda
+        uses: Tiryoh/gha-jobid-action@c1d1cf7334b70c29374ae382b91053674c8049a2
         with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
+          github_token: ${{ github.token }}
           job_name: "Run Benchmarks"
       - name: Set PR Commit Status to Pending
         uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
@@ -822,8 +829,8 @@ jobs:
       - name: Install Rust Toolchain
         # Match installation steps to CI base docker image
         run: |
-          curl https://sh.rustup.rs -sSf | bash -s -- -y
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+          curl https://sh.rustup.rs -sSf | HOME=`pwd` bash -s -- -y
+          echo "PATH=`pwd`/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Update Weights
         run: |
           rustup show
@@ -842,14 +849,14 @@ jobs:
         run: |
           git status
           git diff
+
       - name: Commit Updated Weights
         id: commit-updated-weights
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
-          commit_message: "Update weights for PR #${{github.event.pull_request.number}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+          commit_message: "[actions skip] Update weights for PR #${{github.event.pull_request.number}}"
+          file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
+
       - name: Set PR Commit Status to Success
         uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
         with:
