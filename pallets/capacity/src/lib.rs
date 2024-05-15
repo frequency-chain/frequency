@@ -408,18 +408,22 @@ pub mod pallet {
 		CannotChangeStakingType,
 		/// The Era specified is too far in the past or is in the future (15)
 		EraOutOfRange,
+		// TODO: I think this Error is not needed.
 		/// Rewards were already paid out for the specified Era range
 		IneligibleForPayoutInEraRange,
 		/// Attempted to retarget but from and to Provider MSA Ids were the same
 		CannotRetargetToSameProvider,
-		/// Rewards were already paid out this era
-		AlreadyClaimedRewardsThisEra,
+		/// There are no rewards eligible to claim.  Rewards have expired, have already been
+		/// claimed, or boosting has never been done before the current era.
+		NoRewardsEligibleToClaim,
 		/// Caller must wait until the next RewardEra, claim rewards and then can boost again.
 		MustFirstClaimRewards,
 		/// Too many change_staking_target calls made in this RewardEra. (20)
 		MaxRetargetsExceeded,
 		/// There are no unstaked token amounts that have passed their thaw period.
 		NoThawedTokenAvailable,
+		/// This should not have failed, ever, but if it did something is really wrong.
+		TotallyUnexpectedError,
 	}
 
 	#[pallet::hooks]
@@ -1080,7 +1084,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let era_info = Self::get_current_era(); // 1r
-										// early exit if they just staked this era
+										// early exit if they only just staked this era
 		if staking_history.count().eq(&1usize) &&
 			staking_history.get_entry_for_era(&era_info.era_index).is_some()
 		{
@@ -1091,7 +1095,7 @@ impl<T: Config> Pallet<T> {
 		let era_length: u32 = T::EraLength::get(); // 1r
 		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
 		let end_era = era_info.era_index.saturating_sub(One::one());
-		while reward_era.ne(&end_era) {
+		while reward_era.le(&end_era) {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {
 				let expires_at_era = reward_era.saturating_add(max_history.into());
@@ -1118,10 +1122,10 @@ impl<T: Config> Pallet<T> {
 						staked_amount,
 						earned_amount,
 					})
-					.map_err(|_e| Error::<T>::MaxRetargetsExceeded)?; // TODO: a better error
+					.map_err(|_e| Error::<T>::TotallyUnexpectedError)?; // there's no good reason for this ever to fail in production.
 			}
 			reward_era = reward_era.saturating_add(One::one());
-		} // 1r * up to StakingRewardsPastErasMax
+		} // 1r * up to StakingRewardsPastErasMax-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
 	}
 }

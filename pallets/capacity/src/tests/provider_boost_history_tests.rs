@@ -35,8 +35,8 @@ fn multiple_provider_boosts_updates_history_correctly() {
 		assert_eq!(history.count(), 1);
 		assert_eq!(history.get_entry_for_era(&1u32).unwrap(), &700u64);
 
-		system_run_to_block(9);
-		run_to_block(10);
+		system_run_to_block(10);
+		run_to_block(11);
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, 200));
 

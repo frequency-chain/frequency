@@ -347,20 +347,19 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
 
-	for i in 10u32..13u32 {
+	for i in 10u32..=13u32 {
 		staking_history.add_era_balance(&i.into(), &5u64);
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 5u64);
-	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 15u64);
-	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 15u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 20u64);
 
 	staking_history.subtract_era_balance(&14u32, &7u64);
-	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 8u64);
-	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), 8u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 13u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), 13u64);
 
 	staking_history.add_era_balance(&15u32, &10u64);
 
-	let expected_balance = 18u64;
+	let expected_balance = 23u64;
 	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), expected_balance);
 
 	// unstake everything
@@ -376,9 +375,9 @@ fn get_amount_staked_for_era_works() {
 	assert_eq!(staking_history.get_amount_staked_for_era(&31u32), 0u64);
 
 	// ensure reporting from earlier is still correct.
-	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 8u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 13u64);
 
 	// querying for an era that has been cleared due to the hitting the bound
 	// (StakingRewardsPastErasMax = 5 in mock) returns zero.
-	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 0u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&9u32), 0u64);
 }

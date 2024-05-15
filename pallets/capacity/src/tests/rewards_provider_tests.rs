@@ -4,9 +4,12 @@ use crate::{
 	StakingDetails, StakingRewardClaim, StakingRewardsProvider, StakingType::*,
 	UnclaimedRewardInfo,
 };
-use frame_support::{assert_err, traits::Len};
+use frame_support::{assert_err, assert_ok, traits::Len};
 
-use crate::tests::testing_utils::{run_to_block, set_era_and_reward_pool, system_run_to_block};
+use crate::tests::testing_utils::{
+	run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
+};
+use common_primitives::msa::MessageSourceId;
 use sp_core::H256;
 
 #[test]
@@ -127,28 +130,68 @@ fn check_for_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
 #[test]
 fn check_for_unclaimed_rewards_has_eligible_rewards() {
 	new_test_ext().execute_with(|| {
-		system_run_to_block(99);
-		run_to_block(102);
 		let account = 10_000u64;
-		let mut history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
-		for era in 4u32..15u32 {
-			set_era_and_reward_pool(era, (era * 10u32).into(), 1_000_000u64);
-		}
-		history.add_era_balance(&4u32, &1_000u64);
-		history.add_era_balance(&12u32, &1_000u64);
-		history.add_era_balance(&14u32, &1_000u64); // ineligible, in current era
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
 
-		ProviderBoostHistories::<Test>::set(account, Some(history));
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+
+		// staking 2k as of block 11, era 2
+		run_to_block(11);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+
+		//  staking 3k as of era 4, block 31
+		run_to_block(31);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+
+		run_to_block(51);
+		assert_eq!(Capacity::get_current_era().era_index, 6u32);
+		assert_eq!(Capacity::get_current_era().started_at, 51u32);
+
+		assert!(Capacity::get_reward_pool_for_era(0u32).is_none());
+		assert!(Capacity::get_reward_pool_for_era(1u32).is_some());
+		assert!(Capacity::get_reward_pool_for_era(6u32).is_some());
+
+		// rewards for eras 1 and 6 should not be returned; era 1 has been deleted, era 6 is current
+		// era and therefore ineligible.
+		// rewards should be for eras 1=1k, 2=2k, 3=2k, 4=3k, 5=3k
 		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
-		assert_eq!(rewards.len(), 4usize);
-		assert_eq!(
-			rewards.get(3).unwrap(),
-			&UnclaimedRewardInfo {
-				reward_era: 13,
-				expires_at_block: 130,
+		assert_eq!(rewards.len(), 5usize);
+		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
+			UnclaimedRewardInfo {
+				reward_era: 1u32,
+				expires_at_block: 61,
+				staked_amount: 1_000,
+				earned_amount: 4,
+			},
+			UnclaimedRewardInfo {
+				reward_era: 2u32,
+				expires_at_block: 71,
 				staked_amount: 2_000,
 				earned_amount: 8,
-			}
-		)
+			},
+			UnclaimedRewardInfo {
+				reward_era: 3u32,
+				expires_at_block: 81,
+				staked_amount: 2_000,
+				earned_amount: 8,
+			},
+			UnclaimedRewardInfo {
+				reward_era: 4u32,
+				expires_at_block: 91,
+				staked_amount: 3_000,
+				earned_amount: 11,
+			},
+			UnclaimedRewardInfo {
+				reward_era: 5u32,
+				expires_at_block: 101,
+				staked_amount: 3_000,
+				earned_amount: 11,
+			},
+		];
+		for i in 0..=4 {
+			assert_eq!(rewards.get(i).unwrap(), &expected_info[i]);
+		}
 	})
 }
