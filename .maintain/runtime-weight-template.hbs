@@ -16,10 +16,10 @@
 #![allow(unused_imports)]
 #![allow(missing_docs)]
 
-use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
+use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
-/// Weights for {{pallet}} using the Substrate node and recommended hardware.
+/// Weights for `{{pallet}}` using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 {{#if (eq pallet "frame_system")}}
 impl<T: crate::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
@@ -63,5 +63,45 @@ impl<T: frame_system::Config> {{pallet}}::WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(0, {{cp.slope}}).saturating_mul({{cp.name}}.into()))
 			{{/each}}
 	}
+	{{/each}}
+}
+
+
+#[cfg(test)]
+mod tests {
+  use frame_support::{traits::Get, weights::Weight, dispatch::DispatchClass};
+  use crate::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
+  use crate::weights::extrinsic_weights::ExtrinsicBaseWeight;
+
+  struct BlockWeights;
+  impl Get<frame_system::limits::BlockWeights> for BlockWeights {
+  	fn get() -> frame_system::limits::BlockWeights {
+  		frame_system::limits::BlockWeights::builder()
+  			.base_block(Weight::zero())
+  			.for_class(DispatchClass::all(), |weights| {
+  				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
+  			})
+  			.for_class(DispatchClass::non_mandatory(), |weights| {
+  				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+  			})
+  			.build_or_panic()
+  	}
+  }
+
+	{{#each benchmarks as |benchmark|}}
+	{{#if (ne benchmark.base_calculated_proof_size "0")}}
+	#[test]
+	fn test_{{benchmark.name~}} () {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> {{benchmark.base_calculated_proof_size}}
+		);
+	}
+	{{/if}}
 	{{/each}}
 }
