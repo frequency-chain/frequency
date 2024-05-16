@@ -109,7 +109,7 @@ fn check_for_unclaimed_rewards_returns_empty_set_when_no_staking() {
 		let account = 500u64;
 		let history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
 		ProviderBoostHistories::<Test>::set(account, Some(history));
-		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert!(rewards.is_empty())
 	})
 }
@@ -122,7 +122,7 @@ fn check_for_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
 		let mut history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
 		history.add_era_balance(&5u32, &100u64);
 		ProviderBoostHistories::<Test>::set(account, Some(history));
-		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert!(rewards.is_empty())
 	})
 }
@@ -156,7 +156,7 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		// rewards for eras 1 and 6 should not be returned; era 1 has been deleted, era 6 is current
 		// era and therefore ineligible.
 		// rewards should be for eras 1=1k, 2=2k, 3=2k, 4=3k, 5=3k
-		let rewards = Capacity::check_for_unclaimed_rewards(&account).unwrap();
+		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert_eq!(rewards.len(), 5usize);
 		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
 			UnclaimedRewardInfo {

@@ -408,9 +408,6 @@ pub mod pallet {
 		CannotChangeStakingType,
 		/// The Era specified is too far in the past or is in the future (15)
 		EraOutOfRange,
-		// TODO: I think this Error is not needed.
-		/// Rewards were already paid out for the specified Era range
-		IneligibleForPayoutInEraRange,
 		/// Attempted to retarget but from and to Provider MSA Ids were the same
 		CannotRetargetToSameProvider,
 		/// There are no rewards eligible to claim.  Rewards have expired, have already been
@@ -422,8 +419,8 @@ pub mod pallet {
 		MaxRetargetsExceeded,
 		/// There are no unstaked token amounts that have passed their thaw period.
 		NoThawedTokenAvailable,
-		/// This should not have failed, ever, but if it did something is really wrong.
-		TotallyUnexpectedError,
+		/// Tried to exceed bounds of a some Bounded collection
+		CollectionBoundExceeded
 	}
 
 	#[pallet::hooks]
@@ -1087,7 +1084,7 @@ impl<T: Config> Pallet<T> {
 
 	// this could be up to 35 reads.
 	#[allow(unused)]
-	pub(crate) fn check_for_unclaimed_rewards(
+	pub(crate) fn list_unclaimed_rewards(
 		account: &T::AccountId,
 	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::StakingRewardsPastErasMax>, DispatchError> {
 		let mut unclaimed_rewards: BoundedVec<
@@ -1136,7 +1133,8 @@ impl<T: Config> Pallet<T> {
 						staked_amount,
 						earned_amount,
 					})
-					.map_err(|_e| Error::<T>::TotallyUnexpectedError)?; // there's no good reason for this ever to fail in production.
+					.map_err(|_e| Error::<T>::CollectionBoundExceeded)?;
+				// ^^ there's no good reason for this ever to fail in production but it should be handled.
 			}
 			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to StakingRewardsPastErasMax-1, if they staked every RewardEra.
