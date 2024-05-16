@@ -510,6 +510,8 @@ pub mod pallet {
 
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
+			ensure!(!Self::has_unclaimed_rewards(&unstaker), Error::<T>::MustFirstClaimRewards);
+
 			let (actual_amount, staking_type) =
 				Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
 			Self::add_unlock_chunk(&unstaker, actual_amount)?;
@@ -1068,6 +1070,20 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
+	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
+		let current_era = Self::get_current_era().era_index;
+		match Self::get_staking_history_for(account) {
+			Some(provider_boost_history) => {
+				match provider_boost_history.count() {
+					0usize => false,
+					// they staked before the current era, so they have unclaimed rewards.
+					1usize => provider_boost_history.get_entry_for_era(&current_era).is_none(),
+					_ => true,
+				}
+			},
+			None => false,
+		} // 1r
+	}
 	#[allow(unused)]
 	pub(crate) fn check_for_unclaimed_rewards(
 		account: &T::AccountId,

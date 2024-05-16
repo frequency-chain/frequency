@@ -195,3 +195,30 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		}
 	})
 }
+
+#[test]
+fn has_unclaimed_rewards_works() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		// staking 2k as of block 11, era 2
+		run_to_block(11);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+		assert!(Capacity::has_unclaimed_rewards(&account));
+
+		//  staking 3k as of era 4, block 31
+		run_to_block(31);
+		assert!(Capacity::has_unclaimed_rewards(&account));
+
+		run_to_block(61);
+		assert!(Capacity::has_unclaimed_rewards(&account));
+	})
+}
