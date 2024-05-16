@@ -10,6 +10,16 @@ export default {
       ],
       type: 'Vec<RpcEvent>',
     },
+    getNonceHoles: {
+      description: 'Get holes in the nonce for an account',
+      params: [
+        {
+          name: 'account',
+          type: 'AccountId32'
+        },
+      ],
+      type: 'Vec<Index>',
+    }
   },
   types: {
     RpcEvent: {
