@@ -1084,6 +1084,8 @@ impl<T: Config> Pallet<T> {
 			None => false,
 		} // 1r
 	}
+
+	// this could be up to 35 reads.
 	#[allow(unused)]
 	pub(crate) fn check_for_unclaimed_rewards(
 		account: &T::AccountId,
@@ -1092,20 +1094,16 @@ impl<T: Config> Pallet<T> {
 			UnclaimedRewardInfo<T>,
 			T::StakingRewardsPastErasMax,
 		> = BoundedVec::new();
+
+		if !Self::has_unclaimed_rewards(account) {
+			// 2r
+			return Ok(unclaimed_rewards);
+		}
+
 		let staking_history =
-			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // 1r
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // cached read from has_unclaimed_rewards
 
-		if staking_history.count().is_zero() {
-			return Ok(unclaimed_rewards);
-		}
-
-		let era_info = Self::get_current_era(); // 1r
-										// early exit if they only just staked this era
-		if staking_history.count().eq(&1usize) &&
-			staking_history.get_entry_for_era(&era_info.era_index).is_some()
-		{
-			return Ok(unclaimed_rewards);
-		}
+		let era_info = Self::get_current_era(); // cached read, ditto
 
 		let max_history: u32 = T::StakingRewardsPastErasMax::get(); // 1r
 		let era_length: u32 = T::EraLength::get(); // 1r

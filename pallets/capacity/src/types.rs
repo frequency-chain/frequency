@@ -286,9 +286,6 @@ pub struct RewardPoolInfo<Balance> {
 	pub unclaimed_balance: Balance,
 }
 
-// TODO: Store retarget unlock chunks in their own storage but can be for any stake type
-// TODO: Store unstake unlock chunks in their own storage but can be for any stake type (at first do only boosted unstake)
-
 /// A record of staked amounts for a complete RewardEra
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
