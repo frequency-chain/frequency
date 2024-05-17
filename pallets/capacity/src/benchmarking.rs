@@ -60,10 +60,14 @@ pub fn setup_provider_stake<T: Config>(
 	caller: &T::AccountId,
 	target: &MessageSourceId,
 	staking_amount: BalanceOf<T>,
+	is_provider_boost: bool,
 ) {
 	let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
 
 	let mut staking_account = StakingDetails::<T>::default();
+	if is_provider_boost {
+		staking_account.staking_type = ProviderBoost;
+	}
 	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 	let mut capacity_details =
 		CapacityDetails::<BalanceOf<T>, <T as Config>::EpochNumber>::default();
@@ -161,8 +165,14 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
+		// Add a boost history entry for this era only so unstake succeeds but reads are maximized.
+		let mut pbh: ProviderBoostHistory<T> = ProviderBoostHistory::new();
+		pbh.add_era_balance(&1u32.into(), &staking_amount);
+		ProviderBoostHistories::<T>::set(caller.clone(), Some(pbh));
 		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
-		setup_provider_stake::<T>(&caller, &target, staking_amount);
+
+		setup_provider_stake::<T>(&caller, &target, staking_amount, true);
+
 		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get() - 1);
 	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
 	verify {
@@ -193,8 +203,8 @@ benchmarks! {
 		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(from_msa, "frommsa");
 		register_provider::<T>(to_msa, "tomsa");
-		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount);
-		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount);
+		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount, false);
+		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount, false);
 		let restake_amount: BalanceOf<T> = from_msa_amount.saturating_sub(10u32.into());
 
 	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount)

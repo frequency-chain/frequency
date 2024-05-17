@@ -420,7 +420,7 @@ pub mod pallet {
 		/// There are no unstaked token amounts that have passed their thaw period.
 		NoThawedTokenAvailable,
 		/// Tried to exceed bounds of a some Bounded collection
-		CollectionBoundExceeded
+		CollectionBoundExceeded,
 	}
 
 	#[pallet::hooks]
@@ -802,14 +802,16 @@ impl<T: Config> Pallet<T> {
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
-		let staking_type = staking_account.staking_type;
 		Self::set_staking_account(unstaker, &staking_account);
 
-		let era = Self::get_current_era().era_index;
-		let mut reward_pool =
-			Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
-		reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
-		Self::set_reward_pool(era, &reward_pool.clone());
+		let staking_type = staking_account.staking_type;
+		if staking_type == ProviderBoost {
+			let era = Self::get_current_era().era_index;
+			let mut reward_pool =
+				Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
+			reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
+			Self::set_reward_pool(era, &reward_pool.clone());
+		}
 		Ok((actual_unstaked_amount, staking_type))
 	}
 
