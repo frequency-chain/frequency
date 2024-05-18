@@ -522,7 +522,7 @@ pub struct UnclaimedRewardInfo<T: Config> {
 	pub expires_at_block: BlockNumberFor<T>,
 	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
 	/// staked in this era.
-	pub staked_amount: BalanceOf<T>,
+	pub eligible_amount: BalanceOf<T>,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
 	pub earned_amount: BalanceOf<T>,
 }

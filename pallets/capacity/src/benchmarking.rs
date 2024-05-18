@@ -165,7 +165,8 @@ benchmarks! {
 		let target = 1;
 		let block_number = 4u32;
 
-		// Add a boost history entry for this era only so unstake succeeds but reads are maximized.
+		// Adds a boost history entry for this era only so unstake succeeds and there is an update
+		// to provider boost history.
 		let mut pbh: ProviderBoostHistory<T> = ProviderBoostHistory::new();
 		pbh.add_era_balance(&1u32.into(), &staking_amount);
 		ProviderBoostHistories::<T>::set(caller.clone(), Some(pbh));

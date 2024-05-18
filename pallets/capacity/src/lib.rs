@@ -404,6 +404,8 @@ pub mod pallet {
 		MaxEpochLengthExceeded,
 		/// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
 		BalanceTooLowtoStake,
+		/// There are no unstaked token amounts that have passed their thaw period.
+		NoThawedTokenAvailable,
 		/// Staker tried to change StakingType on an existing account
 		CannotChangeStakingType,
 		/// The Era specified is too far in the past or is in the future (15)
@@ -417,8 +419,6 @@ pub mod pallet {
 		MustFirstClaimRewards,
 		/// Too many change_staking_target calls made in this RewardEra. (20)
 		MaxRetargetsExceeded,
-		/// There are no unstaked token amounts that have passed their thaw period.
-		NoThawedTokenAvailable,
 		/// Tried to exceed bounds of a some Bounded collection
 		CollectionBoundExceeded,
 	}
@@ -1104,10 +1104,11 @@ impl<T: Config> Pallet<T> {
 
 		let era_info = Self::get_current_era(); // cached read, ditto
 
-		let max_history: u32 = T::StakingRewardsPastErasMax::get(); // 1r
+		let max_history: u32 = T::StakingRewardsPastErasMax::get() - 1; // 1r
 		let era_length: u32 = T::EraLength::get(); // 1r
 		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
 		let end_era = era_info.era_index.saturating_sub(One::one());
+		let mut previous_amount: BalanceOf<T> = 0u32.into();
 		while reward_era.le(&end_era) {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {
@@ -1117,14 +1118,19 @@ impl<T: Config> Pallet<T> {
 				let expires_at_block = if expires_at_era.eq(&era_info.era_index) {
 					era_info.started_at + era_length.into() // expires at end of this era
 				} else {
-					let eras_to_expiration = expires_at_era.saturating_sub(era_info.era_index);
+					let eras_to_expiration =
+						expires_at_era.saturating_sub(era_info.era_index).add(1u32.into());
 					let blocks_to_expiration = eras_to_expiration * era_length.into();
 					let started_at = era_info.started_at;
 					started_at + blocks_to_expiration.into()
 				};
-
+				let eligible_amount = if staked_amount.lt(&previous_amount) {
+					staked_amount
+				} else {
+					previous_amount
+				};
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
-					staked_amount,
+					eligible_amount,
 					reward_pool.total_staked_token,
 					reward_pool.total_reward_pool,
 				);
@@ -1132,11 +1138,12 @@ impl<T: Config> Pallet<T> {
 					.try_push(UnclaimedRewardInfo {
 						reward_era,
 						expires_at_block,
-						staked_amount,
+						eligible_amount,
 						earned_amount,
 					})
 					.map_err(|_e| Error::<T>::CollectionBoundExceeded)?;
 				// ^^ there's no good reason for this ever to fail in production but it should be handled.
+				previous_amount = staked_amount;
 			}
 			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to StakingRewardsPastErasMax-1, if they staked every RewardEra.
