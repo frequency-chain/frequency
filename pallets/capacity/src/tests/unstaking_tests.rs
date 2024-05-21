@@ -468,3 +468,19 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		);
 	})
 }
+
+#[test]
+fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(Capacity::get_staking_history_for(account).is_some());
+		run_to_block(10);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
+		assert!(Capacity::get_staking_history_for(account).is_none());
+	});
+}

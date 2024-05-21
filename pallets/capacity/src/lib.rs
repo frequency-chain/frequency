@@ -811,6 +811,7 @@ impl<T: Config> Pallet<T> {
 				Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
 			reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
 			Self::set_reward_pool(era, &reward_pool.clone());
+			Self::upsert_boost_history(&unstaker, era, actual_unstaked_amount, false)?;
 		}
 		Ok((actual_unstaked_amount, staking_type))
 	}
@@ -920,14 +921,6 @@ impl<T: Config> Pallet<T> {
 
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
-		if staking_type.eq(&ProviderBoost) {
-			// update staking history
-			let era = Self::get_current_era().era_index;
-			let mut pbh =
-				Self::get_staking_history_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
-			pbh.subtract_era_balance(&era, &actual_amount);
-			ProviderBoostHistories::set(unstaker, Some(pbh));
-		}
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
 
@@ -1064,8 +1057,11 @@ impl<T: Config> Pallet<T> {
 		} else {
 			boost_history.subtract_era_balance(&current_era, &boost_amount)
 		};
-		ensure!(upsert_result.is_some(), Error::<T>::EraOutOfRange);
-		ProviderBoostHistories::<T>::set(account, Some(boost_history));
+		match upsert_result {
+			Some(0usize) => ProviderBoostHistories::<T>::remove(account),
+			None => return Err(DispatchError::from(Error::<T>::EraOutOfRange)),
+			_ => ProviderBoostHistories::<T>::set(account, Some(boost_history)),
+		}
 		Ok(())
 	}
 
@@ -1108,7 +1104,9 @@ impl<T: Config> Pallet<T> {
 		let era_length: u32 = T::EraLength::get(); // 1r
 		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
 		let end_era = era_info.era_index.saturating_sub(One::one());
-		let mut previous_amount: BalanceOf<T> = 0u32.into();
+		// start with how much was staked in the era before the earliest for which there are eligible rewards.
+		let mut previous_amount: BalanceOf<T> =
+			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
 		while reward_era.le(&end_era) {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {

@@ -121,3 +121,12 @@ fn provider_boost_history_subtract_era_balance_in_new_era_correctly_subtracts_va
 	pbh.subtract_era_balance(&(era + 2), &600u64);
 	assert!(pbh.get_entry_for_era(&(era + 2)).unwrap().is_zero());
 }
+
+#[test]
+fn provider_boost_history_subtract_all_balance_on_only_entry_returns_some_0() {
+	let mut pbh = ProviderBoostHistory::<Test>::new();
+	let era = 22u32;
+	let amount = 1000u64;
+	pbh.add_era_balance(&era, &amount);
+	assert_eq!(pbh.subtract_era_balance(&(era), &amount), Some(0usize));
+}

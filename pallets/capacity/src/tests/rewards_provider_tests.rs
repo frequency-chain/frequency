@@ -214,6 +214,41 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 	})
 }
 
+// check that if an account boosted and then let it run for more than the number
+// of  history retention eras, eligible rewards are correct.
+#[test]
+fn check_for_unclaimed_rewards_returns_correctly_for_old_single_boost() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		// boost 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		run_to_block(71);
+		assert_eq!(Capacity::get_current_era().era_index, 8u32);
+		assert_eq!(Capacity::get_current_era().started_at, 71u32);
+
+		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
+		// the earliest era should no longer be stored.
+		assert_eq!(rewards.len(), 5usize);
+		for i in 0..=4 {
+			let expected_era: u32 = i + 3;
+			let expected_info: UnclaimedRewardInfo<Test> = UnclaimedRewardInfo {
+				reward_era: expected_era.into(),
+				expires_at_block: (expected_era * 10u32 + 51u32).into(),
+				eligible_amount: 1000,
+				earned_amount: 4,
+			};
+			assert_eq!(rewards.get(i as usize).unwrap(), &expected_info);
+		}
+	})
+}
+
 #[test]
 fn has_unclaimed_rewards_works() {
 	new_test_ext().execute_with(|| {
@@ -239,4 +274,22 @@ fn has_unclaimed_rewards_works() {
 		run_to_block(61);
 		assert!(Capacity::has_unclaimed_rewards(&account));
 	})
+}
+
+#[test]
+fn has_unclaimed_rewards_returns_true_with_old_single_boost() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		// boost 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(!Capacity::has_unclaimed_rewards(&account));
+
+		run_to_block(71);
+		assert!(Capacity::has_unclaimed_rewards(&account));
+	});
 }

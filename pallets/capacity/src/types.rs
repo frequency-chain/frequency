@@ -334,6 +334,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 
 	/// Subtracts `subtract_amount` from the entry for `reward_era`. Zero values are still retained.
 	/// Returns None if there is no entry for the reward era.
+	/// Returns Some(0) if they unstaked everything and this is the only entry
 	/// Otherwise returns Some(history_count)
 	pub fn subtract_era_balance(
 		&mut self,
@@ -343,8 +344,16 @@ impl<T: Config> ProviderBoostHistory<T> {
 		if self.count().is_zero() {
 			return None;
 		};
+		// have to save this because calling self.count() after self.0.get_mut produces compiler error
+		let current_count = self.count();
+
 		if let Some(entry) = self.0.get_mut(reward_era) {
 			*entry = entry.saturating_sub(*subtract_amount);
+			// if they unstaked everything and there are no other entries, return 0 count (a lie)
+			// so that the storage can be reaped.
+			if current_count.eq(&1usize) && entry.is_zero() {
+				return Some(0usize);
+			}
 		} else {
 			self.remove_oldest_entry_if_full();
 			let current_staking_amount = self.get_last_staking_amount();
