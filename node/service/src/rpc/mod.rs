@@ -20,9 +20,6 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 mod frequency_rpc;
 
-#[cfg(test)]
-mod tests;
-
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
