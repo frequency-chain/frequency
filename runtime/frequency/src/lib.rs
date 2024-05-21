@@ -507,7 +507,7 @@ impl pallet_capacity::Config for Runtime {
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type RewardEra = u32;
 	type EraLength = ConstU32<{ 14 * DAYS }>;
-	type StakingRewardsPastErasMax = ConstU32<30u32>;
+	type StakingRewardsPastErasMax = ConstU32<31u32>; // 30 for claiming rewards, 1 for current era
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<16>;
 	// Value determined by desired inflation rate limits for chosen economic model

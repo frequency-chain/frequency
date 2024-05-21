@@ -4,7 +4,7 @@ use frame_support::{BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating},
+	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
 
@@ -261,6 +261,7 @@ pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChun
 pub struct RewardEraInfo<RewardEra, BlockNumber>
 where
 	RewardEra: AtLeast32BitUnsigned + EncodeLike,
+	BlockNumber: AtLeast32BitUnsigned + EncodeLike,
 {
 	/// the index of this era
 	pub era_index: RewardEra,
@@ -284,9 +285,6 @@ pub struct RewardPoolInfo<Balance> {
 	/// the remaining rewards balance to be claimed
 	pub unclaimed_balance: Balance,
 }
-
-// TODO: Store retarget unlock chunks in their own storage but can be for any stake type
-// TODO: Store unstake unlock chunks in their own storage but can be for any stake type (at first do only boosted unstake)
 
 /// A record of staked amounts for a complete RewardEra
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
@@ -336,6 +334,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 
 	/// Subtracts `subtract_amount` from the entry for `reward_era`. Zero values are still retained.
 	/// Returns None if there is no entry for the reward era.
+	/// Returns Some(0) if they unstaked everything and this is the only entry
 	/// Otherwise returns Some(history_count)
 	pub fn subtract_era_balance(
 		&mut self,
@@ -345,8 +344,16 @@ impl<T: Config> ProviderBoostHistory<T> {
 		if self.count().is_zero() {
 			return None;
 		};
+		// have to save this because calling self.count() after self.0.get_mut produces compiler error
+		let current_count = self.count();
+
 		if let Some(entry) = self.0.get_mut(reward_era) {
 			*entry = entry.saturating_sub(*subtract_amount);
+			// if they unstaked everything and there are no other entries, return 0 count (a lie)
+			// so that the storage can be reaped.
+			if current_count.eq(&1usize) && entry.is_zero() {
+				return Some(0usize);
+			}
 		} else {
 			self.remove_oldest_entry_if_full();
 			let current_staking_amount = self.get_last_staking_amount();
@@ -361,9 +368,31 @@ impl<T: Config> ProviderBoostHistory<T> {
 		Some(self.count())
 	}
 
-	/// Return how much is staked for the given era.  If there is no entry for that era, return None.
-	pub fn get_staking_amount_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
+	/// A wrapper for the key/value retrieval of the BoundedBTreeMap.
+	pub(crate) fn get_entry_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
 		self.0.get(reward_era)
+	}
+
+	/// Returns how much was staked during the given era, even if there is no explicit entry for that era.
+	/// If there is no history entry for `reward_era`, returns the next earliest entry's staking balance.
+	///
+	/// Note there is no sense of what the current era is; subsequent calls could return a different result
+	/// if 'reward_era' is the current era and there has been a boost or unstake.
+	pub(crate) fn get_amount_staked_for_era(&self, reward_era: &T::RewardEra) -> BalanceOf<T> {
+		// this gives an ordered-by-key Iterator
+		let mut bmap_iter = self.0.iter();
+		let mut eligible_amount: BalanceOf<T> = Zero::zero();
+		while let Some((era, balance)) = bmap_iter.next() {
+			if era.eq(reward_era) {
+				return *balance
+			}
+			// there was a boost or unstake in this era.
+			else if era.gt(reward_era) {
+				return eligible_amount;
+			} // eligible_amount has been staked through reward_era
+			eligible_amount = *balance;
+		}
+		eligible_amount
 	}
 
 	/// Returns the number of history items
@@ -488,4 +517,21 @@ pub trait StakingRewardsProvider<T: Config> {
 	/// Return the effective amount when staked for a Provider Boost
 	/// The amount is multiplied by a factor > 0 and < 1.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
+}
+
+/// Result of checking a Boost History item to see if it's eligible for a reward.
+#[derive(
+	Copy, Clone, Encode, Eq, Decode, Default, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
+)]
+#[scale_info(skip_type_params(T))]
+pub struct UnclaimedRewardInfo<T: Config> {
+	/// The Reward Era for which this reward was earned
+	pub reward_era: T::RewardEra,
+	/// When this reward expires, i.e. can no longer be claimed
+	pub expires_at_block: BlockNumberFor<T>,
+	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
+	/// staked in this era.
+	pub eligible_amount: BalanceOf<T>,
+	/// The amount in token of the reward (only if it can be calculated using only on chain data)
+	pub earned_amount: BalanceOf<T>,
 }
