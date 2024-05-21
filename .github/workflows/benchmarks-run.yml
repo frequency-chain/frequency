@@ -5,15 +5,11 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
-  push:
-    branches:
-      - "chore/fix-benchmarks"
   workflow_dispatch:
     inputs:
       branch:
         description: "Branch"
         required: true
-        default: chore/fix-benchmarks
       pallets:
         description: "Specific Pallets? (Ex: 'msa,messages')"
         required: true
@@ -69,5 +65,5 @@ jobs:
         id: commit-updated-weights
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
-          commit_message: "Update weights for #${{github.event.inputs.branch}}"
+          commit_message: "Update weights"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
