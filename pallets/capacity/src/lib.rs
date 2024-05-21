@@ -381,6 +381,7 @@ pub mod pallet {
 		/// Staker is attempting to stake an amount below the minimum amount.
 		StakingAmountBelowMinimum,
 		/// Staker is attempting to stake a zero amount.  DEPRECATED
+		/// #[deprecated(since = "1.13.0", note = "Use StakingAmountBelowMinimum instead")]
 		ZeroAmountNotAllowed,
 		/// This AccountId does not have a staking account.
 		NotAStakingAccount,
