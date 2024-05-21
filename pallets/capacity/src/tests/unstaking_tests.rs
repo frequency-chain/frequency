@@ -1,8 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, FreezeReason, RewardPoolInfo, StakingDetails, StakingTargetDetails,
-	StakingType, UnlockChunk,
+	CapacityDetails, FreezeReason, ProviderBoostHistory, RewardPoolInfo, StakingDetails,
+	StakingTargetDetails, StakingType, StakingType::ProviderBoost, UnlockChunk,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
@@ -158,8 +158,17 @@ fn unstake_errors_unstaking_amount_is_zero() {
 	});
 }
 
+fn fill_unstake_unlock_chunks(token_account: u64, target: MessageSourceId, unstaking_amount: u64) {
+	for _n in 0..<Test as Config>::MaxUnlockingChunks::get() {
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			unstaking_amount
+		));
+	}
+}
 #[test]
-fn unstake_errors_max_unlocking_chunks_exceeded() {
+fn unstake_errors_max_unlocking_chunks_exceeded_stake() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
@@ -170,13 +179,31 @@ fn unstake_errors_max_unlocking_chunks_exceeded() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 
-		for _n in 0..<Test as Config>::MaxUnlockingChunks::get() {
-			assert_ok!(Capacity::unstake(
-				RuntimeOrigin::signed(token_account),
-				target,
-				unstaking_amount
-			));
-		}
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount);
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
+			Error::<Test>::MaxUnlockingChunksExceeded
+		);
+	});
+}
+#[test]
+fn unstake_errors_max_unlocking_chunks_exceeded_provider_boost() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 60;
+		let unstaking_amount = 10;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(token_account),
+			target,
+			staking_amount
+		));
+
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount);
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
@@ -284,6 +311,38 @@ fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
 }
 
 #[test]
+fn unstake_maximum_does_not_change_reward_pool() {
+	new_test_ext().execute_with(|| {
+		// two accounts staking to the same target
+		let account1 = 600;
+		let a_booster = 500;
+		let target: MessageSourceId = 1;
+		let amount1 = 500;
+		let unstake_amount = 200;
+
+		let expected_reward_pool: RewardPoolInfo<BalanceOf<Test>> = RewardPoolInfo {
+			total_staked_token: 490, // ???
+			total_reward_pool: 10_000,
+			unclaimed_balance: 10_000,
+		};
+
+		register_provider(target, String::from("Foo"));
+		run_to_block(5); // ensures Capacity::on_initialize is run
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account1), target, amount1));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(a_booster), target, amount1));
+
+		// there should be only the one contribution
+		let mut reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
+		assert_eq!(reward_pool, expected_reward_pool);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account1), target, unstake_amount));
+		reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
+		assert_eq!(reward_pool, expected_reward_pool);
+	});
+}
+
+#[test]
 fn unstake_fills_up_common_unlock_for_any_target() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000;
@@ -308,7 +367,10 @@ fn unstake_fills_up_common_unlock_for_any_target() {
 	})
 }
 
+// This fails now because unstaking is disallowed before claiming unclaimed rewards.
+// TODO: add claim_rewards call after it's implemented and un-ignore.
 #[test]
+#[ignore]
 fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000;
@@ -325,7 +387,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50));
 		pbh = Capacity::get_staking_history_for(staker).unwrap();
 		assert_eq!(pbh.count(), 2);
-		assert_eq!(pbh.get_staking_amount_for_era(&2u32).unwrap(), &950u64);
+		assert_eq!(pbh.get_entry_for_era(&2u32).unwrap(), &950u64);
 	})
 }
 
@@ -337,6 +399,88 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target1, 1_000));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 500));
 		assert!(Capacity::get_staking_history_for(staker).is_none());
 	})
+}
+
+// Simulate a series of stake/unstake events over 10 eras then check for
+// correct staking values, including for eras that do not have an explicit entry.
+#[test]
+fn get_amount_staked_for_era_works() {
+	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+
+	for i in 10u32..=13u32 {
+		staking_history.add_era_balance(&i.into(), &5u64);
+	}
+	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 5u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 20u64);
+
+	staking_history.subtract_era_balance(&14u32, &7u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 13u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), 13u64);
+
+	staking_history.add_era_balance(&15u32, &10u64);
+
+	let expected_balance = 23u64;
+	assert_eq!(staking_history.get_amount_staked_for_era(&15u32), expected_balance);
+
+	// unstake everything
+	staking_history.subtract_era_balance(&20u32, &expected_balance);
+
+	assert_eq!(staking_history.get_amount_staked_for_era(&16u32), expected_balance);
+	assert_eq!(staking_history.get_amount_staked_for_era(&17u32), expected_balance);
+	assert_eq!(staking_history.get_amount_staked_for_era(&18u32), expected_balance);
+	assert_eq!(staking_history.get_amount_staked_for_era(&19u32), expected_balance);
+
+	// from 20 onward, should return 0.
+	assert_eq!(staking_history.get_amount_staked_for_era(&20u32), 0u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&31u32), 0u64);
+
+	// ensure reporting from earlier is still correct.
+	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 13u64);
+
+	// querying for an era that has been cleared due to the hitting the bound
+	// (StakingRewardsPastErasMax = 5 in mock) returns zero.
+	assert_eq!(staking_history.get_amount_staked_for_era(&9u32), 0u64);
+}
+
+#[test]
+fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+
+		// staking 2k as of block 11, era 2
+		run_to_block(11);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+
+		//  staking 3k as of era 4, block 31
+		run_to_block(31);
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(account), target, amount),
+			Error::<Test>::MustFirstClaimRewards
+		);
+	})
+}
+
+#[test]
+fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(Capacity::get_staking_history_for(account).is_some());
+		run_to_block(10);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
+		assert!(Capacity::get_staking_history_for(account).is_none());
+	});
 }

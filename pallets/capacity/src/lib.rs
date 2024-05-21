@@ -60,7 +60,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, DispatchError, Perbill, Permill,
+	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
 };
 
 pub use common_primitives::{
@@ -187,6 +187,7 @@ pub mod pallet {
 			+ MaxEncodedLen
 			+ EncodeLike
 			+ Into<BalanceOf<Self>>
+			+ Into<BlockNumberFor<Self>>
 			+ TypeInfo;
 
 		/// The number of blocks in a RewardEra
@@ -380,6 +381,7 @@ pub mod pallet {
 		/// Staker is attempting to stake an amount below the minimum amount.
 		StakingAmountBelowMinimum,
 		/// Staker is attempting to stake a zero amount.  DEPRECATED
+		/// #[deprecated(since = "1.13.0", note = "Use StakingAmountBelowMinimum instead")]
 		ZeroAmountNotAllowed,
 		/// This AccountId does not have a staking account.
 		NotAStakingAccount,
@@ -403,22 +405,23 @@ pub mod pallet {
 		MaxEpochLengthExceeded,
 		/// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
 		BalanceTooLowtoStake,
+		/// There are no unstaked token amounts that have passed their thaw period.
+		NoThawedTokenAvailable,
 		/// Staker tried to change StakingType on an existing account
 		CannotChangeStakingType,
 		/// The Era specified is too far in the past or is in the future (15)
 		EraOutOfRange,
-		/// Rewards were already paid out for the specified Era range
-		IneligibleForPayoutInEraRange,
 		/// Attempted to retarget but from and to Provider MSA Ids were the same
 		CannotRetargetToSameProvider,
-		/// Rewards were already paid out this era
-		AlreadyClaimedRewardsThisEra,
+		/// There are no rewards eligible to claim.  Rewards have expired, have already been
+		/// claimed, or boosting has never been done before the current era.
+		NoRewardsEligibleToClaim,
 		/// Caller must wait until the next RewardEra, claim rewards and then can boost again.
 		MustFirstClaimRewards,
 		/// Too many change_staking_target calls made in this RewardEra. (20)
 		MaxRetargetsExceeded,
-		/// There are no unstaked token amounts that have passed their thaw period.
-		NoThawedTokenAvailable,
+		/// Tried to exceed bounds of a some Bounded collection
+		CollectionBoundExceeded,
 	}
 
 	#[pallet::hooks]
@@ -504,6 +507,8 @@ pub mod pallet {
 			let unstaker = ensure_signed(origin)?;
 
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
+
+			ensure!(!Self::has_unclaimed_rewards(&unstaker), Error::<T>::MustFirstClaimRewards);
 
 			let (actual_amount, staking_type) =
 				Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
@@ -798,14 +803,17 @@ impl<T: Config> Pallet<T> {
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
-		let staking_type = staking_account.staking_type;
 		Self::set_staking_account(unstaker, &staking_account);
 
-		let era = Self::get_current_era().era_index;
-		let mut reward_pool =
-			Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
-		reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
-		Self::set_reward_pool(era, &reward_pool.clone());
+		let staking_type = staking_account.staking_type;
+		if staking_type == ProviderBoost {
+			let era = Self::get_current_era().era_index;
+			let mut reward_pool =
+				Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
+			reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
+			Self::set_reward_pool(era, &reward_pool.clone());
+			Self::upsert_boost_history(&unstaker, era, actual_unstaked_amount, false)?;
+		}
 		Ok((actual_unstaked_amount, staking_type))
 	}
 
@@ -914,14 +922,6 @@ impl<T: Config> Pallet<T> {
 
 		capacity_details.withdraw(actual_capacity, actual_amount);
 
-		if staking_type.eq(&ProviderBoost) {
-			// update staking history
-			let era = Self::get_current_era().era_index;
-			let mut pbh =
-				Self::get_staking_history_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
-			pbh.subtract_era_balance(&era, &actual_amount);
-			ProviderBoostHistories::set(unstaker, Some(pbh));
-		}
 		Self::set_capacity_for(target, capacity_details);
 		Self::set_target_details_for(unstaker, target, staking_target_details);
 
@@ -1058,9 +1058,95 @@ impl<T: Config> Pallet<T> {
 		} else {
 			boost_history.subtract_era_balance(&current_era, &boost_amount)
 		};
-		ensure!(upsert_result.is_some(), Error::<T>::EraOutOfRange);
-		ProviderBoostHistories::<T>::set(account, Some(boost_history));
+		match upsert_result {
+			Some(0usize) => ProviderBoostHistories::<T>::remove(account),
+			None => return Err(DispatchError::from(Error::<T>::EraOutOfRange)),
+			_ => ProviderBoostHistories::<T>::set(account, Some(boost_history)),
+		}
 		Ok(())
+	}
+
+	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
+		let current_era = Self::get_current_era().era_index;
+		match Self::get_staking_history_for(account) {
+			Some(provider_boost_history) => {
+				match provider_boost_history.count() {
+					0usize => false,
+					// they staked before the current era, so they have unclaimed rewards.
+					1usize => provider_boost_history.get_entry_for_era(&current_era).is_none(),
+					_ => true,
+				}
+			},
+			None => false,
+		} // 1r
+	}
+
+	// this could be up to 35 reads.
+	#[allow(unused)]
+	pub(crate) fn list_unclaimed_rewards(
+		account: &T::AccountId,
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::StakingRewardsPastErasMax>, DispatchError> {
+		let mut unclaimed_rewards: BoundedVec<
+			UnclaimedRewardInfo<T>,
+			T::StakingRewardsPastErasMax,
+		> = BoundedVec::new();
+
+		if !Self::has_unclaimed_rewards(account) {
+			// 2r
+			return Ok(unclaimed_rewards);
+		}
+
+		let staking_history =
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // cached read from has_unclaimed_rewards
+
+		let era_info = Self::get_current_era(); // cached read, ditto
+
+		let max_history: u32 = T::StakingRewardsPastErasMax::get() - 1; // 1r
+		let era_length: u32 = T::EraLength::get(); // 1r
+		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
+		let end_era = era_info.era_index.saturating_sub(One::one());
+		// start with how much was staked in the era before the earliest for which there are eligible rewards.
+		let mut previous_amount: BalanceOf<T> =
+			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
+		while reward_era.le(&end_era) {
+			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
+			if !staked_amount.is_zero() {
+				let expires_at_era = reward_era.saturating_add(max_history.into());
+				let reward_pool =
+					Self::get_reward_pool_for_era(reward_era).ok_or(Error::<T>::EraOutOfRange)?; // 1r
+				let expires_at_block = if expires_at_era.eq(&era_info.era_index) {
+					era_info.started_at + era_length.into() // expires at end of this era
+				} else {
+					let eras_to_expiration =
+						expires_at_era.saturating_sub(era_info.era_index).add(1u32.into());
+					let blocks_to_expiration = eras_to_expiration * era_length.into();
+					let started_at = era_info.started_at;
+					started_at + blocks_to_expiration.into()
+				};
+				let eligible_amount = if staked_amount.lt(&previous_amount) {
+					staked_amount
+				} else {
+					previous_amount
+				};
+				let earned_amount = <T>::RewardsProvider::era_staking_reward(
+					eligible_amount,
+					reward_pool.total_staked_token,
+					reward_pool.total_reward_pool,
+				);
+				unclaimed_rewards
+					.try_push(UnclaimedRewardInfo {
+						reward_era,
+						expires_at_block,
+						eligible_amount,
+						earned_amount,
+					})
+					.map_err(|_e| Error::<T>::CollectionBoundExceeded)?;
+				// ^^ there's no good reason for this ever to fail in production but it should be handled.
+				previous_amount = staked_amount;
+			}
+			reward_era = reward_era.saturating_add(One::one());
+		} // 1r * up to StakingRewardsPastErasMax-1, if they staked every RewardEra.
+		Ok(unclaimed_rewards)
 	}
 }
 
