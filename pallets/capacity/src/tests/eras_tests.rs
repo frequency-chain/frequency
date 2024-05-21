@@ -12,8 +12,8 @@ use sp_core::Get;
 fn start_new_era_if_needed_updates_era_info() {
 	new_test_ext().execute_with(|| {
 		system_run_to_block(9);
-		for i in 1..4 {
-			let block_decade = i * 10;
+		for i in 1..=4 {
+			let block_decade = (i * 10) + 1;
 			run_to_block(block_decade);
 
 			let current_era_info = CurrentEraInfo::<Test>::get();
@@ -45,7 +45,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 
 		for i in 1u32..4 {
 			let era = i + 1;
-			let final_block = i * 10;
+			let final_block = (i * 10) + 1;
 			system_run_to_block(final_block - 1);
 			run_to_block(final_block);
 			assert_eq!(StakingRewardPool::<Test>::count(), era);
