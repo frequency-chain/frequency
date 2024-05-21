@@ -5,11 +5,15 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
+  push:
+    branches:
+      - "chore/fix-benchmarks"
   workflow_dispatch:
     inputs:
       branch:
         description: "Branch"
         required: true
+        default: chore/fix-benchmarks
       pallets:
         description: "Specific Pallets? (Ex: 'msa,messages')"
         required: true
