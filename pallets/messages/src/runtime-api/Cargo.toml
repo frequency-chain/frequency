@@ -1,6 +1,6 @@
 [package]
 name = "pallet-messages-runtime-api"
-version = "0.0.0"
+version = "1.12.0-rc3+polkadot1.1.0"
 description = "A package that adds Runtime Api for Messages pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
