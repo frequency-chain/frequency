@@ -23,6 +23,7 @@ sp-core = { workspace = true }
 log = { workspace = true, default-features = false }
 
 [dev-dependencies]
+common-runtime = { path = "../../runtime/common", default-features = false }
 chrono = { workspace = true }
 pallet-balances = { workspace = true }
 common-primitives = { default-features = false, path = "../../common/primitives" }

@@ -1433,6 +1433,7 @@ dependencies = [
  "scale-info",
  "smallvec",
  "sp-core",
+ "sp-runtime",
  "sp-std",
  "sp-weights",
 ]
@@ -6520,6 +6521,7 @@ name = "pallet-handles"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "env_logger 0.10.2",
  "frame-benchmarking",
  "frame-support",
@@ -7197,6 +7199,7 @@ name = "pallet-stateful-storage"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "common-runtime",
  "env_logger 0.10.2",
  "frame-benchmarking",
  "frame-support",
@@ -7264,6 +7267,7 @@ version = "0.0.0"
 dependencies = [
  "chrono",
  "common-primitives",
+ "common-runtime",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
