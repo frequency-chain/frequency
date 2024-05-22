@@ -1,6 +1,6 @@
-// This file is part of Substrate.
+// This file is part of Frequency.
 
-// Copyright (C) Parity Technologies (UK) Ltd.
+// Copyright (C) Frequency Network Foundation.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 // limitations under the License.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-03-06 (Y/M/D)
-//! HOSTNAME: `benchmark-runner-wc6w8-pv9rm`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! DATE: 2024-05-21 (Y/M/D)
+//! HOSTNAME: `ip-10-173-4-174`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -43,17 +43,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 370_262, 404_792
-	///   Average:  378_283
-	///   Median:   374_739
-	///   Std-Dev:  7804.27
+	///   Min, Max: 377_053, 408_146
+	///   Average:  383_956
+	///   Median:   380_896
+	///   Std-Dev:  7560.45
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 398_165
-	///   95th: 396_057
-	///   75th: 379_625
+	///   99th: 406_105
+	///   95th: 400_845
+	///   75th: 384_674
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(378_283), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(383_956), 0);
 }
 
 #[cfg(test)]
