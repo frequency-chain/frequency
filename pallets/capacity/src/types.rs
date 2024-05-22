@@ -290,7 +290,7 @@ pub struct RewardPoolInfo<Balance> {
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct ProviderBoostHistory<T: Config>(
-	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::StakingRewardsPastErasMax>,
+	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::ProviderBoostRewardsPastErasMax>,
 );
 
 impl<T: Config> Default for ProviderBoostHistory<T> {
@@ -418,7 +418,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 	}
 
 	fn is_full(&self) -> bool {
-		self.count().eq(&(T::StakingRewardsPastErasMax::get() as usize))
+		self.count().eq(&(T::ProviderBoostRewardsPastErasMax::get() as usize))
 	}
 }
 
@@ -457,7 +457,7 @@ impl<T: Config> RetargetInfo<T> {
 }
 
 /// A claim to be rewarded `claimed_reward` in token value
-pub struct StakingRewardClaim<T: Config> {
+pub struct ProviderBoostRewardClaim<T: Config> {
 	/// How much is claimed, in token
 	pub claimed_reward: BalanceOf<T>,
 	/// The end state of the staking account if the operations are valid
@@ -469,7 +469,7 @@ pub struct StakingRewardClaim<T: Config> {
 }
 
 /// A trait that provides the Economic Model for Provider Boosting.
-pub trait StakingRewardsProvider<T: Config> {
+pub trait BoostingRewardsProvider<T: Config> {
 	/// the AccountId this provider is using
 	type AccountId;
 
@@ -494,7 +494,7 @@ pub trait StakingRewardsProvider<T: Config> {
 		to_era: Self::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError>;
 
-	/// Calculate the staking reward for a single era.  We don't care about the era number,
+	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
 		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
@@ -502,7 +502,7 @@ pub trait StakingRewardsProvider<T: Config> {
 		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
 	) -> BalanceOf<T>;
 
-	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` StakingRewardClaim.
+	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` ProviderBoostRewardClaim.
 	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
 	/// Errors:
 	///     - NotAStakingAccount
@@ -511,7 +511,7 @@ pub trait StakingRewardsProvider<T: Config> {
 	fn validate_staking_reward_claim(
 		account_id: Self::AccountId,
 		proof: Self::Hash,
-		payload: StakingRewardClaim<T>,
+		payload: ProviderBoostRewardClaim<T>,
 	) -> bool;
 
 	/// Return the effective amount when staked for a Provider Boost

@@ -115,10 +115,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Capacity::StakingRewardPool` (r:3 w:2)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::CounterForStakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::CounterForStakingRewardPool` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:3 w:2)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CounterForProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::CounterForProviderBoostRewardPool` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn start_new_reward_era_if_needed() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `613`
@@ -132,8 +132,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Capacity::ProviderBoostHistories` (`max_values`: None, `max_size`: Some(661), added: 3136, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:1)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
@@ -186,8 +186,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::CapacityLedger` (r:1 w:1)
 	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Freezes` (r:1 w:1)
@@ -262,10 +262,10 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-	/// Storage: `Capacity::StakingRewardPool` (r:3 w:2)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::CounterForStakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::CounterForStakingRewardPool` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:3 w:2)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::CounterForProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::CounterForProviderBoostRewardPool` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
 	fn start_new_reward_era_if_needed() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `613`
@@ -279,8 +279,8 @@ impl WeightInfo for () {
 	/// Proof: `Capacity::ProviderBoostHistories` (`max_values`: None, `max_size`: Some(661), added: 3136, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingAccountLedger` (r:1 w:1)
 	/// Proof: `Capacity::StakingAccountLedger` (`max_values`: None, `max_size`: Some(57), added: 2532, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:1)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::StakingTargetLedger` (r:1 w:1)
@@ -333,8 +333,8 @@ impl WeightInfo for () {
 	/// Proof: `Capacity::StakingTargetLedger` (`max_values`: None, `max_size`: Some(88), added: 2563, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::CapacityLedger` (r:1 w:1)
 	/// Proof: `Capacity::CapacityLedger` (`max_values`: None, `max_size`: Some(68), added: 2543, mode: `MaxEncodedLen`)
-	/// Storage: `Capacity::StakingRewardPool` (r:1 w:1)
-	/// Proof: `Capacity::StakingRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::ProviderBoostRewardPool` (r:1 w:1)
+	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
 	/// Storage: `Capacity::UnstakeUnlocks` (r:1 w:0)
 	/// Proof: `Capacity::UnstakeUnlocks` (`max_values`: None, `max_size`: Some(121), added: 2596, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Freezes` (r:1 w:1)

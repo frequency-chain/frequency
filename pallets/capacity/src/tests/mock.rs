@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, StakingRewardClaim,
-	StakingRewardsProvider,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, BoostingRewardsProvider,
+	ProviderBoostRewardClaim,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -134,11 +134,11 @@ impl pallet_msa::Config for Test {
 }
 
 // not used yet
-pub struct TestStakingRewardsProvider {}
+pub struct TestRewardsProvider {}
 
 type TestRewardEra = u32;
 
-impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
+impl BoostingRewardsProvider<Test> for TestRewardsProvider {
 	type AccountId = u64;
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
@@ -173,7 +173,7 @@ impl StakingRewardsProvider<Test> for TestStakingRewardsProvider {
 	fn validate_staking_reward_claim(
 		_account_id: Self::AccountId,
 		_proof: Self::Hash,
-		_payload: StakingRewardClaim<Test>,
+		_payload: ProviderBoostRewardClaim<Test>,
 	) -> bool {
 		true
 	}
@@ -208,7 +208,7 @@ impl pallet_capacity::Config for Test {
 	type CapacityPerToken = TestCapacityPerToken;
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
-	type StakingRewardsPastErasMax = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
+	type ProviderBoostRewardsPastErasMax = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;

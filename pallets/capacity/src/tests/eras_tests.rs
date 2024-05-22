@@ -1,7 +1,7 @@
 use super::mock::*;
 use crate::{
 	tests::testing_utils::{run_to_block, setup_provider, system_run_to_block},
-	Config, CurrentEraInfo, RewardEraInfo, RewardPoolInfo, StakingRewardPool,
+	Config, CurrentEraInfo, ProviderBoostRewardPool, RewardEraInfo, RewardPoolInfo,
 	StakingType::*,
 };
 use common_primitives::msa::MessageSourceId;
@@ -24,8 +24,8 @@ fn start_new_era_if_needed_updates_era_info() {
 				RewardEraInfo { era_index: expected_era, started_at: block_decade }
 			);
 
-			let past_eras_max: u32 = <Test as Config>::StakingRewardsPastErasMax::get();
-			assert!(StakingRewardPool::<Test>::count().le(&past_eras_max));
+			let past_eras_max: u32 = <Test as Config>::ProviderBoostRewardsPastErasMax::get();
+			assert!(ProviderBoostRewardPool::<Test>::count().le(&past_eras_max));
 			system_run_to_block(block_decade + 9);
 		}
 	})
@@ -48,9 +48,9 @@ fn start_new_era_if_needed_updates_reward_pool() {
 			let final_block = (i * 10) + 1;
 			system_run_to_block(final_block - 1);
 			run_to_block(final_block);
-			assert_eq!(StakingRewardPool::<Test>::count(), era);
+			assert_eq!(ProviderBoostRewardPool::<Test>::count(), era);
 			assert_eq!(
-				StakingRewardPool::<Test>::get(era).unwrap(),
+				ProviderBoostRewardPool::<Test>::get(era).unwrap(),
 				RewardPoolInfo {
 					total_staked_token: (stake_amount * i as u64),
 					total_reward_pool: 10_000,
