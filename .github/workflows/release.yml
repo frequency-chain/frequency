@@ -19,6 +19,7 @@ on:
 
 permissions:
   contents: write
+  statuses: write
 
 env:
   NEW_RELEASE_TAG_FROM_UI: ${{github.event.inputs.release-version}}
@@ -94,8 +95,8 @@ jobs:
         if: steps.is-full-release.outputs.is-full-release == 'true'
         # Match installation steps to CI base docker image
         run: |
-          curl https://sh.rustup.rs -sSf | bash -s -- -y
-          echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+          curl https://sh.rustup.rs -sSf | HOME=`pwd` bash -s -- -y
+          echo "PATH=`pwd`/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Update Weights for All Pallets
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
@@ -108,9 +109,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
+          file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
 
   version-code:
     needs: run-all-benchmarks
@@ -136,9 +135,6 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
           commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
-          commit_user_name: Frequency CI [bot]
-          commit_user_email: do-not-reply@users.noreply.github.com
-          commit_author: Frequency CI [bot] <do-not-reply@users.noreply.github.com>
       - name: Update Release Version Tag
         uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
         with:
@@ -651,6 +647,8 @@ jobs:
     name: Release Built Artifacts
     runs-on: ubuntu-22.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    permissions:
+      contents: write
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -682,7 +680,7 @@ jobs:
         id: build-changelog
         uses: mikepenz/release-changelog-builder-action@6fd5cc6eaf7567dbd0f9666061215bb476f012fc
         env:
-          GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+          GITHUB_TOKEN: ${{ github.token }}
         with:
           fromTag: ${{env.PREVIOUS_RELEASE_TAG}}
           toTag: ${{env.NEW_RELEASE_TAG}}
