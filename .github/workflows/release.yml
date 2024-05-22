@@ -869,8 +869,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
       - name: Build and Push Parachain Image
         uses: docker/build-push-action@v5
         with:
@@ -894,8 +894,8 @@ jobs:
         if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
           repository: ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}
           readme-filepath: docker/${{env.IMAGE_NAME}}-${{matrix.network}}.overview.md
 
@@ -964,8 +964,8 @@ jobs:
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
       - name: Build and Push Dev Image
         # if: env.TEST_RUN != 'true'
         uses: docker/build-push-action@v5
@@ -990,8 +990,8 @@ jobs:
         if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
         with:
-          username: ${{secrets.DOCKERHUB_USERNAME_FC}}
-          password: ${{secrets.DOCKERHUB_TOKEN_FC}}
+          username: ${{secrets.DOCKERHUB_USERNAME}}
+          password: ${{secrets.DOCKERHUB_TOKEN}}
           repository: ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}
           readme-filepath: docker/${{matrix.node}}.overview.md
 
