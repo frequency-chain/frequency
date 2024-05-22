@@ -41,6 +41,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use crate::types::PasskeyPayload;
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	node::UtilityProvider,
@@ -237,6 +238,50 @@ pub mod pallet {
 			);
 
 			T::BatchProvider::batch_all(origin, calls)
+		}
+
+		// TODO: do we need Pays::No?
+		#[pallet::call_index(2)]
+		#[pallet::weight({
+		let info = payload.passkey_call.call.get_dispatch_info();
+		(info.weight, info.class)
+		})]
+		pub fn passkey_proxy(
+			origin: OriginFor<T>,
+			payload: PasskeyPayload<T>,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+			let main_origin = T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+				payload.passkey_call.account_id,
+			));
+			payload.passkey_call.call.dispatch(main_origin)
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			const PRIORITY: u64 = 100;
+
+			let signer = match call {
+				Call::passkey_proxy { payload } => payload.passkey_call.account_id.clone(),
+				_ => return Err(InvalidTransaction::Call.into()),
+			};
+
+			// TODO: check signature for the passkey
+			// TODO: check signature for the account
+			// TODO: check and increase nonce of signer
+			// TODO: additional verifications that will make this unsigned call secure from DOS attacks
+
+			Ok(ValidTransaction {
+				priority: PRIORITY,
+				requires: vec![],
+				provides: vec![("passkey", signer).encode()],
+				longevity: TransactionLongevity::max_value(),
+				propagate: true,
+			})
 		}
 	}
 }
