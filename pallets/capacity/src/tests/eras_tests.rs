@@ -24,7 +24,7 @@ fn start_new_era_if_needed_updates_era_info() {
 				RewardEraInfo { era_index: expected_era, started_at: block_decade }
 			);
 
-			let past_eras_max: u32 = <Test as Config>::ProviderBoostRewardsPastErasMax::get();
+			let past_eras_max: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 			assert!(ProviderBoostRewardPool::<Test>::count().le(&past_eras_max));
 			system_run_to_block(block_decade + 9);
 		}

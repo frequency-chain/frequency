@@ -198,10 +198,10 @@ pub mod pallet {
 		/// Note that you can claim rewards even if you no longer are boosting, because you
 		/// may claim rewards for past eras up to the history limit.
 		#[pallet::constant]
-		type ProviderBoostRewardsPastErasMax: Get<u32>;
+		type ProviderBoostHistoryLimit: Get<u32>;
 
-		/// The BoostingRewardsProvider used by this pallet in a given runtime
-		type RewardsProvider: BoostingRewardsProvider<Self>;
+		/// The ProviderBoostRewardsProvider used by this pallet in a given runtime
+		type RewardsProvider: ProviderBoostRewardsProvider<Self>;
 
 		/// A staker may not retarget more than MaxRetargetsPerRewardEra
 		#[pallet::constant]
@@ -946,8 +946,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
-			Self::get_epoch_length()
+		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start)
+			>= Self::get_epoch_length()
 		{
 			let current_epoch = Self::get_current_epoch();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(One::one()));
@@ -974,7 +974,7 @@ impl<T: Config> Pallet<T> {
 			let current_reward_pool =
 				Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
 
-			let past_eras_max = T::ProviderBoostRewardsPastErasMax::get();
+			let past_eras_max = T::ProviderBoostHistoryLimit::get();
 			let entries: u32 = ProviderBoostRewardPool::<T>::count(); // 1r
 
 			if past_eras_max.eq(&entries) {
@@ -1085,11 +1085,10 @@ impl<T: Config> Pallet<T> {
 	#[allow(unused)]
 	pub(crate) fn list_unclaimed_rewards(
 		account: &T::AccountId,
-	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostRewardsPastErasMax>, DispatchError>
-	{
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError> {
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<T>,
-			T::ProviderBoostRewardsPastErasMax,
+			T::ProviderBoostHistoryLimit,
 		> = BoundedVec::new();
 
 		if !Self::has_unclaimed_rewards(account) {
@@ -1102,7 +1101,7 @@ impl<T: Config> Pallet<T> {
 
 		let era_info = Self::get_current_era(); // cached read, ditto
 
-		let max_history: u32 = T::ProviderBoostRewardsPastErasMax::get() - 1; // 1r
+		let max_history: u32 = T::ProviderBoostHistoryLimit::get() - 1; // 1r
 		let era_length: u32 = T::EraLength::get(); // 1r
 		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
 		let end_era = era_info.era_index.saturating_sub(One::one());
@@ -1146,7 +1145,7 @@ impl<T: Config> Pallet<T> {
 				previous_amount = staked_amount;
 			}
 			reward_era = reward_era.saturating_add(One::one());
-		} // 1r * up to ProviderBoostRewardsPastErasMax-1, if they staked every RewardEra.
+		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
 	}
 }
@@ -1222,13 +1221,13 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
 		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.can_replenish(Self::get_current_epoch())
+			return capacity_details.can_replenish(Self::get_current_epoch());
 		}
 		false
 	}
 }
 
-impl<T: Config> BoostingRewardsProvider<T> for Pallet<T> {
+impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	type AccountId = T::AccountId;
 	type RewardEra = T::RewardEra;
 	type Hash = T::Hash;
@@ -1248,7 +1247,7 @@ impl<T: Config> BoostingRewardsProvider<T> for Pallet<T> {
 	) -> Result<Self::Balance, DispatchError> {
 		let era_range = from_era.saturating_sub(to_era);
 		ensure!(
-			era_range.le(&T::ProviderBoostRewardsPastErasMax::get().into()),
+			era_range.le(&T::ProviderBoostHistoryLimit::get().into()),
 			Error::<T>::EraOutOfRange
 		);
 		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);

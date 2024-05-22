@@ -1,7 +1,8 @@
 use super::mock::*;
 use crate::{
-	BoostingRewardsProvider, CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory,
-	ProviderBoostRewardClaim, RewardEraInfo, StakingDetails, StakingType::*, UnclaimedRewardInfo,
+	CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardClaim,
+	ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails, StakingType::*,
+	UnclaimedRewardInfo,
 };
 use frame_support::{assert_err, assert_ok, traits::Len};
 

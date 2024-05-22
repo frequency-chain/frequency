@@ -111,7 +111,7 @@ impl<Balance: Default + Saturating + Copy + CheckedAdd + CheckedSub + PartialOrd
 		self.amount = self.amount.saturating_sub(amount);
 		if self.amount.lt(&minimum) {
 			*self = Self::default();
-			return (entire_amount, entire_capacity)
+			return (entire_amount, entire_capacity);
 		} else {
 			self.capacity = self.capacity.saturating_sub(capacity);
 		}
@@ -290,7 +290,7 @@ pub struct RewardPoolInfo<Balance> {
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct ProviderBoostHistory<T: Config>(
-	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::ProviderBoostRewardsPastErasMax>,
+	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::ProviderBoostHistoryLimit>,
 );
 
 impl<T: Config> Default for ProviderBoostHistory<T> {
@@ -362,7 +362,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 				.try_insert(*reward_era, current_staking_amount.saturating_sub(*subtract_amount))
 				.is_err()
 			{
-				return None
+				return None;
 			}
 		}
 		Some(self.count())
@@ -384,7 +384,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 		let mut eligible_amount: BalanceOf<T> = Zero::zero();
 		while let Some((era, balance)) = bmap_iter.next() {
 			if era.eq(reward_era) {
-				return *balance
+				return *balance;
 			}
 			// there was a boost or unstake in this era.
 			else if era.gt(reward_era) {
@@ -418,7 +418,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 	}
 
 	fn is_full(&self) -> bool {
-		self.count().eq(&(T::ProviderBoostRewardsPastErasMax::get() as usize))
+		self.count().eq(&(T::ProviderBoostHistoryLimit::get() as usize))
 	}
 }
 
@@ -444,7 +444,7 @@ impl<T: Config> RetargetInfo<T> {
 	pub fn update(&mut self, current_era: T::RewardEra) -> Option<()> {
 		let max_retargets = T::MaxRetargetsPerRewardEra::get();
 		if self.retarget_count.ge(&max_retargets) && self.last_retarget_at.eq(&current_era) {
-			return None
+			return None;
 		}
 		if self.last_retarget_at.lt(&current_era) {
 			self.last_retarget_at = current_era;
@@ -469,7 +469,7 @@ pub struct ProviderBoostRewardClaim<T: Config> {
 }
 
 /// A trait that provides the Economic Model for Provider Boosting.
-pub trait BoostingRewardsProvider<T: Config> {
+pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// the AccountId this provider is using
 	type AccountId;
 

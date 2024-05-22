@@ -62,7 +62,7 @@ fn stake_does_not_add_to_staking_history() {
 #[test]
 fn provider_boost_history_add_era_balance_adds_entries_and_deletes_old_if_full() {
 	let mut pbh = ProviderBoostHistory::<Test>::new();
-	let bound: u32 = <Test as Config>::ProviderBoostRewardsPastErasMax::get();
+	let bound: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 
 	for era in 1..bound + 1u32 {
 		let add_amount: u64 = 1_000 * era as u64;

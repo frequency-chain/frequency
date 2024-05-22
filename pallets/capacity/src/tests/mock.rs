@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, BoostingRewardsProvider,
-	ProviderBoostRewardClaim,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, ProviderBoostRewardClaim,
+	ProviderBoostRewardsProvider,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -138,7 +138,7 @@ pub struct TestRewardsProvider {}
 
 type TestRewardEra = u32;
 
-impl BoostingRewardsProvider<Test> for TestRewardsProvider {
+impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 	type AccountId = u64;
 	type RewardEra = TestRewardEra;
 	type Hash = Hash; // use what's in common_primitives::node
@@ -208,7 +208,7 @@ impl pallet_capacity::Config for Test {
 	type CapacityPerToken = TestCapacityPerToken;
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
-	type ProviderBoostRewardsPastErasMax = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
+	type ProviderBoostHistoryLimit = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;

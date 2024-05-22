@@ -55,7 +55,7 @@ It does not give regard to what the economic model actually is, since that is ye
 1. **RewardEra**: the time period (TBD in blocks) that Staking Rewards are based upon. `RewardEra` is to distinguish it easily from Substrate's staking pallet Era, or the index of said time period.
 1. **Staking Reward**: a per-RewardEra share of a staking reward pool of FRQCY tokens for a given staking account.
 1. **Reward Pool**: a fixed amount of FRQCY that can be minted for rewards each RewardEra and distributed to stakers.
-1. **StakingRewardsProvider**: a trait that encapsulates the economic model for staking rewards, providing functionality for calculating the reward pool and staking rewards.
+1. **ProviderBoostRewardsProvider**: a trait that encapsulates the economic model for staking rewards, providing functionality for calculating the reward pool and staking rewards.
 
 ## Staking Token Rewards
 
@@ -94,8 +94,8 @@ pub struct StakingTargetDetails<T: Config> {
 	pub capacity: BalanceOf<T>,
 	/// The type of staking, which determines ultimate capacity per staked token.
 	pub staking_type: StakingType, // NEW
-    /// total staked amounts for each past era, up to StakingRewardsPastErasMax eras.
-    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::StakingRewardsPastErasMax>, // NEW
+    /// total staked amounts for each past era, up to ProviderBoostHistoryLimit eras.
+    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::ProviderBoostHistoryLimit>, // NEW
 }
 ```
 
@@ -140,7 +140,7 @@ pub fn unstake(
 
 ```
 
-### NEW: StakingRewardsProvider - Economic Model trait
+### NEW: ProviderBoostRewardsProvider - Economic Model trait
 
 This one is not yet determined, however there are certain functions that will definitely be needed.
 The rewards system will still need to know the `reward_pool_size`.
@@ -166,7 +166,7 @@ pub struct StakingRewardClaim<T: Config> {
     pub to_era: T::RewardEra,
 }
 
-pub trait StakingRewardsProvider<T: Config> {
+pub trait ProviderBoostRewardsProvider<T: Config> {
 
     /// Calculate the size of the reward pool for the given era, in token
     fn reward_pool_size() -> BalanceOf<T>;
@@ -210,16 +210,16 @@ pub trait Config: frame_system::Config {
     /// The number of blocks in a Staking RewardEra
     type EraLength: Get<u32>;
     /// The maximum number of eras over which one can claim rewards
-    type StakingRewardsPastErasMax: Get<u32>;
+    type ProviderBoostHistoryLimit: Get<u32>;
     /// The trait providing the ProviderBoost economic model calculations and values
-    type RewardsProvider: StakingRewardsProvider;
+    type RewardsProvider: ProviderBoostRewardsProvider;
 };
 ```
 
 ### NEW: RewardPoolInfo, RewardPoolHistory
 
 Information about the reward pool for a given Reward Era and how it's stored. The size of this pool is limited to
-`StakingRewardsPastErasMax` but is stored as a CountedStorageMap instead of a BoundedVec for performance reasons:
+`ProviderBoostHistoryLimit` but is stored as a CountedStorageMap instead of a BoundedVec for performance reasons:
 
 - claiming rewards for the entire history will be unlikely to be allowed. Iterating over a much smaller range is more performant
 - Fetching/writing the entire history every block could affect block times. Instead, once per block, retrieve the latest record, delete the earliest record and insert a new one
@@ -323,7 +323,7 @@ within discussed limits.
 ///     - EraOutOfRange:
 ///         - if `from_era` is earlier than history storage
 ///         - if `to_era` is >= current era
-///         - if `to_era` - `from_era` > StakingRewardsPastErasMax
+///         - if `to_era` - `from_era` > ProviderBoostHistoryLimit
 #[pallet::call_index(n)]
 pub fn claim_staking_reward(
    origin: OriginFor<T>,
@@ -346,7 +346,7 @@ This could be the form if calculations are done off chain and submitted for vali
     ///     - EraOutOfRange:
     ///         - if `from_era` is earlier than history storage
     ///         - if `to_era` is >= current era
-    ///         - if `to_era` - `from_era` > StakingRewardsPastErasMax
+    ///         - if `to_era` - `from_era` > ProviderBoostHistoryLimit
     #[pallet::call_index(n)]
     pub fn claim_staking_reward(
         origin: OriginFor<T>,

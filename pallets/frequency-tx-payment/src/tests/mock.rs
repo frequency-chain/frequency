@@ -220,7 +220,7 @@ impl pallet_capacity::Config for Test {
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type RewardEra = u32;
 	type EraLength = ConstU32<5>;
-	type ProviderBoostRewardsPastErasMax = ConstU32<2>;
+	type ProviderBoostHistoryLimit = ConstU32<2>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;
@@ -241,7 +241,7 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 	}
 
 	fn get_inner_calls(_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		return Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
+		return Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})]);
 	}
 }
 
