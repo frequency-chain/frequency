@@ -441,7 +441,7 @@ fn get_amount_staked_for_era_works() {
 	assert_eq!(staking_history.get_amount_staked_for_era(&14u32), 13u64);
 
 	// querying for an era that has been cleared due to the hitting the bound
-	// (StakingRewardsPastErasMax = 5 in mock) returns zero.
+	// (ProviderBoostHistoryLimit = 5 in mock) returns zero.
 	assert_eq!(staking_history.get_amount_staked_for_era(&9u32), 0u64);
 }
 

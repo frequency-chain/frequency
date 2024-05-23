@@ -828,7 +828,7 @@ Note that Capacity transactions do not get refunded for overcharges.
 
 ## Non-goals
 
-Staking rewards and re-staking are left for another design document.
+Rewards and re-staking are left for another design document.
 
 ## Benefits and Risk
 
