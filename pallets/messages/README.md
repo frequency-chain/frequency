@@ -12,8 +12,8 @@ Retrieval is via RPC.
 ### Metadata vs Payload
 
 Messages have both metadata and payloads.
-The payload should always match the data structure or the messages is considered invalid.
-The metadata is the Block Number, Schema Id, and other data to help discover and organize the payload information.
+The payload should always match the data structure or the message is considered invalid.
+The metadata is the Block Number, Schema Id, and other data useful for discovering and organizing the payload information.
 
 ### Payload Options
 
