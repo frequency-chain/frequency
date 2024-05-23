@@ -1,4 +1,4 @@
-use crate::{Config, CurrentEraInfo, RewardEraInfo, RewardPoolInfo, StakingRewardPool};
+use crate::{Config, CurrentEraInfo, ProviderBoostRewardPool, RewardEraInfo, RewardPoolInfo};
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
@@ -18,7 +18,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 			let current_block = frame_system::Pallet::<T>::block_number(); // 1r
 			let era_index: T::RewardEra = 0u32.into();
 			CurrentEraInfo::<T>::set(RewardEraInfo { era_index, started_at: current_block }); // 1w
-			StakingRewardPool::<T>::insert(era_index, RewardPoolInfo::default()); // 1w
+			ProviderBoostRewardPool::<T>::insert(era_index, RewardPoolInfo::default()); // 1w
 			T::DbWeight::get().reads_writes(2, 2)
 		} else {
 			T::DbWeight::get().reads(1)
@@ -32,10 +32,10 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		} else {
 			log::info!("CurrentEraInfo not found. Initialization should proceed.");
 		}
-		if StakingRewardPool::<T>::iter().count() == 0usize {
-			log::info!("StakingRewardPool will be updated with Era 0");
+		if ProviderBoostRewardPool::<T>::iter().count() == 0usize {
+			log::info!("ProviderBoostRewardPool will be updated with Era 0");
 		} else {
-			log::info!("StakingRewardPool has already been initialized.")
+			log::info!("ProviderBoostRewardPool has already been initialized.")
 		}
 		Ok(Vec::default())
 	}
@@ -47,7 +47,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		let info = CurrentEraInfo::<T>::get();
 		assert_eq!(info.started_at, current_block);
 		log::info!("CurrentEraInfo.started_at is set to {:?}.", info.started_at);
-		assert_eq!(StakingRewardPool::<T>::iter().count(), 1);
+		assert_eq!(ProviderBoostRewardPool::<T>::iter().count(), 1);
 		Ok(())
 	}
 }

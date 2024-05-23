@@ -1,7 +1,7 @@
 use super::mock::*;
 use crate::{
-	CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory, RewardEraInfo,
-	StakingDetails, StakingRewardClaim, StakingRewardsProvider, StakingType::*,
+	CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardClaim,
+	ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails, StakingType::*,
 	UnclaimedRewardInfo,
 };
 use frame_support::{assert_err, assert_ok, traits::Len};
@@ -19,7 +19,7 @@ fn staking_reward_total_happy_path() {
 		// this calls the implementation in the pallet
 		assert_eq!(Ok(5u64), Capacity::staking_reward_total(1, 5u32, 10u32));
 		let proof = H256::random();
-		let payload: StakingRewardClaim<Test> = StakingRewardClaim {
+		let payload: ProviderBoostRewardClaim<Test> = ProviderBoostRewardClaim {
 			claimed_reward: 1,
 			staking_account_end_state: StakingDetails { active: 1, staking_type: MaximumCapacity },
 			from_era: 1,
