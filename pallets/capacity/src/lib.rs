@@ -175,7 +175,7 @@ pub mod pallet {
 		type CapacityPerToken: Get<Perbill>;
 
 		/// A period of `EraLength` blocks in which a Staking Pool applies and
-		/// when Staking Rewards may be earned.
+		/// when Provider Boost Rewards may be earned.
 		type RewardEra: Parameter
 			+ Member
 			+ MaybeSerializeDeserialize
@@ -198,10 +198,10 @@ pub mod pallet {
 		/// Note that you can claim rewards even if you no longer are boosting, because you
 		/// may claim rewards for past eras up to the history limit.
 		#[pallet::constant]
-		type StakingRewardsPastErasMax: Get<u32>;
+		type ProviderBoostHistoryLimit: Get<u32>;
 
-		/// The StakingRewardsProvider used by this pallet in a given runtime
-		type RewardsProvider: StakingRewardsProvider<Self>;
+		/// The ProviderBoostRewardsProvider used by this pallet in a given runtime
+		type RewardsProvider: ProviderBoostRewardsProvider<Self>;
 
 		/// A staker may not retarget more than MaxRetargetsPerRewardEra
 		#[pallet::constant]
@@ -275,7 +275,7 @@ pub mod pallet {
 	pub type UnstakeUnlocks<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunkList<T>>;
 
-	/// Information about the current staking reward era. Checked every block.
+	/// Information about the current reward era. Checked every block.
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_current_era)]
@@ -285,7 +285,7 @@ pub mod pallet {
 	/// Reward Pool history
 	#[pallet::storage]
 	#[pallet::getter(fn get_reward_pool_for_era)]
-	pub type StakingRewardPool<T: Config> =
+	pub type ProviderBoostRewardPool<T: Config> =
 		CountedStorageMap<_, Twox64Concat, T::RewardEra, RewardPoolInfo<BalanceOf<T>>>;
 
 	#[pallet::storage]
@@ -787,7 +787,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn set_reward_pool(era: <T>::RewardEra, new_reward_pool: &RewardPoolInfo<BalanceOf<T>>) {
-		StakingRewardPool::<T>::set(era, Some(new_reward_pool.clone()));
+		ProviderBoostRewardPool::<T>::set(era, Some(new_reward_pool.clone()));
 	}
 
 	/// Decrease a staking account's active token and reap if it goes below the minimum.
@@ -969,19 +969,19 @@ impl<T: Config> Pallet<T> {
 				era_index: current_era_info.era_index.saturating_add(One::one()),
 				started_at: current_block,
 			};
+			CurrentEraInfo::<T>::set(new_era_info); // 1w
 
 			let current_reward_pool =
 				Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
 
-			let past_eras_max = T::StakingRewardsPastErasMax::get();
-			let entries: u32 = StakingRewardPool::<T>::count(); // 1r
+			let past_eras_max = T::ProviderBoostHistoryLimit::get();
+			let entries: u32 = ProviderBoostRewardPool::<T>::count(); // 1r
 
 			if past_eras_max.eq(&entries) {
 				let earliest_era =
 					current_era_info.era_index.saturating_sub(past_eras_max.into()).add(One::one());
-				StakingRewardPool::<T>::remove(earliest_era); // 1w
+				ProviderBoostRewardPool::<T>::remove(earliest_era); // 1w
 			}
-			CurrentEraInfo::<T>::set(new_era_info); // 1w
 
 			let total_reward_pool =
 				T::RewardsProvider::reward_pool_size(current_reward_pool.total_staked_token);
@@ -990,7 +990,7 @@ impl<T: Config> Pallet<T> {
 				total_reward_pool,
 				unclaimed_balance: total_reward_pool,
 			};
-			StakingRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
+			ProviderBoostRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
 			T::WeightInfo::start_new_reward_era_if_needed()
 		} else {
 			T::DbWeight::get().reads(1)
@@ -1085,10 +1085,10 @@ impl<T: Config> Pallet<T> {
 	#[allow(unused)]
 	pub(crate) fn list_unclaimed_rewards(
 		account: &T::AccountId,
-	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::StakingRewardsPastErasMax>, DispatchError> {
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError> {
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<T>,
-			T::StakingRewardsPastErasMax,
+			T::ProviderBoostHistoryLimit,
 		> = BoundedVec::new();
 
 		if !Self::has_unclaimed_rewards(account) {
@@ -1101,7 +1101,7 @@ impl<T: Config> Pallet<T> {
 
 		let era_info = Self::get_current_era(); // cached read, ditto
 
-		let max_history: u32 = T::StakingRewardsPastErasMax::get() - 1; // 1r
+		let max_history: u32 = T::ProviderBoostHistoryLimit::get() - 1; // 1r
 		let era_length: u32 = T::EraLength::get(); // 1r
 		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
 		let end_era = era_info.era_index.saturating_sub(One::one());
@@ -1145,7 +1145,7 @@ impl<T: Config> Pallet<T> {
 				previous_amount = staked_amount;
 			}
 			reward_era = reward_era.saturating_add(One::one());
-		} // 1r * up to StakingRewardsPastErasMax-1, if they staked every RewardEra.
+		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
 	}
 }
@@ -1221,13 +1221,13 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
 		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.can_replenish(Self::get_current_epoch())
+			return capacity_details.can_replenish(Self::get_current_epoch());
 		}
 		false
 	}
 }
 
-impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
+impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	type AccountId = T::AccountId;
 	type RewardEra = T::RewardEra;
 	type Hash = T::Hash;
@@ -1247,7 +1247,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 	) -> Result<Self::Balance, DispatchError> {
 		let era_range = from_era.saturating_sub(to_era);
 		ensure!(
-			era_range.le(&T::StakingRewardsPastErasMax::get().into()),
+			era_range.le(&T::ProviderBoostHistoryLimit::get().into()),
 			Error::<T>::EraOutOfRange
 		);
 		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
@@ -1262,7 +1262,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 		Ok(per_era.saturating_mul(num_eras.into()))
 	}
 
-	/// Calculate the staking reward for a single era.  We don't care about the era number,
+	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
 		era_amount_staked: Self::Balance,
@@ -1280,7 +1280,7 @@ impl<T: Config> StakingRewardsProvider<T> for Pallet<T> {
 	fn validate_staking_reward_claim(
 		_account_id: Self::AccountId,
 		_proof: Self::Hash,
-		_payload: StakingRewardClaim<T>,
+		_payload: ProviderBoostRewardClaim<T>,
 	) -> bool {
 		true
 	}

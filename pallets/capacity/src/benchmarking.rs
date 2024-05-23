@@ -52,7 +52,7 @@ pub fn set_era_and_reward_pool_at_block<T: Config>(
 		total_reward_pool,
 		unclaimed_balance: total_reward_pool,
 	};
-	StakingRewardPool::<T>::insert(era_index, pool_info);
+	ProviderBoostRewardPool::<T>::insert(era_index, pool_info);
 }
 
 // caller stakes the given amount to the given target
@@ -137,7 +137,7 @@ benchmarks! {
 
 	start_new_reward_era_if_needed {
 		let current_block: BlockNumberFor<T> = 1_209_600u32.into();
-		let history_limit: u32 = <T as Config>::StakingRewardsPastErasMax::get();
+		let history_limit: u32 = <T as Config>::ProviderBoostHistoryLimit::get();
 		let total_reward_pool: BalanceOf<T> = <T as Config>::RewardPoolEachEra::get();
 		let unclaimed_balance: BalanceOf<T> = 5_000u32.into();
 		let total_staked_token: BalanceOf<T> = 5_000u32.into();
@@ -148,7 +148,7 @@ benchmarks! {
 
 		for i in 0..history_limit {
 			let era: T::RewardEra = i.into();
-			StakingRewardPool::<T>::insert(era, RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance});
+			ProviderBoostRewardPool::<T>::insert(era, RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance});
 		}
 	}: {
 		Capacity::<T>::start_new_reward_era_if_needed(current_block);
