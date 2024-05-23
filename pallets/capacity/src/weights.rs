@@ -31,7 +31,7 @@
 use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use core::marker::PhantomData;
 
-/// Weight functions needed for `pallet_capacity`.
+/// Weight functions needed for pallet_capacity.
 pub trait WeightInfo {
 	fn stake() -> Weight;
 	fn withdraw_unstaked() -> Weight;
@@ -157,8 +157,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Proof Size summary in bytes:
 		//  Measured:  `315`
 		//  Estimated: `7601`
-		// Minimum execution time: 29_000_000 picoseconds.
-		Weight::from_parts(31_000_000, 7601)
+		// Minimum execution time: 31_000_000 picoseconds.
+		Weight::from_parts(32_000_000, 7601)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -232,6 +232,19 @@ impl WeightInfo for () {
 		Weight::from_parts(27_758_000, 6249)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(2_u64))
+	}
+	/// Storage: `Capacity::CurrentEpochInfo` (r:1 w:1)
+	/// Proof: `Capacity::CurrentEpochInfo` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `Capacity::EpochLength` (r:1 w:0)
+	/// Proof: `Capacity::EpochLength` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	fn start_new_epoch_if_needed() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `2974`
+		// Minimum execution time: 3_000_000 picoseconds.
+		Weight::from_parts(4_000_000, 2974)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Capacity::ProviderBoostRewardPool` (r:3 w:2)
 	/// Proof: `Capacity::ProviderBoostRewardPool` (`max_values`: None, `max_size`: Some(60), added: 2535, mode: `MaxEncodedLen`)
@@ -322,15 +335,6 @@ impl WeightInfo for () {
 		Weight::from_parts(48_000_000, 6249)
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
-	}
-	fn start_new_epoch_if_needed() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `2974`
-		// Minimum execution time: 3_000_000 picoseconds.
-		Weight::from_parts(4_000_000, 2974)
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
 
