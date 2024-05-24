@@ -269,21 +269,67 @@ where
 	pub started_at: BlockNumber,
 }
 
-/// Needed data about a RewardPool for a given RewardEra.
-/// The total_reward_pool balance for the previous era is set when a new era starts,
-/// based on total staked token at the end of the previous era, and remains unchanged.
-/// The unclaimed_balance is initialized to total_reward_pool and deducted whenever a
-/// valid claim occurs.
-#[derive(
-	PartialEq, Eq, Clone, Default, PartialOrd, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen,
-)]
-pub struct RewardPoolInfo<Balance> {
-	/// the total staked for rewards in the associated RewardEra
-	pub total_staked_token: Balance,
-	/// the reward pool for this era
-	pub total_reward_pool: Balance,
-	/// the remaining rewards balance to be claimed
-	pub unclaimed_balance: Balance,
+/// A chunk of Reward Pool history items consists of a BoundedBTreeMap,
+/// RewardEra is the key and the total stake for the RewardPool is the value.
+/// the map has up to T::RewardPoolChunkLength items, however, the chunk storing the current era
+/// has only that one.
+// TODO: on new era, copy CurrentEraProviderBoostTotal value to highest-era chunk
+// TODO: on new era, delete oldest era value.
+// TODO: on new era, zero out total in CurrentEraProviderBoostTotal
+// TODO: on boost/unstake: update CEPBT
+// TODO: on list_unclaimed_rewards, use new struct
+// TODO: on has_unclaimed_rewards, use_new_struct
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[scale_info(skip_type_params(T))]
+pub struct RewardPoolHistoryChunk<T: Config>(
+	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::RewardPoolChunkLength>,
+);
+impl<T: Config> Default for RewardPoolHistoryChunk<T> {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
+impl<T: Config> RewardPoolHistoryChunk<T> {
+	/// Constructs a new empty RewardPoolHistoryChunk
+	pub fn new() -> Self {
+		RewardPoolHistoryChunk(BoundedBTreeMap::new())
+	}
+
+	/// A wrapper for retrieving how much was provider_boosted in the given era
+	/// from the  BoundedBTreeMap
+	pub fn total_for_era(&self, reward_era: &T::RewardEra) -> Option<&BalanceOf<T>> {
+		self.0.get(reward_era)
+	}
+
+	// returns the range of eras in this chunk
+	pub fn era_range(&self) -> (T::RewardEra, T::RewardEra) {
+		let zero_reward_era: T::RewardEra = Zero::zero();
+		let zero_balance: BalanceOf<T> = Zero::zero();
+		let (first, _vf) = self.0.first_key_value().unwrap_or((&zero_reward_era, &zero_balance));
+		let (last, _vl) = self.0.last_key_value().unwrap_or((&zero_reward_era, &zero_balance));
+		(*first, *last)
+	}
+
+	/// A wrapper for adding a new reward_era_entry to the BoundedBTreeMap
+	pub fn try_insert(
+		&mut self,
+		reward_era: T::RewardEra,
+		total: BalanceOf<T>,
+	) -> Result<Option<BalanceOf<T>>, (T::RewardEra, BalanceOf<T>)> {
+		self.0.try_insert(reward_era, total)
+	}
+
+	/// A wrapper for removing a reward era entry from the BoundedBTreeMap
+	/// Returns the total stored at that entry.
+	pub fn remove(&mut self, reward_era: &T::RewardEra) -> Option<BalanceOf<T>> {
+		self.0.remove(reward_era)
+	}
+
+	/// Is this chunk full?  It should always be yes once there is enough RewardPool history.
+	pub fn is_full(&self) -> bool {
+		self.0.len().eq(&(T::RewardPoolChunkLength::get() as usize))
+	}
 }
 
 /// A record of staked amounts for a complete RewardEra

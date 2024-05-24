@@ -1,4 +1,6 @@
-use crate::{Config, CurrentEraInfo, ProviderBoostRewardPool, RewardEraInfo, RewardPoolInfo};
+use crate::{
+	Config, CurrentEraInfo, ProviderBoostRewardPool, RewardEraInfo, RewardPoolHistoryChunk,
+};
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
@@ -18,7 +20,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 			let current_block = frame_system::Pallet::<T>::block_number(); // 1r
 			let era_index: T::RewardEra = 0u32.into();
 			CurrentEraInfo::<T>::set(RewardEraInfo { era_index, started_at: current_block }); // 1w
-			ProviderBoostRewardPool::<T>::insert(era_index, RewardPoolInfo::default()); // 1w
+																				  // TODO:  set up Current Reward Era total stake default value. No need for a history chunk at this point.
 			T::DbWeight::get().reads_writes(2, 2)
 		} else {
 			T::DbWeight::get().reads(1)

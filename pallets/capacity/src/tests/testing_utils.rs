@@ -6,7 +6,7 @@ use sp_runtime::traits::SignedExtension;
 
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Event, ProviderBoostRewardPool,
-	RewardEraInfo, RewardPoolInfo, StakingType,
+	RewardEraInfo, StakingType,
 };
 use common_primitives::msa::MessageSourceId;
 
@@ -98,10 +98,10 @@ pub fn set_era_and_reward_pool(era_index: u32, started_at: u32, total_staked_tok
 	let era_info = RewardEraInfo { era_index, started_at };
 	let total_reward_pool = 10_000u64;
 	CurrentEraInfo::<Test>::set(era_info);
-	let pool_info = RewardPoolInfo {
-		total_staked_token,
-		total_reward_pool,
-		unclaimed_balance: total_reward_pool,
-	};
-	ProviderBoostRewardPool::<Test>::insert(era_index, pool_info);
+	// let pool_info = RewardPoolInfo {
+	// 	total_staked_token,
+	// 	total_reward_pool,
+	// 	unclaimed_balance: total_reward_pool,
+	// };
+	// ProviderBoostRewardPool::<Test>::insert(era_index, pool_info);
 }

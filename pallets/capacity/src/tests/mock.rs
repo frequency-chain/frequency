@@ -208,11 +208,12 @@ impl pallet_capacity::Config for Test {
 	type CapacityPerToken = TestCapacityPerToken;
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
-	type ProviderBoostHistoryLimit = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
+	type ProviderBoostHistoryLimit = ConstU32<9>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
+	type RewardPoolChunkLength = ConstU32<3>;
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
