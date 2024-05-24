@@ -17,12 +17,12 @@ The metadata is the Block Number, Schema Id, and other data useful for discoveri
 
 ### Payload Options
 
-- `IPFS`: Storage of the CID and length of the file on IFPS
+- `IPFS`: Storage of the CID and length of the file on IPFS
 - `OnChain`: Storage of the entire payload data. Usually for tiny payloads only.
 
-### Message Ordered
+### Message Ordering
 
-Messages are ordered by block number, but the have a set order based on transaction order in the block.
+Messages are ordered by block number, and within each block have a set order based on transaction order in the block.
 This order is immutable.
 
 ### Actions

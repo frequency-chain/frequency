@@ -1,4 +1,4 @@
-//! Stores messages `IPFS` and `OnChain` Schema payload locations
+//! Stores messages for `IPFS` and `OnChain` Schema payload locations
 //!
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
