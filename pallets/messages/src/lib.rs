@@ -1,5 +1,6 @@
 //! Stores messages for `IPFS` and `OnChain` Schema payload locations
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `MessagesRuntimeApi`](../pallet_messages_runtime_api/trait.MessagesRuntimeApi.html)
