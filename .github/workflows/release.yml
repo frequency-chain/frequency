@@ -324,7 +324,7 @@ jobs:
           runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |
-          cp -p ${{ steps.srtool_build.outputs.wasm }} \
+          cp -p ${{ steps.srtool_build.outputs.wasm_compressed }} \
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install Subwasm
         run: |
