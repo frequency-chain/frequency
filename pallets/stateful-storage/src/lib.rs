@@ -1,38 +1,13 @@
-//! # Stateful Storage Pallet
-//! The Stateful Storage pallet provides functionality for reading and writing stateful data
-//! representing stateful data for which we are only ever interested in the latest state.
+//! MSA-centric Storage for [`PayloadLocation::Paginated`] and [`PayloadLocation::Itemized`]
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
 //! - [Runtime API: `StatefulStorageRuntimeApi`](../pallet_stateful_storage_runtime_api/trait.StatefulStorageRuntimeApi.html)
 //! - [Custom RPC API: `StatefulStorageApiServer`](../pallet_stateful_storage_rpc/trait.StatefulStorageApiServer.html)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
-//!
-//! ## Overview
-//! For state transitions for which we only care about the latest state, Stateful Storage provides a way to store and retrieve such data
-//! outside of the existing Announcement mechanism, which would require the latest state to be tracked using some kind of 3rd-party indexer.
-//!
-//! This pallet supports two models for storing stateful data:
-//! 1. **Itemized:** Data is stored in a single **page** (max size: [`Config::MaxItemizedPageSizeBytes`]) containing multiple items (max item size `MaxItemizedBlobSizeBytes`) of the associated schema.
-//! Useful for schemas with a relative small item size and higher potential item count. The read and write complexity is O(n) when n is the number of bytes for all items.
-//! 2. **Paginated:** Data is stored in multiple **pages** of size [`Config::MaxPaginatedPageSizeBytes`], each containing a single item of the associated schema.
-//! Page IDs range from 0 .. `MaxPaginatedPageId` (implying there may be at most `MaxPaginatedPageId` + 1 pages per MSA+Schema at any given time, though
-//! there may be holes in that range). Useful for schemas with a larger item size and smaller potential item count.
-//!
-//! ## Features
-//! * Provide for storage of stateful data with flexible schemas on-chain.
-//! * Data stored for one MSA does not have impact read/write access times or storage costs for any data stored for another MSA.
-//! * High write throughput.
-//! * High read throughput.
-//! * Data race condition protection
-//!
-//! The Stateful Storage pallet provides functions for:
-//!
-//! - Appending items in an **itemized** model
-//! - Removing items in an **itemized** model
-//! - Upserting items in a **paginated** model
-//! - Removing pages in a **paginated**  model
+#![doc = include_str!("../README.md")]
 //!
 //! ## Terminology
 //! - [`Page`](../pallet_stateful_storage/types/struct.Page.html): Block of on-chain data of a fixed size, which is the underlying type for Itemized and Paginated storage.
