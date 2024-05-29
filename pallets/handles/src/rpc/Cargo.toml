@@ -25,7 +25,6 @@ frame-support = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
-substrate-test-runtime-client = { workspace = true }
 sc-client-api = { workspace = true }
 
 [features]
@@ -34,6 +33,7 @@ std = [
   'sp-std/std',
   'sp-api/std',
   'sp-runtime/std',
+  "frame-support/std",
   'pallet-handles-runtime-api/std',
   'common-primitives/std',
   'common-helpers/std',

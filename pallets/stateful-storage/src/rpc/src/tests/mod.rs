@@ -3,11 +3,10 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::stateful_storage::*;
+use common_primitives::{node::Block, stateful_storage::*};
 use pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi;
 use sp_runtime::DispatchError;
 use std::sync::Arc;
-use substrate_test_runtime_client::runtime::Block;
 
 const SUCCESSFUL_SCHEMA_ID: u16 = 1;
 const SUCCESSFUL_MSA_ID: MessageSourceId = 1;

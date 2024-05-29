@@ -1,16 +1,15 @@
 mod rpc_mock;
 
 use super::*;
-use common_primitives::node::Balance;
+use common_primitives::node::{Balance, Block};
 use pallet_frequency_tx_payment_runtime_api::CapacityTransactionPaymentRuntimeApi;
 use rpc_mock::*;
-use sp_runtime::traits::Zero;
+use sp_runtime::{traits::Zero, OpaqueExtrinsic};
 use std::sync::Arc;
-use substrate_test_runtime_client::runtime::{Block, Extrinsic};
 
 sp_api::mock_impl_runtime_apis! {
 	impl CapacityTransactionPaymentRuntimeApi<Block, Balance> for TestRuntimeApi {
-		fn compute_capacity_fee(_uxt: Extrinsic, _len: u32) -> FeeDetails<Balance> {
+		fn compute_capacity_fee(_uxt: OpaqueExtrinsic, _len: u32) -> FeeDetails<Balance> {
 			let inclusion_fee = InclusionFee {
 				base_fee: Zero::zero(),
 				len_fee: Zero::zero(),
