@@ -12,10 +12,13 @@ use sp_api::impl_runtime_apis;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto},
+	traits::{AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
+
+// #[cfg(feature = "experimental")]
+// use sp_core::ConstU64;
 
 use parity_scale_codec::Encode;
 
@@ -40,8 +43,10 @@ use frame_support::{
 	pallet_prelude::{DispatchResultWithPostInfo, Get, GetStorageVersion},
 	parameter_types,
 	traits::{
-		fungible::HoldConsideration, ConstBool, ConstU128, ConstU32, EitherOfDiverse,
-		EqualPrivilegeOnly, InstanceFilter, LinearStoragePrice,
+		fungible::HoldConsideration,
+		tokens::{PayFromAccount, UnityAssetBalanceConversion},
+		ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly, InstanceFilter,
+		LinearStoragePrice,
 	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 	Twox128,
@@ -401,7 +406,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 80,
+	spec_version: 81,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -415,7 +420,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 80,
+	spec_version: 81,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -652,6 +657,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxHolds = ConstU32<1>;
 	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
 }
 // Needs parameter_types! for the Weight type
@@ -819,6 +825,11 @@ impl pallet_democracy::Config for Runtime {
 	type VetoOrigin = pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>;
 }
 
+parameter_types! {
+	pub TreasuryAccount: AccountId = Treasury::account_id();
+	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
 // the descriptions of these configs.
 impl pallet_treasury::Config for Runtime {
@@ -879,6 +890,16 @@ impl pallet_treasury::Config for Runtime {
 
 	/// 64
 	type MaxApprovals = MaxApprovals;
+
+	type AssetKind = ();
+	type Beneficiary = AccountId;
+	type BeneficiaryLookup = IdentityLookup<Self::AccountId>;
+	type Paymaster = PayFromAccount<Balances, TreasuryAccount>;
+	type BalanceConverter = UnityAssetBalanceConversion;
+	type PayoutPeriod = PayoutSpendPeriod;
+	#[cfg(feature = "runtime-benchmarks")]
+	type BenchmarkHelper = ();
+	// type BenchmarkHelper = polkadot_runtime_common::runtime_common::impls::benchmarks::TreasuryArguments;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
