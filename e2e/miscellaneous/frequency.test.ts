@@ -1,13 +1,11 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getBlockNumber, getNonce } from '../scaffolding/helpers';
+import { DOLLARS, createAndFundKeypair, getBlockNumber, getNonce } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
-
-const DOLLARS = 100000000n; // 100_000_000
 
 const fundingSource: KeyringPair = getFundingSource('frequency-misc');
 
