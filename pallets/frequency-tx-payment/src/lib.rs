@@ -35,7 +35,7 @@ use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };
@@ -45,7 +45,10 @@ use crate::types::PasskeyPayload;
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	node::UtilityProvider,
+	utils::wrap_binary_data,
 };
+use sp_core::crypto::AccountId32;
+
 pub use pallet::*;
 pub use weights::*;
 
@@ -142,6 +145,8 @@ pub mod weights;
 #[allow(dead_code)]
 #[frame_support::pallet]
 pub mod pallet {
+	use sp_runtime::traits::Verify;
+
 	use super::*;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -179,6 +184,8 @@ pub mod pallet {
 		type MaximumCapacityBatchLength: Get<u8>;
 
 		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
+
+		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 	}
 
 	#[pallet::event]
@@ -189,6 +196,8 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The maximum amount of requested batched calls was exceeded
 		BatchedCallAmountExceedsMaximum,
+		/// The signature is invalid
+		InvalidSignature,
 	}
 
 	#[pallet::call]
@@ -266,11 +275,25 @@ pub mod pallet {
 			const PRIORITY: u64 = 100;
 
 			let signer = match call {
-				Call::passkey_proxy { payload } => payload.passkey_call.account_id.clone(),
+				Call::passkey_proxy { payload } => {
+					let key: AccountId32 = T::ConvertIntoAccountId32::convert(
+						(payload.passkey_call.account_id.clone()).clone(),
+					);
+					// check signature for the passkey
+					let passkey_publickey_payload =
+						wrap_binary_data(payload.passkey_public_key.into());
+					ensure!(
+						payload
+							.passkey_call
+							.account_ownership_proof
+							.verify(&passkey_publickey_payload[..], &key),
+						TransactionValidityError::Invalid(InvalidTransaction::BadProof)
+					);
+					payload.passkey_call.account_id.clone()
+				},
 				_ => return Err(InvalidTransaction::Call.into()),
 			};
 
-			// TODO: check signature for the passkey
 			// TODO: check signature for the account
 			// TODO: check and increase nonce of signer
 			// TODO: additional verifications that will make this unsigned call secure from DOS attacks
@@ -418,8 +441,8 @@ where
 	/// Return the tip as being chosen by the transaction sender.
 	pub fn tip(&self, call: &<T as frame_system::Config>::RuntimeCall) -> BalanceOf<T> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. }) |
-			Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
+			Some(Call::pay_with_capacity { .. })
+			| Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
 			_ => self.0,
 		}
 	}
@@ -433,10 +456,12 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) =>
-				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
-			Some(Call::pay_with_capacity_batch_all { calls }) =>
-				self.withdraw_capacity_fee(who, calls, len),
+			Some(Call::pay_with_capacity { call }) => {
+				self.withdraw_capacity_fee(who, &vec![*call.clone()], len)
+			},
+			Some(Call::pay_with_capacity_batch_all { calls }) => {
+				self.withdraw_capacity_fee(who, calls, len)
+			},
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
@@ -474,7 +499,7 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Free))
+			return Ok((fee, InitialPayment::Free));
 		}
 
 		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(

@@ -936,6 +936,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
