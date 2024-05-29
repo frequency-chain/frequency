@@ -5,7 +5,7 @@ Stores block-indexed data for a Schema using `OnChain` or `IPFS` payload locatio
 ## Summary
 
 Messages stores metadata and message payload data for a set Schema.
-Use of the Message pallet payloads is designed for time-centric data.
+Message payloads are meant for streaming data, where when the message was sent is the focus.
 Discovery is via the `MessagesInBlock` on new blocks or requesting messages from a block.
 Retrieval is via RPC.
 
@@ -18,11 +18,11 @@ The metadata is the Block Number, Schema Id, and other data useful for discoveri
 ### Payload Options
 
 - `IPFS`: Storage of the CID and length of the file on IPFS
-- `OnChain`: Storage of the entire payload data. Usually for tiny payloads only.
+- `OnChain`: Storage of the entire payload data, usually for sub-256 byte payloads
 
 ### Message Ordering
 
-Messages are ordered by block number, and within each block have a set order based on transaction order in the block.
+Messages are ordered by block number, and within each block, they follow a specific order based on their transaction sequence within that block.
 This order is immutable.
 
 ### Actions
