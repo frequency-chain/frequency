@@ -9,7 +9,7 @@ import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
-import { DispatchError, Event, SignedBlock } from '@polkadot/types/interfaces';
+import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
   HandleResponse,
@@ -17,11 +17,12 @@ import {
   MessageSourceId,
   PaginatedStorageResponse,
   PresumptiveSuffixesResponse,
+  RpcEvent,
   SchemaResponse,
 } from '@frequency-chain/api-augment/interfaces';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
-import type { Call } from '@polkadot/types/interfaces/runtime';
+import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
 
 export interface ReleaseSchedule {
@@ -726,6 +727,14 @@ export class ExtrinsicHelper {
 
   public static validateHandle(base_handle: string): Promise<Bool> {
     return ExtrinsicHelper.apiPromise.rpc.handles.validateHandle(base_handle);
+  }
+
+  public static getFrequencyEvents(at: H256 | string): Promise<Vec<RpcEvent>> {
+    return ExtrinsicHelper.apiPromise.rpc.frequency.getEvents(at);
+  }
+
+  public static getMissingNonceValues(accountId: AccountId32 | string | Uint8Array): Promise<Vec<Index>> {
+    return ExtrinsicHelper.apiPromise.rpc.frequency.getMissingNonceValues(accountId);
   }
 
   public static addOnChainMessage(keys: KeyringPair, schemaId: any, payload: string) {
