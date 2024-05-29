@@ -39,7 +39,10 @@ use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
 	pallet_prelude::{DispatchResultWithPostInfo, Get, GetStorageVersion},
 	parameter_types,
-	traits::{ConstBool, ConstU128, ConstU32, EitherOfDiverse, EqualPrivilegeOnly, InstanceFilter},
+	traits::{
+		fungible::HoldConsideration, ConstBool, ConstU128, ConstU32, EitherOfDiverse,
+		EqualPrivilegeOnly, InstanceFilter, LinearStoragePrice,
+	},
 	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
 	Twox128,
 };
@@ -398,7 +401,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 78,
+	spec_version: 80,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -412,7 +415,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 78,
+	spec_version: 80,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -646,7 +649,7 @@ impl pallet_balances::Config for Runtime {
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
 	type ReserveIdentifier = [u8; 8];
-	type MaxHolds = ConstU32<0>;
+	type MaxHolds = ConstU32<1>;
 	type MaxFreezes = BalancesMaxFreezes;
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
@@ -677,6 +680,10 @@ impl pallet_scheduler::Config for Runtime {
 	type Preimages = Preimage;
 }
 
+parameter_types! {
+	pub const PreimageHoldReason: RuntimeHoldReason = RuntimeHoldReason::Preimage(pallet_preimage::HoldReason::Preimage);
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_preimage/index.html for
 // the descriptions of these configs.
 impl pallet_preimage::Config for Runtime {
@@ -688,8 +695,13 @@ impl pallet_preimage::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMember<AccountId, TechnicalCommitteeCollective>,
 	>;
-	type BaseDeposit = PreimageBaseDeposit;
-	type ByteDeposit = PreimageByteDeposit;
+
+	type Consideration = HoldConsideration<
+		AccountId,
+		Balances,
+		PreimageHoldReason,
+		LinearStoragePrice<PreimageBaseDeposit, PreimageByteDeposit, Balance>,
+	>;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_collective/index.html for
@@ -1180,7 +1192,7 @@ construct_runtime!(
 		#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T> }= 4,
 
-		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>} = 5,
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason} = 5,
 		Democracy: pallet_democracy::{Pallet, Call, Config<T>, Storage, Event<T> } = 6,
 		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T> } = 8,
 		Utility: pallet_utility::{Pallet, Call, Event} = 9,

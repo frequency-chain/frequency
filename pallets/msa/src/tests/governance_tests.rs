@@ -1,7 +1,4 @@
-use frame_support::{
-	assert_noop, assert_ok,
-	traits::{ChangeMembers, Hash},
-};
+use frame_support::{assert_noop, assert_ok, traits::ChangeMembers};
 
 use sp_weights::Weight;
 
@@ -38,7 +35,7 @@ fn propose_to_be_provider_happy_path() {
 		);
 
 		// Find the Proposed event and get it's hash and index so it can be voted on
-		let proposed_events: Vec<(u32, Hash)> = System::events()
+		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::Council(pallet_collective::Event::Proposed {

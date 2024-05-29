@@ -23,7 +23,7 @@ fn transaction_payment_validate_is_succesful() {
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 			let dispatch_info =
 				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -48,7 +48,7 @@ fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 			let dispatch_info =
 				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -76,7 +76,7 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 			let dispatch_info =
 				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -119,7 +119,7 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 		.execute_with(|| {
 			let account_id = 1u64;
 			let balances_call: &<Test as frame_system::Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 			let dispatch_info =
 				DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -168,7 +168,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			let account_id = 1u64;
 			let balances_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
-					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer {
+					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
 						dest: 2,
 						value: 100,
 					})),
@@ -279,7 +279,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity_batch_all {
-					calls: vec![RuntimeCall::Balances(BalancesCall::transfer {
+					calls: vec![RuntimeCall::Balances(BalancesCall::transfer_allow_death {
 						dest: 2,
 						value: 100,
 					})],
@@ -314,7 +314,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
-					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer {
+					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
 						dest: 2,
 						value: 100,
 					})),
@@ -351,7 +351,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_capacity_tx_when_user_
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
-					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer {
+					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
 						dest: 2,
 						value: 100,
 					})),
@@ -380,7 +380,7 @@ fn charge_frq_transaction_payment_withdraw_fee_errors_for_non_capacity_tx_when_u
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -402,7 +402,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_non_capacity_tx_returns_tuppl
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let info = DispatchInfo { weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
@@ -434,7 +434,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_free_non_capacity_tx_returns_
 			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
 			let who = 1u64;
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let info = DispatchInfo {
 				weight: Weight::from_parts(5, 0),
@@ -463,7 +463,10 @@ fn charge_frq_transaction_payment_tip_is_zero_for_capacity_calls() {
 	let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(fake_tip);
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
-			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 })),
+			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: 2,
+				value: 100,
+			})),
 		});
 
 	let result = charge_tx_payment.tip(call);
@@ -476,7 +479,7 @@ fn charge_frq_transaction_payment_tip_is_some_amount_for_non_capacity_calls() {
 	let tip = 200;
 	let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(tip);
 	let call: &<Test as Config>::RuntimeCall =
-		&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+		&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 	let result = charge_tx_payment.tip(call);
 
@@ -522,7 +525,7 @@ fn withdraw_fee_allows_only_configured_capacity_calls() {
 		.execute_with(|| {
 			let account_id = 1u64;
 			let allowed_call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let forbidden_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
@@ -550,7 +553,7 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_does_not_have_the_requ
 			let _ = tests::mock::create_msa_account(account_id);
 
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Payment);
 			assert_withdraw_fee_result(account_id, call, Some(expected_err));
@@ -576,7 +579,7 @@ fn withdraw_fee_returns_custom_error_when_the_account_key_is_not_associated_with
 			));
 
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
@@ -617,7 +620,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 			Capacity::set_capacity_for(provider_msa_id, capacity_details);
 
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			assert_withdraw_fee_result(provider_msa_id, call, None);
 
@@ -663,7 +666,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 			Capacity::set_capacity_for(provider_msa_id, capacity_details);
 
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			assert_withdraw_fee_result(provider_msa_id, call, None);
 
@@ -691,7 +694,7 @@ fn compute_capacity_fee_successful() {
 		.build()
 		.execute_with(|| {
 			let call: &<Test as Config>::RuntimeCall =
-				&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			// fee = base_weight + extrinsic weight + len = CAPACITY_EXTRINSIC_BASE_WEIGHT + 11 + 10 = CAPACITY_EXTRINSIC_BASE_WEIGHT + 21
 			let fee = FrequencyTxPayment::compute_capacity_fee(
@@ -715,8 +718,8 @@ fn pay_with_capacity_batch_all_happy_path() {
 			let origin = 1u64;
 
 			let calls = vec![
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 10 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 10 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 10 }),
 			];
 
 			let token_balance_before_call = Balances::free_balance(origin);
@@ -745,17 +748,17 @@ fn pay_with_capacity_batch_all_errors_when_transaction_amount_exceeds_maximum() 
 			let token_balance_before_call = Balances::free_balance(origin);
 
 			let too_many_calls = vec![
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 }),
 			];
 			assert_noop!(
 				FrequencyTxPayment::pay_with_capacity_batch_all(
@@ -782,10 +785,13 @@ fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
 		.execute_with(|| {
 			let origin = 1u64;
 			let successful_balance_transfer_call =
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let balance_transfer_call_insufficient_funds =
-				RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100000000 });
+				RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+					dest: 2,
+					value: 100000000,
+				});
 
 			let token_balance_before_call = Balances::free_balance(origin);
 
@@ -816,7 +822,7 @@ fn pay_with_capacity_batch_all_transactions_will_all_fail_if_one_fails() {
 fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 	let balance_factor = 10;
 	let call: &<Test as Config>::RuntimeCall =
-		&RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+		&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 	let origin = 111111;
 	let extra = ();
 	let xt = TestXt::new(call.clone(), Some((origin, extra)));

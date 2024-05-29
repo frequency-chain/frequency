@@ -25,6 +25,7 @@ export const fundingSources = [
   'msa-key-management',
   'stateful-storage-handle-paginated',
   'stateful-storage-handle-itemized',
+  'frequency-misc',
 ] as const;
 
 // Get the correct key for this Funding Source

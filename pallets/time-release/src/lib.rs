@@ -1,30 +1,11 @@
-//! # Time-Release Module
+//! Transfer Funds as Frozen with a Time Delayed Release
 //!
-//! This pallet is a fork of the [ORML-vesting]( [vesting](https://github.com/open-web3-stack/open-runtime-module-library/tree/master/vesting)) polkadot-v0.9.39.
-//!
-//! ## Overview
-//!
-//! Time-release module provides a means of scheduled release (thaw) of a frozen balance in an account.
-//! It uses the *graded release* approach, which thaws a specific amount of balance per period (measured
-//! in blocks), until all frozen balances are thawed.
-//!
-//! ### Release Schedule
-//!
-//! The schedule of a release is described by data structure `ReleaseSchedule`:
-//! from the block number of `start`, for every `period` amount of blocks,
-//! `per_period` amount of balance would thaw, until number of periods
-//! `period_count` reached. Note in release schedules, *time* is measured by
-//! block number. All `ReleaseSchedule`s under an account could be queried in
-//! chain state.
-//!
-//! ## Interface
-//!
-//! ### Dispatchable Functions
-//!
-//! - `transfer` - Add a new release schedule for an account.
-//! - `claim` - Claim thawed balances.
-//! - `update_release_schedules` - Update all release schedules under an
-//!   account, `root` origin required.
+//! ## Quick Links
+//! - [Configuration: `Config`](Config)
+//! - [Extrinsics: `Call`](Call)
+//! - [Event Enum: `Event`](Event)
+//! - [Error Enum: `Error`](Error)
+#![doc = include_str!("../README.md")]
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
