@@ -22,9 +22,9 @@ The {Name} pallet provides for:
 
 ### Extrinsics
 
-| Name/Description                 | Caller | Payment | Key Events                                                                                                    | Runtime Added |
-| -------------------------------- | ------ | ------- | ------------------------------------------------------------------------------------------------------------- | ------------- |
-| `{extrinsic}`<br />{Description} | Tokens | Free    | [`{Event}`](https://frequency-chain.github.io/frequency/{pallet_name}/pallet/enum.Event.html#variant.{Event}) | 1             |
+| Name/Description                 | Caller        | Payment | Key Events                                                                                                    | Runtime Added |
+| -------------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------- |
+| `{extrinsic}`<br />{Description} | Token Account | Tokens  | [`{Event}`](https://frequency-chain.github.io/frequency/{pallet_name}/pallet/enum.Event.html#variant.{Event}) | 1             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/{pallet_name}/pallet/struct.Pallet.html) for more details.
 
@@ -32,7 +32,7 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/{pallet_name}/pallet
 
 | Name      | Description         | Query                    | Runtime Added |
 | --------- | ------------------- | ------------------------ | ------------- |
-| {Query 1} | {Query Desctiption} | `{queryCallInCamelCase}` | 1             |
+| {Query 1} | {Query Description} | `{queryCallInCamelCase}` | 1             |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/{pallet_name}/pallet/storage_types/index.html) for additional state queries and details.
 

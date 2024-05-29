@@ -60,6 +60,7 @@ pub fn frequency_dev_sealing(
 			import_queue,
 			block_announce_validator_builder: None,
 			warp_sync_params: None,
+			block_relay: None,
 		})?;
 
 	// Start off-chain workers if enabled

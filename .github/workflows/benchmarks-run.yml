@@ -1,5 +1,6 @@
 # yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
 name: Benchmarks Run
+run-name: Benchmarks Run for ${{github.event.inputs.branch}}
 concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
@@ -32,22 +33,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{github.event.inputs.branch}}
-      - name: Get Current Job Log URL
-        id: jobs
-        uses: Tiryoh/gha-jobid-action@c1d1cf7334b70c29374ae382b91053674c8049a2
-        with:
-          github_token: ${{ github.token }}
-          job_name: "Run Benchmarks"
-      - name: Set PR Commit Status to Pending
-        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
-        with:
-          name: "GithubActions - Run Benchmarks"
-          status: "pending"
-          addHoldComment: "true"
-          pendingComment: >-
-            :hourglass_flowing_sand: [Running benchmarks](${{steps.jobs.outputs.html_url}})
-            and calculating weights. DO NOT MERGE! A new commit will be added upon completion...
-          failComment: "ERROR: Failed to set commit to pending status!"
       - name: Install Required Packages
         run: |
           sudo apt-get update
@@ -80,17 +65,5 @@ jobs:
         id: commit-updated-weights
         uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
         with:
-          commit_message: "Update weights for #${{github.event.inputs.branch}}"
+          commit_message: "Update weights"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
-
-      - name: Set Commit Status to Success
-        uses: ouzi-dev/commit-status-updater@219d3f932547cad092e384c7a36bf4d963739c35
-        with:
-          name: "GithubActions - Run Benchmarks"
-          status: "success"
-          addHoldComment: "true"
-          successComment: >-
-            :white_check_mark: [Finished running benchmarks](${{steps.jobs.outputs.html_url}}).
-            Updated weights have been committed to this branch in
-            commit ${{steps.commit-updated-weights.outputs.commit_hash}}.
-          failComment: "ERROR: Failed to set commit to success status!"

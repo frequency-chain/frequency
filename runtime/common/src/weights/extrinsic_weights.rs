@@ -1,6 +1,6 @@
-// This file is part of Substrate.
+// This file is part of Frequency.
 
-// Copyright (C) Parity Technologies (UK) Ltd.
+// Copyright (C) Frequency Network Foundation.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,8 +16,8 @@
 // limitations under the License.
 
 //! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 4.0.0-dev
-//! DATE: 2024-03-06 (Y/M/D)
-//! HOSTNAME: `benchmark-runner-wc6w8-pv9rm`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! DATE: 2024-05-24 (Y/M/D)
+//! HOSTNAME: `ip-10-173-4-53`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
 //! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency Development (No Relay)`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -43,17 +43,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 98_091, 105_553
-	///   Average:  98_845
-	///   Median:   98_793
-	///   Std-Dev:  761.2
+	///   Min, Max: 97_466, 100_014
+	///   Average:  98_539
+	///   Median:   98_455
+	///   Std-Dev:  575.37
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 100_080
-	///   95th: 99_462
-	///   75th: 98_926
+	///   99th: 99_911
+	///   95th: 99_641
+	///   75th: 98_950
 	pub const ExtrinsicBaseWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(98_845), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(98_539), 0);
 }
 
 #[cfg(test)]
