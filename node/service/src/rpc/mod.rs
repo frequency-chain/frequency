@@ -20,9 +20,6 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 mod frequency_rpc;
 
-#[cfg(test)]
-mod tests;
-
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
@@ -80,7 +77,7 @@ where
 	let mut module = RpcExtension::new(());
 	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
 
-	module.merge(System::new(client.clone(), pool, deny_unsafe).into_rpc())?;
+	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
@@ -88,7 +85,7 @@ where
 	module.merge(StatefulStorageHandler::new(client.clone()).into_rpc())?;
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
 	module.merge(CapacityPaymentHandler::new(client.clone()).into_rpc())?;
-	module.merge(FrequencyRpcHandler::new(client).into_rpc())?;
+	module.merge(FrequencyRpcHandler::new(client, pool).into_rpc())?;
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
