@@ -4,12 +4,7 @@ use common_primitives::{
 	node::AccountId,
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
 };
-use frame_support::{
-	assert_noop, assert_ok,
-	traits::{ChangeMembers, Hash},
-	weights::Weight,
-	BoundedVec,
-};
+use frame_support::{assert_noop, assert_ok, traits::ChangeMembers, weights::Weight, BoundedVec};
 use parity_scale_codec::Encode;
 use serial_test::serial;
 
@@ -95,7 +90,7 @@ fn propose_to_create_schema_happy_path() {
 		);
 
 		// Find the Proposed event and get it's hash and index so it can be voted on
-		let proposed_events: Vec<(u32, Hash)> = System::events()
+		let proposed_events: Vec<(u32, <Test as frame_system::Config>::Hash)> = System::events()
 			.iter()
 			.filter_map(|event| match event.event {
 				RuntimeEvent::Council(pallet_collective::Event::Proposed {

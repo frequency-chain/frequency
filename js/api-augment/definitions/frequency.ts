@@ -10,6 +10,16 @@ export default {
       ],
       type: 'Vec<RpcEvent>',
     },
+    getMissingNonceValues: {
+      description: 'Get missing nonce values for an account',
+      params: [
+        {
+          name: 'account',
+          type: 'AccountId32',
+        },
+      ],
+      type: 'Vec<Index>',
+    },
   },
   types: {
     RpcEvent: {

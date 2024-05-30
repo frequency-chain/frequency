@@ -36,7 +36,7 @@ describe('Proxy', function () {
           ExtrinsicHelper.api.tx.proxy.proxy(
             stashKeys.address,
             'Any',
-            ExtrinsicHelper.api.tx.balances.transfer(proxyKeys.address, 1n * DOLLARS)
+            ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS)
           ),
         proxyKeys,
         ExtrinsicHelper.api.events.balances.Transfer
@@ -84,7 +84,7 @@ describe('Proxy', function () {
           ExtrinsicHelper.api.tx.proxy.proxy(
             stashKeys.address,
             'Any',
-            ExtrinsicHelper.api.tx.balances.transfer(proxyKeys.address, 1n * DOLLARS)
+            ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS)
           ),
         proxyKeys,
         ExtrinsicHelper.api.events.system.ExtrinsicFailed
@@ -104,7 +104,7 @@ describe('Proxy', function () {
             stashKeys.address,
             'Any',
             ExtrinsicHelper.api.tx.utility.batch([
-              ExtrinsicHelper.api.tx.balances.transfer(proxyKeys.address, 1n * DOLLARS),
+              ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS),
             ])
           ),
         proxyKeys,
