@@ -279,7 +279,7 @@ pub mod pallet {
 					let key: AccountId32 = T::ConvertIntoAccountId32::convert(
 						(payload.passkey_call.account_id.clone()).clone(),
 					);
-					// check signature for the passkey
+					// check signature for the account
 					let passkey_publickey_payload =
 						wrap_binary_data(payload.passkey_public_key.into());
 					ensure!(
@@ -294,7 +294,7 @@ pub mod pallet {
 				_ => return Err(InvalidTransaction::Call.into()),
 			};
 
-			// TODO: check signature for the account
+			// TODO: check signature for the passkey
 			// TODO: check and increase nonce of signer
 			// TODO: additional verifications that will make this unsigned call secure from DOS attacks
 
