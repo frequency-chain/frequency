@@ -36,7 +36,7 @@ pub struct PasskeyPayload<T: Config> {
 	pub passkey_signature: PasskeySignature,
 	/// passkey authenticator data
 	pub passkey_authenticator: PasskeyAuthenticator,
-	// passkey client data in json format with challenge value removed from it
+	// passkey client data in json format
 	pub passkey_client_data_json: PasskeyClientDataJson,
 	/// PassKey Call
 	pub passkey_call: PasskeyCall<T>,

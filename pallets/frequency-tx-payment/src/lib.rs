@@ -199,8 +199,6 @@ pub mod pallet {
 	pub enum Error<T> {
 		/// The maximum amount of requested batched calls was exceeded
 		BatchedCallAmountExceedsMaximum,
-		/// The signature is invalid
-		InvalidSignature,
 	}
 
 	#[pallet::call]
@@ -280,15 +278,14 @@ pub mod pallet {
 			let signer = match call {
 				Call::passkey_proxy { payload } => {
 					let signer = payload.passkey_call.account_id.clone();
-					Self::check_account_sig(&payload)?;
-					Self::check_sig(payload)?;
+					Self::check_account_signature(payload)?;
+					Self::check_passkey_signature(payload)?;
 
 					signer
 				},
 				_ => return Err(InvalidTransaction::Call.into()),
 			};
 
-			// TODO: check signature for the passkey
 			// TODO: check and increase nonce of signer
 			// TODO: additional verifications that will make this unsigned call secure from DOS attacks
 
@@ -388,54 +385,86 @@ impl<T: Config> Pallet<T> {
 		T::WeightToFee::weight_to_fee(&capped_weight)
 	}
 
-	pub fn check_sig(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
-		let got = CoseKey::from_slice(&payload.passkey_public_key[..]).unwrap();
-		let (_, x) = got.params.iter().find(|(l, _)| l == &Label::Int(-2)).unwrap();
-		let (_, y) = got.params.iter().find(|(l, _)| l == &Label::Int(-3)).unwrap();
+	/// Check Passkey P256 signature of the call in payload with the provided passkey public key
+	pub fn check_passkey_signature(
+		payload: &PasskeyPayload<T>,
+	) -> Result<(), TransactionValidityError> {
+		// deserialize to COSE key format and check the key
+		let cose_key = CoseKey::from_slice(&payload.passkey_public_key[..])
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(1)))?;
+		let (_, x) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-2))
+			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(2)))?;
+		let (_, y) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-3))
+			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(3)))?;
 
-		let mut sig_payload = payload.passkey_authenticator.to_vec();
-		sig_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+		// convert COSE format to P256 verifying key
+		let encoded_point =
+			EncodedPoint::from_affine_coordinates(
+				GenericArray::from_slice(&x.clone().into_bytes().map_err(|_| {
+					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
+				})?),
+				GenericArray::from_slice(&y.clone().into_bytes().map_err(|_| {
+					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
+				})?),
+				false,
+			);
+		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point)
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(5)))?;
 
-		let sig = p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..]).unwrap();
-		let encoded_point = EncodedPoint::from_affine_coordinates(
-			GenericArray::from_slice(&x.clone().into_bytes().unwrap()),
-			GenericArray::from_slice(&y.clone().into_bytes().unwrap()),
-			false,
-		);
+		let passkey_signature =
+			p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..])
+				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(6)))?;
 
-		let result: serde_json::Value =
+		// extract the challenge from client_data and
+		// ensure the that the challenge is the same as the call payload
+		let client_data: serde_json::Value =
 			serde_json::from_slice(&payload.passkey_client_data_json)
-				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(1u8)))?;
-		let extracted_challenge = match result {
+				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(7)))?;
+		let extracted_challenge = match client_data {
 			serde_json::Value::Object(m) => {
 				let challenge = m
 					.get(&"challenge".to_string())
-					.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(2u8)))?;
+					.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(8)))?;
 				if let serde_json::Value::String(base64_url_encoded) = challenge {
-					Ok(base64_url::decode(&base64_url_encoded).unwrap())
+					let decoded = base64_url::decode(&base64_url_encoded).map_err(|_| {
+						TransactionValidityError::Invalid(InvalidTransaction::Custom(9))
+					})?;
+					Ok(decoded)
 				} else {
-					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(3u8)))
+					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(10)))
 				}
 			},
-			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(4u8))),
+			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(11))),
 		}?;
 
 		let encoded_payload = payload.passkey_call.encode();
-		log::info!("pass_call challenge    {}", HexDisplay::from(&extracted_challenge));
-		log::info!("pass_call scale encode {}", HexDisplay::from(&encoded_payload));
-
+		log::debug!("pass_call challenge    {}", HexDisplay::from(&extracted_challenge));
+		log::debug!("pass_call scale encode {}", HexDisplay::from(&encoded_payload));
 		ensure!(
 			encoded_payload == extracted_challenge,
-			TransactionValidityError::Invalid(InvalidTransaction::Custom(5u8))
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(12))
 		);
-		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point).unwrap();
+
+		// prepare signing payload which is [authenticator || sha256(client_data_json)]
+		let mut passkey_signature_payload = payload.passkey_authenticator.to_vec();
+		passkey_signature_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+
+		// finally verify the passkey signature against the payload
 		verify_key
-			.verify(&sig_payload, &sig)
+			.verify(&passkey_signature_payload, &passkey_signature)
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::BadProof))
 	}
 
 	/// Check the signature on passkey public key by the account id
-	pub fn check_account_sig(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
+	pub fn check_account_signature(
+		payload: &PasskeyPayload<T>,
+	) -> Result<(), TransactionValidityError> {
 		let key: AccountId32 =
 			T::ConvertIntoAccountId32::convert((payload.passkey_call.account_id.clone()).clone());
 		// check signature for the account
