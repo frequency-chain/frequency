@@ -35,7 +35,9 @@ use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{
+		Convert, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Verify, Zero,
+	},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };
@@ -47,9 +49,8 @@ use common_primitives::{
 	node::UtilityProvider,
 	utils::wrap_binary_data,
 };
-use sp_core::crypto::AccountId32;
-
 pub use pallet::*;
+use sp_core::crypto::AccountId32;
 pub use weights::*;
 
 mod payment;
@@ -145,8 +146,6 @@ pub mod weights;
 #[allow(dead_code)]
 #[frame_support::pallet]
 pub mod pallet {
-	use sp_runtime::traits::Verify;
-
 	use super::*;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -276,19 +275,7 @@ pub mod pallet {
 
 			let signer = match call {
 				Call::passkey_proxy { payload } => {
-					let key: AccountId32 = T::ConvertIntoAccountId32::convert(
-						(payload.passkey_call.account_id.clone()).clone(),
-					);
-					// check signature for the account
-					let passkey_publickey_payload =
-						wrap_binary_data(payload.passkey_public_key.into());
-					ensure!(
-						payload
-							.passkey_call
-							.account_ownership_proof
-							.verify(&passkey_publickey_payload[..], &key),
-						TransactionValidityError::Invalid(InvalidTransaction::BadProof)
-					);
+					Self::check_account_sig(&payload)?;
 					payload.passkey_call.account_id.clone()
 				},
 				_ => return Err(InvalidTransaction::Call.into()),
@@ -393,6 +380,25 @@ impl<T: Config> Pallet<T> {
 		let capped_weight = weight.min(T::BlockWeights::get().max_block);
 		T::WeightToFee::weight_to_fee(&capped_weight)
 	}
+
+	/// Check the signature on passkey public key by the account id
+	pub fn check_account_sig(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
+		let key: AccountId32 =
+			T::ConvertIntoAccountId32::convert((payload.passkey_call.account_id.clone()).clone());
+		// check signature for the account
+		let passkey_publickey_payload = wrap_binary_data(payload.passkey_public_key.into());
+
+		let verified = payload
+			.passkey_call
+			.account_ownership_proof
+			.verify(&passkey_publickey_payload[..], &key);
+
+		if verified {
+			Ok(())
+		} else {
+			Err(TransactionValidityError::Invalid(InvalidTransaction::BadProof))
+		}
+	}
 }
 
 /// Custom Transaction Validity Errors for ChargeFrqTransactionPayment
@@ -441,8 +447,8 @@ where
 	/// Return the tip as being chosen by the transaction sender.
 	pub fn tip(&self, call: &<T as frame_system::Config>::RuntimeCall) -> BalanceOf<T> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. })
-			| Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
+			Some(Call::pay_with_capacity { .. }) |
+			Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
 			_ => self.0,
 		}
 	}
@@ -456,12 +462,10 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => {
-				self.withdraw_capacity_fee(who, &vec![*call.clone()], len)
-			},
-			Some(Call::pay_with_capacity_batch_all { calls }) => {
-				self.withdraw_capacity_fee(who, calls, len)
-			},
+			Some(Call::pay_with_capacity { call }) =>
+				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.withdraw_capacity_fee(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
