@@ -3,7 +3,8 @@ use frame_support::{
 	pallet_prelude::{Decode, Encode, MaxEncodedLen, TypeInfo},
 	RuntimeDebugNoBound,
 };
-use sp_runtime::MultiSignature;
+use sp_core::ConstU32;
+use sp_runtime::{BoundedVec, MultiSignature};
 use sp_std::{prelude::*, vec::Vec};
 
 /// Gets stable weights for a capacity Call
@@ -17,9 +18,13 @@ pub trait GetStableWeight<RuntimeCall, Weight> {
 }
 
 /// PassKey Public Key type
-pub type PasskeyPublicKey = [u8; 64];
+pub type PasskeyPublicKey = BoundedVec<u8, ConstU32<96>>;
 /// PassKey Signature type
-pub type PasskeySignature = [u8; 64];
+pub type PasskeySignature = BoundedVec<u8, ConstU32<96>>;
+/// Passkey Authenticator type
+pub type PasskeyAuthenticator = BoundedVec<u8, ConstU32<96>>;
+/// Passkey Authenticator type
+pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<1024>>; // TODO: remove the challenge field to reduce the size
 
 /// Passkey Payload
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
@@ -29,10 +34,10 @@ pub struct PasskeyPayload<T: Config> {
 	pub passkey_public_key: PasskeyPublicKey,
 	/// passkey signature of `passkey_call`
 	pub passkey_signature: PasskeySignature,
-	// TODO: figure out metadata structure
-	// passkey signature metadata starts from here
-	pub nonce: u32,
-	// passkey signature metadata ends here
+	/// passkey authenticator data
+	pub passkey_authenticator: PasskeyAuthenticator,
+	// passkey client data in json format with challenge value removed from it
+	pub passkey_client_data_json: PasskeyClientDataJson,
 	/// PassKey Call
 	pub passkey_call: PasskeyCall<T>,
 }
