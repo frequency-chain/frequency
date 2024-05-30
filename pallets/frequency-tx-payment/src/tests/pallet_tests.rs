@@ -1,16 +1,21 @@
 use crate::{
-	self as pallet_frequency_tx_payment, tests::mock::*, ChargeFrqTransactionPayment, DispatchInfo,
-	*,
+	self as pallet_frequency_tx_payment,
+	tests::mock::*,
+	types::{PasskeyPublicKey, PasskeySignature},
+	ChargeFrqTransactionPayment, DispatchInfo, *,
 };
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo, weights::Weight};
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
-use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError};
+use sp_core::bytes::{from_hex, to_hex};
+use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
 
+use crate::types::{PasskeyAuthenticator, PasskeyClientDataJson};
 use pallet_balances::Call as BalancesCall;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
 use pallet_msa::Call as MsaCall;
+use sp_core::{sr25519, Pair};
 
 #[test]
 fn transaction_payment_validate_is_succesful() {
@@ -866,4 +871,42 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
 			assert!(fee_res.inclusion_fee.is_some());
 		});
+}
+
+#[test]
+fn check_signature() {
+	let pk = base64_url::decode("pQECAyYgASFYIFbpyOGmeNtXQLrrd0FOk52vc2rIzlj_PUCFtPJQwFhbIlgghddI3iuUR_DaWPRKafm_Ey4__YRtUYqy8b9UhgDDSaE").unwrap();
+	let passkey_public_key = PasskeyPublicKey::try_from(pk).unwrap();
+
+	let signature = base64_url::decode("MEYCIQCdBu8KI6ndqEuBc8j0C-ZMJLib6Krg0pH-VjoWDWfyYgIhAMn7MXTK2lXRRHZMsouB6GIxIr6y1csf29vfBbwGnbTM").unwrap();
+	let passkey_signature = PasskeySignature::try_from(signature).unwrap();
+
+	let authenticator =
+		base64_url::decode("WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA").unwrap();
+	let passkey_authenticator = PasskeyAuthenticator::try_from(authenticator).unwrap();
+
+	let client_data_json = base64_url::decode("eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiRHFrVF9aQXFXYUFfV1FYc01EZWw1T0VLdjVrWGwxMjF5TnAxcXhzMlpoVUJoRFNNS3lKVTNnZjlPTkRVNXR5b0tMYmNkQ0hFTWFYVTRGaDJ1blBISzNQTTRTTUQxUEZvRFBJSUpMeWZnWlQ0bEJMUWE3VXVyblNEWHJVekFsanJqd29IQU5RMWs4Y1ZfZE1jWVJRYXZRU3BuOWFDTElWWWhVek40NXBXaE9lbGJhSjlvUTgiLCJvcmlnaW4iOiJodHRwczovL3Bhc3NrZXkuYW1wbGljYS5pbzo4MDgwIiwiY3Jvc3NPcmlnaW4iOmZhbHNlfQ").unwrap();
+	let passkey_client_data_json = PasskeyClientDataJson::try_from(client_data_json).unwrap();
+
+	let call: <Test as Config>::RuntimeCall =
+		RuntimeCall::Balances(BalancesCall::transfer { dest: 2, value: 100 });
+
+	let sig_bin = from_hex("01dc5e4f604c629cd96b00d0cdd91d20c8efc0d9dd81c15953119225b7337a6c4768012dc084c7992bcb4973608f3d0d97c7ce2cc7b5c4b54d2c1d1696dc49a282").unwrap();
+	let account_ownership_proof = MultiSignature::decode(&mut &sig_bin[..]).unwrap();
+
+	let payload = PasskeyPayload::<Test> {
+		passkey_public_key,
+		passkey_signature,
+		passkey_authenticator,
+		passkey_client_data_json,
+		passkey_call: types::PasskeyCall {
+			account_id: 2,
+			account_ownership_proof,
+			call: Box::new(call),
+		},
+	};
+
+	let check = pallet_frequency_tx_payment::Pallet::check_sig(&payload);
+
+	assert!(check.is_ok());
 }

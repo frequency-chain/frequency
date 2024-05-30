@@ -49,8 +49,12 @@ use common_primitives::{
 	node::UtilityProvider,
 	utils::wrap_binary_data,
 };
+use coset::{CborSerializable, CoseKey, Label};
+use p256::{ecdsa::signature::Verifier, elliptic_curve::generic_array::GenericArray, EncodedPoint};
 pub use pallet::*;
-use sp_core::crypto::AccountId32;
+use parity_scale_codec::alloc::string::ToString;
+use sp_core::{crypto::AccountId32, hexdisplay::HexDisplay};
+use sp_io::hashing::sha2_256;
 pub use weights::*;
 
 mod payment;
@@ -275,8 +279,11 @@ pub mod pallet {
 
 			let signer = match call {
 				Call::passkey_proxy { payload } => {
+					let signer = payload.passkey_call.account_id.clone();
 					Self::check_account_sig(&payload)?;
-					payload.passkey_call.account_id.clone()
+					Self::check_sig(payload)?;
+
+					signer
 				},
 				_ => return Err(InvalidTransaction::Call.into()),
 			};
@@ -381,12 +388,58 @@ impl<T: Config> Pallet<T> {
 		T::WeightToFee::weight_to_fee(&capped_weight)
 	}
 
+	pub fn check_sig(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
+		let got = CoseKey::from_slice(&payload.passkey_public_key[..]).unwrap();
+		let (_, x) = got.params.iter().find(|(l, _)| l == &Label::Int(-2)).unwrap();
+		let (_, y) = got.params.iter().find(|(l, _)| l == &Label::Int(-3)).unwrap();
+
+		let mut sig_payload = payload.passkey_authenticator.to_vec();
+		sig_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+
+		let sig = p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..]).unwrap();
+		let encoded_point = EncodedPoint::from_affine_coordinates(
+			GenericArray::from_slice(&x.clone().into_bytes().unwrap()),
+			GenericArray::from_slice(&y.clone().into_bytes().unwrap()),
+			false,
+		);
+
+		let result: serde_json::Value =
+			serde_json::from_slice(&payload.passkey_client_data_json)
+				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(1u8)))?;
+		let extracted_challenge = match result {
+			serde_json::Value::Object(m) => {
+				let challenge = m
+					.get(&"challenge".to_string())
+					.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(2u8)))?;
+				if let serde_json::Value::String(base64_url_encoded) = challenge {
+					Ok(base64_url::decode(&base64_url_encoded).unwrap())
+				} else {
+					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(3u8)))
+				}
+			},
+			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(4u8))),
+		}?;
+
+		let encoded_payload = payload.passkey_call.encode();
+		log::info!("pass_call challenge    {}", HexDisplay::from(&extracted_challenge));
+		log::info!("pass_call scale encode {}", HexDisplay::from(&encoded_payload));
+
+		ensure!(
+			encoded_payload == extracted_challenge,
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(5u8))
+		);
+		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point).unwrap();
+		verify_key
+			.verify(&sig_payload, &sig)
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::BadProof))
+	}
+
 	/// Check the signature on passkey public key by the account id
 	pub fn check_account_sig(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
 		let key: AccountId32 =
 			T::ConvertIntoAccountId32::convert((payload.passkey_call.account_id.clone()).clone());
 		// check signature for the account
-		let passkey_publickey_payload = wrap_binary_data(payload.passkey_public_key.into());
+		let passkey_publickey_payload = wrap_binary_data(payload.passkey_public_key.clone().into());
 
 		let verified = payload
 			.passkey_call

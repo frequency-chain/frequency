@@ -26,6 +26,10 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 log = { workspace = true }
+coset = { version = "0.3.7", default-features = false }
+p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
+base64-url = { version =  "3.0.0", default-features = false }
+serde_json = { workspace = true, features = ["alloc"] }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
