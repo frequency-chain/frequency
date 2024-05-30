@@ -151,9 +151,9 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		assert_eq!(Capacity::get_current_era().started_at, 51u32);
 
 		todo!();
-		// assert!(Capacity::get_reward_pool_for_era(0u32).is_none());
-		// assert!(Capacity::get_reward_pool_for_era(1u32).is_some());
-		// assert!(Capacity::get_reward_pool_for_era(6u32).is_some());
+		// assert!(Capacity::get_reward_pool_chunk(0u32).is_none());
+		// assert!(Capacity::get_reward_pool_chunk(1u32).is_some());
+		// assert!(Capacity::get_reward_pool_chunk(6u32).is_some());
 
 		// rewards for era 6 should not be returned; era 6 is current era and therefore ineligible.
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k

@@ -1,6 +1,4 @@
-use crate::{
-	Config, CurrentEraInfo, ProviderBoostRewardPool, RewardEraInfo, RewardPoolHistoryChunk,
-};
+use crate::{Config, CurrentEraInfo, RewardEraInfo};
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
@@ -34,7 +32,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		} else {
 			log::info!("CurrentEraInfo not found. Initialization should proceed.");
 		}
-		if ProviderBoostRewardPool::<T>::iter().count() == 0usize {
+		if ProviderBoostRewardPools::<T>::iter().count() == 0usize {
 			log::info!("ProviderBoostRewardPool will be updated with Era 0");
 		} else {
 			log::info!("ProviderBoostRewardPool has already been initialized.")
@@ -49,7 +47,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		let info = CurrentEraInfo::<T>::get();
 		assert_eq!(info.started_at, current_block);
 		log::info!("CurrentEraInfo.started_at is set to {:?}.", info.started_at);
-		assert_eq!(ProviderBoostRewardPool::<T>::iter().count(), 1);
+		assert_eq!(ProviderBoostRewardPools::<T>::iter().count(), 1);
 		Ok(())
 	}
 }

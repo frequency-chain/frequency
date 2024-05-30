@@ -188,6 +188,7 @@ pub mod pallet {
 			+ EncodeLike
 			+ Into<BalanceOf<Self>>
 			+ Into<BlockNumberFor<Self>>
+			+ EncodeLike<u32>
 			+ TypeInfo;
 
 		/// The number of blocks in a RewardEra
@@ -215,7 +216,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type RewardPercentCap: Get<Permill>;
 
-		/// the maximum number of Reward Pool history items in a chunk
+		/// The number of chunks
 		#[pallet::constant]
 		type RewardPoolChunkLength: Get<u32>;
 	}
@@ -279,6 +280,11 @@ pub mod pallet {
 	pub type UnstakeUnlocks<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunkList<T>>;
 
+	/// stores how many times an account has retargeted, and when it last retargeted.
+	#[pallet::storage]
+	#[pallet::getter(fn get_retargets_for)]
+	pub type Retargets<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, RetargetInfo<T>>;
+
 	/// Information about the current reward era. Checked every block.
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
@@ -290,23 +296,19 @@ pub mod pallet {
 	/// ProviderBoostHistoryLimit is the total number of items, the key is the
 	/// chunk number.
 	#[pallet::storage]
-	#[pallet::getter(fn get_reward_pool_for_era)]
-	pub type ProviderBoostRewardPool<T: Config> =
-		StorageMap<_, Twox64Concat, u8, RewardPoolHistoryChunk<T>>;
+	#[pallet::getter(fn get_reward_pool_chunk)]
+	pub type ProviderBoostRewardPools<T: Config> =
+		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
 
 	/// How much is staked this era
 	#[pallet::storage]
 	pub type CurrentEraProviderBoostTotal<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 
+	/// Individual history for each account that has Provider-Boosted.
 	#[pallet::storage]
 	#[pallet::getter(fn get_staking_history_for)]
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
-
-	/// stores how many times an account has retargeted, and when it last retargeted.
-	#[pallet::storage]
-	#[pallet::getter(fn get_retargets_for)]
-	pub type Retargets<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, RetargetInfo<T>>;
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -615,7 +617,7 @@ pub mod pallet {
 			let (mut boosting_details, actual_amount) =
 				Self::ensure_can_boost(&staker, &target, &amount)?;
 
-			let capacity = Self::increase_stake_and_issue_boost(
+			let capacity = Self::increase_stake_and_issue_boost_capacity(
 				&staker,
 				&mut boosting_details,
 				&target,
@@ -713,7 +715,7 @@ impl<T: Config> Pallet<T> {
 		Ok(capacity)
 	}
 
-	fn increase_stake_and_issue_boost(
+	fn increase_stake_and_issue_boost_capacity(
 		staker: &T::AccountId,
 		staking_details: &mut StakingDetails<T>,
 		target: &MessageSourceId,
@@ -737,11 +739,8 @@ impl<T: Config> Pallet<T> {
 		let era = Self::get_current_era().era_index;
 		Self::upsert_boost_history(staker, era, *amount, true)?;
 
-		// TODO: New reward pool
-		// let mut reward_pool =
-		// 	Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
-		// reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_add(*amount);
-		// Self::set_reward_pool(era, &reward_pool);
+		let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
+		CurrentEraProviderBoostTotal::<T>::set(reward_pool_total.saturating_add(*amount));
 
 		Ok(capacity)
 	}
@@ -798,11 +797,6 @@ impl<T: Config> Pallet<T> {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
 
-	// TODO: implement set_reward_pool
-	fn set_reward_pool(era: <T>::RewardEra, new_total: &BalanceOf<T>) {
-		()
-	}
-
 	/// Decrease a staking account's active token and reap if it goes below the minimum.
 	/// Returns: actual amount unstaked, plus the staking type + StakingDetails,
 	/// since StakingDetails may be reaped and staking type must be used to calculate the
@@ -822,11 +816,10 @@ impl<T: Config> Pallet<T> {
 		if staking_type == ProviderBoost {
 			let era = Self::get_current_era().era_index;
 			Self::upsert_boost_history(&unstaker, era, actual_unstaked_amount, false)?;
-			// TODO: Reward pool
-			// let mut reward_pool =
-			// 	Self::get_reward_pool_for_era(era).ok_or(Error::<T>::EraOutOfRange)?;
-			// reward_pool.total_staked_token = reward_pool.total_staked_token.saturating_sub(amount);
-			// Self::set_reward_pool(era, &reward_pool.clone());
+			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
+			CurrentEraProviderBoostTotal::<T>::set(
+				reward_pool_total.saturating_sub(actual_unstaked_amount),
+			);
 		}
 		Ok((actual_unstaked_amount, staking_type))
 	}
@@ -985,29 +978,12 @@ impl<T: Config> Pallet<T> {
 			};
 			CurrentEraInfo::<T>::set(new_era_info); // 1w
 
-			// let current_reward_pool =
-			// 	Self::get_reward_pool_for_era(current_era_info.era_index).unwrap_or_default(); // 1r
-
-			let past_eras_max = T::ProviderBoostHistoryLimit::get();
-
-			// TODO: ProviderBoostRewardPool, check for if it's full
-			let is_full = true;
-
-			if is_full {
-				let earliest_era =
-					current_era_info.era_index.saturating_sub(past_eras_max.into()).add(One::one());
-				// TODO: update the reward pool.
-				// ProviderBoostRewardPool::<T>::remove(0u32);
-			}
-
-			// let total_reward_pool =
-			// 	T::RewardsProvider::reward_pool_size(current_reward_pool.total_staked_token);
-			// let new_reward_pool = RewardPoolInfo {
-			// 	total_staked_token: current_reward_pool.total_staked_token,
-			// 	total_reward_pool,
-			// 	unclaimed_balance: total_reward_pool,
-			// };
-			// ProviderBoostRewardPool::<T>::insert(new_era_info.era_index, new_reward_pool); // 1w
+			// carry over the current reward pool total
+			let current_reward_pool_total: BalanceOf<T> = CurrentEraProviderBoostTotal::<T>::get(); // 1
+			Self::update_provider_boost_reward_pool(
+				current_era_info.era_index,
+				current_reward_pool_total,
+			);
 			T::WeightInfo::start_new_reward_era_if_needed()
 		} else {
 			T::DbWeight::get().reads(1)
@@ -1131,7 +1107,7 @@ impl<T: Config> Pallet<T> {
 				let expires_at_era = reward_era.saturating_add(max_history.into());
 				// TODO: Reward pool
 				// let reward_pool =
-				// 	Self::get_reward_pool_for_era(reward_era).ok_or(Error::<T>::EraOutOfRange)?; // 1r
+				// 	Self::get_reward_pool_chunk(reward_era).ok_or(Error::<T>::EraOutOfRange)?; // 1r
 				let expires_at_block = if expires_at_era.eq(&era_info.era_index) {
 					era_info.started_at + era_length.into() // expires at end of this era
 				} else {
@@ -1168,6 +1144,44 @@ impl<T: Config> Pallet<T> {
 			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
+	}
+
+	pub(crate) fn update_provider_boost_reward_pool(era: T::RewardEra, boost_total: BalanceOf<T>) {
+		let mut new_era = era;
+		let mut new_value = boost_total;
+		let chunks_total =
+			T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
+		for chunk_idx in (0u32..chunks_total).rev() {
+			// ProviderBoostRewardPools should be initialized correctly,
+			// that is, all possible chunk key values at least have an empty map, and so this should never be None.
+			if let Some(mut chunk) = ProviderBoostRewardPools::<T>::get(chunk_idx) {
+				if chunk.is_full() {
+					// this would return None only if the history is empty, and that clearly won't happen if the chunk is full.
+					if let Some(oldest_era) = chunk.earliest_era() {
+						// this is an ummutable borrow
+						let mut new_chunk = chunk.clone(); // have to do it this way because E0502
+						if let Some(oldest_value) = new_chunk.remove(&oldest_era) {
+							// since the oldest is removed first, try_insert should never fail.
+							// But JUST IN CASE, keep the new values around to try on the next chunk.
+							let try_result = new_chunk.try_insert(new_era, new_value);
+							if try_result.is_ok() {
+								new_era = *oldest_era;
+								new_value = oldest_value;
+							}
+							ProviderBoostRewardPools::<T>::set(chunk_idx, Some(new_chunk));
+						}
+					}
+				} else {
+					// since it's not full, just insert it and ignore the result.
+					let _unused = chunk.try_insert(new_era, new_value);
+					ProviderBoostRewardPools::<T>::set(chunk_idx, Some(chunk));
+					break;
+				}
+			}
+		}
+		// there was a serious problem. do what? put it into an overflow?
+		// if new_era.eq(era) {
+		// }
 	}
 }
 

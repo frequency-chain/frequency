@@ -1,8 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, FreezeReason, ProviderBoostHistory, StakingDetails, StakingTargetDetails,
-	StakingType, StakingType::ProviderBoost, UnlockChunk,
+	CapacityDetails, CurrentEraProviderBoostTotal, FreezeReason, ProviderBoostHistory,
+	StakingDetails, StakingTargetDetails, StakingType, StakingType::ProviderBoost, UnlockChunk,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
@@ -286,7 +286,6 @@ fn unstake_when_not_staking_to_target_errors() {
 
 #[test]
 fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
-	todo!();
 	new_test_ext().execute_with(|| {
 		// two accounts staking to the same target
 		let account1 = 600;
@@ -299,15 +298,7 @@ fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account1), target, amount1));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account1), target, unstake_amount));
 
-		let reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
-		// assert_eq!(
-		// 	reward_pool,
-		// 	RewardPoolInfo {
-		// 		total_staked_token: 300,
-		// 		total_reward_pool: 10_000,
-		// 		unclaimed_balance: 10_000,
-		// 	}
-		// );
+		assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), 300u64);
 	});
 }
 
@@ -316,17 +307,10 @@ fn unstake_maximum_does_not_change_reward_pool() {
 	new_test_ext().execute_with(|| {
 		// two accounts staking to the same target
 		let account1 = 600;
-		let a_booster = 500;
+		let a_booster = 10_000;
 		let target: MessageSourceId = 1;
 		let amount1 = 500;
 		let unstake_amount = 200;
-
-		todo!();
-		// let expected_reward_pool: RewardPoolInfo<BalanceOf<Test>> = RewardPoolInfo {
-		// 	total_staked_token: 490, // ???
-		// 	total_reward_pool: 10_000,
-		// 	unclaimed_balance: 10_000,
-		// };
 
 		register_provider(target, String::from("Foo"));
 		run_to_block(5); // ensures Capacity::on_initialize is run
@@ -334,13 +318,10 @@ fn unstake_maximum_does_not_change_reward_pool() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account1), target, amount1));
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(a_booster), target, amount1));
 
-		// there should be only the one contribution
-		// let mut reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
-		// assert_eq!(reward_pool, expected_reward_pool);
+		assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), amount1);
 
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account1), target, unstake_amount));
-		// reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
-		// assert_eq!(reward_pool, expected_reward_pool);
+		assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), amount1);
 	});
 }
 

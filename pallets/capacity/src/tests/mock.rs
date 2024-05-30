@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, ProviderBoostRewardClaim,
-	ProviderBoostRewardsProvider,
+	ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -216,6 +216,12 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<3>;
 }
 
+fn initialize_reward_pool() {
+	for i in 0u32..5u32 {
+		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
+	}
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	pallet_balances::GenesisConfig::<Test> {
@@ -236,6 +242,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {
 		System::set_block_number(1);
+		initialize_reward_pool();
 		set_era_and_reward_pool(1, 1, 0);
 	});
 	ext

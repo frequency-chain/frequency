@@ -1,5 +1,7 @@
 use super::{mock::*, testing_utils::*};
-use crate::{Config, Error, Event, FreezeReason, StakingDetails, StakingType};
+use crate::{
+	Config, CurrentEraProviderBoostTotal, Error, Event, FreezeReason, StakingDetails, StakingType,
+};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
 
@@ -46,7 +48,6 @@ fn provider_boost_works() {
 
 #[test]
 fn provider_boost_updates_reward_pool_history() {
-	todo!();
 	// two accounts staking to the same target
 	new_test_ext().execute_with(|| {
 		let account1 = 600;
@@ -58,16 +59,7 @@ fn provider_boost_updates_reward_pool_history() {
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account1), target, amount1));
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account2), target, amount2));
-
-		let reward_pool = Capacity::get_reward_pool_for_era(1).unwrap();
-		// assert_eq!(
-		// 	reward_pool,
-		// 	RewardPoolInfo {
-		// 		total_staked_token: 700,
-		// 		total_reward_pool: 10_000,
-		// 		unclaimed_balance: 10_000,
-		// 	}
-		// );
+		assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), 700u64);
 	});
 }
 

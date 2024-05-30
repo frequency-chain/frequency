@@ -279,7 +279,7 @@ where
 // TODO: on boost/unstake: update CEPBT
 // TODO: on list_unclaimed_rewards, use new struct
 // TODO: on has_unclaimed_rewards, use_new_struct
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+#[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct RewardPoolHistoryChunk<T: Config>(
 	BoundedBTreeMap<T::RewardEra, BalanceOf<T>, T::RewardPoolChunkLength>,
@@ -287,6 +287,12 @@ pub struct RewardPoolHistoryChunk<T: Config>(
 impl<T: Config> Default for RewardPoolHistoryChunk<T> {
 	fn default() -> Self {
 		Self::new()
+	}
+}
+
+impl<T: Config> Clone for RewardPoolHistoryChunk<T> {
+	fn clone(&self) -> Self {
+		Self(self.0.clone())
 	}
 }
 
@@ -302,7 +308,8 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 		self.0.get(reward_era)
 	}
 
-	// returns the range of eras in this chunk
+	/// returns the range of 		eras in this chunk
+	/// TODO: needed?
 	pub fn era_range(&self) -> (T::RewardEra, T::RewardEra) {
 		let zero_reward_era: T::RewardEra = Zero::zero();
 		let zero_balance: BalanceOf<T> = Zero::zero();
@@ -322,8 +329,17 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 
 	/// A wrapper for removing a reward era entry from the BoundedBTreeMap
 	/// Returns the total stored at that entry.
+	/// TODO: needed?
 	pub fn remove(&mut self, reward_era: &T::RewardEra) -> Option<BalanceOf<T>> {
 		self.0.remove(reward_era)
+	}
+
+	/// Get the earliest reward era stored in this BoundedBTreeMap
+	pub fn earliest_era(&self) -> Option<&T::RewardEra> {
+		if let Some((first_era, _first_total)) = self.0.first_key_value() {
+			return Some(first_era);
+		}
+		None
 	}
 
 	/// Is this chunk full?  It should always be yes once there is enough RewardPool history.

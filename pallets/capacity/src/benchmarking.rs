@@ -44,15 +44,8 @@ pub fn set_era_and_reward_pool_at_block<T: Config>(
 ) {
 	let era_info: RewardEraInfo<T::RewardEra, BlockNumberFor<T>> =
 		RewardEraInfo { era_index, started_at };
-	let total_reward_pool: BalanceOf<T> =
-		T::MinimumStakingAmount::get().saturating_add(1_100u32.into());
 	CurrentEraInfo::<T>::set(era_info);
-	let pool_info: RewardPoolInfo<BalanceOf<T>> = RewardPoolInfo {
-		total_staked_token,
-		total_reward_pool,
-		unclaimed_balance: total_reward_pool,
-	};
-	ProviderBoostRewardPool::<T>::insert(era_index, pool_info);
+	CurrentEraProviderBoostTotal::<T>::set(total_staked_token)
 }
 
 // caller stakes the given amount to the given target
@@ -91,6 +84,18 @@ fn fill_unlock_chunks<T: Config>(caller: &T::AccountId, count: u32) {
 		assert_ok!(unlocking.try_push(unlock_chunk));
 	}
 	UnstakeUnlocks::<T>::set(caller, Some(unlocking));
+}
+
+fn fill_reward_pool_chunks<T: Config>() {
+	let chunk_len = T::RewardPoolChunkLength::get();
+	let chunks = T::ProviderBoostHistoryLimit::get() / (chunk_len);
+	for i in 0..chunks {
+		let mut new_chunk = RewardPoolHistoryChunk::<T>::new();
+		for j in 0..chunk_len {
+			assert_ok!(new_chunk.try_insert((i + 1u32).into(), (1000u32 * (j + i)).into()));
+		}
+		ProviderBoostRewardPools::<T>::set(i, Some(new_chunk));
+	}
 }
 
 benchmarks! {
@@ -145,11 +150,7 @@ benchmarks! {
 
 		let current_era: T::RewardEra = (history_limit + 1u32).into();
 		CurrentEraInfo::<T>::set(RewardEraInfo{ era_index: current_era, started_at });
-
-		for i in 0..history_limit {
-			let era: T::RewardEra = i.into();
-			ProviderBoostRewardPool::<T>::insert(era, RewardPoolInfo { total_staked_token, total_reward_pool, unclaimed_balance});
-		}
+		fill_reward_pool_chunks::<T>();
 	}: {
 		Capacity::<T>::start_new_reward_era_if_needed(current_block);
 	} verify {
