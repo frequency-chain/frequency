@@ -11,7 +11,7 @@
 //!
 //! ## Shuffled Sequences
 //!
-//! To limit the value low or particular suffixes, this uses a suffled sequence to choose a suffix for a specific canonical handle string.
+//! To limit the human value of low or particular suffixes, the pallet uses a shuffled sequence to choose a semi-randon suffix for a specific canonical handle string.
 //! The shuffle only requires storage of the current index, same as an ordered suffix system.
 //! The computational cost is greater the larger the index grows as it is lazy evaluation of the Rand32 given a deterministic seed generated from the canonical handle string.
 //! See more details at [`handles_utils::suffix`]
