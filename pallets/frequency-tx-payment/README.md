@@ -20,9 +20,9 @@ The account must:
 
 ### Capacity Stable Weights
 
-Capacity calls of the pallet also provide for stable capacity costs.
-While the token cost can fluctuate with the change in benchmarks, the capacity cost remains relatively stable.
-While these are updated from time to time, generally one may expect that if it takes x capacity to do a call, that exact same transaction will cost close to or less in a later update.
+Token costs on a specific transaction can fluctuate due to benchmark changes, but the costs of capacity calls are setup to be relatively consistent.
+This consistency is because the price of a capacity transaction is use a separate set of benchmark weights, which are kept constant at a given point in time.
+While periodic updates do occur, the costs typically stay the same or may even decrease over time.
 
 ### Actions
 
