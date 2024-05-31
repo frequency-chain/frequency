@@ -22,10 +22,10 @@ So `Zoë.35` and `Zoe.35` will both resolve to the same MSA Id.
 
 ### Homoglyph Attack Resistance
 
-Two or more characters appear the same to the user are [homoglyphs](https://en.wikipedia.org/wiki/Homoglyph).
-To prevent most homoglyph attacks where one user attempts to impersonate another, the user's Base Handle is converted to a canonical, normalized version of the handle.
+Two or more characters that appear the same to the user are [homoglyphs](https://en.wikipedia.org/wiki/Homoglyph).
+To prevent most homoglyph attacks where one user attempts to impersonate another, the user's requested Base Handle is converted to a canonical, normalized version of the handle.
 The canonical version determines the suffix series that is chosen.
-Thus `alice` and `a1ice` (with a one instead of an `L`) can never have the same suffix.
+Thus `alice` and `a1ice` (with a one instead of an `L`) can never have the same suffix and point to different MSA Ids.
 
 
 ### Actions
@@ -56,7 +56,7 @@ Note: RPC use is suggested over the direct state queries for handles.
 | Name      | Description         | Query                    | Runtime Added |
 | --------- | ------------------- | ------------------------ | ------------- |
 | Get Handle by MSA Id  | Returns the Display Handle and the block number in which it was claimed   | `msaIdToDisplayName` | 29             |
-| Get MSA Id by Canonical and Suffix  | Uses the stored canonical lookup string NOT the display handle with the suffix to retrieve the MSA Id   | `canonicalBaseHandleAndSuffixToMSAId` | 29             |
+| Get MSA Id by Canonical Base and Suffix  | Uses the stored canonical lookup string NOT the display handle with the suffix to retrieve the MSA Id   | `canonicalBaseHandleAndSuffixToMSAId` | 29             |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_handles/pallet/storage_types/index.html) for additional state queries and details.
 
