@@ -12,7 +12,7 @@ on:
         required: true
 
 env:
-  TAG_FROM_UI: "v1.11.1"
+  TAG_FROM_UI: ${{github.event.inputs.release-version}}
 
 jobs:
   run-e2e:
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          # ref: ${{env.TAG_FROM_UI}}
+          ref: ${{env.TAG_FROM_UI}}
       - name: Set Env Vars
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
