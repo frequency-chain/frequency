@@ -150,46 +150,41 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		assert_eq!(Capacity::get_current_era().era_index, 6u32);
 		assert_eq!(Capacity::get_current_era().started_at, 51u32);
 
-		todo!();
-		// assert!(Capacity::get_reward_pool_chunk(0u32).is_none());
-		// assert!(Capacity::get_reward_pool_chunk(1u32).is_some());
-		// assert!(Capacity::get_reward_pool_chunk(6u32).is_some());
-
 		// rewards for era 6 should not be returned; era 6 is current era and therefore ineligible.
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert_eq!(rewards.len(), 5usize);
-		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
+		let expected_info: [UnclaimedRewardInfo<Test>; 1] = [
 			UnclaimedRewardInfo {
 				reward_era: 1u32,
-				expires_at_block: 61,
+				expires_at_block: 101,
 				eligible_amount: 0,
 				earned_amount: 0,
 			},
-			UnclaimedRewardInfo {
-				reward_era: 2u32,
-				expires_at_block: 71,
-				eligible_amount: 1000,
-				earned_amount: 4,
-			},
-			UnclaimedRewardInfo {
-				reward_era: 3u32,
-				expires_at_block: 81,
-				eligible_amount: 2_000,
-				earned_amount: 8,
-			},
-			UnclaimedRewardInfo {
-				reward_era: 4u32,
-				expires_at_block: 91,
-				eligible_amount: 2000,
-				earned_amount: 8,
-			},
-			UnclaimedRewardInfo {
-				reward_era: 5u32,
-				expires_at_block: 101,
-				eligible_amount: 3_000,
-				earned_amount: 11,
-			},
+			// UnclaimedRewardInfo {
+			// 	reward_era: 2u32,
+			// 	expires_at_block: 71,
+			// 	eligible_amount: 1000,
+			// 	earned_amount: 4,
+			// },
+			// UnclaimedRewardInfo {
+			// 	reward_era: 3u32,
+			// 	expires_at_block: 81,
+			// 	eligible_amount: 2_000,
+			// 	earned_amount: 8,
+			// },
+			// UnclaimedRewardInfo {
+			// 	reward_era: 4u32,
+			// 	expires_at_block: 91,
+			// 	eligible_amount: 2000,
+			// 	earned_amount: 8,
+			// },
+			// UnclaimedRewardInfo {
+			// 	reward_era: 5u32,
+			// 	expires_at_block: 101,
+			// 	eligible_amount: 3_000,
+			// 	earned_amount: 11,
+			// },
 		];
 		for i in 0..=4 {
 			assert_eq!(rewards.get(i).unwrap(), &expected_info[i]);

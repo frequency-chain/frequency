@@ -57,6 +57,7 @@ use frame_support::{
 	},
 	weights::{constants::RocksDbWeight, Weight},
 };
+use frame_support::traits::fungible::Inspect;
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
@@ -92,6 +93,7 @@ pub(crate) type BalanceOf<T> =
 
 use crate::StakingType::{MaximumCapacity, ProviderBoost};
 use frame_system::pallet_prelude::*;
+use sp_runtime::traits::{Header, HeaderProvider};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -188,6 +190,7 @@ pub mod pallet {
 			+ EncodeLike
 			+ Into<BalanceOf<Self>>
 			+ Into<BlockNumberFor<Self>>
+			+ Into<u32>
 			+ EncodeLike<u32>
 			+ TypeInfo;
 
@@ -1092,43 +1095,33 @@ impl<T: Config> Pallet<T> {
 		let staking_history =
 			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // cached read from has_unclaimed_rewards
 
-		let era_info = Self::get_current_era(); // cached read, ditto
+		let current_era_info = Self::get_current_era(); // cached read, ditto
+		let max_history: u32 = T::ProviderBoostHistoryLimit::get(); // 1r
+		let era_length: u32 = T::EraLength::get(); // 1r  length in blocks
+		let chunk_length: u32 = T::RewardPoolChunkLength::get();
 
-		let max_history: u32 = T::ProviderBoostHistoryLimit::get() - 1; // 1r
-		let era_length: u32 = T::EraLength::get(); // 1r
-		let mut reward_era = era_info.era_index.saturating_sub((max_history).into());
-		let end_era = era_info.era_index.saturating_sub(One::one());
+		let mut reward_era = current_era_info.era_index.saturating_sub((max_history).into());
+		let end_era = current_era_info.era_index.saturating_sub(One::one());
+
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
 		let mut previous_amount: BalanceOf<T> =
 			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
+
 		while reward_era.le(&end_era) {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {
 				let expires_at_era = reward_era.saturating_add(max_history.into());
-				// TODO: Reward pool
-				// let reward_pool =
-				// 	Self::get_reward_pool_chunk(reward_era).ok_or(Error::<T>::EraOutOfRange)?; // 1r
-				let expires_at_block = if expires_at_era.eq(&era_info.era_index) {
-					era_info.started_at + era_length.into() // expires at end of this era
-				} else {
-					let eras_to_expiration =
-						expires_at_era.saturating_sub(era_info.era_index).add(1u32.into());
-					let blocks_to_expiration = eras_to_expiration * era_length.into();
-					let started_at = era_info.started_at;
-					started_at + blocks_to_expiration.into()
-				};
+				let expires_at_block = Self::block_at_end_of_era(expires_at_era);
 				let eligible_amount = if staked_amount.lt(&previous_amount) {
 					staked_amount
 				} else {
 					previous_amount
 				};
-				// TODO:  reward pool
+				let total_for_era = Self::get_total_stake_from_reward_pool(current_era_info.era_index, chunk_length, reward_era)?;
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
 					eligible_amount,
-					eligible_amount,
-					eligible_amount,
-					// reward_pool.total_staked_token,
-					// reward_pool.total_reward_pool,
+					total_for_era,
+					T::RewardPoolEachEra::get(),
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1138,7 +1131,7 @@ impl<T: Config> Pallet<T> {
 						earned_amount,
 					})
 					.map_err(|_e| Error::<T>::CollectionBoundExceeded)?;
-				// ^^ there's no good reason for this ever to fail in production but it should be handled.
+				// ^^ there's no good reason for this ever to fail in production but it must be handled.
 				previous_amount = staked_amount;
 			}
 			reward_era = reward_era.saturating_add(One::one());
@@ -1146,12 +1139,51 @@ impl<T: Config> Pallet<T> {
 		Ok(unclaimed_rewards)
 	}
 
+	// Returns the block number for the end of the provided era. Assumes `era` is at least this
+	// era or in the future
+	pub(crate) fn block_at_end_of_era(era: T::RewardEra) -> BlockNumberFor<T> {
+		let current_era_info = Self::get_current_era();
+		let era_length: BlockNumberFor<T> = T::EraLength::get().into();
+
+		let era_diff = if current_era_info.era_index.eq(&era) {
+			1u32.into()
+		} else {
+			era
+				.saturating_sub(current_era_info.era_index)
+				.saturating_add(1u32.into())
+		};
+		current_era_info.started_at + era_length.mul(era_diff.into()) - 1u32.into()
+	}
+
+	pub(crate) fn get_total_stake_from_reward_pool(current_era: T::RewardEra, chunk_length: u32, reward_era: T::RewardEra) -> Result<BalanceOf<T>, DispatchError> {
+		let era_diff: u32 = current_era.saturating_sub(reward_era).into();
+		let chunk_idx: u32 = (era_diff).saturating_div(chunk_length);
+		let mut reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
+		if let Some(total_for_era) = (reward_pool_chunk.total_for_era(&reward_era)) {
+			Ok(*total_for_era)
+		} else {
+			let chunks = T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
+			for i in 0..chunks {
+				if i != chunk_idx {
+					reward_pool_chunk = Self::get_reward_pool_chunk(i).ok_or(Error::<T>::CollectionBoundExceeded)?;
+					match reward_pool_chunk.total_for_era(&reward_era) {
+						Some(total_for_era) => {
+							return Ok(*total_for_era)
+						},
+						None => ()
+					}
+				}
+			}
+			Err(DispatchError::from(Error::<T>::EraOutOfRange))
+		}
+	}
+
 	pub(crate) fn update_provider_boost_reward_pool(era: T::RewardEra, boost_total: BalanceOf<T>) {
 		let mut new_era = era;
 		let mut new_value = boost_total;
 		let chunks_total =
 			T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
-		for chunk_idx in (0u32..chunks_total).rev() {
+		for chunk_idx in (0u32..chunks_total) {
 			// ProviderBoostRewardPools should be initialized correctly,
 			// that is, all possible chunk key values at least have an empty map, and so this should never be None.
 			if let Some(mut chunk) = ProviderBoostRewardPools::<T>::get(chunk_idx) {
