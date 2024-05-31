@@ -17,6 +17,7 @@ The `pay_with_capacity` will verify that the inner call is allowed with capacity
 The account must:
 1. Be a current control key on a Provider.
 2. Have a minimum balance of the existential deposit.
+3. Must have enough capacity for the call remaining in the current Epoch.
 
 ### Capacity Stable Weights
 
