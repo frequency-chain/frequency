@@ -7,9 +7,9 @@ Creates human-readable, homoglyph-attack resistant handles for MSAs.
 Provides MSAs with an optional, but unique handle.
 
 A handle consists of:
-- **Base Handle:** The user's chosen handle string. It is not guaranteed to be unique.
-- **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
-- **Display Handle:** The base and the suffix together (`base`.`suffix`) is a unique identifier for a user.
+- **Base Handle:** The user's chosen handle. It is *not* guaranteed to be unique without the suffix. It is linked to a normalized version for Handle to MSA Id resolution. See [UTF-8 Support](#utf-8-support) and [Homoglyph Attack Resistence](#homoglyph-attack-resistence) below.
+- **Suffix:** A suffix is a unique numeric value appended to a user's base handle to make it unique.
+- **Display Handle:** The user's original (un-normalized) base handle string and the suffix together (`base`.`suffix`) constitute a unique identifier for a user.
 
 
 ### UTF-8 Support
@@ -25,7 +25,7 @@ So `Zoë.35` and `Zoe.35` will both resolve to the same MSA Id.
 Two or more characters that appear the same to the user are [homoglyphs](https://en.wikipedia.org/wiki/Homoglyph).
 To prevent most homoglyph attacks where one user attempts to impersonate another, the user's requested Base Handle is converted to a canonical, normalized version of the handle.
 The canonical version determines the suffix series that is chosen.
-Thus `alice` and `a1ice` (with a one instead of an `L`) can never have the same suffix and point to different MSA Ids.
+An end user can therefore be reasonably assured that a display handle with the correct numeric suffix resolves to the desired user, regardless of the homoglyph-variant of the displayed base. (ie, for the suffix `.25`, all variants of the canonical base `a1ice` resolve to the same user: `a1ice`, `alice`, `alicë`, `a1icé`, etc...)
 
 
 ### Actions
