@@ -1,41 +1,19 @@
-//! # Capacity Pallet
-//! The Capacity pallet provides functionality for staking tokens to the Frequency network.
+//! Managages staking to the network for Capacity
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
+#![doc = include_str!("../README.md")]
 //!
-//! ## Overview
-//! Capacity is a refillable resource that can be used to make transactions on the network.
-//! Tokens may be staked to the network targeting a provider MSA account to which the network will grant Capacity.
+//! ## Lazy Capacity Refill
 //!
-//! The network generates Capacity based on a Capacity-generating function that considers usage and network congestion.
-//! When token is staked, the targeted provider MSA receives the Capacity generated.
-//!
-//! This Capacity can be used to pay for transactions given that the key used to pay for those transactions have a minimum balance
-//! of the existential deposit.
-//!
-//! The staked amount may be increased, targeting either the same or a different target to receive the newly generated Capacity.
-//! As a result, every time the network is staked to, the staked tokens are locked until unstaked.
-//!
-//! Unstaking schedules some amount of token to be unlocked. Any amount up to the total staked amount may
-//! be unstaked, however, there is a a limit on how many concurrently scheduled unstaking requests can exist.
-//! After scheduling tokens to be unlocked, they must undergo a thaw period before being withdrawn.
-//!
-//! After thawing, the tokens may be withdrawn using the withdraw_unstaked extrinsic.
-//! On success, the tokens are unlocked and free up space to submit more unstaking request.
-//!
-//! The Capacity pallet provides functions for:
-//!
-//! - staking and, updating,
-//!
-//! ## Terminology
-//! * **Capacity:** A refillable and non-transferable resource that can be used to pay for transactions on the network.
-//! * **Staker:** An account that stakes tokens to the Frequency network in exchange for Capacity.
-//! * **Target** A provider MSA account that receives Capacity.
-//! * **Epoch Period:** The length of an epoch in blocks, used for replenishment and thawing.
-//! * **Replenishable:**  The ability of a provider MSA account to be refilled with Capacity after an epoch period.
+//! Capacity is refilled on an as needed basis.
+//! Thus, the provider's capacity balance retains the information of the last epoch.
+//! Upon use, if the last epoch is less than the current epoch, the balance is assumed to be the maximum as the reload "has" happened.
+//! Thus, the first use of capacity in an epoch will update the last epoch number to match the current epoch.
+//! If a provider does not use any capacity in an epoch, the provider's capacity balance information is never updated for that epoch.
 //!
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
