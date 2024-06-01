@@ -39,4 +39,5 @@ std = [
   "pallet-stateful-storage-runtime-api/std",
   "common-primitives/std",
   "common-helpers/std",
+  "frame-support/std",
 ]

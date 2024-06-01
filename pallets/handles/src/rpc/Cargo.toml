@@ -34,6 +34,7 @@ std = [
   'sp-std/std',
   'sp-api/std',
   'sp-runtime/std',
+  "frame-support/std",
   'pallet-handles-runtime-api/std',
   'common-primitives/std',
   'common-helpers/std',
