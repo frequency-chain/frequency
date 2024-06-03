@@ -155,6 +155,7 @@ std = [
   "sp-session/std",
   "sp-std/std",
   "sp-transaction-pool/std",
+  "common-runtime/std",
   "sp-version/std",
   "system-runtime-api/std",
 ]
