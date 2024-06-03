@@ -5,18 +5,18 @@ Manages the staking and balances for Capacity, an alternative payment system on 
 ## Summary
 
 Capacity is an alternative payment system for a subset of calls that renews each Epoch.
-Tokens staked creates Capacity for a targeted Provider.
+Tokens staked create Capacity for a targeted Provider.
 [Learn more about Capacity](https://docs.frequency.xyz/Tokenomics/ProviderIncentives.html#capacity-model).
 
 ### Staking & Unstaking
 Currently, the token to Capcity ratio is 50:1.
-For example, if for a 5 token stake, a Provider would receive 0.1 Capacity.
-Staking and unstaking effect available Capacity immediately.
+For example, for a 5 token stake, a Provider would receive 0.1 Capacity.
+Staking and unstaking affect available Capacity immediately.
 
 ### Capacity Epoch
 
 A Capacity Epoch is the number of blocks before Capacity balances are able to be renewed.
-The value is managed by Governance, but currently set to ~24 hours.
+The value is managed by Governance, and is currently set to ~24 hours.
 
 ### Thaw Period
 
@@ -40,7 +40,7 @@ The Capacity pallet provides for:
 | -------------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------- |
 | `stake`<br />Lock tokens to gain Capacity | Token Account | Tokens | [`Staked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked) | 1             |
 | `unstake`<br />Begin the process of unlocking tokens by unstaking currently staked tokens | Token Account | Tokens | [`UnStaked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.UnStaked) | 1             |
-| `withdraw_unstaked`<br />Compete the process of unlocking tokens staked by releasing locks on expired unlock chunks | Token Account | Tokens | [`StakeWithdrawn`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakeWithdrawn) | 1             |
+| `withdraw_unstaked`<br />Complete the process of unlocking tokens staked by releasing locks on expired unlock chunks | Token Account | Tokens | [`StakeWithdrawn`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakeWithdrawn) | 1             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/struct.Pallet.html) for more details.
 
@@ -50,7 +50,7 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_capacity/pall
 | --------- | ------------------- | ------------------------ | ------------- |
 | Get Capacity Ledger | Returns the Capacity balance details for a Provider's MSA Id  | `capacityLedger` | 1             |
 | Get Current Epoch | Returns the current Capacity Epoch number  | `currentEpoch` | 1             |
-| Get Current Epoch Info | Returns information about the current Capacity Epoch such as what block it started | `currentEpochInfo` | 1             |
+| Get Current Epoch Info | Returns information about the current Capacity Epoch such as the starting block number | `currentEpochInfo` | 1             |
 | Get Staking Account Ledger | Returns information about an account's current staking details | `stakingAccountLedger` | 1             |
 | Staking Target Ledger | Returns information about an account's current staking details for a specific target Provider MSA Id | `stakingTargetLedger` | 1             |
 | Get Unstake Information | Returns the information about an account's current unstaking details and the unlocking chunks | `unstakeUnlocks` | 1             |

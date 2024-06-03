@@ -11,9 +11,9 @@
 //!
 //! Capacity is refilled on an as needed basis.
 //! Thus, the provider's capacity balance retains the information of the last epoch.
-//! Upon use, if the last epoch is less than the current epoch, the balance is assumed to be the maximum as the reload "has" happened.
-//! Thus, the first use of capacity in an epoch will update the last epoch number to match the current epoch.
-//! If a provider does not use any capacity in an epoch, the provider's capacity balance information is never updated for that epoch.
+//! Upon use, if the last Epoch is less than the current Epoch, the balance is assumed to be the maximum as the reload "has" happened.
+//! Thus, the first use of Capacity in an Epoch will update the last Epoch number to match the current Epoch.
+//! If a provider does not use any Capacity in an Epoch, the provider's capacity balance information is never updated for that Epoch.
 //!
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
