@@ -189,6 +189,7 @@ runtime-benchmarks = [
   "pallet-utility/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
+  "common-runtime/runtime-benchmarks",
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
@@ -221,6 +222,7 @@ try-runtime = [
   "pallet-treasury/try-runtime",
   "pallet-utility/try-runtime",
   "parachain-info/try-runtime",
+  "common-runtime/try-runtime",
 ]
 frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
