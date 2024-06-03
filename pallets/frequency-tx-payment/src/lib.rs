@@ -1,24 +1,13 @@
-//! # Frequency-Transactions Pallet
-//! The Frequency-transaction pallet allows users to transact using either capacity or token.
+//! Allows transactions in alternative payment methods such as capacity
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `CapacityTransactionPaymentRuntimeApi`](../pallet_frequency_tx_payment_runtime_api/trait.CapacityTransactionPaymentRuntimeApi.html)
+//! - [Custom RPC API: `CapacityPaymentApiServer`](../pallet_frequency_tx_payment_rpc/trait.CapacityPaymentApiServer.html)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
-//!
-//! ## Overview
-//! Capacity is a refillable resource that can be used to make transactions on the network.
-//! This pallets allows users to toggle between submitting transactions with capacity or tokens.
-//! Note that tipping for capacity transactions is not allowed and is set to zero. Users who
-//! use tokens to transact can continue to use a tip.
-//!
-//! The key that is used to pay with Capacity must have a minimum balance of the existential deposit.
-//!
-//! The Frequency-transaction pallet provides functions for:
-//!
-//! - pay_with_capacity
-//!
-
+#![doc = include_str!("../README.md")]
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]

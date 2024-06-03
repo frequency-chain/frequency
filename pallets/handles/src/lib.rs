@@ -1,31 +1,21 @@
-//! # Handles Pallet
-//! The Handles pallet provides functionality for claiming and retiring user handles.  Each MSA can have one user handle
-//! associated with it.  The handle consists of a canonical base, a "." delimiter and a unique numeric suffix.  It also has
-//! a display name.  e.g. user.734 with a display of "User"
+//! Unique human-readable strings for MSAs
 //!
+//! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `HandlesRuntimeApi`](../pallet_handles_runtime_api/trait.HandlesRuntimeApi.html)
+//! - [Custom RPC API: `HandlesApiServer`](../pallet_handles_rpc/trait.HandlesApiServer.html)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
+#![doc = include_str!("../README.md")]
 //!
-//! ## Overview
+//! ## Shuffled Sequences
 //!
-//! ## Features
+//! To limit the human value of low or particular suffixes, the pallet uses a shuffled sequence to choose a semi-randon suffix for a specific canonical handle string.
+//! The shuffle only requires storage of the current index, same as an ordered suffix system.
+//! The computational cost is greater the larger the index grows as it is lazy evaluation of the Rand32 given a deterministic seed generated from the canonical handle string.
+//! See more details at [`handles_utils::suffix`]
 //!
-//! * Handle creation and retirement
-//! * Shuffled sequence generation for handle suffixes
-//! * Homoglyph detection
-//!
-//! ## Terminology
-//!
-//! Handle on frequency is composed of a `base_handle`, its canonical version as, `canonical_base` and a unique numeric `suffix`.
-//!
-//! - **Base Handle:** A base handle is a user's chosen handle name.  It is not guaranteed to be unique.
-//! - **Display Handle:** A handle is a unique identifier for a user. Display handle is `base_handle`.`suffix`.
-//! - **Canonical Base:** A canonical base is a base handle that has been converted to a canonical form. Canonicals are unique representations of a base handle.
-//! - **Delimiter:** Period character (".") is reserved on Frequency to form display handle as `base_handle`.`suffix`.
-//! - **Suffix:** A suffix is a unique numeric value appended to a handle's canonical base to make it unique.
-
 // Substrate macros are tripping the clippy::expect_used lint.
 #![allow(clippy::expect_used)]
 #![cfg_attr(not(feature = "std"), no_std)]
