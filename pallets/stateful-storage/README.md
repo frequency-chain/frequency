@@ -11,13 +11,13 @@ Custom RPCs are provided for easy access to data.
 
 ### Paginated Data (`PayloadLocation:Paginated`)
 
-Data is stored in multiple pages of `1_024` bytes in size, each containing a single item of the associated schema.
-Page count is limited to 33 per Schema Id (though there may be holes in that range).
+Data is stored in multiple pages of `1_024` bytes in size (linit defined by `constants::MaxPaginatedPageSizeBytes`), each containing a single item of the associated schema.
+Page count is limited to `33` per Schema Id, though there may be holes in that range (limit defined by `constants::MaxPaginatedPageId`).
 This is most useful for schemas with a larger per-item size and smaller potential item count.
 
 ### Itemized Data (`PayloadLocation:Itemized`)
 
-Data is stored in a single page (max size: `10_240` bytes) containing multiple items (max item size of `1_024` bytes) of the associated schema.
+Data is stored in a single page (max size of `10_240` bytes defined by `constants::MaxItemizedPageSizeBytes`) containing multiple items (max item size of `1_024` bytes defined by `constants::MaxItemizedBlobSizeBytes`) of the associated schema.
 This is most useful for schemas with a relatively small item size and higher potential item count.
 The read and write complexity is O(n) when n is the number of bytes for all items.
 
