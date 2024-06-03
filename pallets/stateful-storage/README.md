@@ -1,6 +1,6 @@
 # Stateful Storage Pallet
 
-The Stateful Storage pallet provides per-MSA functionality for reading and writing stateful data (where the relevant piece is solely the latest state).
+The Stateful Storage pallet provides per-MSA functionality for reading and writing stateful data (where only the latest state is relevant).
 
 ## Summary
 
