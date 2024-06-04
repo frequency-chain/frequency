@@ -1,6 +1,7 @@
 // @ts-check
 
 import eslint from '@eslint/js';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import mochaPlugin from 'eslint-plugin-mocha';
 
@@ -10,6 +11,9 @@ export default tseslint.config(
   ...tseslint.configs.stylistic,
   mochaPlugin.configs.flat.recommended,
   {
+    languageOptions: {
+      globals: { ...globals.node },
+    },
     rules: {
       '@typescript-eslint/no-empty-interface': 'off',
       '@typescript-eslint/no-unused-vars': 'off',
