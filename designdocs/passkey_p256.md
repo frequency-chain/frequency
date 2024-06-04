@@ -9,8 +9,9 @@
     - [Accounts](#accounts)
     - [Keys](#keys)
     - [Signatures](#signatures)
-  - [3. Data Flow Diagram](#3-data-flow-diagram)
-  - [4. Data Map for Legal Teams](#4-data-map-for-legal-teams)
+  - [3.1. Data Flow Diagram](#31-data-flow-diagram)
+  - [3.2. Data maps for Legal Teams](#32-data-maps-for-legal-teams)
+  - [4. Benefits](#4-benefits)
   - [5. Specification](#5-specification)
     - [Passkey Registration](#passkey-registration)
     - [Security Considerations](#security-considerations)
@@ -50,13 +51,17 @@ This document outlines the design considerations and specifications for integrat
   - **Signature on Account Public Key**: Passkey signs a message containing the account public key. This signature is retained by the Frequency Access platform and/or maybe used for account recovery.
   - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
 
-## 3. Data Flow Diagram
+## 3.1. Data Flow Diagram
 
 ![Data Flow Diagram](insert_diagram_link_here)
 
-## 4. Data Map for Legal Teams
+## 3.2. Data maps for Legal Teams
 
-(Provide a data map detailing what information is stored, where it's stored, and its legal implications.)
+## 4. Benefits
+
+- **Non-Custodial Account Management**: Passkey support enables users to interact with Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
+
+- **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The poliferation of passkey enabled services can lead to a seamless user experience.
 
 ## 5. Specification
 
