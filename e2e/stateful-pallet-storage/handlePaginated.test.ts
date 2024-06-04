@@ -7,6 +7,7 @@ import {
   getCurrentPaginatedHash,
   createMsa,
   DOLLARS,
+  getOrCreateAvroChatMessagePaginatedSchema,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -34,15 +35,17 @@ describe('📗 Stateful Pallet Storage', function () {
     assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated');
-    const { target: event } = await createSchema.signAndSend();
-    schemaId = event!.data.schemaId;
+    schemaId = await getOrCreateAvroChatMessagePaginatedSchema(providerKeys);
 
     // Create non supported schema
-    const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'OnChain');
-    const { target: event2 } = await createSchema2.signAndSend();
-    assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
-    schemaId_unsupported = event2!.data.schemaId;
+    schemaId_unsupported = await ExtrinsicHelper.getOrCreateSchemaV3(
+      providerKeys,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'OnChain',
+      [],
+      'test.handlePaginatedUnsupported'
+    );
 
     // Create a MSA for the delegator and delegate to the provider
     [delegatorKeys, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);

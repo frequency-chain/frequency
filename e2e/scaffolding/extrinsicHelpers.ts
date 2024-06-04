@@ -371,6 +371,35 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static async getOrCreateSchemaV3(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: ('AppendOnly' | 'SignatureRequired')[],
+    schemaNme: string
+  ): Promise<u16> {
+    // Check to see if the schema name already exists
+    const [group, name] = schemaNme.toLowerCase().split('.');
+    const { ids } = await ExtrinsicHelper.apiPromise.query.schemas.schemaNameToIds(group, name);
+    if (ids.length > 0) {
+      return ids[ids.length - 1];
+    }
+    // Not found? Create it!
+    const { target: event } = await ExtrinsicHelper.createSchemaV3(
+      keys,
+      model,
+      modelType,
+      payloadLocation,
+      grant,
+      schemaNme
+    ).signAndSend();
+    if (event?.data.schemaId) {
+      return event.data.schemaId;
+    }
+    throw new Error(`Tried to create a schema for ${schemaNme}, but it failed!`);
+  }
+
   /** Schema v3 Extrinsics */
   public static createSchemaV3(
     keys: KeyringPair,
