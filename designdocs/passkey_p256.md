@@ -52,7 +52,8 @@ This document outlines the design considerations and specifications for integrat
 
 ## 3. Data Flow Diagram
 
-![Data Flow Diagram](insert_diagram_link_here)
+![Registration Diagram](https://docs.google.com/drawings/d/1x9pM2OVU0zNLVJWHvHhMzLfFnIpqYU2KNVDuDMgXnrY)
+![Transaction Diagram](https://docs.google.com/drawings/d/1eSgwxuCrR0x-J_7kzqnn-POXrZ5XCWM7TF0tyaxKKaw)
 
 ## 4. Data Map for Legal Teams
 
@@ -66,7 +67,21 @@ This document outlines the design considerations and specifications for integrat
 
 ### Security Considerations
 
-(Outline the security measures to be implemented both on the client-side and server-side to ensure the safety of user data and transactions.)
+#### Front-end (client)
+- If key generation is done in front-end, it should ideally being done inside an isolated section such as iframe or Web Worker.
+- Generated Keypair should not get stored permanently (except for back up options) and removed as soon as it is not required.
+
+#### Backend
+- Passkey registration response should get verified which checks the random challenge
+- Passkey Login response should get verified which checks the random challenge
+- Passkey Transaction response should get verified which checks transaction related challenge.
+- Any provided Frequency account signature should get verified.
+
+#### On-chain
+- Preferably using an audited crate to support p256 operations. Currently, we are using `p256` crate
+which is not audited.
+- If signature checks implemented **on_validate** are expensive, then this would open a vulnerability
+surface for DOS attacks.
 
 ### Transaction Submission Specification
 
@@ -76,7 +91,92 @@ This document outlines the design considerations and specifications for integrat
 
 ### Backend Example Code
 
-(Include code snippets demonstrating how to implement Passkey support on the backend.)
+#### Signature verification
+- Non-optimal approach
+```rust
+	pub fn check_passkey_signature(
+		payload: &PasskeyPayload<T>,
+	) -> Result<(), TransactionValidityError> {
+		// deserialize to COSE key format and check the key
+		let cose_key = CoseKey::from_slice(&payload.passkey_public_key[..])
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(1)))?;
+		let (_, x) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-2))
+			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(2)))?;
+		let (_, y) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-3))
+			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(3)))?;
+
+		// convert COSE format to P256 verifying key
+		let encoded_point =
+			EncodedPoint::from_affine_coordinates(
+				GenericArray::from_slice(&x.clone().into_bytes().map_err(|_| {
+					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
+				})?),
+				GenericArray::from_slice(&y.clone().into_bytes().map_err(|_| {
+					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
+				})?),
+				false,
+			);
+		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point)
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(5)))?;
+
+		let passkey_signature =
+			p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..])
+				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(6)))?;
+
+		// extract the challenge from client_data and
+		// ensure the that the challenge is the same as the call payload
+		let client_data: serde_json::Value =
+			serde_json::from_slice(&payload.passkey_client_data_json)
+				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(7)))?;
+		let extracted_challenge = match client_data {
+			serde_json::Value::Object(m) => {
+				let challenge = m
+					.get(&"challenge".to_string())
+					.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(8)))?;
+				if let serde_json::Value::String(base64_url_encoded) = challenge {
+					let decoded = base64_url::decode(&base64_url_encoded).map_err(|_| {
+						TransactionValidityError::Invalid(InvalidTransaction::Custom(9))
+					})?;
+					Ok(decoded)
+				} else {
+					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(10)))
+				}
+			},
+			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(11))),
+		}?;
+
+		let encoded_payload = payload.passkey_call.encode();
+		ensure!(
+			encoded_payload == extracted_challenge,
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(12))
+		);
+
+		// prepare signing payload which is [authenticator || sha256(client_data_json)]
+		let mut passkey_signature_payload = payload.passkey_authenticator.to_vec();
+		passkey_signature_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+
+		// finally verify the passkey signature against the payload
+		verify_key
+			.verify(&passkey_signature_payload, &passkey_signature)
+			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::BadProof))
+	}
+```
+- Some possible optimizations
+  - **Compressed public key**: Currently passed public key is in **Cose** format, and it's between 70-73 bytes.
+If the client can parse the Cose public key can extract the compressed encoded key. This public key can
+get reduced to 33 bytes.
+  - **Challenge data deduplication**: Currently the challenge data is duplicated in `expected_challenge` and
+  in it's serialized format inside `passkey_client_data_json`. If the client is able to parse
+  `passkey_client_data_json` and replace `challenge` field value with empty string. Then during the
+  signature check we can replace that empty string with `expected_challenge` and that would allow us to
+  reduce the transaction size by around **40%**. It is important that the order of the field `passkey_client_data_json`
+  does not change during this operation since that would generate a different signature.
 
 ### Frontend Example Code
 
