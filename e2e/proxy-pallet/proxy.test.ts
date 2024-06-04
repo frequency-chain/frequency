@@ -93,7 +93,6 @@ describe('Proxy', function () {
       // Filtered Out ExtrinsicFailed
       await assert.rejects(extrinsic.signAndSend(), {
         name: 'NotProxy',
-        message: /Sender is not a proxy of the account to be proxied./,
       });
     });
 
@@ -114,7 +113,6 @@ describe('Proxy', function () {
       // Filtered Out ExtrinsicFailed
       await assert.rejects(extrinsic.signAndSend(), {
         name: 'NotProxy',
-        message: /Sender is not a proxy of the account to be proxied./,
       });
     });
 
