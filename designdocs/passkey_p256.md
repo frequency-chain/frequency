@@ -145,7 +145,7 @@ Browser/Client receives the following data from the backend:
 - `account_sig_passkey_pk`
 
 1. **Transaction Formation**:
-   - The user initiates a transaction by providing the details needed for the transaction (e.g., recipient address, amount, nonce).
+   - The client initiates a transaction by providing the details needed for the transaction (e.g., recipient address, amount, nonce).
    - The transaction payload includes the actual tx and proof of account ownership.
 
     ```javascript
@@ -205,7 +205,7 @@ Browser/Client receives the following data from the backend:
       const passkey_payload = api.createType('PalletFrequencyTxPaymentPasskeyPayload', payload);
 
       // Submit the transaction to the chain without signature
-      const tx = api.tx.frequencyTxPayment.passkeyProxy(passkey_payload);
+      const tx = api.tx.{frequecyPassKeyProxy}.submitPasskeyTx(passkey_payload);
       await tx.send()
     ```
 
