@@ -111,7 +111,7 @@ These are the following technical terms and specifications for the implementatio
         const passkey_sig_pk = registerPassKey.signature; // obtained from the registration response
         const passkey_pk = registerPassKey.publicKey; // obtained from the registration response
 
-        // Sign Passkey Public Key using Account Key
+        // Sign Passkey Public Key using Account Key, this is used to prove ownership of the account
         const account_sig_passkey_pk = account_keypair.sign(passkey_pk);
       ```
 
@@ -122,8 +122,8 @@ These are the following technical terms and specifications for the implementatio
    - The following data is sent:
      - `passkey_pk`
      - `account_pk`
-     - `passkey_sig_pk`
      - `account_sig_passkey_pk`
+     - `passkey_sig_pk`
 
 7. **Frequency Access validates and stores the data**:
    - The backend validates the signatures to ensure ownership and integrity.
