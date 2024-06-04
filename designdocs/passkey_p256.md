@@ -5,13 +5,13 @@
 - [Design Doc for P256 PassKey Support](#design-doc-for-p256-passkey-support)
   - [Table of Contents](#table-of-contents)
   - [1. Introduction](#1-introduction)
-  - [2. Terminology](#2-terminology)
+  - [2. Benefits](#2-benefits)
+  - [3. Terminology](#3-terminology)
     - [Accounts](#accounts)
     - [Keys](#keys)
     - [Signatures](#signatures)
-  - [3.1. Data Flow Diagram](#31-data-flow-diagram)
-  - [3.2. Data maps for Legal Teams](#32-data-maps-for-legal-teams)
-  - [4. Benefits](#4-benefits)
+  - [4.1. Data Flow Diagram](#41-data-flow-diagram)
+  - [4.2. Data maps for Legal Teams](#42-data-maps-for-legal-teams)
   - [5. Specification](#5-specification)
     - [Passkey Registration](#passkey-registration)
     - [Transaction Submission Specification](#transaction-submission-specification)
@@ -29,7 +29,17 @@
 
 This document outlines the design considerations and specifications for integrating P256 Passkey support for performing transactions on Frequency chain. Passkey support aims to provide a novel non custodial solution for managing user accounts and signing transactions on-chain.
 
-## 2. Terminology
+## 2. Benefits
+
+- **Non-Custodial Account Management**: Passkey support enables users to interact with Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
+
+- **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The poliferation of passkey enabled services can lead to a seamless user experience.
+
+- **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
+
+- **Backup and Recovery**: Passkey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of loss of seed access.
+
+## 3. Terminology
 
 ### Accounts
 
@@ -51,21 +61,13 @@ This document outlines the design considerations and specifications for integrat
   - **Signature on Account Public Key**: Passkey signs a message containing the account public key. This signature is retained by the Frequency Access platform and/or maybe used for account recovery.
   - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
 
-## 3.1. Data Flow Diagram
+## 4.1. Data Flow Diagram
 
 ![Data Flow Diagram](insert_diagram_link_here)
 
-## 3.2. Data maps for Legal Teams
+## 4.2. Data maps for Legal Teams
 
-## 4. Benefits
-
-- **Non-Custodial Account Management**: Passkey support enables users to interact with Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
-
-- **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The poliferation of passkey enabled services can lead to a seamless user experience.
-
-- **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
-
-- **Backup and Recovery**: Passkey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of loss of seed access.
+![Data Map](insert_data_map_link_here)
 
 ## 5. Specification
 
@@ -213,7 +215,7 @@ Browser/Client receives the following data from the backend:
 
 - Never store or backup the seed phrase other than memory.
 - Prefer more client side data processing and handling, backend should only store the necessary data.
-- Choose vetted npm packages for handling cryptographic operations, such that signing with seed phrase, or handling of private keys is done securely.
+- Choose vetted libraries, npm packages for handling cryptographic operations, such that signing with seed phrase, or handling of private keys is done securely.
 
 ## 6. Implementation
 
