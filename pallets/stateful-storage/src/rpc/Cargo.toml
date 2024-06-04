@@ -34,6 +34,7 @@ default = ["std"]
 std = [
   "sp-std/std",
   "sp-api/std",
+  "sp-api/frame-metadata",
   "sp-core/std",
   "sp-runtime/std",
   "pallet-stateful-storage-runtime-api/std",

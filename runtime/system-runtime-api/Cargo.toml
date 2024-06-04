@@ -29,4 +29,5 @@ std = [
     "common-primitives/std",
     "sp-std/std",
     "sp-runtime/std",
+    "sp-api/frame-metadata"
 ]
