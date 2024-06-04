@@ -93,6 +93,7 @@ These are the following technical terms and specifications for the implementatio
    - The seed phrase is used to generate a signature on the `passkey_pk`, resulting in `account_sig_passkey_pk`.
 
       ```javascript
+        // Generate Account Key Pair
         const mnemonic = "GENERATE SOME MNEMONIC HERE"
         const keyring = new Keyring({ type: 'sr25519' });
         const account_keypair = keyring.addFromMnemonic(mnemonic);
@@ -107,7 +108,10 @@ These are the following technical terms and specifications for the implementatio
         ...
         ...
         // Sign Passkey Public Key using Account Key
-        const passkey_pk = registerPassKey.publicKey;
+        const passkey_sig_pk = registerPassKey.signature; // obtained from the registration response
+        const passkey_pk = registerPassKey.publicKey; // obtained from the registration response
+
+        // Sign Passkey Public Key using Account Key
         const account_sig_passkey_pk = account_keypair.sign(passkey_pk);
       ```
 
