@@ -1,4 +1,4 @@
-export const providerUrl = process.env.WS_PROVIDER_URL;
+export const providerUrl: string = process.env.WS_PROVIDER_URL || 'ws://localhost:9944';
 export const verbose = process.env.VERBOSE_TESTS === 'true' || process.env.VERBOSE_TESTS === '1';
 
 const CHAIN_ENVIRONMENT = {

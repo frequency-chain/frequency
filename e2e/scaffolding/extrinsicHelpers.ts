@@ -306,7 +306,7 @@ export class ExtrinsicHelper {
   public static api: ApiRx;
   public static apiPromise: ApiPromise;
 
-  public static async initialize(providerUrl?: string | string[] | undefined) {
+  public static async initialize(providerUrl: string | string[]) {
     ExtrinsicHelper.api = await connect(providerUrl);
     // For single state queries (api.query), ApiPromise is better
     ExtrinsicHelper.apiPromise = await connectPromise(providerUrl);
