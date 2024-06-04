@@ -5,7 +5,7 @@ import workerpool from 'workerpool';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
-import { isDev } from './env';
+import { isDev, providerUrl } from './env';
 
 const SOURCE_AMOUNT = 100_000_000_000_000n;
 
@@ -35,7 +35,7 @@ function drainAllSources() {
 export async function mochaGlobalSetup() {
   console.log('Global Setup Start', 'Reported CPU Count: ', workerpool.cpus);
   await cryptoWaitReady();
-  await ExtrinsicHelper.initialize();
+  await ExtrinsicHelper.initialize(providerUrl);
   await fundAllSources();
 
   // Sudo is only when not on Testnet
