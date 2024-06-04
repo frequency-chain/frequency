@@ -93,7 +93,7 @@ These are the following technical terms and specifications for the implementatio
    - The Passkey signs the `account_pk`, resulting in `passkey_sig_pk`.
 
 4. **Browser JavaScript generates a signature using the seed phrase**:
-   - The seed phrase is used to generate a signature on the `passkey_pk`, resulting in `account_sig_passkey_pk`.
+   - `account_keypair` is used to generate a signature on the `passkey_pk`, resulting in `account_sig_passkey_pk`.
 
       ```javascript
         // Generate Account Key Pair
