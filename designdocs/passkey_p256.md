@@ -6,8 +6,8 @@
   - [Table of Contents](#table-of-contents)
   - [1. Introduction](#1-introduction)
   - [2. Terminology](#2-terminology)
-    - [Keys](#keys)
     - [Accounts](#accounts)
+    - [Keys](#keys)
     - [Signatures](#signatures)
   - [3. Data Flow Diagram](#3-data-flow-diagram)
   - [4. Data Map for Legal Teams](#4-data-map-for-legal-teams)
@@ -30,6 +30,12 @@ This document outlines the design considerations and specifications for integrat
 
 ## 2. Terminology
 
+### Accounts
+
+- **Authorized Account**: The user account associated with the Passkey.
+- **Parent Account**: The account holding the primary private key for transaction signing.
+- **Frequency Access**: The platform facilitating the management and interaction with user accounts.
+
 ### Keys
 
 - **Passkey**: P256 key pair used for transaction signing and account management. This is the primary key used for transaction signing.
@@ -37,15 +43,9 @@ This document outlines the design considerations and specifications for integrat
 - **Seed Phrase**: A mnemonic phrase used to generate cryptographic keys, particularly for SR25519 accounts. This is used for signing passkey proving account ownership.
 - **Seed Public Key**: The public key derived from the Seed Phrase.
 
-### Accounts
-
-- **Authorized Account**: The user account associated with the Passkey.
-- **Parent Account**: The account holding the primary private key for transaction signing.
-- **Frequency Access**: The platform facilitating the management and interaction with user accounts.
-
 ### Signatures
 
-- **Seed Public Key Signature**: A cryptographic signature generated using the Seed Phrase private key. The data being signed is public key derived from passkey. This is used to prove ownership of parent account.
+- **Seed signature on PassKey Public Key**: A cryptographic signature generated using the Seed Phrase private key. The data being signed is public key derived from passkey. This is used to prove ownership of parent account.
 - **Passkey Signature**: A cryptographic signature generated using the Passkey private key. This is presented to passkey enabled services as a challenge-response mechanism. Passkeys are used to generate two signatures as follows:
   - **Signature on Seed Public Key**: Passkey signs a message containing the Seed Public Key.
   - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain.
