@@ -46,7 +46,7 @@ This document outlines the design considerations and specifications for integrat
 
 ### Signatures
 
-- **Account signature on PassKey Public Key**: A cryptographic signature generated using th Account Key. The data being signed is public key derived from passkey. This is used to prove ownership of parent account.
+- **Account signature on PassKey Public Key**: A cryptographic signature generated using the Account Key. The data being signed is passkey public key. This is used to prove ownership of Account Key.
 - **Passkey Signatures**: A cryptographic signature generated using the Passkey private key. This is presented to passkey enabled services as a challenge-response mechanism. Passkeys are used to generate two signatures as follows:
   - **Signature on Account Public Key**: Passkey signs a message containing the account public key. This signature is retained by the Frequency Access platform and/or maybe used for account recovery.
   - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
@@ -64,6 +64,8 @@ This document outlines the design considerations and specifications for integrat
 - **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The poliferation of passkey enabled services can lead to a seamless user experience.
 
 - **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
+
+- **Backup and Recovery**: Passkey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of loss of seed access.
 
 ## 5. Specification
 
