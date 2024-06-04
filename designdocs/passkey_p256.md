@@ -210,16 +210,6 @@ Browser/Client receives the following data from the backend:
     ```
 
 4. **Backend Validation and Submission**:
-    - While preferrably the backend should not be involved in transaction signing, it can validate the transaction payload and submit the transaction to the chain.
-
-    ```typescript
-      // Validate the transaction payload
-      const passkeyPayload = api.createType('PalletFrequencyTxPaymentPasskeyPayload', payload);
-
-      // Submit the transaction to the chain
-      const tx = api.tx.frequencyTxPayment.passkeyProxy(passkeyPayload);
-      await tx.send()
-    ```
 
 ### Security Considerations
 
