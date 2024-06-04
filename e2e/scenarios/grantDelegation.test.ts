@@ -10,6 +10,7 @@ import {
   createKeys,
   generateDelegationPayload,
   getBlockNumber,
+  getOrCreateDummySchema,
   signPayloadSr25519,
 } from '../scaffolding/helpers';
 import { SchemaGrantResponse, SchemaId } from '@frequency-chain/api-augment/interfaces';
@@ -58,51 +59,34 @@ describe('Delegation Scenario Tests', function () {
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;
 
-    const createSchemaOp = ExtrinsicHelper.createSchema(
-      keys,
-      {
-        type: 'record',
-        name: 'Post',
-        fields: [
-          {
-            name: 'title',
-            type: {
-              name: 'Title',
-              type: 'string',
-            },
-          },
-          {
-            name: 'content',
-            type: {
-              name: 'Content',
-              type: 'string',
-            },
-          },
-          {
-            name: 'fromId',
-            type: {
-              name: 'DSNPId',
-              type: 'fixed',
-              size: 8,
-            },
-          },
-          {
-            name: 'objectId',
-            type: 'DSNPId',
-          },
-        ],
-      },
-      'AvroBinary',
-      'OnChain'
-    );
-    let { target: createSchemaEvent } = await createSchemaOp.signAndSend();
-    assert.notEqual(createSchemaEvent, undefined, 'setup should return SchemaCreated event');
-    schemaId = createSchemaEvent!.data.schemaId;
+    const schema = {
+      type: 'record',
+      name: 'Post',
+      fields: [
+        { name: 'title', type: { name: 'Title', type: 'string' } },
+        { name: 'content', type: { name: 'Content', type: 'string' } },
+        { name: 'fromId', type: { name: 'DSNPId', type: 'fixed', size: 8 } },
+        { name: 'objectId', type: 'DSNPId' },
+      ],
+    };
 
-    // Create a second schema
-    ({ target: createSchemaEvent } = await createSchemaOp.signAndSend());
-    assert.notEqual(createSchemaEvent, undefined, 'setup should return SchemaCreated event');
-    schemaId2 = createSchemaEvent!.data.schemaId;
+    schemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
+      keys,
+      schema,
+      'AvroBinary',
+      'OnChain',
+      [],
+      'test.grantDelegation'
+    );
+
+    schemaId2 = await ExtrinsicHelper.getOrCreateSchemaV3(
+      keys,
+      schema,
+      'AvroBinary',
+      'OnChain',
+      [],
+      'test.grantDelegationSecond'
+    );
   });
 
   describe('delegation grants', function () {
@@ -242,16 +226,7 @@ describe('Delegation Scenario Tests', function () {
     });
 
     it('should fail to revoke schema permission which was never granted (SchemaNotGranted)', async function () {
-      const schema = {
-        name: 'nonGrantedSchema',
-        type: 'record',
-        fields: [],
-      };
-
-      const sop = ExtrinsicHelper.createSchema(keys, schema, 'AvroBinary', 'OnChain');
-      const { target: sevent } = await sop.fundAndSend(fundingSource);
-      const sid = sevent?.data.schemaId;
-      assert.notEqual(sid, undefined, 'should have created schema');
+      const sid = await getOrCreateDummySchema(keys);
 
       const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [sid]);
       await assert.rejects(op.fundAndSend(fundingSource), { name: 'SchemaNotGranted' });

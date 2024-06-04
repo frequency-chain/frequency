@@ -7,6 +7,7 @@ import {
   createMsa,
   createProviderKeysAndId,
   getCurrentItemizedHash,
+  getOrCreateAvroChatMessageItemizedSchema,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -32,20 +33,16 @@ describe('📗 Stateful Pallet Storage', function () {
     assert.notEqual(providerId, undefined, 'setup should populate providerId');
     assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
-    // Create a schema to allow delete actions
-    const createSchemaDeletable = ExtrinsicHelper.createSchema(
+    schemaId_deletable = await getOrCreateAvroChatMessageItemizedSchema(providerKeys);
+
+    schemaId_unsupported = await ExtrinsicHelper.getOrCreateSchemaV3(
       providerKeys,
       AVRO_CHAT_MESSAGE,
       'AvroBinary',
-      'Itemized'
+      'OnChain',
+      [],
+      'test.handleItemizedUnsupported'
     );
-    const { target: eventDeletable } = await createSchemaDeletable.signAndSend();
-    schemaId_deletable = eventDeletable!.data.schemaId;
-    // Create non supported schema
-    const createSchema2 = ExtrinsicHelper.createSchema(providerKeys, AVRO_CHAT_MESSAGE, 'AvroBinary', 'OnChain');
-    const { target: event2 } = await createSchema2.signAndSend();
-    assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
-    schemaId_unsupported = event2!.data.schemaId;
     // Create a MSA for the delegator and delegate to the provider
     [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
       fundingSource,
