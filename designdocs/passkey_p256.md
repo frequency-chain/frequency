@@ -40,7 +40,7 @@ This document outlines the design considerations and specifications for integrat
 ### Keys
 
 - **Passkey**: P256 key pair used for transaction signing and account management. This is the primary key used for transaction signing.
-- **Passkey Public Key**: The public key derived from the Passkey private key.
+- **Passkey Public Key**: The public key retrieved from the Passkey registration process.
 - **Account Key**: The key pair generated from a seed phrase.
 - **Account Public Key**: The public key derived from the Account Key.
 
