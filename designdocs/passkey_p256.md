@@ -47,8 +47,8 @@ This document outlines the design considerations and specifications for integrat
 
 - **Seed signature on PassKey Public Key**: A cryptographic signature generated using the Seed Phrase private key. The data being signed is public key derived from passkey. This is used to prove ownership of parent account.
 - **Passkey Signature**: A cryptographic signature generated using the Passkey private key. This is presented to passkey enabled services as a challenge-response mechanism. Passkeys are used to generate two signatures as follows:
-  - **Signature on Seed Public Key**: Passkey signs a message containing the Seed Public Key.
-  - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain.
+  - **Signature on Seed Public Key**: Passkey signs a message containing the Seed Public Key. This signature is retained by the Frequency Access platform and/or maybe used for account recovery.
+  - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
 
 ## 3. Data Flow Diagram
 
