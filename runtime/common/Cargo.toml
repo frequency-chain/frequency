@@ -48,7 +48,7 @@ frequency = []
 frequency-testnet = []
 frequency-local = []
 frequency-no-relay = []
-runtime-benchmarks = ["pallet-collective/runtime-benchmarks"]
+runtime-benchmarks = ["pallet-collective/runtime-benchmarks", "frame-support/runtime-benchmarks"]
 std = [
   "frame-support/std",
   "frame-system/std",
@@ -72,6 +72,7 @@ std = [
   "scale-info/std",
   "sp-std/std",
   "pallet-preimage/std",
+  "pallet-sudo/std",
 ]
 try-runtime = [
   "frame-support/try-runtime",
