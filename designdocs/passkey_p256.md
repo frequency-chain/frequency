@@ -23,12 +23,12 @@
 
 ## 1. Introduction
 
-This document outlines the design considerations and specifications for integrating P256 Passkey support into our system. Passkey support aims to provide users with a secure and convenient way to manage their tokens while ensuring the integrity and privacy of their cryptographic keys.
+This document outlines the design considerations and specifications for integrating P256 Passkey support for performing transactions on Frequency chain. Passkey support aims to provide a novel non custodial solution for managing user accounts and signing transactions on-chain. The design will cover the following aspects:
 
 ## 2. Terminology
 
-- **Passkey**: A cryptographic key generated and managed by the user to sign transactions and access their account.
-- **Seed Phrase**: A mnemonic phrase used to generate cryptographic keys, particularly for SR25519 accounts.
+- **Passkey**: P256 key pair used for transaction signing and account management. This is the primary key used for transaction signing.
+- **Seed Phrase**: A mnemonic phrase used to generate cryptographic keys, particularly for SR25519 accounts. This is used for signing passkey proving account ownership.
 - **Authorized Account**: The user account associated with the Passkey.
 - **Parent Account**: The account holding the primary private key for transaction signing.
 - **Frequency Access**: The platform facilitating the management and interaction with user accounts.
