@@ -71,7 +71,7 @@ describe('Capacity Transactions', function () {
         const capacityKeys = createKeys('CapacityKeysNSF');
         const capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapProvNSF', FUNDS_AMOUNT);
         // this will first fund 'capacityKeys' before staking
-        await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+        await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
 
         // As current owner, add a new set of control keys that do not have a balance.
         const newControlKeypair = createKeys('NewKeyNoBalance');
@@ -112,7 +112,7 @@ describe('Capacity Transactions', function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
           // Stake enough for all transactions
-          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, stakedForMsa));
+          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, stakedForMsa));
         });
 
         beforeEach(async function () {
@@ -204,7 +204,7 @@ describe('Capacity Transactions', function () {
         beforeEach(async function () {
           starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
           // Stake each time so that we always have enough capacity to do the call
-          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
         });
 
         it('successfully pays with Capacity for eligible transaction - addIPFSMessage', async function () {
@@ -245,11 +245,15 @@ describe('Capacity Transactions', function () {
         before(async function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
+          // Create a MSA for the delegator
+          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
+          assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
+          assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
         });
 
         beforeEach(async function () {
           // Stake each time so that we always have enough capacity to do the call
-          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
         });
 
         it('successfully pays with Capacity for eligible transaction - applyItemActions', async function () {
@@ -317,11 +321,6 @@ describe('Capacity Transactions', function () {
           // Create a schema for Itemized PayloadLocation
           const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
 
-          // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
-          assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
-          assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
-
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
           const add_action = {
@@ -366,11 +365,6 @@ describe('Capacity Transactions', function () {
           // Create a schema for Itemized PayloadLocation
           const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
 
-          // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
-          assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
-          assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
-
           // Add and update actions
           const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
           const add_action = {
@@ -412,11 +406,6 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - upsertPageWithSignature; deletePageWithSignature', async function () {
           const paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
-
-          // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
-          assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
-          assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
           const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
@@ -479,11 +468,6 @@ describe('Capacity Transactions', function () {
 
         it('successfully pays with Capacity for eligible transaction - upsertPageWithSignatureV2; deletePageWithSignatureV2', async function () {
           const paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
-
-          // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
-          assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
-          assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
           const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
@@ -553,7 +537,7 @@ describe('Capacity Transactions', function () {
         });
 
         it('successfully pays with Capacity for eligible transaction - claimHandle', async function () {
-          await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
+          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
 
           const handle = getTestHandle();
           const expiration = (await getBlockNumber()) + 10;
@@ -583,7 +567,7 @@ describe('Capacity Transactions', function () {
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
         });
 
-        it('successfully pays with Capacity for eligible transaction - claimHandle [balance < ED]', async function () {
+        it('successfully pays with Capacity for eligible transaction - claimHandle [available balance < ED]', async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
           // Empty the account to ensure the balance is less than ED
           await ExtrinsicHelper.emptyAccount(capacityKeys, fundingSource.address).signAndSend();
@@ -640,19 +624,17 @@ describe('Capacity Transactions', function () {
       // and is NOT eligible to replenish Capacity, it should error and be dropped
       // from the transaction pool.
       it('fails to pay for a transaction with empty capacity', async function () {
-        const capacityKeys = createKeys('CapKeysEmpty');
-        const capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapProvEmpty', FUNDS_AMOUNT);
         const noCapacityKeys = createKeys('noCapacityKeys');
-        const _providerId = await createMsaAndProvider(fundingSource, noCapacityKeys, 'NoCapProvider');
+        const noCapacityProvider = await createMsaAndProvider(fundingSource, noCapacityKeys, 'NoCapProvider');
 
         const delegatorKeys = createKeys('delegatorKeys');
 
         const payload = await generateDelegationPayload({
-          authorizedMsaId: capacityProvider,
+          authorizedMsaId: noCapacityProvider,
           schemaIds: [schemaId],
         });
         const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
-        const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+        const grantDelegationOp = ExtrinsicHelper.createSponsoredAccountWithDelegation(
           delegatorKeys,
           noCapacityKeys,
           signPayloadSr25519(noCapacityKeys, addProviderData),
@@ -670,9 +652,9 @@ describe('Capacity Transactions', function () {
         const capacityKeys = createKeys('CapKeysUnder');
         const capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapProvUnder', FUNDS_AMOUNT);
         const noTokensKeys = createKeys('noTokensKeys');
-        const delegatorKeys = await createAndFundKeypair(fundingSource, 2n * DOLLARS, 'delegatorKeys');
+        const delegatorKeys = createKeys('delegatorKeys');
 
-        await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, 1n * DOLLARS));
+        await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, 1n * DOLLARS));
 
         // Add new key
         const newKeyPayload: AddKeyData = await generateAddKeyPayload({
@@ -688,16 +670,12 @@ describe('Capacity Transactions', function () {
         const { target: publicKeyEvent } = await addPublicKeyOp.fundAndSend(fundingSource);
         assert.notEqual(publicKeyEvent, undefined, 'should have added public key');
 
-        const createMsaOp = ExtrinsicHelper.createMsa(delegatorKeys);
-        const { target: MsaCreatedEvent } = await createMsaOp.fundAndSend(fundingSource);
-        assert.notEqual(MsaCreatedEvent, undefined, 'should have returned MsaCreated event');
-
         const payload = await generateDelegationPayload({
           authorizedMsaId: capacityProvider,
           schemaIds: [schemaId],
         });
         const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
-        const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+        const grantDelegationOp = ExtrinsicHelper.createSponsoredAccountWithDelegation(
           delegatorKeys,
           noTokensKeys,
           signPayloadSr25519(delegatorKeys, addProviderData),
@@ -802,7 +780,7 @@ describe('Capacity Transactions', function () {
     });
 
     it('successfully pays with Capacity for a batch of eligible transactions - [createSponsoredAccountWithDelegation, claimHandle]', async function () {
-      await assert.doesNotReject(stakeToProvider(fundingSource, capacityProviderKeys, capacityProvider, amountStaked));
+      await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
 
       const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);
@@ -848,7 +826,7 @@ describe('Capacity Transactions', function () {
     });
 
     it('batch fails if one transaction fails - [createSponsoredAccountWithDelegation, claimHandle]', async function () {
-      await assert.doesNotReject(stakeToProvider(fundingSource, capacityProviderKeys, capacityProvider, amountStaked));
+      await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
 
       const addProviderPayload = await generateDelegationPayload({ ...defaultPayload });
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);

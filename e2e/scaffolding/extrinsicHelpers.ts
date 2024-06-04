@@ -163,7 +163,7 @@ export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
 
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
-  private extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
+  public readonly extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
   private keys: KeyringPair;
   public api: ApiRx;
 
