@@ -15,6 +15,7 @@ export const fundingSources = [
   'sudo-transactions',
   'time-release',
   'capacity-staking',
+  'capacity-unstaking',
   'schemas-create',
   'handles',
   'messages-add-ipfs',
