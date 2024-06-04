@@ -131,6 +131,7 @@ These are the following technical terms and specifications for the implementatio
      - `passkey_pk`
      - `account_pk`
      - `account_sig_passkey_pk`
+     - Optionally, `passkey_sig_pk` can be stored for account recovery.
 
 ### Transaction Submission Specification
 
