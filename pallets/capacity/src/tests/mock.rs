@@ -208,7 +208,7 @@ impl pallet_capacity::Config for Test {
 	type CapacityPerToken = TestCapacityPerToken;
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
-	type ProviderBoostHistoryLimit = ConstU32<9>;
+	type ProviderBoostHistoryLimit = ConstU32<12>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;

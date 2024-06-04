@@ -47,17 +47,18 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-use sp_std::ops::{Add, Mul};
+
+use sp_std::ops::Mul;
 
 use frame_support::{
 	ensure,
 	traits::{
+		fungible::Inspect,
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::{constants::RocksDbWeight, Weight},
 };
-use frame_support::traits::fungible::Inspect;
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
@@ -93,7 +94,6 @@ pub(crate) type BalanceOf<T> =
 
 use crate::StakingType::{MaximumCapacity, ProviderBoost};
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{Header, HeaderProvider};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -1117,7 +1117,8 @@ impl<T: Config> Pallet<T> {
 				} else {
 					previous_amount
 				};
-				let total_for_era = Self::get_total_stake_from_reward_pool(current_era_info.era_index, chunk_length, reward_era)?;
+				let total_for_era =
+					Self::get_total_stake_for_past_era(reward_era, current_era_info.era_index)?;
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
 					eligible_amount,
 					total_for_era,
@@ -1148,29 +1149,31 @@ impl<T: Config> Pallet<T> {
 		let era_diff = if current_era_info.era_index.eq(&era) {
 			1u32.into()
 		} else {
-			era
-				.saturating_sub(current_era_info.era_index)
-				.saturating_add(1u32.into())
+			era.saturating_sub(current_era_info.era_index).saturating_add(1u32.into())
 		};
 		current_era_info.started_at + era_length.mul(era_diff.into()) - 1u32.into()
 	}
 
-	pub(crate) fn get_total_stake_from_reward_pool(current_era: T::RewardEra, chunk_length: u32, reward_era: T::RewardEra) -> Result<BalanceOf<T>, DispatchError> {
-		let era_diff: u32 = current_era.saturating_sub(reward_era).into();
-		let chunk_idx: u32 = (era_diff).saturating_div(chunk_length);
+	// Find the history chunk that a given era is in and pull out the total stake for that era.
+	pub(crate) fn get_total_stake_for_past_era(
+		reward_era: T::RewardEra,
+		current_era: T::RewardEra,
+	) -> Result<BalanceOf<T>, DispatchError> {
+		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era, current_era)
+			.ok_or(Error::<T>::EraOutOfRange)?;
 		let mut reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
-		if let Some(total_for_era) = (reward_pool_chunk.total_for_era(&reward_era)) {
+		if let Some(total_for_era) = reward_pool_chunk.total_for_era(&reward_era) {
 			Ok(*total_for_era)
 		} else {
-			let chunks = T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
+			let chunks =
+				T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
 			for i in 0..chunks {
 				if i != chunk_idx {
-					reward_pool_chunk = Self::get_reward_pool_chunk(i).ok_or(Error::<T>::CollectionBoundExceeded)?;
+					reward_pool_chunk = Self::get_reward_pool_chunk(i)
+						.ok_or(Error::<T>::CollectionBoundExceeded)?;
 					match reward_pool_chunk.total_for_era(&reward_era) {
-						Some(total_for_era) => {
-							return Ok(*total_for_era)
-						},
-						None => ()
+						Some(total_for_era) => return Ok(*total_for_era),
+						None => (),
 					}
 				}
 			}
@@ -1178,14 +1181,32 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	pub(crate) fn get_chunk_index_for_era(
+		era: T::RewardEra,
+		current_era: T::RewardEra,
+	) -> Option<u32> {
+		if era >= current_era {
+			return None;
+		}
+
+		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
+		let era_diff = current_era.saturating_sub(era);
+		if era_diff > history_limit.into() {
+			return None;
+		}
+
+		let chunk_len = T::RewardPoolChunkLength::get();
+		let chunks: u32 = history_limit.saturating_div(chunk_len);
+		(0u32..chunks).find(|&i| era_diff.le(&(chunk_len * (i + 1)).into()))
+	}
+
 	pub(crate) fn update_provider_boost_reward_pool(era: T::RewardEra, boost_total: BalanceOf<T>) {
 		let mut new_era = era;
 		let mut new_value = boost_total;
 		let chunks_total =
 			T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
-		for chunk_idx in (0u32..chunks_total) {
-			// ProviderBoostRewardPools should be initialized correctly,
-			// that is, all possible chunk key values at least have an empty map, and so this should never be None.
+		for chunk_idx in 0u32..chunks_total {
+			// ProviderBoostRewardPools should have already been initialized with empty BoundedBTrees.
 			if let Some(mut chunk) = ProviderBoostRewardPools::<T>::get(chunk_idx) {
 				if chunk.is_full() {
 					// this would return None only if the history is empty, and that clearly won't happen if the chunk is full.
@@ -1193,8 +1214,6 @@ impl<T: Config> Pallet<T> {
 						// this is an ummutable borrow
 						let mut new_chunk = chunk.clone(); // have to do it this way because E0502
 						if let Some(oldest_value) = new_chunk.remove(&oldest_era) {
-							// since the oldest is removed first, try_insert should never fail.
-							// But JUST IN CASE, keep the new values around to try on the next chunk.
 							let try_result = new_chunk.try_insert(new_era, new_value);
 							if try_result.is_ok() {
 								new_era = *oldest_era;
@@ -1211,9 +1230,6 @@ impl<T: Config> Pallet<T> {
 				}
 			}
 		}
-		// there was a serious problem. do what? put it into an overflow?
-		// if new_era.eq(era) {
-		// }
 	}
 }
 

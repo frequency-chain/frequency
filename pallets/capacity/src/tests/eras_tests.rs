@@ -1,13 +1,25 @@
 use super::mock::*;
 use crate::{
-	tests::testing_utils::{register_provider, run_to_block, system_run_to_block},
-	BalanceOf, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, RewardEraInfo,
-	RewardPoolHistoryChunk,
+	tests::testing_utils::*, BalanceOf, Config, CurrentEraInfo, CurrentEraProviderBoostTotal,
+	RewardEraInfo,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::assert_ok;
 use sp_core::Get;
-use crate::tests::testing_utils::set_era_and_reward_pool;
+use sp_io::storage::exists;
+
+pub fn boost_provider_and_run_to_end_of_era(
+	staker: u64,
+	provider_msa: MessageSourceId,
+	stake_amount: u64,
+	era: u32,
+) {
+	assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), provider_msa, stake_amount));
+	let block_decade: u32 = (era * 10) + 1;
+	run_to_block(block_decade);
+	assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), stake_amount * (era as u64));
+	system_run_to_block(block_decade + 9);
+}
 
 #[test]
 fn start_new_era_if_needed_updates_era_info() {
@@ -27,19 +39,6 @@ fn start_new_era_if_needed_updates_era_info() {
 			system_run_to_block(block_decade + 9);
 		}
 	})
-}
-
-fn add_stake_and_run_to_end_of_era(
-	staker: u64,
-	provider_msa: MessageSourceId,
-	stake_amount: u64,
-	era: u32,
-) {
-	assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), provider_msa, stake_amount));
-	let block_decade: u32 = (era * 10) + 1;
-	run_to_block(block_decade);
-	assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), stake_amount * (era as u64));
-	system_run_to_block(block_decade + 9);
 }
 
 // checks that the chunk indicated has an earliest era matching `era`,
@@ -82,7 +81,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 		register_provider(provider_msa, "Binky".to_string());
 
 		for i in [1u32, 2u32, 3u32] {
-			add_stake_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
+			boost_provider_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
 		}
 		// check that first chunk is filled correctly.
 		assert_chunk_is_full_and_has_earliest_era_total(0, true, 1, 100);
@@ -91,7 +90,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 		assert_last_era_total(3, 300);
 
 		for i in [4u32, 5u32, 6u32] {
-			add_stake_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
+			boost_provider_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
 		}
 		assert_chunk_is_full_and_has_earliest_era_total(0, true, 4, 400);
 		assert_chunk_is_full_and_has_earliest_era_total(1, true, 1, 100);
@@ -99,7 +98,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 		assert_last_era_total(6, 600);
 
 		for i in [7u32, 8u32, 9u32] {
-			add_stake_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
+			boost_provider_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
 		}
 		assert_chunk_is_full_and_has_earliest_era_total(0, true, 7, 700);
 		assert_chunk_is_full_and_has_earliest_era_total(1, true, 4, 400);
@@ -108,71 +107,13 @@ fn start_new_era_if_needed_updates_reward_pool() {
 
 		// check that it all rolls over properly.
 		for i in [10u32, 11u32] {
-			add_stake_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
+			boost_provider_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
 		}
 		assert_chunk_is_full_and_has_earliest_era_total(0, true, 9, 900);
 		assert_chunk_is_full_and_has_earliest_era_total(1, true, 6, 600);
 		assert_chunk_is_full_and_has_earliest_era_total(2, true, 3, 300);
 		assert_last_era_total(11, 1100);
 	});
-}
-
-#[test]
-fn reward_pool_history_chunk_default_tests() {
-	let chunk: RewardPoolHistoryChunk<Test> = RewardPoolHistoryChunk::new();
-	assert!(!chunk.is_full());
-	assert!(chunk.total_for_era(&0u32).is_none());
-	let default: RewardPoolHistoryChunk<Test> = RewardPoolHistoryChunk::default();
-	assert!(default.total_for_era(&032).is_none());
-	assert_eq!(default.era_range(), (0u32, 0u32));
-}
-
-#[test]
-fn reward_pool_history_chunk_insert_range_remove() {
-	let mut chunk: RewardPoolHistoryChunk<Test> = RewardPoolHistoryChunk::new();
-	assert_eq!(chunk.try_insert(22u32, 100u64), Ok(None));
-	assert_eq!(chunk.try_insert(22u32, 110u64), Ok(Some(100u64)));
-	assert!(chunk.try_insert(23u32, 123u64).is_ok());
-	assert!(chunk.try_insert(24u32, 99u64).is_ok());
-	// For <Test> the limit is 3
-	assert_eq!(chunk.try_insert(25u32, 99u64), Err((25u32, 99u64)));
-	assert_eq!(chunk.total_for_era(&23u32), Some(&123u64));
-	assert_eq!(chunk.era_range(), (22u32, 24u32));
-}
-
-#[test]
-fn reward_pool_history_chunk_try_removing_oldest() {
-	let mut chunk: RewardPoolHistoryChunk<Test> = RewardPoolHistoryChunk::new();
-	assert!(chunk.try_insert(22u32, 100u64).is_ok());
-	assert!(chunk.try_insert(23u32, 123u64).is_ok());
-	assert!(chunk.try_insert(24u32, 99u64).is_ok());
-	assert_eq!(chunk.is_full(), true);
-
-	let earliest = chunk.earliest_era().unwrap();
-	assert_eq!(earliest, &22u32);
-
-	// E0502
-	let mut new_chunk = chunk.clone();
-	assert_eq!(new_chunk.is_full(), true);
-	let remove_result = new_chunk.remove(earliest);
-	assert_eq!(remove_result, Some(100u64));
-	assert_eq!(new_chunk.is_full(), false);
-
-	assert_eq!(new_chunk.earliest_era(), Some(&23u32));
-}
-
-#[test]
-fn get_total_stake_from_reward_pool_works_with_new_reward_pool() {
-	new_test_ext().execute_with(|| {
-
-	})
-}
-
-#[test]
-fn get_total_stake_from_reward_pool_works_with_full_reward_pool() {
-	new_test_ext().execute_with(|| {
-
-	})
 }
 
 #[test]
@@ -195,3 +136,44 @@ fn get_expiration_block_for_era_works() {
 	})
 }
 
+#[test]
+fn get_chunk_index_for_era_works() {
+	new_test_ext().execute_with(|| {
+		struct TestCase {
+			era: u32,
+			current_era: u32,
+			expected: Option<u32>,
+		}
+		// assuming history limit is 12, chunk length is 3
+		for test in {
+			vec![
+				TestCase { era: 2, current_era: 1, expected: None },
+				TestCase { era: 3, current_era: 16, expected: None },
+				TestCase { era: 1, current_era: 1, expected: None },
+				TestCase { era: 1, current_era: 2, expected: Some(0) },
+				TestCase { era: 1, current_era: 3, expected: Some(0) },
+				TestCase { era: 1, current_era: 4, expected: Some(0) },
+				TestCase { era: 1, current_era: 5, expected: Some(1) },
+				TestCase { era: 1, current_era: 6, expected: Some(1) },
+				TestCase { era: 1, current_era: 7, expected: Some(1) },
+				TestCase { era: 12, current_era: 13, expected: Some(0) },
+				TestCase { era: 11, current_era: 13, expected: Some(0) },
+				TestCase { era: 10, current_era: 13, expected: Some(0) },
+				TestCase { era: 9, current_era: 13, expected: Some(1) },
+				TestCase { era: 8, current_era: 13, expected: Some(1) },
+				TestCase { era: 7, current_era: 13, expected: Some(1) },
+				TestCase { era: 6, current_era: 13, expected: Some(2) },
+				TestCase { era: 5, current_era: 13, expected: Some(2) },
+				TestCase { era: 4, current_era: 13, expected: Some(2) },
+				TestCase { era: 3, current_era: 13, expected: Some(3) },
+				TestCase { era: 55, current_era: 60, expected: Some(1) },
+				TestCase { era: 55, current_era: 62, expected: Some(2) },
+			]
+		} {
+			assert_eq!(
+				Capacity::get_chunk_index_for_era(test.era, test.current_era),
+				test.expected
+			);
+		}
+	})
+}
