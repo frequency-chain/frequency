@@ -63,7 +63,8 @@ This document outlines the design considerations and specifications for integrat
 
 ## 4.1. Data Flow Diagram
 
-![Data Flow Diagram](insert_diagram_link_here)
+![Registration Diagram](https://docs.google.com/drawings/d/1x9pM2OVU0zNLVJWHvHhMzLfFnIpqYU2KNVDuDMgXnrY)
+![Transaction Diagram](https://docs.google.com/drawings/d/1eSgwxuCrR0x-J_7kzqnn-POXrZ5XCWM7TF0tyaxKKaw)
 
 ## 4.2. Data maps for Legal Teams
 
@@ -184,7 +185,7 @@ Browser/Client receives the following data from the backend:
       passkey_tx_signature = passkeyTxSignature.signature;
       passkey_authenticator_data = passkeyTxSignature.authenticatorData;
       passkey_client_data = passkeyTxSignature.clientData;
-      // 
+      //
     ```
 
 3. **Transaction Submission**:
@@ -213,15 +214,104 @@ Browser/Client receives the following data from the backend:
 
 ### Security Considerations
 
+#### Generic
 - Never store or backup the seed phrase other than memory.
 - Prefer more client side data processing and handling, backend should only store the necessary data.
 - Choose vetted libraries, npm packages for handling cryptographic operations, such that signing with seed phrase, or handling of private keys is done securely.
+
+#### Front-end (client)
+- If key generation is done in front-end, it should ideally being done inside an isolated section such as iframe or Web Worker.
+- Generated Keypair should not get stored permanently (except for back up options) and removed as soon as it is not required.
+
+#### Backend
+- Passkey registration response should get verified which checks the random challenge
+- Passkey Login response should get verified which checks the random challenge
+- Passkey Transaction response should get verified which checks transaction related challenge.
+- Any provided Frequency account signature should get verified.
+
+#### On-chain
+- Preferably using an audited crate to support p256 operations. Currently, we are using `p256` crate
+  which is not audited.
+- If signature checks implemented **on_validate** are expensive, then this would open a vulnerability
+  surface for DOS attacks.
 
 ## 6. Implementation
 
 ### Backend Example Code
 
 (Include code snippets demonstrating how to implement Passkey support on the backend.)
+#### Signature verification
+- Non-optimal approach
+```rust
+	pub fn check_passkey_signature(
+		payload: &PasskeyPayload<T>,
+	) -> Result<(), TransactionValidityError> {
+		// deserialize to COSE key format and check the key
+		let cose_key = CoseKey::from_slice(&payload.passkey_public_key[..]);
+		let (_, x) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-2));
+		let (_, y) = cose_key
+			.params
+			.iter()
+			.find(|(l, _)| l == &Label::Int(-3));
+
+		// convert COSE format to P256 verifying key
+		let encoded_point =
+			EncodedPoint::from_affine_coordinates(
+				GenericArray::from_slice(&x.clone().into_bytes()),
+				GenericArray::from_slice(&y.clone().into_bytes()),
+				false,
+			);
+		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point);
+
+		let passkey_signature =
+			p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..]);
+
+		// extract the challenge from client_data and
+		// ensure the that the challenge is the same as the call payload
+		let client_data: serde_json::Value =
+			serde_json::from_slice(&payload.passkey_client_data_json);
+		let extracted_challenge = match client_data {
+			serde_json::Value::Object(m) => {
+				let challenge = m
+					.get(&"challenge".to_string());
+				if let serde_json::Value::String(base64_url_encoded) = challenge {
+					let decoded = base64_url::decode(&base64_url_encoded).map_err(|_| {
+						TransactionValidityError::Invalid(InvalidTransaction::Custom(9))
+					})?;
+					Ok(decoded)
+				}
+			},
+			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(11))),
+		}?;
+
+		let encoded_payload = payload.passkey_call.encode();
+		ensure!(
+			encoded_payload == extracted_challenge,
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(12))
+		);
+
+		// prepare signing payload which is [authenticator || sha256(client_data_json)]
+		let mut passkey_signature_payload = payload.passkey_authenticator.to_vec();
+		passkey_signature_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+
+		// finally verify the passkey signature against the payload
+		verify_key
+			.verify(&passkey_signature_payload, &passkey_signature)
+	}
+```
+- Some possible optimizations
+    - **Compressed public key**: Currently passed public key is in **Cose** format, and it's between 70-73 bytes.
+      If the client can parse the Cose public key can extract the compressed encoded key. This public key can
+      get reduced to 33 bytes.
+    - **Challenge data deduplication**: Currently the challenge data is duplicated in `expected_challenge` and
+      in it's serialized format inside `passkey_client_data_json`. If the client is able to parse
+      `passkey_client_data_json` and replace `challenge` field value with empty string. Then during the
+      signature check we can replace that empty string with `expected_challenge` and that would allow us to
+      reduce the transaction size by around **40%**. It is important that the order of the field `passkey_client_data_json`
+      does not change during this operation since that would generate a different signature.
 
 ### Frontend Example Code
 
@@ -229,18 +319,54 @@ Browser/Client receives the following data from the backend:
 
 ## 7. Options for Discussion
 
-### Unsigned Extensions vs MultiSignature
+### Unsigned Extensions vs Extending MultiSignature
 
-(Discuss the pros and cons of using unsigned extensions versus multisignature schemes for transaction verification.)
+#### Unsigned Extensions
+In this variant we will have an unsigned extrinsic and all the related checks would be done inside
+`ValidateUnsigned` trait implementation for the pallet.
+
+##### Pros/Cons
+- **Pro**: Faster and already proven implementation
+- **Pro**: Flexibility to be replaced with other implementations
+- **Con**: Some duplication of code between existing checks on signed extensions and the checks
+  implemented on `ValidateUnsigned`
+- **Con**: An unsigned extrinsic implementation might open up a new unknown attack vector.
+
+#### Extending MultiSignature
+In this variant we will extend `MultiSignature` enum and replace it with a new enum which will have
+a new `P256` signature type.
+
+##### Pros/Cons
+- **Pro**: No need to use unsigned extrinsic and all extra checks would be done inside a new signed
+  extension.
+- **Pro**: A uniform and generic solution which would allow having P256 signature scheme to be used
+  for other operations on chain.
+- **Pro**: This would allow us to use P256 accounts to hold token (but that might not be desirable)
+- **Pro**: We could use the P256 keys as MSA control keys.
+- **Con**: Requires significant effort (in case if no hard constraints detected) to implement compared to using
+  unsigned extension and once deployed there would not be an easy way for a backwards compatible rollback.
+  Here is a quick breakdown for known issues:
+    - Signature size mismatch force us to implement a new `Signature` type with all required traits.
+    - Public key size mismatch might force us to implement a new `Publickey` type with all required traits.
+    - Reimplementing `MultiSignature`, `MultiSigner` and other types with `P265` functionality added.
+    - Adding signature and key generation support on polkadotJS and all frontend implementations
+    - Might require DB migration for already stored MultiSignatures
+
 
 ### Generic Key Support
-
-(Consider whether to support keys from wallets other than those generated by Passkey.)
+There is an issue with the `account_key` generation flow since it would only support transactions
+that do not require any Msa account. To be able to use the PassKey feature for the majority of
+transactions, it might be better if the `account_key` was already in a wallet and the Msa account
+was created for that key,and we register a passkey using the same.
 
 ### Separate Pallet
+_Question_: Should we implement this feature in a separate pallet or just use already existing `frequency-tx-payment`
+pallet?
 
-(Discuss the feasibility and benefits of implementing Passkey support as a separate pallet within the system.)
-
+One argument against having it in a separate pallet is since there is no extra data required to be
+stored on-chain, it seems less necessary to split it into a separate pallet.
+Another argument in favor of having it in a new pallet is to be able to share this pallet with other
+para-chains in the Polkadot ecosystem.
 ## 8. Conclusion
 
 (Summarize the key points of the design document and outline next steps for implementation and further discussion.)
