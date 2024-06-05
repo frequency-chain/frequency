@@ -1,7 +1,7 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, ProviderBoostRewardClaim,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardClaim,
 	ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
 };
 use common_primitives::{
@@ -15,7 +15,7 @@ use frame_support::{
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, IdentityLookup},
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
 use sp_std::ops::Mul;
@@ -217,7 +217,9 @@ impl pallet_capacity::Config for Test {
 }
 
 fn initialize_reward_pool() {
-	for i in 0u32..5u32 {
+	let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
+	let chunks = history_limit.saturating_div(<Test as Config>::RewardPoolChunkLength::get());
+	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
 }

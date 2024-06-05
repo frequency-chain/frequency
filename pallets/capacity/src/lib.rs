@@ -53,7 +53,6 @@ use sp_std::ops::Mul;
 use frame_support::{
 	ensure,
 	traits::{
-		fungible::Inspect,
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
@@ -219,7 +218,7 @@ pub mod pallet {
 		#[pallet::constant]
 		type RewardPercentCap: Get<Permill>;
 
-		/// The number of chunks
+		/// The number of chunks of Reward Pool history we expect to store
 		#[pallet::constant]
 		type RewardPoolChunkLength: Get<u32>;
 	}
@@ -1154,31 +1153,17 @@ impl<T: Config> Pallet<T> {
 		current_era_info.started_at + era_length.mul(era_diff.into()) - 1u32.into()
 	}
 
-	// Find the history chunk that a given era is in and pull out the total stake for that era.
+	// Figure out the history chunk that a given era is in and pull out the total stake for that era.
 	pub(crate) fn get_total_stake_for_past_era(
 		reward_era: T::RewardEra,
 		current_era: T::RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era, current_era)
 			.ok_or(Error::<T>::EraOutOfRange)?;
-		let mut reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
-		if let Some(total_for_era) = reward_pool_chunk.total_for_era(&reward_era) {
-			Ok(*total_for_era)
-		} else {
-			let chunks =
-				T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
-			for i in 0..chunks {
-				if i != chunk_idx {
-					reward_pool_chunk = Self::get_reward_pool_chunk(i)
-						.ok_or(Error::<T>::CollectionBoundExceeded)?;
-					match reward_pool_chunk.total_for_era(&reward_era) {
-						Some(total_for_era) => return Ok(*total_for_era),
-						None => (),
-					}
-				}
-			}
-			Err(DispatchError::from(Error::<T>::EraOutOfRange))
-		}
+		let reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
+		let total_for_era =
+			reward_pool_chunk.total_for_era(&reward_era).ok_or(Error::<T>::EraOutOfRange)?;
+		Ok(*total_for_era)
 	}
 
 	pub(crate) fn get_chunk_index_for_era(
@@ -1200,6 +1185,11 @@ impl<T: Config> Pallet<T> {
 		(0u32..chunks).find(|&i| era_diff.le(&(chunk_len * (i + 1)).into()))
 	}
 
+	// This is where the reward pool gets updated.
+	// This inserts what was the current era and total boost amount into Reward Pool history, by
+	// removing the oldest item in each chunk, saving it for the next chunk, then
+	// inserting the new item.  If the entire history is full, it exits without an insert on the last chunk,
+	// effectively dropping the oldest item.
 	pub(crate) fn update_provider_boost_reward_pool(era: T::RewardEra, boost_total: BalanceOf<T>) {
 		let mut new_era = era;
 		let mut new_value = boost_total;
@@ -1223,7 +1213,9 @@ impl<T: Config> Pallet<T> {
 						}
 					}
 				} else {
-					// since it's not full, just insert it and ignore the result.
+					// Since it's not full, just insert it and ignore the result.
+					// The only reason this is supposed to fail is if the BoundedBTree is full, and
+					// since we're here, this shouldn't ever fail.
 					let _unused = chunk.try_insert(new_era, new_value);
 					ProviderBoostRewardPools::<T>::set(chunk_idx, Some(chunk));
 					break;

@@ -6,7 +6,6 @@ use crate::{
 use common_primitives::msa::MessageSourceId;
 use frame_support::assert_ok;
 use sp_core::Get;
-use sp_io::storage::exists;
 
 pub fn boost_provider_and_run_to_end_of_era(
 	staker: u64,
@@ -147,6 +146,7 @@ fn get_chunk_index_for_era_works() {
 		// assuming history limit is 12, chunk length is 3
 		for test in {
 			vec![
+				TestCase { era: 3, current_era: 6, expected: Some(0) },
 				TestCase { era: 2, current_era: 1, expected: None },
 				TestCase { era: 3, current_era: 16, expected: None },
 				TestCase { era: 1, current_era: 1, expected: None },

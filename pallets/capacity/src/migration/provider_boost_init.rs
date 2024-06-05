@@ -1,4 +1,7 @@
-use crate::{Config, CurrentEraInfo, RewardEraInfo};
+use crate::{
+	Config, CurrentEraInfo, CurrentEraProviderBoostTotal, ProviderBoostRewardPools, RewardEraInfo,
+	RewardPoolHistoryChunk,
+};
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
@@ -16,9 +19,15 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		if current_era_info.eq(&RewardEraInfo::default()) {
 			// 1r
 			let current_block = frame_system::Pallet::<T>::block_number(); // 1r
-			let era_index: T::RewardEra = 0u32.into();
+			let era_index: T::RewardEra = 1u32.into();
 			CurrentEraInfo::<T>::set(RewardEraInfo { era_index, started_at: current_block }); // 1w
-																				  // TODO:  set up Current Reward Era total stake default value. No need for a history chunk at this point.
+			CurrentEraProviderBoostTotal::<T>::set(0u32.into());
+			let chunks: u32 =
+				T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
+			(0u32..chunks).for_each(|chunk_index| {
+				let new_chunk: RewardPoolHistoryChunk<T> = RewardPoolHistoryChunk::new();
+				ProviderBoostRewardPools::<T>::insert(chunk_index, new_chunk);
+			});
 			T::DbWeight::get().reads_writes(2, 2)
 		} else {
 			T::DbWeight::get().reads(1)
@@ -47,7 +56,9 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		let info = CurrentEraInfo::<T>::get();
 		assert_eq!(info.started_at, current_block);
 		log::info!("CurrentEraInfo.started_at is set to {:?}.", info.started_at);
-		assert_eq!(ProviderBoostRewardPools::<T>::iter().count(), 1);
+		let chunks: u32 =
+			T::RewardPoolHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
+		assert_eq!(ProviderBoostRewardPools::<T>::iter().count(), chunks);
 		Ok(())
 	}
 }
