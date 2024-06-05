@@ -4,8 +4,10 @@ The Capacity Pallet manages the staking and balances for Capacity, an alternativ
 
 ## Summary
 
-Capacity is an alternative payment system for a subset of calls that renews each Epoch.
-Tokens staked create Capacity for a targeted Provider.
+Capacity is an alternative to paying with tokens for a limited set of calls.
+These Capacity eligible extrinsics are noted in each pallet's documentation with "Capacity" in the Payment column of the extrinsics section.
+Tokens can be staked to generate Capacity for a targeted Provider.
+The generated Capacity renews each [Epoch](#capacity-epoch).
 [Learn more about Capacity](https://docs.frequency.xyz/Tokenomics/ProviderIncentives.html#capacity-model).
 
 ### Staking & Unstaking
@@ -15,8 +17,10 @@ Staking and unstaking affect available Capacity immediately.
 
 ### Capacity Epoch
 
-A Capacity Epoch is the number of blocks before Capacity balances are able to be renewed.
-The value is managed by Governance, and is currently set to 7200 blocks (approximately 24 hours at the current average 12-second block time).
+A Capacity Epoch is a period consisting of a specific number of blocks, during which a Provider's utilization of network Capacity is capped at the amount of generated Capacity targeted to that Provider.
+At the start of each new Epoch, the available Capacity is renewed for each Provider, regardless of how much they consumed in the prior Epoch.
+The duration of a Capacity Epoch is determined by Governance, and is currently set to 7200 blocks.
+With the current average block time of approximately 12 seconds, one Capacity Epoch lasts around 24 hours on Mainnet.
 
 ### Thaw Period
 
