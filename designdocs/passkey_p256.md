@@ -21,9 +21,8 @@
       - [Backend](#backend)
       - [On-chain](#on-chain)
   - [6. Implementation](#6-implementation)
-    - [Backend Example Code](#backend-example-code)
+    - [On-chain Implementation](#on-chain-implementation)
       - [Signature verification](#signature-verification)
-    - [Frontend Example Code](#frontend-example-code)
   - [7. Options for Discussion](#7-options-for-discussion)
     - [Unsigned Extensions vs Extending MultiSignature](#unsigned-extensions-vs-extending-multisignature)
       - [Unsigned Extensions](#unsigned-extensions)
@@ -253,9 +252,7 @@ Browser/Client receives the following data from the backend:
 
 ## 6. Implementation
 
-### Backend Example Code
-
-(Include code snippets demonstrating how to implement Passkey support on the backend.)
+### On-chain Implementation
 
 #### Signature verification
 
@@ -332,10 +329,6 @@ Browser/Client receives the following data from the backend:
       signature check we can replace that empty string with `expected_challenge` and that would allow us to
       reduce the transaction size by around **40%**. It is important that the order of the field `passkey_client_data_json`
       does not change during this operation since that would generate a different signature.
-
-### Frontend Example Code
-
-(Include code snippets demonstrating how to implement Passkey support on the frontend.)
 
 ## 7. Options for Discussion
 
