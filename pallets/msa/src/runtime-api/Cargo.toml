@@ -22,6 +22,7 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 default = ["std"]
 std = [
   "parity-scale-codec/std",
+  "sp-api/frame-metadata",
   "sp-api/std",
   "sp-std/std",
   "frame-support/std",

@@ -35,6 +35,7 @@ sc-client-api = { workspace = true }
 default = ["std"]
 std = [
   'parity-scale-codec/std',
+  "sp-api/frame-metadata",
   "sp-api/std",
   "sp-runtime/std",
   "pallet-msa-runtime-api/std",

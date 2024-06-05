@@ -145,6 +145,7 @@ std = [
   "scale-info/std",
   "serde",
   "sp-api/std",
+  "sp-api/frame-metadata",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
   "sp-core/std",

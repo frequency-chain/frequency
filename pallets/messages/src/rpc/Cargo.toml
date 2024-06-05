@@ -30,6 +30,7 @@ sc-client-api = { workspace = true }
 default = ["std"]
 std = [
   "sp-api/std",
+  "sp-api/frame-metadata",
   "sp-runtime/std",
   'frame-support/std',
   "pallet-messages-runtime-api/std",

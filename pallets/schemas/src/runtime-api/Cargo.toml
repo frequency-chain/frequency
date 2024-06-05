@@ -20,4 +20,4 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 
 [features]
 default = ["std"]
-std = ["sp-api/std", "frame-support/std", "common-primitives/std", "sp-std/std"]
+std = ["sp-api/std", "sp-api/frame-metadata", "frame-support/std", "common-primitives/std", "sp-std/std"]

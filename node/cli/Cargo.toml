@@ -63,7 +63,7 @@ cumulus-primitives-core = { workspace = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
-std = ["sp-io/std", "sp-api/std", "frame-support/std"]
+std = ["sp-io/std", "sp-api/std", "frame-support/std", "sp-api/frame-metadata"]
 cli = [
   "frequency-service",
   "sp-core",

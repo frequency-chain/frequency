@@ -14,7 +14,7 @@ targets = ['x86_64-unknown-linux-gnu']
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-frame-support = { workspace = true }
+frame-support = { workspace = true, default-features = false }
 frame-system = { workspace = true }
 impl-serde = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
@@ -39,6 +39,7 @@ std = [
   'sp-std/std',
   'sp-runtime/std',
   'sp-api/std',
+  "sp-api/frame-metadata",
   'sp-io/std',
   'scale-info/std',
   'sp-core/std',
