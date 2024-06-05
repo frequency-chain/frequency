@@ -133,12 +133,12 @@ These are the following technical terms and specifications for the implementatio
       passkeyAuthenticator: `passkey_authenticator_data`;
       passkeyClientDataJson: `passkey_client_data`;
       passkeyCall: PasskeyCall;
-      nonce: `nonce`;
     }
     
     interface PasskeyCall {
       accountId: `account_pk`;
       accountOwnershipProof: `AccountOwnershipProof`;
+      nonce: `nonce`;
       call: Call;
     }
 
