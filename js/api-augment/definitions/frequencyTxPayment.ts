@@ -35,6 +35,7 @@ export default {
             type: 'FeeDetails',
           },
         },
+        version: 1,
       },
     ],
   },
