@@ -1,6 +1,6 @@
 # Capacity Pallet
 
-Manages the staking and balances for Capacity, an alternative payment system on Frequency.
+The Capacity Pallet manages the staking and balances for Capacity, an alternative payment system on Frequency.
 
 ## Summary
 
@@ -9,14 +9,14 @@ Tokens staked create Capacity for a targeted Provider.
 [Learn more about Capacity](https://docs.frequency.xyz/Tokenomics/ProviderIncentives.html#capacity-model).
 
 ### Staking & Unstaking
-Currently, the token to Capcity ratio is 50:1.
+Currently, the token to Capacity ratio is 50:1.
 For example, for a 5 token stake, a Provider would receive 0.1 Capacity.
 Staking and unstaking affect available Capacity immediately.
 
 ### Capacity Epoch
 
 A Capacity Epoch is the number of blocks before Capacity balances are able to be renewed.
-The value is managed by Governance, and is currently set to ~24 hours.
+The value is managed by Governance, and is currently set to 7200 blocks (approximately 24 hours at the current average 12-second block time).
 
 ### Thaw Period
 
@@ -26,7 +26,7 @@ Currently it is set to 30 Epochs or ~30 days after unstaking.
 
 ### Actions
 
-The Capacity pallet provides for:
+The Capacity Pallet provides for:
 
 - Staking to receive Capacity
 - Unstaking & Thaw Period
@@ -38,7 +38,7 @@ The Capacity pallet provides for:
 
 | Name/Description                 | Caller        | Payment | Key Events                                                                                                    | Runtime Added |
 | -------------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------- |
-| `stake`<br />Lock tokens to gain Capacity | Token Account | Tokens | [`Staked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked) | 1             |
+| `stake`<br />Lock tokens to grant Capacity to a Provider | Token Account | Tokens | [`Staked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked) | 1             |
 | `unstake`<br />Begin the process of unlocking tokens by unstaking currently staked tokens | Token Account | Tokens | [`UnStaked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.UnStaked) | 1             |
 | `withdraw_unstaked`<br />Complete the process of unlocking tokens staked by releasing locks on expired unlock chunks | Token Account | Tokens | [`StakeWithdrawn`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakeWithdrawn) | 1             |
 
