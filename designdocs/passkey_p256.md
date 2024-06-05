@@ -20,7 +20,7 @@
     - [Backend Example Code](#backend-example-code)
     - [Frontend Example Code](#frontend-example-code)
   - [7. Options for Discussion](#7-options-for-discussion)
-    - [Unsigned Extensions vs MultiSignature](#unsigned-extensions-vs-multisignature)
+    - [Unsigned Extensions vs Extending MultiSignature](#unsigned-extensions-vs-extending-multiSignature)
     - [Generic Key Support](#generic-key-support)
     - [Separate Pallet](#separate-pallet)
   - [8. Conclusion](#8-conclusion)
@@ -63,12 +63,28 @@ This document outlines the design considerations and specifications for integrat
 
 ## 4.1. Data Flow Diagram
 
-![Registration Diagram](https://docs.google.com/drawings/d/1x9pM2OVU0zNLVJWHvHhMzLfFnIpqYU2KNVDuDMgXnrY)
-![Transaction Diagram](https://docs.google.com/drawings/d/1eSgwxuCrR0x-J_7kzqnn-POXrZ5XCWM7TF0tyaxKKaw)
+- [Registration Diagram](https://docs.google.com/drawings/d/1x9pM2OVU0zNLVJWHvHhMzLfFnIpqYU2KNVDuDMgXnrY)
+- [Transaction Diagram](https://docs.google.com/drawings/d/1eSgwxuCrR0x-J_7kzqnn-POXrZ5XCWM7TF0tyaxKKaw)
 
 ## 4.2. Data maps for Legal Teams
 
-![Data Map](insert_data_map_link_here)
+### Frequency Access backend
+- PassKey Signature of Account public key (`passkey_sig_pk`)
+- PassKey signature of transaction (`passkey_tx_signature`)
+- Frequency Account key signature of Passkey public key (`account_sig_passkey_pk`)
+- `credentialPublicKey`: Passkey Public key (`passkey_pk`)
+- `UserName`: User's website-specific username (email, etc...)
+- `UserId`: User's website-specific unique ID
+- `CredentialId`: The credential's credential ID for the pass key
+- `Counter`: The number of times the authenticator reported it has been used.
+- `credentialDeviceType`: Whether this is a single-device or multi-device credential.
+- `credentialBackedUp`: Whether or not the multi-device credential has been backed up. Always false for single-device credentials.
+- Transaction call
+
+### Users Device
+- Keypair for PassKey
+- Keypair seed backup for Frequency Account
+- All data included in the [Frequency Access backend](#frequency-access-backend) section
 
 ## 5. Specification
 
@@ -239,7 +255,54 @@ Browser/Client receives the following data from the backend:
 
 ### Backend Example Code
 
-(Include code snippets demonstrating how to implement Passkey support on the backend.)
+#### Passkey Registration Verification
+```typescript
+    // RegistrationResponseJSON is the data that passkey authenticator returns after registeration
+    const verification = await verifyRegistrationResponse({
+        response: body as RegistrationResponseJSON,
+        // challenge that server expects and provided for registeration
+        expectedChallenge: currentChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        requireUserVerification: true,
+    });
+
+    if (verification.verified && verification.registrationInfo) {
+        const { credentialPublicKey, credentialID, counter } = verification.registrationInfo;
+        const transportsString = JSON.stringify(body.response.transports);
+        await credentialService.saveNewCredential(
+            loggedInUserId,
+            credentialID,
+            credentialPublicKey,
+            counter,
+            transportsString,
+        );
+    }
+```
+
+#### Transaction Authentication Verification
+```typescript
+    // get AuthenticatorDevice data from database by credentialId
+    const dbCredential: AuthenticatorDevice | null = await credentialService.getCredentialByCredentialId(credentialId);
+    const authenticator: VerifyAuthenticationResponseOpts["authenticator"] = {
+        ...dbCredential,
+        credentialID: credentialId,
+    };
+    const opts: VerifyAuthenticationResponseOpts = {
+        response: body,
+        expectedChallenge: currentChallenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        authenticator,
+    };
+     let verification: VerifiedAuthenticationResponse = await verifyAuthenticationResponse(opts);
+    const { verified, authenticationInfo } = verification;
+
+    if (verified) {
+        // transaction authentication verification is successful
+    }
+```
+
 #### Signature verification
 - Non-optimal approach
 ```rust
@@ -312,10 +375,6 @@ Browser/Client receives the following data from the backend:
       signature check we can replace that empty string with `expected_challenge` and that would allow us to
       reduce the transaction size by around **40%**. It is important that the order of the field `passkey_client_data_json`
       does not change during this operation since that would generate a different signature.
-
-### Frontend Example Code
-
-(Include code snippets demonstrating how to implement Passkey support on the frontend.)
 
 ## 7. Options for Discussion
 
