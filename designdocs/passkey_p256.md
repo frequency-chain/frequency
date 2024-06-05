@@ -26,6 +26,7 @@
       - [On-chain](#on-chain)
   - [6. Implementation](#6-implementation)
     - [On-chain Implementation](#on-chain-implementation)
+      - [Extrinsic verification](#extrinsic-verification)
       - [Signature verification](#signature-verification)
     - [Backend Example Code](#backend-example-code)
       - [Passkey Registration Verification](#passkey-registration-verification)
@@ -124,7 +125,7 @@ These are the following technical terms and specifications for the implementatio
 ### Passkey Transaction Payload
 
 - The transaction payload is a structure that contains the following fields:
-  
+
     ```typescript
 
     interface PasskeyPayload {
@@ -134,7 +135,7 @@ These are the following technical terms and specifications for the implementatio
       passkeyClientDataJson: `passkey_client_data`;
       passkeyCall: PasskeyCall;
     }
-    
+
     interface PasskeyCall {
       accountId: `account_pk`;
       accountOwnershipProof: `AccountOwnershipProof`;
@@ -321,6 +322,19 @@ Browser/Client receives the following data from the backend:
 
 ### On-chain Implementation
 
+#### Extrinsic verification
+
+As we know every signed extrinsic is required to get validated by a list of SignedExtensions which
+verify that extrinsic from different aspects. Depending on our choice to use _SignedExtrinsic_ or
+an _Unsigned_ one we would need to modify or re-implement some of the following.
+
+- **CheckNonce**: The nonce check should happen with the nonce inside the payload to avoid replay attacks.
+- **ChargeFrqTransactionPayment**: The transaction fee should be applied to the owner account inside
+the payload.
+- **CheckP256Signature**: A new extension should be written to verify the P256 signature inside the payload.
+- **Others**: We might also need to check the **Era**, **Mortality** and **Genesis hash** if we choose the
+unsigned path.
+
 #### Signature verification
 
 - Non-optimal approach
@@ -461,7 +475,7 @@ Browser/Client receives the following data from the backend:
   >
   > 1. That people will not backup their other key and forget to regenerate before the deadline.
   > 2. That it adds too much complexity to an already complex setup.
-  
+
   >In the end, an equal key made the most sense to Wil.
 
 ### Unsigned Extensions vs Extending MultiSignature
@@ -503,10 +517,16 @@ a new `P256` signature type.
 
 ### Generic Key Support
 
+_Question_: Should we be able to use any other key which is already inside a wallet instead
+of generating new ones?
+
 There is an issue with the `account_key` generation flow since it would only support transactions
 that do not require any Msa account. To be able to use the PassKey feature for the majority of
 transactions, it might be better if the `account_key` was already in a wallet and the Msa account
 was created for that key,and we register a passkey using the same.
+
+If an already existing key is allowed to be used with a passkey the challenge for registering a passkey
+should be a different and random value coming from server instead of the public key of mentioned key.
 
 ### Separate Pallet
 
