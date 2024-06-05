@@ -3689,7 +3689,6 @@ dependencies = [
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
- "substrate-test-runtime-client",
  "system-runtime-api",
  "tokio",
  "try-runtime-cli",
@@ -4835,7 +4834,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0c2a198fb6b0eada2a8df47933734e6d35d350665a33a3593d7164fa52c75c19"
 dependencies = [
  "cfg-if",
- "windows-targets 0.48.5",
+ "windows-targets 0.52.5",
 ]
 
 [[package]]
@@ -5578,20 +5577,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "808b50db46293432a45e63bc15ea51e0ab4c0a1647b8eb114e31a3e698dd6fbe"
 dependencies = [
  "hash-db",
-]
-
-[[package]]
-name = "merkleized-metadata"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f313fcff1d2a4bcaa2deeaa00bf7530d77d5f7bd0467a117dde2e29a75a7a17a"
-dependencies = [
- "array-bytes 6.2.2",
- "blake3",
- "frame-metadata",
- "parity-scale-codec",
- "scale-decode",
- "scale-info",
 ]
 
 [[package]]
@@ -6595,7 +6580,6 @@ dependencies = [
  "sp-runtime",
  "sp-std",
  "sp-weights",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -6673,7 +6657,6 @@ dependencies = [
  "sp-blockchain",
  "sp-runtime",
  "sp-std",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -6812,7 +6795,6 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -6890,7 +6872,6 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-std",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -7171,7 +7152,6 @@ dependencies = [
  "sp-rpc",
  "sp-runtime",
  "sp-std",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -7350,7 +7330,6 @@ dependencies = [
  "sp-rpc",
  "sp-runtime",
  "sp-std",
- "substrate-test-runtime-client",
  "tokio",
 ]
 
@@ -11233,29 +11212,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "scale-bits"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e57b1e7f6b65ed1f04e79a85a57d755ad56d76fdf1e9bddcc9ae14f71fcdcf54"
-dependencies = [
- "parity-scale-codec",
- "scale-type-resolver",
-]
-
-[[package]]
-name = "scale-decode"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b12ebca36cec2a3f983c46295b282b35e5f8496346fb859a8776dad5389e5389"
-dependencies = [
- "derive_more",
- "parity-scale-codec",
- "scale-bits",
- "scale-type-resolver",
- "smallvec",
-]
-
-[[package]]
 name = "scale-info"
 version = "2.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -11280,12 +11236,6 @@ dependencies = [
  "quote",
  "syn 1.0.109",
 ]
-
-[[package]]
-name = "scale-type-resolver"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f0cded6518aa0bd6c1be2b88ac81bf7044992f0f154bfbabd5ad34f43512abcb"
 
 [[package]]
 name = "schannel"
@@ -12870,113 +12820,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "substrate-test-client"
-version = "2.0.1"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#c34bcf7e2bf5cba9cd141c790f4c144959d5a5a9"
-dependencies = [
- "array-bytes 6.2.2",
- "async-trait",
- "futures",
- "parity-scale-codec",
- "sc-client-api",
- "sc-client-db",
- "sc-consensus",
- "sc-executor",
- "sc-offchain",
- "sc-service",
- "serde",
- "serde_json",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-keyring",
- "sp-keystore",
- "sp-runtime",
- "sp-state-machine",
-]
-
-[[package]]
-name = "substrate-test-runtime"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#c34bcf7e2bf5cba9cd141c790f4c144959d5a5a9"
-dependencies = [
- "array-bytes 6.2.2",
- "frame-executive",
- "frame-metadata-hash-extension",
- "frame-support",
- "frame-system",
- "frame-system-rpc-runtime-api",
- "log",
- "pallet-babe",
- "pallet-balances",
- "pallet-timestamp",
- "parity-scale-codec",
- "sc-service",
- "scale-info",
- "serde",
- "serde_json",
- "sp-api",
- "sp-application-crypto",
- "sp-block-builder",
- "sp-consensus-aura",
- "sp-consensus-babe",
- "sp-consensus-grandpa",
- "sp-core",
- "sp-externalities",
- "sp-genesis-builder",
- "sp-inherents",
- "sp-io",
- "sp-keyring",
- "sp-offchain",
- "sp-runtime",
- "sp-session",
- "sp-state-machine",
- "sp-std",
- "sp-transaction-pool",
- "sp-trie",
- "sp-version",
- "substrate-wasm-builder",
- "trie-db",
-]
-
-[[package]]
-name = "substrate-test-runtime-client"
-version = "2.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#c34bcf7e2bf5cba9cd141c790f4c144959d5a5a9"
-dependencies = [
- "futures",
- "sc-block-builder",
- "sc-client-api",
- "sc-consensus",
- "sp-api",
- "sp-blockchain",
- "sp-consensus",
- "sp-core",
- "sp-runtime",
- "substrate-test-client",
- "substrate-test-runtime",
-]
-
-[[package]]
 name = "substrate-wasm-builder"
 version = "5.0.0-dev"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.3.0#c34bcf7e2bf5cba9cd141c790f4c144959d5a5a9"
 dependencies = [
  "ansi_term",
- "array-bytes 6.2.2",
  "build-helper",
  "cargo_metadata",
  "filetime",
- "frame-metadata",
- "merkleized-metadata",
- "parity-scale-codec",
  "parity-wasm",
- "sc-executor",
- "sp-core",
- "sp-io",
  "sp-maybe-compressed-blob",
- "sp-tracing",
- "sp-version",
  "strum 0.24.1",
  "tempfile",
  "toml 0.7.8",

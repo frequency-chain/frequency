@@ -1,12 +1,12 @@
 mod rpc_mock;
 
 use super::*;
+use common_primitives::node::Block;
 use rpc_mock::*;
 use std::string::ToString;
 
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use std::sync::Arc;
-use substrate_test_runtime_client::runtime::Block;
 
 const SUCCESSFUL_SCHEMA_ID: u16 = 1;
 const SUCCESSFUL_SCHEMA_NAME: &str = "namespace.descriptor";

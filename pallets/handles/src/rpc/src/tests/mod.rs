@@ -3,10 +3,12 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::handles::{BaseHandle, DisplayHandle, PresumptiveSuffixesResponse};
+use common_primitives::{
+	handles::{BaseHandle, DisplayHandle, PresumptiveSuffixesResponse},
+	node::Block,
+};
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use std::sync::Arc;
-use substrate_test_runtime_client::runtime::Block;
 
 const VALID_MSA_ID: u64 = 1;
 

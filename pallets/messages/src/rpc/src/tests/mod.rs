@@ -3,10 +3,9 @@ mod rpc_mock;
 use super::*;
 use rpc_mock::*;
 
-use common_primitives::node::BlockNumber;
+use common_primitives::node::{Block, BlockNumber};
 use pallet_messages_runtime_api::MessagesRuntimeApi;
 use std::sync::Arc;
-use substrate_test_runtime_client::runtime::Block;
 
 const SCHEMA_ID_EMPTY: u16 = 1;
 const SCHEMA_ID_HAS_MESSAGES: u16 = 2;

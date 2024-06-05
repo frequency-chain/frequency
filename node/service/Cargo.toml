@@ -112,7 +112,7 @@ system-runtime-api = { path = "../../runtime/system-runtime-api" }
 substrate-build-script-utils = { workspace = true }
 
 [dev-dependencies]
-substrate-test-runtime-client = { workspace = true }
+# substrate-test-runtime-client = { workspace = true }
 sc-client-api = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
