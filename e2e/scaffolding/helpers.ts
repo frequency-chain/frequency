@@ -462,11 +462,13 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchema(
+    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchemaV3(
       source,
       AVRO_GRAPH_CHANGE,
       'AvroBinary',
-      'OnChain'
+      'OnChain',
+      [],
+      'test.graphChangeSchema'
     ).fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
@@ -482,7 +484,14 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const createSchema = ExtrinsicHelper.createSchema(source, PARQUET_BROADCAST, 'Parquet', 'IPFS');
+    const createSchema = ExtrinsicHelper.createSchemaV3(
+      source,
+      PARQUET_BROADCAST,
+      'Parquet',
+      'IPFS',
+      [],
+      'test.parquetBroadcast'
+    );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
@@ -497,11 +506,13 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const createDummySchema = ExtrinsicHelper.createSchema(
+    const createDummySchema = ExtrinsicHelper.createSchemaV3(
       source,
       { type: 'record', name: 'Dummy on-chain schema', fields: [] },
       'AvroBinary',
-      'OnChain'
+      'OnChain',
+      [],
+      'test.dummySchema'
     );
     const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
     if (dummySchemaEvent) {
@@ -518,7 +529,14 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Paginated');
+    const createSchema = ExtrinsicHelper.createSchemaV3(
+      source,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Paginated',
+      [],
+      'test.AvroChatMessagePaginated'
+    );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
@@ -534,7 +552,14 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
     // Create a schema for Paginated PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchema(source, AVRO_CHAT_MESSAGE, 'AvroBinary', 'Itemized');
+    const createSchema = ExtrinsicHelper.createSchemaV3(
+      source,
+      AVRO_CHAT_MESSAGE,
+      'AvroBinary',
+      'Itemized',
+      [],
+      'test.AvroChatMessageItemized'
+    );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
       return event.data.schemaId;
