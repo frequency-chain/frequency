@@ -111,7 +111,7 @@ describe('Capacity RPC', function () {
       null
     );
     assert.notEqual(feeDetails, undefined, 'should have returned a feeDetails');
-    assert(feeDetails.inclusionFee.isNone, 'should have returned something for the inclusionFee');
+    assert(feeDetails.inclusionFee.isNone, 'should have returned None for the inclusionFee');
   });
 
   it('Returns nothing when requesting pay with capacity call with a non-capacity transaction', async function () {
@@ -122,6 +122,6 @@ describe('Capacity RPC', function () {
       null
     );
     assert.notEqual(feeDetails, undefined, 'should have returned a feeDetails');
-    assert(feeDetails.inclusionFee.isNone, 'should have returned something for the inclusionFee');
+    assert(feeDetails.inclusionFee.isNone, 'should have returned None for the inclusionFee');
   });
 });
