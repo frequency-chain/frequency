@@ -1,11 +1,9 @@
 use crate::{
-	migration::v3,
-	pallet::SchemaNameToIds,
+	migration::v4,
 	tests::mock::{
 		create_bounded_schema_vec, new_test_ext, sudo_set_max_schema_size, test_public,
 		RuntimeOrigin, SchemasPallet, Test,
 	},
-	SchemaName,
 };
 use common_primitives::{node::AccountId, schema::*};
 use frame_support::{
@@ -13,7 +11,7 @@ use frame_support::{
 };
 
 #[test]
-fn schemas_migration_to_v3_should_work_as_expected() {
+fn schemas_migration_to_v4_should_work_as_expected() {
 	new_test_ext().execute_with(|| {
 		// Arrange
 		sudo_set_max_schema_size();
@@ -31,22 +29,13 @@ fn schemas_migration_to_v3_should_work_as_expected() {
 		}
 
 		// Act
-		let _ = v3::migrate_to_v3::<Test>();
+		let _ = v4::migrate_to_v4::<Test>();
 
 		// Assert
 		let current_version = SchemasPallet::current_storage_version();
-		assert_eq!(current_version, StorageVersion::new(3));
+		assert_eq!(current_version, StorageVersion::new(4));
 
-		let known_schemas = v3::get_known_schemas();
-		let versions_count = SchemaNameToIds::<Test>::iter().count();
-		assert_eq!(known_schemas.len(), versions_count);
-
-		for (_, schema_name) in known_schemas.iter() {
-			let bounded_name = BoundedVec::try_from(schema_name.clone()).expect("should work");
-			let parsed_name =
-				SchemaName::try_parse::<Test>(bounded_name, true).expect("should parse");
-			let val = SchemaNameToIds::<Test>::get(&parsed_name.namespace, &parsed_name.descriptor);
-			assert_eq!(val.ids.len(), 1usize);
-		}
+		let known_schemas = v4::get_known_schemas::<Test>();
+		assert_eq!(known_schemas.len(), 0);
 	});
 }

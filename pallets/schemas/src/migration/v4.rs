@@ -1,11 +1,12 @@
-#[cfg(feature = "try-runtime")]
-use crate::types::SCHEMA_STORAGE_VERSION;
 use crate::{
-	migration::v3::old::OldSchemaInfo,
 	pallet::{SchemaInfos, SchemaNameToIds},
-	Config, Pallet, SchemaId, SchemaInfo, SchemaName, LOG_TARGET,
+	Config, Pallet, SchemaId, SchemaName, LOG_TARGET,
 };
+#[cfg(feature = "try-runtime")]
+use crate::{types::SCHEMA_STORAGE_VERSION, SchemaVersionId};
+use common_primitives::utils::{get_chain_type_by_genesis_hash, DetectedChainType};
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
+use frame_system::pallet_prelude::BlockNumberFor;
 use log;
 use sp_runtime::Saturating;
 #[cfg(feature = "try-runtime")]
@@ -13,124 +14,94 @@ use sp_runtime::TryRuntimeError;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// get known schema names for mainnet
-#[cfg(feature = "frequency")]
-pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
-	BTreeMap::from([
-		(1, b"dsnp.tombstone".to_vec()),
-		(2, b"dsnp.broadcast".to_vec()),
-		(3, b"dsnp.reply".to_vec()),
-		(4, b"dsnp.reaction".to_vec()),
-		(5, b"dsnp.update".to_vec()),
-		(6, b"dsnp.profile".to_vec()),
-		(7, b"dsnp.public-key-key-agreement".to_vec()),
-		(8, b"dsnp.public-follows".to_vec()),
-		(9, b"dsnp.private-follows".to_vec()),
-		(10, b"dsnp.private-connections".to_vec()),
-	])
-}
-/// get known schema names for rococo
-#[cfg(not(feature = "frequency"))]
-pub fn get_known_schemas() -> BTreeMap<SchemaId, Vec<u8>> {
-	BTreeMap::from([
-		(1, b"dsnp.tombstone".to_vec()),
-		(2, b"dsnp.broadcast".to_vec()),
-		(3, b"dsnp.reply".to_vec()),
-		(4, b"dsnp.reaction".to_vec()),
-		(5, b"dsnp.profile".to_vec()),
-		(6, b"dsnp.update".to_vec()),
-		(18, b"dsnp.public-key-key-agreement".to_vec()),
-		(13, b"dsnp.public-follows".to_vec()),
-		(14, b"dsnp.private-follows".to_vec()),
-		(15, b"dsnp.private-connections".to_vec()),
-	])
-}
+pub fn get_known_schemas<T: Config>() -> BTreeMap<SchemaId, Vec<u8>> {
+	let genesis_block: BlockNumberFor<T> = 0u32.into();
+	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 
-/// old module storages
-pub mod old {
-	use super::*;
-	use common_primitives::schema::{ModelType, PayloadLocation, SchemaSettings};
-	use frame_support::storage_alias;
-
-	#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
-	/// A structure defining a Schema information (excluding the payload)
-	pub struct OldSchemaInfo {
-		/// The type of model (AvroBinary, Parquet, etc.)
-		pub model_type: ModelType,
-		/// The payload location
-		pub payload_location: PayloadLocation,
-		/// additional control settings for the schema
-		pub settings: SchemaSettings,
+	if let DetectedChainType::FrequencyMain = get_chain_type_by_genesis_hash(&genesis.encode()[..])
+	{
+		// only return what needs to change which for this case is only on mainnet
+		BTreeMap::from([
+			(5, b"dsnp.update".to_vec()),
+			(6, b"dsnp.profile".to_vec()),
+			(7, b"dsnp.public-key-key-agreement".to_vec()),
+			(8, b"dsnp.public-follows".to_vec()),
+			(9, b"dsnp.private-follows".to_vec()),
+			(10, b"dsnp.private-connections".to_vec()),
+		])
+	} else {
+		BTreeMap::new()
 	}
-
-	/// Old Storage for schema info struct data
-	#[storage_alias]
-	pub(crate) type SchemaInfos<T: Config> =
-		StorageMap<Pallet<T>, Twox64Concat, SchemaId, OldSchemaInfo, OptionQuery>;
 }
 
-/// migration to v3 implementation
-pub struct MigrateToV3<T>(PhantomData<T>);
+/// migration to v4 implementation
+pub struct MigrateToV4<T>(PhantomData<T>);
 
-impl<T: Config> OnRuntimeUpgrade for MigrateToV3<T> {
+impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 	fn on_runtime_upgrade() -> Weight {
-		migrate_to_v3::<T>()
+		migrate_to_v4::<T>()
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn pre_upgrade() -> Result<Vec<u8>, TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		if on_chain_version >= 3 {
+		let genesis_block: BlockNumberFor<T> = 0u32.into();
+		let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
+		if on_chain_version >= 4 {
 			return Ok(Vec::new())
 		}
-		let count = old::SchemaInfos::<T>::iter().count() as u32;
-		log::info!(target: LOG_TARGET, "Finish pre_upgrade for {:?}", count);
-		Ok(count.encode())
+		log::info!(target: LOG_TARGET, "Found genesis... {:?}", genesis);
+		let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
+		log::info!(target: LOG_TARGET,"Detected Chain is {:?}", detected_chain);
+		Ok(Vec::new())
 	}
 
 	#[cfg(feature = "try-runtime")]
 	fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		if on_chain_version >= 3 {
+		if on_chain_version >= 4 {
 			return Ok(())
 		}
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		assert_eq!(onchain_version, SCHEMA_STORAGE_VERSION);
+		// check to ensure updates took place
+		let known_schemas = get_known_schemas::<T>();
+		for (schema_id, schema_name) in known_schemas.into_iter() {
+			// safe to use unwrap since only used in try_runtime
+			let bounded = BoundedVec::try_from(schema_name).unwrap();
+			let parsed_name = SchemaName::try_parse::<T>(bounded, true).unwrap();
+			let current_versions =
+				SchemaNameToIds::<T>::get(parsed_name.namespace, parsed_name.descriptor);
+
+			let mut expected = SchemaVersionId::default();
+			let _ = expected.add::<T>(schema_id);
+
+			assert_eq!(
+				current_versions, expected,
+				"Expected versions did not match for {}",
+				schema_id
+			);
+		}
 		log::info!(target: LOG_TARGET, "Finished post_upgrade");
 		Ok(())
 	}
 }
 
-/// migrating to v3
-pub fn migrate_to_v3<T: Config>() -> Weight {
+/// migrating to v4
+pub fn migrate_to_v4<T: Config>() -> Weight {
 	log::info!(target: LOG_TARGET, "Running storage migration...");
 	let onchain_version = Pallet::<T>::on_chain_storage_version();
 	let current_version = Pallet::<T>::current_storage_version();
 	log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
 	let each_layer_access: u64 = 33 * 16;
 
-	if onchain_version < 3 {
-		let known_schemas = get_known_schemas();
+	if onchain_version < 4 {
+		let known_schemas = get_known_schemas::<T>();
 		let mut reads = 1u64;
 		let mut writes = 0u64;
 		let mut bytes = 0u64;
-
-		SchemaInfos::<T>::translate_values(|old: OldSchemaInfo| -> Option<SchemaInfo> {
-			reads.saturating_inc();
-			writes.saturating_inc();
-			bytes = bytes.saturating_add(old.encode().len() as u64);
-			bytes = bytes.saturating_add(each_layer_access * 3); // three layers in merkle tree
-
-			Some(SchemaInfo {
-				model_type: old.model_type,
-				payload_location: old.payload_location,
-				settings: old.settings,
-				has_name: false,
-			})
-		});
-
-		log::info!(target: LOG_TARGET, "Finished translating {:?} SchemaInfos!", writes);
 
 		for (schema_id, schema_name) in known_schemas.iter() {
 			reads.saturating_inc();
@@ -149,6 +120,8 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 									bytes = bytes
 										.saturating_add(schema_version_id.encode().len() as u64);
 
+									// clear the old/wrong one in case they exist
+									schema_version_id.ids.clear();
 									let _ = schema_version_id.add::<T>(*schema_id);
 
 									// set schema as having a name
@@ -170,14 +143,16 @@ pub fn migrate_to_v3<T: Config>() -> Weight {
 						log::error!(target: LOG_TARGET, "Was not able to get bounded vec {:?}", schema_name);
 					},
 				}
+			} else {
+				log::error!(target: LOG_TARGET, "Schema id {:?} does not exist!", schema_id);
 			}
 		}
 
-		// Set storage version to `3`.
-		StorageVersion::new(3).put::<Pallet<T>>();
+		// Set storage version to `4`.
+		StorageVersion::new(4).put::<Pallet<T>>();
 		writes.saturating_inc();
 
-		log::info!(target: LOG_TARGET, "Storage migrated to version 3  read={:?}, write={:?}, bytes={:?}", reads, writes, bytes);
+		log::info!(target: LOG_TARGET, "Storage migrated to version 4  read={:?}, write={:?}, bytes={:?}", reads, writes, bytes);
 		let weights = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
 		log::info!(target: LOG_TARGET, "Migration Calculated weights={:?}",weights);
 		weights

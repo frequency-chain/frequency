@@ -14,7 +14,7 @@ use frame_support::traits::Len;
 use sp_std::{vec, vec::*};
 
 /// Current storage version of the schemas pallet.
-pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(3);
+pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
 
 /// The maximum size of schema name including all parts
 pub const SCHEMA_NAME_BYTES_MAX: u32 = 32; // Hard limit of 32 bytes
