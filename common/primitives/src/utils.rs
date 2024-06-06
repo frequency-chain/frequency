@@ -1,5 +1,36 @@
 use sp_std::vec::Vec;
 
+/// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1
+pub const MAINNET_GENESIS_HASH: &[u8] = &[
+	74u8, 88, 123, 241, 122, 64, 78, 53, 114, 116, 122, 221, 122, 171, 123, 190, 86, 232, 5, 165,
+	71, 156, 108, 67, 111, 7, 243, 111, 204, 141, 58, 225,
+];
+
+/// Frequency Testnet on Paseo Genesis Hash 0x203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0
+pub const TESTNET_ON_PASEO_GENESIS_HASH: &[u8] = &[
+	32, 60, 104, 56, 252, 120, 234, 54, 96, 162, 242, 152, 165, 141, 133, 149, 25, 199, 42, 94,
+	253, 192, 241, 148, 171, 214, 240, 213, 206, 24, 56, 224,
+];
+
+/// An enum that shows the detected chain type
+#[derive(Debug, Clone, PartialEq)]
+pub enum DetectedChainType {
+	/// An unknown chain, it can be a local or development chain
+	Unknown,
+	/// Frequency Mainnet
+	FrequencyMainNet,
+	/// Frequency Paseo Testnet
+	FrequencyPaseoTestNet,
+}
+
+/// Finds the chain type by genesis hash
+pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType {
+	match genesis_hash {
+		MAINNET_GENESIS_HASH => DetectedChainType::FrequencyMainNet,
+		TESTNET_ON_PASEO_GENESIS_HASH => DetectedChainType::FrequencyPaseoTestNet,
+		_ => DetectedChainType::Unknown,
+	}
+}
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex {
@@ -112,6 +143,7 @@ pub fn wrap_binary_data(data: Vec<u8>) -> Vec<u8> {
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use impl_serde::serialize::from_hex;
 	use parity_scale_codec::{Decode, Encode};
 	use scale_info::TypeInfo;
 	use serde::{Deserialize, Serialize};
@@ -239,5 +271,31 @@ mod tests {
 		let result: Result<TestAsString, serde_json::Error> =
 			serde_json::from_str("{\"data\":\"\\xa0\\xa1\"}");
 		assert!(result.is_err());
+	}
+
+	#[test]
+	fn get_chain_type_by_genesis_hash_with_mainnet_genesis_should_get_mainnet() {
+		// arrange
+		let known_genesis =
+			from_hex("4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1").unwrap();
+
+		// act
+		let detected = get_chain_type_by_genesis_hash(&known_genesis);
+
+		// assert
+		assert_eq!(detected, DetectedChainType::FrequencyMainNet);
+	}
+
+	#[test]
+	fn get_chain_type_by_genesis_hash_with_paseo_genesis_should_get_paseo() {
+		// arrange
+		let known_genesis =
+			from_hex("203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0").unwrap();
+
+		// act
+		let detected = get_chain_type_by_genesis_hash(&known_genesis);
+
+		// assert
+		assert_eq!(detected, DetectedChainType::FrequencyPaseoTestNet);
 	}
 }
