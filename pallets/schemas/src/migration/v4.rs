@@ -62,7 +62,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 	fn post_upgrade(_: Vec<u8>) -> Result<(), TryRuntimeError> {
 		log::info!(target: LOG_TARGET, "Running post_upgrade...");
 		let on_chain_version = Pallet::<T>::on_chain_storage_version();
-		if on_chain_version >= 4 {
+		if on_chain_version > 4 {
 			return Ok(())
 		}
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
