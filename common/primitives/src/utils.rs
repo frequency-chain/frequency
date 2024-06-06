@@ -6,8 +6,8 @@ pub const MAINNET_GENESIS_HASH: &[u8] = &[
 	71, 156, 108, 67, 111, 7, 243, 111, 204, 141, 58, 225,
 ];
 
-/// Paseo Genesis Hash 0x203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0
-pub const PASEO_GENESIS_HASH: &[u8] = &[
+/// Frequency Testnet on Paseo Genesis Hash 0x203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0
+pub const TESTNET_ON_PASEO_GENESIS_HASH: &[u8] = &[
 	32, 60, 104, 56, 252, 120, 234, 54, 96, 162, 242, 152, 165, 141, 133, 149, 25, 199, 42, 94,
 	253, 192, 241, 148, 171, 214, 240, 213, 206, 24, 56, 224,
 ];
@@ -17,17 +17,17 @@ pub const PASEO_GENESIS_HASH: &[u8] = &[
 pub enum DetectedChainType {
 	/// An unknown chain, it can be a local or development chain
 	Unknown,
-	/// Frequency main-net
-	FrequencyMain,
-	/// Frequency Paseo test-net
-	FrequencyPaseo,
+	/// Frequency Mainnet
+	FrequencyMainNet,
+	/// Frequency Paseo Testnet
+	FrequencyPaseoTestNet,
 }
 
 /// Finds the chain type by genesis hash
 pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType {
 	match genesis_hash {
-		MAINNET_GENESIS_HASH => DetectedChainType::FrequencyMain,
-		PASEO_GENESIS_HASH => DetectedChainType::FrequencyPaseo,
+		MAINNET_GENESIS_HASH => DetectedChainType::FrequencyMainNet,
+		TESTNET_ON_PASEO_GENESIS_HASH => DetectedChainType::FrequencyPaseoTestNet,
 		_ => DetectedChainType::Unknown,
 	}
 }
@@ -283,7 +283,7 @@ mod tests {
 		let detected = get_chain_type_by_genesis_hash(&known_genesis);
 
 		// assert
-		assert_eq!(detected, DetectedChainType::FrequencyMain);
+		assert_eq!(detected, DetectedChainType::FrequencyMainNet);
 	}
 
 	#[test]
@@ -296,6 +296,6 @@ mod tests {
 		let detected = get_chain_type_by_genesis_hash(&known_genesis);
 
 		// assert
-		assert_eq!(detected, DetectedChainType::FrequencyPaseo);
+		assert_eq!(detected, DetectedChainType::FrequencyPaseoTestNet);
 	}
 }

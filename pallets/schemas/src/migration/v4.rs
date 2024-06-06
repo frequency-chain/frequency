@@ -18,7 +18,8 @@ pub fn get_known_schemas<T: Config>() -> BTreeMap<SchemaId, Vec<u8>> {
 	let genesis_block: BlockNumberFor<T> = 0u32.into();
 	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 
-	if let DetectedChainType::FrequencyMain = get_chain_type_by_genesis_hash(&genesis.encode()[..])
+	if let DetectedChainType::FrequencyMainNet =
+		get_chain_type_by_genesis_hash(&genesis.encode()[..])
 	{
 		// only return what needs to change which for this case is only on mainnet
 		BTreeMap::from([
