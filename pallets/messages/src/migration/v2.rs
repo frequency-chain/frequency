@@ -64,7 +64,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 		log::info!(target: LOG_TARGET, "Running pre_upgrade...");
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		if onchain_version < 2 {
-			let pallet_prefix = old::Messages::<T>::module_prefix();
+			let pallet_prefix = old::Messages::<T>::pallet_prefix();
 			let storage_prefix = old::Messages::<T>::storage_prefix();
 			assert_eq!(&b"Messages"[..], pallet_prefix);
 			assert_eq!(&b"Messages"[..], storage_prefix);

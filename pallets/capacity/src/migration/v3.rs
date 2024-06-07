@@ -126,7 +126,7 @@ where
 			return Ok(Vec::new())
 		}
 
-		let pallet_prefix = StakingAccountLedger::<T>::module_prefix();
+		let pallet_prefix = StakingAccountLedger::<T>::pallet_prefix();
 		let storage_prefix = StakingAccountLedger::<T>::storage_prefix();
 		assert_eq!(&b"Capacity"[..], pallet_prefix);
 		assert_eq!(&b"StakingAccountLedger"[..], storage_prefix);

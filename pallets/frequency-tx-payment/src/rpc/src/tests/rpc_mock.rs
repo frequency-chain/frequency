@@ -1,5 +1,5 @@
+use common_primitives::node::Block;
 use sp_api::{ApiRef, ProvideRuntimeApi};
-use substrate_test_runtime_client::runtime::Block;
 
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, NumberFor, Zero};
