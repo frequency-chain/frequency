@@ -41,7 +41,7 @@
         - [Pros/Cons](#proscons-2)
     - [Generic Key Support](#generic-key-support)
     - [Separate Pallet](#separate-pallet)
-  - [8. Conclusion](#8-conclusion)
+  - [8. References](#8-references)
 
 ## 1. Introduction
 
@@ -544,6 +544,9 @@ stored on-chain, it seems less necessary to split it into a separate pallet.
 Another argument in favor of having it in a new pallet is to be able to share this pallet with other
 para-chains in the Polkadot ecosystem.
 
-## 8. Conclusion
+## 8. References
 
-(Summarize the key points of the design document and outline next steps for implementation and further discussion.)
+- _**Frontend library for Passkeys**_: https://simplewebauthn.dev/docs/advanced/passkeys
+- _**WebAuthn Guide**_: https://webauthn.guide/
+- _**WebAuthn spec**_: https://w3c.github.io/webauthn
+- _**Cose Key format**_: https://www.iana.org/assignments/cose/cose.xhtml#key-type
