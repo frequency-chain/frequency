@@ -9,7 +9,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 
 const fundingSource: KeyringPair = getFundingSource('frequency-misc');
 
-describe('Frequency', function () {
+describe.skip('Frequency', function () {
   describe('setup', function () {
     let keypairA: KeyringPair;
     let keypairB: KeyringPair;

@@ -5,6 +5,9 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
+  push:
+    branches:
+      - chore/update-e2e-tests-part3
   workflow_dispatch:
     inputs:
       release-version:
@@ -12,7 +15,7 @@ on:
         required: true
 
 env:
-  TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  TAG_FROM_UI: v1.12.0
 
 jobs:
   run-e2e:
@@ -35,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: ${{env.TAG_FROM_UI}}
+          # ref: ${{env.TAG_FROM_UI}}
       - name: Set Env Vars
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
