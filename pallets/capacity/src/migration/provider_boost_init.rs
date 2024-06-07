@@ -1,7 +1,4 @@
-use crate::{
-	Config, CurrentEraInfo, CurrentEraProviderBoostTotal, ProviderBoostRewardPools, RewardEraInfo,
-	RewardPoolHistoryChunk,
-};
+use crate::{Config, CurrentEraInfo, CurrentEraProviderBoostTotal, RewardEraInfo};
 use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
@@ -15,20 +12,13 @@ pub struct ProviderBoostInit<T: Config>(sp_std::marker::PhantomData<T>);
 
 impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 	fn on_runtime_upgrade() -> Weight {
-		let current_era_info = CurrentEraInfo::<T>::get();
+		let current_era_info = CurrentEraInfo::<T>::get(); // 1r
 		if current_era_info.eq(&RewardEraInfo::default()) {
-			// 1r
-			let current_block = frame_system::Pallet::<T>::block_number(); // 1r
+			let current_block = frame_system::Pallet::<T>::block_number(); // Whitelisted
 			let era_index: T::RewardEra = 1u32.into();
 			CurrentEraInfo::<T>::set(RewardEraInfo { era_index, started_at: current_block }); // 1w
-			CurrentEraProviderBoostTotal::<T>::set(0u32.into());
-			let chunks: u32 =
-				T::ProviderBoostHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
-			(0u32..chunks).for_each(|chunk_index| {
-				let new_chunk: RewardPoolHistoryChunk<T> = RewardPoolHistoryChunk::new();
-				ProviderBoostRewardPools::<T>::insert(chunk_index, new_chunk);
-			});
-			T::DbWeight::get().reads_writes(2, 2)
+			CurrentEraProviderBoostTotal::<T>::set(0u32.into()); // 1w
+			T::DbWeight::get().reads_writes(2, 1)
 		} else {
 			T::DbWeight::get().reads(1)
 		}
@@ -41,11 +31,6 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		} else {
 			log::info!("CurrentEraInfo not found. Initialization should proceed.");
 		}
-		if ProviderBoostRewardPools::<T>::iter().count() == 0usize {
-			log::info!("ProviderBoostRewardPool will be updated with Era 0");
-		} else {
-			log::info!("ProviderBoostRewardPool has already been initialized.")
-		}
 		Ok(Vec::default())
 	}
 
@@ -56,9 +41,6 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		let info = CurrentEraInfo::<T>::get();
 		assert_eq!(info.started_at, current_block);
 		log::info!("CurrentEraInfo.started_at is set to {:?}.", info.started_at);
-		let chunks: u32 =
-			T::RewardPoolHistoryLimit::get().saturating_div(T::RewardPoolChunkLength::get());
-		assert_eq!(ProviderBoostRewardPools::<T>::iter().count(), chunks);
 		Ok(())
 	}
 }
