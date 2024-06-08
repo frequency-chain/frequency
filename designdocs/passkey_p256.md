@@ -318,6 +318,8 @@ Browser/Client receives the following data from the backend:
 
 - Preferably using an audited crate to support p256 operations. Currently, we are using `p256` crate
   which is not audited.
+  - After investigating other libraries it looks like the only audited alternative is `Openssl` library which is only
+a wrapper around the Original C implementation and unfortunately it doesn't look like it is compatible with WASM.
 - If signature checks implemented **on_validate** are expensive, then this would open a vulnerability
   surface for DOS attacks.
 
