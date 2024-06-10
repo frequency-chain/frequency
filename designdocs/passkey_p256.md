@@ -51,7 +51,7 @@ This document outlines the design considerations and specifications for integrat
 
 - **Non-Custodial Account Management**: Passkey support enables users to interact with Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
 
-- **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The poliferation of passkey enabled services can lead to a seamless user experience.
+- **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The proliferation of passkey-enabled services can lead to a seamless user experience.
 
 - **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
 
