@@ -48,7 +48,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     assert.notEqual(delegatedProviderKeys, undefined, 'setup should populate delegatedProviderKeys');
 
     // Create a schema for Itemized PayloadLocation
-    const createSchema = ExtrinsicHelper.createSchemaV3(
+    itemizedSchemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
       undelegatedProviderKeys,
       AVRO_CHAT_MESSAGE,
       'AvroBinary',
@@ -56,11 +56,9 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       ['AppendOnly', 'SignatureRequired'],
       'test.ItemizedSignatureRequired'
     );
-    const { target: event } = await createSchema.signAndSend();
-    itemizedSchemaId = event!.data.schemaId;
 
     // Create a schema for Paginated PayloadLocation
-    const createSchema2 = ExtrinsicHelper.createSchemaV3(
+    paginatedSchemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
       undelegatedProviderKeys,
       AVRO_CHAT_MESSAGE,
       'AvroBinary',
@@ -68,9 +66,6 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       ['SignatureRequired'],
       'test.PaginatedSignatureRequired'
     );
-    const { target: event2 } = await createSchema2.signAndSend();
-    assert.notEqual(event2, undefined, 'setup should return a SchemaCreated event');
-    paginatedSchemaId = event2!.data.schemaId;
 
     // Create a MSA for the delegator
     [delegatorKeys, msa_id] = await createDelegatorAndDelegation(

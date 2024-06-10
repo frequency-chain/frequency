@@ -163,7 +163,7 @@ export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
 
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
-  private extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
+  public readonly extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
   private keys: KeyringPair;
   public api: ApiRx;
 
@@ -306,7 +306,7 @@ export class ExtrinsicHelper {
   public static api: ApiRx;
   public static apiPromise: ApiPromise;
 
-  public static async initialize(providerUrl?: string | string[] | undefined) {
+  public static async initialize(providerUrl: string | string[]) {
     ExtrinsicHelper.api = await connect(providerUrl);
     // For single state queries (api.query), ApiPromise is better
     ExtrinsicHelper.apiPromise = await connectPromise(providerUrl);
@@ -369,6 +369,35 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
     );
+  }
+
+  public static async getOrCreateSchemaV3(
+    keys: KeyringPair,
+    model: any,
+    modelType: 'AvroBinary' | 'Parquet',
+    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
+    grant: ('AppendOnly' | 'SignatureRequired')[],
+    schemaNme: string
+  ): Promise<u16> {
+    // Check to see if the schema name already exists
+    const [group, name] = schemaNme.toLowerCase().split('.');
+    const { ids } = await ExtrinsicHelper.apiPromise.query.schemas.schemaNameToIds(group, name);
+    if (ids.length > 0) {
+      return ids[ids.length - 1];
+    }
+    // Not found? Create it!
+    const { target: event } = await ExtrinsicHelper.createSchemaV3(
+      keys,
+      model,
+      modelType,
+      payloadLocation,
+      grant,
+      schemaNme
+    ).signAndSend();
+    if (event?.data.schemaId) {
+      return event.data.schemaId;
+    }
+    throw new Error(`Tried to create a schema for ${schemaNme}, but it failed!`);
   }
 
   /** Schema v3 Extrinsics */

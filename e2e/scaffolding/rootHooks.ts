@@ -4,6 +4,7 @@ import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { drainFundedKeys } from './helpers';
 import { getRootFundingSource } from './funding';
+import { providerUrl } from './env';
 
 // Make sure that we can serialize BigInts for Mocha
 (BigInt.prototype as any).toJSON = function () {
@@ -14,7 +15,7 @@ export const mochaHooks = {
   async beforeAll() {
     try {
       await cryptoWaitReady();
-      await ExtrinsicHelper.initialize();
+      await ExtrinsicHelper.initialize(providerUrl);
     } catch (e) {
       console.error('Failed to run beforeAll root hook: ', this.test.parent.suites[0].title, e);
     }
