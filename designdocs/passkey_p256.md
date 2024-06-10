@@ -74,7 +74,7 @@ This document outlines the design considerations and specifications for integrat
 
 ### Signatures
 
-- **Account signature on PassKey Public Key**: A cryptographic signature generated using the Account Key. The data being signed is passkey public key. This is used to prove ownership of Account Key.
+- **Account signature on PassKey Public Key**: A cryptographic signature generated using the Account Key. The data being signed is the Passkey Public Key. This is used to prove ownership of Account Key.
 - **Passkey Signatures**: A cryptographic signature generated using the Passkey private key. This is presented to passkey enabled services as a challenge-response mechanism. Passkeys are used to generate two signatures as follows:
   - **Signature on Account Public Key**: Passkey signs a message containing the account public key. This signature is retained by a Web Wallet platform and/or maybe used for account recovery.
   - **Signature on Transactions**: Passkey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
