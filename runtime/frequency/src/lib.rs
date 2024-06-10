@@ -507,12 +507,14 @@ impl pallet_capacity::Config for Runtime {
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type RewardEra = u32;
 	type EraLength = ConstU32<{ 14 * DAYS }>;
-	type ProviderBoostHistoryLimit = ConstU32<31u32>; // 30 for claiming rewards, 1 for current era
+	type ProviderBoostHistoryLimit = ConstU32<30u32>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<16>;
 	// Value determined by desired inflation rate limits for chosen economic model
 	type RewardPoolEachEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
 	type RewardPercentCap = CapacityRewardCap;
+	// Must evenly divide ProviderBoostHistoryLimit
+	type RewardPoolChunkLength = ConstU32<5>;
 }
 
 impl pallet_schemas::Config for Runtime {
