@@ -45,7 +45,7 @@
 
 ## 1. Introduction
 
-This document outlines the design considerations and specifications for integrating P256 Passkey support for performing transactions on Frequency chain. Passkey support aims to provide a novel non custodial solution for managing user accounts and signing transactions on-chain.
+This document outlines the design considerations and specifications for integrating P256 Passkey support for performing transactions on the Frequency chain. Passkey support aims to provide a novel non-custodial solution for managing user accounts and signing transactions on-chain.
 
 ## 2. Benefits
 
