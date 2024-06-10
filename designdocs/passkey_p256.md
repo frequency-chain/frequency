@@ -297,7 +297,7 @@ Browser/Client receives the following data from the backend:
 
 ### Security Considerations
 
-#### Generic
+#### General
 
 - Never store or backup the seed phrase other than memory.
 - Prefer more client side data processing and handling, backend should only store the necessary data.
