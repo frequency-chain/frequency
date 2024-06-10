@@ -481,7 +481,7 @@ unsigned path.
 
 - **Pro**: Mortality of `account_sig_passkey_pk` would ensure that the account signature on the PassKey Public Key is only valid for a certain period, albieit it would be a complex setup.
 
-  >Wil wondered about a mortality as well, but I >have two fears:
+  >Wil wondered about a mortality as well, but I  have two fears:
   >
   > 1. That people will not backup their other key and forget to regenerate before the deadline.
   > 2. That it adds too much complexity to an already complex setup.
