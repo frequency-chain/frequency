@@ -49,7 +49,7 @@ This document outlines the design considerations and specifications for integrat
 
 ## 2. Benefits
 
-- **Non-Custodial Account Management**: Passkey support enables users to interact with Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
+- **Non-Custodial Account Management**: Passkey support enables users to interact with the Frequency chain without actual seed access. This reduces the risk of seed exposure and enhances security.
 
 - **Functionality**: Passkey support provides a better user experience by enabling users to sign transactions without seed access. The proliferation of passkey-enabled services can lead to a seamless user experience.
 
