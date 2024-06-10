@@ -55,7 +55,7 @@ This document outlines the design considerations and specifications for integrat
 
 - **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
 
-- **Backup and Recovery**: Passkey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of loss of seed access.
+- **Backup and Recovery**: Passkey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of a lost seed.
 
 ## 3. Terminology
 
