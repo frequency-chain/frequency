@@ -269,8 +269,8 @@ Browser/Client receives the following data from the backend:
     ```
 
 3. **Transaction Submission**:
-   - The transaction payload, that requires, `passkey_pk`, `passkey_sig_tx`, `passkey_authenticator_data`, `passkey_client_data` is submitted to the chain.
-   - The transaction is submitted to the chain as in `unsigned` extrinsic.
+   - The transaction payload (consisting of `passkey_pk`, `passkey_sig_tx`, `passkey_authenticator_data`, `passkey_client_data`) is submitted to the chain.
+   - The transaction is submitted to the chain as an `unsigned` extrinsic.
 
     ```javascript
       // Prepare the payload for the PassKey proxy call
