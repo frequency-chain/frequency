@@ -52,8 +52,7 @@ use common_primitives::{
 use coset::{CborSerializable, CoseKey, Label};
 use p256::{ecdsa::signature::Verifier, elliptic_curve::generic_array::GenericArray, EncodedPoint};
 pub use pallet::*;
-use parity_scale_codec::alloc::string::ToString;
-use sp_core::{crypto::AccountId32, hexdisplay::HexDisplay};
+use sp_core::crypto::AccountId32;
 use sp_io::hashing::sha2_256;
 pub use weights::*;
 
@@ -421,39 +420,22 @@ impl<T: Config> Pallet<T> {
 			p256::ecdsa::DerSignature::from_bytes(&payload.passkey_signature[..])
 				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(6)))?;
 
-		// extract the challenge from client_data and
-		// ensure the that the challenge is the same as the call payload
-		let client_data: serde_json::Value =
-			serde_json::from_slice(&payload.passkey_client_data_json)
-				.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(7)))?;
-		let extracted_challenge = match client_data {
-			serde_json::Value::Object(m) => {
-				let challenge = m
-					.get(&"challenge".to_string())
-					.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(8)))?;
-				if let serde_json::Value::String(base64_url_encoded) = challenge {
-					let decoded = base64_url::decode(&base64_url_encoded).map_err(|_| {
-						TransactionValidityError::Invalid(InvalidTransaction::Custom(9))
-					})?;
-					Ok(decoded)
-				} else {
-					Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(10)))
-				}
-			},
-			_ => Err(TransactionValidityError::Invalid(InvalidTransaction::Custom(11))),
-		}?;
-
 		let encoded_payload = payload.passkey_call.encode();
-		log::debug!("pass_call challenge    {}", HexDisplay::from(&extracted_challenge));
-		log::debug!("pass_call scale encode {}", HexDisplay::from(&encoded_payload));
-		ensure!(
-			encoded_payload == extracted_challenge,
-			TransactionValidityError::Invalid(InvalidTransaction::Custom(12))
-		);
+		let calculated_challenge = sha2_256(&encoded_payload);
+		let calculated_challenge_base64url = base64_url::encode(&calculated_challenge);
+		log::info!("calculated_challenge {}", calculated_challenge_base64url);
+
+		// inject challenge inside clientJsonData
+		let str_of_json =
+			core::str::from_utf8(&payload.passkey_client_data_json).unwrap_or_default();
+		log::info!("passkey_client_data_json {}", str_of_json);
+		let original_client_data_json =
+			str_of_json.replace("#rplc#", &calculated_challenge_base64url);
 
 		// prepare signing payload which is [authenticator || sha256(client_data_json)]
 		let mut passkey_signature_payload = payload.passkey_authenticator.to_vec();
-		passkey_signature_payload.extend_from_slice(&sha2_256(&payload.passkey_client_data_json));
+		passkey_signature_payload
+			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
 
 		// finally verify the passkey signature against the payload
 		verify_key
