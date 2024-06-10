@@ -55,7 +55,7 @@ This document outlines the design considerations and specifications for integrat
 
 - **Interoperability**: The use of standard cryptographic protocols (e.g., P256) ensures compatibility with other systems and services that also support these standards. This can facilitate integrations with existing wallets, security modules, and third-party applications.
 
-- **Backup and Recovery**: PassKey support can be used to facilitate account recovery and backup mechanisms. By signing the account public key, users can prove ownership of the account and recover access in case of a lost seed.
+- **Backup and Recovery**: PassKey support can be used to facilitate account recovery and backup mechanisms. By signing the account Public Key, users can prove ownership of the account and recover access in case of a lost seed.
 
 ## 3. Terminology
 
@@ -68,15 +68,15 @@ This document outlines the design considerations and specifications for integrat
 ### Keys
 
 - **PassKey**: P256 key pair used for transaction signing and account management. This is the primary key used for transaction signing.
-- **PassKey Public Key**: The public key retrieved from the PassKey registration process.
+- **PassKey Public Key**: The Public Key retrieved from the PassKey registration process.
 - **Account Key**: The key pair generated from a seed phrase.
-- **Account Public Key**: The public key derived from the Account Key.
+- **Account Public Key**: The Public Key derived from the Account Key.
 
 ### Signatures
 
 - **Account signature on PassKey Public Key**: A cryptographic signature generated using the Account Key. The data being signed is the PassKey Public Key. This is used to prove ownership of Account Key.
 - **PassKey Signatures**: A cryptographic signature generated using the PassKey private key. This is presented to PassKey enabled services as a challenge-response mechanism. Passkeys are used to generate two signatures as follows:
-  - **Signature on Account Public Key**: PassKey signs a message containing the account public key. This signature is retained by a Web Wallet platform and/or maybe used for account recovery.
+  - **Signature on Account Public Key**: PassKey signs a message containing the account Public Key. This signature is retained by a Web Wallet platform and/or maybe used for account recovery.
   - **Signature on Transactions**: PassKey signs the transaction payload which needs to be submitted on-chain. This signature is used to verify the authenticity of the transaction.
 
 ## 4.1. Data Flow Diagram
@@ -91,11 +91,11 @@ This document outlines the design considerations and specifications for integrat
 
 ### Web Wallet backend
 
-- PassKey Signature of Account public key (`passkey_sig_account_pk`)
+- PassKey Signature of Account Public Key (`passkey_sig_account_pk`)
 - PassKey signature of transaction (`passkey_sig_tx`)
-- Frequency Account key signature of PassKey public key (`account_sig_passkey_pk`)
-- Generated Account public key (`account_pk`)
-- `credentialPublicKey`: PassKey Public key (`passkey_pk`)
+- Frequency Account key signature of PassKey Public Key (`account_sig_passkey_pk`)
+- Generated Account Public Key (`account_pk`)
+- `credentialPublicKey`: PassKey Public Key (`passkey_pk`)
 - `UserName`: User's website-specific username (email, etc...)
 - `UserId`: User's website-specific unique ID
 - `CredentialId`: The credential's credential ID for the PassKey
@@ -164,7 +164,7 @@ These are the following technical terms and specifications for the implementatio
 ### PassKey Registration
 
 1. **User visits "Wallet Setup Page"**:
-   - The browser JavaScript generates a seed phrase, using it to generate `account_keypair` and the corresponding account public key (`account_pk`).
+   - The browser JavaScript generates a seed phrase, using it to generate `account_keypair` and the corresponding account Public Key (`account_pk`).
 
 2. **Web Wallet requests creation of user PassKey**:
    - A challenge containing the `account_pk` is sent to the PassKey generation process.
@@ -311,7 +311,7 @@ Browser/Client receives the following data from the backend:
 #### Backend
 
 - PassKey registration response should get verified which checks the random challenge. Random Challenge
-for registration is generated account public key (`account_pk`)
+for registration is generated account Public Key (`account_pk`)
 - PassKey Login response should get verified which checks the random challenge
 - PassKey Transaction response should get verified which checks transaction related challenge.
 - Any provided Frequency account signature should get verified.
@@ -408,8 +408,8 @@ unsigned path.
 ```
 
 - Some possible optimizations
-  - **Compressed public key**: Currently passed public key is in **Cose** format, and it's between 70-73 bytes.
-      If the client can parse the Cose public key can extract the compressed encoded key. This public key can
+  - **Compressed Public Key**: Currently passed Public Key is in **Cose** format, and it's between 70-73 bytes.
+      If the client can parse the Cose Public Key can extract the compressed encoded key. This Public Key can
       get reduced to 33 bytes.
   - **Challenge data deduplication**: Currently the challenge data is duplicated in `expected_challenge` and
       in it's serialized format inside `passkey_client_data_json`. If the client is able to parse
@@ -479,7 +479,7 @@ unsigned path.
 
 #### Pros/Cons
 
-- **Pro**: Mortality of `account_sig_passkey_pk` would ensure that the account signature on the PassKey public key is only valid for a certain period, albieit it would be a complex setup.
+- **Pro**: Mortality of `account_sig_passkey_pk` would ensure that the account signature on the PassKey Public Key is only valid for a certain period, albieit it would be a complex setup.
 
   >Wil wondered about a mortality as well, but I >have two fears:
   >
@@ -520,7 +520,7 @@ a new `P256` signature type.
   unsigned extension and once deployed there would not be an easy way for a backwards compatible rollback.
   Here is a quick breakdown for known issues:
   - Signature size mismatch force us to implement a new `Signature` type with all required traits.
-  - Public key size mismatch might force us to implement a new `Publickey` type with all required traits.
+  - Public Key size mismatch might force us to implement a new `PublicKey` type with all required traits.
   - Reimplementing `MultiSignature`, `MultiSigner` and other types with `P265` functionality added.
   - Adding signature and key generation support on polkadotJS and all frontend implementations
   - Might require DB migration for already stored MultiSignatures
@@ -536,7 +536,7 @@ transactions, it might be better if the `account_key` was already in a wallet an
 was created for that key,and we register a PassKey using the same.
 
 If an already existing key is allowed to be used with a PassKey the challenge for registering a PassKey
-should be a different and random value coming from server instead of the public key of mentioned key.
+should be a different and random value coming from server instead of the Public Key of mentioned key.
 
 ### Separate Pallet
 
