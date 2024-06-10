@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, ProviderBoostRewardClaim,
-	ProviderBoostRewardsProvider,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardClaim,
+	ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -15,7 +15,7 @@ use frame_support::{
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, IdentityLookup},
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
 use sp_std::ops::Mul;
@@ -208,11 +208,20 @@ impl pallet_capacity::Config for Test {
 	type CapacityPerToken = TestCapacityPerToken;
 	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
-	type ProviderBoostHistoryLimit = ConstU32<6>; // 5 for claiming rewards, 1 for current reward era
+	type ProviderBoostHistoryLimit = ConstU32<12>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolEachEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
+	type RewardPoolChunkLength = ConstU32<3>;
+}
+
+fn initialize_reward_pool() {
+	let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
+	let chunks = history_limit.saturating_div(<Test as Config>::RewardPoolChunkLength::get());
+	for i in 0u32..chunks {
+		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
+	}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -235,6 +244,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| {
 		System::set_block_number(1);
+		initialize_reward_pool();
 		set_era_and_reward_pool(1, 1, 0);
 	});
 	ext
