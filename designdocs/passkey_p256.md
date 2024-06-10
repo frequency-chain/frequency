@@ -331,14 +331,15 @@ a wrapper around the Original C implementation and unfortunately it doesn't look
 
 #### Extrinsic verification
 
-As we know every signed extrinsic is required to get validated by a list of SignedExtensions which
-verify that extrinsic from different aspects. Depending on our choice to use _SignedExtrinsic_ or
-an _Unsigned_ one we would need to modify or re-implement some of the following.
+Currently, the Frequency chain primarily makes use of _SignedExtrinsic_. As we know, every signed extrinsic is validated by a list of SignedExtensions which each verify a different aspect of that extrinsic. The list of signed extensions includes:
 
-- **CheckNonce**: The nonce check should happen with the nonce inside the payload to avoid replay attacks.
-- **ChargeFrqTransactionPayment**: The transaction fee should be applied to the owner account inside
+- **CheckNonce**: Checks the the nonce inside the payload to avoid replay attacks.
+- **ChargeFrqTransactionPayment**: Checks that the transaction fee can be applied to the owner account inside
 the payload.
-- **CheckP256Signature**: A new extension should be written to verify the P256 signature inside the payload.
+
+Depending on whether we choose to implement Passkey support using Signed or Unsigned extrinsics, the above extensions may need to be duplicated to check Unsigned extrinsics. Additionally, regardless of which route (signed vs unsigned) we take, we will require the following additional checks:
+
+- **CheckP256Signature**: Verify the P256 signature inside the payload.
 - **Others**: We might also need to check the **Era**, **Mortality** and **Genesis hash** if we choose the
 unsigned path.
 
