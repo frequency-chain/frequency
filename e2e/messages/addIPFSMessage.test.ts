@@ -5,7 +5,7 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import assert from 'assert';
-import { assertHasMessage, createAndFundKeypair } from '../scaffolding/helpers';
+import { assertHasMessage, createAndFundKeypair, getOrCreateDummySchema } from '../scaffolding/helpers';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
@@ -38,19 +38,17 @@ describe('Add Offchain Message', function () {
     await createMsa.fundAndSend(fundingSource);
 
     // Create a schema for IPFS
-    const createSchema = ExtrinsicHelper.createSchema(keys, PARQUET_BROADCAST, 'Parquet', 'IPFS');
-    const { target: event } = await createSchema.fundAndSend(fundingSource);
-    schemaId = event!.data.schemaId;
+    schemaId = (await ExtrinsicHelper.getOrCreateSchemaV3(
+      fundingSource,
+      PARQUET_BROADCAST,
+      'Parquet',
+      'IPFS',
+      [],
+      'test.addIPFSMessage'
+    ))!;
 
     // Create a dummy on-chain schema
-    const createDummySchema = ExtrinsicHelper.createSchema(
-      keys,
-      { type: 'record', name: 'Dummy on-chain schema', fields: [] },
-      'AvroBinary',
-      'OnChain'
-    );
-    const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(fundingSource);
-    dummySchemaId = dummySchemaEvent!.data.schemaId;
+    dummySchemaId = await getOrCreateDummySchema(fundingSource);
   });
 
   it('should fail if insufficient funds', async function () {

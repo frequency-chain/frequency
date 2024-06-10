@@ -390,18 +390,22 @@ export async function createMsaAndProvider(
   providerName: string,
   amount: bigint | undefined = undefined
 ): Promise<u64> {
+  const createMsaOp = ExtrinsicHelper.createMsa(keys);
+  const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
+  const minimumFund = (
+    await Promise.all([getExistentialDeposit(), createMsaOp.getEstimatedTxFee(), createProviderOp.getEstimatedTxFee()])
+  ).reduce((i, j) => i + j, 100_000n);
   // Create and fund a keypair with stakeAmount
   // Use this keypair for stake operations
-  await fundKeypair(source, keys, amount || (await getExistentialDeposit()));
-  const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const { target: MsaCreatedEvent } = await createMsaOp.fundAndSend(source);
-  assert.notEqual(MsaCreatedEvent, undefined, 'createMsaAndProvider: should have returned MsaCreated event');
+  await fundKeypair(source, keys, amount || minimumFund);
 
-  const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
-  const { target: providerCreatedEvent } = await createProviderOp.fundAndSend(source);
-  assert.notEqual(providerCreatedEvent, undefined, 'createMsaAndProvider: should have returned ProviderCreated event');
+  const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(keys, [
+    createMsaOp.extrinsic(),
+    createProviderOp.extrinsic(),
+  ]).signAndSend();
 
-  if (providerCreatedEvent) {
+  const providerCreatedEvent = eventMap['msa.ProviderCreated'];
+  if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
     return providerCreatedEvent.data.providerId;
   }
   return Promise.reject('Did not create provider with msa.ProviderCreated event');
