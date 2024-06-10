@@ -5,8 +5,8 @@ use frame_support::{assert_ok, traits::Hooks};
 use sp_runtime::traits::SignedExtension;
 
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEraInfo, Event, ProviderBoostRewardPool,
-	RewardEraInfo, RewardPoolInfo, StakingType,
+	BalanceOf, CapacityDetails, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, Event,
+	RewardEraInfo, StakingType,
 };
 use common_primitives::msa::MessageSourceId;
 
@@ -96,12 +96,6 @@ pub fn setup_provider(
 // Currently the reward pool is a constant, however it could change in the future.
 pub fn set_era_and_reward_pool(era_index: u32, started_at: u32, total_staked_token: u64) {
 	let era_info = RewardEraInfo { era_index, started_at };
-	let total_reward_pool = 10_000u64;
 	CurrentEraInfo::<Test>::set(era_info);
-	let pool_info = RewardPoolInfo {
-		total_staked_token,
-		total_reward_pool,
-		unclaimed_balance: total_reward_pool,
-	};
-	ProviderBoostRewardPool::<Test>::insert(era_index, pool_info);
+	CurrentEraProviderBoostTotal::<Test>::set(total_staked_token);
 }

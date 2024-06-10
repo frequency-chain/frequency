@@ -1,8 +1,8 @@
 use super::mock::*;
 use crate::{
-	CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardClaim,
-	ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails, StakingType::*,
-	UnclaimedRewardInfo,
+	Config, CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory,
+	ProviderBoostRewardClaim, ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails,
+	StakingType::*, UnclaimedRewardInfo,
 };
 use frame_support::{assert_err, assert_ok, traits::Len};
 
@@ -10,7 +10,7 @@ use crate::tests::testing_utils::{
 	run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
 };
 use common_primitives::msa::MessageSourceId;
-use sp_core::H256;
+use sp_core::{Get, H256};
 
 #[test]
 fn staking_reward_total_happy_path() {
@@ -150,10 +150,6 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		assert_eq!(Capacity::get_current_era().era_index, 6u32);
 		assert_eq!(Capacity::get_current_era().started_at, 51u32);
 
-		assert!(Capacity::get_reward_pool_for_era(0u32).is_none());
-		assert!(Capacity::get_reward_pool_for_era(1u32).is_some());
-		assert!(Capacity::get_reward_pool_for_era(6u32).is_some());
-
 		// rewards for era 6 should not be returned; era 6 is current era and therefore ineligible.
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
@@ -161,52 +157,53 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
 			UnclaimedRewardInfo {
 				reward_era: 1u32,
-				expires_at_block: 61,
+				expires_at_block: 130,
 				eligible_amount: 0,
 				earned_amount: 0,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 2u32,
-				expires_at_block: 71,
+				expires_at_block: 140,
 				eligible_amount: 1000,
 				earned_amount: 4,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 3u32,
-				expires_at_block: 81,
+				expires_at_block: 150,
 				eligible_amount: 2_000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 4u32,
-				expires_at_block: 91,
+				expires_at_block: 160,
 				eligible_amount: 2000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 5u32,
-				expires_at_block: 101,
+				expires_at_block: 170,
 				eligible_amount: 3_000,
 				earned_amount: 11,
 			},
 		];
-		for i in 0..=4 {
+		for i in 0..5 {
 			assert_eq!(rewards.get(i).unwrap(), &expected_info[i]);
 		}
 
-		run_to_block(61);
+		run_to_block(131);
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
+		let max_history: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 		// the earliest era should no longer be stored.
-		assert_eq!(rewards.len(), 5usize);
+		assert_eq!(rewards.len(), max_history as usize);
 		assert_eq!(rewards.get(0).unwrap().reward_era, 2u32);
 
 		// there was no change in stake, so the eligible and earned amounts should be the same as in
 		// reward era 5.
 		assert_eq!(
-			rewards.get(4).unwrap(),
+			rewards.get((max_history - 1) as usize).unwrap(),
 			&UnclaimedRewardInfo {
-				reward_era: 6u32,
-				expires_at_block: 111,
+				reward_era: 13u32,
+				expires_at_block: 250,
 				eligible_amount: 3_000,
 				earned_amount: 11,
 			}
@@ -229,18 +226,21 @@ fn check_for_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		setup_provider(&account, &target, &amount, ProviderBoost);
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
-		run_to_block(71);
-		assert_eq!(Capacity::get_current_era().era_index, 8u32);
-		assert_eq!(Capacity::get_current_era().started_at, 71u32);
+		run_to_block(131);
+		assert_eq!(Capacity::get_current_era().era_index, 14u32);
+		assert_eq!(Capacity::get_current_era().started_at, 131u32);
 
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
+
+		let max_history: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
+		assert_eq!(rewards.len(), max_history as usize);
+
 		// the earliest era should no longer be stored.
-		assert_eq!(rewards.len(), 5usize);
-		for i in 0..=4 {
-			let expected_era: u32 = i + 3;
+		for i in 0u32..max_history {
+			let era = i + 2u32;
 			let expected_info: UnclaimedRewardInfo<Test> = UnclaimedRewardInfo {
-				reward_era: expected_era.into(),
-				expires_at_block: (expected_era * 10u32 + 51u32).into(),
+				reward_era: era.into(),
+				expires_at_block: (era * 10u32 + 120u32).into(),
 				eligible_amount: 1000,
 				earned_amount: 4,
 			};

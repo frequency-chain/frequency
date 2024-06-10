@@ -7,6 +7,7 @@ pub mod other_tests;
 mod provider_boost_history_tests;
 mod provider_boost_tests;
 pub mod replenishment_tests;
+mod reward_pool_tests;
 mod rewards_provider_tests;
 pub mod stake_and_deposit_tests;
 pub mod staking_account_details_tests;
