@@ -92,7 +92,8 @@ fn fill_reward_pool_chunks<T: Config>() {
 	for i in 0..chunks {
 		let mut new_chunk = RewardPoolHistoryChunk::<T>::new();
 		for j in 0..chunk_len {
-			assert_ok!(new_chunk.try_insert((i + 1u32).into(), (1000u32 * (j + i)).into()));
+			let era = (i + 1) * (j + 1);
+			assert_ok!(new_chunk.try_insert(era.into(), (1000u32 * era).into()));
 		}
 		ProviderBoostRewardPools::<T>::set(i, Some(new_chunk));
 	}
