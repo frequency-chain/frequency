@@ -690,7 +690,7 @@ fn migration_to_v2_should_work_as_expected() {
 fn migration_to_v2_should_have_correct_prefix() {
 	new_test_ext().execute_with(|| {
 		use frame_support::storage::generator::StorageDoubleMap;
-		let pallet_prefix = v2::old::Messages::<Test>::module_prefix();
+		let pallet_prefix = v2::old::Messages::<Test>::pallet_prefix();
 		let storage_prefix = v2::old::Messages::<Test>::storage_prefix();
 
 		assert_eq!(&b"MessagesPallet"[..], pallet_prefix);

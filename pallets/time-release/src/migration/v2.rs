@@ -134,7 +134,7 @@ where
 			return Ok(Vec::new())
 		}
 
-		let pallet_prefix = ReleaseSchedules::<T>::module_prefix();
+		let pallet_prefix = ReleaseSchedules::<T>::pallet_prefix();
 		let storage_prefix = ReleaseSchedules::<T>::storage_prefix();
 		assert_eq!(&b"TimeRelease"[..], pallet_prefix);
 		assert_eq!(&b"ReleaseSchedules"[..], storage_prefix);
