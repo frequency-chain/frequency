@@ -33,20 +33,20 @@
   "author": "frequency-chain",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^11.0.3",
-    "@polkadot/rpc-provider": "^11.0.3",
-    "@polkadot/types": "^11.0.3"
+    "@polkadot/api": "^11.2.1",
+    "@polkadot/rpc-provider": "^11.2.1",
+    "@polkadot/types": "^11.2.1"
   },
   "devDependencies": {
-    "@eslint/js": "^9.2.0",
-    "@polkadot/typegen": "^11.0.3",
+    "@eslint/js": "^9.4.0",
+    "@polkadot/typegen": "^11.2.1",
     "@types/mocha": "^10.0.6",
     "eslint": "^8.57.0",
     "eslint-plugin-mocha": "^10.4.3",
     "mocha": "10.4.0",
-    "prettier": "^3.2.5",
-    "tsx": "^4.9.3",
+    "prettier": "^3.3.2",
+    "tsx": "^4.15.2",
     "typescript": "^5.4.5",
-    "typescript-eslint": "^7.8.0"
+    "typescript-eslint": "^7.13.0"
   }
 }
