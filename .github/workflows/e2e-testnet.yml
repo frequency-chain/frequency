@@ -17,7 +17,7 @@ env:
 jobs:
   run-e2e:
     name: Run E2E Tests
-    runs-on: ubuntu-22.04
+    runs-on: benchmark
     container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Validate
