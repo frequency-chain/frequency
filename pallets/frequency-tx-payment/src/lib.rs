@@ -49,8 +49,7 @@ use common_primitives::{
 	node::UtilityProvider,
 	utils::wrap_binary_data,
 };
-use coset::{CborSerializable, CoseKey, Label};
-use p256::{ecdsa::signature::Verifier, elliptic_curve::generic_array::GenericArray, EncodedPoint};
+use p256::{ecdsa::signature::Verifier, EncodedPoint};
 pub use pallet::*;
 use sp_core::crypto::AccountId32;
 use sp_io::hashing::sha2_256;
@@ -388,31 +387,9 @@ impl<T: Config> Pallet<T> {
 	pub fn check_passkey_signature(
 		payload: &PasskeyPayload<T>,
 	) -> Result<(), TransactionValidityError> {
-		// deserialize to COSE key format and check the key
-		let cose_key = CoseKey::from_slice(&payload.passkey_public_key[..])
+		let encoded_point = EncodedPoint::from_bytes(&payload.passkey_public_key[..])
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(1)))?;
-		let (_, x) = cose_key
-			.params
-			.iter()
-			.find(|(l, _)| l == &Label::Int(-2))
-			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(2)))?;
-		let (_, y) = cose_key
-			.params
-			.iter()
-			.find(|(l, _)| l == &Label::Int(-3))
-			.ok_or(TransactionValidityError::Invalid(InvalidTransaction::Custom(3)))?;
 
-		// convert COSE format to P256 verifying key
-		let encoded_point =
-			EncodedPoint::from_affine_coordinates(
-				GenericArray::from_slice(&x.clone().into_bytes().map_err(|_| {
-					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
-				})?),
-				GenericArray::from_slice(&y.clone().into_bytes().map_err(|_| {
-					TransactionValidityError::Invalid(InvalidTransaction::Custom(4))
-				})?),
-				false,
-			);
 		let verify_key = p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point)
 			.map_err(|_| TransactionValidityError::Invalid(InvalidTransaction::Custom(5)))?;
 
