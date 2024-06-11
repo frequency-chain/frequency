@@ -142,7 +142,7 @@ These are the following technical terms and specifications for the implementatio
 
     interface PasskeyCall {
       accountId: `account_pk`;
-      accountOwnershipProof: `AccountOwnershipProof`;
+      accountOwnershipProof: AccountOwnershipProof;
       nonce: `nonce`;
       call: Call;
     }
