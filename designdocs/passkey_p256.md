@@ -410,8 +410,7 @@ unsigned path.
 
 - Some possible optimizations
   - **Compressed Public Key**: Currently passed Public Key is in **Cose** format, and it's between 70-73 bytes.
-      If the client can parse the Cose Public Key can extract the compressed encoded key. This Public Key can
-      get reduced to 33 bytes.
+      If the client is capable of parsing the Cose Public Key, it can extract the compressed encoded key. This process can reduce the size of the Public Key to just 33 bytes.
   - **Challenge data deduplication**: Currently the challenge data is duplicated in `expected_challenge` and
       in it's serialized format inside `passkey_client_data_json`. If the client is able to parse
       `passkey_client_data_json` and replace the `challenge` field value with an empty string, then during the
