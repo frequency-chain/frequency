@@ -331,7 +331,7 @@ a wrapper around the Original C implementation and unfortunately it doesn't look
 
 #### Extrinsic verification
 
-Currently, the Frequency chain primarily makes use of _SignedExtrinsic_. As we know, every signed extrinsic is validated by a list of SignedExtensions which each verify a different aspect of that extrinsic. The list of signed extensions includes:
+Currently, the Frequency chain primarily makes use of _SignedExtrinsic_. Every signed extrinsic is validated by a list of SignedExtensions which each verify a different aspect of that extrinsic. The list of signed extensions includes:
 
 - **CheckNonce**: Checks the the nonce inside the payload to avoid replay attacks.
 - **ChargeFrqTransactionPayment**: Checks that the transaction fee can be applied to the owner account inside
