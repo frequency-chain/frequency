@@ -28,7 +28,7 @@ describe('Capacity RPC', function () {
     schemaId = await getOrCreateGraphChangeSchema(fundingSource);
     assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
   });
-
+    //comment to trigger test
   beforeEach(async function () {
     capacityProviderKeys = createKeys('CapacityProviderKeys');
     capacityProvider = await createMsaAndProvider(
