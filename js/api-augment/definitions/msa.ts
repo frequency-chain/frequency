@@ -71,8 +71,8 @@ export default {
     },
     DelegationResponse: {
       provider_id: 'ProviderId',
-      permissions: 'Vec<SchemaGrantResponse>'
-    }
+      permissions: 'Vec<SchemaGrantResponse>',
+    },
   },
   runtime: {
     MsaRuntimeApi: [
