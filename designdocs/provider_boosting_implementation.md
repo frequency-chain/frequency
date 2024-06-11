@@ -23,7 +23,7 @@ Provider Boost token rewards are earned only for token staked for a complete Rew
 
 This process will be described in more detail in the Economic Model Design Document.
 
-### NOTE: Actual reward amounts are TBD; amounts are for illustration purposes only
+### NOTE: Actual reward amounts may differ; amounts are for illustration purposes only
 
 ![Provider boosted staking](https://github.com/frequency-chain/frequency/assets/502640/ffb632f2-79c2-4a09-a906-e4de02e4f348)
 
@@ -43,8 +43,7 @@ The Frequency Transaction Payment system allows certain transactions on chain to
 
 # Problem Statement
 
-This document outlines how to implement the Staking for Rewards feature described in [Capacity Staking Rewards Economic Model (TBD)](TBD).
-It does not give regard to what the economic model actually is, since that is yet to be determined.
+This document outlines how to implement the Staking for Rewards feature described in [Capacity Staking Rewards Economic Model](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_boosting_economic_model.md).
 
 ## Glossary
 
@@ -61,42 +60,28 @@ It does not give regard to what the economic model actually is, since that is ye
 
 ### StakingAccountDetails --> StakingDetails
 
-New fields are added. The field **`last_rewarded_at`** is to keep track of the last time rewards were claimed for this Staking Account.
-MaximumCapacity staking accounts MUST always have the value `None` for `last_rewarded_at`.
+A new field, `staking_type` is added to indicate the type of staking the Account holder is doing in relation to this target.
+Staking type may be `MaximumCapacity` or `ProviderBoost`. `MaximumCapacity` is the default value for `staking_type` and maps to 0.
 
 This is a second version of this storage, to replace StakingAccountDetails, and StakingAccountDetails data will need to be migrated.
 
 ```rust
 pub struct StakingDetails<T: Config> {
-    pub active: BalanceOf<T>,
-    pub last_rewards_claimed_at: Option<T::RewardEra>, // NEW  None means never rewarded, Some(RewardEra) means last rewarded RewardEra.
+	/// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
+	pub active: BalanceOf<T>,
+	/// The type of staking for this staking account
+	pub staking_type: StakingType,
 }
 ```
 
-### StakingTargetDetails updates, StakingHistory
-
-A new field, `staking_type` is added to indicate the type of staking the Account holder is doing in relation to this target.
-Staking type may be `MaximumCapacity` or `ProviderBoost`. `MaximumCapacity` is the default value for `staking_type` and maps to 0.
+### ProviderBoostHistories
 
 ```rust
-/// A per-reward-era record for StakingAccount total_staked amount.
-pub struct StakingHistory<Balance, RewardEra> { // NEW
-    total_staked: Balance,
-    reward_era: RewardEra,
-}
-
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
-#[scale_info(skip_type_params(T))]
-pub struct StakingTargetDetails<T: Config> {
-	/// The total amount of tokens that have been targeted to the MSA.
-	pub amount: BalanceOf<T>,
-	/// The total Capacity that an MSA received.
-	pub capacity: BalanceOf<T>,
-	/// The type of staking, which determines ultimate capacity per staked token.
-	pub staking_type: StakingType, // NEW
-    /// total staked amounts for each past era, up to ProviderBoostHistoryLimit eras.
-    pub staking_history: BoundedVec<StakingHistory<BalanceOf<T>, T::RewardEra>, T::ProviderBoostHistoryLimit>, // NEW
-}
+	/// Individual history for each account that has Provider-Boosted.
+	#[pallet::storage]
+	#[pallet::getter(fn get_staking_history_for)]
+	pub type ProviderBoostHistories<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 ```
 
 **Unstaking thaw period**
@@ -111,25 +96,14 @@ more token to a staker-target relationship with type `MaximiumCapacity`.
 However, if one calls `stake` with a `target` that `origin` already has a staker-target relationsip with,
 it is _not_ a `MaximumCapacity` staking type, it will error with `Error::CannotChangeStakingType`.
 
+This means that a single Account Id must choose between staking for Maximum Capacity or staking for Provider Boost + Rewards.
+Those who wish to do both types of staking must use two different accounts, one for each purpose.
+
 #### unstake
 
 The unstake parameters are the same, and unstake behavior is the same for `MaximumCapacity` as before, however
-for a `ProviderBoost` staker-target relationship, the behavior must be different. While it's not feasible to
-store either `reward_pool` history or individual staking reward history indefinitely, it still may be lengthy
-enough that having to calculate _all_ unclaimed rewards for what could be numerous accounts in one block
-could make a block heavier than desired. Therefore there must be a limit limit on how many eras
-one can claim rewards for. This value will likely be a pallet constant. The logic would be:
-
-- If a ProviderBoost stake is `payout_eligible`,
-  - check whether their last payout era is recent enough to pay out all rewards at once.
-  - if so, first pay out all rewards and then continue with rest of unstaking code as is
-  - if not, emit error `MustFirstClaimRewards`, `UnclaimedRewardsOverTooManyEras` or something like that.
-    Don't use `EraOutOfRange` because it will overload the meaning of that error; needs to be something more specific.
-- If not payout eligible,
-  - check whether the last payout era is the current one.
-    - if so, all rewards have been claimed, so continue with rest of unstaking code as is,
-    - if not, it means they have too many unlocking chunks so they'll have to wait. - the unstaking code
-      will catch this anyway and emit `MaxUnlockingChunksExceeded`
+for a `ProviderBoost` staker-target relationship, the behavior must be different. The Provider-Boost account must 
+first claim all unpaid rewards before an unstake can succeed.
 
 ```rust
 pub fn unstake(
@@ -141,55 +115,55 @@ pub fn unstake(
 ```
 
 ### NEW: ProviderBoostRewardsProvider - Economic Model trait
-
-This one is not yet determined, however there are certain functions that will definitely be needed.
-The rewards system will still need to know the `reward_pool_size`.
-
-The struct and method for claiming rewards is probably going to change.
-The `staking_reward_total` for a given staker may not be calculable by the node, depending on the complexity of the
-economic rewards model.
-It's possible that it would be calculated via some app with access to the staker's wallet, and submitted as a proof
-with a payload.
-In that case the `validate_staking_reward_claim` is more likely to be part of the trait.
+The ProviderBoostRewardsProvider trait implementation depends on the chosen economic model and must
+implement the following:
 
 ```rust
-use std::hash::Hash;
-
-pub struct StakingRewardClaim<T: Config> {
-    /// How much is claimed, in token
-    pub claimed_reward: Balance,
-    /// The end state of the staking account if the operations are valid
-    pub staking_account_end_state: StakingDetails,
-    /// The starting era for the claimed reward period, inclusive
-    pub from_era: T::RewardEra,
-    /// The ending era for the claimed reward period, inclusive
-    pub to_era: T::RewardEra,
-}
-
+/// A trait that provides the Economic Model for Provider Boosting.
 pub trait ProviderBoostRewardsProvider<T: Config> {
+	/// the AccountId this provider is using
+	type AccountId;
 
-    /// Calculate the size of the reward pool for the given era, in token
-    fn reward_pool_size() -> BalanceOf<T>;
+	/// the range of blocks over which a Reward Pool is determined and rewards are paid out
+	type RewardEra;
 
-    /// Return the total unclaimed reward in token for `account_id` for `fromEra` --> `toEra`, inclusive
-    /// Errors:
-    ///     - EraOutOfRange when fromEra or toEra are prior to the history retention limit, or greater than the current RewardEra.
-    /// May not be possible depending on economic model complexity.
-    fn staking_reward_total(account_id: T::AccountId, fromEra: T::RewardEra, toEra: T::RewardEra);
+	///  The hasher to use for proofs
+	type Hash;
 
-    /// Validate a payout claim for `account_id`, using `proof` and the provided `payload` StakingRewardClaim.
-    /// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
-    /// Errors: None
-    fn validate_staking_reward_claim(account_id: T::AccountID, proof: Hash, payload: StakingRewardClaim<T>) -> bool;
+	/// The type for currency
+	type Balance;
 
-    /// Calculate a reward for a single era based on a chosen economic model
-    fn era_staking_reward(amount_staked: Self::Balance,
-		total_staked: Self::Balance,
-		reward_pool_size: Self::Balance,
-    ) -> Self::Balance}
+	/// Return the size of the reward pool using the current economic model
+	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
+
+	/// Return the list of unclaimed rewards  for `accountId`, using the current economic model
+	fn staking_reward_totals(
+		account_id: Self::AccountId,
+	) -> Result<BalanceOf<T>, DispatchError>;
+	
+	/// Return whether this account has any unclaimed rewards
+	fn payout_eligible(
+		account_id: Self::AccountId,
+	) -> Result<bool, DispatchError>;
+
+	/// Calculate the reward for a single era.  We don't care about the era number,
+	/// just the values.
+	fn era_staking_reward(
+		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
+		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
+		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
+	) -> BalanceOf<T>;
+
+
+	/// Return the effective amount when staked for a Provider Boost
+	/// The amount is multiplied by a factor > 0 and < 1.
+	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
+}
 ```
 
 ### NEW: Config items
+The list below is not inclusive. Other structures and storage may be needed to support required
+functionality.
 
 ```rust
 pub trait Config: frame_system::Config {
@@ -209,35 +183,41 @@ pub trait Config: frame_system::Config {
                 + TypeInfo;
     /// The number of blocks in a Staking RewardEra
     type EraLength: Get<u32>;
+
     /// The maximum number of eras over which one can claim rewards
     type ProviderBoostHistoryLimit: Get<u32>;
+
     /// The trait providing the ProviderBoost economic model calculations and values
     type RewardsProvider: ProviderBoostRewardsProvider;
+
+    /// The fixed size of the reward pool in each Reward Era.
+    type RewardPoolEachEra: Get<BalanceOf<Self>>;
+
+    /// the percentage cap per era of an individual Provider Boost reward
+    type RewardPercentCap: Get<Permill>;
+
 };
 ```
 
-### NEW: RewardPoolInfo, RewardPoolHistory
 
-Information about the reward pool for a given Reward Era and how it's stored. The size of this pool is limited to
-`ProviderBoostHistoryLimit` but is stored as a CountedStorageMap instead of a BoundedVec for performance reasons:
-
-- claiming rewards for the entire history will be unlikely to be allowed. Iterating over a much smaller range is more performant
-- Fetching/writing the entire history every block could affect block times. Instead, once per block, retrieve the latest record, delete the earliest record and insert a new one
+### NEW: ProviderBoostRewardPools, CurrentEraProviderBoostTotal
+The storage of the total amount staked for the ProviderBoostHistoryLimit number of eras is divided into chunks of
+BoundedBTreeMaps, which store Key = RewardERa, Value = Total stake for that era.  The chunks are updated in rotating fashion
+in order to minimize reads and writes for listing individual rewards, claiming individual rewards, and changing to a 
+new Reward Era, when necessary, during `on_initialize`.
 
 ```rust
-pub struct RewardPoolInfo<Balance> {
-    /// the total staked for rewards in the associated RewardEra
-    pub total_staked_token: Balance,
-    /// the reward pool for this era
-    pub total_reward_pool: Balance,
-    /// the remaining rewards balance to be claimed
-    pub unclaimed_balance: Balance,
-}
+	/// Reward Pool history is divided into chunks of size RewardPoolChunkLength.
+	/// ProviderBoostHistoryLimit is the total number of items, the key is the
+	/// chunk number.
+	#[pallet::storage]
+	#[pallet::getter(fn get_reward_pool_chunk)]
+	pub type ProviderBoostRewardPools<T: Config> =
+		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
 
-/// Reward Pool history
-#[pallet::storage]
-#[pallet::getter(fn get_reward_pool_for_era)]
-pub type StakingRewardPool<T: Config> = <CountedStorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
+	/// How much is staked this era
+	#[pallet::storage]
+	pub type CurrentEraProviderBoostTotal<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 ```
 
 ### NEW: CurrentEra, RewardEraInfo
@@ -269,36 +249,30 @@ pub enum Error<T> {
     CannotChangeStakingType,
     /// The Era specified is too far in the past or is in the future
     EraOutOfRange,
-    /// Rewards were already paid out for the specified Era range
-    IneligibleForPayoutInEraRange,
     /// Attempted to retarget but from and to Provider MSA Ids were the same
     CannotRetargetToSameProvider,
-    /// Rewards were already paid out this era
-    AlreadyClaimedRewardsThisEra,
+    /// There are no rewards eligible to claim.  Rewards have expired, have already been
+    /// claimed, or the first ProviderBoost occurred in the current era.
+    NoRewardsEligibleToClaim,
+    /// Caller must claim rewards before unstaking.
+    MustFirstClaimRewards,
+    /// Too many change_staking_target calls made in this RewardEra.
+    MaxRetargetsExceeded,
+    /// Account either has no staking account at all or it is not a ProviderBoost type 
+    NotAProviderBoostAccount,
 }
 ```
 
 ### NEW Extrinsics
 
-This is the most undecided portion of this design and depends strongly on the chosen economic model for Provider Boosting.
-There are generally two forms that claiming a staking reward could take, and this depends on whether it's possible to
-calculate rewards on chain at all.
-
-Regardless, on success, the claimed rewards are minted and transferred as locked token to the origin, with the existing
-unstaking thaw period for withdrawal (which simply unlocks thawed token amounts as before).
-There is no chunk added; instead the existing unstaking thaw period is applied to last_rewards_claimed_at in StakingDetails.
-
-Forcing stakers to wait a thaw period for every claim is an incentive to claim rewards sooner than later, leveling out
-possible inflationary effects and helping prevent unclaimed rewards from expiring.
-The thaw period must be short enough for all rewards to be claimed before rewards history would end.
-Therefore, it's possible that a complete separate reward claim thaw period would need to be used.
-
-For all forms of claim_staking_reward, the event `StakingRewardClaimed` is emitted with the parameters of the extrinsic.
-
 #### provider_boost(origin, target, amount)
 
 Like `stake`, except this extrinsic creates or adds staked token to a `ProviderBoost` type staker-target relationship.
 In the case of an increase in stake, `staking_type` MUST be a `ProviderBoost` type, or else it will error with `Error::CannotChangeStakingType`.
+
+This means that a single Account Id (origin) must choose between staking for Maximum Capacity or staking for Provider Boost + Rewards.
+Those who wish to do both types of staking must use two different accounts, one for each purpose.
+
 
 ```rust
 pub fn provider_boost(
@@ -308,53 +282,22 @@ pub fn provider_boost(
 ) -> DispatchResult {}
 ```
 
-#### 1. claim_staking_reward(origin, from_era, to_era), simple economic model
+#### 1. claim_rewards(origin)
+Mints and transfers all unclaimed rewards to origin.
+The event `StakingRewardClaimed` is emitted with the parameters of the extrinsic.
 
-In the case of a simple economic model such as a fixed rate return, reward calculations may be done on chain -
-within discussed limits.
 
 ```rust
-/// Claim Provider Boost rewards from `from_era` to `to_era`, inclusive.
-/// from_era: if None, since last_reward_claimed_at
-/// to_era: if None, to CurrentEra - 1
+/// Claim all outstanding Provider Boost rewards, up to ProviderBoostHistoryLimit Reward Eras 
+/// in the past.  Accounts should check for unclaimed rewards before calling this extrinsic
+/// to avoid needless transaction fees.
 ///  Errors:
-///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
-///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-///     - EraOutOfRange:
-///         - if `from_era` is earlier than history storage
-///         - if `to_era` is >= current era
-///         - if `to_era` - `from_era` > ProviderBoostHistoryLimit
+///     - NotAProviderBoostAccount:  if Origin has nothing staked for ProviderBoost
+///     - NothingToClaim:  if Origin has no unclaimed rewards to pay out.
 #[pallet::call_index(n)]
 pub fn claim_staking_reward(
    origin: OriginFor<T>,
-   from_era: Option<T::RewardEra>,
-   to_era: Option<T::RewardEra>
 );
-```
-
-#### 2. claim_staking_reward(origin,proof,payload)
-
-TBD whether this is the form for claiming rewards.
-This could be the form if calculations are done off chain and submitted for validation.
-
-```rust
-    /// Validates the reward claim. If validated, mints token and transfers to Origin.
-    /// Errors:
-    ///     - NotAStakingAccount:  if Origin does not own the StakingRewardDetails in the claim.
-    ///     - StakingRewardClaimInvalid:  if validation of calculation fails
-    ///     - IneligibleForPayoutInEraRange:  if rewards were already paid out in the provided RewardEra range
-    ///     - EraOutOfRange:
-    ///         - if `from_era` is earlier than history storage
-    ///         - if `to_era` is >= current era
-    ///         - if `to_era` - `from_era` > ProviderBoostHistoryLimit
-    #[pallet::call_index(n)]
-    pub fn claim_staking_reward(
-        origin: OriginFor<T>,
-        /// `proof` - the Merkle proof for the reward claim
-        proof: Hash,
-        /// The staking reward claim payload for which the proof was generated
-        payload: StakingRewardClaim<T>
-    );
 ```
 
 #### 3. change_staking_target(origin, from, to, amount)
@@ -390,18 +333,17 @@ pub fn change_staking_target(
 
 ### NEW: Capacity pallet helper function
 
-#### payout_eligible
+#### has_unclaimed_rewards
 
 Returns whether `account_id` can claim a reward at all.
 This function will return false if there is no staker-target relationship.
 Staking accounts may claim rewards:
 
-- ONCE per RewardEra,
+- Once per RewardEra - in which all outstanding rewards are paid out.
 - Only for funds staked for a complete RewardEra, i.e. the balance at the end of the Era,
-- Must wait for the thaw period to claim rewards again (see `last_rewards_claimed_at`)
 
 ```rust
-fn payout_eligible(account_id: AccountIdOf<T>) -> bool;
+fn has_unclaimed_rewards(account_id: AccountIdOf<T>) -> bool;
 ```
 
 ### NEW RPCS
@@ -412,16 +354,16 @@ The form of this will depend on whether the rewards calculation for an individua
 with a submitted proof. If externally, then unclaimed rewards would not include an earned amount.
 
 ```rust
-pub struct UnclaimedRewardInfo {
-    /// The Reward Era for which this reward was earned
-    reward_era: RewardEra,
-    /// An ISO8701 string, UTC, estimated using current block time, and the number of blocks between
-    /// the current block and the block when this era's RewardPoolInfo would be removed from StakingRewardPool history
-    expires_at: string,
-    /// The amount staked in this era
-    staked_amount: BalanceOf<T>,
-    /// The amount in token of the reward (only if it can be calculated using only on chain data)
-    earned_amount: BalanceOf<T>
+pub struct UnclaimedRewardInfo<T: Config> {
+	/// The Reward Era for which this reward was earned
+	pub reward_era: T::RewardEra,
+	/// When this reward expires, i.e. can no longer be claimed
+	pub expires_at_block: BlockNumberFor<T>,
+	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
+	/// staked in this era.
+	pub eligible_amount: BalanceOf<T>,
+	/// The amount in token of the reward (only if it can be calculated using only on chain data)
+	pub earned_amount: BalanceOf<T>,
 }
 
 /// Check what unclaimed rewards origin has and how long they have left to claim them

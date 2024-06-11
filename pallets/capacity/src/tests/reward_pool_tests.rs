@@ -78,6 +78,7 @@ fn get_total_stake_for_past_era_works_with_partly_filled_single_chunk() {
 		assert_eq!(Capacity::get_total_stake_for_past_era(1, 3), Ok(100));
 		assert_eq!(Capacity::get_total_stake_for_past_era(2, 3), Ok(200));
 		assert!(Capacity::get_total_stake_for_past_era(3, 3).is_err());
+		assert!(Capacity::get_total_stake_for_past_era(99, 3).is_err());
 	})
 }
 
@@ -116,7 +117,7 @@ fn get_total_stake_for_past_era_works_with_2_full_chunks() {
 #[test]
 fn get_total_stake_for_past_era_works_with_full_reward_pool() {
 	new_test_ext().execute_with(|| {
-		System::set_block_number(72);
+		System::set_block_number(121);
 		let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 		set_era_and_reward_pool(13, 121, (2000u32).into());
 
