@@ -24,11 +24,11 @@ describe('Capacity RPC', function () {
   let defaultPayload: AddProviderPayload;
 
   before(async function () {
-    // Create schemas for testing with Grant Delegation to test pay_with_capacity
+    // Create schemas for testing with Grant Delegation to test pay_with_capacity.
     schemaId = await getOrCreateGraphChangeSchema(fundingSource);
     assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
   });
-    //comment to trigger test
+
   beforeEach(async function () {
     capacityProviderKeys = createKeys('CapacityProviderKeys');
     capacityProvider = await createMsaAndProvider(
