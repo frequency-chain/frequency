@@ -429,7 +429,7 @@ unsigned path.
     // RegistrationResponseJSON is the data that PassKey authenticator returns after registeration
     const verification = await verifyRegistrationResponse({
         response: body as RegistrationResponseJSON,
-        // challenge that server expects and provided for registeration
+        // challenge that server expects and provided for registration
         expectedChallenge: currentChallenge,
         expectedOrigin: origin,
         expectedRPID: rpID,
