@@ -52,6 +52,16 @@ impl From<DelegatorId> for MessageSourceId {
 	}
 }
 
+/// RPC response for getting delegated providers with their permissions
+#[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
+#[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
+pub struct DelegationResponse<SchemaId, BlockNumber> {
+	/// SchemaId of schema for which permission is/was granted
+	pub provider_id: ProviderId,
+	/// The list of schema permissions grants
+	pub permissions: Vec<SchemaGrant<SchemaId, BlockNumber>>,
+}
+
 /// RPC response for getting schema permission grants
 #[cfg_attr(feature = "std", derive(Deserialize, Serialize))]
 #[derive(TypeInfo, RuntimeDebug, Clone, Decode, Encode, MaxEncodedLen, Eq)]
@@ -60,6 +70,16 @@ pub struct SchemaGrant<SchemaId, BlockNumber> {
 	pub schema_id: SchemaId,
 	/// Block number the permission was/will be revoked (0 = not revoked)
 	pub revoked_at: BlockNumber,
+}
+
+impl<SchemaId, BlockNumber> PartialEq for DelegationResponse<SchemaId, BlockNumber>
+where
+	SchemaId: PartialEq,
+	BlockNumber: PartialEq,
+{
+	fn eq(&self, other: &Self) -> bool {
+		self.provider_id == other.provider_id && self.permissions == other.permissions
+	}
 }
 
 impl<SchemaId, BlockNumber> SchemaGrant<SchemaId, BlockNumber> {

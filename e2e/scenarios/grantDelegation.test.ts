@@ -211,6 +211,26 @@ describe('Delegation Scenario Tests', function () {
       const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
       assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
     });
+
+    it('should get all delegations and grants', async function () {
+      const payload = await generateDelegationPayload({
+        authorizedMsaId: providerId,
+        schemaIds: [schemaId, schemaId2],
+      });
+      const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
+      const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+        keys,
+        providerKeys,
+        signPayloadSr25519(keys, addProviderData),
+        payload
+      );
+      const { target: grantDelegationEvent } = await grantDelegationOp.fundAndSend(fundingSource);
+      assert.notEqual(grantDelegationEvent, undefined, 'should have returned DelegationGranted event');
+
+      const grants = await ExtrinsicHelper.apiPromise.rpc.msa.getAllGrantedDelegationsByMsaId(msaId);
+      assert.deepStrictEqual(grants.length, 1);
+      assert.deepStrictEqual(grants[0].provider_id.toNumber(), providerId.toNumber());
+    });
   });
 
   describe('revoke schema permissions', function () {

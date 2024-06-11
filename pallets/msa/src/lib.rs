@@ -64,6 +64,7 @@ use sp_runtime::{
 };
 use sp_std::prelude::*;
 
+use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
@@ -1321,28 +1322,41 @@ impl<T: Config> Pallet<T> {
 	///
 	pub fn get_granted_schemas_by_msa_id(
 		delegator: DelegatorId,
-		provider: ProviderId,
-	) -> Result<Option<Vec<SchemaGrant<SchemaId, BlockNumberFor<T>>>>, DispatchError> {
-		let provider_info =
-			Self::get_delegation_of(delegator, provider).ok_or(Error::<T>::DelegationNotFound)?;
+		provider: Option<ProviderId>,
+	) -> Result<Vec<DelegationResponse<SchemaId, BlockNumberFor<T>>>, DispatchError> {
+		let delegations = match provider {
+			Some(provider_id) => vec![(
+				provider_id,
+				Self::get_delegation_of(delegator, provider_id)
+					.ok_or(Error::<T>::DelegationNotFound)?,
+			)],
+			None => DelegatorAndProviderToDelegation::<T>::iter_prefix(delegator).collect(),
+		};
 
-		let schema_permissions = provider_info.schema_permissions;
-		if schema_permissions.is_empty() {
-			return Err(Error::<T>::SchemaNotGranted.into());
-		}
-
-		let mut schema_list = Vec::new();
-		for (schema_id, revoked_at) in schema_permissions {
-			if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
-				(revoked_at > provider_info.revoked_at ||
-					revoked_at == BlockNumberFor::<T>::zero())
-			{
-				schema_list.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
-			} else {
-				schema_list.push(SchemaGrant { schema_id, revoked_at });
+		let mut result = vec![];
+		for (provider_id, provider_info) in delegations {
+			let schema_permissions = provider_info.schema_permissions;
+			if schema_permissions.is_empty() {
+				return Err(Error::<T>::SchemaNotGranted.into());
 			}
+
+			let mut schema_list = Vec::new();
+			for (schema_id, revoked_at) in schema_permissions {
+				if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
+					(revoked_at > provider_info.revoked_at ||
+						revoked_at == BlockNumberFor::<T>::zero())
+				{
+					schema_list
+						.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
+				} else {
+					schema_list.push(SchemaGrant { schema_id, revoked_at });
+				}
+			}
+
+			result.push(DelegationResponse { provider_id, permissions: schema_list });
 		}
-		Ok(Some(schema_list))
+
+		Ok(result)
 	}
 
 	/// Adds a signature to the `PayloadSignatureRegistryList`

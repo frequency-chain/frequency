@@ -1404,9 +1404,19 @@ impl_runtime_apis! {
 		}
 
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
+			match Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)) {
+				Ok(res) => match res.into_iter().next() {
+					Some(delagation) => Some(delagation.permissions),
+					None => None,
+				},
+				_ => None,
+			}
+		}
+
+		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
+			match Msa::get_granted_schemas_by_msa_id(delegator, None) {
 				Ok(x) => x,
-				Err(_) => None,
+				Err(_) => vec![],
 			}
 		}
 	}
