@@ -1,8 +1,8 @@
 use super::mock::*;
 use crate::{
 	Config, CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory,
-	ProviderBoostRewardClaim, ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails,
-	StakingType::*, UnclaimedRewardInfo,
+	ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails, StakingType::*,
+	UnclaimedRewardInfo,
 };
 use frame_support::{assert_err, assert_ok, traits::Len};
 
@@ -11,41 +11,6 @@ use crate::tests::testing_utils::{
 };
 use common_primitives::msa::MessageSourceId;
 use sp_core::{Get, H256};
-
-#[test]
-fn staking_reward_total_happy_path() {
-	new_test_ext().execute_with(|| {
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 11, started_at: 100 });
-		// this calls the implementation in the pallet
-		assert_eq!(Ok(5u64), Capacity::staking_reward_total(1, 5u32, 10u32));
-		let proof = H256::random();
-		let payload: ProviderBoostRewardClaim<Test> = ProviderBoostRewardClaim {
-			claimed_reward: 1,
-			staking_account_end_state: StakingDetails { active: 1, staking_type: MaximumCapacity },
-			from_era: 1,
-			to_era: 5,
-		};
-		assert!(Capacity::validate_staking_reward_claim(4, proof, payload));
-	})
-}
-
-#[test]
-fn payout_eligible_happy_path() {
-	new_test_ext().execute_with(|| {
-		let is_eligible = Capacity::payout_eligible(1);
-		assert!(!is_eligible);
-	})
-}
-
-#[test]
-fn test_staking_reward_total_era_out_of_range() {
-	new_test_ext().execute_with(|| {
-		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 10, started_at: 100 });
-		assert_err!(Capacity::staking_reward_total(1, 5u32, 4u32), Error::<Test>::EraOutOfRange);
-		assert_err!(Capacity::staking_reward_total(1, 15u32, 5u32), Error::<Test>::EraOutOfRange);
-		assert_err!(Capacity::staking_reward_total(1, 5u32, 13u32), Error::<Test>::EraOutOfRange);
-	});
-}
 
 // This tests Capacity implementation of the trait, but uses the mock's constants,
 // to ensure that it's correctly specified in the pallet.

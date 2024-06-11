@@ -141,11 +141,6 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 		account_id: Self::AccountId,
 	) -> Result<BalanceOf<T>, DispatchError>;
 	
-	/// Return whether this account has any unclaimed rewards
-	fn payout_eligible(
-		account_id: Self::AccountId,
-	) -> Result<bool, DispatchError>;
-
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(

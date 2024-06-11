@@ -994,14 +994,6 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	/// Returns whether `account_id` may claim and and be paid token rewards.
-	#[allow(unused)]
-	pub(crate) fn payout_eligible(account_id: T::AccountId) -> bool {
-		let _staking_account =
-			Self::get_staking_account_for(account_id).ok_or(Error::<T>::NotAStakingAccount);
-		false
-	}
-
 	/// attempts to increment number of retargets this RewardEra
 	/// Returns:
 	///     Error::MaxRetargetsExceeded if they try to retarget too many times in one era.

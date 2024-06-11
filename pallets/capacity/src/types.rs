@@ -273,12 +273,6 @@ where
 /// RewardEra is the key and the total stake for the RewardPool is the value.
 /// the map has up to T::RewardPoolChunkLength items, however, the chunk storing the current era
 /// has only that one.
-// TODO: on new era, copy CurrentEraProviderBoostTotal value to highest-era chunk
-// TODO: on new era, delete oldest era value.
-// TODO: on new era, zero out total in CurrentEraProviderBoostTotal
-// TODO: on boost/unstake: update CEPBT
-// TODO: on list_unclaimed_rewards, use new struct
-// TODO: on has_unclaimed_rewards, use_new_struct
 #[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct RewardPoolHistoryChunk<T: Config>(
@@ -309,7 +303,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// returns the range of 		eras in this chunk
-	/// TODO: needed?
+	/// Used in testing
 	pub fn era_range(&self) -> (T::RewardEra, T::RewardEra) {
 		let zero_reward_era: T::RewardEra = Zero::zero();
 		let zero_balance: BalanceOf<T> = Zero::zero();
@@ -327,14 +321,8 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 		self.0.try_insert(reward_era, total)
 	}
 
-	/// A wrapper for removing a reward era entry from the BoundedBTreeMap
-	/// Returns the total stored at that entry.
-	/// TODO: needed?
-	pub fn remove(&mut self, reward_era: &T::RewardEra) -> Option<BalanceOf<T>> {
-		self.0.remove(reward_era)
-	}
-
 	/// Get the earliest reward era stored in this BoundedBTreeMap
+	/// Used only in testing.
 	pub fn earliest_era(&self) -> Option<&T::RewardEra> {
 		if let Some((first_era, _first_total)) = self.0.first_key_value() {
 			return Some(first_era);
