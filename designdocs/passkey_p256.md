@@ -414,7 +414,7 @@ unsigned path.
       get reduced to 33 bytes.
   - **Challenge data deduplication**: Currently the challenge data is duplicated in `expected_challenge` and
       in it's serialized format inside `passkey_client_data_json`. If the client is able to parse
-      `passkey_client_data_json` and replace `challenge` field value with empty string, then during the
+      `passkey_client_data_json` and replace the `challenge` field value with an empty string, then during the
       signature check we can replace that empty string with `expected_challenge` which would allow us to
       reduce the transaction size by around **40%**. It is important that the order of the field `passkey_client_data_json`  does not change during this operation since that would generate a different signature.
   - **Signing hash of payload**: Since there might be a size limit for the data that can get signed
