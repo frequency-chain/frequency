@@ -426,7 +426,7 @@ unsigned path.
 #### PassKey Registration Verification
 
 ```typescript
-    // RegistrationResponseJSON is the data that PassKey authenticator returns after registeration
+    // RegistrationResponseJSON is the data that PassKey authenticator returns after registration
     const verification = await verifyRegistrationResponse({
         response: body as RegistrationResponseJSON,
         // challenge that server expects and provided for registration
