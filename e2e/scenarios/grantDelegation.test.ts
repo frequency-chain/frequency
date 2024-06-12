@@ -15,7 +15,6 @@ import {
 } from '../scaffolding/helpers';
 import { SchemaGrantResponse, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
-import { threadId } from 'node:worker_threads';
 
 const fundingSource = getFundingSource('scenarios-grant-delegation');
 
