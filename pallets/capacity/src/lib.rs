@@ -410,7 +410,7 @@ pub mod pallet {
 		/// There are no rewards eligible to claim.  Rewards have expired, have already been
 		/// claimed, or boosting has never been done before the current era.
 		NoRewardsEligibleToClaim,
-		/// Caller must wait until the next RewardEra, claim rewards and then can boost again.
+		/// Caller must claim rewards before unstaking.
 		MustFirstClaimRewards,
 		/// Too many change_staking_target calls made in this RewardEra. (20)
 		MaxRetargetsExceeded,
@@ -972,14 +972,6 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	/// Returns whether `account_id` may claim and and be paid token rewards.
-	#[allow(unused)]
-	pub(crate) fn payout_eligible(account_id: T::AccountId) -> bool {
-		let _staking_account =
-			Self::get_staking_account_for(account_id).ok_or(Error::<T>::NotAStakingAccount);
-		false
-	}
-
 	/// attempts to increment number of retargets this RewardEra
 	/// Returns:
 	///     Error::MaxRetargetsExceeded if they try to retarget too many times in one era.
@@ -1153,9 +1145,9 @@ impl<T: Config> Pallet<T> {
 		Ok(*total_for_era)
 	}
 
-	/// Get the index of the chunk for a given era, hustory limit, and chunk length
+	/// Get the index of the chunk for a given era, history limit, and chunk length
 	/// Example with history limit of 6 and chunk length 3:
-	/// - Arrange the chuncks such that we overwrite a complete chunk only when it is not needed
+	/// - Arrange the chunks such that we overwrite a complete chunk only when it is not needed
 	/// - The cycle is thus era modulo (history limit + chunk length)
 	/// - `[0,1,2],[3,4,5],[6,7,8]`
 	/// - The second step is which chunk to add to:
@@ -1280,33 +1272,15 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	type Hash = T::Hash;
 	type Balance = BalanceOf<T>;
 
-	// Calculate the size of the reward pool for the current era, based on current staked token
-	// and the other determined factors of the current economic model
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
 		T::RewardPoolEachEra::get()
 	}
 
-	// Performs range checks plus a reward calculation based on economic model for the era range
-	fn staking_reward_total(
+	// TODO: implement or pull in list_unclaimed_rewards fn
+	fn staking_reward_totals(
 		_account_id: Self::AccountId,
-		from_era: Self::RewardEra,
-		to_era: Self::RewardEra,
-	) -> Result<Self::Balance, DispatchError> {
-		let era_range = from_era.saturating_sub(to_era);
-		ensure!(
-			era_range.le(&T::ProviderBoostHistoryLimit::get().into()),
-			Error::<T>::EraOutOfRange
-		);
-		ensure!(from_era.le(&to_era), Error::<T>::EraOutOfRange);
-		let current_era_info = Self::get_current_era();
-		ensure!(to_era.lt(&current_era_info.era_index), Error::<T>::EraOutOfRange);
-
-		// TODO: update after staking history is implemented
-		// For now rewards 1 unit per era for a valid range since there is no history storage
-		let per_era = BalanceOf::<T>::one();
-
-		let num_eras = to_era.saturating_sub(from_era);
-		Ok(per_era.saturating_mul(num_eras.into()))
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError> {
+		Ok(BoundedVec::new())
 	}
 
 	/// Calculate the reward for a single era.  We don't care about the era number,
@@ -1322,14 +1296,6 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 			.checked_div(&era_total_staked)
 			.unwrap_or_else(|| Zero::zero());
 		proportional_reward.min(capped_reward)
-	}
-
-	fn validate_staking_reward_claim(
-		_account_id: Self::AccountId,
-		_proof: Self::Hash,
-		_payload: ProviderBoostRewardClaim<T>,
-	) -> bool {
-		true
 	}
 
 	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
