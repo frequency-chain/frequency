@@ -1,0 +1,30 @@
+name: "Check Migrations Paseo"
+description: "An action to check runtime migrations"
+inputs:
+  github-token:
+    description: "GitHub token"
+    required: true
+  runtime-package:
+    description: "The package name of the runtime"
+    required: true
+  runtime-uri:
+    description: "The URI of the runtime"
+    required: true
+outputs:
+  migration-success:
+    description: "Whether the migration was successful"
+    required: true
+  
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Run runtime checks
+      uses: paritytech/try-runtime-gha@v0.1.0
+      with:
+        runtime-package: ${{ inputs.runtime-package }}
+        node-uri: ${{ inputs.runtime-uri }}
+        checks: "pre-and-post"
+
