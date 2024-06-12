@@ -6,6 +6,17 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+#[cfg(feature = "std")]
+#[allow(clippy::expect_used)]
+/// Wasm binary unwrapped. If built with `WASM_BINARY`, the function panics.
+pub fn wasm_binary_unwrap() -> &'static [u8] {
+	WASM_BINARY.expect(
+		"wasm binary is not available. This means the client is \
+                        built with `WASM_BINARY` flag and it is only usable for \
+                        production chains. Please rebuild with the flag disabled.",
+	)
+}
+
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
 use sp_api::impl_runtime_apis;
@@ -40,6 +51,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
+	genesis_builder_helper::{build_config, create_default_config},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{
@@ -331,7 +343,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 84,
+	spec_version: 85,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -345,7 +357,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 84,
+	spec_version: 85,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -922,12 +934,13 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
-	type DmpMessageHandler = ();
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
 	type ReservedDmpWeight = ();
 	type OutboundXcmpMessageSource = ();
 	type XcmpMessageHandler = ();
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
+	type WeightInfo = ();
 	// TODO: Remove this when Async Backing is activated and the feature is set for cumulus-pallet-parachain-system
 	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = ConsensusHook;
@@ -1323,6 +1336,16 @@ impl_runtime_apis! {
 			encoded: Vec<u8>,
 		) -> Option<Vec<(Vec<u8>, KeyTypeId)>> {
 			SessionKeys::decode_into_raw_public_keys(&encoded)
+		}
+	}
+
+	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
+		fn create_default_config() -> Vec<u8> {
+			create_default_config::<RuntimeGenesisConfig>()
+		}
+
+		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
+			build_config::<RuntimeGenesisConfig>(config)
 		}
 	}
 
