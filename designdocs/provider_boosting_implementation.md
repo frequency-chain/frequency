@@ -197,7 +197,7 @@ pub trait Config: frame_system::Config {
 
 ### NEW: ProviderBoostRewardPools, CurrentEraProviderBoostTotal
 The storage of the total amount staked for the ProviderBoostHistoryLimit number of eras is divided into chunks of
-BoundedBTreeMaps, which store Key = RewardERa, Value = Total stake for that era.  The chunks are updated in rotating fashion
+BoundedBTreeMaps, which store Key = RewardEra, Value = Total stake for that era.  The chunks are updated in rotating fashion
 in order to minimize reads and writes for listing individual rewards, claiming individual rewards, and changing to a 
 new Reward Era, when necessary, during `on_initialize`.
 
