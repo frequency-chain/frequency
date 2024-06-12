@@ -1,8 +1,8 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardClaim,
-	ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
+	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, UnclaimedRewardInfo,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -11,6 +11,7 @@ use common_primitives::{
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{ConstU16, ConstU32, ConstU64},
+	BoundedVec,
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
@@ -150,16 +151,13 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		10_000u64.into()
 	}
 
-	fn staking_reward_total(
+	fn staking_reward_totals(
 		account_id: Self::AccountId,
-		_from_era: Self::RewardEra,
-		_to_era: Self::RewardEra,
-	) -> Result<Self::Balance, DispatchError> {
-		if account_id > 2u64 {
-			Ok(10u64)
-		} else {
-			Ok(1u64)
-		}
+	) -> Result<
+		BoundedVec<UnclaimedRewardInfo<Test>, <Test as Config>::ProviderBoostHistoryLimit>,
+		DispatchError,
+	> {
+		Ok(BoundedVec::new())
 	}
 
 	// use the pallet version of the era calculation.
@@ -169,14 +167,6 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		reward_pool_size: Self::Balance,
 	) -> Self::Balance {
 		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
-	}
-
-	fn validate_staking_reward_claim(
-		_account_id: Self::AccountId,
-		_proof: Self::Hash,
-		_payload: ProviderBoostRewardClaim<Test>,
-	) -> bool {
-		true
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {

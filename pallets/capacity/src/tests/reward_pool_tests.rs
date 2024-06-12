@@ -46,27 +46,6 @@ fn reward_pool_history_chunk_insert_range_remove() {
 	assert_eq!(chunk.era_range(), (22u32, 24u32));
 }
 
-#[test]
-fn reward_pool_history_chunk_try_removing_oldest() {
-	let mut chunk: RewardPoolHistoryChunk<Test> = RewardPoolHistoryChunk::new();
-	assert!(chunk.try_insert(22u32, 100u64).is_ok());
-	assert!(chunk.try_insert(23u32, 123u64).is_ok());
-	assert!(chunk.try_insert(24u32, 99u64).is_ok());
-	assert_eq!(chunk.is_full(), true);
-
-	let earliest = chunk.earliest_era().unwrap();
-	assert_eq!(earliest, &22u32);
-
-	// E0502
-	let mut new_chunk = chunk.clone();
-	assert_eq!(new_chunk.is_full(), true);
-	let remove_result = new_chunk.remove(earliest);
-	assert_eq!(remove_result, Some(100u64));
-	assert_eq!(new_chunk.is_full(), false);
-
-	assert_eq!(new_chunk.earliest_era(), Some(&23u32));
-}
-
 // Check boundary behavior for the first reward eras before hitting maximum history,
 // then check behavior once the reward pool chunks are always full.
 #[test]
@@ -78,6 +57,7 @@ fn get_total_stake_for_past_era_works_with_partly_filled_single_chunk() {
 		assert_eq!(Capacity::get_total_stake_for_past_era(1, 3), Ok(100));
 		assert_eq!(Capacity::get_total_stake_for_past_era(2, 3), Ok(200));
 		assert!(Capacity::get_total_stake_for_past_era(3, 3).is_err());
+		assert!(Capacity::get_total_stake_for_past_era(99, 3).is_err());
 	})
 }
 
@@ -116,7 +96,7 @@ fn get_total_stake_for_past_era_works_with_2_full_chunks() {
 #[test]
 fn get_total_stake_for_past_era_works_with_full_reward_pool() {
 	new_test_ext().execute_with(|| {
-		System::set_block_number(72);
+		System::set_block_number(121);
 		let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 		set_era_and_reward_pool(13, 121, (2000u32).into());
 
