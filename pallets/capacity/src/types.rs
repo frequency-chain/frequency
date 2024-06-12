@@ -273,12 +273,6 @@ where
 /// RewardEra is the key and the total stake for the RewardPool is the value.
 /// the map has up to T::RewardPoolChunkLength items, however, the chunk storing the current era
 /// has only that one.
-// TODO: on new era, copy CurrentEraProviderBoostTotal value to highest-era chunk
-// TODO: on new era, delete oldest era value.
-// TODO: on new era, zero out total in CurrentEraProviderBoostTotal
-// TODO: on boost/unstake: update CEPBT
-// TODO: on list_unclaimed_rewards, use new struct
-// TODO: on has_unclaimed_rewards, use_new_struct
 #[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]
 pub struct RewardPoolHistoryChunk<T: Config>(
@@ -309,7 +303,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// returns the range of 		eras in this chunk
-	/// TODO: needed?
+	/// Used in testing
 	pub fn era_range(&self) -> (T::RewardEra, T::RewardEra) {
 		let zero_reward_era: T::RewardEra = Zero::zero();
 		let zero_balance: BalanceOf<T> = Zero::zero();
@@ -327,14 +321,8 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 		self.0.try_insert(reward_era, total)
 	}
 
-	/// A wrapper for removing a reward era entry from the BoundedBTreeMap
-	/// Returns the total stored at that entry.
-	/// TODO: needed?
-	pub fn remove(&mut self, reward_era: &T::RewardEra) -> Option<BalanceOf<T>> {
-		self.0.remove(reward_era)
-	}
-
 	/// Get the earliest reward era stored in this BoundedBTreeMap
+	/// Used only in testing.
 	pub fn earliest_era(&self) -> Option<&T::RewardEra> {
 		if let Some((first_era, _first_total)) = self.0.first_key_value() {
 			return Some(first_era);
@@ -518,18 +506,6 @@ impl<T: Config> RetargetInfo<T> {
 	}
 }
 
-/// A claim to be rewarded `claimed_reward` in token value
-pub struct ProviderBoostRewardClaim<T: Config> {
-	/// How much is claimed, in token
-	pub claimed_reward: BalanceOf<T>,
-	/// The end state of the staking account if the operations are valid
-	pub staking_account_end_state: StakingDetails<T>,
-	/// The starting era for the claimed reward period, inclusive
-	pub from_era: T::RewardEra,
-	/// The ending era for the claimed reward period, inclusive
-	pub to_era: T::RewardEra,
-}
-
 /// A trait that provides the Economic Model for Provider Boosting.
 pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// the AccountId this provider is using
@@ -544,17 +520,13 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// The type for currency
 	type Balance;
 
-	/// Calculate the size of the reward pool using the current economic model
+	/// Return the size of the reward pool using the current economic model
 	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
-	/// Return the total unclaimed reward in token for `accountId` for `from_era` --> `to_era`, inclusive
-	/// Errors:
-	///     - EraOutOfRange when from_era or to_era are prior to the history retention limit, or greater than the current Era.
-	fn staking_reward_total(
+	/// Return the list of unclaimed rewards  for `accountId`, using the current economic model
+	fn staking_reward_totals(
 		account_id: Self::AccountId,
-		from_era: Self::RewardEra,
-		to_era: Self::RewardEra,
-	) -> Result<BalanceOf<T>, DispatchError>;
+	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError>;
 
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
@@ -563,18 +535,6 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
 		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
 	) -> BalanceOf<T>;
-
-	/// Validate a payout claim for `accountId`, using `proof` and the provided `payload` ProviderBoostRewardClaim.
-	/// Returns whether the claim passes validation.  Accounts must first pass `payoutEligible` test.
-	/// Errors:
-	///     - NotAStakingAccount
-	///     - MaxUnlockingChunksExceeded
-	///     - All other conditions that would prevent a reward from being claimed return 'false'
-	fn validate_staking_reward_claim(
-		account_id: Self::AccountId,
-		proof: Self::Hash,
-		payload: ProviderBoostRewardClaim<T>,
-	) -> bool;
 
 	/// Return the effective amount when staked for a Provider Boost
 	/// The amount is multiplied by a factor > 0 and < 1.
