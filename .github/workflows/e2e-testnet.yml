@@ -5,19 +5,17 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
-  workflow_dispatch:
-    inputs:
-      release-version:
-        description: "Test Release version (v#.#.#[-rc#])"
-        required: true
+  push:
+    branches:
+      - wil/test-e2e-tests
 
 env:
-  TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  TAG_FROM_UI: v1.12.0
 
 jobs:
   run-e2e:
     name: Run E2E Tests
-    runs-on: ubuntu-22.04
+    runs-on: [self-hosted, Linux, X64, benchmark]
     container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Validate
@@ -52,6 +50,7 @@ jobs:
         working-directory: e2e
         env:
           CHAIN_ENVIRONMENT: paseo-testnet
-          WS_PROVIDER_URL: ${{ vars.E2E_TESTNET_PASEO_RPC }}
+          # WS_PROVIDER_URL: ${{ vars.E2E_TESTNET_PASEO_RPC }}
+          WS_PROVIDER_URL: ws://10.40.6.79:9944
           FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.PASEO_E2E_TEST_SEED_PHRASE }}
         run: npm run test:relay

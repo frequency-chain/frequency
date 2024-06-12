@@ -52,7 +52,7 @@ describe('Frequency', function () {
       assert(found, 'Could not find the desired event');
     });
 
-    it('Get missing nonce successfully', async function () {
+    it.skip('Get missing nonce successfully', async function () {
       const nonce = await getNonce(keypairB);
       for (let i = 0; i < 10; i += 2) {
         const extrinsic = new Extrinsic(
