@@ -330,7 +330,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 82,
+	spec_version: 83,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +344,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 82,
+	spec_version: 83,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1404,9 +1404,19 @@ impl_runtime_apis! {
 		}
 
 		fn get_granted_schemas_by_msa_id(delegator: DelegatorId, provider: ProviderId) -> Option<Vec<SchemaGrant<SchemaId, BlockNumber>>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, provider) {
+			match Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)) {
+				Ok(res) => match res.into_iter().next() {
+					Some(delegation) => Some(delegation.permissions),
+					None => None,
+				},
+				_ => None,
+			}
+		}
+
+		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
+			match Msa::get_granted_schemas_by_msa_id(delegator, None) {
 				Ok(x) => x,
-				Err(_) => None,
+				Err(_) => vec![],
 			}
 		}
 	}

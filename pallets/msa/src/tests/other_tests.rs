@@ -18,8 +18,8 @@ use crate::{
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegatorId, ProviderId, ProviderRegistryEntry, SchemaGrant,
-		SchemaGrantValidator,
+		Delegation, DelegationResponse, DelegatorId, ProviderId, ProviderRegistryEntry,
+		SchemaGrant, SchemaGrantValidator,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
@@ -449,7 +449,7 @@ pub fn error_not_delegated_rpc() {
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
 		assert_err!(
-			Msa::get_granted_schemas_by_msa_id(delegator, provider),
+			Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)),
 			Error::<Test>::DelegationNotFound
 		);
 	})
@@ -462,7 +462,7 @@ pub fn error_schema_not_granted_rpc() {
 		let delegator = DelegatorId(2);
 		assert_ok!(Msa::add_provider(provider, delegator, Vec::default()));
 		assert_err!(
-			Msa::get_granted_schemas_by_msa_id(delegator, provider),
+			Msa::get_granted_schemas_by_msa_id(delegator, Some(provider)),
 			Error::<Test>::SchemaNotGranted
 		);
 	})
@@ -477,14 +477,47 @@ pub fn schema_granted_success_rpc() {
 		let delegator = DelegatorId(2);
 		let schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
 		let expected_schemas_granted = vec![
 			SchemaGrant::new(1, BlockNumber::zero()),
 			SchemaGrant::new(2, BlockNumber::zero()),
 		];
-		let output_schemas: Vec<SchemaGrant<SchemaId, BlockNumber>> =
-			schemas_granted.unwrap().unwrap();
-		assert_eq!(output_schemas, expected_schemas_granted);
+		let expected_delegations = vec![DelegationResponse {
+			provider_id: provider,
+			permissions: expected_schemas_granted,
+		}];
+		let output_schemas = schemas_granted.unwrap();
+		assert_eq!(output_schemas, expected_delegations);
+	})
+}
+
+#[test]
+pub fn schema_granted_success_multiple_providers_rpc() {
+	new_test_ext().execute_with(|| {
+		set_schema_count::<Test>(4);
+
+		let provider_1 = ProviderId(1);
+		let provider_2 = ProviderId(2);
+		let delegator = DelegatorId(2);
+		let schema_grants_1 = vec![1, 2];
+		let schema_grants_2 = vec![3, 4];
+		assert_ok!(Msa::add_provider(provider_1, delegator, schema_grants_1));
+		assert_ok!(Msa::add_provider(provider_2, delegator, schema_grants_2));
+		let schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, None);
+		let expected_schemas_granted_1 = vec![
+			SchemaGrant::new(1, BlockNumber::zero()),
+			SchemaGrant::new(2, BlockNumber::zero()),
+		];
+		let expected_schemas_granted_2 = vec![
+			SchemaGrant::new(3, BlockNumber::zero()),
+			SchemaGrant::new(4, BlockNumber::zero()),
+		];
+		let expected_delegation_1 =
+			DelegationResponse { provider_id: provider_1, permissions: expected_schemas_granted_1 };
+		let expected_delegation_2 =
+			DelegationResponse { provider_id: provider_2, permissions: expected_schemas_granted_2 };
+		let output_schemas = schemas_granted.unwrap();
+		assert_eq!(output_schemas, vec![expected_delegation_1, expected_delegation_2]);
 	})
 }
 
@@ -497,24 +530,31 @@ pub fn schema_revoked_rpc() {
 		let delegator = DelegatorId(2);
 		let mut schema_grants = vec![1, 2];
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
-		let mut schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		let mut schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
 		let mut expected_schemas_granted = vec![
 			SchemaGrant::new(1, BlockNumber::zero()),
 			SchemaGrant::new(2, BlockNumber::zero()),
 		];
-		let mut output_schemas: Vec<SchemaGrant<SchemaId, BlockNumber>> =
-			schemas_granted.unwrap().unwrap();
-		assert_eq!(output_schemas, expected_schemas_granted);
+		let expected_delegations = vec![DelegationResponse {
+			provider_id: provider,
+			permissions: expected_schemas_granted,
+		}];
+		let mut output_schemas = schemas_granted.unwrap();
+		assert_eq!(output_schemas, expected_delegations);
 
 		// Now revoke a schema and check that it is reported correctly by the RPC
 		run_to_block(5);
 		schema_grants = vec![1];
 		assert_ok!(Msa::upsert_schema_permissions(provider, delegator, schema_grants));
-		schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		schemas_granted = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
 		expected_schemas_granted =
 			vec![SchemaGrant::new(1, BlockNumber::zero()), SchemaGrant::new(2, 5)];
-		output_schemas = schemas_granted.unwrap().unwrap();
-		assert_eq!(output_schemas, expected_schemas_granted);
+		let expected_delegations = vec![DelegationResponse {
+			provider_id: provider,
+			permissions: expected_schemas_granted,
+		}];
+		output_schemas = schemas_granted.unwrap();
+		assert_eq!(output_schemas, expected_delegations);
 	})
 }
 
