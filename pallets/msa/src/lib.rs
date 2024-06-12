@@ -1336,7 +1336,8 @@ impl<T: Config> Pallet<T> {
 		let mut result = vec![];
 		for (provider_id, provider_info) in delegations {
 			let schema_permissions = provider_info.schema_permissions;
-			if schema_permissions.is_empty() {
+			// checking only if this is called for a specific provider
+			if provider.is_some() && schema_permissions.is_empty() {
 				return Err(Error::<T>::SchemaNotGranted.into());
 			}
 
