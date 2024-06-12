@@ -21,6 +21,7 @@ const fundingSource = getFundingSource('scenarios-grant-delegation');
 describe('Delegation Scenario Tests', function () {
   let keys: KeyringPair;
   let otherMsaKeys: KeyringPair;
+  let thirdMsaKeys: KeyringPair;
   let noMsaKeys: KeyringPair;
   let providerKeys: KeyringPair;
   let otherProviderKeys: KeyringPair;
@@ -30,12 +31,13 @@ describe('Delegation Scenario Tests', function () {
   let otherProviderId: u64;
   let msaId: u64;
   let otherMsaId: u64;
+  let thirdMsaId: u64;
 
   before(async function () {
     // Fund all the different keys
-    [noMsaKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(
+    [noMsaKeys, keys, otherMsaKeys, thirdMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(
       fundingSource,
-      ['noMsaKeys', 'keys', 'otherMsaKeys', 'providerKeys', 'otherProviderKeys'],
+      ['noMsaKeys', 'keys', 'otherMsaKeys', 'thirdMsaKeys', 'providerKeys', 'otherProviderKeys'],
       1n * DOLLARS
     );
 
@@ -44,6 +46,9 @@ describe('Delegation Scenario Tests', function () {
 
     const { target: msaCreatedEvent2 } = await ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend();
     otherMsaId = msaCreatedEvent2!.data.msaId;
+
+    const { target: msaCreatedEvent3 } = await ExtrinsicHelper.createMsa(thirdMsaKeys).signAndSend();
+    thirdMsaId = msaCreatedEvent3!.data.msaId;
 
     let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
     await createProviderMsaOp.signAndSend();
@@ -210,6 +215,42 @@ describe('Delegation Scenario Tests', function () {
         .map((grant) => grant.schema_id.toNumber());
       const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
       assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
+    });
+
+    it('should get all delegations and grants', async function () {
+      const payload = await generateDelegationPayload({
+        authorizedMsaId: providerId,
+        schemaIds: [schemaId, schemaId2],
+      });
+      const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
+      const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+        thirdMsaKeys,
+        providerKeys,
+        signPayloadSr25519(thirdMsaKeys, addProviderData),
+        payload
+      );
+      const { target: grantDelegationEvent } = await grantDelegationOp.fundAndSend(fundingSource);
+      assert.notEqual(grantDelegationEvent, undefined, 'should have returned DelegationGranted event');
+
+      const payload2 = await generateDelegationPayload({
+        authorizedMsaId: otherProviderId,
+        schemaIds: [schemaId, schemaId2],
+      });
+      const addProviderData2 = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload2);
+      const grantDelegationOp2 = ExtrinsicHelper.grantDelegation(
+        thirdMsaKeys,
+        otherProviderKeys,
+        signPayloadSr25519(thirdMsaKeys, addProviderData2),
+        payload2
+      );
+      const { target: grantDelegationEvent2 } = await grantDelegationOp2.fundAndSend(fundingSource);
+      assert.notEqual(grantDelegationEvent2, undefined, 'should have returned DelegationGranted event');
+
+      const grants = await ExtrinsicHelper.apiPromise.rpc.msa.getAllGrantedDelegationsByMsaId(thirdMsaId);
+      assert.deepStrictEqual(grants.length, 2);
+      const expectedProviderIds = [providerId.toNumber(), otherProviderId.toNumber()];
+      assert(expectedProviderIds.indexOf(grants[0].provider_id.toNumber()) !== -1);
+      assert(expectedProviderIds.indexOf(grants[1].provider_id.toNumber()) !== -1);
     });
   });
 

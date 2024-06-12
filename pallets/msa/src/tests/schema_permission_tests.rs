@@ -401,12 +401,12 @@ pub fn ensure_delegation_revocation_reflects_in_schema_permissions() {
 		// Revoke delegation relationship at block 6.
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
-		let grants_result = Msa::get_granted_schemas_by_msa_id(delegator, provider);
+		let grants_result = Msa::get_granted_schemas_by_msa_id(delegator, Some(provider));
 		assert!(grants_result.is_ok());
 		let grants_option = grants_result.unwrap();
-		assert!(grants_option.is_some());
-		let grants = grants_option.unwrap();
-		assert!(grants[0].revoked_at == 6);
-		assert!(grants[1].revoked_at == 6);
+		assert!(grants_option.len() == 1);
+		let grants = grants_option.into_iter().next().unwrap();
+		assert!(grants.permissions[0].revoked_at == 6);
+		assert!(grants.permissions[1].revoked_at == 6);
 	});
 }

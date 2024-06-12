@@ -44,6 +44,18 @@ sp_api::mock_impl_runtime_apis! {
 				_ => None,
 			}
 		}
+
+		/// Get the list of all delegations and grants
+		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
+			match delegator {
+				DELEGATE_A => vec![DelegationResponse{ provider_id: ProviderId(1), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]}],
+				DELEGATE_B => vec![
+					DelegationResponse{ provider_id: ProviderId(2), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()), SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())]},
+					DelegationResponse{ provider_id: ProviderId(3), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]}
+					],
+				_ => vec![],
+			}
+		}
 	}
 }
 
@@ -142,6 +154,33 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 	assert_eq!(true, result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
+}
+
+#[tokio::test]
+async fn get_all_granted_delegations_by_msa_id_with_success() {
+	let client = Arc::new(TestApi {});
+	let api = MsaHandler::<TestApi, Block, TestPersistentOffchainDB>::new(client, None);
+
+	let result = api.get_all_granted_delegations_by_msa_id(DELEGATE_B);
+
+	assert_eq!(true, result.is_ok());
+	let response = result.unwrap();
+	assert_eq!(
+		vec![
+			DelegationResponse {
+				provider_id: ProviderId(2),
+				permissions: vec![
+					SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero()),
+					SchemaGrant::new(SCHEMA_FOR_B, BlockNumber::zero())
+				]
+			},
+			DelegationResponse {
+				provider_id: ProviderId(3),
+				permissions: vec![SchemaGrant::new(SCHEMA_FOR_A_AND_B, BlockNumber::zero())]
+			}
+		],
+		response
+	);
 }
 
 #[tokio::test]
