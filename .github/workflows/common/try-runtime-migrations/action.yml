@@ -10,10 +10,6 @@ inputs:
   runtime-uri:
     description: "The URI of the runtime"
     required: true
-outputs:
-  migration-success:
-    description: "Whether the migration was successful"
-    required: true
   
 runs:
   using: "composite"
