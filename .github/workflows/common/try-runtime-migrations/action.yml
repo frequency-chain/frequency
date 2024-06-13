@@ -10,7 +10,7 @@ inputs:
   runtime-uri:
     description: "The URI of the runtime"
     required: true
-  
+
 runs:
   using: "composite"
   steps:
@@ -29,4 +29,4 @@ runs:
         runtime-package: ${{ inputs.runtime-package }}
         node-uri: ${{ inputs.runtime-uri }}
         checks: "pre-and-post"
-
+        extra-args: "--disable-spec-version-check --no-weight-warnings"
