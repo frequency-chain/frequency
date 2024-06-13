@@ -1,15 +1,24 @@
-# .github/workflows/check-migrations-on-paseo.yml
-
 name: Check Migrations on Paseo
 
 on:
   pull_request_target:
     types:
       - labeled
+  workflow_dispatch:
+    inputs:
+      runtime-package:
+        description: 'Runtime package to check migrations for'
+        required: true
+        default: 'frequency-runtime'
+      runtime-uri:
+        description: 'URI of the runtime to check migrations for'
+        required: true
+        default: 'wss://0.rpc.testnet.amplica.io:443'
+    
 
 jobs:
   check-migrations:
-    if: contains(github.event.pull_request.labels.*.name, 'paseo-migration')
+    if: contains(github.event.pull_request.labels.*.name, 'change/storage-migration')
     name: Check Migrations on Paseo
     continue-on-error: false
     runs-on: ubicloud-standard-8
