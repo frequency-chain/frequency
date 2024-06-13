@@ -19,8 +19,8 @@ runs:
 
     - name: Install required packages
       run: |
-        sudo apt-get update
-        sudo apt install -y protobuf-compiler libclang-dev clang cmake unzip
+        apt-get update
+        apt install -y protobuf-compiler libclang-dev clang cmake unzip
       shell: bash
 
     - name: Run runtime checks
