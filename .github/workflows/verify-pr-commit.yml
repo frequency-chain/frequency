@@ -755,7 +755,7 @@ jobs:
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
 
-  check-migrations:
+  check-migrations-on-paseo:
     continue-on-error: false
     runs-on: ubicloud-standard-8
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
