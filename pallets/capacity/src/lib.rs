@@ -402,6 +402,10 @@ pub mod pallet {
 		MaxRetargetsExceeded,
 		/// Tried to exceed bounds of a some Bounded collection
 		CollectionBoundExceeded,
+		/// This origin has nothing staked for ProviderBoost.
+		NotAProviderBoostAccount,
+		/// There are no unpaid rewards to claim from ProviderBoost staking.
+		NothingToClaim,
 	}
 
 	#[pallet::hooks]
@@ -599,6 +603,20 @@ pub mod pallet {
 				capacity,
 			});
 
+			Ok(())
+		}
+
+		/// Claim all outstanding rewards earned from ProviderBoosting.
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::provider_boost())]
+		pub fn claim_staking_rewards(origin: OriginFor<T>) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+			ensure!(ProviderBoostHistories::<T>::contains_key(staker.clone()), Error::<T>::NotAProviderBoostAccount);
+			let rewards: BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit> = Self::list_unclaimed_rewards(&staker)?;
+			let zero_balance: BalanceOf<T> = 0u32.into();
+			let total_to_mint: BalanceOf<T> = rewards.iter().fold(zero_balance, |acc, reward_info| {
+				acc.saturating_add(reward_info.earned_amount)
+			}).into();
 			Ok(())
 		}
 	}
@@ -1049,7 +1067,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let staking_history =
-			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAStakingAccount)?; // cached read from has_unclaimed_rewards
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read from has_unclaimed_rewards
 
 		let current_era_info = Self::get_current_era(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get(); // 1r

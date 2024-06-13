@@ -17,3 +17,4 @@ mod unlock_chunks_tests;
 pub mod unstaking_tests;
 pub mod withdraw_unstaked_tests;
 pub mod withdrawal_tests;
+mod claim_staking_rewards_tests;
