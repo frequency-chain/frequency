@@ -10,7 +10,9 @@
 
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
-	msa::{DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, SchemaGrant},
+	msa::{
+		DelegationResponse, DelegatorId, KeyInfoResponse, MessageSourceId, ProviderId, SchemaGrant,
+	},
 	node::BlockNumber,
 	offchain::get_msa_account_storage_key_name,
 	schema::SchemaId,
@@ -55,6 +57,13 @@ pub trait MsaApi<BlockHash, AccountId> {
 		delegator_msa_id: DelegatorId,
 		provider_msa_id: ProviderId,
 	) -> RpcResult<Option<Vec<SchemaGrant<SchemaId, BlockNumber>>>>;
+
+	/// Retrieve the list of all delegations for a MsaId
+	#[method(name = "msa_getAllGrantedDelegationsByMsaId")]
+	fn get_all_granted_delegations_by_msa_id(
+		&self,
+		delegator_msa_id: DelegatorId,
+	) -> RpcResult<Vec<DelegationResponse<SchemaId, BlockNumber>>>;
 
 	/// Retrieve the list of keys for msa id
 	#[method(name = "msa_getKeysByMsaId")]
@@ -152,6 +161,16 @@ where
 		let at = self.client.info().best_hash;
 		let runtime_api_result =
 			api.get_granted_schemas_by_msa_id(at, delegator_msa_id, provider_msa_id);
+		map_rpc_result(runtime_api_result)
+	}
+
+	fn get_all_granted_delegations_by_msa_id(
+		&self,
+		delegator_msa_id: DelegatorId,
+	) -> RpcResult<Vec<DelegationResponse<SchemaId, BlockNumber>>> {
+		let api = self.client.runtime_api();
+		let at = self.client.info().best_hash;
+		let runtime_api_result = api.get_all_granted_delegations_by_msa_id(at, delegator_msa_id);
 		map_rpc_result(runtime_api_result)
 	}
 

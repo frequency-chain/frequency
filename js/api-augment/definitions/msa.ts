@@ -46,6 +46,16 @@ export default {
       ],
       type: 'Option<KeyInfoResponse>',
     },
+    getAllGrantedDelegationsByMsaId: {
+      description: 'Get the list of all delegated providers with schema permission grants',
+      params: [
+        {
+          name: 'delegator_msa_id',
+          type: 'DelegatorId',
+        },
+      ],
+      type: 'Vec<DelegationResponse>',
+    },
   },
   types: {
     MessageSourceId: 'u64',
@@ -58,6 +68,10 @@ export default {
     SchemaGrantResponse: {
       schema_id: 'SchemaId',
       revoked_at: 'BlockNumber',
+    },
+    DelegationResponse: {
+      provider_id: 'ProviderId',
+      permissions: 'Vec<SchemaGrantResponse>',
     },
   },
   runtime: {
@@ -100,50 +114,17 @@ export default {
                 type: 'ProviderId',
               },
             ],
-            type: 'Option<Vec<SchemaId>>',
-          },
-        },
-        version: 1,
-      },
-      {
-        methods: {
-          has_delegation: {
-            description:
-              'Check to see if a delegation existed between the given delegator and provider at a given block',
-            params: [
-              {
-                name: 'delegator_id',
-                type: 'DelegatorId',
-              },
-              {
-                name: 'provider_id',
-                type: 'ProviderId',
-              },
-              {
-                name: 'block_number',
-                type: 'BlockNumber',
-              },
-              {
-                name: 'schema_id',
-                type: 'Option<SchemaId>',
-              },
-            ],
-            type: 'bool',
-          },
-          get_granted_schemas_by_msa_id: {
-            description:
-              'Get the list of schema ids (if any) that exist in any delegation between the delegator and provider',
-            params: [
-              {
-                name: 'delegator_id',
-                type: 'DelegatorId',
-              },
-              {
-                name: 'provider_id',
-                type: 'ProviderId',
-              },
-            ],
             type: 'Option<Vec<SchemaGrantResponse>>',
+          },
+          get_all_granted_delegations_by_msa_id: {
+            description: 'Get the list of all delegated providers with schema permission grants',
+            params: [
+              {
+                name: 'delegator_msa_id',
+                type: 'DelegatorId',
+              },
+            ],
+            type: 'Vec<DelegationResponse>',
           },
         },
         version: 2,
