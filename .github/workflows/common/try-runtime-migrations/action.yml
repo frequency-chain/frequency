@@ -21,6 +21,8 @@ runs:
       run: |
         sudo apt-get update
         sudo apt install -y protobuf-compiler libclang-dev clang cmake unzip
+      shell: bash
+
     - name: Run runtime checks
       uses: paritytech/try-runtime-gha@v0.1.0
       with:
