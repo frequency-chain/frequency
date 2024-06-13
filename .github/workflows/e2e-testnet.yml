@@ -51,6 +51,6 @@ jobs:
         env:
           CHAIN_ENVIRONMENT: paseo-testnet
           # WS_PROVIDER_URL: ${{ vars.E2E_TESTNET_PASEO_RPC }}
-          WS_PROVIDER_URL: ws://10.40.6.79:9944
+          WS_PROVIDER_URL: wss://0.rpc.testnet.amplica.io:9944
           FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.PASEO_E2E_TEST_SEED_PHRASE }}
         run: npm run test:relay
