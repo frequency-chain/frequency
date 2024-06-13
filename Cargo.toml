@@ -160,6 +160,12 @@ lto = true
 codegen-units = 1
 strip = true
 
+[profile.production]
+panic = "unwind"
+lto = true
+codegen-units = 1
+strip = true
+
 # Faster build for bench-dev
 [profile.bench-dev]
 inherits = "release"
