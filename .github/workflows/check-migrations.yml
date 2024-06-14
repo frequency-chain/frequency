@@ -21,7 +21,6 @@ on:
 
 jobs:
   check-migrations:
-    if: contains(github.event.pull_request.labels.*.name, 'change/storage-migration')
     name: Check Migrations on Paseo
     continue-on-error: false
     runs-on: ubicloud-standard-8
