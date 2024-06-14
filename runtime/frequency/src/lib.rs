@@ -68,6 +68,7 @@ pub use sp_runtime::BuildStorage;
 pub use pallet_capacity;
 pub use pallet_frequency_tx_payment::{capacity_stable_weights, types::GetStableWeight};
 pub use pallet_msa;
+pub use pallet_passkey;
 pub use pallet_schemas;
 pub use pallet_time_release;
 
@@ -330,7 +331,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 83,
+	spec_version: 84,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -344,7 +345,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 83,
+	spec_version: 84,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -894,6 +895,13 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 }
 
+#[cfg(feature = "frequency-no-relay")]
+impl pallet_passkey::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeCall = RuntimeCall;
+	type WeightInfo = pallet_passkey::weights::SubstrateWeight<Runtime>;
+}
+
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
 /// into the relay chain.
@@ -1176,6 +1184,9 @@ construct_runtime!(
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
+		// Currently enabled only under feature flag
+		#[cfg(feature = "frequency-no-relay")]
+		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>} = 67,
 	}
 );
 
@@ -1211,6 +1222,7 @@ mod benches {
 		[pallet_time_release, TimeRelease]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
+		[pallet_passkey, Passkey]
 	);
 }
 

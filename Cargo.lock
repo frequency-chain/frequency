@@ -3563,6 +3563,7 @@ dependencies = [
  "pallet-msa",
  "pallet-msa-runtime-api",
  "pallet-multisig",
+ "pallet-passkey",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
@@ -7006,6 +7007,23 @@ dependencies = [
  "scale-info",
  "sp-runtime",
  "sp-staking",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-passkey"
+version = "0.0.0"
+dependencies = [
+ "common-runtime",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
  "sp-std",
 ]
 
