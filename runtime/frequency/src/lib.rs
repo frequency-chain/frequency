@@ -895,6 +895,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 }
 
+/// Configurations for passkey pallet
+#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 impl pallet_passkey::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
