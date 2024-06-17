@@ -350,6 +350,13 @@ pub mod pallet {
 			/// The Capacity amount issued to the target as a result of the stake.
 			capacity: BalanceOf<T>,
 		},
+		/// Provider Boost Token Rewards have been minted and transferred to the staking account.
+		ProviderBoostRewardClaimed {
+			/// The token account claiming and receiving the reward from ProviderBoost staking
+			account: T::AccountId,
+			/// The reward amount
+			reward_amount: BalanceOf<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -611,12 +618,15 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::provider_boost())]
 		pub fn claim_staking_rewards(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
-			ensure!(ProviderBoostHistories::<T>::contains_key(staker.clone()), Error::<T>::NotAProviderBoostAccount);
-			let rewards: BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit> = Self::list_unclaimed_rewards(&staker)?;
-			let zero_balance: BalanceOf<T> = 0u32.into();
-			let total_to_mint: BalanceOf<T> = rewards.iter().fold(zero_balance, |acc, reward_info| {
-				acc.saturating_add(reward_info.earned_amount)
-			}).into();
+			ensure!(
+				ProviderBoostHistories::<T>::contains_key(staker.clone()),
+				Error::<T>::NotAProviderBoostAccount
+			);
+			let total_to_mint = Self::do_claim_rewards(&staker)?;
+			Self::deposit_event(Event::ProviderBoostRewardClaimed {
+				account: staker.clone(),
+				reward_amount: total_to_mint,
+			});
 			Ok(())
 		}
 	}
@@ -1042,8 +1052,16 @@ impl<T: Config> Pallet<T> {
 			Some(provider_boost_history) => {
 				match provider_boost_history.count() {
 					0usize => false,
-					// they staked before the current era, so they have unclaimed rewards.
-					1usize => provider_boost_history.get_entry_for_era(&current_era).is_none(),
+					1usize => {
+						// if there is just one era entry and:
+						// it's for the previous era, it means we've already paid out rewards for that era, or they just staked in the last era.
+						// of if it's for the current era, they only just started staking.
+						provider_boost_history
+							.get_entry_for_era(&current_era.saturating_sub(1u32.into()))
+							.is_none() && provider_boost_history
+							.get_entry_for_era(&current_era)
+							.is_none()
+					},
 					_ => true,
 				}
 			},
@@ -1102,6 +1120,7 @@ impl<T: Config> Pallet<T> {
 					.try_push(UnclaimedRewardInfo {
 						reward_era,
 						expires_at_block,
+						staked_amount,
 						eligible_amount,
 						earned_amount,
 					})
@@ -1189,6 +1208,34 @@ impl<T: Config> Pallet<T> {
 			// Handle the error case that should never happen
 		}
 		ProviderBoostRewardPools::<T>::set(chunk_idx, Some(new_chunk)); // 1w
+	}
+	fn do_claim_rewards(staker: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
+		let rewards: BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit> =
+			Self::list_unclaimed_rewards(&staker)?;
+		ensure!(!rewards.len().is_zero(), Error::<T>::NothingToClaim);
+		let zero_balance: BalanceOf<T> = 0u32.into();
+		let total_to_mint: BalanceOf<T> = rewards
+			.iter()
+			.fold(zero_balance, |acc, reward_info| acc.saturating_add(reward_info.earned_amount))
+			.into();
+		ensure!(total_to_mint.gt(&Zero::zero()), Error::<T>::NothingToClaim);
+		let _minted_unused = T::Currency::mint_into(&staker, total_to_mint)?;
+
+		let mut new_history: ProviderBoostHistory<T> = ProviderBoostHistory::new();
+		let last_staked_amount =
+			rewards.last().unwrap_or(&UnclaimedRewardInfo::default()).staked_amount;
+		let current_era = Self::get_current_era().era_index;
+		// We have already paid out for the previous era. Put one entry for the previous era as if that is when they staked,
+		// so they will be credited for current_era.
+		ensure!(
+			new_history
+				.add_era_balance(&current_era.saturating_sub(1u32.into()), &last_staked_amount)
+				.is_some(),
+			Error::<T>::CollectionBoundExceeded
+		);
+		ProviderBoostHistories::<T>::set(staker, Some(new_history));
+
+		Ok(total_to_mint)
 	}
 }
 

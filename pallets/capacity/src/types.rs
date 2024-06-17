@@ -398,19 +398,19 @@ impl<T: Config> ProviderBoostHistory<T> {
 		if self.count().is_zero() {
 			return None;
 		};
-		// have to save this because calling self.count() after self.0.get_mut produces compiler error
-		let current_count = self.count();
+
+		let current_staking_amount = self.get_last_staking_amount();
+		if current_staking_amount.eq(subtract_amount) && self.count().eq(&1usize) {
+			// Should not get here unless rewards have all been claimed, and provider boost history was
+			// correctly updated. This && condition is to protect stakers against loss of rewards in the
+			// case of some bug with payouts and boost history.
+			return Some(0usize);
+		}
 
 		if let Some(entry) = self.0.get_mut(reward_era) {
 			*entry = entry.saturating_sub(*subtract_amount);
-			// if they unstaked everything and there are no other entries, return 0 count (a lie)
-			// so that the storage can be reaped.
-			if current_count.eq(&1usize) && entry.is_zero() {
-				return Some(0usize);
-			}
 		} else {
 			self.remove_oldest_entry_if_full();
-			let current_staking_amount = self.get_last_staking_amount();
 			if self
 				.0
 				.try_insert(*reward_era, current_staking_amount.saturating_sub(*subtract_amount))
@@ -551,18 +551,30 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 }
 
 /// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(
-	Copy, Clone, Encode, Eq, Decode, Default, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
-)]
+#[derive(Copy, Clone, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct UnclaimedRewardInfo<T: Config> {
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
 	/// When this reward expires, i.e. can no longer be claimed
 	pub expires_at_block: BlockNumberFor<T>,
+	/// The total staked in this era as of the current block
+	pub staked_amount: BalanceOf<T>,
 	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
 	/// staked in this era.
 	pub eligible_amount: BalanceOf<T>,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
 	pub earned_amount: BalanceOf<T>,
+}
+
+impl<T: Config> Default for UnclaimedRewardInfo<T> {
+	fn default() -> Self {
+		Self {
+			reward_era: 1u32.into(),
+			expires_at_block: 0u32.into(),
+			staked_amount: 0u32.into(),
+			eligible_amount: 0u32.into(),
+			earned_amount: 0u32.into(),
+		}
+	}
 }

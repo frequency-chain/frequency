@@ -10,7 +10,7 @@ use common_primitives::{
 };
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{fungible::Inspect, tokens::WithdrawConsequence, ConstU16, ConstU32, ConstU64},
 	BoundedVec,
 };
 use frame_system::EnsureSigned;
@@ -214,6 +214,14 @@ fn initialize_reward_pool() {
 	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
+}
+
+pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
+	T::Currency::balance(who)
+}
+
+pub fn assert_transferable<T: Config>(who: &T::AccountId, amount: BalanceOf<T>) {
+	assert_eq!(T::Currency::can_withdraw(who, amount), WithdrawConsequence::Success);
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
