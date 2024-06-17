@@ -238,7 +238,6 @@ jobs:
     name: Build Runtime for ${{matrix.network}}
     outputs:
       runtime_filename_dev: ${{steps.set-env-vars.outputs.runtime_filename_dev}}
-      runtime_filename_rococo: ${{steps.set-env-vars.outputs.runtime_filename_rococo}}
       runtime_filename_paseo: ${{steps.set-env-vars.outputs.runtime_filename_paseo}}
       runtime_filename_mainnet: ${{steps.set-env-vars.outputs.runtime_filename_mainnet}}
     # env:
@@ -248,7 +247,7 @@ jobs:
       matrix:
         # Remember, runtimes are separate for each relay chain
         # We do not release frequency-*-local runtimes however
-        network: [dev, rococo, paseo, mainnet]
+        network: [dev, paseo, mainnet]
         include:
           - network: dev
             build-profile: release
@@ -257,14 +256,6 @@ jobs:
             built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-dev_runtime
             features: frequency-no-relay
-            wasm-core-version: frequency-testnet
-          - network: rococo
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
-            release-wasm-file-name-prefix: frequency-rococo_runtime
-            features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: paseo
             build-profile: release
@@ -637,7 +628,6 @@ jobs:
       runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
       runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
       runtime_filename_paseo: ${{needs.build-runtimes.outputs.runtime_filename_paseo}}
-      runtime_filename_rococo: ${{needs.build-runtimes.outputs.runtime_filename_rococo}}
     steps:
       - name: Proceed Forward
         run: echo "All build jobs have finished, proceeding with the release"
@@ -735,9 +725,6 @@ jobs:
         working-directory: /tmp
         # Do NOT produce the dev version. That doesn't need to be part of the release notes, just in the artifacts
         run: |
-          runtime_filename_rococo=${{needs.wait-for-all-builds.outputs.runtime_filename_rococo}}
-          runtime_info_rococo=$(subwasm info $runtime_filename_rococo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
-          echo "runtime_info_rococo=$runtime_info_rococo" >> $GITHUB_OUTPUT
           runtime_filename_paseo=${{needs.wait-for-all-builds.outputs.runtime_filename_paseo}}
           runtime_info_paseo=$(subwasm info $runtime_filename_paseo | sed -Ez '$ s/\n+$//' | tr '\n' '|')
           echo "runtime_info_paseo=$runtime_info_paseo" >> $GITHUB_OUTPUT
@@ -749,14 +736,12 @@ jobs:
         env:
           CHANGELOG: ${{steps.sanitize-changelog.outputs.sanitized}}
           RUNTIME_INFO_PASEO: ${{steps.get-runtimes-info.outputs.runtime_info_paseo}}
-          RUNTIME_INFO_ROCOCO: ${{steps.get-runtimes-info.outputs.runtime_info_rococo}}
           RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
         run: |
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
             "${CHANGELOG}" \
             "${RUNTIME_INFO_MAINNET}" \
             "${RUNTIME_INFO_PASEO}" \
-            "${RUNTIME_INFO_ROCOCO}" \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'

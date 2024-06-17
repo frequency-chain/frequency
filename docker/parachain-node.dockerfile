@@ -1,10 +1,9 @@
-# Docker image for running Frequency parachain node container (without collating)
-# for Rococo testnet or Mainnet. Requires to run from repository root and to copy
-# the binary in the build folder.
+# Docker image for running Frequency parachain node container (without collating).
+# Requires to run from repository root and to copy the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
 FROM --platform=linux/amd64 ubuntu:22.04 AS base
 LABEL maintainer="Frequency"
-LABEL description="Frequency parachain node for Rococo testnet and Mainnet"
+LABEL description="Frequency Parachain Node"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
