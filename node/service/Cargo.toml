@@ -21,6 +21,7 @@ jsonrpsee = { workspace = true, features = ["server"] }
 log = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
+serde_json = { workspace = true }
 
 # Frequency Runtime
 frequency-runtime = { path = "../../runtime/frequency", optional = true }
