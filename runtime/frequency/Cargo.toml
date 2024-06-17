@@ -79,6 +79,7 @@ pallet-stateful-storage = { path = "../../pallets/stateful-storage", default-fea
 pallet-stateful-storage-runtime-api = { path = "../../pallets/stateful-storage/src/runtime-api", default-features = false }
 pallet-handles = { path = "../../pallets/handles", default-features = false }
 pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
+pallet-passkey = { path = "../../pallets/passkey", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
 # Polkadot
 polkadot-parachain-primitives = { workspace = true }
@@ -118,6 +119,7 @@ std = [
   "pallet-frequency-tx-payment/std",
   "pallet-handles-runtime-api/std",
   "pallet-handles/std",
+  "pallet-passkey/std",
   "pallet-messages-runtime-api/std",
   "pallet-messages/std",
   "pallet-msa-runtime-api/std",
@@ -175,6 +177,7 @@ runtime-benchmarks = [
   "pallet-democracy/runtime-benchmarks",
   "pallet-frequency-tx-payment/runtime-benchmarks",
   "pallet-handles/runtime-benchmarks",
+  "pallet-passkey/runtime-benchmarks",
   "pallet-messages/runtime-benchmarks",
   "pallet-msa/runtime-benchmarks",
   "pallet-multisig/runtime-benchmarks",
@@ -206,6 +209,7 @@ try-runtime = [
   "pallet-democracy/try-runtime",
   "pallet-frequency-tx-payment/try-runtime",
   "pallet-handles/try-runtime",
+  "pallet-passkey/try-runtime",
   "pallet-messages/try-runtime",
   "pallet-msa/try-runtime",
   "pallet-multisig/try-runtime",
