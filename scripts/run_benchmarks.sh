@@ -29,6 +29,7 @@ ALL_CUSTOM_PALLETS=( \
   time-release \
   capacity \
   frequency-tx-payment \
+  passkey \
 )
 
 declare -a CUSTOM_PALLETS

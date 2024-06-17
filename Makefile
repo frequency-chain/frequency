@@ -123,8 +123,9 @@ benchmarks-frequency-tx-payment \
 benchmarks-overhead \
 benchmarks-schemas \
 benchmarks-stateful-storage \
-benchmarks-handles\
-benchmarks-time-release\
+benchmarks-handles \
+benchmarks-time-release \
+benchmarks-passkey \
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -145,6 +146,7 @@ benchmarks-schemas-local \
 benchmarks-frequency-tx-payment-local \
 benchmarks-stateful-storage-local \
 benchmarks-handles-local \
+benchmarks-passkey-local \
 benchmarks-time-release-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
