@@ -64,7 +64,7 @@ pub mod module {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// Convert AccountId to AccountId32
+		/// AccountId truncated to 32 bytes
 		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 	}
 
@@ -101,9 +101,9 @@ pub mod module {
 		pub fn check_account_signature(
 			account_id: &T::AccountId,
 			passkey_public_key: Vec<u8>,
-			account_ownership_proof: MultiSignature,
+			account_ownership_proof: &MultiSignature,
 		) -> DispatchResult {
-			let key: AccountId32 = T::ConvertIntoAccountId32::convert(account_id.clone());
+			let key: AccountId32 = T::ConvertIntoAccountId32::convert((*account_id).clone());
 			// check signature for the account
 			let passkey_publickey_payload = wrap_binary_data(passkey_public_key.clone().into());
 

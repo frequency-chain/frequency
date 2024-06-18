@@ -1,6 +1,4 @@
 //! Mocks for the Time-release module.
-
-use super::*;
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, Everything},
@@ -40,7 +38,7 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-impl Config for Test {
+impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
