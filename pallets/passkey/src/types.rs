@@ -4,6 +4,8 @@ use frame_support::{
 	BoundedVec, RuntimeDebugNoBound,
 };
 use sp_runtime::MultiSignature;
+#[allow(unused)]
+use sp_std::boxed::Box;
 
 /// This is the placeholder value that should be replaced by calculated challenge for
 /// evaluation of a Passkey signature.
