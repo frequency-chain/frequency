@@ -90,77 +90,65 @@ pub fn local_paseo_testnet_config() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 
-	ChainSpec::from_genesis(
-		// Name
-		"Frequency Local Testnet",
-		// ID
-		"frequency-paseo-local",
-		ChainType::Local,
-		move || {
-			testnet_genesis(
-				// initial collators.
-				vec![
-					(
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_collator_keys_from_seed("Alice"),
-					),
-					(
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_collator_keys_from_seed("Bob"),
-					),
-				],
-				// Sudo
-				Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-				// Endowed Accounts
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-					common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-				],
-				// Council members
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-				],
-				// Technical Committee members
-				vec![
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-				],
-				// ParaId
-				2000.into(),
-			)
-		},
-		// Bootnodes
-		Vec::new(),
-		// Telemetry
-		None,
-		// Protocol ID
-		Some("frequency-paseo-local"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
+	ChainSpec::builder(
+		frequency_runtime::wasm_binary_unwrap(),
 		Extensions {
 			relay_chain: "paseo-local".into(), // You MUST set this to the correct network!
 			para_id: 2000,
 		},
 	)
+	.with_name("Frequency Local Testnet")
+	.with_protocol_id("frequency-paseo-local")
+	.with_properties(properties)
+	.with_chain_type(ChainType::Local)
+	.with_genesis_config(testnet_genesis(
+		// initial collators.
+		vec![
+			(
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				get_collator_keys_from_seed("Alice"),
+			),
+			(
+				get_account_id_from_seed::<sr25519::Public>("Bob"),
+				get_collator_keys_from_seed("Bob"),
+			),
+		],
+		// Sudo
+		Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
+		// Endowed Accounts
+		vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+			get_account_id_from_seed::<sr25519::Public>("Dave"),
+			get_account_id_from_seed::<sr25519::Public>("Eve"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+			common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
+		],
+		// Council members
+		vec![
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_account_id_from_seed::<sr25519::Public>("Charlie"),
+			get_account_id_from_seed::<sr25519::Public>("Eve"),
+		],
+		// Technical Committee members
+		vec![
+			get_account_id_from_seed::<sr25519::Public>("Bob"),
+			get_account_id_from_seed::<sr25519::Public>("Dave"),
+		],
+		// ParaId
+		2000.into(),
+	))
+	.build()
 }
 
-#[allow(clippy::expect_used)]
+#[allow(clippy::unwrap_used)]
 fn testnet_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
@@ -168,14 +156,9 @@ fn testnet_genesis(
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
 	id: ParaId,
-) -> frequency_runtime::RuntimeGenesisConfig {
-	frequency_runtime::RuntimeGenesisConfig {
-		system: frequency_runtime::SystemConfig {
-			code: frequency_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+) -> serde_json::Value {
+	let genesis = frequency_runtime::RuntimeGenesisConfig {
+		system: frequency_runtime::SystemConfig { ..Default::default() },
 		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
@@ -219,5 +202,7 @@ fn testnet_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
-	}
+	};
+
+	serde_json::to_value(&genesis).unwrap()
 }
