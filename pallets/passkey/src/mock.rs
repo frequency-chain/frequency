@@ -6,7 +6,10 @@ use frame_support::{
 	traits::{ConstU32, Everything},
 };
 use sp_core::H256;
-use sp_runtime::{traits::IdentityLookup, BuildStorage};
+use sp_runtime::{
+	traits::{ConvertInto, IdentityLookup},
+	BuildStorage,
+};
 
 use crate as pallet_passkey;
 
@@ -41,6 +44,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;

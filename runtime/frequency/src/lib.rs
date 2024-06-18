@@ -913,6 +913,7 @@ impl pallet_passkey::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_passkey::weights::SubstrateWeight<Runtime>;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]

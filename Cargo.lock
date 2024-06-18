@@ -7172,6 +7172,7 @@ dependencies = [
 name = "pallet-passkey"
 version = "0.0.0"
 dependencies = [
+ "common-primitives",
  "common-runtime",
  "frame-benchmarking",
  "frame-support",

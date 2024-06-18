@@ -23,7 +23,7 @@ use frame_support::{
 	traits::IsSubType,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::Dispatchable;
+use sp_runtime::traits::{Convert, Dispatchable, Verify};
 
 #[cfg(test)]
 mod mock;
@@ -40,6 +40,9 @@ pub use module::*;
 
 #[frame_support::pallet]
 pub mod module {
+	use common_primitives::utils::wrap_binary_data;
+	use sp_runtime::{AccountId32, MultiSignature};
+
 	use super::*;
 
 	/// the storage version for this pallet
@@ -60,12 +63,15 @@ pub mod module {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Convert AccountId to AccountId32
+		type ConvertIntoAccountId32: Convert<Self::AccountId, AccountId32>;
 	}
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// PlaceHolder error
-		PlaceHolderError,
+		/// InvalidAccountSignature
+		InvalidAccountSignature,
 	}
 
 	#[pallet::event]
@@ -87,6 +93,26 @@ pub mod module {
 		pub fn proxy(_origin: OriginFor<T>) -> DispatchResult {
 			Self::deposit_event(Event::PlaceHolderEvent);
 			Ok(())
+		}
+	}
+
+	impl<T: Config> Pallet<T> {
+		/// Check the signature on passkey public key by the account id
+		pub fn check_account_signature(
+			account_id: &T::AccountId,
+			passkey_public_key: Vec<u8>,
+			account_ownership_proof: MultiSignature,
+		) -> DispatchResult {
+			let key: AccountId32 = T::ConvertIntoAccountId32::convert(account_id.clone());
+			// check signature for the account
+			let passkey_publickey_payload = wrap_binary_data(passkey_public_key.clone().into());
+
+			let verified = account_ownership_proof.verify(&passkey_publickey_payload[..], &key);
+			if verified {
+				Ok(())
+			} else {
+				Err(Error::<T>::InvalidAccountSignature.into())
+			}
 		}
 	}
 }
