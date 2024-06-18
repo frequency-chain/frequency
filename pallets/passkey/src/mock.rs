@@ -1,24 +1,24 @@
 //! Mocks for the Time-release module.
+use common_primitives::node::AccountId;
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, Everything},
 };
 use sp_core::H256;
 use sp_runtime::{
-	traits::{ConvertInto, IdentityLookup},
-	BuildStorage,
+	traits::{Convert, ConvertInto, IdentityLookup},
+	AccountId32, BuildStorage,
 };
 
 use crate as pallet_passkey;
 
-pub type AccountId = u128;
 impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = AccountId;
+	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type Block = Block;
@@ -38,11 +38,19 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
+pub struct TestAccountId;
+
+impl Convert<u64, AccountId> for TestAccountId {
+	fn convert(_x: u64) -> AccountId32 {
+		AccountId32::new([1u8; 32])
+	}
+}
+
 impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
-	type ConvertIntoAccountId32 = ConvertInto;
+	type ConvertIntoAccountId32 = TestAccountId;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;

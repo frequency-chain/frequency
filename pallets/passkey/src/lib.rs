@@ -98,16 +98,24 @@ pub mod module {
 
 	impl<T: Config> Pallet<T> {
 		/// Check the signature on passkey public key by the account id
-		pub fn check_account_signature(
-			account_id: &T::AccountId,
-			passkey_public_key: Vec<u8>,
-			account_ownership_proof: &MultiSignature,
+		/// Returns Ok(()) if the signature is valid
+		/// Returns Err(InvalidAccountSignature) if the signature is invalid
+		/// # Arguments
+		/// * `signer` - The account id of the signer
+		/// * `signed_data` - The signed data
+		/// * `signature` - The signature
+		/// # Return
+		/// * `Ok(())` if the signature is valid
+		/// * `Err(InvalidAccountSignature)` if the signature is invalid
+		fn check_account_signature(
+			signer: &T::AccountId,
+			signed_data: &Vec<u8>,
+			signature: &MultiSignature,
 		) -> DispatchResult {
-			let key: AccountId32 = T::ConvertIntoAccountId32::convert((*account_id).clone());
-			// check signature for the account
-			let passkey_publickey_payload = wrap_binary_data(passkey_public_key.clone().into());
+			let key: AccountId32 = T::ConvertIntoAccountId32::convert((*signer).clone());
+			let signed_payload: Vec<u8> = wrap_binary_data(signed_data.clone().into());
 
-			let verified = account_ownership_proof.verify(&passkey_publickey_payload[..], &key);
+			let verified = signature.verify(&signed_payload[..], &key);
 			if verified {
 				Ok(())
 			} else {
