@@ -107,6 +107,7 @@ pub mod module {
 		/// # Return
 		/// * `Ok(())` if the signature is valid
 		/// * `Err(InvalidAccountSignature)` if the signature is invalid
+		#[allow(unused)]
 		fn check_account_signature(
 			signer: &T::AccountId,
 			signed_data: &Vec<u8>,
