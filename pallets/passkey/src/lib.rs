@@ -24,6 +24,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::traits::{Convert, Dispatchable, Verify};
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
