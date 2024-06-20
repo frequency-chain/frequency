@@ -1,5 +1,5 @@
 //! Mocks for the Time-release module.
-use common_primitives::{msa::MessageSourceId, node::AccountId};
+use common_primitives::node::AccountId;
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, Everything},
@@ -18,7 +18,7 @@ impl frame_system::Config for Test {
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = MessageSourceId;
+	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type Block = Block;
@@ -38,19 +38,11 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-pub struct TestAccountId;
-
-impl Convert<u64, AccountId> for TestAccountId {
-	fn convert(_x: u64) -> AccountId32 {
-		AccountId32::new([1u8; 32])
-	}
-}
-
 impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
-	type ConvertIntoAccountId32 = TestAccountId;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
