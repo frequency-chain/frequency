@@ -73,10 +73,13 @@ pub mod module {
 	}
 
 	#[pallet::event]
-	// #[pallet::generate_deposit(fn deposit_event)]
+	#[pallet::generate_deposit(fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// PlaceHolder event
-		PlaceHolderEvent,
+		/// When a passkey transaction is successfully executed
+		TransactionExecutionSuccess {
+			/// transaction account id
+			account_id: T::AccountId,
+		},
 	}
 
 	#[pallet::pallet]
@@ -99,10 +102,17 @@ pub mod module {
 			payload: PasskeyPayload<T>,
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
+			let transaction_account_id = payload.passkey_call.account_id.clone();
 			let main_origin = T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
-				payload.passkey_call.account_id,
+				transaction_account_id.clone(),
 			));
-			payload.passkey_call.call.dispatch(main_origin)
+			let result = payload.passkey_call.call.dispatch(main_origin);
+			if result.is_ok() {
+				Self::deposit_event(Event::TransactionExecutionSuccess {
+					account_id: transaction_account_id,
+				});
+			}
+			result
 		}
 	}
 
