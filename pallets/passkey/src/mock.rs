@@ -1,5 +1,5 @@
 //! Mocks for the Time-release module.
-use common_primitives::node::AccountId;
+use common_primitives::{msa::MessageSourceId, node::AccountId};
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, Everything},
@@ -18,7 +18,7 @@ impl frame_system::Config for Test {
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = ::sp_runtime::traits::BlakeTwo256;
-	type AccountId = u64;
+	type AccountId = MessageSourceId;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type Block = Block;
