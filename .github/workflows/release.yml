@@ -760,7 +760,7 @@ jobs:
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+        uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
@@ -771,7 +771,7 @@ jobs:
             /tmp/metadata-compare-*
       - name: Publish Full Release on GitHub
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+        uses: softprops/action-gh-release@a74c6b72af54cfa997e81df42d94703d6313a2d0
         with:
           body_path: tools/ci/release-notes/release-notes.md
           tag_name: ${{env.NEW_RELEASE_TAG}}
