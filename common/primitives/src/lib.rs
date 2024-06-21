@@ -35,6 +35,9 @@ pub mod utils;
 /// Structs and traits for the Capacity pallet.
 pub mod capacity;
 
+/// Structs and traits for generic payment semantics
+pub mod payment;
+
 /// Constants and types for offchain data
 pub mod offchain;
 

@@ -1,5 +1,6 @@
 use crate::msa::MessageSourceId;
-use frame_support::traits::tokens::Balance;
+use frame_support::{pallet_prelude::TransactionValidityError, traits::tokens::Balance};
+use frame_system::Config;
 use sp_runtime::DispatchError;
 
 /// A trait for checking that a target MSA can be staked to.

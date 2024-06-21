@@ -33,6 +33,7 @@ use sp_std::prelude::*;
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	node::UtilityProvider,
+	payment::OnChargeCapacityTransaction,
 };
 pub use pallet::*;
 pub use weights::*;

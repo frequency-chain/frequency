@@ -1,22 +1,9 @@
-use common_primitives::msa::MsaValidator;
-use frame_support::traits::tokens::{fungible::Inspect as InspectFungible, Balance};
+use common_primitives::{msa::MsaValidator, payment::OnChargeCapacityTransaction};
+use frame_support::traits::tokens::fungible::Inspect as InspectFungible;
 use sp_std::marker::PhantomData;
 
 use super::*;
 use crate::Config;
-
-/// A trait used for the withdrawal of Capacity.
-pub trait OnChargeCapacityTransaction<T: Config> {
-	/// Scalar type for representing balance of an account.
-	type Balance: Balance;
-
-	/// Handles withdrawal of Capacity from an Account.
-	fn withdraw_fee(
-		key: &T::AccountId,
-		fee: Self::Balance,
-	) -> Result<Self::Balance, TransactionValidityError>;
-}
-
 /// A type used to withdraw Capacity from an account.
 pub struct CapacityAdapter<Curr, Msa>(PhantomData<(Curr, Msa)>);
 
