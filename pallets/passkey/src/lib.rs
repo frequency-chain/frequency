@@ -18,7 +18,7 @@
 )]
 
 use frame_support::{
-	dispatch::{DispatchResult, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -36,6 +36,10 @@ pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
+
+/// defines all new types for this pallet
+pub mod types;
+pub use types::*;
 
 pub use module::*;
 
@@ -78,8 +82,11 @@ pub mod module {
 	#[pallet::event]
 	#[pallet::generate_deposit(fn deposit_event)]
 	pub enum Event<T: Config> {
-		/// PlaceHolder event
-		PlaceHolderEvent,
+		/// When a passkey transaction is successfully executed
+		TransactionExecutionSuccess {
+			/// transaction account id
+			account_id: T::AccountId,
+		},
 	}
 
 	#[pallet::pallet]
@@ -90,10 +97,40 @@ pub mod module {
 	impl<T: Config> Pallet<T> {
 		/// proxy call
 		#[pallet::call_index(0)]
-		#[pallet::weight(T::WeightInfo::proxy())]
-		pub fn proxy(_origin: OriginFor<T>) -> DispatchResult {
-			Self::deposit_event(Event::PlaceHolderEvent);
-			Ok(())
+		#[pallet::weight({
+			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
+			// TODO: calculate overhead after all validations
+			let overhead = T::WeightInfo::proxy();
+			let total = overhead.saturating_add(dispatch_info.weight);
+			(total, dispatch_info.class)
+		})]
+		pub fn proxy(
+			origin: OriginFor<T>,
+			payload: PasskeyPayload<T>,
+		) -> DispatchResultWithPostInfo {
+			ensure_none(origin)?;
+			let transaction_account_id = payload.passkey_call.account_id.clone();
+			let main_origin = T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
+				transaction_account_id.clone(),
+			));
+			let result = payload.passkey_call.call.dispatch(main_origin);
+			if result.is_ok() {
+				Self::deposit_event(Event::TransactionExecutionSuccess {
+					account_id: transaction_account_id,
+				});
+			}
+			result
+		}
+	}
+
+	#[pallet::validate_unsigned]
+	impl<T: Config> ValidateUnsigned for Pallet<T> {
+		type Call = Call<T>;
+		fn validate_unsigned(
+			_source: TransactionSource,
+			_call: &Self::Call,
+		) -> TransactionValidity {
+			Ok(ValidTransaction::default())
 		}
 	}
 

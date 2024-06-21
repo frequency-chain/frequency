@@ -27,6 +27,7 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
+pallet-balances = { workspace = true }
 
 [features]
 default = ["std"]
