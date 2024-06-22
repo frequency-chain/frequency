@@ -1,19 +1,45 @@
 //! Mocks for the Passkey module.
+use crate as pallet_passkey;
+use crate::*;
 use frame_support::{
-	construct_runtime,
+	construct_runtime, parameter_types,
 	traits::{ConstU32, ConstU64, Everything},
+	weights::WeightToFee as WeightToFeeTrait,
 };
-use sp_core::H256;
+use pallet_transaction_payment::CurrencyAdapter;
+use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{ConvertInto, IdentityLookup},
-	BuildStorage,
+	BuildStorage, SaturatedConversion,
 };
-
-use crate as pallet_passkey;
 
 use common_primitives::node::AccountId;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
+
+// Needs parameter_types! for the impls below
+parameter_types! {
+	pub static WeightToFee: u64 = 1;
+	pub static TransactionByteFee: u64 = 1;
+}
+
+impl WeightToFeeTrait for WeightToFee {
+	type Balance = u64;
+
+	fn weight_to_fee(weight: &Weight) -> Self::Balance {
+		Self::Balance::saturated_from(weight.ref_time())
+			.saturating_mul(WEIGHT_TO_FEE.with(|v| *v.borrow()))
+	}
+}
+
+impl WeightToFeeTrait for TransactionByteFee {
+	type Balance = u64;
+
+	fn weight_to_fee(weight: &Weight) -> Self::Balance {
+		Self::Balance::saturated_from(weight.ref_time())
+			.saturating_mul(TRANSACTION_BYTE_FEE.with(|v| *v.borrow()))
+	}
+}
 
 construct_runtime!(
 	pub enum Test
@@ -21,6 +47,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>},
+		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 	}
 );
 
@@ -48,6 +75,15 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ();
 	type OnSetCode = ();
 	type MaxConsumers = ConstU32<16>;
+}
+
+impl pallet_transaction_payment::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type WeightToFee = WeightToFee;
+	type LengthToFee = TransactionByteFee;
+	type FeeMultiplierUpdate = ();
+	type OperationalFeeMultiplier = ConstU8<5>;
 }
 
 impl pallet_passkey::Config for Test {
