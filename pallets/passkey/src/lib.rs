@@ -20,10 +20,11 @@
 use frame_support::{
 	dispatch::{GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::IsSubType,
+	traits::{Contains, IsSubType},
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::Dispatchable;
+use sp_runtime::traits::{Dispatchable, One};
+use sp_std::vec;
 
 #[cfg(test)]
 mod mock;
@@ -64,6 +65,9 @@ pub mod module {
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
+
+		/// Filters the inner calls for passkey which is set in runtime
+		type PasskeyCallFilter: Contains<<Self as Config>::RuntimeCall>;
 	}
 
 	#[pallet::error]
@@ -119,13 +123,77 @@ pub mod module {
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T> {
 		type Call = Call<T>;
-		fn validate_unsigned(
-			_source: TransactionSource,
-			_call: &Self::Call,
-		) -> TransactionValidity {
-			Ok(ValidTransaction::default())
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			let payload = Self::filter_valid_calls(&call)?;
+			Self::validate_nonce(&payload)
+		}
+
+		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
+			let payload = Self::filter_valid_calls(&call)?;
+			Self::pre_dispatch_nonce(&payload)
 		}
 	}
 }
 
-impl<T: Config> Pallet<T> {}
+impl<T: Config> Pallet<T> {
+	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
+		match call {
+			Call::proxy { payload }
+				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
+				return Ok(payload.clone()),
+			_ => return Err(InvalidTransaction::Call.into()),
+		}
+	}
+
+	fn validate_nonce(payload: &PasskeyPayload<T>) -> TransactionValidity {
+		let who = &payload.passkey_call.account_id.clone();
+		let nonce = payload.passkey_call.account_nonce;
+
+		// check index
+		let account = frame_system::Account::<T>::get(who);
+		if nonce < account.nonce {
+			return InvalidTransaction::Stale.into()
+		}
+
+		let provides = vec![Encode::encode(&(who, nonce))];
+		let requires = if account.nonce < nonce {
+			vec![Encode::encode(&(who, nonce - One::one()))]
+		} else {
+			vec![]
+		};
+
+		Ok(ValidTransaction {
+			priority: 0,
+			requires,
+			provides,
+			longevity: TransactionLongevity::max_value(),
+			propagate: true,
+		})
+	}
+
+	fn pre_dispatch_nonce(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
+		let who = &payload.passkey_call.account_id.clone();
+		let nonce = payload.passkey_call.account_nonce;
+
+		// Get TOKEN account from "who" key
+		let mut account = frame_system::Account::<T>::get(who);
+
+		// The default account (no account) has a nonce of 0.
+		// If account nonce is not equal to the tx nonce, the tx is invalid.  Therefore, check if it is a stale or future tx.
+		if nonce != account.nonce {
+			return Err(if nonce < account.nonce {
+				InvalidTransaction::Stale
+			} else {
+				InvalidTransaction::Future
+			}
+			.into())
+		}
+
+		// Increment account nonce by 1
+		account.nonce += T::Nonce::one();
+
+		frame_system::Account::<T>::insert(who, account);
+
+		Ok(())
+	}
+}

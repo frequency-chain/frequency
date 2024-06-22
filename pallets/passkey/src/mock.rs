@@ -53,6 +53,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
+	type PasskeyCallFilter = MockPasskeyCallFilter;
 }
 
 impl pallet_balances::Config for Test {
@@ -70,6 +71,19 @@ impl pallet_balances::Config for Test {
 	type MaxFreezes = ConstU32<1>;
 	type MaxHolds = ConstU32<0>;
 	type RuntimeHoldReason = ();
+}
+
+pub struct MockPasskeyCallFilter;
+
+impl Contains<RuntimeCall> for MockPasskeyCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
+			_ => false,
+		}
+	}
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
