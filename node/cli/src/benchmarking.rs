@@ -166,7 +166,7 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 	let d = Duration::from_millis(0);
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
 	let mock_para_inherent_provider =
-		cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider {
+		cumulus_client_parachain_inherent::MockValidationDataInherentDataProvider {
 			current_para_block: 0,
 			relay_offset: 1,
 			relay_blocks_per_para_block: 2,

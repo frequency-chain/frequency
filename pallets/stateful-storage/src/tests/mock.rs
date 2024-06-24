@@ -57,6 +57,7 @@ impl system::Config for Test {
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<Self::AccountId>;
+	type RuntimeTask = RuntimeTask;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();

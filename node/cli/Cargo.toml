@@ -56,7 +56,7 @@ polkadot-service = { workspace = true }
 # Cumulus
 cumulus-client-cli = { workspace = true }
 cumulus-client-service = { workspace = true }
-cumulus-primitives-parachain-inherent = { workspace = true }
+cumulus-client-parachain-inherent = { workspace = true }
 cumulus-primitives-core = { workspace = true }
 
 [build-dependencies]
