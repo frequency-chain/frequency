@@ -20,7 +20,7 @@ impl ProvideRuntimeApi<Block> for TestApi {
 impl<Block: BlockT> HeaderBackend<Block> for TestApi {
 	fn header(
 		&self,
-		_id: <Block as sp_api::BlockT>::Hash,
+		_id: Block::Hash,
 	) -> std::result::Result<Option<Block::Header>, sp_blockchain::Error> {
 		Ok(None)
 	}
@@ -40,7 +40,7 @@ impl<Block: BlockT> HeaderBackend<Block> for TestApi {
 
 	fn status(
 		&self,
-		_id: <Block as sp_api::BlockT>::Hash,
+		_id: Block::Hash,
 	) -> std::result::Result<sc_client_api::blockchain::BlockStatus, sp_blockchain::Error> {
 		Ok(sc_client_api::blockchain::BlockStatus::Unknown)
 	}

@@ -18,7 +18,7 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{messages::*, node::BlockNumber, schema::*};
-use sp_api::vec::Vec;
+use sp_std::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

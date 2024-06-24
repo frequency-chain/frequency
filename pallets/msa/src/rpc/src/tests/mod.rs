@@ -6,8 +6,8 @@ use rpc_mock::*;
 use common_primitives::node::{AccountId, Block, BlockNumber};
 use pallet_msa_runtime_api::MsaRuntimeApi;
 use parity_scale_codec::Encode;
-use sp_api::offchain::testing::TestPersistentOffchainDB;
-use sp_core::offchain::OffchainStorage;
+use sp_core::offchain::{testing::TestPersistentOffchainDB, OffchainStorage};
+
 use sp_runtime::traits::Zero;
 use std::{sync::Arc, vec};
 
