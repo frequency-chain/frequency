@@ -1,12 +1,13 @@
 //! Mocks for the Passkey module.
-
-use super::*;
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, ConstU64, Everything},
 };
 use sp_core::H256;
-use sp_runtime::{traits::IdentityLookup, BuildStorage};
+use sp_runtime::{
+	traits::{ConvertInto, IdentityLookup},
+	BuildStorage,
+};
 
 use crate as pallet_passkey;
 
@@ -49,10 +50,11 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-impl Config for Test {
+impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
 impl pallet_balances::Config for Test {
