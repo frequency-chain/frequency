@@ -277,7 +277,6 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 		match call {
 			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) |
-			
 			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
@@ -360,7 +359,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 86,
+	spec_version: 87,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -374,7 +373,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 86,
+	spec_version: 87,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -930,6 +929,7 @@ impl pallet_passkey::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_passkey::weights::SubstrateWeight<Runtime>;
+	type ConvertIntoAccountId32 = ConvertInto;
 	type PasskeyCallFilter = PasskeyCallFilter;
 }
 

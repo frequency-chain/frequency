@@ -1,12 +1,13 @@
 //! Mocks for the Passkey module.
-
-use super::*;
 use frame_support::{
 	construct_runtime,
-	traits::{ConstU32, ConstU64, Everything},
+	traits::{ConstU32, ConstU64, Contains, Everything},
 };
 use sp_core::H256;
-use sp_runtime::{traits::IdentityLookup, BuildStorage};
+use sp_runtime::{
+	traits::{ConvertInto, IdentityLookup},
+	BuildStorage,
+};
 
 use crate as pallet_passkey;
 
@@ -49,10 +50,11 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-impl Config for Test {
+impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
+	type ConvertIntoAccountId32 = ConvertInto;
 	type PasskeyCallFilter = MockPasskeyCallFilter;
 }
 
@@ -78,9 +80,7 @@ pub struct MockPasskeyCallFilter;
 impl Contains<RuntimeCall> for MockPasskeyCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
-			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) |
-			
 			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,

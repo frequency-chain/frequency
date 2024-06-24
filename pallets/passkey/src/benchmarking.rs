@@ -23,8 +23,10 @@ type SignerId = app_sr25519::Public;
 
 fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
+	let passkey_public_key = [0u8; 33];
+	let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 	let signature: MultiSignature =
-		MultiSignature::Sr25519(test_account_1_pk.sign(b"sdsds").unwrap().into());
+		MultiSignature::Sr25519(test_account_1_pk.sign(&wrapped_binary).unwrap().into());
 
 	let inner_call: <T as Config>::RuntimeCall =
 		frame_system::Call::<T>::remark { remark: vec![] }.into();
@@ -36,7 +38,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 		call: Box::new(inner_call),
 	};
 	let payload = PasskeyPayload {
-		passkey_public_key: [0u8; 33],
+		passkey_public_key,
 		verifiable_passkey_signature: VerifiablePasskeySignature {
 			signature: PasskeySignature::default(),
 			client_data_json: PasskeyClientDataJson::default(),
