@@ -33,6 +33,7 @@ use sp_std::prelude::*;
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	node::UtilityProvider,
+	payment::*,
 };
 pub use pallet::*;
 pub use weights::*;
@@ -46,17 +47,6 @@ pub mod types;
 pub mod capacity_stable_weights;
 
 use capacity_stable_weights::CAPACITY_EXTRINSIC_BASE_WEIGHT;
-
-/// Type aliases used for interaction with `OnChargeTransaction`.
-pub(crate) type OnChargeTransactionOf<T> =
-	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
-
-/// Balance type alias.
-pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
-
-/// Liquidity info type alias (imbalances).
-pub(crate) type LiquidityInfoOf<T> =
-	<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::LiquidityInfo;
 
 /// Capacity Balance type
 pub(crate) type CapacityOf<T> = <T as Config>::Capacity;

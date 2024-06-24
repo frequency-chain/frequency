@@ -1553,6 +1553,7 @@ dependencies = [
  "frame-system",
  "impl-serde",
  "numtoa",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "serde",
