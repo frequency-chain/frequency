@@ -17,14 +17,19 @@
 	missing_docs
 )]
 
+use common_primitives::payment::*;
 use frame_support::{
 	dispatch::{GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::IsSubType,
 };
 use frame_system::pallet_prelude::*;
-use sp_runtime::traits::{Convert, Dispatchable, Verify};
-use sp_std::vec::Vec;
+use pallet_transaction_payment::OnChargeTransaction;
+use sp_runtime::{
+	traits::{Convert, DispatchInfoOf, Dispatchable, Verify, Zero},
+	transaction_validity::{TransactionValidity, TransactionValidityError},
+};
+use sp_std::prelude::*;
 
 #[cfg(test)]
 mod mock;
@@ -46,6 +51,7 @@ pub use module::*;
 #[frame_support::pallet]
 pub mod module {
 	use common_primitives::utils::wrap_binary_data;
+	use frame_support::dispatch::DispatchInfo;
 	use sp_runtime::{AccountId32, MultiSignature};
 
 	use super::*;
@@ -134,7 +140,11 @@ pub mod module {
 		}
 	}
 
-	impl<T: Config> Pallet<T> {
+	impl<T: Config> Pallet<T>
+	where
+		<T as frame_system::Config>::RuntimeCall:
+			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	{
 		/// Check the signature on passkey public key by the account id
 		/// Returns Ok(()) if the signature is valid
 		/// Returns Err(InvalidAccountSignature) if the signature is invalid
@@ -160,6 +170,35 @@ pub mod module {
 			} else {
 				Err(Error::<T>::InvalidAccountSignature.into())
 			}
+		}
+
+		/// Withdraws transaction fee paid with tokens.
+		#[allow(unused)]
+		fn withdraw_token_fee(
+			&self,
+			who: &T::AccountId,
+			call: &<T as frame_system::Config>::RuntimeCall,
+			info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+			len: usize,
+		) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+			let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
+				len as u32,
+				info,
+				Zero::zero(),
+			);
+			if fee.is_zero() {
+				return Ok((fee, InitialPayment::Free));
+			}
+
+			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+				who,
+				call,
+				info,
+				fee,
+				Zero::zero(),
+			)
+			.map(|i| (fee, InitialPayment::Token(i)))
+			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 		}
 	}
 }

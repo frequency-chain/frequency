@@ -1,4 +1,4 @@
-use common_primitives::{ msa::MsaValidator, payment::* };
+use common_primitives::{msa::MsaValidator, payment::*};
 use frame_support::traits::tokens::{fungible::Inspect as InspectFungible, Balance};
 use sp_std::marker::PhantomData;
 

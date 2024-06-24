@@ -17,7 +17,6 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
-	DefaultNoBound,
 };
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
@@ -56,58 +55,6 @@ pub(crate) type CapacityBalanceOf<T> = <CapacityOf<T> as Nontransferable>::Balan
 
 pub(crate) type ChargeCapacityBalanceOf<T> =
 	<<T as Config>::OnChargeCapacityTransaction as OnChargeCapacityTransaction<T>>::Balance;
-
-/// Used to pass the initial payment info from pre- to post-dispatch.
-#[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
-pub enum InitialPayment<T: Config> {
-	/// No initial fee was paid.
-	#[default]
-	Free,
-	/// The initial fee was payed in the native currency.
-	Token(LiquidityInfoOf<T>),
-	/// The initial fee was paid in an asset.
-	Capacity,
-}
-
-#[cfg(feature = "std")]
-impl<T: Config> InitialPayment<T> {
-	pub fn is_free(&self) -> bool {
-		match *self {
-			InitialPayment::Free => true,
-			_ => false,
-		}
-	}
-
-	pub fn is_capacity(&self) -> bool {
-		match *self {
-			InitialPayment::Capacity => true,
-			_ => false,
-		}
-	}
-
-	pub fn is_token(&self) -> bool {
-		match *self {
-			InitialPayment::Token(_) => true,
-			_ => false,
-		}
-	}
-}
-
-impl<T: Config> sp_std::fmt::Debug for InitialPayment<T> {
-	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		match *self {
-			InitialPayment::Free => write!(f, "Nothing"),
-			InitialPayment::Capacity => write!(f, "Token"),
-			InitialPayment::Token(_) => write!(f, "Imbalance"),
-		}
-	}
-
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
 
 #[cfg(test)]
 mod tests;
