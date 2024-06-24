@@ -78,6 +78,9 @@ pub struct MockPasskeyCallFilter;
 impl Contains<RuntimeCall> for MockPasskeyCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) |
+			
 			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
@@ -90,5 +93,17 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities =
 		frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
+	use sp_std::sync::Arc;
+
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
+
 	ext
 }

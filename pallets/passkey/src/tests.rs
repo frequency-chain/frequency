@@ -81,7 +81,7 @@ fn validate_unsigned_with_unsupported_call_should_fail() {
 			account_nonce: 3,
 			account_ownership_proof: signature,
 			// remark is an unsupported call
-			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
+			call: Box::new(RuntimeCall::System(SystemCall::remark_with_event { remark: vec![1, 2, 3u8] })),
 		};
 		let payload = PasskeyPayload {
 			passkey_public_key: [0u8; 33],

@@ -275,6 +275,9 @@ pub struct PasskeyCallFilter;
 impl Contains<RuntimeCall> for PasskeyCallFilter {
 	fn contains(call: &RuntimeCall) -> bool {
 		match call {
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) |
+			
 			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
 			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
