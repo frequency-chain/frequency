@@ -152,7 +152,7 @@ impl<T: Config> Pallet<T> {
 		// check index
 		let account = frame_system::Account::<T>::get(who);
 		if nonce < account.nonce {
-			return InvalidTransaction::Stale.into()
+			return InvalidTransaction::Stale.into();
 		}
 
 		let provides = vec![Encode::encode(&(who, nonce))];
@@ -186,7 +186,7 @@ impl<T: Config> Pallet<T> {
 			} else {
 				InvalidTransaction::Future
 			}
-			.into())
+			.into());
 		}
 
 		// Increment account nonce by 1

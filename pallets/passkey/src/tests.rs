@@ -144,6 +144,57 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 }
 
 #[test]
+fn validate_unsigned_with_correct_nonce_should_work() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		let who: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		let mut account = frame_system::Account::<Test>::get(&who);
+		account.nonce += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+
+		let signature: MultiSignature = test_account_1_key_pair.sign(b"sdsds").into();
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: test_account_1_key_pair.public().into(),
+			account_nonce: 2,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: test_account_2_key_pair.public().into(),
+				value: 10000,
+			})),
+		};
+		let payload = PasskeyPayload {
+			passkey_public_key: [0u8; 33],
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: PasskeySignature::default(),
+				client_data_json: PasskeyClientDataJson::default(),
+				authenticator_data: PasskeyAuthenticatorData::default(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		assert!(v.is_ok());
+
+		assert_eq!(
+			v,
+			Ok(ValidTransaction {
+				priority: 0,
+				requires: vec![Encode::encode(&(who.clone(), 1u64))],
+				provides: vec![Encode::encode(&(who, 2u64))],
+				longevity: TransactionLongevity::max_value(),
+				propagate: true,
+			})
+		);
+	});
+}
+
+#[test]
 fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 	new_test_ext().execute_with(|| {
 		// arrange
