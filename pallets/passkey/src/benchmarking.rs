@@ -4,7 +4,6 @@ use super::*;
 #[allow(unused)]
 use crate::Pallet as Passkey;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
-use sp_std::prelude::*;
 
 benchmarks! {
 	proxy {

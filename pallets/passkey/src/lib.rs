@@ -181,21 +181,14 @@ pub mod module {
 			info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 			len: usize,
 		) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-			let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
-				len as u32,
-				info,
-				Zero::zero(),
-			);
+			let tip = Zero::zero();
+			let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 			if fee.is_zero() {
 				return Ok((fee, InitialPayment::Free));
 			}
 
 			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-				who,
-				call,
-				info,
-				fee,
-				Zero::zero(),
+				who, call, info, fee, tip,
 			)
 			.map(|i| (fee, InitialPayment::Token(i)))
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
