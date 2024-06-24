@@ -99,11 +99,8 @@ fn test_proxy_call_with_bad_signature_should_fail() {
 			},
 			passkey_call: call,
 		};
-
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
 		// assert
-		assert_noop!(
-			Passkey::proxy(RuntimeOrigin::none(), payload),
-			Error::<Test>::InvalidAccountSignature
-		);
+		assert_eq!(res, InvalidTransaction::BadSigner.into());
 	});
 }
