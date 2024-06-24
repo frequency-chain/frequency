@@ -113,6 +113,14 @@ pub mod module {
 			let main_origin = T::RuntimeOrigin::from(frame_system::RawOrigin::Signed(
 				transaction_account_id.clone(),
 			));
+
+			// check the signature
+			Self::check_account_signature(
+				&transaction_account_id,
+				&payload.passkey_public_key.into(),
+				&payload.passkey_call.account_ownership_proof,
+			)?;
+
 			let result = payload.passkey_call.call.dispatch(main_origin);
 			if result.is_ok() {
 				Self::deposit_event(Event::TransactionExecutionSuccess {
