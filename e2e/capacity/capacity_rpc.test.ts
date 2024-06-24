@@ -70,7 +70,11 @@ describe('Capacity RPC', function () {
     assert.notEqual(feeDetails.inclusionFee, undefined, 'should have returned a partialFee');
     assert(feeDetails.inclusionFee.isSome, 'should have returned a partialFee');
     const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
-    assert(Math.abs(baseFee - 106382) < 10_000, 'The base fee appears to be wrong or have changed more than expected');
+    const baseFeeSnapshot = 139448;
+    assert(
+      Math.abs(baseFee - baseFeeSnapshot) < 10_000,
+      'The base fee appears to be wrong or have changed more than expected'
+    );
     assert(Math.abs(lenFee - 1170000) < 100, 'The len fee appears to be wrong or have changed more than expected');
     // This is comparing stable weight, which has no impact from targeted_fee_adjustment, with actual weights.
     assert(
