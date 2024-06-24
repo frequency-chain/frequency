@@ -1,14 +1,12 @@
 //! Mocks for the Passkey module.
-
-use super::*;
 use frame_support::{
 	construct_runtime,
 	traits::{ConstU32, ConstU64, Everything},
 };
 use sp_core::H256;
 use sp_runtime::{
-	traits::{Convert, ConvertInto, IdentityLookup},
-	AccountId32, BuildStorage,
+	traits::{ConvertInto, IdentityLookup},
+	BuildStorage,
 };
 
 use crate as pallet_passkey;
