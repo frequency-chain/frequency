@@ -136,7 +136,7 @@ pub mod module {
 		fn validate_signatures(call: &Call<T>) -> TransactionValidity {
 			match call {
 				Call::proxy { payload } => {
-					let signed_data = payload.passkey_public_key.clone();
+					let signed_data = payload.passkey_public_key;
 					let signature = payload.passkey_call.account_ownership_proof.clone();
 					let signer = &payload.passkey_call.account_id;
 					match Self::check_account_signature(signer, &signed_data.into(), &signature) {
