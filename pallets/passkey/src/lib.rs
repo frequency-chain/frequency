@@ -104,8 +104,7 @@ pub mod module {
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
-			// TODO: calculate overhead after all validations
-			let overhead = T::WeightInfo::proxy();
+			let overhead = T::WeightInfo::pre_dispatch();
 			let total = overhead.saturating_add(dispatch_info.weight);
 			(total, dispatch_info.class)
 		})]
