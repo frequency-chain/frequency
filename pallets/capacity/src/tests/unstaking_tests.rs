@@ -55,9 +55,9 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<Test> {
-				amount: BalanceOf::<Test>::from(60u64),
-				capacity: BalanceOf::<Test>::from(6u64),
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: BalanceOf::<Test>::from(60u32),
+				capacity: BalanceOf::<Test>::from(6u32),
 			}
 		);
 

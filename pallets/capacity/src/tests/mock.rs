@@ -195,8 +195,6 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolEachEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
-    type StakingRewardsPastErasMax = ConstU32<5>;
-    type ChangeStakingTargetThawEras = ConstU32<5>;
 }
 
 fn initialize_reward_pool() {

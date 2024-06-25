@@ -17,8 +17,8 @@
 //! - An interface between the runtime and Custom RPCs.
 //! - Runtime interfaces for end users beyond just State Queries
 
-use sp_api::codec::Codec;
 use sp_std::vec::Vec;
+use parity_scale_codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
 use common_primitives::capacity::{UnclaimedRewardInfoRPC};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
