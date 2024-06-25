@@ -1,4 +1,4 @@
-name: "Check Migrations Paseo"
+name: "Check Migrations for Frequency Runtime"
 description: "An action to check runtime migrations"
 inputs:
   github-token:
