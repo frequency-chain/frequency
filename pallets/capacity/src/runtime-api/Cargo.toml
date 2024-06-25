@@ -1,0 +1,23 @@
+[package]
+name = "pallet-capacity-runtime-api"
+version = "0.0.0"
+description = "A package that adds Runtime Api for the Stateful Storage pallet"
+authors = ["Frequency"]
+license = "Apache-2.0"
+publish = false
+homepage = "https://frequency.xyz"
+repository = "https://github.com/frequency-chain/frequency/"
+edition = "2021"
+
+
+[dependencies]
+sp-api = { workspace = true }
+sp-std = { workspace = true }
+common-primitives = { path="../../../../common/primitives"}
+
+[features]
+default = ["std"]
+std = [
+    "sp-api/std",
+    "sp-std/std",
+]

@@ -136,11 +136,6 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// Return the size of the reward pool using the current economic model
 	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
-	/// Return the list of unclaimed rewards  for `accountId`, using the current economic model
-	fn staking_reward_totals(
-		account_id: Self::AccountId,
-	) -> Result<BalanceOf<T>, DispatchError>;
-	
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(

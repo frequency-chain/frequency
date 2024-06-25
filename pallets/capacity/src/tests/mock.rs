@@ -151,15 +151,6 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		10_000u64.into()
 	}
 
-	fn staking_reward_totals(
-		_account_id: Self::AccountId,
-	) -> Result<
-		BoundedVec<UnclaimedRewardInfo<Test>, <Test as Config>::ProviderBoostHistoryLimit>,
-		DispatchError,
-	> {
-		Ok(BoundedVec::new())
-	}
-
 	// use the pallet version of the era calculation.
 	fn era_staking_reward(
 		amount_staked: Self::Balance,

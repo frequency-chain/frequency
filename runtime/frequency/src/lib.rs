@@ -40,6 +40,7 @@ use sp_version::RuntimeVersion;
 
 use common_primitives::{
 	handles::*, messages::*, msa::*, node::*, rpc::RpcEvent, schema::*, stateful_storage::*,
+	capacity::*,
 };
 
 pub use common_runtime::{
@@ -1499,6 +1500,12 @@ impl_runtime_apis! {
 		}
 		fn validate_handle(base_handle: BaseHandle) -> bool {
 			Handles::validate_handle(base_handle.to_vec())
+		}
+	}
+
+	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId> for Runtime {
+		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfoRPC> {
+			Capacity::list_unclaimed_rewards_rpc(who)
 		}
 	}
 

@@ -59,6 +59,7 @@ where
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_handles_runtime_api::HandlesRuntimeApi<Block>,
+	C::Api: pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId>,
 	OffchainDB: sp_core::offchain::OffchainStorage + 'static,
 	P: TransactionPool + Sync + Send + 'static,
 {

@@ -95,6 +95,7 @@ cumulus-relay-chain-rpc-interface = { workspace = true }
 # Frequency
 common-helpers = { default-features = false, path = "../../common/helpers" }
 common-primitives = { default-features = false, path = "../../common/primitives" }
+pallet-capacity-runtime-api = { path = "../../pallets/capacity/src/runtime-api"}
 pallet-messages-rpc = { path = "../../pallets/messages/src/rpc" }
 pallet-messages-runtime-api = { path = "../../pallets/messages/src/runtime-api" }
 pallet-msa-rpc = { path = "../../pallets/msa/src/rpc" }

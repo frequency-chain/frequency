@@ -1,4 +1,5 @@
 //! Types for the Capacity Pallet
+use std::marker::PhantomData;
 use super::*;
 use common_primitives::capacity::RewardEra;
 use frame_support::{
@@ -11,6 +12,7 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
+use common_primitives::capacity::RewardEra;
 
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
@@ -532,11 +534,6 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// Return the size of the reward pool using the current economic model
 	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
-	/// Return the list of unclaimed rewards  for `accountId`, using the current economic model
-	fn staking_reward_totals(
-		account_id: Self::AccountId,
-	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError>;
-
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
@@ -551,30 +548,23 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 }
 
 /// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(Copy, Clone, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
+#[derive(Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct UnclaimedRewardInfo<T: Config> {
+pub struct UnclaimedRewardInfo<Balance, BlockNumber >
+where
+	Balance: AtLeast32BitUnsigned,
+	BlockNumber: AtLeast32BitUnsigned,
+{
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
 	/// When this reward expires, i.e. can no longer be claimed
-	pub expires_at_block: BlockNumberFor<T>,
+	pub expires_at_block: BlockNumber,
 	/// The total staked in this era as of the current block
-	pub staked_amount: BalanceOf<T>,
+	pub staked_amount: Balance,
 	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
 	/// staked in this era.
-	pub eligible_amount: BalanceOf<T>,
+	pub eligible_amount: Balance,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
-	pub earned_amount: BalanceOf<T>,
+	pub earned_amount: Balance,
 }
 
-impl<T: Config> Default for UnclaimedRewardInfo<T> {
-	fn default() -> Self {
-		Self {
-			reward_era: 1u32.into(),
-			expires_at_block: 0u32.into(),
-			staked_amount: 0u32.into(),
-			eligible_amount: 0u32.into(),
-			earned_amount: 0u32.into(),
-		}
-	}
-}

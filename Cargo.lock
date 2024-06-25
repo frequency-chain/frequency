@@ -3686,6 +3686,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-capacity",
+ "pallet-capacity-runtime-api",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -3770,6 +3771,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee",
  "log",
+ "pallet-capacity-runtime-api",
  "pallet-frequency-tx-payment-rpc",
  "pallet-frequency-tx-payment-runtime-api",
  "pallet-handles-rpc",
@@ -6604,6 +6606,15 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 8.0.0",
+]
+
+[[package]]
+name = "pallet-capacity-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "sp-api",
+ "sp-std",
 ]
 
 [[package]]
