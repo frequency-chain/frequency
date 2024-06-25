@@ -5,20 +5,10 @@ on:
     types:
       - labeled
   workflow_dispatch:
-    inputs:
-      runtime-package:
-        description: 'Runtime package to check migrations for'
-        required: true
-        default: 'frequency-runtime'
-      runtime-uri:
-        description: 'URI of the runtime to check migrations for'
-        required: true
-        default: 'wss://0.rpc.testnet.amplica.io:443'
-    
 
 jobs:
   check-migrations:
-    if: contains(github.event.pull_request.labels.*.name, 'change/storage-migration')
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'change/storage-migration')
     name: Check Migrations on Paseo
     continue-on-error: false
     runs-on: ubicloud-standard-8
@@ -32,4 +22,4 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           runtime-package: "frequency-runtime"
-          runtime-uri: "wss://0.rpc.testnet.amplica.io:443"
+          runtime-uri: ${{ vars.E2E_TESTNET_PASEO_RPC }}
