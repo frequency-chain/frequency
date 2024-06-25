@@ -22,8 +22,8 @@ use common_primitives::{
 	schema::SchemaId,
 	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
-use sp_api::vec::Vec;
 use sp_runtime::DispatchError;
+use sp_std::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

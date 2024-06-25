@@ -130,12 +130,14 @@ pub mod module {
 	}
 
 	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
+	impl<T: Config> ValidateUnsigned for Pallet<T>
+	where
+		<T as frame_system::Config>::RuntimeCall:
+			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	{
 		type Call = Call<T>;
-		fn validate_unsigned(
-			_source: TransactionSource,
-			_call: &Self::Call,
-		) -> TransactionValidity {
+		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			Self::validate_signatures(call)?;
 			Ok(ValidTransaction::default())
 		}
 	}
@@ -145,6 +147,21 @@ pub mod module {
 		<T as frame_system::Config>::RuntimeCall:
 			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
+		fn validate_signatures(call: &Call<T>) -> TransactionValidity {
+			match call {
+				Call::proxy { payload } => {
+					let signed_data = payload.passkey_public_key;
+					let signature = payload.passkey_call.account_ownership_proof.clone();
+					let signer = &payload.passkey_call.account_id;
+					match Self::check_account_signature(signer, &signed_data.into(), &signature) {
+						Ok(_) => Ok(ValidTransaction::default()),
+						Err(_e) => InvalidTransaction::BadSigner.into(),
+					}
+				},
+				_ => InvalidTransaction::Call.into(),
+			}
+		}
+
 		/// Check the signature on passkey public key by the account id
 		/// Returns Ok(()) if the signature is valid
 		/// Returns Err(InvalidAccountSignature) if the signature is invalid
@@ -155,7 +172,6 @@ pub mod module {
 		/// # Return
 		/// * `Ok(())` if the signature is valid
 		/// * `Err(InvalidAccountSignature)` if the signature is invalid
-		#[allow(unused)]
 		fn check_account_signature(
 			signer: &T::AccountId,
 			signed_data: &Vec<u8>,

@@ -175,6 +175,7 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 			raw_horizontal_messages: Default::default(),
 			para_blocks_per_relay_epoch: 2,
 			relay_randomness_config: (),
+			additional_key_values: Some(vec![]),
 		};
 
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
