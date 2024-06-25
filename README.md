@@ -187,10 +187,10 @@ Great for most testing.
 make start
 ```
 
-Also available as a Docker image: [`frequencychain/instant-seal-node`](https://hub.docker.com/r/frequencychain/instant-seal-node)
+Also available as a Docker image: [`frequencychain/standalone-node`](https://hub.docker.com/r/frequencychain/standalone-node)
 
 ```sh
-docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node
+docker run --rm -p 9944:9944 frequencychain/standalone-node
 ```
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
