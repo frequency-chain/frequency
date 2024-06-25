@@ -1,16 +1,29 @@
-//! Mocks for the Time-release module.
-
-use super::*;
+//! Mocks for the Passkey module.
 use frame_support::{
 	construct_runtime,
-	traits::{ConstU32, Everything},
+	traits::{ConstU32, ConstU64, Everything},
 };
 use sp_core::H256;
-use sp_runtime::{traits::IdentityLookup, BuildStorage};
+use sp_runtime::{
+	traits::{ConvertInto, IdentityLookup},
+	BuildStorage,
+};
 
 use crate as pallet_passkey;
 
-pub type AccountId = u128;
+use common_primitives::node::AccountId;
+
+type Block = frame_system::mocking::MockBlockU32<Test>;
+
+construct_runtime!(
+	pub enum Test
+	{
+		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>},
+	}
+);
+
 impl frame_system::Config for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
@@ -26,7 +39,7 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type DbWeight = ();
@@ -37,21 +50,29 @@ impl frame_system::Config for Test {
 	type MaxConsumers = ConstU32<16>;
 }
 
-impl Config for Test {
+impl pallet_passkey::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
+	type ConvertIntoAccountId32 = ConvertInto;
 }
 
-type Block = frame_system::mocking::MockBlockU32<Test>;
-
-construct_runtime!(
-	pub enum Test
-	{
-		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>},
-	}
-);
+impl pallet_balances::Config for Test {
+	type DustRemoval = ();
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = u64;
+	type MaxLocks = ();
+	type WeightInfo = ();
+	type ReserveIdentifier = [u8; 8];
+	type ExistentialDeposit = ConstU64<1>;
+	type AccountStore = System;
+	type MaxReserves = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
+	type RuntimeFreezeReason = ();
+	type MaxFreezes = ConstU32<1>;
+	type MaxHolds = ConstU32<0>;
+	type RuntimeHoldReason = ();
+}
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities =

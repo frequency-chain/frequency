@@ -121,13 +121,23 @@ pub fn benchmark_mainnet_config() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 2091.into();
-	ChainSpec::from_genesis(
-		// Name
+	ChainSpec::builder(
+		frequency_runtime::wasm_binary_unwrap(),
+		Extensions { relay_chain: "polkadot".into(), para_id: para_id.into() },
+	).with_name(
 		"Frequency",
-		// ID
+	).with_protocol_id(
 		"frequency",
-		ChainType::Live,
-		move || {
+	).with_properties(
+		properties,
+	).with_chain_type(
+		ChainType::Live
+	).with_telemetry_endpoints(
+		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0), ("wss://telemetry.frequency.xyz/submit/".into(), 0)]).unwrap()	
+	).with_boot_nodes(vec![
+		"/dns4/0.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWBd4aEArNvXECtt2JHQACBdFmeafpyfre3q81iM1xCcpP".parse().unwrap(),
+		"/dns4/1.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
+	]).with_genesis_config(
 			frequency_genesis(
 				vec![
 					(
@@ -389,26 +399,11 @@ pub fn benchmark_mainnet_config() -> ChainSpec {
 				100_000 * UNITS,
 				para_id,
 			)
-		},
-		// Bootnodes
-		vec![
-			"/dns4/0.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWBd4aEArNvXECtt2JHQACBdFmeafpyfre3q81iM1xCcpP".parse().unwrap(),
-			"/dns4/1.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
-		],
-		// Telemetry
-		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0), ("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok(),
-		// Protocol ID
-		Some("frequency"),
-		// Fork ID
-		None,
-		// Properties
-		Some(properties),
-		// Extensions
-		Extensions { relay_chain: "polkadot".into(), para_id: para_id.into() },
-	)
+
+	).build()
 }
 
-#[allow(clippy::expect_used)]
+#[allow(clippy::unwrap_used)]
 fn frequency_genesis(
 	initial_authorities: Vec<(AccountId, AuraId)>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
@@ -416,14 +411,9 @@ fn frequency_genesis(
 	technical_committee_members: Vec<AccountId>,
 	candidacy_bond: Balance,
 	id: ParaId,
-) -> frequency_runtime::RuntimeGenesisConfig {
-	frequency_runtime::RuntimeGenesisConfig {
-		system: frequency_runtime::SystemConfig {
-			code: frequency_runtime::WASM_BINARY
-				.expect("WASM binary was not build, please build it!")
-				.to_vec(),
-			..Default::default()
-		},
+) -> serde_json::Value {
+	let genesis = frequency_runtime::RuntimeGenesisConfig {
+		system: frequency_runtime::SystemConfig { ..Default::default() },
 		balances: frequency_runtime::BalancesConfig { balances: endowed_accounts },
 		parachain_info: frequency_runtime::ParachainInfoConfig {
 			parachain_id: id,
@@ -461,5 +451,7 @@ fn frequency_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
-	}
+	};
+
+	serde_json::to_value(&genesis).unwrap()
 }

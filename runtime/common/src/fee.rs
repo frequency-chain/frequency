@@ -76,8 +76,10 @@ mod test {
 		let q = Balance::from(ExtrinsicBaseWeight::get().ref_time());
 
 		assert_eq!(p, 100_000);
-		assert!(q >= 90_000_000);
-		assert!(q <= 150_000_000);
+
+		assert!(q >= 65_000_000);
+		assert!(q <= 100_000_000);
+
 		assert_eq!(p / q, Balance::from(0u128));
 	}
 }
