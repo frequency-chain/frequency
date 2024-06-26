@@ -167,7 +167,6 @@ pub mod module {
 		}
 
 		/// Charge the fee for the transaction
-		#[allow(unused)]
 		fn charge_fee(call: &Call<T>) -> TransactionValidity {
 			let call_data = call.clone();
 			match call {
