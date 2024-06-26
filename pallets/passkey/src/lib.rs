@@ -26,7 +26,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, Verify, Zero},
+	traits::{Convert, Dispatchable, Verify, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 };
 use sp_std::prelude::*;
@@ -132,8 +132,9 @@ pub mod module {
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T>
 	where
-		<T as frame_system::Config>::RuntimeCall:
-			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		<T as frame_system::Config>::RuntimeCall: From<Call<T>>
+			+ IsSubType<Call<T>>
+			+ Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
 		type Call = Call<T>;
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
@@ -144,9 +145,11 @@ pub mod module {
 
 	impl<T: Config> Pallet<T>
 	where
-		<T as frame_system::Config>::RuntimeCall:
-			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		<T as frame_system::Config>::RuntimeCall: From<Call<T>>
+			+ IsSubType<Call<T>>
+			+ Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
+		/// Validate the signatures on the call
 		fn validate_signatures(call: &Call<T>) -> TransactionValidity {
 			match call {
 				Call::proxy { payload } => {
@@ -162,9 +165,25 @@ pub mod module {
 			}
 		}
 
+		/// Charge the fee for the transaction
+		#[allow(unused)]
+		fn charge_fee(call: &Call<T>) -> TransactionValidity {
+			let call_data = call.clone();
+			match call {
+				Call::proxy { ref payload } => {
+					let payer = &payload.passkey_call.account_id;
+					let runtime_call: <T as frame_system::Config>::RuntimeCall =
+						<T as frame_system::Config>::RuntimeCall::from(call_data.into());
+					match Self::withdraw_token_fee(payer, call, &runtime_call) {
+						Ok(_) => Ok(ValidTransaction::default()),
+						Err(_e) => InvalidTransaction::Payment.into(),
+					}
+				},
+				_ => InvalidTransaction::Call.into(),
+			}
+		}
+
 		/// Check the signature on passkey public key by the account id
-		/// Returns Ok(()) if the signature is valid
-		/// Returns Err(InvalidAccountSignature) if the signature is invalid
 		/// # Arguments
 		/// * `signer` - The account id of the signer
 		/// * `signed_data` - The signed data
@@ -189,22 +208,30 @@ pub mod module {
 		}
 
 		/// Withdraws transaction fee paid with tokens.
+		/// # Arguments
+		/// * `who` - The account id of the payer
+		/// * `call` - The call
+		/// * `runtime_call` - The runtime call
 		#[allow(unused)]
 		fn withdraw_token_fee(
-			&self,
 			who: &T::AccountId,
-			call: &<T as frame_system::Config>::RuntimeCall,
-			info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-			len: usize,
+			call: &Call<T>,
+			runtime_call: &<T as frame_system::Config>::RuntimeCall,
 		) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 			let tip = Zero::zero();
-			let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+			let info = call.get_dispatch_info();
+			let len = call.using_encoded(|b| b.len());
+			let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, &info, tip);
 			if fee.is_zero() {
 				return Ok((fee, InitialPayment::Free));
 			}
 
 			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-				who, call, info, fee, tip,
+				who,
+				runtime_call,
+				&info,
+				fee,
+				tip,
 			)
 			.map(|i| (fee, InitialPayment::Token(i)))
 			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
