@@ -1,6 +1,6 @@
 [package]
 name = "pallet-handles-rpc"
-version = "0.0.0"
+version = "1.13.0-rc2+polkadot1.1.0"
 description = "A package that adds RPC to Handles pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
