@@ -144,3 +144,41 @@ fn test_proxy_call_with_low_funds_should_fail() {
 		assert_eq!(res, InvalidTransaction::Payment.into());
 	});
 }
+
+#[test]
+fn test_proxy_call_with_funds_should_pass() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		// fund the account with 10 units
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1305343182u32.into()
+		));
+		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
+		assert_eq!(balance_after, 1305343182);
+		let passkey_public_key = [0u8; 33];
+		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let signature: MultiSignature =
+			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: test_account_1_key_pair.public().into(),
+			account_nonce: 3,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
+		};
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: PasskeySignature::default(),
+				client_data_json: PasskeyClientDataJson::default(),
+				authenticator_data: PasskeyAuthenticatorData::default(),
+			},
+			passkey_call: call,
+		};
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		// assert
+		assert!(res.is_ok());
+	});
+}
