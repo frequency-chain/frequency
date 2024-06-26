@@ -225,7 +225,6 @@ pub mod module {
 			if fee.is_zero() {
 				return Ok((fee, InitialPayment::Free));
 			}
-			log::error!("fee here: {:?}", fee);
 
 			match <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
 				who,
@@ -235,10 +234,7 @@ pub mod module {
 				tip,
 			) {
 				Ok(initial_payment) => Ok((fee, InitialPayment::Token(initial_payment))),
-				Err(e) => {
-					log::error!("Error withdrawing fee for account {:?}: {:?}", who, e);
-					Err(InvalidTransaction::Payment.into())
-				},
+				Err(_) => Err(InvalidTransaction::Payment.into()),
 			}
 		}
 	}
