@@ -21,7 +21,7 @@ use common_primitives::utils::wrap_binary_data;
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{Contains, IsSubType},
+	traits::Contains,
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
@@ -67,7 +67,6 @@ pub mod module {
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
 			+ GetDispatchInfo
 			+ From<frame_system::Call<Self>>
-			// + IsSubType<Call<Self>>
 			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
 
 		/// Weight information for extrinsics in this pallet.
@@ -132,7 +131,7 @@ pub mod module {
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T>
 	where
-		<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
 	{
 		type Call = Call<T>;
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
@@ -156,8 +155,7 @@ struct PasskeyNonce<T: Config>(pub T::Nonce);
 
 impl<T: Config> PasskeyNonce<T>
 where
-	<T as frame_system::Config>::RuntimeCall:
-		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
 {
 	pub fn new(nonce: T::Nonce) -> Self {
 		Self(nonce)
@@ -177,15 +175,13 @@ where
 
 impl<T: Config> Pallet<T>
 where
-	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
 {
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-			{
-				return Ok(payload.clone())
-			},
+				return Ok(payload.clone()),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
