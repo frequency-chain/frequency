@@ -110,6 +110,8 @@ fn test_proxy_call_with_bad_signature_should_fail() {
 		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
+		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
+		assert_eq!(balance_after, 1305343182);
 	});
 }
 
@@ -119,7 +121,7 @@ fn test_proxy_call_with_low_funds_should_fail() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data("bad data".as_bytes().to_vec());
+		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 		let signature: MultiSignature =
 			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
 		let call: PasskeyCall<Test> = PasskeyCall {
