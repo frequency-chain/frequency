@@ -24,9 +24,9 @@ log = { workspace = true, default-features = false }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
+common-runtime = { path = "../../runtime/common", default-features = false }
 
 [dev-dependencies]
-common-runtime = { path = "../../runtime/common", default-features = false }
 pallet-balances = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }

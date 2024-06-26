@@ -50,6 +50,8 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 }
 
 benchmarks! {
+	where_clause {  where <T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo> }
+
 	validate {
 		let payload = generate_payload::<T>();
 	}: {
