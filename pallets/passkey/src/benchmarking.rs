@@ -61,8 +61,7 @@ benchmarks! {
 	pre_dispatch {
 		let payload = generate_payload::<T>();
 	}: {
-		let result = Passkey::pre_dispatch(&Call::proxy { payload });
-		assert!(result.is_ok());
+		assert_ok!(Passkey::pre_dispatch(&Call::proxy { payload }));
 	}
 
 	impl_benchmark_test_suite!(
