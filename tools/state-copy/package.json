@@ -1,0 +1,14 @@
+{
+  "name": "state-copy",
+  "version": "1.0.0",
+  "description": "Copies state from one chain and sudo sets it on another",
+  "scripts": {
+    "schemas": "node schemas.mjs"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "^12.0.1",
+    "@polkadot/keyring": "^12.6.2"
+  }
+}
