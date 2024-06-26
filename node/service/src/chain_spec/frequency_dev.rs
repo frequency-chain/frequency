@@ -97,6 +97,7 @@ fn development_genesis(
 ) -> serde_json::Value {
 	let genesis = frequency_runtime::RuntimeGenesisConfig {
 		system: Default::default(),
+		schemas: frequency_runtime::Schema { schemas: load_schemas(), ..Default::default() },
 		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},

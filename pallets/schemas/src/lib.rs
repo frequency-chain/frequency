@@ -36,7 +36,7 @@ use common_primitives::{
 use frame_support::{
 	dispatch::{DispatchResult, PostDispatchInfo},
 	ensure,
-	traits::{BuildGenesisConfig, Get},
+	traits::{BuildGenesisConfig, ConstU32, Get},
 };
 use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
 use sp_std::{boxed::Box, vec::Vec};
@@ -239,6 +239,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
+		/// Genesis Schemas
+		pub schemas: BoundedVec<SchemaGenesis<T>, ConstU32<100>>,
 		/// Phantom type
 		#[serde(skip)]
 		pub _config: PhantomData<T>,
@@ -246,13 +248,18 @@ pub mod pallet {
 
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { initial_max_schema_model_size: 1024, _config: Default::default() }
+			Self {
+				initial_max_schema_model_size: 1024,
+				schemas: BoundedVec::default(),
+				_config: Default::default(),
+			}
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
+			// self.schemas.forEach...
 		}
 	}
 
