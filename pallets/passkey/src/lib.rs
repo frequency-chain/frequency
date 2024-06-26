@@ -19,16 +19,18 @@
 
 use common_primitives::utils::wrap_binary_data;
 use frame_support::{
-	dispatch::{GetDispatchInfo, PostDispatchInfo},
+	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::{Contains, IsSubType},
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
-	traits::{Convert, Dispatchable, One, Verify},
+	traits::{Convert, Dispatchable, One, SignedExtension, Verify},
 	AccountId32, MultiSignature,
 };
 use sp_std::{vec, vec::Vec};
+
+use common_runtime::extensions::check_nonce::CheckNonce;
 
 #[cfg(test)]
 mod mock;
@@ -128,11 +130,16 @@ pub mod module {
 	}
 
 	#[pallet::validate_unsigned]
-	impl<T: Config> ValidateUnsigned for Pallet<T> {
+	impl<T: Config> ValidateUnsigned for Pallet<T>
+	where
+		<T as frame_system::Config>::RuntimeCall:
+			IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	{
 		type Call = Call<T>;
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let payload = Self::filter_valid_calls(&call)?;
 			Self::validate_signatures(&payload)?;
+
 			Self::validate_nonce(&payload)
 		}
 
@@ -145,12 +152,43 @@ pub mod module {
 	}
 }
 
-impl<T: Config> Pallet<T> {
+#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+struct PasskeyNonce<T: Config>(pub T::Nonce);
+
+impl<T: Config> PasskeyNonce<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
+{
+	pub fn new(nonce: T::Nonce) -> Self {
+		Self(nonce)
+	}
+
+	pub fn validate(
+		&self,
+		who: &T::AccountId,
+		call: <T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfo,
+		len: usize,
+	) -> TransactionValidity {
+		let some = CheckNonce::<T>::from(self.0);
+		some.validate(who, &call, info, len)
+	}
+}
+
+impl<T: Config> Pallet<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok(payload.clone()),
+			{
+				return Ok(payload.clone())
+			},
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -159,26 +197,33 @@ impl<T: Config> Pallet<T> {
 		let who = &payload.passkey_call.account_id.clone();
 		let nonce = payload.passkey_call.account_nonce;
 
+		// let some = CheckNonce::<T>::from(nonce);
+		let some_call: &<T as Config>::RuntimeCall = &payload.passkey_call.call;
+		let info = &some_call.get_dispatch_info();
+
+		let passkey_nonce = PasskeyNonce::<T>::new(nonce);
+		passkey_nonce.validate(who, some_call.clone().into(), info, 0usize)
+
 		// check index
-		let account = frame_system::Account::<T>::get(who);
-		if nonce < account.nonce {
-			return InvalidTransaction::Stale.into();
-		}
+		// let account = frame_system::Account::<T>::get(who);
+		// if nonce < account.nonce {
+		// 	return InvalidTransaction::Stale.into();
+		// }
 
-		let provides = vec![Encode::encode(&(who, nonce))];
-		let requires = if account.nonce < nonce {
-			vec![Encode::encode(&(who, nonce - One::one()))]
-		} else {
-			vec![]
-		};
+		// let provides = vec![Encode::encode(&(who, nonce))];
+		// let requires = if account.nonce < nonce {
+		// 	vec![Encode::encode(&(who, nonce - One::one()))]
+		// } else {
+		// 	vec![]
+		// };
 
-		Ok(ValidTransaction {
-			priority: 0,
-			requires,
-			provides,
-			longevity: TransactionLongevity::max_value(),
-			propagate: true,
-		})
+		// Ok(ValidTransaction {
+		// 	priority: 0,
+		// 	requires,
+		// 	provides,
+		// 	longevity: TransactionLongevity::max_value(),
+		// 	propagate: true,
+		// })
 	}
 
 	fn pre_dispatch_nonce(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
