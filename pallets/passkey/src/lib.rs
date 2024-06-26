@@ -138,6 +138,7 @@ pub mod module {
 	{
 		type Call = Call<T>;
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+			Self::charge_fee(call)?;
 			Self::validate_signatures(call)?;
 			Ok(ValidTransaction::default())
 		}
