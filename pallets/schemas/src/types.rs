@@ -1,11 +1,13 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	ModelType, PayloadLocation, SchemaId, SchemaSettings, SchemaVersion, SchemaVersionResponse,
+	ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion,
+	SchemaVersionResponse,
 };
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
+use serde::{Deserialize, Serialize};
 use sp_runtime::DispatchError;
 use sp_std::fmt::Debug;
 extern crate alloc;
@@ -38,6 +40,23 @@ pub const SEPARATOR_CHAR: char = '.';
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
+#[derive(
+	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+)]
+/// A structure defining a Schema information (excluding the payload)
+pub struct SchemaGenesis<T: Config> {
+	/// The type of model (AvroBinary, Parquet, etc.)
+	pub model_type: ModelType,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// additional control settings for the schema
+	pub settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+	/// Defines if a schema has a name or not
+	pub name: SchemaName,
+	/// payload
+	pub payload: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
 pub struct SchemaInfo {
@@ -51,7 +70,9 @@ pub struct SchemaInfo {
 	pub has_name: bool,
 }
 
-#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(
+	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
+)]
 /// A structure defining name of a schema
 pub struct SchemaName {
 	/// namespace or domain of the schema
