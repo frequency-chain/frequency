@@ -20,7 +20,7 @@ construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>},
+		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>, ValidateUnsigned},
 	}
 );
 

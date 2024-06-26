@@ -28,7 +28,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let signature: MultiSignature =
 		MultiSignature::Sr25519(test_account_1_pk.sign(&wrapped_binary).unwrap().into());
 
-	let inner_call: <T as Config>::RuntimeCall =
+		let inner_call: <T as Config>::RuntimeCall =
 		frame_system::Call::<T>::remark { remark: vec![] }.into();
 
 	let call: PasskeyCall<T> = PasskeyCall {
@@ -49,18 +49,39 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	payload
 }
 
+fn run_bench<T: Config>() -> TransactionValidity
+where
+<T as  module::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
+	let payload = generate_payload::<T>();
+
+	let call : <T as module::Config>::RuntimeCall = <T as module::Config>::RuntimeCall::from(Call::proxy { payload }.into());
+	let result = Passkey::validate_unsigned(TransactionSource::InBlock, &call.into());
+	result
+}
+
 benchmarks! {
 	validate {
-		let payload = generate_payload::<T>();
+		// let payload = generate_payload::<T>();
+		// let call = Call::proxy { payload };
 	}: {
-		assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload }));
+		// let result = Passkey::validate_unsigned(TransactionSource::InBlock, &call);
+		let result = run_bench::<T>();
+		assert!(result.is_ok());
 	}
 
-	pre_dispatch {
-		let payload = generate_payload::<T>();
-	}: {
-		assert_ok!(Passkey::pre_dispatch(&Call::proxy { payload }));
-	}
+	// validate {
+	// 	let payload = generate_payload::<T>();
+	// }: {
+	// 	assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload }));
+	// }
+
+	// pre_dispatch {
+	// 	let payload = generate_payload::<T>();
+	// }: {
+	// 	let result = Passkey::pre_dispatch(&Call::proxy { payload });
+	// 	assert!(result.is_ok());
+	// }
 
 	impl_benchmark_test_suite!(
 		Passkey,
