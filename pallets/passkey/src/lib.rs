@@ -213,7 +213,6 @@ pub mod module {
 		/// * `who` - The account id of the payer
 		/// * `call` - The call
 		/// * `runtime_call` - The runtime call
-		#[allow(unused)]
 		fn withdraw_token_fee(
 			who: &T::AccountId,
 			call: &Call<T>,
@@ -226,16 +225,21 @@ pub mod module {
 			if fee.is_zero() {
 				return Ok((fee, InitialPayment::Free));
 			}
+			log::error!("fee here: {:?}", fee);
 
-			<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+			match <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
 				who,
 				runtime_call,
 				&info,
 				fee,
 				tip,
-			)
-			.map(|i| (fee, InitialPayment::Token(i)))
-			.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+			) {
+				Ok(initial_payment) => Ok((fee, InitialPayment::Token(initial_payment))),
+				Err(e) => {
+					log::error!("Error withdrawing fee for account {:?}: {:?}", who, e);
+					Err(InvalidTransaction::Payment.into())
+				},
+			}
 		}
 	}
 }

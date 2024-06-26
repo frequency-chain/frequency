@@ -2,7 +2,7 @@
 use super::*;
 use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_noop, assert_ok};
-use frame_system::Call as SystemCall;
+use frame_system::{Call as SystemCall, RawOrigin};
 use mock::*;
 use pallet_balances::Call as BalancesCall;
 use sp_core::{sr25519, Pair};
@@ -80,6 +80,14 @@ fn test_proxy_call_with_bad_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		// fund the account with 10 units
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1305343182u32.into()
+		));
+		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
+		assert_eq!(balance_after, 1305343182);
 		let passkey_public_key = [0u8; 33];
 		let wrapped_binary = wrap_binary_data("bad data".as_bytes().to_vec());
 		let signature: MultiSignature =
