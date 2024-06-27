@@ -7,7 +7,7 @@ use frame_system::Call as SystemCall;
 use mock::*;
 use pallet_balances::Call as BalancesCall;
 use sp_core::{sr25519, Pair};
-use sp_runtime::{DispatchError::BadOrigin, MultiSignature};
+use sp_runtime::{traits::One, DispatchError::BadOrigin, MultiSignature};
 
 #[test]
 fn proxy_call_with_signed_origin_should_fail() {

@@ -25,7 +25,7 @@ use frame_support::{
 };
 use frame_system::pallet_prelude::*;
 use sp_runtime::{
-	traits::{Convert, Dispatchable, One, SignedExtension, Verify},
+	traits::{Convert, Dispatchable, SignedExtension, Verify},
 	AccountId32, MultiSignature,
 };
 use sp_std::{vec, vec::Vec};
@@ -137,46 +137,22 @@ pub mod module {
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let payload = Self::filter_valid_calls(&call)?;
 			Self::validate_signatures(&payload)?;
-			Self::validate_nonce(&payload)
+
+			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
+			nonce_check.validate()
 		}
 
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			Self::validate_unsigned(TransactionSource::InBlock, call)?;
 
 			let payload = Self::filter_valid_calls(&call)?;
-			Self::pre_dispatch_nonce(&payload)
+			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
+			nonce_check.pre_dispatch()
 		}
 	}
 }
 
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-struct PasskeyNonce<T: Config>(pub T::Nonce);
-
-impl<T: Config> PasskeyNonce<T>
-where
-	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
-{
-	pub fn new(nonce: T::Nonce) -> Self {
-		Self(nonce)
-	}
-
-	pub fn validate(
-		&self,
-		who: &T::AccountId,
-		call: <T as frame_system::Config>::RuntimeCall,
-		info: &DispatchInfo,
-		len: usize,
-	) -> TransactionValidity {
-		let some = CheckNonce::<T>::from(self.0);
-		some.validate(who, &call, info, len)
-	}
-}
-
-impl<T: Config> Pallet<T>
-where
-	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
-{
+impl<T: Config> Pallet<T> {
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
@@ -184,43 +160,6 @@ where
 				return Ok(payload.clone()),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
-	}
-
-	fn validate_nonce(payload: &PasskeyPayload<T>) -> TransactionValidity {
-		let who = &payload.passkey_call.account_id.clone();
-		let nonce = payload.passkey_call.account_nonce;
-
-		let some_call: &<T as Config>::RuntimeCall = &payload.passkey_call.call;
-		let info = &some_call.get_dispatch_info();
-
-		let passkey_nonce = PasskeyNonce::<T>::new(nonce);
-		passkey_nonce.validate(who, some_call.clone().into(), info, 0usize)
-	}
-
-	fn pre_dispatch_nonce(payload: &PasskeyPayload<T>) -> Result<(), TransactionValidityError> {
-		let who = &payload.passkey_call.account_id.clone();
-		let nonce = payload.passkey_call.account_nonce;
-
-		// Get TOKEN account from "who" key
-		let mut account = frame_system::Account::<T>::get(who);
-
-		// The default account (no account) has a nonce of 0.
-		// If account nonce is not equal to the tx nonce, the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if nonce != account.nonce {
-			return Err(if nonce < account.nonce {
-				InvalidTransaction::Stale
-			} else {
-				InvalidTransaction::Future
-			}
-			.into());
-		}
-
-		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
-
-		frame_system::Account::<T>::insert(who, account);
-
-		Ok(())
 	}
 
 	fn validate_signatures(payload: &PasskeyPayload<T>) -> TransactionValidity {
@@ -257,5 +196,39 @@ where
 		} else {
 			Err(Error::<T>::InvalidAccountSignature.into())
 		}
+	}
+}
+
+/// Passkey specific nonce check
+#[derive(Encode, Decode, Clone, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+struct PasskeyNonce<T: Config>(pub PasskeyCall<T>);
+
+impl<T: Config> PasskeyNonce<T>
+where
+	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+{
+	pub fn new(passkey_call: PasskeyCall<T>) -> Self {
+		Self(passkey_call)
+	}
+
+	pub fn validate(&self) -> TransactionValidity {
+		let who = self.0.account_id.clone();
+		let nonce = self.0.account_nonce;
+		let some_call: &<T as Config>::RuntimeCall = &self.0.call;
+		let info = &some_call.get_dispatch_info();
+
+		let passkey_nonce = CheckNonce::<T>::from(nonce);
+		passkey_nonce.validate(&who, &some_call.clone().into(), info, 0usize)
+	}
+
+	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
+		let who = self.0.account_id.clone();
+		let nonce = self.0.account_nonce;
+		let some_call: &<T as Config>::RuntimeCall = &self.0.call;
+		let info = &some_call.get_dispatch_info();
+
+		let passkey_nonce = CheckNonce::<T>::from(nonce);
+		passkey_nonce.pre_dispatch(&who, &some_call.clone().into(), info, 0usize)
 	}
 }
