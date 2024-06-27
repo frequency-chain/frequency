@@ -168,13 +168,10 @@ pub mod module {
 
 		/// Charge the fee for the transaction
 		fn charge_fee(call: &Call<T>) -> TransactionValidity {
-			let call_data = call.clone();
 			match call {
 				Call::proxy { ref payload } => {
 					let payer = &payload.passkey_call.account_id;
-					let runtime_call: <T as frame_system::Config>::RuntimeCall =
-						<T as frame_system::Config>::RuntimeCall::from(call_data.into());
-					match Self::withdraw_token_fee(payer, call, &runtime_call) {
+					match Self::withdraw_token_fee(payer, call) {
 						Ok(_) => Ok(ValidTransaction::default()),
 						Err(_e) => InvalidTransaction::Payment.into(),
 					}
@@ -215,7 +212,6 @@ pub mod module {
 		fn withdraw_token_fee(
 			who: &T::AccountId,
 			call: &Call<T>,
-			runtime_call: &<T as frame_system::Config>::RuntimeCall,
 		) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 			let tip = Zero::zero();
 			let info = call.get_dispatch_info();
@@ -225,9 +221,12 @@ pub mod module {
 				return Ok((fee, InitialPayment::Free));
 			}
 
+			let runtime_call: <T as frame_system::Config>::RuntimeCall =
+				<T as frame_system::Config>::RuntimeCall::from(call.clone());
+
 			match <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
 				who,
-				runtime_call,
+				&runtime_call,
 				&info,
 				fee,
 				tip,
