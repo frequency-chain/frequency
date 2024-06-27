@@ -11,9 +11,10 @@ edition = "2021"
 
 
 [dependencies]
-sp-api = { workspace = true }
 parity-scale-codec = { workspace = true, features = ["derive"] }
+sp-api = { workspace = true }
 sp-std = { workspace = true }
+sp-runtime = { workspace = true, default-features = false }
 common-primitives = { path="../../../../common/primitives"}
 
 [features]
@@ -22,4 +23,5 @@ std = [
     "parity-scale-codec/std",
     "sp-api/std",
     "sp-std/std",
+    "sp-runtime/std"
 ]

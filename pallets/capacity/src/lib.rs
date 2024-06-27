@@ -36,6 +36,7 @@ use frame_support::{
 	},
 	weights::{constants::RocksDbWeight, Weight},
 };
+use frame_support::traits::fungible::Inspect;
 
 use sp_runtime::{traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero}, ArithmeticError, DispatchError, Perbill, Permill, BoundedVec};
 
@@ -48,12 +49,13 @@ pub use common_primitives::{
 
 use crate::StakingType::{MaximumCapacity, ProviderBoost};
 use frame_system::pallet_prelude::*;
-use parity_scale_codec::{Decode, Encode, EncodeLike};
+use parity_scale_codec::EncodeLike;
+use sp_runtime::traits::{Header, HeaderProvider};
 
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::capacity::UnclaimedRewardInfoRPC;
+use common_primitives::capacity::{UnclaimedRewardInfo, UnclaimedRewardInfoRPC};
 
 pub use pallet::*;
 pub use types::*;
@@ -500,7 +502,7 @@ pub mod pallet {
 
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
 
-			ensure!(!Self::has_unclaimed_rewards(&Self::get_staking_history_for(unstaker.clone())), Error::<T>::MustFirstClaimRewards);
+			ensure!(!Self::has_unclaimed_rewards(&unstaker), Error::<T>::MustFirstClaimRewards);
 
 			let (actual_amount, staking_type) =
 				Self::decrease_active_staking_balance(&unstaker, requested_amount)?;
@@ -1048,9 +1050,10 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	pub(crate) fn has_unclaimed_rewards(history_record: &Option<ProviderBoostHistory<T>>) -> bool {
+	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
+		let history_opt = Self::get_staking_history_for(account);
 		let current_era = Self::get_current_era().era_index;
-		match history_record {
+		match history_opt {
 			Some(provider_boost_history) => {
 				match provider_boost_history.count() {
 					0usize => false,
@@ -1072,19 +1075,14 @@ impl<T: Config> Pallet<T> {
 	}
 
 
-	#[allow(unused)]
-	pub(crate) fn list_unclaimed_rewards(
+	/// Get all unclaimed rewards information for each eligible Reward Era
+	pub fn list_unclaimed_rewards(
 		account: &T::AccountId,
 	) -> Result<BoundedVec<UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>, T::ProviderBoostHistoryLimit>, DispatchError> {
-		let history_opt = Self::get_staking_history_for(account);
-		if !Self::has_unclaimed_rewards(&history_opt) { return Ok(BoundedVec::new()); }
+		if !Self::has_unclaimed_rewards(account) { return Ok(BoundedVec::new()); }
 
-		let staking_history = history_opt.ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read from has_unclaimed_rewards
+		let staking_history = Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
 
-		Self::do_get_unclaimed_rewards(&staking_history)
-	}
-
-	fn do_get_unclaimed_rewards(staking_history: &ProviderBoostHistory<T>) -> Result<BoundedVec<UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>, T::ProviderBoostHistoryLimit>, DispatchError> {
 		let current_era_info = Self::get_current_era(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
@@ -1129,28 +1127,6 @@ impl<T: Config> Pallet<T> {
 			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
-	}
-
-	// Retrieve the account transaction counter from storage.
-	// 	pub fn account_nonce(who: impl EncodeLike<T::AccountId>) -> T::Nonce {
-	// 		Account::<T>::get(who).nonce
-	// 	}
-	/// The RPC version of list_unclaimed_rewards which is a wrapper that converts to a UnclaimedRewardInfoResponse
-	pub fn list_unclaimed_rewards_rpc(who: impl EncodeLike<T::AccountId>) -> Vec<UnclaimedRewardInfoRPC> {
-		let history_opt = Self::get_staking_history_for(who);
-		if !Self::has_unclaimed_rewards(&history_opt) { return Vec::new() }
-		let history = history_opt.unwrap_or_default();
-		let rewards = Self::do_get_unclaimed_rewards(&history).unwrap_or_default();
-		let result: Vec<UnclaimedRewardInfoRPC> = rewards.iter().map(|r| {
-			UnclaimedRewardInfoRPC {
-				reward_era: 0,
-				expires_at_block: 0,
-				staked_amount: 0,
-				eligible_amount: 0,
-				earned_amount: 0,
-			}
-		}).collect();
-		result
 	}
 
 	// Returns the block number for the end of the provided era. Assumes `era` is at least this

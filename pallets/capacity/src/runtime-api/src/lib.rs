@@ -18,8 +18,9 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use sp_std::vec::Vec;
-use parity_scale_codec::{Codec, Decode, Encode, EncodeLike, MaxEncodedLen};
-use common_primitives::capacity::{UnclaimedRewardInfoRPC};
+use common_primitives::capacity::UnclaimedRewardInfo;
+use parity_scale_codec::Codec;
+use sp_runtime::traits::MaybeDisplay;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)
@@ -29,13 +30,17 @@ sp_api::decl_runtime_apis! {
 	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
 	#[api_version(1)]
-
 	/// Runtime APIs for [Capacity](../pallet_capacity/index.html)
-    pub trait CapacityRuntimeApi<AccountId> where
-		AccountId: Codec,
+    pub trait CapacityRuntimeApi<AccountId, Balance, BlockNumber> where
+		AccountId: Codec + MaybeDisplay,
+		Balance: Codec + MaybeDisplay,
+		BlockNumber: Codec + MaybeDisplay,
 	{
-		// TODO: this could just return the list_unclaimed_reward result
+		// state_call method: CapacityRuntimeApi_list_unclaimed_rewards
 		/// Get the list of unclaimed rewards information for each eligible Reward Era.
-        fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfoRPC>;
+        fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>>;
     }
 }
+
+// maybe need to go back to UnclaimedRewardInfo and specify Balance/BlockNumber as generics
+// see compute_capacity_fee_details

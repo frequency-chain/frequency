@@ -7,7 +7,7 @@
 
 use std::sync::Arc;
 
-use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
+use common_primitives::node::{AccountId, Balance, Block, BlockNumber, Hash, Index as Nonce};
 
 use sc_client_api::{AuxStore, StorageProvider};
 use sc_client_db::Backend as DbBackend;
@@ -59,7 +59,7 @@ where
 	C::Api: pallet_msa_runtime_api::MsaRuntimeApi<Block, AccountId>,
 	C::Api: pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block>,
 	C::Api: pallet_handles_runtime_api::HandlesRuntimeApi<Block>,
-	C::Api: pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId>,
+	C::Api: pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber>,
 	OffchainDB: sp_core::offchain::OffchainStorage + 'static,
 	P: TransactionPool + Sync + Send + 'static,
 {

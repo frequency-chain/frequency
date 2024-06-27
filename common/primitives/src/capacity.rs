@@ -1,8 +1,10 @@
+use frame_support::{Deserialize, Serialize};
 use crate::msa::MessageSourceId;
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
 use sp_runtime::DispatchError;
+use sp_runtime::traits::AtLeast32BitUnsigned;
 use crate::node::{BlockNumber, Balance as BalanceC};
 
 /// The type of a Reward Era
@@ -78,4 +80,27 @@ pub struct UnclaimedRewardInfoRPC
 	pub eligible_amount: BalanceC,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
 	pub earned_amount: BalanceC,
+}
+
+
+// maybe we don't need these but they are there for transaction_payment::FeeDetails<Balance>
+// #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+// #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
+
+/// Result of checking a Boost History item to see if it's eligible for a reward.
+#[derive(Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct UnclaimedRewardInfo<Balance, BlockNumber >
+{
+	/// The Reward Era for which this reward was earned
+	pub reward_era: RewardEra,
+	/// When this reward expires, i.e. can no longer be claimed
+	pub expires_at_block: BlockNumber,
+	/// The total staked in this era as of the current block
+	pub staked_amount: Balance,
+	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
+	/// staked in this era.
+	pub eligible_amount: Balance,
+	/// The amount in token of the reward (only if it can be calculated using only on chain data)
+	pub earned_amount: Balance,
 }

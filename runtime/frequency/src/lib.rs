@@ -1502,9 +1502,10 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId> for Runtime {
-		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfoRPC> {
-			Capacity::list_unclaimed_rewards_rpc(who)
+	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
+			let result = Capacity::list_unclaimed_rewards(&who).unwrap_or_default();
+			result.into_inner()
 		}
 	}
 

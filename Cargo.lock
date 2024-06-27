@@ -6615,6 +6615,7 @@ dependencies = [
  "common-primitives",
  "parity-scale-codec",
  "sp-api",
+ "sp-runtime",
  "sp-std 8.0.0",
 ]
 
