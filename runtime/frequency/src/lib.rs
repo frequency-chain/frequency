@@ -269,6 +269,23 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 	}
 }
 
+/// PasskeyCallFilter to only allow calls to specified transactions to be executed
+pub struct PasskeyCallFilter;
+
+impl Contains<RuntimeCall> for PasskeyCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) => true,
+
+			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
+			_ => false,
+		}
+	}
+}
+
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckNonZeroSender<Runtime>,
@@ -914,6 +931,7 @@ impl pallet_passkey::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type WeightInfo = pallet_passkey::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
+	type PasskeyCallFilter = PasskeyCallFilter;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -1201,7 +1219,7 @@ construct_runtime!(
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		// Currently enabled only under feature flag
 		#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
-		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>} = 67,
+		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 	}
 );
 
