@@ -161,6 +161,9 @@ lto = true
 codegen-units = 1
 strip = true
 
+[profile.production]
+inherits = "release"
+
 # Faster build for bench-dev
 [profile.bench-dev]
 inherits = "release"

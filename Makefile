@@ -282,41 +282,36 @@ e2e-tests-testnet-paseo:
 e2e-tests-paseo-local:
 	./scripts/run_e2e_tests.sh -c paseo_local
 
-.PHONY: try-runtime-create-snapshot-rococo, try-runtime-create-snapshot-mainnet, try-runtime-upgrade-rococo, try-runtime-upgrade-mainnet, try-runtime-use-snapshot-rococo, try-runtime-use-snapshot-mainnet, try-runtime-create-snapshot-paseo-testnet, try-runtime-use-snapshot-paseo-testnet, try-runtime-upgrade-paseo-testnet
-try-runtime-create-snapshot-rococo:
-	try-runtime create-snapshot --uri wss://rpc.rococo.frequency.xyz:443 rococo-all-pallets.state
+check-try-runtime-installed:
+	@which try-runtime > /dev/null || (echo "try-runtime is not installed. Please install it" && exit 1)
+.PHONY: try-runtime-create-snapshot-mainnet, try-runtime-upgrade-mainnet, try-runtime-use-snapshot-mainnet, try-runtime-create-snapshot-paseo-testnet, try-runtime-use-snapshot-paseo-testnet, try-runtime-upgrade-paseo-testnet
 
-try-runtime-create-snapshot-paseo-testnet:
+try-runtime-create-snapshot-paseo-testnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://0.rpc.testnet.amplica.io:443 testnet-paseo-all-pallets.state
 
 # mainnet snapshot takes as many as 24 hours to complete
-try-runtime-create-snapshot-mainnet:
+try-runtime-create-snapshot-mainnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
 
-try-runtime-upgrade-rococo:
-	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://rpc.rococo.frequency.xyz:443
-
-try-runtime-upgrade-paseo-testnet:
+try-runtime-upgrade-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://0.rpc.testnet.amplica.io:443
 
-try-runtime-upgrade-mainnet:
+try-runtime-upgrade-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
 
-try-runtime-use-snapshot-rococo:
-	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path rococo-all-pallets.state
-
-try-runtime-use-snapshot-paseo-testnet:
+try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path testnet-paseo-all-pallets.state
 
-try-runtime-use-snapshot-mainnet:
+try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
 
+try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
+	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
 POLKADOT_VERSION=$(shell awk -F "=" '/name = "polkadot-cli"/,/version = ".*"/{ print $2 }' Cargo.lock | tail -n 1 | cut -d " " -f 3 | tr -d \")

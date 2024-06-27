@@ -1,0 +1,25 @@
+name: Check Migrations on Paseo
+
+on:
+  pull_request_target:
+    types:
+      - labeled
+  workflow_dispatch:
+
+jobs:
+  check-migrations:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'change/storage-migration')
+    name: Check Migrations on Paseo
+    continue-on-error: false
+    runs-on: ubicloud-standard-8
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Run Check Migrations Action
+        uses: ./.github/workflows/common/try-runtime-migrations
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          runtime-package: "frequency-runtime"
+          runtime-uri: ${{ vars.E2E_TESTNET_PASEO_RPC }}
