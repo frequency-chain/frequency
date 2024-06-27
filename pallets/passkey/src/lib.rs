@@ -208,7 +208,9 @@ pub mod module {
 		/// # Arguments
 		/// * `who` - The account id of the payer
 		/// * `call` - The call
-		/// * `runtime_call` - The runtime call
+		/// # Return
+		/// * `Ok((fee, initial_payment))` if the fee is successfully withdrawn
+		/// * `Err(InvalidTransaction::Payment)` if the fee cannot be withdrawn
 		fn withdraw_token_fee(
 			who: &T::AccountId,
 			call: &Call<T>,
