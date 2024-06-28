@@ -7259,6 +7259,8 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-keyring",
+ "sp-keystore",
  "sp-runtime",
  "sp-std 8.0.0",
 ]

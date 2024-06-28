@@ -3,7 +3,7 @@ use crate as pallet_passkey;
 use crate::*;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU64, Everything},
+	traits::{ConstU32, ConstU64, Contains, Everything},
 	weights::WeightToFee as WeightToFeeTrait,
 };
 use pallet_transaction_payment::CurrencyAdapter;
@@ -46,7 +46,7 @@ construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>},
+		Passkey: pallet_passkey::{Pallet, Storage, Call, Event<T>, ValidateUnsigned},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
 	}
 );
@@ -91,6 +91,7 @@ impl pallet_passkey::Config for Test {
 	type WeightInfo = ();
 	type RuntimeCall = RuntimeCall;
 	type ConvertIntoAccountId32 = ConvertInto;
+	type PasskeyCallFilter = MockPasskeyCallFilter;
 }
 
 impl pallet_balances::Config for Test {
@@ -110,9 +111,35 @@ impl pallet_balances::Config for Test {
 	type RuntimeHoldReason = ();
 }
 
+pub struct MockPasskeyCallFilter;
+
+impl Contains<RuntimeCall> for MockPasskeyCallFilter {
+	fn contains(call: &RuntimeCall) -> bool {
+		match call {
+			RuntimeCall::System(frame_system::Call::remark { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
+			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) => true,
+			_ => false,
+		}
+	}
+}
+
 pub fn new_test_ext() -> sp_io::TestExternalities {
 	let mut ext: sp_io::TestExternalities =
 		frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
 	ext.execute_with(|| System::set_block_number(1));
+	ext
+}
+
+#[cfg(feature = "runtime-benchmarks")]
+pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
+	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
+	use sp_std::sync::Arc;
+
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	let mut ext = sp_io::TestExternalities::new(t);
+	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
+
 	ext
 }
