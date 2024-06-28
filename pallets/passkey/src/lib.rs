@@ -26,7 +26,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
-	traits::{Convert, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
@@ -132,7 +132,8 @@ pub mod module {
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T>
 	where
-		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo>,
+		<T as frame_system::Config>::RuntimeCall:
+			From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
 		type Call = Call<T>;
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
@@ -140,14 +141,24 @@ pub mod module {
 			Self::validate_signatures(&payload)?;
 			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
 			nonce_check.validate()?;
-			// TODO : follow the pattern for nonce checking for fee
-			Self::charge_fee(call)
+
+			let charge = ChargeTransactionPayment::<T>(
+				payload.passkey_call.account_id.clone(),
+				call.clone(),
+			);
+			charge.validate()
 		}
 
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
+			let payload = Self::filter_valid_calls(&call)?;
+			let charge = ChargeTransactionPayment::<T>(
+				payload.passkey_call.account_id.clone(),
+				call.clone(),
+			);
+			charge.pre_dispatch()?;
+
 			Self::validate_unsigned(TransactionSource::InBlock, call)?;
 
-			let payload = Self::filter_valid_calls(&call)?;
 			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
 			nonce_check.pre_dispatch()
 		}
@@ -202,54 +213,6 @@ where
 			Err(Error::<T>::InvalidAccountSignature.into())
 		}
 	}
-
-	/// Charge the fee for the transaction
-	fn charge_fee(call: &Call<T>) -> TransactionValidity {
-		match call {
-			Call::proxy { ref payload } => {
-				let payer = &payload.passkey_call.account_id;
-				match Self::withdraw_token_fee(payer, call) {
-					Ok(_) => Ok(ValidTransaction::default()),
-					Err(_e) => InvalidTransaction::Payment.into(),
-				}
-			},
-			_ => InvalidTransaction::Call.into(),
-		}
-	}
-
-	/// Withdraws transaction fee paid with tokens.
-	/// # Arguments
-	/// * `who` - The account id of the payer
-	/// * `call` - The call
-	/// # Return
-	/// * `Ok((fee, initial_payment))` if the fee is successfully withdrawn
-	/// * `Err(InvalidTransaction::Payment)` if the fee cannot be withdrawn
-	fn withdraw_token_fee(
-		who: &T::AccountId,
-		call: &Call<T>,
-	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let tip = Zero::zero();
-		let info = call.get_dispatch_info();
-		let len = call.using_encoded(|b| b.len());
-		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, &info, tip);
-		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Free));
-		}
-
-		let runtime_call: <T as frame_system::Config>::RuntimeCall =
-			<T as frame_system::Config>::RuntimeCall::from(call.clone());
-
-		match <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-			who,
-			&runtime_call,
-			&info,
-			fee,
-			tip,
-		) {
-			Ok(initial_payment) => Ok((fee, InitialPayment::Token(initial_payment))),
-			Err(_) => Err(InvalidTransaction::Payment.into()),
-		}
-	}
 }
 
 /// Passkey specific nonce check
@@ -283,5 +246,69 @@ where
 
 		let passkey_nonce = CheckNonce::<T>::from(nonce);
 		passkey_nonce.pre_dispatch(&who, &some_call.clone().into(), info, 0usize)
+	}
+}
+
+/// Passkey related tx payment
+#[derive(Encode, Decode, Clone, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct ChargeTransactionPayment<T: Config>(pub T::AccountId, pub Call<T>);
+
+impl<T: Config> ChargeTransactionPayment<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
+	/// Validates the transaction fee paid with tokens.
+	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
+		let info = &self.1.get_dispatch_info();
+		let len = self.0.using_encoded(|c| c.len());
+		let runtime_call: <T as frame_system::Config>::RuntimeCall =
+			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
+		let who = self.0.clone();
+		self.withdraw_token_fee(&who, &runtime_call, info, len, Zero::zero())?;
+		Ok(())
+	}
+
+	/// Validates the transaction fee paid with tokens.
+	pub fn validate(&self) -> TransactionValidity {
+		let info = &self.1.get_dispatch_info();
+		let len = self.0.using_encoded(|c| c.len());
+		let runtime_call: <T as frame_system::Config>::RuntimeCall =
+			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
+		let who = self.0.clone();
+		let fee = self.withdraw_token_fee(&who, &runtime_call, info, len, Zero::zero())?;
+
+		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
+			info,
+			len,
+			Zero::zero(),
+			fee,
+		);
+
+		Ok(ValidTransaction { priority, ..Default::default() })
+	}
+
+	/// Withdraws transaction fee paid with tokens.
+	/// # Arguments
+	/// * `who` - The account id of the payer
+	/// * `call` - The call
+	/// # Return
+	/// * `Ok((fee, initial_payment))` if the fee is successfully withdrawn
+	/// * `Err(InvalidTransaction::Payment)` if the fee cannot be withdrawn
+	fn withdraw_token_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+		tip: BalanceOf<T>,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
+			who, call, info, fee, tip,
+		)
+		.map(|_| (fee))
+		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 	}
 }
