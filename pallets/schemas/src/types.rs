@@ -15,6 +15,9 @@ use alloc::string::String;
 use frame_support::traits::Len;
 use sp_std::{vec, vec::*};
 
+#[cfg(feature = "std")]
+use common_primitives::utils::as_string_bv2048;
+
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(4);
 
@@ -40,21 +43,30 @@ pub const SEPARATOR_CHAR: char = '.';
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
+#[cfg(feature = "std")]
 #[derive(
 	Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen, Serialize, Deserialize,
 )]
 /// A structure defining a Schema information (excluding the payload)
-pub struct SchemaGenesis<T: Config> {
+pub struct SchemaGenesis {
 	/// The type of model (AvroBinary, Parquet, etc.)
 	pub model_type: ModelType,
 	/// The payload location
 	pub payload_location: PayloadLocation,
-	/// additional control settings for the schema
-	pub settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema>,
+	/// Append Only
+	pub is_append_only: bool,
+	/// Sig Only
+	pub is_signature_only: bool,
 	/// Defines if a schema has a name or not
-	pub name: SchemaName,
+	#[cfg_attr(feature = "std", serde(with = "as_string_bv2048"))]
+	pub namespace: BoundedVec<u8, ConstU32<2048>>,
+
+	/// Name Descriptor
+	#[cfg_attr(feature = "std", serde(with = "as_string_bv2048"))]
+	pub descriptor: BoundedVec<u8, ConstU32<2048>>,
 	/// payload
-	pub payload: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
+	#[cfg_attr(feature = "std", serde(with = "as_string_bv2048"))]
+	pub payload: BoundedVec<u8, ConstU32<2048>>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]

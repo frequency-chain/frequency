@@ -239,8 +239,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
-		/// Genesis Schemas
-		pub schemas: BoundedVec<SchemaGenesis<T>, ConstU32<100>>,
+		/// Genesis Schemas, order will deterine schema id
+		pub schemas: BoundedVec<SchemaGenesis, ConstU32<100>>,
 		/// Phantom type
 		#[serde(skip)]
 		pub _config: PhantomData<T>,
@@ -259,7 +259,18 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
-			// self.schemas.forEach...
+			for (schema_id, schema) in self.schemas.iter().enumerate() {
+				// SchemaInfos
+				// SchemaPayloads
+				// SchemaNameToIds
+				SchemaNameToIds::<T>::set(
+					schema.namespace.truncate(NAMESPACE_MAX as usize),
+					schema.descriptor.truncate(DESCRIPTOR_MAX as usize),
+					schema_id,
+				)
+			}
+
+			// CurrentSchemaIdentifierMaximum::<T>::put(self.schemas.len().into());
 		}
 	}
 

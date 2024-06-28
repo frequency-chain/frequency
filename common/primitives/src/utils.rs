@@ -95,6 +95,35 @@ pub mod as_string {
 	}
 }
 
+/// Handle serializing and deserializing from `BoundedVec<u8, 2048>` to a UTF-8 string
+#[cfg(feature = "std")]
+pub mod as_string_bv2048 {
+	use super::*;
+	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
+	use sp_core::ConstU32;
+	use sp_runtime::BoundedVec;
+
+	/// Serializes a `Vec<u8>` into a UTF-8 string
+	pub fn serialize<S: Serializer>(
+		bytes: &BoundedVec<u8, ConstU32<2048>>,
+		serializer: S,
+	) -> Result<S::Ok, S::Error> {
+		std::str::from_utf8(bytes)
+			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
+			.serialize(serializer)
+	}
+
+	/// Serializes a UTF-8 string into a `Vec<u8>`
+	pub fn deserialize<'de, D: Deserializer<'de>>(
+		deserializer: D,
+	) -> Result<BoundedVec<u8, ConstU32<2048>>, D::Error> {
+		Ok(BoundedVec::<u8, ConstU32<2048>>::try_from(
+			String::deserialize(deserializer)?.into_bytes(),
+		)
+		.expect("bad"))
+	}
+}
+
 /// Handle serializing and deserializing from `Option<Vec<u8>>` to a UTF-8 string
 #[cfg(feature = "std")]
 pub mod as_string_option {

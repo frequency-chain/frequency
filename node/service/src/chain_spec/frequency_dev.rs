@@ -1,5 +1,8 @@
 #![allow(missing_docs)]
-use common_primitives::node::AccountId;
+use common_primitives::{
+	node::AccountId,
+	schema::{ModelType, PayloadLocation},
+};
 use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
@@ -7,7 +10,7 @@ use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use sc_service::ChainType;
 use sp_core::sr25519;
-use sp_runtime::traits::AccountIdConversion;
+use sp_runtime::{traits::AccountIdConversion, BoundedVec};
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec =
 	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
@@ -85,6 +88,38 @@ pub fn development_config() -> ChainSpec {
 fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 	frequency_runtime::SessionKeys { aura: keys }
 }
+//<T: frequency_runtime::pallet_schemas::Config>
+fn load_genesis_schemas(
+) -> BoundedVec<frequency_runtime::pallet_schemas::SchemaGenesis, sp_core::ConstU32<100>> {
+	let model = r#"
+	[
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "is_append_only": false,
+    "is_signature_only": false,
+    "namespace": "dsnp",
+    "descriptor": "broadcast"
+    "payload": "{}"
+  }
+]
+    "#;
+	println!("Testing");
+	let x: BoundedVec<frequency_runtime::pallet_schemas::SchemaGenesis, sp_core::ConstU32<100>> =
+		serde_json::from_str(model).expect("bad json");
+	// ::from_json_bytes(&include_bytes!("../../../../resources/dev-schemas.json"));
+	// BoundedVec::from(vec![frequency_runtime::pallet_schemas::SchemaGenesis {
+	// 	model_type: ModelType::Parquet,
+	//   payload_location: PayloadLocation::IPFS,
+	//   settings: Default::default(),
+	//   name: {
+	// 	 namespace: "dsnp",
+	// 	 descriptor: "broadcast",
+	//   },
+	//   payload: BoundedVec::try_from(b"{}").unwrap(),
+	// }])
+	x
+}
 
 #[allow(clippy::unwrap_used)]
 fn development_genesis(
@@ -97,7 +132,11 @@ fn development_genesis(
 ) -> serde_json::Value {
 	let genesis = frequency_runtime::RuntimeGenesisConfig {
 		system: Default::default(),
-		schemas: frequency_runtime::Schema { schemas: load_schemas(), ..Default::default() },
+		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
+			schemas: load_genesis_schemas(),
+			..Default::default()
+		},
+		// schemas:  { schemas: Default::default(), ..Default::default() },
 		balances: frequency_runtime::BalancesConfig {
 			balances: endowed_accounts.iter().cloned().map(|k| (k, 1 << 60)).collect(),
 		},
@@ -132,7 +171,6 @@ fn development_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		schemas: Default::default(),
 		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),
