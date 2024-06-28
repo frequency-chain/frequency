@@ -259,15 +259,18 @@ pub mod pallet {
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
-			for (schema_id, schema) in self.schemas.iter().enumerate() {
+			for (schema_id_in, schema) in self.schemas.iter().enumerate() {
 				// SchemaInfos
 				// SchemaPayloads
 				// SchemaNameToIds
-				SchemaNameToIds::<T>::set(
-					schema.namespace.truncate(NAMESPACE_MAX as usize),
-					schema.descriptor.truncate(DESCRIPTOR_MAX as usize),
-					schema_id,
-				)
+
+				let a: SchemaNamespace =
+					BoundedVec::try_from(schema.clone().namespace.into_inner()).unwrap();
+				let b: SchemaDescriptor =
+					BoundedVec::try_from(schema.clone().descriptor.into_inner()).unwrap();
+				let mut schema_id = SchemaVersionId { ids: Default::default() };
+				schema_id.add::<T>(schema_id_in as u16);
+				SchemaNameToIds::<T>::set(a, b, schema_id);
 			}
 
 			// CurrentSchemaIdentifierMaximum::<T>::put(self.schemas.len().into());
@@ -750,7 +753,7 @@ pub mod pallet {
 					payload_location: schema_info.payload_location,
 					settings,
 				};
-				return Some(response)
+				return Some(response);
 			}
 			None
 		}
