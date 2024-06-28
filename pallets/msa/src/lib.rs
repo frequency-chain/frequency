@@ -669,8 +669,8 @@ pub mod pallet {
 			)
 			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
 
-			Self::register_signature(&msa_owner_proof, add_key_payload.expiration.into())?;
-			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration.into())?;
+			Self::register_signature(&msa_owner_proof, add_key_payload.expiration)?;
+			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration)?;
 
 			let msa_id = add_key_payload.msa_id;
 
