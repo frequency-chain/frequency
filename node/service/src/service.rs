@@ -31,7 +31,6 @@ use cumulus_primitives_core::{
 	relay_chain::{CollatorPair, ValidationCode},
 	ParaId,
 };
-use cumulus_primitives_parachain_inherent::MockValidationDataInherentDataProvider;
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainError, RelayChainInterface};
 
 // Substrate Imports

@@ -144,6 +144,7 @@ impl frame_system::Config for Test {
 	type AccountId = AccountId;
 	type Lookup = IdentityLookup<AccountId>;
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeTask = RuntimeTask;
 	type Block = Block;
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
