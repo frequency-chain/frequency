@@ -387,7 +387,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The signature is within the mortality window
-			Self::verify_signature_mortality(payload.expiration.into())?;
+			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
@@ -473,7 +473,7 @@ pub mod pallet {
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 
 			// Validation: The signature is within the mortality window
-			Self::verify_signature_mortality(payload.expiration.into())?;
+			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
