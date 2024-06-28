@@ -1,0 +1,12 @@
+[
+  {
+    "model_type": 1,
+    "payload_location": 1,
+    "settings": [],
+    "name": {
+      "namespace": "dsnp",
+      "descriptor": "broadcast"
+    },
+    "payload": "{}"
+  }
+]
