@@ -20,11 +20,13 @@ mod app_sr25519 {
 }
 
 type SignerId = app_sr25519::Public;
+const REPLACED_CLIENT_DATA_JSON: &'static str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiI3JwbGMjIiwib3JpZ2luIjoiaHR0cHM6Ly9wYXNza2V5LmFtcGxpY2EuaW86ODA4MCIsImNyb3NzT3JpZ2luIjpmYWxzZSwiYWxnIjoiSFMyNTYifQ";
+const AUTHENTICATOR_DATA: &'static str = "WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA";
 
 fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
-	let passkey_public_key = [0u8; 33];
-	let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+	let passkey_public_key = PasskeyPublicKey([0u8; 33]);
+	let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 	let signature: MultiSignature =
 		MultiSignature::Sr25519(test_account_1_pk.sign(&wrapped_binary).unwrap().into());
 

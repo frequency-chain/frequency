@@ -5,9 +5,47 @@ use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Call as SystemCall;
 use mock::*;
+
+use p256::{
+	ecdsa::{signature::Signer, SigningKey},
+	elliptic_curve::sec1::ToEncodedPoint,
+};
 use pallet_balances::Call as BalancesCall;
-use sp_core::{sr25519, Pair};
+use sp_core::{hashing::sha2_256, sr25519, Pair};
 use sp_runtime::{traits::One, DispatchError::BadOrigin, MultiSignature};
+
+const REPLACED_CLIENT_DATA_JSON: &'static str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiI3JwbGMjIiwib3JpZ2luIjoiaHR0cHM6Ly9wYXNza2V5LmFtcGxpY2EuaW86ODA4MCIsImNyb3NzT3JpZ2luIjpmYWxzZSwiYWxnIjoiSFMyNTYifQ";
+const AUTHENTICATOR_DATA: &'static str = "WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA";
+
+fn get_p256_public_key(secret: &p256::SecretKey) -> PasskeyPublicKey {
+	let encoded = secret.public_key().to_encoded_point(true);
+	let passkey_public_key: PasskeyPublicKey = encoded.try_into().unwrap();
+	passkey_public_key
+}
+fn get_p256_signature(
+	secret: &p256::SecretKey,
+	payload: &[u8],
+	client_data_json: &[u8],
+	authenticator_data: &[u8],
+) -> PasskeySignature {
+	let signing_key: SigningKey = secret.into();
+	let calculated_challenge = sha2_256(payload);
+	let calculated_challenge_base64url = base64_url::encode(&calculated_challenge);
+
+	// inject challenge inside clientJsonData
+	let str_of_json = core::str::from_utf8(client_data_json).unwrap();
+	let original_client_data_json =
+		str_of_json.replace(CHALLENGE_PLACEHOLDER, &calculated_challenge_base64url);
+
+	// prepare signing payload which is [authenticator || sha256(client_data_json)]
+	let mut passkey_signature_payload = authenticator_data.to_vec();
+	passkey_signature_payload.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
+
+	let (signature, _) = signing_key.try_sign(&passkey_signature_payload).unwrap();
+	let der_sig = p256::ecdsa::DerSignature::from(signature);
+	let passkey_signature: PasskeySignature = der_sig.to_bytes().to_vec().try_into().unwrap();
+	passkey_signature
+}
 
 #[test]
 fn proxy_call_with_signed_origin_should_fail() {
@@ -15,8 +53,8 @@ fn proxy_call_with_signed_origin_should_fail() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let passkey_public_key = PasskeyPublicKey([0u8; 33]);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature =
 			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
 		let call: PasskeyCall<Test> = PasskeyCall {
@@ -51,8 +89,8 @@ fn proxy_call_with_unsigned_origin_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let passkey_public_key = PasskeyPublicKey([0u8; 33]);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature =
 			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
 		let call: PasskeyCall<Test> = PasskeyCall {
@@ -77,29 +115,80 @@ fn proxy_call_with_unsigned_origin_should_work() {
 }
 
 #[test]
-fn test_proxy_call_with_bad_signature_should_fail() {
+fn validate_unsigned_with_bad_account_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
-		let passkey_public_key = [0u8; 33];
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
 		let wrapped_binary = wrap_binary_data("bad data".as_bytes().to_vec());
 		let signature: MultiSignature =
 			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
+
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
 			account_nonce: 3,
 			account_ownership_proof: signature,
 			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
+
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		// assert
+		assert_eq!(res, InvalidTransaction::BadSigner.into());
+	});
+}
+
+#[test]
+fn validate_unsigned_with_bad_passkey_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
+		let signature: MultiSignature =
+			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
+
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
+		let bad_authenticator = b"bad_auth".to_vec();
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: test_account_1_key_pair.public().into(),
+			account_nonce: 3,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
+		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &bad_authenticator);
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
+			},
+			passkey_call: call,
+		};
+
 		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
@@ -123,7 +212,7 @@ fn validate_unsigned_with_unsupported_call_should_fail() {
 			})),
 		};
 		let payload = PasskeyPayload {
-			passkey_public_key: [0u8; 33],
+			passkey_public_key: PasskeyPublicKey([0u8; 33]),
 			verifiable_passkey_signature: VerifiablePasskeySignature {
 				signature: PasskeySignature::default(),
 				client_data_json: PasskeyClientDataJson::default(),
@@ -153,9 +242,15 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 		account.nonce += 1;
 		frame_system::Account::<Test>::insert(who, account);
 
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
@@ -166,12 +261,14 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 				value: 10000,
 			})),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
@@ -197,9 +294,15 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 		account.nonce += 1;
 		frame_system::Account::<Test>::insert(who.clone(), account);
 
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
@@ -210,12 +313,14 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 				value: 10000,
 			})),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
@@ -251,9 +356,15 @@ fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 		account.nonce += 1;
 		frame_system::Account::<Test>::insert(who, account);
 
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
@@ -264,12 +375,14 @@ fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 				value: 10000,
 			})),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
@@ -289,9 +402,17 @@ fn pre_dispatch_unsigned_with_future_nonce_should_fail_with_future() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
+
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
 			account_nonce: 2,
@@ -301,12 +422,14 @@ fn pre_dispatch_unsigned_with_future_nonce_should_fail_with_future() {
 				value: 10000,
 			})),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
@@ -328,9 +451,17 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 		let account_1_pk: <Test as frame_system::Config>::AccountId =
 			test_account_1_key_pair.public().into();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
-		let passkey_public_key = [0u8; 33];
-		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret);
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
+
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: account_1_pk.clone(),
 			account_nonce: 0,
@@ -340,12 +471,14 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 				value: 10000,
 			})),
 		};
+		let passkey_signature =
+			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
-				signature: PasskeySignature::default(),
-				client_data_json: PasskeyClientDataJson::default(),
-				authenticator_data: PasskeyAuthenticatorData::default(),
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
 			},
 			passkey_call: call,
 		};
