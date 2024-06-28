@@ -85,10 +85,10 @@ fn test_proxy_call_with_bad_signature_should_fail() {
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
 			test_account_1_key_pair.public().into(),
-			1305343182u32.into()
+			1000000000u32.into()
 		));
 		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
-		assert_eq!(balance_after, 1305343182);
+		assert_eq!(balance_after, 1000000000);
 		let passkey_public_key = [0u8; 33];
 		let wrapped_binary = wrap_binary_data("bad data".as_bytes().to_vec());
 		let signature: MultiSignature =
@@ -112,7 +112,7 @@ fn test_proxy_call_with_bad_signature_should_fail() {
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
 		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
-		assert_eq!(balance_after, 1305343182);
+		assert_eq!(balance_after, 1000000000);
 	});
 }
 
@@ -155,10 +155,10 @@ fn test_proxy_call_with_funds_should_pass() {
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
 			test_account_1_key_pair.public().into(),
-			1305343182u32.into()
+			1000000000u32.into()
 		));
 		let balance_after = Balances::free_balance(&test_account_1_key_pair.public().into());
-		assert_eq!(balance_after, 1305343182);
+		assert_eq!(balance_after, 1000000000);
 		let passkey_public_key = [0u8; 33];
 		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 		let signature: MultiSignature =
@@ -225,6 +225,12 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1000000000u32.into()
+		));
 		let who: <Test as frame_system::Config>::AccountId =
 			test_account_1_key_pair.public().into();
 		let mut account = frame_system::Account::<Test>::get(&who);
@@ -269,6 +275,12 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1000000000u32.into()
+		));
 		let who: <Test as frame_system::Config>::AccountId =
 			test_account_1_key_pair.public().into();
 		let mut account = frame_system::Account::<Test>::get(&who);
@@ -323,6 +335,12 @@ fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1000000000u32.into()
+		));
 		let who: <Test as frame_system::Config>::AccountId =
 			test_account_1_key_pair.public().into();
 		let mut account = frame_system::Account::<Test>::get(&who);
@@ -367,6 +385,12 @@ fn pre_dispatch_unsigned_with_future_nonce_should_fail_with_future() {
 		// arrange
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			1000000000u32.into()
+		));
 		let passkey_public_key = [0u8; 33];
 		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
@@ -405,6 +429,12 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
 		let account_1_pk: <Test as frame_system::Config>::AccountId =
 			test_account_1_key_pair.public().into();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_1_pk.clone(),
+			1000000000u32.into()
+		));
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
 		let passkey_public_key = [0u8; 33];
 		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
