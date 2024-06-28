@@ -56,6 +56,7 @@ impl system::Config for Test {
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = ConstU32<250>;
+	type RuntimeTask = RuntimeTask;
 	type Version = ();
 	type PalletInfo = PalletInfo;
 	type AccountData = ();

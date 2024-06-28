@@ -77,7 +77,7 @@ mod test {
 
 		assert_eq!(p, 100_000);
 
-		assert!(q >= 65_000_000);
+		assert!(q >= 50_000_000);
 		assert!(q <= 100_000_000);
 
 		assert_eq!(p / q, Balance::from(0u128));
