@@ -8,7 +8,7 @@
 //! WASM-EXECUTION: `Compiled`, CHAIN: `Some("frequency-bench")`, DB CACHE: `1024`
 
 // Executed Command:
-// ./scripts/../target/debug/frequency
+// ./scripts/../target/release/frequency
 // benchmark
 // pallet
 // --pallet=pallet_passkey
@@ -44,20 +44,20 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn validate() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `39`
+		//  Measured:  `52`
 		//  Estimated: `5078`
-		// Minimum execution time: 1_413_000_000 picoseconds.
-		Weight::from_parts(1_424_000_000, 5078)
+		// Minimum execution time: 988_000_000 picoseconds.
+		Weight::from_parts(1_002_000_000, 5078)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn pre_dispatch() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `72`
+		//  Measured:  `39`
 		//  Estimated: `5078`
-		// Minimum execution time: 1_434_000_000 picoseconds.
-		Weight::from_parts(1_498_000_000, 5078)
+		// Minimum execution time: 993_000_000 picoseconds.
+		Weight::from_parts(1_009_000_000, 5078)
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
@@ -69,20 +69,20 @@ impl WeightInfo for () {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn validate() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `39`
+		//  Measured:  `52`
 		//  Estimated: `5078`
-		// Minimum execution time: 1_413_000_000 picoseconds.
-		Weight::from_parts(1_424_000_000, 5078)
+		// Minimum execution time: 988_000_000 picoseconds.
+		Weight::from_parts(1_002_000_000, 5078)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 	}
 	/// Storage: `System::Account` (r:1 w:1)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn pre_dispatch() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `72`
+		//  Measured:  `39`
 		//  Estimated: `5078`
-		// Minimum execution time: 1_434_000_000 picoseconds.
-		Weight::from_parts(1_498_000_000, 5078)
+		// Minimum execution time: 993_000_000 picoseconds.
+		Weight::from_parts(1_009_000_000, 5078)
 			.saturating_add(RocksDbWeight::get().reads(1_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
@@ -91,24 +91,24 @@ impl WeightInfo for () {
 
 #[cfg(test)]
 mod tests {
-  use frame_support::{traits::Get, weights::Weight, dispatch::DispatchClass};
-  use common_runtime::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
-  use common_runtime::weights::extrinsic_weights::ExtrinsicBaseWeight;
+	use frame_support::{traits::Get, weights::Weight, dispatch::DispatchClass};
+	use common_runtime::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
+	use common_runtime::weights::extrinsic_weights::ExtrinsicBaseWeight;
 
-  struct BlockWeights;
-  impl Get<frame_system::limits::BlockWeights> for BlockWeights {
-  	fn get() -> frame_system::limits::BlockWeights {
-  		frame_system::limits::BlockWeights::builder()
-  			.base_block(Weight::zero())
-  			.for_class(DispatchClass::all(), |weights| {
-  				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
-  			})
-  			.for_class(DispatchClass::non_mandatory(), |weights| {
-  				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-  			})
-  			.build_or_panic()
-  	}
-  }
+	struct BlockWeights;
+	impl Get<frame_system::limits::BlockWeights> for BlockWeights {
+		fn get() -> frame_system::limits::BlockWeights {
+			frame_system::limits::BlockWeights::builder()
+				.base_block(Weight::zero())
+				.for_class(DispatchClass::all(), |weights| {
+					weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
+				})
+				.for_class(DispatchClass::non_mandatory(), |weights| {
+					weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
+				})
+				.build_or_panic()
+		}
+	}
 
 	#[test]
 	fn test_validate() {

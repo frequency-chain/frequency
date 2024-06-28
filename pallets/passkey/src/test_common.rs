@@ -22,10 +22,10 @@ pub mod utilities {
 	use sp_io::hashing::sha2_256;
 
 	/// get PasskeyPublicKey from Secret key
-	pub fn get_p256_public_key(secret: &p256::SecretKey) -> PasskeyPublicKey {
+	pub fn get_p256_public_key(secret: &p256::SecretKey) -> Result<PasskeyPublicKey, ()> {
 		let encoded = secret.public_key().to_encoded_point(true);
-		let passkey_public_key: PasskeyPublicKey = encoded.try_into().unwrap();
-		passkey_public_key
+		let passkey_public_key: PasskeyPublicKey = encoded.try_into().map_err(|_| ())?;
+		Ok(passkey_public_key)
 	}
 	/// getting a passkey specific signature
 	pub fn passkey_sign(
@@ -33,13 +33,13 @@ pub mod utilities {
 		payload: &[u8],
 		client_data_json: &[u8],
 		authenticator_data: &[u8],
-	) -> PasskeySignature {
+	) -> Result<PasskeySignature, ()> {
 		let signing_key: SigningKey = secret.into();
 		let calculated_challenge = sha2_256(payload);
 		let calculated_challenge_base64url = base64_url::encode(&calculated_challenge);
 
 		// inject challenge inside clientJsonData
-		let str_of_json = core::str::from_utf8(client_data_json).unwrap();
+		let str_of_json = core::str::from_utf8(client_data_json).map_err(|_| ())?;
 		let original_client_data_json =
 			str_of_json.replace(CHALLENGE_PLACEHOLDER, &calculated_challenge_base64url);
 
@@ -48,9 +48,10 @@ pub mod utilities {
 		passkey_signature_payload
 			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
 
-		let (signature, _) = signing_key.try_sign(&passkey_signature_payload).unwrap();
+		let (signature, _) = signing_key.try_sign(&passkey_signature_payload).map_err(|_| ())?;
 		let der_sig = p256::ecdsa::DerSignature::from(signature);
-		let passkey_signature: PasskeySignature = der_sig.as_bytes().to_vec().try_into().unwrap();
-		passkey_signature
+		let passkey_signature: PasskeySignature =
+			der_sig.as_bytes().to_vec().try_into().map_err(|_| ())?;
+		Ok(passkey_signature)
 	}
 }

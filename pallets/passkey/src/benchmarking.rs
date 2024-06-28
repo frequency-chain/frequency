@@ -34,7 +34,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 		1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
 	])
 	.unwrap();
-	let passkey_public_key = get_p256_public_key(&secret);
+	let passkey_public_key = get_p256_public_key(&secret).unwrap();
 	let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 	let signature: MultiSignature =
 		MultiSignature::Sr25519(test_account_1_pk.sign(&wrapped_binary).unwrap().into());
@@ -51,7 +51,8 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 		call: Box::new(inner_call),
 	};
 
-	let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
+	let passkey_signature =
+		passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
 	let payload = PasskeyPayload {
 		passkey_public_key,
 		verifiable_passkey_signature: VerifiablePasskeySignature {
