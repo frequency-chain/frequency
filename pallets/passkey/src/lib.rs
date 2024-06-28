@@ -32,6 +32,9 @@ use sp_std::{vec, vec::Vec};
 
 use common_runtime::extensions::check_nonce::CheckNonce;
 
+#[cfg(any(feature = "runtime-benchmarks", test))]
+mod test_common;
+
 #[cfg(test)]
 mod mock;
 #[cfg(test)]

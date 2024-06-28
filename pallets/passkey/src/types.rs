@@ -4,10 +4,11 @@ use frame_support::{
 	BoundedVec, RuntimeDebugNoBound,
 };
 use p256::{ecdsa::signature::Verifier, EncodedPoint};
-use sp_core::hashing::sha2_256;
+use sp_io::hashing::sha2_256;
 use sp_runtime::MultiSignature;
 #[allow(unused)]
 use sp_std::boxed::Box;
+use sp_std::vec::Vec;
 
 /// This is the placeholder value that should be replaced by calculated challenge for
 /// evaluation of a Passkey signature.
@@ -94,7 +95,7 @@ impl TryFrom<EncodedPoint> for PasskeyPublicKey {
 	type Error = ();
 
 	fn try_from(value: EncodedPoint) -> Result<Self, Self::Error> {
-		let bytes = value.to_bytes().to_vec();
+		let bytes = value.as_bytes().to_vec();
 		let inner: [u8; 33] = bytes.try_into().map_err(|_| ())?;
 		Ok(PasskeyPublicKey(inner))
 	}

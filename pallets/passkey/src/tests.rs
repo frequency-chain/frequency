@@ -6,46 +6,10 @@ use frame_support::{assert_err, assert_noop, assert_ok};
 use frame_system::Call as SystemCall;
 use mock::*;
 
-use p256::{
-	ecdsa::{signature::Signer, SigningKey},
-	elliptic_curve::sec1::ToEncodedPoint,
-};
+use crate::test_common::{constants::*, utilities::*};
 use pallet_balances::Call as BalancesCall;
-use sp_core::{hashing::sha2_256, sr25519, Pair};
+use sp_core::{sr25519, Pair};
 use sp_runtime::{traits::One, DispatchError::BadOrigin, MultiSignature};
-
-const REPLACED_CLIENT_DATA_JSON: &'static str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiI3JwbGMjIiwib3JpZ2luIjoiaHR0cHM6Ly9wYXNza2V5LmFtcGxpY2EuaW86ODA4MCIsImNyb3NzT3JpZ2luIjpmYWxzZSwiYWxnIjoiSFMyNTYifQ";
-const AUTHENTICATOR_DATA: &'static str = "WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA";
-
-fn get_p256_public_key(secret: &p256::SecretKey) -> PasskeyPublicKey {
-	let encoded = secret.public_key().to_encoded_point(true);
-	let passkey_public_key: PasskeyPublicKey = encoded.try_into().unwrap();
-	passkey_public_key
-}
-fn get_p256_signature(
-	secret: &p256::SecretKey,
-	payload: &[u8],
-	client_data_json: &[u8],
-	authenticator_data: &[u8],
-) -> PasskeySignature {
-	let signing_key: SigningKey = secret.into();
-	let calculated_challenge = sha2_256(payload);
-	let calculated_challenge_base64url = base64_url::encode(&calculated_challenge);
-
-	// inject challenge inside clientJsonData
-	let str_of_json = core::str::from_utf8(client_data_json).unwrap();
-	let original_client_data_json =
-		str_of_json.replace(CHALLENGE_PLACEHOLDER, &calculated_challenge_base64url);
-
-	// prepare signing payload which is [authenticator || sha256(client_data_json)]
-	let mut passkey_signature_payload = authenticator_data.to_vec();
-	passkey_signature_payload.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
-
-	let (signature, _) = signing_key.try_sign(&passkey_signature_payload).unwrap();
-	let der_sig = p256::ecdsa::DerSignature::from(signature);
-	let passkey_signature: PasskeySignature = der_sig.to_bytes().to_vec().try_into().unwrap();
-	passkey_signature
-}
 
 #[test]
 fn proxy_call_with_signed_origin_should_fail() {
@@ -136,8 +100,7 @@ fn validate_unsigned_with_bad_account_signature_should_fail() {
 			account_ownership_proof: signature,
 			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -178,7 +141,7 @@ fn validate_unsigned_with_bad_passkey_signature_should_fail() {
 			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
 		};
 		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &bad_authenticator);
+			passkey_sign(&secret, &call.encode(), &client_data, &bad_authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -261,8 +224,7 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 				value: 10000,
 			})),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -313,8 +275,7 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 				value: 10000,
 			})),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -375,8 +336,7 @@ fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 				value: 10000,
 			})),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -422,8 +382,7 @@ fn pre_dispatch_unsigned_with_future_nonce_should_fail_with_future() {
 				value: 10000,
 			})),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
@@ -471,8 +430,7 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 				value: 10000,
 			})),
 		};
-		let passkey_signature =
-			get_p256_signature(&secret, &call.encode(), &client_data, &authenticator);
+		let passkey_signature = passkey_sign(&secret, &call.encode(), &client_data, &authenticator);
 		let payload = PasskeyPayload {
 			passkey_public_key,
 			verifiable_passkey_signature: VerifiablePasskeySignature {
