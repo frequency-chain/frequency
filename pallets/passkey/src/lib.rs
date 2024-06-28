@@ -16,7 +16,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-use common_primitives::{payment::*, utils::wrap_binary_data};
+use common_primitives::utils::wrap_binary_data;
 use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
@@ -31,6 +31,13 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 use sp_std::{vec, vec::Vec};
+
+/// Type aliases used for interaction with `OnChargeTransaction`.
+pub(crate) type OnChargeTransactionOf<T> =
+	<T as pallet_transaction_payment::Config>::OnChargeTransaction;
+
+/// Balance type alias.
+pub(crate) type BalanceOf<T> = <OnChargeTransactionOf<T> as OnChargeTransaction<T>>::Balance;
 
 #[cfg(test)]
 mod mock;
