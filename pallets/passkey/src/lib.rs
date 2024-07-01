@@ -154,16 +154,17 @@ pub mod module {
 			let valid_tx = ValidTransaction::default();
 			let payload = Self::filter_valid_calls(&call)?;
 			let signature_validity = Self::validate_signatures(&payload)?;
-			let valid_tx = valid_tx.combine_with(signature_validity);
 			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
 			let nonce_validity = nonce_check.validate()?;
-			let valid_tx = valid_tx.combine_with(nonce_validity);
 			let tx_charge = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			);
 			let tx_payment_validity = tx_charge.validate()?;
-			let valid_tx = valid_tx.combine_with(tx_payment_validity);
+			let valid_tx = valid_tx
+				.combine_with(signature_validity)
+				.combine_with(nonce_validity)
+				.combine_with(tx_payment_validity);
 			Ok(valid_tx)
 		}
 
@@ -189,7 +190,9 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok(payload.clone()),
+			{
+				return Ok(payload.clone())
+			},
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
