@@ -164,6 +164,7 @@ pub mod module {
 
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			let payload = Self::filter_valid_calls(&call)?;
+			Self::validate_signatures(&payload)?;
 			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
 			nonce_check.pre_dispatch()?;
 			let tx_charge = ChargeTransactionPayment::<T>(
