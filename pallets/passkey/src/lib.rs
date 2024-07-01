@@ -190,9 +190,7 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-			{
-				return Ok(payload.clone())
-			},
+				return Ok(payload.clone()),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
