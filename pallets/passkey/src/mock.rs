@@ -93,6 +93,8 @@ impl pallet_passkey::Config for Test {
 	type RuntimeCall = RuntimeCall;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type PasskeyCallFilter = MockPasskeyCallFilter;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Currency = Balances;
 }
 
 impl pallet_balances::Config for Test {

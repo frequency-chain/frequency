@@ -48,6 +48,8 @@ pub mod weights;
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
+use frame_support::traits::{Currency, ReservableCurrency};
+#[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
 /// defines all new types for this pallet
@@ -85,6 +87,10 @@ pub mod module {
 
 		/// Filters the inner calls for passkey which is set in runtime
 		type PasskeyCallFilter: Contains<<Self as Config>::RuntimeCall>;
+
+		/// Helper Curreny method for benchmarking
+		#[cfg(feature = "runtime-benchmarks")]
+		type Currency: ReservableCurrency<Self::AccountId>;
 	}
 
 	#[pallet::error]

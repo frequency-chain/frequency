@@ -933,6 +933,8 @@ impl pallet_passkey::Config for Runtime {
 	type WeightInfo = pallet_passkey::weights::SubstrateWeight<Runtime>;
 	type ConvertIntoAccountId32 = ConvertInto;
 	type PasskeyCallFilter = PasskeyCallFilter;
+	#[cfg(feature = "runtime-benchmarks")]
+	type Currency = Balances;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
