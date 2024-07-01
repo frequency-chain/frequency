@@ -343,10 +343,17 @@ fn fee_withdrawn_for_failed_call() {
 		};
 
 		// act
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res = Passkey::validate_unsigned(
+			TransactionSource::InBlock,
+			&Call::proxy { payload: payload.clone() },
+		);
 
 		// assert
 		assert!(res.is_ok());
+
+		// Call the proxy
+		let res = Passkey::proxy(RuntimeOrigin::none(), payload);
+		assert!(res.is_err());
 		let final_balance = Balances::free_balance(&account_id);
 		assert!(final_balance < initial_balance);
 	});
