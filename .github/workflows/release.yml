@@ -517,7 +517,7 @@ jobs:
         with:
           full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
       - name: Fetch Reference Binary
-        uses: robinraju/release-downloader@c39a3b234af58f0cf85888573d361fb6fa281534
+        uses: robinraju/release-downloader@a96f54c1b5f5e09e47d9504526e96febd949d4c2
         with:
           tag: ${{steps.get-previous-full-release-version.outputs.version}}
           fileName: ${{env.BIN_FILENAME}}
