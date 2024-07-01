@@ -153,27 +153,24 @@ pub mod module {
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let payload = Self::filter_valid_calls(&call)?;
 			Self::validate_signatures(&payload)?;
+			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
+			nonce_check.validate()?;
 			let tx_charge = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			);
-			tx_charge.validate()?;
-			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
-			nonce_check.validate()
+			tx_charge.validate()
 		}
 
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			let payload = Self::filter_valid_calls(&call)?;
+			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
+			nonce_check.pre_dispatch()?;
 			let tx_charge = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			);
-			tx_charge.pre_dispatch()?;
-
-			Self::validate_unsigned(TransactionSource::InBlock, call)?;
-
-			let nonce_check = PasskeyNonce::new(payload.passkey_call.clone());
-			nonce_check.pre_dispatch()
+			tx_charge.pre_dispatch()
 		}
 	}
 }
