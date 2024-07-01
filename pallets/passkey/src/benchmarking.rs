@@ -25,10 +25,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
 	let test_account_1_account_id =
 		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
-	T::Currency::make_free_balance_be(
-		&test_account_1_account_id.clone().into(),
-		1000000000u32.into(),
-	);
+	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 1000000000u32.into());
 	let passkey_public_key = [0u8; 33];
 	let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 	let signature: MultiSignature =

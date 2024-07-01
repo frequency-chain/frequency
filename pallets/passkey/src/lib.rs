@@ -48,7 +48,8 @@ pub mod weights;
 pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
-use frame_support::traits::{Currency, ReservableCurrency};
+use frame_support::traits::tokens::fungible::Mutate;
+
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
@@ -90,7 +91,7 @@ pub mod module {
 
 		/// Helper Curreny method for benchmarking
 		#[cfg(feature = "runtime-benchmarks")]
-		type Currency: ReservableCurrency<Self::AccountId>;
+		type Currency: Mutate<Self::AccountId>;
 	}
 
 	#[pallet::error]
