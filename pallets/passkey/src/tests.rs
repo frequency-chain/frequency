@@ -255,6 +255,149 @@ fn test_pre_dispatch_with_low_funds_should_fail() {
 }
 
 #[test]
+fn fee_removed_on_successful_validation() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		let account_id: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		let destination_id = test_account_2_key_pair.public().into();
+		// Fund the account
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_id.clone(),
+			1000000000u32.into()
+		));
+		let initial_balance = Balances::free_balance(&account_id);
+
+		let passkey_public_key = [0u8; 33];
+		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: account_id.clone(),
+			account_nonce: 0,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: destination_id,
+				value: 10000,
+			})),
+		};
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: PasskeySignature::default(),
+				client_data_json: PasskeyClientDataJson::default(),
+				authenticator_data: PasskeyAuthenticatorData::default(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		assert!(res.is_ok());
+		let final_balance = Balances::free_balance(&account_id);
+		assert!(final_balance < initial_balance);
+	});
+}
+
+#[test]
+fn fee_withdrawn_for_failed_call() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let account_id: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		// Fund the account
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_id.clone(),
+			1000000000u32.into()
+		));
+		let initial_balance = Balances::free_balance(&account_id);
+
+		let passkey_public_key = [0u8; 33];
+		let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: account_id.clone(),
+			account_nonce: 0,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: account_id.clone(),
+				value: 1000000000,
+			})),
+		};
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: PasskeySignature::default(),
+				client_data_json: PasskeyClientDataJson::default(),
+				authenticator_data: PasskeyAuthenticatorData::default(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		assert!(res.is_ok());
+		let final_balance = Balances::free_balance(&account_id);
+		assert!(final_balance < initial_balance);
+	});
+}
+
+#[test]
+fn fee_not_removed_on_failed_validation() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let account_id: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		// Fund the account
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_id.clone(),
+			1000000000u32.into()
+		));
+		let initial_balance = Balances::free_balance(&account_id);
+
+		let passkey_public_key = [0u8; 33];
+		let wrapped_binary = wrap_binary_data("invalid data".as_bytes().to_vec());
+		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: account_id.clone(),
+			account_nonce: 0,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
+		};
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: PasskeySignature::default(),
+				client_data_json: PasskeyClientDataJson::default(),
+				authenticator_data: PasskeyAuthenticatorData::default(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		assert_eq!(res, InvalidTransaction::BadSigner.into());
+		let final_balance = Balances::free_balance(&account_id);
+		assert_eq!(initial_balance, final_balance);
+	});
+}
+
+#[test]
 fn validate_unsigned_with_unsupported_call_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
