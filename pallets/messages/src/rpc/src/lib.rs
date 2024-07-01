@@ -13,8 +13,9 @@ use common_helpers::rpc::map_rpc_result;
 use common_primitives::{messages::*, schema::*};
 use frame_support::{ensure, fail};
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
+	types::{ErrorObject, ErrorObjectOwned},
 };
 use pallet_messages_runtime_api::MessagesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -61,9 +62,14 @@ pub enum MessageRpcError {
 	InvalidSchemaId,
 }
 
-impl From<MessageRpcError> for JsonRpseeError {
+impl From<MessageRpcError> for ErrorObjectOwned {
 	fn from(e: MessageRpcError) -> Self {
-		JsonRpseeError::Custom(format!("{:?}", e))
+		let msg = format!("{:?}", e);
+		match e {
+			MessageRpcError::InvalidPaginationRequest => ErrorObject::owned(1, msg, None::<()>),
+			MessageRpcError::TypeConversionOverflow => ErrorObject::owned(2, msg, None::<()>),
+			MessageRpcError::InvalidSchemaId => ErrorObject::owned(3, msg, None::<()>),
+		}
 	}
 }
 

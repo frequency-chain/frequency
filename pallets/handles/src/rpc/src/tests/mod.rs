@@ -43,7 +43,7 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-type HandleResult = Result<Option<HandleResponse>, jsonrpsee::core::Error>;
+type HandleResult = Result<Option<HandleResponse>, jsonrpsee::types::ErrorObjectOwned>;
 
 #[tokio::test]
 async fn get_handle_with_non_existent_msa_id_should_return_none() {

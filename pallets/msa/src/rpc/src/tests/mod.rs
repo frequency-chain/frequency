@@ -232,8 +232,8 @@ async fn get_keys_by_msa_id_with_disabled_offchain_should_fail() {
 
 	let result = api.get_keys_by_msa_id(NOT_EXIST_MSA);
 
-	assert_eq!(true, result.is_err());
-	assert_eq!("Custom error: OffchainIndexingNotEnabled", result.unwrap_err().to_string());
+	assert_eq!(true, result.clone().is_err());
+	assert_eq!("OffchainIndexingNotEnabled", result.unwrap_err().message());
 }
 
 #[tokio::test]

@@ -17,8 +17,9 @@ use common_primitives::{
 	msa::MessageSourceId,
 };
 use jsonrpsee::{
-	core::{async_trait, Error as RpcError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
+	types::{error::ErrorObjectOwned, ErrorObject},
 };
 use pallet_handles_runtime_api::HandlesRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -73,9 +74,13 @@ pub enum HandlesRpcError {
 	InvalidHandle,
 }
 
-impl From<HandlesRpcError> for RpcError {
+impl From<HandlesRpcError> for ErrorObjectOwned {
 	fn from(e: HandlesRpcError) -> Self {
-		RpcError::Custom(format!("{:?}", e))
+		let msg = format!("{:?}", e);
+
+		match e {
+			HandlesRpcError::InvalidHandle => ErrorObject::owned(1, msg, None::<()>),
+		}
 	}
 }
 

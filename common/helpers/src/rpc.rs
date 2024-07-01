@@ -1,7 +1,7 @@
 use core::result::Result as CoreResult;
 use jsonrpsee::{
-	core::{Error as RpcError, RpcResult},
-	types::error::{CallError, ErrorCode, ErrorObject},
+	core::RpcResult,
+	types::error::{ErrorCode, ErrorObject},
 };
 use sp_api::ApiError;
 
@@ -9,11 +9,11 @@ use sp_api::ApiError;
 pub fn map_rpc_result<T>(response: CoreResult<T, ApiError>) -> RpcResult<T> {
 	match response {
 		Ok(res) => Ok(res),
-		Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+		Err(e) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(300).code(), // No real reason for this value
 			"Api Error",
 			Some(format!("{:?}", e)),
-		)))),
+		)),
 	}
 }
 
