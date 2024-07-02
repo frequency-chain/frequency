@@ -38,6 +38,15 @@ pub const SEPARATOR_CHAR: char = '.';
 /// -1 is to avoid overflow when converting the (index + 1) to `SchemaVersion` in `SchemaVersionId`
 pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+/// Genesis Schemas need a way to load up and this is it!
+pub struct GenesisSchema {
+	/// Data
+	pub data: Vec<u32>,
+	/// String
+	pub name: Vec<u8>,
+}
+
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
 /// A structure defining a Schema information (excluding the payload)
 pub struct SchemaInfo {

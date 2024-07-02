@@ -4,7 +4,10 @@ use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
+use frequency_runtime::{
+	pallet_schemas::GenesisSchema, AuraId, CouncilConfig, Ss58Prefix, SudoConfig,
+	TechnicalCommitteeConfig,
+};
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
@@ -131,7 +134,15 @@ fn development_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		schemas: Default::default(),
+		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
+			initial_schemas: vec![
+				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
+				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
+				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
+				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
+			],
+			..Default::default()
+		},
 		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),
