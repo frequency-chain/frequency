@@ -23,6 +23,9 @@ type SignerId = app_sr25519::Public;
 
 fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
+	let test_account_1_account_id =
+		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
+	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 1000000000u32.into());
 	let passkey_public_key = [0u8; 33];
 	let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
 	let signature: MultiSignature =
@@ -32,7 +35,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 		frame_system::Call::<T>::remark { remark: vec![] }.into();
 
 	let call: PasskeyCall<T> = PasskeyCall {
-		account_id: T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap(),
+		account_id: test_account_1_account_id,
 		account_nonce: T::Nonce::zero(),
 		account_ownership_proof: signature,
 		call: Box::new(inner_call),
@@ -50,7 +53,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 }
 
 benchmarks! {
-	where_clause {  where <T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo> }
+	where_clause {  where <T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> }
 
 	validate {
 		let payload = generate_payload::<T>();
