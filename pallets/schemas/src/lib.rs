@@ -239,6 +239,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
+		/// Genesis Schemas to load for development
+		pub initial_schemas: Vec<GenesisSchema>,
 		/// Phantom type
 		#[serde(skip)]
 		pub _config: PhantomData<T>,
@@ -246,13 +248,38 @@ pub mod pallet {
 
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { initial_max_schema_model_size: 1024, _config: Default::default() }
+			Self {
+				initial_max_schema_model_size: 1024,
+				initial_schemas: Default::default(),
+				_config: Default::default(),
+			}
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
+			// GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
+			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_schemas.len() as u32);
+
+			for schema in self.initial_schemas.iter() {
+				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
+					BoundedVec::try_from(b"{}".to_vec()).unwrap();
+				let name_payload: SchemaNamePayload =
+					BoundedVec::try_from(schema.name.clone()).unwrap();
+				let parsed_name: SchemaName = SchemaName::try_parse::<T>(name_payload, true)
+					.expect("Bad Genesis Schema Name");
+
+				let _ = Pallet::<T>::add_schema(
+					model,
+					ModelType::Parquet,
+					PayloadLocation::IPFS,
+					BoundedVec::default(),
+					Some(parsed_name),
+				)
+				.expect("Failed to set genesis schema in database");
+			}
+
+			CurrentSchemaIdentifierMaximum::<T>::put(self.initial_schemas.len() as u16);
 		}
 	}
 
@@ -732,7 +759,7 @@ pub mod pallet {
 					payload_location: schema_info.payload_location,
 					settings,
 				};
-				return Some(response)
+				return Some(response);
 			}
 			None
 		}
@@ -801,8 +828,8 @@ pub mod pallet {
 			);
 			// AppendOnly is only valid for Itemized payload location
 			ensure!(
-				!settings.contains(&SchemaSetting::AppendOnly) ||
-					payload_location == PayloadLocation::Itemized,
+				!settings.contains(&SchemaSetting::AppendOnly)
+					|| payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
 			let schema_name = match optional_schema_name {
