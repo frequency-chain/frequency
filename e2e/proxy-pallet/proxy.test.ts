@@ -7,7 +7,7 @@ import { getFundingSource } from '../scaffolding/funding';
 
 const DOLLARS = 100000000n; // 100_000_000
 
-const fundingSource: KeyringPair = getFundingSource('time-release');
+const fundingSource: KeyringPair = getFundingSource('proxy-pallet');
 
 describe('Proxy', function () {
   describe('Basic Any Proxy Successes', function () {
