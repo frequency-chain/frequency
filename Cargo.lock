@@ -7225,6 +7225,7 @@ dependencies = [
  "log",
  "p256",
  "pallet-balances",
+ "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
  "serde_json",

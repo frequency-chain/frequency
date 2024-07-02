@@ -49,7 +49,7 @@ describe('Capacity Transactions', function () {
   describe('pay_with_capacity', function () {
     describe('when caller has a Capacity account', function () {
       let schemaId: u16;
-      const amountStaked = 2n * DOLLARS;
+      const amountStaked = 3n * DOLLARS;
 
       before(async function () {
         // Create schemas for testing with Grant Delegation to test pay_with_capacity

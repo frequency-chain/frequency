@@ -24,6 +24,7 @@ log = { workspace = true, default-features = false }
 p256 = { workspace = true }
 base64-url = { workspace = true }
 serde_json = { workspace = true, features = ["alloc"] }
+pallet-transaction-payment = { workspace = true }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
