@@ -217,7 +217,6 @@ fn test_pre_dispatch_with_funds_should_pass() {
 			passkey_call: call,
 		};
 		let res = Passkey::pre_dispatch(&Call::proxy { payload });
-		log::error!("res: {:?}", res);
 		// assert
 		assert!(res.is_ok());
 	});
@@ -234,7 +233,7 @@ fn test_pre_dispatch_with_low_funds_should_fail() {
 			test_account_1_key_pair.sign(wrapped_binary.as_slice()).into();
 		let call: PasskeyCall<Test> = PasskeyCall {
 			account_id: test_account_1_key_pair.public().into(),
-			account_nonce: 3,
+			account_nonce: 0,
 			account_ownership_proof: signature,
 			call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
 		};
@@ -247,10 +246,10 @@ fn test_pre_dispatch_with_low_funds_should_fail() {
 			},
 			passkey_call: call,
 		};
-		let res = Passkey::pre_dispatch(&Call::proxy { payload });
+		let res = Passkey::pre_dispatch(&Call::proxy { payload }).unwrap_err();
 
 		// assert
-		assert!(res.is_err());
+		assert_eq!(res, InvalidTransaction::Payment.into());
 	});
 }
 
