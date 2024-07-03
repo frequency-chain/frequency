@@ -1,7 +1,8 @@
 //! Types for the Schema Pallet
 use crate::{Config, Error};
 use common_primitives::schema::{
-	ModelType, PayloadLocation, SchemaId, SchemaSettings, SchemaVersion, SchemaVersionResponse,
+	ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion,
+	SchemaVersionResponse,
 };
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -41,10 +42,16 @@ pub const MAX_NUMBER_OF_VERSIONS: u32 = SchemaVersion::MAX as u32 - 1;
 #[derive(Debug, serde::Serialize, serde::Deserialize)]
 /// Genesis Schemas need a way to load up and this is it!
 pub struct GenesisSchema {
-	/// Data
-	pub data: Vec<u32>,
-	/// String
+	/// The type of model (AvroBinary, Parquet, etc.)
+	pub model_type: ModelType,
+	/// The payload location
+	pub payload_location: PayloadLocation,
+	/// The Payload Model
+	pub model: Vec<u8>,
+	/// Schema Full Name: [Namespace].[Descriptor]
 	pub name: Vec<u8>,
+	/// Settings
+	pub settings: Vec<SchemaSetting>,
 }
 
 #[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
