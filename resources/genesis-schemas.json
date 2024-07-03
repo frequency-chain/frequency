@@ -1,16 +1,75 @@
 [
   {
-    "model": "{}",
     "model_type": "Parquet",
-    "name": "dsnp.second",
     "payload_location": "IPFS",
-    "settings": []
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.tombstone"
   },
   {
-    "model": "{}",
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
+    "name": "dsnp.broadcast"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
+    "name": "dsnp.reply"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"emoji\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"apply\",\"column_type\":{\"INTEGER\":{\"bit_width\":8,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.reaction"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.profile"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"BYTE_ARRAY\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
+    "name": "dsnp.update"
+  },
+  {
     "model_type": "AvroBinary",
-    "name": "dsnp.thing",
     "payload_location": "Itemized",
-    "settings": ["AppendOnly", "SignatureRequired"]
+    "settings": [
+      "AppendOnly",
+      "SignatureRequired"
+    ],
+    "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}",
+    "name": ""
+  },
+  {
+    "model_type": "AvroBinary",
+    "payload_location": "Paginated",
+    "settings": [],
+    "model": "{\"type\":\"record\",\"name\":\"UserPublicFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"compressedPublicGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PublicGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
+    "name": ""
+  },
+  {
+    "model_type": "AvroBinary",
+    "payload_location": "Paginated",
+    "settings": [],
+    "model": "{\"type\":\"record\",\"name\":\"UserPrivateFollowsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
+    "name": ""
+  },
+  {
+    "model_type": "AvroBinary",
+    "payload_location": "Paginated",
+    "settings": [],
+    "model": "{\"type\":\"record\",\"name\":\"UserPrivateConnectionsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"name\":\"pridList\",\"type\":{\"type\":\"array\",\"items\":{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"}}},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
+    "name": ""
   }
 ]
