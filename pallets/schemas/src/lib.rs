@@ -266,8 +266,14 @@ pub mod pallet {
 					BoundedVec::try_from(schema.model.clone().into_bytes()).unwrap();
 				let name_payload: SchemaNamePayload =
 					BoundedVec::try_from(schema.name.clone().into_bytes()).unwrap();
-				let parsed_name: SchemaName = SchemaName::try_parse::<T>(name_payload, true)
-					.expect("Bad Genesis Schema Name");
+				let parsed_name: Option<SchemaName> = if name_payload.len() > 0 {
+					Some(
+						SchemaName::try_parse::<T>(name_payload, true)
+							.expect("Bad Genesis Schema Name"),
+					)
+				} else {
+					None
+				};
 				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
 					BoundedVec::try_from(schema.settings.clone()).unwrap();
 
@@ -276,7 +282,7 @@ pub mod pallet {
 					schema.model_type,
 					schema.payload_location,
 					settings,
-					Some(parsed_name),
+					parsed_name,
 				)
 				.expect("Failed to set Schema in Genesis!");
 			}
