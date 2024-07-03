@@ -1,0 +1,16 @@
+[
+  {
+    "model": "{}",
+    "model_type": "Parquet",
+    "name": "dsnp.second",
+    "payload_location": "IPFS",
+    "settings": []
+  },
+  {
+    "model": "{}",
+    "model_type": "AvroBinary",
+    "name": "dsnp.thing",
+    "payload_location": "Itemized",
+    "settings": ["AppendOnly", "SignatureRequired"]
+  }
+]

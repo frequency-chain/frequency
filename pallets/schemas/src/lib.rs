@@ -260,11 +260,12 @@ pub mod pallet {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
 
+			// Load in the Genesis Schemas
 			for schema in self.initial_schemas.iter() {
 				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
-					BoundedVec::try_from(schema.model.clone()).unwrap();
+					BoundedVec::try_from(schema.model.clone().into_bytes()).unwrap();
 				let name_payload: SchemaNamePayload =
-					BoundedVec::try_from(schema.name.clone()).unwrap();
+					BoundedVec::try_from(schema.name.clone().into_bytes()).unwrap();
 				let parsed_name: SchemaName = SchemaName::try_parse::<T>(name_payload, true)
 					.expect("Bad Genesis Schema Name");
 				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
@@ -277,7 +278,7 @@ pub mod pallet {
 					settings,
 					Some(parsed_name),
 				)
-				.expect("Failed to set genesis schema in database");
+				.expect("Failed to set Schema in Genesis!");
 			}
 
 			CurrentSchemaIdentifierMaximum::<T>::put(self.initial_schemas.len() as u16);
