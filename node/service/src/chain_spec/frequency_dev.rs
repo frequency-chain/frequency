@@ -1,16 +1,10 @@
 #![allow(missing_docs)]
-use common_primitives::{
-	node::AccountId,
-	schema::{ModelType, PayloadLocation, SchemaSetting},
-};
+use common_primitives::node::AccountId;
 use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
 use cumulus_primitives_core::ParaId;
-use frequency_runtime::{
-	pallet_schemas::GenesisSchema, AuraId, CouncilConfig, Ss58Prefix, SudoConfig,
-	TechnicalCommitteeConfig,
-};
+use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
@@ -92,6 +86,97 @@ fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 	frequency_runtime::SessionKeys { aura: keys }
 }
 
+fn load_genesis_schemas() -> Vec<frequency_runtime::pallet_schemas::GenesisSchema> {
+	let model = r#"[
+	{
+    "model": [
+      123,
+      125
+    ],
+    "model_type": "AvroBinary",
+    "name": [
+      100,
+      115,
+      110,
+      112,
+      46,
+      98,
+      114,
+      111,
+      97,
+      100,
+      99,
+      97,
+      115,
+      116
+    ],
+    "payload_location": "Paginated",
+    "settings": [
+      "SignatureRequired"
+    ]
+  },
+  {
+    "model": [
+      123,
+      125
+    ],
+    "model_type": "Parquet",
+    "name": [
+      100,
+      115,
+      110,
+      112,
+      46,
+      115,
+      101,
+      99,
+      111,
+      110,
+      100
+    ],
+    "payload_location": "IPFS",
+    "settings": []
+  },
+  {
+    "model": [
+      123,
+      125
+    ],
+    "model_type": "AvroBinary",
+    "name": [
+      100,
+      115,
+      110,
+      112,
+      46,
+      111,
+      116,
+      104,
+      101,
+      114
+    ],
+    "payload_location": "Itemized",
+    "settings": [
+      "AppendOnly"
+    ]
+  }
+  ]"#;
+	let x: Vec<frequency_runtime::pallet_schemas::GenesisSchema> =
+		serde_json::from_str(model).expect("Invalid Schema JSON in Genesis");
+	// ::from_json_bytes(&include_bytes!("../../../../resources/dev-schemas.json"));
+	// BoundedVec::from(vec![frequency_runtime::pallet_schemas::GenesisSchema {
+	// 	model_type: ModelType::Parquet,
+	//   payload_location: PayloadLocation::IPFS,
+	//   settings: Default::default(),
+	//   name: {
+	// 	 namespace: "dsnp",
+	// 	 descriptor: "broadcast",
+	//   },
+	//   payload: BoundedVec::try_from(b"{}").unwrap(),
+	// }])
+	x
+}
+
 #[allow(clippy::unwrap_used)]
 fn development_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
@@ -138,22 +223,7 @@ fn development_genesis(
 			key: root_key,
 		},
 		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
-			initial_schemas: vec![
-				GenesisSchema {
-					model_type: ModelType::Parquet,
-					payload_location: PayloadLocation::IPFS,
-					model: b"{}".to_vec(),
-					name: b"dsnp.broadcast".to_vec(),
-					settings: Default::default(),
-				},
-				GenesisSchema {
-					model_type: ModelType::AvroBinary,
-					payload_location: PayloadLocation::Paginated,
-					model: b"{}".to_vec(),
-					name: b"dsnp.broadcast".to_vec(),
-					settings: vec![SchemaSetting::SignatureRequired],
-				},
-			],
+			initial_schemas: load_genesis_schemas(),
 			..Default::default()
 		},
 		time_release: Default::default(),
