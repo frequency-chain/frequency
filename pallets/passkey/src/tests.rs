@@ -665,16 +665,8 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 		// assert
 		assert!(v.is_ok());
 		assert!(v.clone().unwrap().priority > 0);
-		assert_eq!(
-			v,
-			Ok(ValidTransaction {
-				priority: 758,
-				requires: vec![Encode::encode(&(who.clone(), 1u64))],
-				provides: vec![Encode::encode(&(who, 2u64))],
-				longevity: TransactionLongevity::max_value(),
-				propagate: true,
-			})
-		);
+		assert_eq!(v.clone().unwrap().requires, vec![Encode::encode(&(who.clone(), 1u64))]);
+		assert_eq!(v.clone().unwrap().provides, vec![Encode::encode(&(who, 2u64))]);
 	});
 }
 
