@@ -21,6 +21,9 @@ sp-std = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 sp-core = { workspace = true }
 log = { workspace = true, default-features = false }
+p256 = { workspace = true }
+base64-url = { workspace = true }
+serde_json = { workspace = true, features = ["alloc"] }
 pallet-transaction-payment = { workspace = true }
 
 # Frequency related dependencies
