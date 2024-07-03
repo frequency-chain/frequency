@@ -418,7 +418,7 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Free));
+			return Ok((fee, InitialPayment::Free))
 		}
 
 		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(

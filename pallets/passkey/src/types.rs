@@ -3,18 +3,16 @@ use frame_support::{
 	pallet_prelude::{ConstU32, Decode, Encode, MaxEncodedLen, TypeInfo},
 	BoundedVec, RuntimeDebugNoBound,
 };
+use p256::{ecdsa::signature::Verifier, EncodedPoint};
+use sp_io::hashing::sha2_256;
 use sp_runtime::MultiSignature;
 #[allow(unused)]
 use sp_std::boxed::Box;
+use sp_std::vec::Vec;
 
 /// This is the placeholder value that should be replaced by calculated challenge for
 /// evaluation of a Passkey signature.
 pub const CHALLENGE_PLACEHOLDER: &str = "#rplc#";
-/// PassKey Public Key type in compressed encoded point format
-/// the first byte is the tag indicating compressed format
-pub type PasskeyPublicKey = [u8; 33];
-/// PassKey Signature type
-pub type PasskeySignature = BoundedVec<u8, ConstU32<96>>;
 /// Passkey AuthenticatorData type. The length is 37 bytes or more
 /// https://w3c.github.io/webauthn/#authenticator-data
 pub type PasskeyAuthenticatorData = BoundedVec<u8, ConstU32<128>>;
@@ -23,6 +21,15 @@ pub type PasskeyAuthenticatorData = BoundedVec<u8, ConstU32<128>>;
 /// before submission to the chain
 /// https://w3c.github.io/webauthn/#dictdef-collectedclientdata
 pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<256>>;
+/// PassKey Public Key type in compressed encoded point format
+/// the first byte is the tag indicating compressed format
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+pub struct PasskeyPublicKey(pub [u8; 33]);
+/// PassKey Signature type
+#[derive(
+	Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone, Default,
+)]
+pub struct PasskeySignature(pub BoundedVec<u8, ConstU32<96>>);
 
 /// Passkey Payload
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
@@ -59,4 +66,117 @@ pub struct PasskeyCall<T: Config> {
 	pub account_ownership_proof: MultiSignature,
 	/// Extrinsic call
 	pub call: Box<<T as Config>::RuntimeCall>,
+}
+
+impl PasskeySignature {
+	/// returns the inner raw data as a vector
+	pub fn to_vec(&self) -> Vec<u8> {
+		self.0.to_vec()
+	}
+}
+
+impl TryFrom<PasskeySignature> for p256::ecdsa::DerSignature {
+	type Error = ();
+
+	fn try_from(value: PasskeySignature) -> Result<Self, Self::Error> {
+		let result = p256::ecdsa::DerSignature::from_bytes(&value.to_vec()[..]).map_err(|_| ())?;
+		Ok(result)
+	}
+}
+
+impl PasskeyPublicKey {
+	/// returns the inner raw data
+	pub fn inner(&self) -> [u8; 33] {
+		self.0
+	}
+}
+
+impl TryFrom<EncodedPoint> for PasskeyPublicKey {
+	type Error = ();
+
+	fn try_from(value: EncodedPoint) -> Result<Self, Self::Error> {
+		let bytes = value.as_bytes().to_vec();
+		let inner: [u8; 33] = bytes.try_into().map_err(|_| ())?;
+		Ok(PasskeyPublicKey(inner))
+	}
+}
+
+impl TryFrom<&PasskeyPublicKey> for p256::ecdsa::VerifyingKey {
+	type Error = ();
+
+	fn try_from(value: &PasskeyPublicKey) -> Result<Self, Self::Error> {
+		let encoded_point = EncodedPoint::from_bytes(&value.inner()[..]).map_err(|_| ())?;
+
+		let result =
+			p256::ecdsa::VerifyingKey::from_encoded_point(&encoded_point).map_err(|_| ())?;
+
+		Ok(result)
+	}
+}
+
+impl TryFrom<Vec<u8>> for PasskeySignature {
+	type Error = ();
+
+	fn try_from(value: Vec<u8>) -> Result<Self, Self::Error> {
+		let inner: BoundedVec<u8, ConstU32<96>> = value.try_into().map_err(|_| ())?;
+		Ok(PasskeySignature(inner))
+	}
+}
+
+/// Passkey verification error types
+pub enum PasskeyVerificationError {
+	/// Invalid Passkey signature
+	InvalidSignature,
+	/// Invalid Passkey public key
+	InvalidPublicKey,
+	/// Invalid Client data json
+	InvalidClientDataJson,
+	/// Invalid proof
+	InvalidProof,
+}
+
+impl From<PasskeyVerificationError> for u8 {
+	fn from(value: PasskeyVerificationError) -> Self {
+		match value {
+			PasskeyVerificationError::InvalidSignature => 0u8,
+			PasskeyVerificationError::InvalidPublicKey => 1u8,
+			PasskeyVerificationError::InvalidClientDataJson => 2u8,
+			PasskeyVerificationError::InvalidProof => 3u8,
+		}
+	}
+}
+
+impl VerifiablePasskeySignature {
+	/// verifying a P256 Passkey signature
+	pub fn try_verify(
+		&self,
+		msg: &[u8],
+		signer: &PasskeyPublicKey,
+	) -> Result<(), PasskeyVerificationError> {
+		let verifying_key: p256::ecdsa::VerifyingKey =
+			signer.try_into().map_err(|_| PasskeyVerificationError::InvalidPublicKey)?;
+		let passkey_signature: p256::ecdsa::DerSignature = self
+			.signature
+			.clone()
+			.try_into()
+			.map_err(|_| PasskeyVerificationError::InvalidSignature)?;
+		let calculated_challenge = sha2_256(msg);
+		let calculated_challenge_base64url = base64_url::encode(&calculated_challenge);
+
+		// inject challenge inside clientJsonData
+		let str_of_json = core::str::from_utf8(&self.client_data_json)
+			.map_err(|_| PasskeyVerificationError::InvalidClientDataJson)?;
+		let original_client_data_json =
+			str_of_json.replace(CHALLENGE_PLACEHOLDER, &calculated_challenge_base64url);
+
+		// prepare signing payload which is [authenticator || sha256(client_data_json)]
+		let mut passkey_signature_payload = self.authenticator_data.to_vec();
+		passkey_signature_payload
+			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
+
+		// finally verify the passkey signature against the payload
+		verifying_key
+			.verify(&passkey_signature_payload, &passkey_signature)
+			.map_err(|_| PasskeyVerificationError::InvalidProof)
+	}
 }

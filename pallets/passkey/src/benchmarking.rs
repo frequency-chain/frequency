@@ -1,9 +1,15 @@
 #![allow(clippy::unwrap_used)]
 use super::*;
 
-use crate::types::*;
 #[allow(unused)]
 use crate::Pallet as Passkey;
+use crate::{
+	test_common::{
+		constants::{AUTHENTICATOR_DATA, REPLACED_CLIENT_DATA_JSON},
+		utilities::{get_p256_public_key, passkey_sign},
+	},
+	types::*,
+};
 use frame_benchmarking::benchmarks;
 use frame_support::assert_ok;
 use sp_core::{crypto::KeyTypeId, Encode};
@@ -25,11 +31,17 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
 	let test_account_1_account_id =
 		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
-	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 1000000000u32.into());
-	let passkey_public_key = [0u8; 33];
-	let wrapped_binary = wrap_binary_data(passkey_public_key.to_vec());
+	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 2000000000u32.into());
+	let secret = p256::SecretKey::from_slice(&[
+		1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+	])
+	.unwrap();
+	let passkey_public_key = get_p256_public_key(&secret).unwrap();
+	let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
 	let signature: MultiSignature =
 		MultiSignature::Sr25519(test_account_1_pk.sign(&wrapped_binary).unwrap().into());
+	let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+	let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 
 	let inner_call: <T as Config>::RuntimeCall =
 		frame_system::Call::<T>::remark { remark: vec![] }.into();
@@ -40,12 +52,15 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 		account_ownership_proof: signature,
 		call: Box::new(inner_call),
 	};
+
+	let passkey_signature =
+		passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
 	let payload = PasskeyPayload {
 		passkey_public_key,
 		verifiable_passkey_signature: VerifiablePasskeySignature {
-			signature: PasskeySignature::default(),
-			client_data_json: PasskeyClientDataJson::default(),
-			authenticator_data: PasskeyAuthenticatorData::default(),
+			signature: passkey_signature,
+			client_data_json: client_data.try_into().unwrap(),
+			authenticator_data: authenticator.try_into().unwrap(),
 		},
 		passkey_call: call,
 	};
