@@ -1,11 +1,11 @@
-use frame_support::{Deserialize, Serialize};
-use crate::msa::MessageSourceId;
+use crate::{
+	msa::MessageSourceId,
+	node::{Balance as BalanceC, BlockNumber},
+};
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
 use sp_runtime::DispatchError;
-use sp_runtime::traits::AtLeast32BitUnsigned;
-use crate::node::{BlockNumber, Balance as BalanceC};
 
 /// The type of a Reward Era
 pub type RewardEra = u32;
@@ -65,10 +65,11 @@ pub trait Replenishable {
 }
 
 /// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
+#[derive(
+	Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
+)]
 #[scale_info(skip_type_params(T))]
-pub struct UnclaimedRewardInfoRPC
-{
+pub struct UnclaimedRewardInfoRPC {
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
 	/// When this reward expires, i.e. can no longer be claimed
@@ -82,16 +83,12 @@ pub struct UnclaimedRewardInfoRPC
 	pub earned_amount: BalanceC,
 }
 
-
-// maybe we don't need these but they are there for transaction_payment::FeeDetails<Balance>
-// #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
-// #[cfg_attr(feature = "std", serde(rename_all = "camelCase"))]
-
 /// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo)]
+#[derive(
+	Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
+)]
 #[scale_info(skip_type_params(T))]
-pub struct UnclaimedRewardInfo<Balance, BlockNumber >
-{
+pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
 	/// When this reward expires, i.e. can no longer be claimed

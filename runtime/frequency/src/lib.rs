@@ -39,8 +39,8 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
 use common_primitives::{
-	handles::*, messages::*, msa::*, node::*, rpc::RpcEvent, schema::*, stateful_storage::*,
-	capacity::*,
+	capacity::*, handles::*, messages::*, msa::*, node::*, rpc::RpcEvent, schema::*,
+	stateful_storage::*,
 };
 
 pub use common_runtime::{
@@ -1504,8 +1504,10 @@ impl_runtime_apis! {
 
 	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
-			let result = Capacity::list_unclaimed_rewards(&who).unwrap_or_default();
-			result.into_inner()
+			match Capacity::list_unclaimed_rewards(&who) {
+				Ok(rewards) => return rewards.into_inner(),
+				Err(_) => return Vec::new(),
+			}
 		}
 	}
 

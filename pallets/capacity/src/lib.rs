@@ -31,31 +31,31 @@ use sp_std::ops::Mul;
 use frame_support::{
 	ensure,
 	traits::{
+		fungible::Inspect,
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::{constants::RocksDbWeight, Weight},
 };
-use frame_support::traits::fungible::Inspect;
 
-use sp_runtime::{traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero}, ArithmeticError, DispatchError, Perbill, Permill, BoundedVec};
+use sp_runtime::{
+	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
+	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
+};
 
 pub use common_primitives::{
-	capacity::{Nontransferable, Replenishable, TargetValidator, RewardEra},
-	node::{AccountId, Balance, BlockNumber},
+	capacity::{Nontransferable, Replenishable, RewardEra, TargetValidator},
 	msa::MessageSourceId,
+	node::{AccountId, Balance, BlockNumber},
 	utils::wrap_binary_data,
 };
 
 use crate::StakingType::{MaximumCapacity, ProviderBoost};
 use frame_system::pallet_prelude::*;
-use parity_scale_codec::EncodeLike;
-use sp_runtime::traits::{Header, HeaderProvider};
-
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-use common_primitives::capacity::{UnclaimedRewardInfo, UnclaimedRewardInfoRPC};
+use common_primitives::capacity::UnclaimedRewardInfo;
 
 pub use pallet::*;
 pub use types::*;
@@ -966,8 +966,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn start_new_reward_era_if_needed(current_block: BlockNumberFor<T>) -> Weight {
-		let current_era_info: RewardEraInfo<RewardEra, BlockNumberFor<T>> =
-			Self::get_current_era(); // 1r
+		let current_era_info: RewardEraInfo<RewardEra, BlockNumberFor<T>> = Self::get_current_era(); // 1r
 
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			// 1r
@@ -1074,14 +1073,22 @@ impl<T: Config> Pallet<T> {
 		} // 1r
 	}
 
-
 	/// Get all unclaimed rewards information for each eligible Reward Era
 	pub fn list_unclaimed_rewards(
 		account: &T::AccountId,
-	) -> Result<BoundedVec<UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>, T::ProviderBoostHistoryLimit>, DispatchError> {
-		if !Self::has_unclaimed_rewards(account) { return Ok(BoundedVec::new()); }
+	) -> Result<
+		BoundedVec<
+			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
+			T::ProviderBoostHistoryLimit,
+		>,
+		DispatchError,
+	> {
+		if !Self::has_unclaimed_rewards(account) {
+			return Ok(BoundedVec::new());
+		}
 
-		let staking_history = Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
+		let staking_history =
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
 
 		let current_era_info = Self::get_current_era(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
@@ -1093,8 +1100,10 @@ impl<T: Config> Pallet<T> {
 		let mut previous_amount: BalanceOf<T> =
 			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
 
-		let mut unclaimed_rewards: BoundedVec<UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>, T::ProviderBoostHistoryLimit> =
-			BoundedVec::new();
+		let mut unclaimed_rewards: BoundedVec<
+			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
+			T::ProviderBoostHistoryLimit,
+		> = BoundedVec::new();
 		while reward_era.le(&end_era) {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {

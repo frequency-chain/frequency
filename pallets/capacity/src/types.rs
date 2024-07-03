@@ -546,4 +546,3 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// The amount is multiplied by a factor > 0 and < 1.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
 }
-

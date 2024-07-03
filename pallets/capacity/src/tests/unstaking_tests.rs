@@ -5,7 +5,6 @@ use crate::{
 	StakingDetails, StakingTargetDetails, StakingType, StakingType::ProviderBoost, UnlockChunk,
 };
 use common_primitives::msa::MessageSourceId;
-use frame_benchmarking::account;
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{fungible::InspectFreeze, Get},
@@ -359,7 +358,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
-		let mut pbh = Capacity::get_staking_history_for(staker).unwrap();
+		let pbh = Capacity::get_staking_history_for(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
@@ -367,8 +366,6 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		run_to_block(51);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 400u64));
-
-		let pbh = Capacity::get_staking_history_for(staker).unwrap();
 
 		assert_eq!(get_balance::<Test>(&staker), 10_016u64);
 		assert_transferable::<Test>(&staker, 16u64);
@@ -383,7 +380,7 @@ fn unstake_all_by_booster_reaps_boost_history() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
-		let mut pbh = Capacity::get_staking_history_for(staker).unwrap();
+		let pbh = Capacity::get_staking_history_for(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.

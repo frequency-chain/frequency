@@ -118,7 +118,7 @@ fn list_unclaimed_rewards_has_eligible_rewards() {
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert_eq!(rewards.len(), 5usize);
-		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
+		let expected_info: [UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>>; 5] = [
 			UnclaimedRewardInfo {
 				reward_era: 1u32,
 				expires_at_block: 130,
@@ -208,19 +208,18 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		// the earliest era should no longer be stored.
 		for i in 0u32..max_history {
 			let era = i + 2u32;
-			let expected_info: UnclaimedRewardInfo<Test> = UnclaimedRewardInfo {
-				reward_era: era.into(),
-				expires_at_block: (era * 10u32 + 120u32).into(),
-				staked_amount: 1000,
-				eligible_amount: 1000,
-				earned_amount: 4,
-			};
+			let expected_info: UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>> =
+				UnclaimedRewardInfo {
+					reward_era: era.into(),
+					expires_at_block: (era * 10u32 + 120u32).into(),
+					staked_amount: 1000,
+					eligible_amount: 1000,
+					earned_amount: 4,
+				};
 			assert_eq!(rewards.get(i as usize).unwrap(), &expected_info);
 		}
 	})
 }
-
-fn list_unclaimed_rewards_has_last_claimed_at() {}
 
 #[test]
 fn has_unclaimed_rewards_works() {

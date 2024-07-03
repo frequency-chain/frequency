@@ -7,7 +7,6 @@ use frame_support::{
 use common_primitives::capacity::RewardEra;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
-use common_primitives::capacity::RewardEra;
 
 /// Initialization during runtime upgrade for Provider Boost storage
 pub struct ProviderBoostInit<T: Config>(sp_std::marker::PhantomData<T>);
