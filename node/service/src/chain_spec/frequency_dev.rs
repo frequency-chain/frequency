@@ -1,5 +1,8 @@
 #![allow(missing_docs)]
-use common_primitives::node::AccountId;
+use common_primitives::{
+	node::AccountId,
+	schema::{ModelType, PayloadLocation, SchemaSetting},
+};
 use common_runtime::constants::{
 	currency::EXISTENTIAL_DEPOSIT, FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS,
 };
@@ -136,10 +139,20 @@ fn development_genesis(
 		},
 		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
 			initial_schemas: vec![
-				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
-				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
-				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
-				GenesisSchema { data: vec![1, 2, 3], name: b"dsnp.broadcast".to_vec() },
+				GenesisSchema {
+					model_type: ModelType::Parquet,
+					payload_location: PayloadLocation::IPFS,
+					model: b"{}".to_vec(),
+					name: b"dsnp.broadcast".to_vec(),
+					settings: Default::default(),
+				},
+				GenesisSchema {
+					model_type: ModelType::AvroBinary,
+					payload_location: PayloadLocation::Paginated,
+					model: b"{}".to_vec(),
+					name: b"dsnp.broadcast".to_vec(),
+					settings: vec![SchemaSetting::SignatureRequired],
+				},
 			],
 			..Default::default()
 		},

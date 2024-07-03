@@ -258,22 +258,23 @@ pub mod pallet {
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
-			// GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
-			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_schemas.len() as u32);
+			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
 
 			for schema in self.initial_schemas.iter() {
 				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
-					BoundedVec::try_from(b"{}".to_vec()).unwrap();
+					BoundedVec::try_from(schema.model.clone()).unwrap();
 				let name_payload: SchemaNamePayload =
 					BoundedVec::try_from(schema.name.clone()).unwrap();
 				let parsed_name: SchemaName = SchemaName::try_parse::<T>(name_payload, true)
 					.expect("Bad Genesis Schema Name");
+				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
+					BoundedVec::try_from(schema.settings.clone()).unwrap();
 
 				let _ = Pallet::<T>::add_schema(
 					model,
-					ModelType::Parquet,
-					PayloadLocation::IPFS,
-					BoundedVec::default(),
+					schema.model_type,
+					schema.payload_location,
+					settings,
 					Some(parsed_name),
 				)
 				.expect("Failed to set genesis schema in database");
