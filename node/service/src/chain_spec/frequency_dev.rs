@@ -86,9 +86,9 @@ fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 	frequency_runtime::SessionKeys { aura: keys }
 }
 
+#[allow(clippy::unwrap_used)]
 fn load_genesis_schemas() -> Vec<frequency_runtime::pallet_schemas::GenesisSchema> {
-	serde_json::from_slice(include_bytes!("../../../../resources/genesis-schemas.json"))
-		.expect("Invalid Schema JSON in Genesis")
+	serde_json::from_slice(include_bytes!("../../../../resources/genesis-schemas.json")).unwrap()
 }
 
 #[allow(clippy::unwrap_used)]
