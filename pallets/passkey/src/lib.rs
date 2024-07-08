@@ -26,7 +26,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
-	traits::{Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, Dispatchable, SignedExtension, Verify, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
@@ -156,6 +156,7 @@ pub mod module {
 	#[pallet::validate_unsigned]
 	impl<T: Config> ValidateUnsigned for Pallet<T>
 	where
+		BalanceOf<T>: Send + Sync + From<u64>,
 		<T as frame_system::Config>::RuntimeCall:
 			From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
@@ -210,6 +211,7 @@ pub mod module {
 
 impl<T: Config> Pallet<T>
 where
+	BalanceOf<T>: Send + Sync + From<u64>,
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
@@ -331,6 +333,7 @@ pub struct ChargeTransactionPayment<T: Config>(pub T::AccountId, pub Call<T>);
 
 impl<T: Config> ChargeTransactionPayment<T>
 where
+	BalanceOf<T>: Send + Sync + From<u64>,
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
@@ -341,7 +344,8 @@ where
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
-		self.withdraw_token_fee(&who, &runtime_call, info, len, Zero::zero())?;
+		pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero())
+			.pre_dispatch(&who, &runtime_call, info, len)?;
 		Ok(())
 	}
 
@@ -352,39 +356,13 @@ where
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
-		let fee = self.withdraw_token_fee(&who, &runtime_call, info, len, Zero::zero())?;
 
-		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
+		pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero()).validate(
+			&who,
+			&runtime_call,
 			info,
 			len,
-			Zero::zero(),
-			fee,
-		);
-
-		Ok(ValidTransaction { priority, ..Default::default() })
-	}
-
-	/// Withdraws transaction fee paid with tokens.
-	/// # Arguments
-	/// * `who` - The account id of the payer
-	/// * `call` - The call
-	/// # Return
-	/// * `Ok((fee, initial_payment))` if the fee is successfully withdrawn
-	/// * `Err(InvalidTransaction::Payment)` if the fee cannot be withdrawn
-	fn withdraw_token_fee(
-		&self,
-		who: &T::AccountId,
-		call: &<T as frame_system::Config>::RuntimeCall,
-		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		len: usize,
-		tip: BalanceOf<T>,
-	) -> Result<BalanceOf<T>, TransactionValidityError> {
-		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
-		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
-			who, call, info, fee, tip,
 		)
-		.map(|_| (fee))
-		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
 	}
 }
 
