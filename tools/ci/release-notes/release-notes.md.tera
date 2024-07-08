@@ -4,12 +4,11 @@ Full changelog: https://github.com/frequency-chain/frequency/compare/{{env.PREVI
 
 ## Versions
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
-- Substrate/Polkadot: `v{{env.POLKADOT_VERSION}}`
+- Polkadot-SDK: `v{{env.POLKADOT_VERSION}}`
 
 ## Deployed
 
 - Frequency-Paseo Testnet: [TBD]()
-- Frequency-Rococo Testnet: [TBD]()
 - Frequency Mainnet: [TBD]()
 
 ## What's Changed
@@ -35,16 +34,6 @@ The information about the runtimes included in this release can be found below.
 ### Frequency Paseo Testnet
 
 {% set runtime = env.RUNTIME_PASEO_INFO | split(pat='|') -%}
-```
-{% for line in runtime -%}
-	{{ line | safe }}
-{% endfor -%}
-```
-
-
-### Frequency Rococo Testnet
-
-{% set runtime = env.RUNTIME_ROCOCO_INFO | split(pat='|') -%}
 ```
 {% for line in runtime -%}
 	{{ line | safe }}
