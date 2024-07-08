@@ -48,7 +48,7 @@ pub struct GenesisSchema {
 	pub payload_location: PayloadLocation,
 	/// The Payload Model
 	pub model: String,
-	/// Schema Full Name: [Namespace].[Descriptor]
+	/// Schema Full Name: {Namespace}.{Descriptor}
 	pub name: String,
 	/// Settings
 	pub settings: Vec<SchemaSetting>,
