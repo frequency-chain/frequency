@@ -122,8 +122,7 @@ pub mod module {
 	pub struct Pallet<T>(_);
 
 	#[pallet::call]
-	impl<T: Config> Pallet<T>
-	{
+	impl<T: Config> Pallet<T> {
 		/// proxy call
 		#[pallet::call_index(0)]
 		#[pallet::weight({
@@ -142,9 +141,9 @@ pub mod module {
 				transaction_account_id.clone(),
 			));
 			let result = payload.passkey_call.call.dispatch(main_origin);
-			if let Ok(inner) = result {
+			if let Ok(_inner) = result {
 				// all post-dispatch logic should be included in here
-				// let _ = PasskeyWeightCheck::<T>::post_dispatch(&payload, &inner);
+				// let _ = PasskeyWeightCheck::<T>::post_dispatch(&payload, &inner); TODO: uncomment after fixing constraints
 
 				Self::deposit_event(Event::TransactionExecutionSuccess {
 					account_id: transaction_account_id,
@@ -210,17 +209,14 @@ pub mod module {
 }
 
 impl<T: Config> Pallet<T>
-// where
-// 	<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo>,
 where
-<T as frame_system::Config>::RuntimeCall: From<Call<T>>
-+ Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
-				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call)
-			=>
+				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
 				return Ok(payload.clone()),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
