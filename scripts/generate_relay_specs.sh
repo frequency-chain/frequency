@@ -2,5 +2,4 @@
 
 set -e
 
-docker run parity/polkadot:v1.1.0 build-spec --disable-default-bootnode --chain rococo-local --raw > ./resources/rococo-local.json
-
+curl -o ./resources/paseo-local.json https://raw.githubusercontent.com/wilwade/paseo-runtimes/main/chain-specs/paseo.raw.json

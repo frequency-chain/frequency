@@ -18,13 +18,6 @@ pub mod frequency;
 	feature = "frequency-local",
 	feature = "frequency-no-relay"
 ))]
-pub mod frequency_rococo;
-
-#[cfg(any(
-	feature = "frequency-testnet",
-	feature = "frequency-local",
-	feature = "frequency-no-relay"
-))]
 pub mod frequency_paseo;
 
 #[cfg(any(feature = "frequency-no-relay"))]

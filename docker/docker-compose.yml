@@ -2,60 +2,6 @@
 # Node Key Bob: `subkey inspect //Bob`
 version: "3"
 services:
-  relay_alice:
-    container_name: alice
-    image: "parity/polkadot:v1.1.0"
-    platform: linux/x86_64
-    hostname: relay_alice
-    ports:
-      - "30335:30335" # p2p port
-      - "9946:9944" # ws and rpc port
-    volumes:
-      - type: bind
-        source: ../resources/rococo-local.json
-        target: /chainspec.json
-        read_only: true
-    command: >
-      --chain=/chainspec.json
-      --node-key=e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a
-      --wasm-execution=compiled
-      --base-path=/data
-      --port=30335
-      --rpc-port=9944
-      --rpc-external
-      --rpc-cors=all
-      --rpc-methods=Unsafe
-      --alice
-      --log="main"
-    restart: unless-stopped
-
-  relay_bob:
-    container_name: bob
-    image: "parity/polkadot:v1.1.0"
-    platform: linux/x86_64
-    hostname: relay_bob
-    ports:
-      - "30336:30336" # p2p port
-      - "9947:9944" # ws and rpc port
-    volumes:
-      - type: bind
-        source: ../resources/rococo-local.json
-        target: /chainspec.json
-        read_only: true
-    command: >
-      --chain=/chainspec.json
-      --node-key=398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89
-      --base-path=/data
-      --wasm-execution=compiled
-      --port=30336
-      --rpc-port=9944
-      --rpc-external
-      --rpc-cors=all
-      --rpc-methods=Unsafe
-      --bob
-      --log="main,info"
-    restart: unless-stopped
-
   relay_paseo_alice:
     container_name: alice
     image: "parity/polkadot:v1.1.0"
