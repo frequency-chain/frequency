@@ -18,7 +18,7 @@ To accomplish the above workflow, you will need to take the following steps:
 
 ```
 make build
-make specs-rococo-2000
+make specs-testnet-2000
 ```
 
 This will place a WASM in the `res/genesis/testnet` folder.

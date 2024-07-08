@@ -9,7 +9,7 @@ use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_change
 compile_error!(
 	r#"You must enable one of these features:
 - Mainnet: "frequency"
-- Frequency Rococo: "frequency-testnet"
+- Frequency Paseo: "frequency-testnet"
 - Local: "frequency-local"
 - No Relay: "frequency-no-relay",
 - All: "frequency-lint-check"#

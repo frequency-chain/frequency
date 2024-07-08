@@ -82,18 +82,6 @@ case "${CHAIN}" in
 
         read -p "Enter the seed phrase for the Frequency Paseo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
     ;;
-    "rococo_local")
-        PROVIDER_URL="ws://127.0.0.1:9944"
-        NPM_RUN_COMMAND="test:relay"
-        CHAIN_ENVIRONMENT="rococo-local"
-    ;;
-    "rococo_testnet")
-        PROVIDER_URL="wss://rpc.rococo.frequency.xyz"
-        NPM_RUN_COMMAND="test:relay"
-        CHAIN_ENVIRONMENT="rococo-testnet"
-
-        read -p "Enter the seed phrase for the Frequency Rococo account funding source: " FUNDING_ACCOUNT_SEED_PHRASE
-    ;;
 esac
 
 echo "The E2E test output will be logged on this console"
@@ -107,11 +95,11 @@ if [ -n "$( get_frequency_pid )" ]
 then
     echo "Frequency is already running."
 else
-    if [ "${CHAIN_ENVIRONMENT}" = "rococo-local" ] || [ "${CHAIN_ENVIRONMENT}" = "paseo-local" ]
+    if [ "${CHAIN_ENVIRONMENT}" = "paseo-local" ]
     then
         echo "Frequency is not running."
         echo "The intended use case of running E2E tests with a chain environment"
-        echo "of \"rococo-local\" or \"paseo-local\" is to run the tests against a locally running Frequency"
+        echo "of \"paseo-local\" is to run the tests against a locally running Frequency"
         echo "chain with locally running Polkadot relay nodes."
         exit 1
     fi
