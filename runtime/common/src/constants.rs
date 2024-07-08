@@ -315,7 +315,7 @@ impl MaxEncodedLen for MessagesMaxPayloadSizeBytes {
 parameter_types! {
 	/// SS58 Prefix for the for Frequency Network
 	/// 90 is the prefix for the Frequency Network on Polkadot
-	/// 42 is the prefix for the Frequency Network on Rococo
+	/// 42 is the default prefix elsewhere
 	pub const Ss58Prefix: u16 = prod_or_testnet_or_local!(90, 42, 42);
 }
 
