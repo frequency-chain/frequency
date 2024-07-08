@@ -376,7 +376,7 @@ where
 	/// Validates the transaction fee paid with tokens.
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
 		let info = &self.1.get_dispatch_info();
-		let len = self.0.using_encoded(|c| c.len());
+		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
@@ -397,7 +397,7 @@ where
 	/// Validates the transaction fee paid with tokens.
 	pub fn validate(&self) -> TransactionValidity {
 		let info = &self.1.get_dispatch_info();
-		let len = self.0.using_encoded(|c| c.len());
+		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
