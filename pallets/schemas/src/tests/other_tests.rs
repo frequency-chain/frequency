@@ -16,7 +16,7 @@ use frame_support::{
 };
 use parity_scale_codec::Encode;
 use serial_test::serial;
-use sp_runtime::DispatchError::BadOrigin;
+use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
 
 use crate::{
 	Error, Event as AnnouncementEvent, SchemaDescriptor, SchemaName, SchemaNamePayload,
@@ -1049,4 +1049,32 @@ fn propose_to_create_schema_name_happy_path() {
 			}])
 		);
 	})
+}
+
+#[test]
+fn genesis_config_build_genesis_schemas() {
+	let mut t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
+	crate::GenesisConfig::<Test> {
+		initial_schemas: serde_json::from_slice(include_bytes!(
+			"../../../../resources/genesis-schemas.json"
+		))
+		.unwrap(),
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
+	let mut ext: sp_io::TestExternalities = t.into();
+
+	ext.execute_with(|| {
+		System::set_block_number(1);
+		let res = SchemasPallet::get_current_schema_identifier_maximum();
+
+		// We should have at least 10
+		assert!(res >= 10);
+
+		// Check that the first schema exists
+		let res = SchemasPallet::get_schema_by_id(1);
+		assert!(res.is_some());
+	});
 }

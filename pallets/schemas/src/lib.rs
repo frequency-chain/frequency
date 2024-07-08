@@ -263,11 +263,12 @@ pub mod pallet {
 			// Load in the Genesis Schemas
 			for schema in self.initial_schemas.iter() {
 				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
-					BoundedVec::try_from(schema.model.clone().into_bytes())
-						.expect("Genesis Schema Model too large!");
+					BoundedVec::try_from(schema.model.clone().into_bytes()).expect(
+						"Genesis Schema Model larger than SchemaModelMaxBytesBoundedVecLimit",
+					);
 				let name_payload: SchemaNamePayload =
 					BoundedVec::try_from(schema.name.clone().into_bytes())
-						.expect("Genesis Schema Name too large!");
+						.expect("Genesis Schema Name larger than SCHEMA_NAME_BYTES_MAX");
 				let parsed_name: Option<SchemaName> = if name_payload.len() > 0 {
 					Some(
 						SchemaName::try_parse::<T>(name_payload, true)
@@ -277,8 +278,9 @@ pub mod pallet {
 					None
 				};
 				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
-					BoundedVec::try_from(schema.settings.clone())
-						.expect("Bad Genesis Schema Settings");
+					BoundedVec::try_from(schema.settings.clone()).expect(
+						"Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
+					);
 
 				let _ = Pallet::<T>::add_schema(
 					model,
