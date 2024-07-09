@@ -3,7 +3,6 @@
 Frequency parachain node which connects to Frequency testnets:
 
 - Frequency Paseo Testnet `--chain=frequency-paseo` (Default)
-- Frequency Rococo Testnet `--chain=frequency-rococo`
 
 To view all available options and arguments:
 
@@ -27,19 +26,6 @@ docker run -p 9944:9944 -p 30333:30333 frequencychain/parachain-node-testnet:<ve
     --sync=warp \
     -- \
     --sync=warp
-```
-
-### Frequency Rococo Testnet
-
-Start full chain node that connects to Rococo Testnet network:
-
-```sh
-docker run -p 9944:9944 -p 30333:30333 frequencychain/parachain-node-testnet:<version.tag> \
-    --chain=frequency-rococo \
-    --base-path=/chain-data \
-    --rpc-external \
-    --rpc-cors=all \
-    --rpc-methods=safe
 ```
 
 ## Storage

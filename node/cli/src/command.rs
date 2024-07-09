@@ -18,7 +18,6 @@ use sc_service::config::{BasePath, PrometheusConfig};
 
 enum ChainIdentity {
 	Frequency,
-	FrequencyRococo,
 	FrequencyPaseo,
 	FrequencyLocal,
 	FrequencyDev,
@@ -32,8 +31,6 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 	fn identify(&self) -> ChainIdentity {
 		if self.id() == "frequency" {
 			ChainIdentity::Frequency
-		} else if self.id() == "frequency-rococo" {
-			ChainIdentity::FrequencyRococo
 		} else if self.id() == "frequency-paseo" {
 			ChainIdentity::FrequencyPaseo
 		} else if self.id() == "frequency-local" {
@@ -50,7 +47,6 @@ impl PartialEq for ChainIdentity {
 	fn eq(&self, other: &Self) -> bool {
 		match (self, other) {
 			(ChainIdentity::Frequency, ChainIdentity::Frequency) => true,
-			(ChainIdentity::FrequencyRococo, ChainIdentity::FrequencyRococo) => true,
 			(ChainIdentity::FrequencyPaseo, ChainIdentity::FrequencyPaseo) => true,
 			(ChainIdentity::FrequencyLocal, ChainIdentity::FrequencyLocal) => true,
 			(ChainIdentity::FrequencyDev, ChainIdentity::FrequencyDev) => true,
@@ -75,17 +71,11 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"dev" | "frequency-no-relay" =>
 			return Ok(Box::new(chain_spec::frequency_dev::development_config())),
 		#[cfg(feature = "frequency-local")]
-		"frequency-rococo-local" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::local_rococo_testnet_config())),
-		#[cfg(feature = "frequency-local")]
 		"frequency-paseo-local" =>
 			return Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			return Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
-		#[cfg(feature = "frequency-testnet")]
-		"frequency-rococo" | "rococo" =>
-			return Ok(Box::new(chain_spec::frequency_rococo::load_frequency_rococo_spec())),
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -136,15 +126,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency"))]
 				return Err("Frequency runtime is not available.".into());
-			} else if ChainIdentity::FrequencyRococo == spec.identify() {
-				#[cfg(feature = "frequency-testnet")]
-				{
-					return Ok(Box::new(chain_spec::frequency_rococo::ChainSpec::from_json_file(
-						path_buf,
-					)?));
-				}
-				#[cfg(not(feature = "frequency-testnet"))]
-				return Err("Frequency Rococo runtime is not available.".into());
 			} else if ChainIdentity::FrequencyPaseo == spec.identify() {
 				#[cfg(feature = "frequency-testnet")]
 				{

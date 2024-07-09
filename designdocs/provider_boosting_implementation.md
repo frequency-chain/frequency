@@ -39,7 +39,7 @@ The Frequency Transaction Payment system allows certain transactions on chain to
 
 1. Have an [MSA](https://github.com/frequency-chain/frequency/blob/main/designdocs/accounts.md)
 2. Be a [Provider](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_registration.md) (see also [Provider Permissions and Grants](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_permissions.md))
-3. Stake a minimum amount of FRQCY (on mainnet, UNIT on Rococo testnet) token to receive [Capacity](https://github.com/frequency-chain/frequency/blob/main/designdocs/capacity.md).
+3. Stake a minimum amount of FRQCY (on mainnet, XRQCY on testnet) token to receive [Capacity](https://github.com/frequency-chain/frequency/blob/main/designdocs/capacity.md).
 
 # Problem Statement
 

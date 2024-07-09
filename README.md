@@ -100,7 +100,7 @@ Non-Collator nodes may have less power, but low memory configurations may lead t
    make build-mainnet
    ```
 
-   To build local, rococo/paseo (testnet) or mainnet features respectively.
+   To build local, paseo (testnet) or mainnet features respectively.
 
 At this point you should have `./target/debug` directory generated locally with compiled project files. (or `./target/release` for `make build-*-release`)
 
