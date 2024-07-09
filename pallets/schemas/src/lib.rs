@@ -291,8 +291,6 @@ pub mod pallet {
 				)
 				.expect("Failed to set Schema in Genesis!");
 			}
-
-			CurrentSchemaIdentifierMaximum::<T>::put(self.initial_schemas.len() as u16);
 		}
 	}
 
