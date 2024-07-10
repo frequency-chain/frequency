@@ -26,7 +26,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
-	traits::{Convert, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, Dispatchable, PostDispatchInfoOf, SignedExtension, Verify, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
@@ -137,12 +137,21 @@ pub mod module {
 				transaction_account_id.clone(),
 			));
 			let result = payload.passkey_call.call.dispatch(main_origin);
-			if result.is_ok() {
-				Self::deposit_event(Event::TransactionExecutionSuccess {
-					account_id: transaction_account_id,
-				});
+			match result {
+				Ok(post_info) => {
+					Self::deposit_event(Event::TransactionExecutionSuccess {
+						account_id: transaction_account_id,
+					});
+
+					// recreate proxy call to get the dispatch info
+					let proxy_call = Call::proxy { payload };
+					let tx_charge =
+						ChargeTransactionPayment::<T>(transaction_account_id, proxy_call);
+					tx_charge.post_dispatch(&post_info)?;
+					Ok(post_info)
+				},
+				Err(e) => Err(e),
 			}
-			result
 		}
 	}
 
@@ -154,6 +163,7 @@ pub mod module {
 			From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
 		type Call = Call<T>;
+
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
 			let payload = Self::filter_valid_calls(&call)?;
@@ -347,6 +357,28 @@ where
 			&runtime_call,
 			info,
 			len,
+		)
+	}
+
+	/// Post dispatch logic for the transaction fee paid with tokens.
+	pub fn post_dispatch(
+		&self,
+		post_info: &PostDispatchInfoOf<<T as Config>::RuntimeCall>,
+	) -> Result<(), TransactionValidityError> {
+		let _dummy_result: DispatchResult = Ok(());
+		let info = &self.1.get_dispatch_info();
+		let len = self.0.using_encoded(|c| c.len());
+		let runtime_call: <T as frame_system::Config>::RuntimeCall =
+			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
+		let who = self.0.clone();
+		let pre = pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero())
+			.pre_dispatch(&who, &runtime_call, info, len)?;
+		pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch(
+			Some(pre),
+			info,
+			post_info,
+			len,
+			&_dummy_result,
 		)
 	}
 }
