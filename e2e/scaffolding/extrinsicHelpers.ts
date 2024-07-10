@@ -806,6 +806,22 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static providerBoost(keys: KeyringPair, target: any, amount: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.capacity.providerBoost(target, amount),
+      keys,
+      ExtrinsicHelper.api.events.capacity.ProviderBoosted
+    );
+  }
+
+  public static changeStakingTarget(keys: KeyringPair, from: any, to: any, amount: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.capacity.changeStakingTarget(from, to, amount),
+      keys,
+      ExtrinsicHelper.api.events.capacity.StakingTargetChanged
+    );
+  }
+
   public static payWithCapacityBatchAll(keys: KeyringPair, calls: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls),
