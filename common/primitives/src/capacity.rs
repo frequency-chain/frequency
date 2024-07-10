@@ -1,7 +1,4 @@
-use crate::{
-	msa::MessageSourceId,
-	node::{Balance as BalanceC, BlockNumber},
-};
+use crate::msa::MessageSourceId;
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
@@ -62,25 +59,6 @@ pub trait Replenishable {
 
 	/// Checks if an account can be replenished.
 	fn can_replenish(msa_id: MessageSourceId) -> bool;
-}
-
-/// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(
-	Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
-)]
-#[scale_info(skip_type_params(T))]
-pub struct UnclaimedRewardInfoRPC {
-	/// The Reward Era for which this reward was earned
-	pub reward_era: RewardEra,
-	/// When this reward expires, i.e. can no longer be claimed
-	pub expires_at_block: BlockNumber,
-	/// The total staked in this era as of the current block
-	pub staked_amount: BalanceC,
-	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
-	/// staked in this era.
-	pub eligible_amount: BalanceC,
-	/// The amount in token of the reward (only if it can be calculated using only on chain data)
-	pub earned_amount: BalanceC,
 }
 
 /// Result of checking a Boost History item to see if it's eligible for a reward.

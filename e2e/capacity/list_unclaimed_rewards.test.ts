@@ -15,6 +15,9 @@ import {
   getNextRewardEraBlock,
 } from '../scaffolding/helpers';
 import { isTestnet } from '../scaffolding/env';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { UnclaimedRewardInfo } from '@frequency-chain/api-augment/interfaces';
+import { Vec } from '@polkadot/types';
 
 const fundingSource = getFundingSource('capacity-replenishment');
 
@@ -35,9 +38,8 @@ describe('Capacity: list_unclaimed_rewards', function() {
     const result = ExtrinsicHelper.api.rpc.state.call(
       'CapacityRuntimeApi_list_unclaimed_rewards', booster.address);
     let count = 0;
-    const subscription = result.subscribe((x)=> {
-        console.log(x);
-        count++;
+    const subscription = result.subscribe((x) => {
+      count++;
     });
     //  Failing to do this results in "helpful" error:
     //  `Bad input data provided to list_unclaimed_rewards: Input buffer has still data left after decoding!`
@@ -45,24 +47,37 @@ describe('Capacity: list_unclaimed_rewards', function() {
     assert(count === 0, `should have been empty but had ${count} items`);
   });
 
-  it('returns non-empty rewards after enough eras have passed', async function() {
-    if (isTestnet()) { this.skip(); }
+  it('returns correct rewards after enough eras have passed', async function() {
+    if (isTestnet()) {
+      this.skip();
+    }
     const [_provider, booster] = await setUpForBoosting("booster2", "provider2");
+    console.debug(`Booster pubkey: ${booster.address}`);
 
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
 
-    const result = ExtrinsicHelper.api.rpc.state.call(
-      'CapacityRuntimeApi_list_unclaimed_rewards', booster.address);
+    const encodedAddr = ExtrinsicHelper.api.registry.createType('AccountId32', booster.address);
+
+    const result = await ExtrinsicHelper.apiPromise.rpc.state.call(
+      'CapacityRuntimeApi_list_unclaimed_rewards', encodedAddr);
+
+    const decResult: Vec<UnclaimedRewardInfo> = ExtrinsicHelper.api.registry.createType('Vec<UnclaimedRewardInfo>', result);
     let count = 0;
-    const subscription = result.subscribe((x)=> {
-      console.log(x);
+    assert(decResult.every(item => {
       count++;
-    });
-    //  Failing to do this results in "helpful" error:
-    //  `Bad input data provided to list_unclaimed_rewards: Input buffer has still data left after decoding!`
-    subscription.unsubscribe();
-    assert(count === 2, `had ${count} items but should have had 2`);
+      return item.staked_amount.toHuman() === '1.0000 UNIT';
+    }));
+    assert.equal(count, 3);
+
+    assert.equal(decResult[0].eligible_amount.toHuman(), '0');
+    assert.equal(decResult[0].earned_amount.toHuman(), '0');
+
+    assert.equal(decResult[1].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(decResult[1].earned_amount.toHuman(), '3.8000 mUNIT');
+
+    assert.equal(decResult[2].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(decResult[2].earned_amount.toHuman(), '3.8000 mUNIT');
   });
 });
