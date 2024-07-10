@@ -3,7 +3,7 @@ use super::*;
 use crate::mock::Passkey;
 use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_err, assert_noop, assert_ok};
-use frame_system::{Call as SystemCall, RawOrigin};
+use frame_system::{limits::BlockLength, Call as SystemCall, RawOrigin};
 use mock::*;
 
 use crate::test_common::{constants::*, utilities::*};
@@ -671,6 +671,64 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 }
 
 #[test]
+fn validate_unsigned_with_exceeding_weights_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		// Fund the account
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			test_account_1_key_pair.public().into(),
+			10000000000
+		));
+		let who: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		let mut account = frame_system::Account::<Test>::get(&who);
+		account.nonce += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret).unwrap();
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
+		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
+		let block_length = BlockLength::default();
+		let max = block_length.max.get(DispatchClass::Normal);
+
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: test_account_1_key_pair.public().into(),
+			account_nonce: 2,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::System(SystemCall::remark {
+				remark: vec![1u8; *max as usize],
+			})),
+		};
+		let passkey_signature =
+			passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		let err: TransactionValidityError = InvalidTransaction::ExhaustsResources.into();
+		assert_err!(v, err);
+	});
+}
+
+#[test]
 fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -831,5 +889,60 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 
 		let account = frame_system::Account::<Test>::get(&account_1_pk);
 		assert_eq!(account.nonce, <Test as frame_system::Config>::Nonce::one());
+	});
+}
+
+#[test]
+fn pre_dispatch_with_exceeding_weight_should_fail() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_1_key_pair, _) = sr25519::Pair::generate();
+		let account_1_pk: <Test as frame_system::Config>::AccountId =
+			test_account_1_key_pair.public().into();
+		// Fund
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_1_pk.clone(),
+			10000000000
+		));
+
+		let secret = p256::SecretKey::from_slice(&[
+			1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
+		])
+		.unwrap();
+		let passkey_public_key = get_p256_public_key(&secret).unwrap();
+		let wrapped_binary = wrap_binary_data(passkey_public_key.inner().to_vec());
+		let signature: MultiSignature = test_account_1_key_pair.sign(&wrapped_binary).into();
+		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
+		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
+		let block_length = BlockLength::default();
+		let max = block_length.max.get(DispatchClass::Normal);
+
+		let call: PasskeyCall<Test> = PasskeyCall {
+			account_id: account_1_pk.clone(),
+			account_nonce: 0,
+			account_ownership_proof: signature,
+			call: Box::new(RuntimeCall::System(SystemCall::remark {
+				remark: vec![1u8; *max as usize],
+			})),
+		};
+		let passkey_signature =
+			passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
+		let payload = PasskeyPayload {
+			passkey_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: passkey_signature,
+				client_data_json: client_data.try_into().unwrap(),
+				authenticator_data: authenticator.try_into().unwrap(),
+			},
+			passkey_call: call,
+		};
+
+		// act
+		let v = Passkey::pre_dispatch(&Call::proxy { payload });
+
+		// assert
+		let err: TransactionValidityError = InvalidTransaction::ExhaustsResources.into();
+		assert_err!(v, err);
 	});
 }
