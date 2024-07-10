@@ -52,6 +52,7 @@ pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
+use frame_system::CheckWeight;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -71,7 +72,9 @@ pub mod module {
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+	pub trait Config:
+		frame_system::Config + pallet_transaction_payment::Config + Sync + Send
+	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -137,21 +140,13 @@ pub mod module {
 				transaction_account_id.clone(),
 			));
 			let result = payload.passkey_call.call.dispatch(main_origin);
-			match result {
-				Ok(post_info) => {
-					Self::deposit_event(Event::TransactionExecutionSuccess {
-						account_id: transaction_account_id,
-					});
-
-					// recreate proxy call to get the dispatch info
-					let proxy_call = Call::proxy { payload };
-					let tx_charge =
-						ChargeTransactionPayment::<T>(transaction_account_id, proxy_call);
-					tx_charge.post_dispatch(&post_info)?;
-					Ok(post_info)
-				},
-				Err(e) => Err(e),
+			if let Ok(_inner) = result {
+				// all post-dispatch logic should be included in here
+				Self::deposit_event(Event::TransactionExecutionSuccess {
+					account_id: transaction_account_id,
+				});
 			}
+			result
 		}
 	}
 
@@ -180,10 +175,14 @@ pub mod module {
 			);
 			let tx_payment_validity = tx_charge.validate()?;
 
+			let weight_check = PasskeyWeightCheck::new(call.clone());
+			let weight_validity = weight_check.validate()?;
+
 			let valid_tx = valid_tx
 				.combine_with(signature_validity)
 				.combine_with(nonce_validity)
-				.combine_with(tx_payment_validity);
+				.combine_with(tx_payment_validity)
+				.combine_with(weight_validity);
 			Ok(valid_tx)
 		}
 
@@ -200,7 +199,10 @@ pub mod module {
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			);
-			tx_charge.pre_dispatch()
+			tx_charge.pre_dispatch()?;
+
+			let weight_check = PasskeyWeightCheck::new(call.clone());
+			weight_check.pre_dispatch()
 		}
 	}
 }
@@ -208,7 +210,8 @@ pub mod module {
 impl<T: Config> Pallet<T>
 where
 	BalanceOf<T>: Send + Sync + From<u64>,
-	<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
@@ -379,6 +382,44 @@ where
 			post_info,
 			len,
 			&_dummy_result,
+		)
+	}
+}
+
+/// Block resource (weight) limit check.
+#[derive(Encode, Decode, Clone, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct PasskeyWeightCheck<T: Config>(pub Call<T>);
+
+impl<T: Config> PasskeyWeightCheck<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
+	/// creating a new instance
+	pub fn new(call: Call<T>) -> Self {
+		Self(call)
+	}
+
+	/// Validate the transaction
+	pub fn validate(&self) -> TransactionValidity {
+		let len = self.0.encode().len();
+
+		CheckWeight::<T>::validate_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
+			len,
+		)
+	}
+
+	/// Pre-dispatch transaction checks
+	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
+		let len = self.0.encode().len();
+
+		CheckWeight::<T>::pre_dispatch_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
+			len,
 		)
 	}
 }
