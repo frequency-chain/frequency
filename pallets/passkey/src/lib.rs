@@ -30,7 +30,7 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
-use sp_std::{boxed::Box, vec, vec::Vec};
+use sp_std::{vec, vec::Vec};
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
@@ -53,7 +53,6 @@ pub use weights::*;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
 use frame_system::CheckWeight;
-use sp_runtime::traits::PostDispatchInfoOf;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -143,8 +142,6 @@ pub mod module {
 			let result = payload.passkey_call.call.dispatch(main_origin);
 			if let Ok(_inner) = result {
 				// all post-dispatch logic should be included in here
-				// let _ = PasskeyWeightCheck::<T>::post_dispatch(&payload, &inner); TODO: uncomment after fixing constraints
-
 				Self::deposit_event(Event::TransactionExecutionSuccess {
 					account_id: transaction_account_id,
 				});
@@ -177,7 +174,7 @@ pub mod module {
 			);
 			let tx_payment_validity = tx_charge.validate()?;
 
-			let weight_check = PasskeyWeightCheck::new(payload.clone());
+			let weight_check = PasskeyWeightCheck::new(call.clone());
 			let weight_validity = weight_check.validate()?;
 
 			let valid_tx = valid_tx
@@ -203,7 +200,7 @@ pub mod module {
 			);
 			tx_charge.pre_dispatch()?;
 
-			let weight_check = PasskeyWeightCheck::new(payload.clone());
+			let weight_check = PasskeyWeightCheck::new(call.clone());
 			weight_check.pre_dispatch()
 		}
 	}
@@ -369,61 +366,37 @@ where
 /// Block resource (weight) limit check.
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-pub struct PasskeyWeightCheck<T: Config + Sync + Send>(pub PasskeyPayload<T>);
+pub struct PasskeyWeightCheck<T: Config>(pub Call<T>);
 
 impl<T: Config> PasskeyWeightCheck<T>
 where
-	T: Sync + Send,
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	/// creating a new instance
-	pub fn new(passkey_payload: PasskeyPayload<T>) -> Self {
-		Self(passkey_payload)
+	pub fn new(call: Call<T>) -> Self {
+		Self(call)
 	}
 
 	/// Validate the transaction
 	pub fn validate(&self) -> TransactionValidity {
-		let some_call: &<T as Config>::RuntimeCall = &self.0.passkey_call.call;
-		let info = &some_call.get_dispatch_info();
-		let overhead = T::WeightInfo::pre_dispatch();
-		let final_info = DispatchInfo {
-			weight: overhead.saturating_add(info.weight),
-			class: info.class,
-			pays_fee: Pays::Yes, // ?
-		};
 		let len = self.0.encode().len();
 
-		CheckWeight::<T>::validate_unsigned(&some_call.clone().into(), &final_info, len)
+		CheckWeight::<T>::validate_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
+			len,
+		)
 	}
 
 	/// Pre-dispatch transaction checks
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
-		let some_call: &<T as Config>::RuntimeCall = &self.0.passkey_call.call;
-		let info = &some_call.get_dispatch_info();
-		let overhead = T::WeightInfo::pre_dispatch();
-		let final_info = DispatchInfo {
-			weight: overhead.saturating_add(info.weight),
-			class: info.class,
-			pays_fee: Pays::Yes, // ?
-		};
 		let len = self.0.encode().len();
 
-		CheckWeight::<T>::pre_dispatch_unsigned(&some_call.clone().into(), &final_info, len)
-	}
-
-	/// Post dispatch call
-	/// WARNING: It is dangerous to return an error here. To do so will fundamentally invalidate the
-	/// transaction and any block that it is included in, causing the block author to not be
-	/// compensated for their work in validating the transaction or producing the block so far.
-	pub fn post_dispatch(
-		payload: &PasskeyPayload<T>,
-		post_info: &PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-	) -> Result<(), TransactionValidityError> {
-		let some_call: Box<<T as Config>::RuntimeCall> = payload.clone().passkey_call.call;
-		// we are only using the dispatch info for the inner call since the overhead would always be
-		// the same, and we don't need to include it here
-		let info = &some_call.get_dispatch_info();
-		CheckWeight::<T>::post_dispatch(None, &info, post_info, 0, &DispatchResult::Ok(()))
+		CheckWeight::<T>::pre_dispatch_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
+			len,
+		)
 	}
 }
