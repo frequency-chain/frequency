@@ -14,12 +14,12 @@ use sp_std::vec::Vec;
 /// evaluation of a Passkey signature.
 pub const CHALLENGE_PLACEHOLDER: &str = "#rplc#";
 /// Passkey AuthenticatorData type. The length is 37 bytes or more
-/// https://w3c.github.io/webauthn/#authenticator-data
+/// <https://w3c.github.io/webauthn/#authenticator-data>
 pub type PasskeyAuthenticatorData = BoundedVec<u8, ConstU32<128>>;
 /// Passkey ClientDataJson type
 /// Note: The `challenge` field inside this json MUST be replaced with `CHALLENGE_PLACEHOLDER`
 /// before submission to the chain
-/// https://w3c.github.io/webauthn/#dictdef-collectedclientdata
+/// <https://w3c.github.io/webauthn/#dictdef-collectedclientdata>
 pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<256>>;
 /// PassKey Public Key type in compressed encoded point format
 /// the first byte is the tag indicating compressed format
