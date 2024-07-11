@@ -26,6 +26,7 @@ use frame_support::{
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
+	generic::Era,
 	traits::{Convert, Dispatchable, SignedExtension, Verify, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
@@ -52,6 +53,7 @@ pub use weights::*;
 
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
+use frame_system::CheckWeight;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -71,7 +73,9 @@ pub mod module {
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_transaction_payment::Config {
+	pub trait Config:
+		frame_system::Config + pallet_transaction_payment::Config + Send + Sync
+	{
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 
@@ -137,7 +141,8 @@ pub mod module {
 				transaction_account_id.clone(),
 			));
 			let result = payload.passkey_call.call.dispatch(main_origin);
-			if result.is_ok() {
+			if let Ok(_inner) = result {
+				// all post-dispatch logic should be included in here
 				Self::deposit_event(Event::TransactionExecutionSuccess {
 					account_id: transaction_account_id,
 				});
@@ -158,6 +163,10 @@ pub mod module {
 			let valid_tx = ValidTransaction::default();
 			let payload = Self::filter_valid_calls(&call)?;
 
+			let frame_system_checks =
+				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
+			let frame_system_validity = frame_system_checks.validate()?;
+
 			let signatures_check = PasskeySignatureCheck::new(payload.clone());
 			let signature_validity = signatures_check.validate()?;
 
@@ -170,15 +179,24 @@ pub mod module {
 			);
 			let tx_payment_validity = tx_charge.validate()?;
 
+			let weight_check = PasskeyWeightCheck::new(call.clone());
+			let weight_validity = weight_check.validate()?;
+
 			let valid_tx = valid_tx
+				.combine_with(frame_system_validity)
 				.combine_with(signature_validity)
 				.combine_with(nonce_validity)
-				.combine_with(tx_payment_validity);
+				.combine_with(tx_payment_validity)
+				.combine_with(weight_validity);
 			Ok(valid_tx)
 		}
 
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			let payload = Self::filter_valid_calls(&call)?;
+
+			let frame_system_checks =
+				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
+			frame_system_checks.pre_dispatch()?;
 
 			let signatures_check = PasskeySignatureCheck::new(payload.clone());
 			signatures_check.pre_dispatch()?;
@@ -190,7 +208,10 @@ pub mod module {
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			);
-			tx_charge.pre_dispatch()
+			tx_charge.pre_dispatch()?;
+
+			let weight_check = PasskeyWeightCheck::new(call.clone());
+			weight_check.pre_dispatch()
 		}
 	}
 }
@@ -198,7 +219,8 @@ pub mod module {
 impl<T: Config> Pallet<T>
 where
 	BalanceOf<T>: Send + Sync + From<u64>,
-	<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo>,
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
@@ -325,7 +347,7 @@ where
 	/// Validates the transaction fee paid with tokens.
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
 		let info = &self.1.get_dispatch_info();
-		let len = self.0.using_encoded(|c| c.len());
+		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
@@ -337,7 +359,7 @@ where
 	/// Validates the transaction fee paid with tokens.
 	pub fn validate(&self) -> TransactionValidity {
 		let info = &self.1.get_dispatch_info();
-		let len = self.0.using_encoded(|c| c.len());
+		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
 		let who = self.0.clone();
@@ -346,6 +368,104 @@ where
 			&who,
 			&runtime_call,
 			info,
+			len,
+		)
+	}
+}
+
+/// Frame system related checks
+#[derive(Encode, Decode, Clone, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct FrameSystemChecks<T: Config + Send + Sync>(pub T::AccountId, pub Call<T>);
+
+impl<T: Config + Send + Sync> FrameSystemChecks<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
+	/// Validates the transaction fee paid with tokens.
+	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
+		let info = &self.1.get_dispatch_info();
+		let len = self.1.using_encoded(|c| c.len());
+		let runtime_call: <T as frame_system::Config>::RuntimeCall =
+			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
+		let who = self.0.clone();
+
+		let non_zero_sender_check = frame_system::CheckNonZeroSender::<T>::new();
+		let spec_version_check = frame_system::CheckSpecVersion::<T>::new();
+		let tx_version_check = frame_system::CheckTxVersion::<T>::new();
+		let genesis_hash_check = frame_system::CheckGenesis::<T>::new();
+		let era_check = frame_system::CheckEra::<T>::from(Era::immortal());
+
+		non_zero_sender_check.pre_dispatch(&who, &runtime_call, info, len)?;
+		spec_version_check.pre_dispatch(&who, &runtime_call, info, len)?;
+		tx_version_check.pre_dispatch(&who, &runtime_call, info, len)?;
+		genesis_hash_check.pre_dispatch(&who, &runtime_call, info, len)?;
+		era_check.pre_dispatch(&who, &runtime_call, info, len)
+	}
+
+	/// Validates the transaction fee paid with tokens.
+	pub fn validate(&self) -> TransactionValidity {
+		let info = &self.1.get_dispatch_info();
+		let len = self.1.using_encoded(|c| c.len());
+		let runtime_call: <T as frame_system::Config>::RuntimeCall =
+			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
+		let who = self.0.clone();
+
+		let non_zero_sender_check = frame_system::CheckNonZeroSender::<T>::new();
+		let spec_version_check = frame_system::CheckSpecVersion::<T>::new();
+		let tx_version_check = frame_system::CheckTxVersion::<T>::new();
+		let genesis_hash_check = frame_system::CheckGenesis::<T>::new();
+		let era_check = frame_system::CheckEra::<T>::from(Era::immortal());
+
+		let non_zero_sender_validity =
+			non_zero_sender_check.validate(&who, &runtime_call, info, len)?;
+		let spec_version_validity = spec_version_check.validate(&who, &runtime_call, info, len)?;
+		let tx_version_validity = tx_version_check.validate(&who, &runtime_call, info, len)?;
+		let genesis_hash_validity = genesis_hash_check.validate(&who, &runtime_call, info, len)?;
+		let era_validity = era_check.validate(&who, &runtime_call, info, len)?;
+
+		Ok(non_zero_sender_validity
+			.combine_with(spec_version_validity)
+			.combine_with(tx_version_validity)
+			.combine_with(genesis_hash_validity)
+			.combine_with(era_validity))
+	}
+}
+
+/// Block resource (weight) limit check.
+#[derive(Encode, Decode, Clone, TypeInfo)]
+#[scale_info(skip_type_params(T))]
+pub struct PasskeyWeightCheck<T: Config>(pub Call<T>);
+
+impl<T: Config> PasskeyWeightCheck<T>
+where
+	<T as frame_system::Config>::RuntimeCall:
+		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+{
+	/// creating a new instance
+	pub fn new(call: Call<T>) -> Self {
+		Self(call)
+	}
+
+	/// Validate the transaction
+	pub fn validate(&self) -> TransactionValidity {
+		let len = self.0.encode().len();
+
+		CheckWeight::<T>::validate_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
+			len,
+		)
+	}
+
+	/// Pre-dispatch transaction checks
+	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
+		let len = self.0.encode().len();
+
+		CheckWeight::<T>::pre_dispatch_unsigned(
+			&self.0.clone().into(),
+			&self.0.get_dispatch_info(),
 			len,
 		)
 	}
