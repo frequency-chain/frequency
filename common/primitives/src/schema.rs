@@ -4,7 +4,6 @@ use crate::utils;
 use enumflags2::{bitflags, BitFlags};
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
-#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
 use sp_std::prelude::*;
@@ -18,8 +17,19 @@ pub type SchemaId = u16;
 pub type SchemaVersion = u8;
 
 /// Types of modeling in which a message payload may be defined
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(
+	Copy,
+	Clone,
+	Encode,
+	Decode,
+	PartialEq,
+	Debug,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
 pub enum ModelType {
 	/// Message payload modeled with Apache Avro: <https://avro.apache.org/docs/current/spec.html>
 	AvroBinary,
@@ -28,8 +38,19 @@ pub enum ModelType {
 }
 
 /// Types of payload locations
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq, MaxEncodedLen)]
+#[derive(
+	Copy,
+	Clone,
+	Encode,
+	Decode,
+	PartialEq,
+	Debug,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	Serialize,
+	Deserialize,
+)]
 pub enum PayloadLocation {
 	/// Message payload is located on chain
 	OnChain,
@@ -44,8 +65,19 @@ pub enum PayloadLocation {
 /// Support for up to 16 user-enabled features on a collection.
 #[bitflags]
 #[repr(u16)]
-#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-#[derive(Copy, Clone, RuntimeDebug, PartialEq, Eq, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	Copy,
+	Clone,
+	RuntimeDebug,
+	PartialEq,
+	Eq,
+	Encode,
+	Decode,
+	MaxEncodedLen,
+	TypeInfo,
+	Serialize,
+	Deserialize,
+)]
 pub enum SchemaSetting {
 	/// Schema setting to enforce append-only behavior on payload.
 	/// Applied to schemas of type `PayloadLocation::Itemized`.
