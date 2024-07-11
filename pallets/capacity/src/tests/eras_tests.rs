@@ -1,9 +1,8 @@
 use super::mock::*;
 use crate::{
-	tests::testing_utils::*, BalanceOf, Config, CurrentEraInfo, CurrentEraProviderBoostTotal,
-	RewardEraInfo,
+	tests::testing_utils::*, BalanceOf, CurrentEraInfo, CurrentEraProviderBoostTotal, RewardEraInfo,
 };
-use common_primitives::msa::MessageSourceId;
+use common_primitives::{capacity::RewardEra, msa::MessageSourceId};
 use frame_support::assert_ok;
 
 pub fn boost_provider_and_run_to_end_of_era(
@@ -44,7 +43,7 @@ fn start_new_era_if_needed_updates_era_info() {
 fn assert_chunk_is_full_and_has_earliest_era_total(
 	chunk_index: u32,
 	is_full: bool,
-	era: <Test as Config>::RewardEra,
+	era: RewardEra,
 	total: BalanceOf<Test>,
 ) {
 	let chunk = Capacity::get_reward_pool_chunk(chunk_index).unwrap();
@@ -55,7 +54,7 @@ fn assert_chunk_is_full_and_has_earliest_era_total(
 
 // gets the last (i.e. latest non-current) stored reward pool era, which is in chunk 0.
 // asserts that it is the same as `era`, and that it has amount `total`
-fn assert_last_era_total(era: <Test as Config>::RewardEra, total: BalanceOf<Test>) {
+fn assert_last_era_total(era: RewardEra, total: BalanceOf<Test>) {
 	let chunk_idx = Capacity::get_chunk_index_for_era(era);
 	let chunk_opt = Capacity::get_reward_pool_chunk(chunk_idx);
 	assert!(chunk_opt.is_some(), "No pool for Era: {:?} with chunk index: {:?}", era, chunk_idx);

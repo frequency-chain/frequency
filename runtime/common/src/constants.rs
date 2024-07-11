@@ -397,4 +397,9 @@ parameter_types! {
 	pub const CapacityPerToken: Perbill = Perbill::from_percent(2);
 	pub const CapacityRewardCap: Permill = Permill::from_parts(3_800);  // 0.38% or 0.0038 per RewardEra
 }
+pub type CapacityRewardEraLength =
+	ConstU32<{ prod_or_testnet_or_local!(14 * DAYS, 1 * HOURS, 50) }>;
+
+pub type CapacityChangeStakingTargetThawEras = ConstU32<5>;
+
 // -end- Capacity Pallet ---

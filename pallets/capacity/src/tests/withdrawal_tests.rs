@@ -17,7 +17,7 @@ fn impl_withdraw_is_successful() {
 		);
 
 		assert_ok!(Capacity::deduct(target_msa_id, 5u32.into()));
-		let events = staking_events();
+		let events = capacity_events();
 
 		assert_eq!(
 			events.last().unwrap(),

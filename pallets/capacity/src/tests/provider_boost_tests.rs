@@ -27,7 +27,7 @@ fn provider_boost_works() {
 		let capacity_details = Capacity::get_capacity_for(target).unwrap();
 		assert_eq!(capacity_details.total_capacity_issued, capacity);
 
-		let events = staking_events();
+		let events = capacity_events();
 		assert_eq!(
 			events.first().unwrap(),
 			&Event::ProviderBoosted { account, target, amount, capacity }
