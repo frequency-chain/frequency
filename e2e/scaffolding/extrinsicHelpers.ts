@@ -3,7 +3,7 @@ import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from './helpers';
@@ -864,6 +864,15 @@ export class ExtrinsicHelper {
       () => ExtrinsicHelper.api.tx.treasury.rejectProposal(proposalId),
       keys,
       ExtrinsicHelper.api.events.treasury.Rejected
+    );
+  }
+
+  /** Passkey Extrinsics **/
+  public static executePassKeyProxy(keys: KeyringPair, payload: PalletPasskeyPasskeyPayload) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.passkey.proxy(payload),
+      keys,
+      ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
   }
 }
