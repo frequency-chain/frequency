@@ -260,6 +260,14 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     return this.signAndSend();
   }
 
+  public async fundAndSendUnsigned(source: KeyringPair) {
+    await this.fundOperation(source);
+    log('Fund and Send', `Fund Source: ${source.address}`);
+    const op = this.extrinsic();
+    // Era is 0 for tests due to issues with BirthBlock
+    return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+  }
+
   private parseResult<ApiType extends ApiTypes = 'rxjs', T extends AnyTuple = AnyTuple, N = unknown>(
     targetEvent?: AugmentedEvent<ApiType, T, N>
   ) {
@@ -868,7 +876,7 @@ export class ExtrinsicHelper {
   }
 
   /** Passkey Extrinsics **/
-  public static executePassKeyProxy(keys: KeyringPair, payload: PalletPasskeyPasskeyPayload) {
+  public static executePassKeyProxy(keys: KeyringPair, payload: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.passkey.proxy(payload),
       keys,
