@@ -239,6 +239,8 @@ pub mod pallet {
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
+		/// Genesis Schemas to load for development
+		pub initial_schemas: Vec<GenesisSchema>,
 		/// Phantom type
 		#[serde(skip)]
 		pub _config: PhantomData<T>,
@@ -246,13 +248,49 @@ pub mod pallet {
 
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
-			Self { initial_max_schema_model_size: 1024, _config: Default::default() }
+			Self {
+				initial_max_schema_model_size: 1024,
+				initial_schemas: Default::default(),
+				_config: Default::default(),
+			}
 		}
 	}
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			GovernanceSchemaModelMaxBytes::<T>::put(self.initial_max_schema_model_size);
+
+			// Load in the Genesis Schemas
+			for schema in self.initial_schemas.iter() {
+				let model: BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit> =
+					BoundedVec::try_from(schema.model.clone().into_bytes()).expect(
+						"Genesis Schema Model larger than SchemaModelMaxBytesBoundedVecLimit",
+					);
+				let name_payload: SchemaNamePayload =
+					BoundedVec::try_from(schema.name.clone().into_bytes())
+						.expect("Genesis Schema Name larger than SCHEMA_NAME_BYTES_MAX");
+				let parsed_name: Option<SchemaName> = if name_payload.len() > 0 {
+					Some(
+						SchemaName::try_parse::<T>(name_payload, true)
+							.expect("Bad Genesis Schema Name"),
+					)
+				} else {
+					None
+				};
+				let settings: BoundedVec<SchemaSetting, T::MaxSchemaSettingsPerSchema> =
+					BoundedVec::try_from(schema.settings.clone()).expect(
+						"Bad Genesis Schema Settings. Perhaps larger than MaxSchemaSettingsPerSchema"
+					);
+
+				let _ = Pallet::<T>::add_schema(
+					model,
+					schema.model_type,
+					schema.payload_location,
+					settings,
+					parsed_name,
+				)
+				.expect("Failed to set Schema in Genesis!");
+			}
 		}
 	}
 
@@ -732,7 +770,7 @@ pub mod pallet {
 					payload_location: schema_info.payload_location,
 					settings,
 				};
-				return Some(response)
+				return Some(response);
 			}
 			None
 		}

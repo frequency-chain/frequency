@@ -4,6 +4,7 @@ use crate::utils::*;
 use frame_support::BoundedVec;
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 use sp_std::vec::Vec;
