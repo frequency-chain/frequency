@@ -34,8 +34,8 @@ describe("Capacity: change_staking_target", function() {
     const oldProvider = await createMsaAndProvider(fundingSource, stakeKeys, "Provider2", providerBalance);
 
     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, oldProvider, tokenMinStake*3n));
-    // const notAProvider = 3;
-    // const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake);
-    // await assert.rejects(call.signAndSend(), {name: "InvalidTarget"})
+    const notAProvider = 3;
+    const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake);
+    await assert.rejects(call.signAndSend(), {name: "InvalidTarget"})
   });
 });

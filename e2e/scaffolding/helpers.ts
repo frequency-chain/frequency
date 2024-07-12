@@ -428,7 +428,6 @@ export async function stakeToProvider(
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 
-    // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
     const expectedCapacity = tokensToStake / TokenPerCapacity;
 
     assert.equal(
@@ -454,7 +453,6 @@ export async function boostProvider(
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 
-    // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
     const expectedCapacity = tokensToStake / TokenPerCapacity / BoostAdjustment;
 
     assert.equal(
