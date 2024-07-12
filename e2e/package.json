@@ -23,6 +23,7 @@
     "@polkadot/api": "12.0.1",
     "@polkadot/types": "12.0.1",
     "@polkadot/util": "12.6.2",
+    "cryptokit": "^1.0.10",
     "helia": "^4.2.4",
     "multiformats": "^13.1.1",
     "rxjs": "^7.8.1",

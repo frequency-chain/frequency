@@ -6,6 +6,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
+import cryptokit from "cryptokit";
 
 const fundingSource = getFundingSource('passkey-proxy');
 
@@ -31,19 +32,16 @@ describe('Passkey Pallet Tests', function () {
       const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
 
       const remarksCalls = ExtrinsicHelper.api.tx.system.remark('passkey-test');
-
-      const payload = createPayload(
-        accountPKey,
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, remarksCalls);
+      const passkeyPayload = await createPasskeyPayload(
         passkeyPublicKey,
-        nonce,
-        accountSignature,
         badPassKeySignatureBase64URL,
         authenticatorDataBase64URL,
         clientDataJsonBase64URL,
-        remarksCalls
+        passkeyCall
       );
 
-      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
+      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
 
@@ -59,19 +57,16 @@ describe('Passkey Pallet Tests', function () {
       const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
 
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 1000000);
-
-      const payload = createPayload(
-        accountPKey,
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyPayload = await createPasskeyPayload(
         passkeyPublicKey,
-        nonce,
-        accountSignature,
         badPassKeySignatureBase64URL,
         authenticatorDataBase64URL,
         clientDataJsonBase64URL,
-        transferCalls
+        passkeyCall
       );
 
-      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
+      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
 
@@ -87,32 +82,34 @@ describe('Passkey Pallet Tests', function () {
       const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
 
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 1000000);
-
-      const payload = createPayload(
-        accountPKey,
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyPayload = await createPasskeyPayload(
         passkeyPublicKey,
-        nonce,
-        accountSignature,
         badPassKeySignatureBase64URL,
         authenticatorDataBase64URL,
         clientDataJsonBase64URL,
-        transferCalls
+        passkeyCall
       );
 
-      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
+      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
   });
 });
 
-function createPayload(
+async function createAndSignPasskeyPayload(payloadToSign: Buffer) {
+  const P256Keys = await cryptokit.P256.generateKeys();
+  const P256PublicKey = await cryptokit.P256.loadPublicKey(P256Keys.publicKey);
+  const P256PrivateKey = await cryptokit.P256.loadPrivateKey(P256Keys.privateKey);
+  const passkeyPublicKeyString = Buffer.from(await cryptokit.P256.formatPublicKeyToRaw(P256PublicKey)).toString('base64url');
+  const signature = await cryptokit.P256.sign(payloadToSign, P256PrivateKey);
+  return { passkeyPublicKeyString, signature };
+}
+
+async function createPassKeyCall(
   accountPKey: Uint8Array,
-  passkeyPublicKey: Uint8Array,
   nonce: number,
   accountSignature: Uint8Array,
-  passkeySignature: string,
-  authenticatorData: string,
-  clientDataJson: string,
   call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
   const passkeyCall = {
@@ -124,7 +121,23 @@ function createPayload(
     call: call,
   };
 
-  const passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCall);
+  return passkeyCall;
+}
+
+async function createPasskeyPayload(
+  passkeyPublicKey: Uint8Array,
+  passkeySignature: string,
+  authenticatorData: string,
+  clientDataJson: string,
+  passkeyCallPayload: { 
+    call: SubmittableExtrinsic<'rxjs', ISubmittableResult>,
+    accountId: Uint8Array,
+    accountNonce: number,
+    accountOwnershipProof: { Sr25519: Uint8Array }
+  }
+) {
+
+  const passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCallPayload);
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passkeyPublicKey),
     verifiablePasskeySignature: {
