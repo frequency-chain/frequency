@@ -505,6 +505,7 @@ fn start_consensus(
 		proposer,
 		collator_service,
 		authoring_duration: Duration::from_millis(1500),
+		reinitialize: false,
 	};
 
 	let fut =

@@ -50,8 +50,8 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-type SchemaResult = Result<Option<SchemaResponse>, jsonrpsee::core::Error>;
-type VersionResult = Result<Option<Vec<SchemaVersionResponse>>, jsonrpsee::core::Error>;
+type SchemaResult = Result<Option<SchemaResponse>, jsonrpsee::types::ErrorObjectOwned>;
+type VersionResult = Result<Option<Vec<SchemaVersionResponse>>, jsonrpsee::types::ErrorObjectOwned>;
 
 #[tokio::test]
 async fn get_schema_with_non_existent_schema_id_should_return_none() {

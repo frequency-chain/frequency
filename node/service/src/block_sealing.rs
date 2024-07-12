@@ -187,7 +187,7 @@ pub fn frequency_dev_sealing(
 			false => None,
 		};
 
-		move |deny_unsafe, _| {
+		Box::new(move |deny_unsafe, _| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
@@ -196,11 +196,11 @@ pub fn frequency_dev_sealing(
 			};
 
 			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
-		}
+		})
 	};
 
 	sc_service::spawn_tasks(sc_service::SpawnTasksParams {
-		rpc_builder: Box::new(rpc_extensions_builder),
+		rpc_builder: rpc_extensions_builder,
 		client: client.clone(),
 		transaction_pool: transaction_pool.clone(),
 		task_manager: &mut task_manager,

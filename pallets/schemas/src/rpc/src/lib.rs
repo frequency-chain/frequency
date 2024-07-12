@@ -11,9 +11,9 @@
 use common_helpers::{avro, rpc::map_rpc_result};
 use common_primitives::schema::*;
 use jsonrpsee::{
-	core::{async_trait, Error as RpcError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::error::{CallError, ErrorObject},
+	types::error::ErrorObject,
 };
 use pallet_schemas_runtime_api::SchemasRuntimeApi;
 use sp_api::ProvideRuntimeApi;
@@ -89,11 +89,11 @@ where
 		let validated_schema = avro::validate_raw_avro_schema(&model);
 		match validated_schema {
 			Ok(_) => Ok(true),
-			Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+			Err(e) => Err(ErrorObject::owned(
 				SchemaRpcError::SchemaValidationError.into(),
 				"Unable to validate schema",
 				Some(format!("{:?}", e)),
-			)))),
+			)),
 		}
 	}
 

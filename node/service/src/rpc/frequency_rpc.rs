@@ -11,7 +11,7 @@ use common_primitives::rpc::RpcEvent;
 use jsonrpsee::{
 	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::error::{CallError, ErrorObject},
+	types::error::ErrorObject,
 };
 use parity_scale_codec::{Codec, Decode, Encode};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
@@ -73,9 +73,9 @@ where
 		let api = self.client.runtime_api();
 		let best = self.client.info().best_hash;
 
-		let nonce = api.account_nonce(best, account.clone()).map_err(|e| {
-			CallError::Custom(ErrorObject::owned(1, "Unable to query nonce.", Some(e.to_string())))
-		})?;
+		let nonce = api
+			.account_nonce(best, account.clone())
+			.map_err(|e| ErrorObject::owned(1, "Unable to query nonce.", Some(e.to_string())))?;
 		Ok(get_missing_nonces(&*self.pool, account, nonce))
 	}
 }

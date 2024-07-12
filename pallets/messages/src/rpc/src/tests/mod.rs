@@ -63,7 +63,7 @@ type GetMessagesBySchemaResult = Result<
 	common_primitives::messages::BlockPaginationResponse<
 		common_primitives::messages::MessageResponse,
 	>,
-	jsonrpsee::core::Error,
+	jsonrpsee::types::ErrorObjectOwned,
 >;
 
 #[tokio::test]
@@ -77,7 +77,7 @@ async fn get_messages_by_schema_with_invalid_request_should_panic() {
 	);
 
 	assert_eq!(true, result.is_err());
-	assert_eq!("Custom error: InvalidPaginationRequest", result.unwrap_err().to_string());
+	assert_eq!("InvalidPaginationRequest", result.unwrap_err().message());
 }
 
 #[tokio::test]
@@ -90,9 +90,8 @@ async fn get_messages_by_schema_with_bad_schema_id_should_err() {
 		BlockPaginationRequest { from_block: 1, to_block: 5, from_index: 0, page_size: 10 },
 	);
 
-	assert_eq!(true, result.is_err());
-	// assert_eq!("RPC call failed: ErrorObject { code: ServerError(300), message: \"Api Error\", data: Some(RawValue(\"InvalidSchemaId\")) }", result.unwrap_err().to_string());
-	assert_eq!("Custom error: InvalidSchemaId", result.unwrap_err().to_string());
+	assert_eq!(true, result.clone().is_err());
+	assert_eq!("InvalidSchemaId", result.unwrap_err().message());
 }
 
 #[tokio::test]
