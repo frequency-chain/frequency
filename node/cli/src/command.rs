@@ -15,6 +15,7 @@ use sc_cli::{
 	NetworkParams, Result, RuntimeVersion, SharedParams, SubstrateCli,
 };
 use sc_service::config::{BasePath, PrometheusConfig};
+use sp_runtime::traits::HashingFor;
 
 enum ChainIdentity {
 	Frequency,
@@ -337,7 +338,7 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<Block, ()>(config))
+						runner.sync_run(|config| cmd.run::<HashingFor<Block>, ()>(config))
 					} else {
 						return Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."

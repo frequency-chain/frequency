@@ -12,7 +12,7 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0"}
+substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.8.0"}
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
@@ -146,7 +146,7 @@ std = [
   "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "scale-info/std",
-  "serde",
+  "serde/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
@@ -158,6 +158,7 @@ std = [
   "sp-session/std",
   "sp-std/std",
   "sp-transaction-pool/std",
+  "sp-genesis-builder/std",
   "common-runtime/std",
   "sp-version/std",
   "system-runtime-api/std",
@@ -193,6 +194,7 @@ runtime-benchmarks = [
   "pallet-utility/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
+  "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
 ]
 try-runtime = [
@@ -228,6 +230,7 @@ try-runtime = [
   "pallet-utility/try-runtime",
   "parachain-info/try-runtime",
   "common-runtime/try-runtime",
+  "sp-runtime/try-runtime",
 ]
 frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]

@@ -38,6 +38,7 @@ std = [
   "sp-io/std",
   "sp-runtime/std",
   "sp-std/std",
+  "sp-core/std",
   "frame-benchmarking/std",
   "common-primitives/std",
   "pallet-balances/std",

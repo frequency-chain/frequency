@@ -226,9 +226,14 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
-      - name: Build Docs
+      - name: Install Nightly Toolchain
+        run: rustup toolchain install nightly-2024-03-01
+      - name: Add Required Components
         run: |
           rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
+          rustup component add rust-src --toolchain nightly-2024-03-01
+      - name: Build Docs
+        run: |
           RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --features frequency
 
   verify-rust-packages-and-deps:
