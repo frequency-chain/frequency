@@ -163,32 +163,26 @@ pub mod module {
 		type Call = Call<T>;
 
 		/// Validating the regular checks of an extrinsic plus verifying the P256 Passkey signature
-		/// Majority of these checks are the same as `SignedExtra` list in defined in runtime
+		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
 			let payload = Self::filter_valid_calls(&call)?;
 
-			let frame_system_checks =
-				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
-			let frame_system_validity = frame_system_checks.validate()?;
-
-			let nonce_check = PasskeyNonceCheck::new(payload.passkey_call.clone());
-			let nonce_validity = nonce_check.validate()?;
-
-			let weight_check = PasskeyWeightCheck::new(call.clone());
-			let weight_validity = weight_check.validate()?;
-
+			let frame_system_validity =
+				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
+					.validate()?;
+			let nonce_validity = PasskeyNonceCheck::new(payload.passkey_call.clone()).validate()?;
+			let weight_validity = PasskeyWeightCheck::new(call.clone()).validate()?;
 			// this is the last (except for the fee validation check) since it is the heaviest
-			let signatures_check = PasskeySignatureCheck::new(payload.clone());
-			let signature_validity = signatures_check.validate()?;
-
+			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
 			// this should be last since we are not refunding in the case of failure since we didn't
-			// have `post_disptach` implemented this should be the last check executed
-			let tx_charge = ChargeTransactionPayment::<T>(
+			// have `post_dispatch` implemented this should be the last check executed
+			let tx_payment_validity = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
-			);
-			let tx_payment_validity = tx_charge.validate()?;
+			)
+			.validate()?;
+
 			let valid_tx = valid_tx
 				.combine_with(frame_system_validity)
 				.combine_with(nonce_validity)
@@ -199,31 +193,19 @@ pub mod module {
 		}
 
 		/// Checking and executing a list of operations pre_dispatch
-		/// Majority of these checks are the same as `SignedExtra` list in defined in runtime
+		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			let payload = Self::filter_valid_calls(&call)?;
-
-			let frame_system_checks =
-				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
-			frame_system_checks.pre_dispatch()?;
-
-			let nonce_check = PasskeyNonceCheck::new(payload.passkey_call.clone());
-			nonce_check.pre_dispatch()?;
-
-			let weight_check = PasskeyWeightCheck::new(call.clone());
-			weight_check.pre_dispatch()?;
-
+			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
+				.pre_dispatch()?;
+			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
+			PasskeyWeightCheck::new(call.clone()).pre_dispatch()?;
 			// this is the last (except for the fee validation check) since it is the heaviest
-			let signatures_check = PasskeySignatureCheck::new(payload.clone());
-			signatures_check.pre_dispatch()?;
-
+			PasskeySignatureCheck::new(payload.clone()).pre_dispatch()?;
 			// this should be last since we are not refunding in the case of failure since we didn't
-			// have `post_disptach` implemented this should be the last check executed
-			let tx_charge = ChargeTransactionPayment::<T>(
-				payload.passkey_call.account_id.clone(),
-				call.clone(),
-			);
-			tx_charge.pre_dispatch()
+			// have `post_dispatch` implemented this should be the last check executed
+			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
+				.pre_dispatch()
 		}
 	}
 }
