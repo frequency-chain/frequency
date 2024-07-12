@@ -4,7 +4,6 @@ use crate::{
 	StakingType::*, UnclaimedRewardInfo,
 };
 use frame_support::{assert_ok, traits::Len};
-use frame_system::pallet_prelude::BlockNumberFor;
 
 use crate::tests::testing_utils::{
 	run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
