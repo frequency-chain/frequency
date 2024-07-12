@@ -37,7 +37,7 @@ fn stake_works() {
 			capacity_details
 		);
 
-		let events = staking_events();
+		let events = capacity_events();
 		assert_eq!(events.first().unwrap(), &Event::Staked { account, target, amount, capacity });
 
 		assert_eq!(
@@ -101,7 +101,7 @@ fn stake_increase_stake_amount_works() {
 
 		// First Stake
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, initial_amount));
-		let events = staking_events();
+		let events = capacity_events();
 		assert_eq!(
 			events.first().unwrap(),
 			&Event::Staked { account, target, amount: initial_amount, capacity }
@@ -136,7 +136,7 @@ fn stake_increase_stake_amount_works() {
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().total_capacity_issued, 15);
 		assert_eq!(Capacity::get_capacity_for(target).unwrap().last_replenished_epoch, 0);
 
-		let events = staking_events();
+		let events = capacity_events();
 		assert_eq!(
 			events.last().unwrap(),
 			&Event::Staked { account, target, amount: additional_amount, capacity }

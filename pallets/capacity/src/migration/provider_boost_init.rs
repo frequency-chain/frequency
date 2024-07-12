@@ -4,6 +4,7 @@ use frame_support::{
 	traits::{Get, OnRuntimeUpgrade},
 };
 
+use common_primitives::capacity::RewardEra;
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;
 
@@ -15,7 +16,7 @@ impl<T: Config> OnRuntimeUpgrade for ProviderBoostInit<T> {
 		let current_era_info = CurrentEraInfo::<T>::get(); // 1r
 		if current_era_info.eq(&RewardEraInfo::default()) {
 			let current_block = frame_system::Pallet::<T>::block_number(); // Whitelisted
-			let era_index: T::RewardEra = 1u32.into();
+			let era_index: RewardEra = 1u32.into();
 			CurrentEraInfo::<T>::set(RewardEraInfo { era_index, started_at: current_block }); // 1w
 			CurrentEraProviderBoostTotal::<T>::set(0u32.into()); // 1w
 			T::DbWeight::get().reads_writes(2, 1)

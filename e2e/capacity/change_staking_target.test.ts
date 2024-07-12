@@ -33,9 +33,15 @@ describe("Capacity: change_staking_target", function() {
     const stakeKeys = createKeys("staker");
     const oldProvider = await createMsaAndProvider(fundingSource, stakeKeys, "Provider2", providerBalance);
 
-    await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, oldProvider, tokenMinStake*3n));
-    const notAProvider = 3;
-    const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake);
-    await assert.rejects(call.signAndSend(), {name: "InvalidTarget"})
+    await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, oldProvider, tokenMinStake*6n));
+    const notAProvider = 9999;
+    const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake*2n);
+    await assert.rejects(call.signAndSend(),
+      (err) => {
+        assert. strictEqual(err?.name, 'InvalidTarget', `expected InvalidTarget, got ${err?.name}`);
+        // // {name: "InvalidTarget"}
+        // assert. strictEqual(err?.message, `Wrong value: expected`);
+        return true;
+    });
   });
 });
