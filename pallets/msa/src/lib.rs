@@ -62,7 +62,7 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
-use sp_std::prelude::*;
+use sp_std::{prelude::*, vec};
 
 use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{

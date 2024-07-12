@@ -37,6 +37,7 @@ std = [
   "sp-api/std",
   "sp-runtime/std",
   "sp-offchain/std",
+  "sp-core/std",
   "pallet-msa-runtime-api/std",
   'common-primitives/std',
   "common-helpers/std",

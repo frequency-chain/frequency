@@ -63,7 +63,7 @@ cumulus-primitives-core = { workspace = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
-std = ["sp-io/std", "sp-api/std", "frame-support/std"]
+std = ["sp-io/std", "sp-api/std", "frame-support/std", "sp-runtime/std", "sp-core/std"]
 cli = [
   "frequency-service",
   "sp-core",
@@ -77,12 +77,14 @@ default = ["std", "cli"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
   "frequency-runtime/runtime-benchmarks",
+  "sc-service?/runtime-benchmarks",
   "frame-benchmarking-cli/runtime-benchmarks",
+  "sp-runtime/runtime-benchmarks",
 ]
 try-runtime = [
   "frequency-service/try-runtime",
-  "try-runtime-cli",
   "try-runtime-cli/try-runtime",
+  "sp-runtime/try-runtime"
 ]
 on-chain-release-build = ["sp-api/disable-logging"]
 frequency = ["frequency-service/frequency"]

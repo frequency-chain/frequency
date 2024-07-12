@@ -117,7 +117,7 @@ scale-info = { workspace = true, features = ["derive"] }
 
 [features]
 default = ["std"]
-std = ["sp-api/std"]
+std = ["sp-api/std", "sp-core/std"]
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
   "polkadot-service/runtime-benchmarks",
