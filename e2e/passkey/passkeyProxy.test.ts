@@ -74,7 +74,8 @@ describe('Passkey Pallet Tests', function () {
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
-})});
+});
+});
 
 function createPayload(
   accountPKey: Uint8Array,
@@ -95,7 +96,7 @@ function createPayload(
     call: call,
   };
 
-  let passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCall);
+  const passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCall);
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passkeyPublicKey),
     verifiablePasskeySignature: {
