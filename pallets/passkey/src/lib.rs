@@ -178,7 +178,7 @@ pub mod module {
 				call.clone(),
 			)
 			.validate()?;
-			// this is the last (except for the fee validation check) since it is the heaviest
+			// this is the last since it is the heaviest
 			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
 
 			let valid_tx = valid_tx
