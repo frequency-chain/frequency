@@ -87,6 +87,11 @@ fn template_session_keys(keys: AuraId) -> frequency_runtime::SessionKeys {
 }
 
 #[allow(clippy::unwrap_used)]
+fn load_genesis_schemas() -> Vec<frequency_runtime::pallet_schemas::GenesisSchema> {
+	serde_json::from_slice(include_bytes!("../../../../resources/genesis-schemas.json")).unwrap()
+}
+
+#[allow(clippy::unwrap_used)]
 fn development_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	root_key: Option<AccountId>,
@@ -131,7 +136,10 @@ fn development_genesis(
 			// Assign network admin rights.
 			key: root_key,
 		},
-		schemas: Default::default(),
+		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
+			initial_schemas: load_genesis_schemas(),
+			..Default::default()
+		},
 		time_release: Default::default(),
 		democracy: Default::default(),
 		treasury: Default::default(),

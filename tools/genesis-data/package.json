@@ -1,0 +1,13 @@
+{
+  "name": "genesis-data",
+  "version": "1.0.0",
+  "description": "Gets data from mainnet and outputs them in formats for use with local genesis",
+  "scripts": {
+    "schemas": "node schemas.mjs"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "^12.1.1"
+  }
+}

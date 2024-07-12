@@ -158,6 +158,9 @@ _Note, Running Frequency via following options does not require binary to be bui
 
 This option runs just one collator node without the need for a relay chain.
 
+This preloads into genesis all the schemas from mainnet.
+Use `make genesis-schemas` if the genesis is out of date.
+
 ### Manual Sealing
 
 a. Blocks can be triggered by calling the `engine_createBlock` RPC
@@ -187,17 +190,17 @@ Great for most testing.
 make start
 ```
 
-Also available as a Docker image: [`frequencychain/instant-seal-node`](https://hub.docker.com/r/frequencychain/instant-seal-node)
+Also available as a Docker image: [`frequencychain/standalone-node`](https://hub.docker.com/r/frequencychain/standalone-node)
 
 ```sh
-docker run --rm -p 9944:9944 -p 30333:30333 frequencychain/instant-seal-node
+docker run --rm -p 9944:9944 frequencychain/standalone-node
 ```
 
 To stop running chain hit [Ctrl+C] in terminal where the chain was started.
 
-| **Node**                |           **Ports**            | **Explorer URL**                                                                          |
-| ----------------------- | :----------------------------: | ----------------------------------------------------------------------------------------- |
-| Frequency Collator Node | ws and rpc:`9944`, p2p:`30333` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
+| **Node**                |     **Ports**     | **Explorer URL**                                                                          |
+| ----------------------- | :---------------: | ----------------------------------------------------------------------------------------- |
+| Frequency Collator Node | ws and rpc:`9944` | [127.0.0.1:9944](https://polkadot.js.org/apps/?rpc=ws%3A%2F%2F127.0.0.1%3A9944#/explorer) |
 
 ### Interval Sealing
 
