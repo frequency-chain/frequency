@@ -173,22 +173,20 @@ pub mod module {
 					.validate()?;
 			let nonce_validity = PasskeyNonceCheck::new(payload.passkey_call.clone()).validate()?;
 			let weight_validity = PasskeyWeightCheck::new(call.clone()).validate()?;
-			// this is the last (except for the fee validation check) since it is the heaviest
-			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
-			// this should be last since we are not refunding in the case of failure since we didn't
-			// have `post_dispatch` implemented this should be the last check executed
 			let tx_payment_validity = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
 			)
 			.validate()?;
+			// this is the last (except for the fee validation check) since it is the heaviest
+			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
 
 			let valid_tx = valid_tx
 				.combine_with(frame_system_validity)
 				.combine_with(nonce_validity)
 				.combine_with(weight_validity)
-				.combine_with(signature_validity)
-				.combine_with(tx_payment_validity);
+				.combine_with(tx_payment_validity)
+				.combine_with(signature_validity);
 			Ok(valid_tx)
 		}
 
@@ -200,12 +198,10 @@ pub mod module {
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
 			PasskeyWeightCheck::new(call.clone()).pre_dispatch()?;
-			// this is the last (except for the fee validation check) since it is the heaviest
-			PasskeySignatureCheck::new(payload.clone()).pre_dispatch()?;
-			// this should be last since we are not refunding in the case of failure since we didn't
-			// have `post_dispatch` implemented this should be the last check executed
 			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
-				.pre_dispatch()
+				.pre_dispatch()?;
+			// this is the last since it is the heaviest
+			PasskeySignatureCheck::new(payload.clone()).pre_dispatch()
 		}
 	}
 }

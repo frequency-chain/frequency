@@ -168,7 +168,7 @@ fn validate_unsigned_with_bad_passkey_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let amount = 10000000000;
-		let (payload, account_public) = TestPasskeyPayloadBuilder::new()
+		let (payload, _) = TestPasskeyPayloadBuilder::new()
 			.with_a_valid_passkey()
 			.with_passkey_as_payload()
 			.with_call(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }))
@@ -179,8 +179,6 @@ fn validate_unsigned_with_bad_passkey_signature_should_fail() {
 		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
-		let balance_after = Balances::free_balance(&account_public.into());
-		assert_eq!(balance_after, amount);
 	});
 }
 
@@ -316,31 +314,6 @@ fn fee_withdrawn_for_failed_call() {
 		assert!(extrinsic_result.is_err());
 		let final_balance = Balances::free_balance(&account_id);
 		assert!(final_balance < initial_balance);
-	});
-}
-
-#[test]
-fn fee_not_removed_on_failed_validation() {
-	new_test_ext().execute_with(|| {
-		// arrange
-		let amount = 10000000000;
-		let (payload, account_pk) = TestPasskeyPayloadBuilder::new()
-			.with_a_valid_passkey()
-			.with_custom_payload(b"invalid data".to_vec())
-			.with_call(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }))
-			.with_funded_account(amount)
-			.build();
-
-		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
-		let initial_balance = Balances::free_balance(&account_id);
-
-		// act
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
-
-		// assert
-		assert_eq!(res, InvalidTransaction::BadSigner.into());
-		let final_balance = Balances::free_balance(&account_id);
-		assert_eq!(initial_balance, final_balance);
 	});
 }
 
