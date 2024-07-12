@@ -322,9 +322,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(pallet_schemas::migration::v4::MigrateToV4<Runtime>,
-     pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
-    ),
+	(
+		pallet_schemas::migration::v4::MigrateToV4<Runtime>,
+		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
+	),
 >;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
@@ -520,8 +521,7 @@ impl pallet_capacity::Config for Runtime {
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type RewardEra = u32;
-	type EraLength = ConstU32<{ 14 * DAYS }>;
+	type EraLength = CapacityRewardEraLength;
 	type ProviderBoostHistoryLimit = ConstU32<30u32>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<16>;
@@ -714,7 +714,7 @@ impl pallet_democracy::Config for Runtime {
 	type EnactmentPeriod = EnactmentPeriod;
 	type RuntimeEvent = RuntimeEvent;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
-	type InstantAllowed = frame_support::traits::ConstBool<true>;
+	type InstantAllowed = ConstBool<true>;
 	type LaunchPeriod = LaunchPeriod;
 	type MaxProposals = DemocracyMaxProposals;
 	type MaxVotes = DemocracyMaxVotes;

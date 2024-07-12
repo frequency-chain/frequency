@@ -1,16 +1,15 @@
 use super::mock::*;
 use crate::{
-	Config, CurrentEraInfo, Error, ProviderBoostHistories, ProviderBoostHistory,
-	ProviderBoostRewardsProvider, RewardEraInfo, StakingDetails, StakingType::*,
-	UnclaimedRewardInfo,
+	Config, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardsProvider,
+	StakingType::*, UnclaimedRewardInfo,
 };
-use frame_support::{assert_err, assert_ok, traits::Len};
+use frame_support::{assert_ok, traits::Len};
 
 use crate::tests::testing_utils::{
 	run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
 };
 use common_primitives::msa::MessageSourceId;
-use sp_core::{Get, H256};
+use sp_core::Get;
 
 // This tests Capacity implementation of the trait, but uses the mock's constants,
 // to ensure that it's correctly specified in the pallet.

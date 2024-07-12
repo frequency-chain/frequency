@@ -36,7 +36,7 @@ use frame_support::{
 	},
 	weights::{constants::RocksDbWeight, Weight},
 };
-
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
 	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
@@ -50,7 +50,6 @@ pub use common_primitives::{
 
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
-
 pub use pallet::*;
 pub use types::*;
 pub use weights::*;
@@ -66,18 +65,23 @@ mod tests;
 /// storage migrations
 pub mod migration;
 pub mod weights;
-pub(crate) type BalanceOf<T> =
+type BalanceOf<T> =
 	<<T as Config>::Currency as InspectFungible<<T as frame_system::Config>::AccountId>>::Balance;
 
-use crate::StakingType::{MaximumCapacity, ProviderBoost};
+use crate::StakingType::ProviderBoost;
+use common_primitives::capacity::RewardEra;
 use frame_system::pallet_prelude::*;
 
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
 
-	use frame_support::{pallet_prelude::*, Twox64Concat};
-	use parity_scale_codec::EncodeLike;
+	use crate::StakingType::MaximumCapacity;
+	use common_primitives::capacity::RewardEra;
+	use frame_support::{
+		pallet_prelude::{StorageVersion, *},
+		Twox64Concat,
+	};
 	use sp_runtime::traits::{AtLeast32BitUnsigned, MaybeDisplay};
 
 	/// A reason for freezing funds.
@@ -152,24 +156,6 @@ pub mod pallet {
 		/// How much FRQCY one unit of Capacity costs
 		#[pallet::constant]
 		type CapacityPerToken: Get<Perbill>;
-
-		/// A period of `EraLength` blocks in which a Staking Pool applies and
-		/// when Provider Boost Rewards may be earned.
-		type RewardEra: Parameter
-			+ Member
-			+ MaybeSerializeDeserialize
-			+ MaybeDisplay
-			+ AtLeast32BitUnsigned
-			+ Default
-			+ Copy
-			+ sp_std::hash::Hash
-			+ MaxEncodedLen
-			+ EncodeLike
-			+ Into<BalanceOf<Self>>
-			+ Into<BlockNumberFor<Self>>
-			+ Into<u32>
-			+ EncodeLike<u32>
-			+ TypeInfo;
 
 		/// The number of blocks in a RewardEra
 		#[pallet::constant]
@@ -272,7 +258,7 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	#[pallet::getter(fn get_current_era)]
 	pub type CurrentEraInfo<T: Config> =
-		StorageValue<_, RewardEraInfo<T::RewardEra, BlockNumberFor<T>>, ValueQuery>;
+		StorageValue<_, RewardEraInfo<RewardEra, BlockNumberFor<T>>, ValueQuery>;
 
 	/// Reward Pool history is divided into chunks of size RewardPoolChunkLength.
 	/// ProviderBoostHistoryLimit is the total number of items, the key is the
@@ -949,8 +935,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn start_new_reward_era_if_needed(current_block: BlockNumberFor<T>) -> Weight {
-		let current_era_info: RewardEraInfo<T::RewardEra, BlockNumberFor<T>> =
-			Self::get_current_era(); // 1r
+		let current_era_info: RewardEraInfo<RewardEra, BlockNumberFor<T>> = Self::get_current_era(); // 1r
 
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			// 1r
@@ -976,7 +961,7 @@ impl<T: Config> Pallet<T> {
 	/// Returns:
 	///     Error::MaxRetargetsExceeded if they try to retarget too many times in one era.
 	fn update_retarget_record(staker: &T::AccountId) -> Result<(), DispatchError> {
-		let current_era: T::RewardEra = Self::get_current_era().era_index;
+		let current_era: RewardEra = Self::get_current_era().era_index;
 		let mut retargets = Self::get_retargets_for(staker).unwrap_or_default();
 		ensure!(retargets.update(current_era).is_some(), Error::<T>::MaxRetargetsExceeded);
 		Retargets::<T>::set(staker, Some(retargets));
@@ -1014,7 +999,7 @@ impl<T: Config> Pallet<T> {
 	/// pass 'false' for a decrease (unstake)
 	pub(crate) fn upsert_boost_history(
 		account: &T::AccountId,
-		current_era: T::RewardEra,
+		current_era: RewardEra,
 		boost_amount: BalanceOf<T>,
 		add: bool,
 	) -> Result<(), DispatchError> {
@@ -1113,7 +1098,7 @@ impl<T: Config> Pallet<T> {
 
 	// Returns the block number for the end of the provided era. Assumes `era` is at least this
 	// era or in the future
-	pub(crate) fn block_at_end_of_era(era: T::RewardEra) -> BlockNumberFor<T> {
+	pub(crate) fn block_at_end_of_era(era: RewardEra) -> BlockNumberFor<T> {
 		let current_era_info = Self::get_current_era();
 		let era_length: BlockNumberFor<T> = T::EraLength::get().into();
 
@@ -1127,8 +1112,8 @@ impl<T: Config> Pallet<T> {
 
 	// Figure out the history chunk that a given era is in and pull out the total stake for that era.
 	pub(crate) fn get_total_stake_for_past_era(
-		reward_era: T::RewardEra,
-		current_era: T::RewardEra,
+		reward_era: RewardEra,
+		current_era: RewardEra,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		// Make sure that the past era is not too old
 		let era_range = current_era.saturating_sub(reward_era);
@@ -1153,7 +1138,7 @@ impl<T: Config> Pallet<T> {
 	/// - The second step is which chunk to add to:
 	/// - Divide the cycle by the chunk length and take the floor
 	/// - Floor(5 / 3) = 1
-	pub(crate) fn get_chunk_index_for_era(era: T::RewardEra) -> u32 {
+	pub(crate) fn get_chunk_index_for_era(era: RewardEra) -> u32 {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
 		// Remove one because eras are 1 indexed
@@ -1170,7 +1155,7 @@ impl<T: Config> Pallet<T> {
 	// - [6], [2,3], [4,5]
 	// - [6,7], [2,3], [4,5]
 	// - [6,7], [8], [4,5]
-	pub(crate) fn update_provider_boost_reward_pool(era: T::RewardEra, boost_total: BalanceOf<T>) {
+	pub(crate) fn update_provider_boost_reward_pool(era: RewardEra, boost_total: BalanceOf<T>) {
 		// Current era is this era
 		let chunk_idx: u32 = Self::get_chunk_index_for_era(era);
 		let mut new_chunk =
@@ -1268,7 +1253,7 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	type AccountId = T::AccountId;
-	type RewardEra = T::RewardEra;
+	type RewardEra = common_primitives::capacity::RewardEra;
 	type Hash = T::Hash;
 	type Balance = BalanceOf<T>;
 

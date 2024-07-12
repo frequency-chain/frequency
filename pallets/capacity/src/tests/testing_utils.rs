@@ -10,7 +10,7 @@ use crate::{
 };
 use common_primitives::msa::MessageSourceId;
 
-pub fn staking_events() -> Vec<Event<Test>> {
+pub fn capacity_events() -> Vec<Event<Test>> {
 	let result = System::events()
 		.into_iter()
 		.map(|r| r.event)

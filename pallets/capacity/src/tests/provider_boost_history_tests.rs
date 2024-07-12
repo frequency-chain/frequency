@@ -6,6 +6,7 @@ use crate::{
 	Config, ProviderBoostHistory,
 	StakingType::{MaximumCapacity, ProviderBoost},
 };
+use common_primitives::capacity::RewardEra;
 use frame_support::assert_ok;
 use sp_runtime::traits::{Get, Zero};
 
@@ -71,12 +72,12 @@ fn provider_boost_history_add_era_balance_adds_entries_and_deletes_old_if_full()
 	}
 	assert_eq!(pbh.count(), bound as usize);
 
-	let new_era: <Test as Config>::RewardEra = 99;
+	let new_era: RewardEra = 99;
 	pbh.add_era_balance(&new_era, &1000u64);
 	assert_eq!(pbh.count(), bound as usize);
 	assert!(pbh.get_entry_for_era(&new_era).is_some());
 
-	let first_era: <Test as Config>::RewardEra = 1;
+	let first_era: RewardEra = 1;
 	assert!(pbh.get_entry_for_era(&first_era).is_none());
 }
 
