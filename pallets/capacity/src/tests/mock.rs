@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, UnclaimedRewardInfo,
+	ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -11,7 +11,6 @@ use common_primitives::{
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{fungible::Inspect, tokens::WithdrawConsequence, ConstU16, ConstU32, ConstU64},
-	BoundedVec,
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};

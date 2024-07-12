@@ -1,5 +1,4 @@
 //! Types for the Capacity Pallet
-use std::marker::PhantomData;
 use super::*;
 use common_primitives::capacity::RewardEra;
 use frame_support::{
@@ -12,7 +11,6 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
-use common_primitives::capacity::RewardEra;
 
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
