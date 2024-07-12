@@ -96,7 +96,7 @@ pub mod module {
 		/// Filters the inner calls for passkey which is set in runtime
 		type PasskeyCallFilter: Contains<<Self as Config>::RuntimeCall>;
 
-		/// Helper Curreny method for benchmarking
+		/// Helper Currency method for benchmarking
 		#[cfg(feature = "runtime-benchmarks")]
 		type Currency: Mutate<Self::AccountId>;
 	}
@@ -123,7 +123,9 @@ pub mod module {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// proxy call
+		/// Proxies an extrinsic call by changing the origin to `account_id` inside the payload.
+		/// Since this is an unsigned extrinsic all the verification checks are performed inside
+		/// `validate_unsigned` and `pre_dispatch` hooks.
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
@@ -159,59 +161,51 @@ pub mod module {
 			From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 	{
 		type Call = Call<T>;
+
+		/// Validating the regular checks of an extrinsic plus verifying the P256 Passkey signature
+		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
 			let payload = Self::filter_valid_calls(&call)?;
 
-			let frame_system_checks =
-				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
-			let frame_system_validity = frame_system_checks.validate()?;
-
-			let signatures_check = PasskeySignatureCheck::new(payload.clone());
-			let signature_validity = signatures_check.validate()?;
-
-			let nonce_check = PasskeyNonceCheck::new(payload.passkey_call.clone());
-			let nonce_validity = nonce_check.validate()?;
-
-			let tx_charge = ChargeTransactionPayment::<T>(
+			let frame_system_validity =
+				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
+					.validate()?;
+			let nonce_validity = PasskeyNonceCheck::new(payload.passkey_call.clone()).validate()?;
+			let weight_validity = PasskeyWeightCheck::new(call.clone()).validate()?;
+			// this is the last (except for the fee validation check) since it is the heaviest
+			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
+			// this should be last since we are not refunding in the case of failure since we didn't
+			// have `post_dispatch` implemented this should be the last check executed
+			let tx_payment_validity = ChargeTransactionPayment::<T>(
 				payload.passkey_call.account_id.clone(),
 				call.clone(),
-			);
-			let tx_payment_validity = tx_charge.validate()?;
-
-			let weight_check = PasskeyWeightCheck::new(call.clone());
-			let weight_validity = weight_check.validate()?;
+			)
+			.validate()?;
 
 			let valid_tx = valid_tx
 				.combine_with(frame_system_validity)
-				.combine_with(signature_validity)
 				.combine_with(nonce_validity)
-				.combine_with(tx_payment_validity)
-				.combine_with(weight_validity);
+				.combine_with(weight_validity)
+				.combine_with(signature_validity)
+				.combine_with(tx_payment_validity);
 			Ok(valid_tx)
 		}
 
+		/// Checking and executing a list of operations pre_dispatch
+		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
 			let payload = Self::filter_valid_calls(&call)?;
-
-			let frame_system_checks =
-				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone());
-			frame_system_checks.pre_dispatch()?;
-
-			let signatures_check = PasskeySignatureCheck::new(payload.clone());
-			signatures_check.pre_dispatch()?;
-
-			let nonce_check = PasskeyNonceCheck::new(payload.passkey_call.clone());
-			nonce_check.pre_dispatch()?;
-
-			let tx_charge = ChargeTransactionPayment::<T>(
-				payload.passkey_call.account_id.clone(),
-				call.clone(),
-			);
-			tx_charge.pre_dispatch()?;
-
-			let weight_check = PasskeyWeightCheck::new(call.clone());
-			weight_check.pre_dispatch()
+			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
+				.pre_dispatch()?;
+			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
+			PasskeyWeightCheck::new(call.clone()).pre_dispatch()?;
+			// this is the last (except for the fee validation check) since it is the heaviest
+			PasskeySignatureCheck::new(payload.clone()).pre_dispatch()?;
+			// this should be last since we are not refunding in the case of failure since we didn't
+			// have `post_dispatch` implemented this should be the last check executed
+			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
+				.pre_dispatch()
 		}
 	}
 }
@@ -222,6 +216,7 @@ where
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
+	/// Filtering the valid calls and extracting the payload from inside the call
 	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
@@ -232,7 +227,7 @@ where
 	}
 }
 
-/// Passkey specific nonce check
+/// Passkey specific nonce check which is a wrapper around `CheckNonce` extension
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 struct PasskeyNonceCheck<T: Config>(pub PasskeyCall<T>);
@@ -266,7 +261,9 @@ where
 	}
 }
 
-/// Passkey signatures check
+/// Passkey signatures check which verifies 2 signatures
+/// 1. Account signature of the P256 public key
+/// 2. Passkey P256 signature of the account public key
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 struct PasskeySignatureCheck<T: Config>(pub PasskeyPayload<T>);
@@ -277,6 +274,14 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	}
 
 	pub fn validate(&self) -> TransactionValidity {
+		// checking account signature to verify ownership of the account used
+		let signed_data = self.0.passkey_public_key.clone();
+		let signature = self.0.passkey_call.account_ownership_proof.clone();
+		let signer = &self.0.passkey_call.account_id;
+
+		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
+			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
+
 		// checking the passkey signature to ensure access to the passkey
 		let p256_signed_data = self.0.passkey_call.encode();
 		let p256_signature = self.0.verifiable_passkey_signature.clone();
@@ -290,15 +295,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 				_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
 			})?;
 
-		// checking account signature to verify ownership of the account used
-		let signed_data = self.0.passkey_public_key.clone();
-		let signature = self.0.passkey_call.account_ownership_proof.clone();
-		let signer = &self.0.passkey_call.account_id;
-
-		match Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature) {
-			Ok(_) => Ok(ValidTransaction::default()),
-			Err(_e) => InvalidTransaction::BadSigner.into(),
-		}
+		Ok(ValidTransaction::default())
 	}
 
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
