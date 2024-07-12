@@ -20,7 +20,7 @@ The Passkey pallet provides for:
 ### Extrinsic verification
 Because the Polkadot SDK currently lacks support for P256 signatures, we had to use an unsigned
 extrinsic to allow this custom verification before dispatching transactions. To achieve this, we
-add P256 signature verification within the `ValidateUnsigned` trait implementation for the pallet.
+added P256 signature verification within the `ValidateUnsigned` trait implementation for the pallet.
 
 Since **unsigned extrinsics** bypass verification by `SignedExtensions`, we've added the necessary
 checks within the ValidateUnsigned trait implementation to mitigate potential vulnerabilities.
