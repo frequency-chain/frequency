@@ -1,8 +1,8 @@
 use super::{
 	mock::*,
-	testing_utils::{setup_provider, staking_events},
+	testing_utils::{capacity_events, setup_provider},
 };
-use crate::*;
+use crate::{StakingType::*, *};
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
@@ -229,7 +229,7 @@ fn change_staking_starget_emits_event_on_success() {
 			to_msa,
 			to_amount
 		));
-		let events = staking_events();
+		let events = capacity_events();
 
 		assert_eq!(
 			events.last().unwrap(),
@@ -425,7 +425,7 @@ fn impl_retarget_info_errors_when_attempt_to_update_past_bounded_max() {
 			TestCase { era: 1u32, retargets: 5u32, last_retarget: 1, expected: None },
 		] {
 			let mut retarget_info: RetargetInfo<Test> =
-				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+				RetargetInfo::new(tc.retargets, tc.last_retarget);
 			assert_eq!(retarget_info.update(tc.era), tc.expected);
 		}
 	})
@@ -448,7 +448,7 @@ fn impl_retarget_info_updates_values_correctly() {
 			TestCase { era: 1, retargets: 5, last_retarget: 1, expected_retargets: 5 },
 		] {
 			let mut retarget_info: RetargetInfo<Test> =
-				RetargetInfo { retarget_count: tc.retargets, last_retarget_at: tc.last_retarget };
+				RetargetInfo::new(tc.retargets, tc.last_retarget);
 			retarget_info.update(tc.era);
 			assert_eq!(retarget_info.retarget_count, tc.expected_retargets);
 		}
@@ -459,10 +459,9 @@ fn impl_retarget_info_updates_values_correctly() {
 fn impl_retarget_chunks_cleanup_when_new_reward_era() {
 	new_test_ext().execute_with(|| {
 		let current_era = 2u32;
-		let mut retarget_info: RetargetInfo<Test> =
-			RetargetInfo { retarget_count: 5, last_retarget_at: 1 };
+		let mut retarget_info: RetargetInfo<Test> = RetargetInfo::new(5, 1);
 		assert!(retarget_info.update(current_era).is_some());
-		let expected: RetargetInfo<Test> = RetargetInfo { retarget_count: 1, last_retarget_at: 2 };
+		let expected: RetargetInfo<Test> = RetargetInfo::new(1, 2);
 		assert_eq!(retarget_info, expected);
 	});
 }

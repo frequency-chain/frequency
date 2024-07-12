@@ -152,7 +152,7 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 	}
 
 	fn staking_reward_totals(
-		account_id: Self::AccountId,
+		_account_id: Self::AccountId,
 	) -> Result<
 		BoundedVec<UnclaimedRewardInfo<Test>, <Test as Config>::ProviderBoostHistoryLimit>,
 		DispatchError,
@@ -197,7 +197,6 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
-	type RewardEra = TestRewardEra;
 	type EraLength = ConstU32<10>;
 	type ProviderBoostHistoryLimit = ConstU32<12>;
 	type RewardsProvider = Capacity;

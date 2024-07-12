@@ -2,6 +2,7 @@ use crate::{
 	tests::{mock::*, testing_utils::set_era_and_reward_pool},
 	BalanceOf, Config, ProviderBoostRewardPools, RewardPoolHistoryChunk,
 };
+use common_primitives::capacity::RewardEra;
 use frame_support::{assert_ok, traits::Get};
 use std::ops::Add;
 
@@ -9,7 +10,7 @@ use std::ops::Add;
 // runtime.
 fn fill_reward_pool_history_chunk(
 	chunk_index: u32,
-	starting_era: <Test as Config>::RewardEra,
+	starting_era: RewardEra,
 	number_of_items: u32,
 	starting_total_stake: BalanceOf<Test>,
 ) {

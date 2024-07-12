@@ -73,7 +73,7 @@ fn unstake_happy_path() {
 			}
 		);
 
-		let events = staking_events();
+		let events = capacity_events();
 		assert_eq!(
 			events.last().unwrap(),
 			&Event::UnStaked {
@@ -285,7 +285,7 @@ fn unstake_when_not_staking_to_target_errors() {
 }
 
 #[test]
-fn unstake_provider_boosted_target_adjusts_reward_pool_total() {
+fn unstake_provider_boosted_target_in_same_era_adjusts_reward_pool_total() {
 	new_test_ext().execute_with(|| {
 		// two accounts staking to the same target
 		let account1 = 600;
