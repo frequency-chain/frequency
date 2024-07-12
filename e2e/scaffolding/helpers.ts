@@ -637,5 +637,4 @@ export function generateSchemaPartialName(length: number): string {
   return result;
 }
 
-export const base64UrlToUint8Array = (base64: string): Uint8Array =>
-  new Uint8Array(Buffer.from(base64, 'base64url'));
+export const base64UrlToUint8Array = (base64: string): Uint8Array => new Uint8Array(Buffer.from(base64, 'base64url'));

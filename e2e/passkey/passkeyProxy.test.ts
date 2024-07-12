@@ -24,13 +24,13 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPublicKey = new Uint8Array(33);
       const nonce = await getNonce(fundedKeys);
       const accountSignature = fundedKeys.sign(passkeyPublicKey);
-      
+
       // base64URL encoded strings
-      const badPassKeySignatureBase64URL = Buffer.from("badPassKeySignature").toString('base64url');
-      const authenticatorDataBase64URL = Buffer.from("authenticatorData").toString('base64url');
-      const clientDataJsonBase64URL = Buffer.from("clientDataJson").toString('base64url');
-      
-      const remarksCalls = ExtrinsicHelper.api.tx.system.remark("passkey-test");
+      const badPassKeySignatureBase64URL = Buffer.from('badPassKeySignature').toString('base64url');
+      const authenticatorDataBase64URL = Buffer.from('authenticatorData').toString('base64url');
+      const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
+
+      const remarksCalls = ExtrinsicHelper.api.tx.system.remark('passkey-test');
 
       const payload = createPayload(
         accountPKey,
@@ -40,7 +40,7 @@ describe('Passkey Pallet Tests', function () {
         badPassKeySignatureBase64URL,
         authenticatorDataBase64URL,
         clientDataJsonBase64URL,
-        remarksCalls,
+        remarksCalls
       );
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
@@ -52,12 +52,12 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPublicKey = new Uint8Array(33);
       const nonce = await getNonce(fundedKeys);
       const accountSignature = fundedKeys.sign(passkeyPublicKey);
-      
+
       // base64URL encoded strings
-      const badPassKeySignatureBase64URL = Buffer.from("badPassKeySignature").toString('base64url');
-      const authenticatorDataBase64URL = Buffer.from("authenticatorData").toString('base64url');
-      const clientDataJsonBase64URL = Buffer.from("clientDataJson").toString('base64url');
-      
+      const badPassKeySignatureBase64URL = Buffer.from('badPassKeySignature').toString('base64url');
+      const authenticatorDataBase64URL = Buffer.from('authenticatorData').toString('base64url');
+      const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
+
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 1000000);
 
       const payload = createPayload(
@@ -68,13 +68,13 @@ describe('Passkey Pallet Tests', function () {
         badPassKeySignatureBase64URL,
         authenticatorDataBase64URL,
         clientDataJsonBase64URL,
-        transferCalls,
+        transferCalls
       );
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
-});
+  });
 });
 
 function createPayload(
@@ -85,7 +85,7 @@ function createPayload(
   passkeySignature: string,
   authenticatorData: string,
   clientDataJson: string,
-  call: SubmittableExtrinsic<"rxjs", ISubmittableResult>,
+  call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
   const passkeyCall = {
     accountId: accountPKey,
