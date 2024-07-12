@@ -20,12 +20,9 @@
 use std::{convert::TryInto, sync::Arc};
 
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::{
-		error::{CallError, ErrorCode},
-		ErrorObject,
-	},
+	types::{error::ErrorCode, ErrorObject},
 };
 use pallet_frequency_tx_payment_runtime_api::{FeeDetails, InclusionFee};
 use parity_scale_codec::{Codec, Decode};
@@ -102,27 +99,27 @@ where
 
 		let encoded_len = encoded_xt.len() as u32;
 		let uxt: Block::Extrinsic = Decode::decode(&mut &*encoded_xt).map_err(|e| {
-			CallError::Custom(ErrorObject::owned(
+			ErrorObject::owned(
 				Error::DecodeError.into(),
 				"Unable to query capacity fee details.",
 				Some(format!("{:?}", e)),
-			))
+			)
 		})?;
 		let fee_details = api.compute_capacity_fee(at_hash, uxt, encoded_len).map_err(|e| {
-			CallError::Custom(ErrorObject::owned(
+			ErrorObject::owned(
 				Error::RuntimeError.into(),
 				"Unable to query capacity fee details.",
 				Some(format!("{:?}", e)),
-			))
+			)
 		})?;
 
 		let try_into_rpc_balance = |value: Balance| {
 			value.try_into().map_err(|_| {
-				JsonRpseeError::Call(CallError::Custom(ErrorObject::owned(
+				ErrorObject::owned(
 					ErrorCode::InvalidParams.code(),
 					format!("{} doesn't fit in NumberOrHex representation", value),
 					None::<()>,
-				)))
+				)
 			})
 		};
 
