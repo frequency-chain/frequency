@@ -47,7 +47,35 @@ describe('Passkey Pallet Tests', function () {
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
 
-    it('should fail to transfer balance due to bad signature', async function () {
+    it('should fail to transfer balance due to bad account ownership proof', async function () {
+      const accountPKey = fundedKeys.publicKey;
+      const passkeyPublicKey = new Uint8Array(33);
+      const nonce = await getNonce(fundedKeys);
+      const accountSignature = fundedKeys.sign('badPasskeyPublicKey');
+
+      // base64URL encoded strings
+      const badPassKeySignatureBase64URL = Buffer.from('badPassKeySignature').toString('base64url');
+      const authenticatorDataBase64URL = Buffer.from('authenticatorData').toString('base64url');
+      const clientDataJsonBase64URL = Buffer.from('clientDataJson').toString('base64url');
+
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 1000000);
+
+      const payload = createPayload(
+        accountPKey,
+        passkeyPublicKey,
+        nonce,
+        accountSignature,
+        badPassKeySignatureBase64URL,
+        authenticatorDataBase64URL,
+        clientDataJsonBase64URL,
+        transferCalls
+      );
+
+      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, payload);
+      assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
+    });
+
+    it('should fail to transfer balance due to bad passkey signature', async function () {
       const accountPKey = fundedKeys.publicKey;
       const passkeyPublicKey = new Uint8Array(33);
       const nonce = await getNonce(fundedKeys);
