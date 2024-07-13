@@ -14,9 +14,9 @@ use common_primitives::{
 	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
 use jsonrpsee::{
-	core::{async_trait, Error as RpcError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
-	types::error::{CallError, ErrorCode, ErrorObject},
+	types::error::{ErrorCode, ErrorObject},
 };
 use pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
@@ -95,15 +95,15 @@ where
 fn map_result<T>(api_result: Result<Result<T, DispatchError>, ApiError>) -> RpcResult<T> {
 	match api_result {
 		Ok(Ok(result)) => Ok(result),
-		Ok(Err(e)) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+		Ok(Err(e)) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(300).code(), // No real reason for this value
 			"Runtime Error",
 			Some(format!("{:?}", e)),
-		)))),
-		Err(e) => Err(RpcError::Call(CallError::Custom(ErrorObject::owned(
+		)),
+		Err(e) => Err(ErrorObject::owned(
 			ErrorCode::ServerError(301).code(), // No real reason for this value
 			"Api Error",
 			Some(format!("{:?}", e)),
-		)))),
+		)),
 	}
 }

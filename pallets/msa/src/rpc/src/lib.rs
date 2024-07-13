@@ -18,9 +18,10 @@ use common_primitives::{
 	schema::SchemaId,
 };
 use jsonrpsee::{
-	core::{async_trait, Error as JsonRpseeError, RpcResult},
+	core::{async_trait, RpcResult},
 	proc_macros::rpc,
 	tracing::warn,
+	types::{error::ErrorObjectOwned, ErrorObject},
 };
 use pallet_msa_runtime_api::MsaRuntimeApi;
 use parity_scale_codec::{Codec, Decode};
@@ -101,9 +102,16 @@ pub enum MsaOffchainRpcError {
 	OffchainIndexingNotEnabled,
 }
 
-impl From<MsaOffchainRpcError> for JsonRpseeError {
+impl From<MsaOffchainRpcError> for ErrorObjectOwned {
 	fn from(e: MsaOffchainRpcError) -> Self {
-		JsonRpseeError::Custom(format!("{:?}", e))
+		let msg = format!("{:?}", e);
+
+		match e {
+			MsaOffchainRpcError::ErrorAcquiringLock => ErrorObject::owned(1, msg, None::<()>),
+			MsaOffchainRpcError::ErrorDecodingData => ErrorObject::owned(2, msg, None::<()>),
+			MsaOffchainRpcError::OffchainIndexingNotEnabled =>
+				ErrorObject::owned(3, msg, None::<()>),
+		}
 	}
 }
 

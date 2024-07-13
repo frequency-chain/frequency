@@ -45,8 +45,9 @@ sp_api::mock_impl_runtime_apis! {
 	}
 }
 
-type PaginatedStateResult = Result<Vec<PaginatedStorageResponse>, jsonrpsee::core::Error>;
-type ItemizedStateResult = Result<ItemizedStoragePageResponse, jsonrpsee::core::Error>;
+type PaginatedStateResult =
+	Result<Vec<PaginatedStorageResponse>, jsonrpsee::types::ErrorObjectOwned>;
+type ItemizedStateResult = Result<ItemizedStoragePageResponse, jsonrpsee::types::ErrorObjectOwned>;
 
 #[tokio::test]
 async fn get_paginated_storage_with_non_existent_schema_id_should_return_error() {

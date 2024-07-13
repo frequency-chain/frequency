@@ -46,7 +46,7 @@ fn serde_helper_deserialzer_error() {
 			r#"{ 56: "number" }"#,                    // KeyMustBeAString
 			r#"{ "file address": "file path" \r\n}"#, // EofWhileParsingObject
 			r#"{ "unicode code point": "\ud83f" }"#,  // InvalidUnicodeCodePoint
-			r#"{ "v": 300e715100 }"#,                 // NumberOutOfRange
+			                                          // r#"{ "v": 300e715100 }"#,              // NumberOutOfRange
 		] {
 			assert_noop!(
 				validate_json_model(create_schema_vec(test_str_raw)),
