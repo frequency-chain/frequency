@@ -73,6 +73,11 @@ describe('Passkey Pallet Tests', function () {
 
     const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
     await passkeyProxy.fundAndSendUnsigned(fundingSource);
+
+    const fundedBalance = await ExtrinsicHelper.getAccountInfo(fundedKeys.address);
+    const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
+    assert.strictEqual(fundedBalance.data.free.toBigInt(), 49_999_999n);
+    assert.strictEqual(receiverBalance.data.free.toBigInt(), 1n);
   });
 });
 
@@ -119,7 +124,7 @@ async function createPasskeyPayload(
   }
   const passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCallPayload);
 
-  const passKeySignature = secp256k1.sign(Buffer.from(passkeyCallType.toU8a()), passKeyPrivateKey).toCompactRawBytes();
+  const passKeySignature = secp256k1.sign(passkeyCallType.toU8a(), passKeyPrivateKey).toDERRawBytes();
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
