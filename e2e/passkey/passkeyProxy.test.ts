@@ -14,7 +14,7 @@ describe('Passkey Pallet Tests', function () {
     let receiverKeys: KeyringPair;
 
     beforeEach(async function () {
-      fundedKeys = await createAndFundKeypair(fundingSource);
+      fundedKeys = await createAndFundKeypair(fundingSource, 100_000_000n);
       receiverKeys = await createAndFundKeypair(fundingSource);
     });
 
