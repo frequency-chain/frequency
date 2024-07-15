@@ -70,13 +70,11 @@ describe('Passkey Pallet Tests', function () {
     const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
     const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
     const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
-    const receiverBalanceBefore = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-    assert(receiverBalanceBefore.data.free.toBigInt() === 0n);
     const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
     await passkeyProxy.fundAndSendUnsigned(fundingSource);
 
     const receiverBalanceAfter = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-    //assert(receiverBalanceAfter.data.free.toBigInt() > 0n);
+    assert(receiverBalanceAfter.data.free.toBigInt() > 100n);
   });
 });
 
