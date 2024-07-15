@@ -2,7 +2,7 @@ use super::{
 	mock::*,
 	testing_utils::{capacity_events, setup_provider},
 };
-use crate::{StakingType::*, *};
+use crate::*;
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::Get};
 
@@ -40,7 +40,7 @@ fn do_retarget_happy_path() {
 		let from_amount = 600u64;
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
-		let staking_type = ProviderBoost;
+		let staking_type = StakingType::ProviderBoost;
 		setup_provider(&staker, &from_msa, &from_amount, staking_type.clone());
 		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
 
@@ -67,8 +67,8 @@ fn do_retarget_flip_flop() {
 		let from_amount = 600u64;
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
-		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
-		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
+		setup_provider(&staker, &from_msa, &from_amount, StakingType::ProviderBoost);
+		setup_provider(&staker, &to_msa, &to_amount, StakingType::ProviderBoost);
 
 		for i in 0..4 {
 			if i % 2 == 0 {
@@ -92,8 +92,8 @@ fn check_retarget_rounding_errors() {
 		let to_amount = 301u64;
 		let to_msa: MessageSourceId = 2;
 
-		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
-		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
+		setup_provider(&staker, &from_msa, &from_amount, StakingType::ProviderBoost);
+		setup_provider(&staker, &to_msa, &to_amount, StakingType::ProviderBoost);
 		assert_capacity_details(from_msa, 33, 666, 33);
 		assert_capacity_details(to_msa, 15, 301, 15);
 		// 666+301= 967,  3+1=4
@@ -135,8 +135,8 @@ fn check_retarget_multiple_stakers() {
 		let amt1 = 192u64;
 		let amt2 = 313u64;
 
-		setup_provider(&staker_10k, &from_msa, &647u64, ProviderBoost);
-		setup_provider(&staker_500, &to_msa, &293u64, ProviderBoost);
+		setup_provider(&staker_10k, &from_msa, &647u64, StakingType::ProviderBoost);
+		setup_provider(&staker_500, &to_msa, &293u64, StakingType::ProviderBoost);
 		assert_ok!(Capacity::provider_boost(
 			RuntimeOrigin::signed(staker_600.clone()),
 			from_msa,
@@ -172,8 +172,8 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 		let from_msa: MessageSourceId = 1;
 		let to_msa: MessageSourceId = 2;
 		let amount = 10u64;
-		setup_provider(&staker, &from_msa, &amount, MaximumCapacity);
-		setup_provider(&staker, &to_msa, &amount, MaximumCapacity);
+		setup_provider(&staker, &from_msa, &amount, StakingType::MaximumCapacity);
+		setup_provider(&staker, &to_msa, &amount, StakingType::MaximumCapacity);
 
 		// stake additional to provider from another Msa, doesn't matter which type.
 		// total staked to from_msa is now 22u64.
@@ -220,8 +220,8 @@ fn change_staking_starget_emits_event_on_success() {
 		let from_amount = 20u64;
 		let to_amount = from_amount / 2;
 		let to_msa: MessageSourceId = 2;
-		setup_provider(&staker, &from_msa, &from_amount, ProviderBoost);
-		setup_provider(&staker, &to_msa, &to_amount, ProviderBoost);
+		setup_provider(&staker, &from_msa, &from_amount, StakingType::ProviderBoost);
+		setup_provider(&staker, &to_msa, &to_amount, StakingType::ProviderBoost);
 
 		assert_ok!(Capacity::change_staking_target(
 			RuntimeOrigin::signed(staker),
@@ -247,8 +247,8 @@ fn change_staking_target_errors_if_too_many_changes_before_thaw() {
 
 		let max_chunks: u32 = <Test as Config>::MaxRetargetsPerRewardEra::get();
 		let staking_amount = ((max_chunks + 2u32) * 10u32) as u64;
-		setup_provider(&staker, &from_msa, &staking_amount, ProviderBoost);
-		setup_provider(&staker, &to_msa, &10u64, ProviderBoost);
+		setup_provider(&staker, &from_msa, &staking_amount, StakingType::ProviderBoost);
+		setup_provider(&staker, &to_msa, &10u64, StakingType::ProviderBoost);
 
 		let retarget_amount = 10u64;
 		for _i in 0..max_chunks {
@@ -280,8 +280,8 @@ fn change_staking_target_garbage_collects_thawed_chunks() {
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
 
-		setup_provider(&staking_account, &from_target, &staked_amount, ProviderBoost);
-		setup_provider(&staking_account, &to_target, &staked_amount, ProviderBoost);
+		setup_provider(&staking_account, &from_target, &staked_amount, StakingType::ProviderBoost);
+		setup_provider(&staking_account, &to_target, &staked_amount, StakingType::ProviderBoost);
 
 		CurrentEraInfo::<Test>::set(RewardEraInfo { era_index: 20, started_at: 100 });
 		let max_chunks = <Test as Config>::MaxUnlockingChunks::get();
@@ -311,16 +311,16 @@ fn change_staking_target_test_parametric_validity() {
 
 		StakingAccountLedger::<Test>::insert(
 			from_account,
-			StakingDetails { active: 20, staking_type: ProviderBoost },
+			StakingDetails { active: 20, staking_type: StakingType::ProviderBoost },
 		);
 		let from_account_not_staking = 100u64;
 		let from_target_not_staked: MessageSourceId = 1;
 		let to_target_not_provider: MessageSourceId = 2;
 		let from_target: MessageSourceId = 3;
 		let to_target: MessageSourceId = 4;
-		setup_provider(&from_account, &from_target_not_staked, &0u64, ProviderBoost);
-		setup_provider(&from_account, &from_target, &staked_amount, ProviderBoost);
-		setup_provider(&from_account, &to_target, &staked_amount, ProviderBoost);
+		setup_provider(&from_account, &from_target_not_staked, &0u64, StakingType::ProviderBoost);
+		setup_provider(&from_account, &from_target, &staked_amount, StakingType::ProviderBoost);
+		setup_provider(&from_account, &to_target, &staked_amount, StakingType::ProviderBoost);
 
 		assert_ok!(Capacity::provider_boost(
 			RuntimeOrigin::signed(from_account),
