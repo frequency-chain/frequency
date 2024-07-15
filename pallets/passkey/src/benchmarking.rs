@@ -31,7 +31,7 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
 	let test_account_1_account_id =
 		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
-	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 2000000000u32.into());
+	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 4_000_000_000u32.into());
 	let secret = p256::SecretKey::from_slice(&[
 		1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
 	])
