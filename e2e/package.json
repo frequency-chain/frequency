@@ -20,10 +20,10 @@
   "dependencies": {
     "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
     "@helia/unixfs": "^3.0.6",
+    "@noble/curves": "^1.4.2",
     "@polkadot/api": "12.0.1",
     "@polkadot/types": "12.0.1",
     "@polkadot/util": "12.6.2",
-    "cryptokit": "^1.0.10",
     "helia": "^4.2.4",
     "multiformats": "^13.1.1",
     "rxjs": "^7.8.1",
