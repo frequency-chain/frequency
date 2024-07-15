@@ -71,8 +71,8 @@ describe('Capacity: list_unclaimed_rewards', function() {
     }));
     assert.equal(count, 3);
 
-    assert.equal(decResult[0].eligible_amount.toHuman(), '0');
-    assert.equal(decResult[0].earned_amount.toHuman(), '0');
+    assert.equal(decResult[0].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(decResult[0].earned_amount.toHuman(), '3.8000 mUNIT');
 
     assert.equal(decResult[1].eligible_amount.toHuman(), '1.0000 UNIT');
     assert.equal(decResult[1].earned_amount.toHuman(), '3.8000 mUNIT');

@@ -50,7 +50,6 @@ pub use common_primitives::{
 	utils::wrap_binary_data,
 };
 
-use crate::StakingType::{MaximumCapacity, ProviderBoost};
 use frame_system::pallet_prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -684,8 +683,8 @@ impl<T: Config> Pallet<T> {
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
 		let (mut staking_details, stakable_amount) =
-			Self::ensure_can_stake(staker, *target, *amount, ProviderBoost)?;
-		staking_details.staking_type = ProviderBoost;
+			Self::ensure_can_stake(staker, *target, *amount, StakingType::ProviderBoost)?;
+		staking_details.staking_type = StakingType::ProviderBoost;
 		Ok((staking_details, stakable_amount))
 	}
 
@@ -812,7 +811,7 @@ impl<T: Config> Pallet<T> {
 		Self::set_staking_account(unstaker, &staking_account);
 
 		let staking_type = staking_account.staking_type;
-		if staking_type == ProviderBoost {
+		if staking_type == StakingType::ProviderBoost {
 			let era = Self::get_current_era().era_index;
 			Self::upsert_boost_history(&unstaker, era, actual_unstaked_amount, false)?;
 			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();

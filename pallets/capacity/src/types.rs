@@ -4,7 +4,6 @@ use common_primitives::capacity::RewardEra;
 use frame_support::{
 	pallet_prelude::PhantomData, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound,
 };
-use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{

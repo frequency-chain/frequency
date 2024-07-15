@@ -7,7 +7,8 @@ use crate::{
 	},
 	Error,
 	Event::ProviderBoostRewardClaimed,
-	MaximumCapacity, MessageSourceId, ProviderBoost,
+	MessageSourceId,
+	StakingType::*,
 };
 use frame_support::{assert_noop, assert_ok};
 
