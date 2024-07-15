@@ -125,7 +125,6 @@ async function createPasskeyPayload(
   // Challenge is sha256(passkeyCallType)
   const calculatedChallenge = sha256(passkeyCallType.toU8a());
   const calculatedChallengeBase64url = Buffer.from(calculatedChallenge).toString('base64url');
-  console.log('calculatedChallengeBase64url', calculatedChallengeBase64url);
   // inject challenge inside clientData
   const clientDataJSON = Buffer.from(clientData)
     .toString('utf-8')
