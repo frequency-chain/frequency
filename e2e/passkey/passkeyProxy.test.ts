@@ -6,7 +6,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { SubmittableExtrinsic } from '@polkadot/api/types';
 import { ISubmittableResult } from '@polkadot/types/types';
-import { secp256k1 } from '@noble/curves/secp256k1'; // ESM and Common.js
+import { secp256r1 } from '@noble/curves/p256';
 import { u8aWrapBytes } from '@polkadot/util';
 
 const fundingSource = getFundingSource('passkey-proxy');
@@ -82,9 +82,9 @@ describe('Passkey Pallet Tests', function () {
 });
 
 function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
-  const passKeyPrivateKey = secp256k1.utils.randomPrivateKey();
-  const passKeyPublicKey = secp256k1.getPublicKey(passKeyPrivateKey);
-  const passkeySignature = secp256k1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey).toCompactRawBytes();
+  const passKeyPrivateKey = secp256r1.utils.randomPrivateKey();
+  const passKeyPublicKey = secp256r1.getPublicKey(passKeyPrivateKey, true);
+  const passkeySignature = secp256r1.sign(u8aWrapBytes(accountPKey), passKeyPrivateKey).toDERRawBytes();
   return { passKeyPrivateKey, passKeyPublicKey, passkeySignature };
 }
 
@@ -124,7 +124,7 @@ async function createPasskeyPayload(
   }
   const passkeyCallType = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyCall', passkeyCallPayload);
 
-  const passKeySignature = secp256k1.sign(passkeyCallType.toU8a(), passKeyPrivateKey).toDERRawBytes();
+  const passKeySignature = secp256r1.sign(passkeyCallType.toU8a(), passKeyPrivateKey).toDERRawBytes();
   const passkeyPayload = {
     passkeyPublicKey: Array.from(passKeyPublicKey),
     verifiablePasskeySignature: {
