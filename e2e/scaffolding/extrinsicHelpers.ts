@@ -264,8 +264,14 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     await this.fundOperation(source);
     log('Fund and Send', `Fund Source: ${source.address}`);
     const op = this.extrinsic();
-    // Era is 0 for tests due to issues with BirthBlock
-    return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+    try {
+      return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+    } catch (e) {
+      if ((e as any).name === 'RpcError') {
+        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+      }
+      throw e;
+    }
   }
 
   private parseResult<ApiType extends ApiTypes = 'rxjs', T extends AnyTuple = AnyTuple, N = unknown>(

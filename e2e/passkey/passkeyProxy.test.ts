@@ -9,15 +9,15 @@ import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } 
 const fundingSource = getFundingSource('passkey-proxy');
 
 describe('Passkey Pallet Tests', function () {
-  let fundedKeys: KeyringPair;
-  let receiverKeys: KeyringPair;
+  describe('proxy basic tests', function () {
+    let fundedKeys: KeyringPair;
+    let receiverKeys: KeyringPair;
 
-  before(async function () {
-    fundedKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
-    receiverKeys = await createAndFundKeypair(fundingSource, 0n);
-  });
+    beforeEach(async function () {
+      fundedKeys = await createAndFundKeypair(fundingSource);
+      receiverKeys = await createAndFundKeypair(fundingSource);
+    });
 
-  describe('proxy', function () {
     it('should fail due to unsupported call', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
@@ -57,20 +57,20 @@ describe('Passkey Pallet Tests', function () {
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
-  });
 
-  it('should transfer small balance from fundedKeys to receiverKeys', async function () {
-    const accountPKey = fundedKeys.publicKey;
-    const nonce = await getNonce(fundedKeys);
-    const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.address, 100n);
-    const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
-    const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
-    const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
-    const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
-    const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
-    await passkeyProxy.fundAndSendUnsigned(fundingSource);
+    it('should transfer small balance from fundedKeys to receiverKeys', async function () {
+      const accountPKey = fundedKeys.publicKey;
+      const nonce = await getNonce(fundedKeys);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 100n);
+      const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
+      const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
+      const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
+      await passkeyProxy.fundAndSendUnsigned(fundingSource);
 
-    const receiverBalanceAfter = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-    assert(receiverBalanceAfter.data.free.toBigInt() > 100n);
+      const receiverBalanceAfter = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
+      assert(receiverBalanceAfter.data.free.toBigInt() > 100n);
+    });
   });
 });

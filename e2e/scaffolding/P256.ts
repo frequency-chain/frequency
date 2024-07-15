@@ -19,13 +19,14 @@ export async function createPassKeyCall(
   accountSignature: Uint8Array,
   call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
+  const ext_call_type = ExtrinsicHelper.api.registry.createType('Call', call);
   const passkeyCall = {
     accountId: accountPKey,
     accountNonce: nonce,
     accountOwnershipProof: {
       Sr25519: accountSignature,
     },
-    call: call,
+    call: ext_call_type,
   };
 
   return passkeyCall;
@@ -69,6 +70,7 @@ export async function createPasskeyPayload(
     },
     passkeyCall: passkeyCallType,
   };
+  const payload = ExtrinsicHelper.api.createType('PalletPasskeyPasskeyPayload', passkeyPayload);
 
-  return passkeyPayload;
+  return payload;
 }
