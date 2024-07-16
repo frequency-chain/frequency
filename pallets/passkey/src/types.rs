@@ -171,6 +171,9 @@ impl VerifiablePasskeySignature {
 
 		// prepare signing payload which is [authenticator || sha256(client_data_json)]
 		let mut passkey_signature_payload = self.authenticator_data.to_vec();
+		if passkey_signature_payload.len() < 37 {
+			return Err(PasskeyVerificationError::InvalidProof);
+		}
 		passkey_signature_payload
 			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
 
