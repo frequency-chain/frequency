@@ -41,6 +41,7 @@ pub trait WeightInfo {
 	fn set_epoch_length() -> Weight;
 	fn change_staking_target() -> Weight;
 	fn provider_boost() -> Weight;
+	fn claim_staking_rewards() -> Weight;
 }
 
 /// Weights for `pallet_capacity` using the Substrate node and recommended hardware.
@@ -185,6 +186,12 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		//  Measured:  `177`
 		//  Estimated: `6249`
 		// Minimum execution time: 43_000_000 picoseconds.
+		Weight::from_parts(45_000_000, 6249)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
+	}
+	/// placeholder
+	fn claim_staking_rewards() -> Weight {
 		Weight::from_parts(45_000_000, 6249)
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
@@ -336,6 +343,13 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(9_u64))
 			.saturating_add(RocksDbWeight::get().writes(6_u64))
 	}
+
+	/// placeholder
+	fn claim_staking_rewards() -> Weight {
+		Weight::from_parts(45_000_000, 6249)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
+	}
 }
 
 
@@ -434,6 +448,19 @@ mod tests {
 	}
 	#[test]
 	fn test_provider_boost() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 6249
+		);
+	}
+
+	#[test]
+	fn test_claim_staking_rewards() {
 		assert!(
 			BlockWeights::get()
 				.per_class

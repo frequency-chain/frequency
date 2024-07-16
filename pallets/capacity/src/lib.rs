@@ -616,7 +616,7 @@ pub mod pallet {
 
 		/// Claim all outstanding rewards earned from ProviderBoosting.
 		#[pallet::call_index(6)]
-		#[pallet::weight(T::WeightInfo::provider_boost())]
+		#[pallet::weight(T::WeightInfo::claim_staking_rewards())]
 		pub fn claim_staking_rewards(origin: OriginFor<T>) -> DispatchResult {
 			let staker = ensure_signed(origin)?;
 			ensure!(
@@ -1174,10 +1174,12 @@ impl<T: Config> Pallet<T> {
 	/// Example with history limit of 6 and chunk length 3:
 	/// - Arrange the chunks such that we overwrite a complete chunk only when it is not needed
 	/// - The cycle is thus era modulo (history limit + chunk length)
-	/// - `[0,1,2],[3,4,5],[6,7,8]`
+	/// - `[0,1,2],[3,4,5],[6,7,8],[]`
+	/// Note Chunks stored = (History Length / Chunk size) + 1
 	/// - The second step is which chunk to add to:
 	/// - Divide the cycle by the chunk length and take the floor
 	/// - Floor(5 / 3) = 1
+	/// Chunk Index = Floor((era % (History Length + chunk size)) / chunk size)
 	pub(crate) fn get_chunk_index_for_era(era: RewardEra) -> u32 {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
@@ -1190,11 +1192,6 @@ impl<T: Config> Pallet<T> {
 	}
 
 	// This is where the reward pool gets updated.
-	// Example with Limit 6, Chunk 2:
-	// - [0,1], [2,3], [4,5]
-	// - [6], [2,3], [4,5]
-	// - [6,7], [2,3], [4,5]
-	// - [6,7], [8], [4,5]
 	pub(crate) fn update_provider_boost_reward_pool(era: RewardEra, boost_total: BalanceOf<T>) {
 		// Current era is this era
 		let chunk_idx: u32 = Self::get_chunk_index_for_era(era);

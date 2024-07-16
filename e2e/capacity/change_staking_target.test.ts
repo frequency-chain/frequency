@@ -5,8 +5,9 @@ import { getFundingSource } from '../scaffolding/funding';
 import {
   createKeys, createMsaAndProvider,
   stakeToProvider,
-  CENTS, DOLLARS, createAndFundKeypair, createProviderKeysAndId
-} from "../scaffolding/helpers";
+  CENTS, DOLLARS, createAndFundKeypair, createProviderKeysAndId, getNonce,
+} from '../scaffolding/helpers';
+import { KeyringPair } from '@polkadot/keyring/types';
 
 const fundingSource = getFundingSource('capacity-replenishment');
 
@@ -39,9 +40,17 @@ describe("Capacity: change_staking_target", function() {
     await assert.rejects(call.signAndSend(),
       (err) => {
         assert. strictEqual(err?.name, 'InvalidTarget', `expected InvalidTarget, got ${err?.name}`);
-        // // {name: "InvalidTarget"}
-        // assert. strictEqual(err?.message, `Wrong value: expected`);
         return true;
     });
+  });
+
+  it("foo", async function(){
+    const fundedKeys: KeyringPair  =  await createAndFundKeypair(fundingSource, 100_000_000n);
+    const receiverKeys: KeyringPair = await createAndFundKeypair(fundingSource);
+    const accountPKey = fundedKeys.publicKey;
+    const nonce = await getNonce(fundedKeys);
+
+    const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100n);
+    transferCalls.signAndSend(fundedKeys);
   });
 });

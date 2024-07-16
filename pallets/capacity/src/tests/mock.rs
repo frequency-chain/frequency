@@ -14,7 +14,6 @@ use frame_support::{
 		tokens::{fungible::Inspect, WithdrawConsequence},
 		ConstU16, ConstU32, ConstU64,
 	},
-	BoundedVec,
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
