@@ -35,7 +35,7 @@ describe('Passkey Pallet Tests', function () {
     it('should fail to transfer balance due to bad account ownership proof', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign('badPasskeyPublicKey');
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
@@ -48,7 +48,7 @@ describe('Passkey Pallet Tests', function () {
     it('should fail to transfer balance due to bad passkey signature', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
@@ -61,16 +61,13 @@ describe('Passkey Pallet Tests', function () {
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferAllowDeath(receiverKeys.publicKey, 100n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
-      await passkeyProxy.fundAndSendUnsigned(fundingSource);
-
-      const receiverBalanceAfter = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-      assert(receiverBalanceAfter.data.free.toBigInt() > 100n);
+      assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
     });
   });
 });

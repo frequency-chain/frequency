@@ -133,6 +133,8 @@ pub enum PasskeyVerificationError {
 	InvalidClientDataJson,
 	/// Invalid proof
 	InvalidProof,
+	/// Invalid authenticator data
+	InvalidAuthenticatorData,
 }
 
 impl From<PasskeyVerificationError> for u8 {
@@ -142,6 +144,7 @@ impl From<PasskeyVerificationError> for u8 {
 			PasskeyVerificationError::InvalidPublicKey => 1u8,
 			PasskeyVerificationError::InvalidClientDataJson => 2u8,
 			PasskeyVerificationError::InvalidProof => 3u8,
+			PasskeyVerificationError::InvalidAuthenticatorData => 4u8,
 		}
 	}
 }
@@ -172,7 +175,7 @@ impl VerifiablePasskeySignature {
 		// prepare signing payload which is [authenticator || sha256(client_data_json)]
 		let mut passkey_signature_payload = self.authenticator_data.to_vec();
 		if passkey_signature_payload.len() < 37 {
-			return Err(PasskeyVerificationError::InvalidProof);
+			return Err(PasskeyVerificationError::InvalidAuthenticatorData);
 		}
 		passkey_signature_payload
 			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
