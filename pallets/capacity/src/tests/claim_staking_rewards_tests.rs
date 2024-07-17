@@ -60,7 +60,7 @@ fn claim_staking_rewards_mints_and_transfers_expected_total() {
 		assert_eq!(Capacity::get_current_era().era_index, 4u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		System::assert_last_event(
-			ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
+			Event::<Test>::ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
 		);
 
 		// should have 2 era's worth of payouts: 4 each for eras 2, 3

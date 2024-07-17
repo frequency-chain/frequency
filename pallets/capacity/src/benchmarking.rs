@@ -8,6 +8,7 @@ use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use parity_scale_codec::alloc::vec::Vec;
 
 const SEED: u32 = 0;
+const REWARD_POOL_TOTAL: u32 = 2_000_000;
 
 fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 	frame_system::Pallet::<T>::assert_last_event(generic_event.into());
@@ -91,7 +92,7 @@ fn fill_reward_pool_chunks<T: Config>(current_era: RewardEra) {
 	let history_limit: RewardEra = <T as Config>::ProviderBoostHistoryLimit::get();
 	let starting_era: RewardEra = current_era - history_limit - 1u32;
 	for era in starting_era..current_era {
-		Capacity::<T>::update_provider_boost_reward_pool(era, 10_000u32.into());
+		Capacity::<T>::update_provider_boost_reward_pool(era, REWARD_POOL_TOTAL.into());
 	}
 }
 
@@ -105,6 +106,16 @@ fn fill_boost_history<T: Config>(
 	for i in starting_era..current_era {
 		assert_ok!(Capacity::<T>::upsert_boost_history(caller.into(), i, amount, true));
 	}
+}
+
+fn unclaimed_rewards_total<T: Config>(caller: &T::AccountId) -> BalanceOf<T> {
+	let zero_balance: BalanceOf<T> = 0u32.into();
+	let rewards: Vec<UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>> =
+		Capacity::<T>::list_unclaimed_rewards(caller).unwrap_or_default().to_vec();
+	rewards
+		.iter()
+		.fold(zero_balance, |acc, reward_info| acc.saturating_add(reward_info.earned_amount))
+		.into()
 }
 
 benchmarks! {
@@ -246,17 +257,17 @@ benchmarks! {
 	claim_staking_rewards {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let from_msa = 33;
-		let from_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(31u32.into());
-		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount, false);
+		let boost_amount: BalanceOf<T> = T::MinimumStakingAmount::get();
+		setup_provider_stake::<T>(&caller, &from_msa, boost_amount, false);
 		frame_system::Pallet::<T>::set_block_number(1002u32.into());
-		let current_era: RewardEra = 100u32;
-		set_era_and_reward_pool_at_block::<T>(current_era, 1001u32.into(), 1_000u32.into());
+		let current_era: RewardEra = 100;
+		set_era_and_reward_pool_at_block::<T>(current_era, 1001u32.into(), REWARD_POOL_TOTAL.into());
 		fill_reward_pool_chunks::<T>(current_era);
-		fill_boost_history::<T>(&caller, 1000u32.into(), current_era);
+		fill_boost_history::<T>(&caller, 100u32.into(), current_era);
+		let unclaimed_rewards = unclaimed_rewards_total::<T>(&caller);
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
-		let expected_amount: BalanceOf<T> = 293u32.into();
-		assert_last_event::<T>(Event::<T>::ProviderBoostRewardClaimed {account: caller.clone(), reward_amount: expected_amount}.into());
+		assert_last_event::<T>(Event::<T>::ProviderBoostRewardClaimed {account: caller.clone(), reward_amount: unclaimed_rewards}.into());
 	}
 
 	impl_benchmark_test_suite!(Capacity,
