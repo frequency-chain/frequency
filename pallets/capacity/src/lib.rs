@@ -1056,7 +1056,7 @@ impl<T: Config> Pallet<T> {
 					1usize => {
 						// if there is just one era entry and:
 						// it's for the previous era, it means we've already paid out rewards for that era, or they just staked in the last era.
-						// of if it's for the current era, they only just started staking.
+						// or if it's for the current era, they only just started staking.
 						provider_boost_history
 							.get_entry_for_era(&current_era.saturating_sub(1u32.into()))
 							.is_none() && provider_boost_history

@@ -62,7 +62,7 @@ pub trait Replenishable {
 #[derive(
 	Copy, Clone, Default, Encode, Eq, Decode, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
 )]
-#[scale_info(skip_type_params(T))]
+
 pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
