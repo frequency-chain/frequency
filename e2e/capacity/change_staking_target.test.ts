@@ -43,14 +43,4 @@ describe("Capacity: change_staking_target", function() {
         return true;
     });
   });
-
-  it("foo", async function(){
-    const fundedKeys: KeyringPair  =  await createAndFundKeypair(fundingSource, 100_000_000n);
-    const receiverKeys: KeyringPair = await createAndFundKeypair(fundingSource);
-    const accountPKey = fundedKeys.publicKey;
-    const nonce = await getNonce(fundedKeys);
-
-    const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100n);
-    transferCalls.signAndSend(fundedKeys);
-  });
 });

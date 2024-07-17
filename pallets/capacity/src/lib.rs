@@ -1048,9 +1048,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
-		let history_opt = Self::get_staking_history_for(account);
 		let current_era = Self::get_current_era().era_index;
-		match history_opt {
+		match Self::get_staking_history_for(account) {
 			Some(provider_boost_history) => {
 				match provider_boost_history.count() {
 					0usize => false,
