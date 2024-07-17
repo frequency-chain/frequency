@@ -36,7 +36,7 @@ export async function createPasskeyPayload(
   passKeyPrivateKey: Uint8Array,
   passKeyPublicKey: Uint8Array,
   passkeyCallPayload: any = {},
-  bad: boolean = false
+  set_invalid_passkey_data: boolean = false
 ) {
   const authenticatorDataRaw = 'WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA';
   const replacedClientDataRaw =
@@ -45,7 +45,7 @@ export async function createPasskeyPayload(
   let clientData = base64UrlToUint8Array(replacedClientDataRaw);
   let authenticatorData = base64UrlToUint8Array(authenticatorDataRaw);
 
-  if (bad) {
+  if (set_invalid_passkey_data) {
     authenticatorData = new Uint8Array(0);
     clientData = new Uint8Array(0);
   }
