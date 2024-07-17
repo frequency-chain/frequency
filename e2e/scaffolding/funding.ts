@@ -29,6 +29,7 @@ export const fundingSources = [
   'stateful-storage-handle-sig-req',
   'sudo-transactions',
   'time-release',
+  'passkey-proxy',
 ] as const;
 
 // Get the correct key for this Funding Source
