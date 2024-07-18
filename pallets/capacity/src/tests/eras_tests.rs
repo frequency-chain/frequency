@@ -172,11 +172,20 @@ fn get_chunk_index_for_era_works() {
 				TestCase { era: 5, expected: 1 },
 				TestCase { era: 6, expected: 1 },
 				TestCase { era: 7, expected: 2 },
+				TestCase { era: 8, expected: 2 },
+				TestCase { era: 9, expected: 2 },
+				TestCase { era: 10, expected: 3 },
 				TestCase { era: 11, expected: 3 },
+				TestCase { era: 12, expected: 3 },
+				TestCase { era: 13, expected: 4 }, // This is not wrong; there is an extra chunk to leave space for cycling
+				TestCase { era: 14, expected: 4 },
 				TestCase { era: 15, expected: 4 },
-				TestCase { era: 16, expected: 0 },
+				TestCase { era: 16, expected: 0 }, // So cycle restarts here, not at 13.
+				TestCase { era: 17, expected: 0 },
+				TestCase { era: 18, expected: 0 },
 				TestCase { era: 22, expected: 2 },
 				TestCase { era: 55, expected: 3 },
+				TestCase { era: 999, expected: 2 },
 			]
 		} {
 			assert_eq!(Capacity::get_chunk_index_for_era(test.era), test.expected, "{:?}", test);

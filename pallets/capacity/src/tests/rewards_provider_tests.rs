@@ -1,14 +1,15 @@
 use super::mock::*;
 use crate::{
-	Config, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardsProvider,
-	StakingType::*, UnclaimedRewardInfo,
-};
-use frame_support::{assert_ok, traits::Len};
-
-use crate::tests::testing_utils::{
-	run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
+	tests::testing_utils::{
+		run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
+	},
+	BalanceOf, Config, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardsProvider,
+	StakingType::*,
+	UnclaimedRewardInfo,
 };
 use common_primitives::msa::MessageSourceId;
+use frame_support::{assert_ok, traits::Len};
+use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::Get;
 
 // This tests Capacity implementation of the trait, but uses the mock's constants,
@@ -68,7 +69,7 @@ fn era_staking_reward_implementation() {
 }
 
 #[test]
-fn check_for_unclaimed_rewards_returns_empty_set_when_no_staking() {
+fn list_unclaimed_rewards_returns_empty_set_when_no_staking() {
 	new_test_ext().execute_with(|| {
 		let account = 500u64;
 		let history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
@@ -78,7 +79,7 @@ fn check_for_unclaimed_rewards_returns_empty_set_when_no_staking() {
 	})
 }
 #[test]
-fn check_for_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
+fn list_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
 	new_test_ext().execute_with(|| {
 		system_run_to_block(5);
 		set_era_and_reward_pool(5u32, 1u32, 1000u64);
@@ -93,7 +94,7 @@ fn check_for_unclaimed_rewards_returns_empty_set_when_only_staked_this_era() {
 
 // Check that eligible amounts are only for what's staked an entire era.
 #[test]
-fn check_for_unclaimed_rewards_has_eligible_rewards() {
+fn list_unclaimed_rewards_has_eligible_rewards() {
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
 		let target: MessageSourceId = 10;
@@ -118,34 +119,39 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert_eq!(rewards.len(), 5usize);
-		let expected_info: [UnclaimedRewardInfo<Test>; 5] = [
+		let expected_info: [UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>>; 5] = [
 			UnclaimedRewardInfo {
 				reward_era: 1u32,
 				expires_at_block: 130,
+				staked_amount: 1000,
 				eligible_amount: 0,
 				earned_amount: 0,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 2u32,
 				expires_at_block: 140,
+				staked_amount: 2000,
 				eligible_amount: 1000,
 				earned_amount: 4,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 3u32,
 				expires_at_block: 150,
+				staked_amount: 2000,
 				eligible_amount: 2_000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 4u32,
 				expires_at_block: 160,
+				staked_amount: 3000,
 				eligible_amount: 2000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
 				reward_era: 5u32,
 				expires_at_block: 170,
+				staked_amount: 3000,
 				eligible_amount: 3_000,
 				earned_amount: 11,
 			},
@@ -168,6 +174,7 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 			&UnclaimedRewardInfo {
 				reward_era: 13u32,
 				expires_at_block: 250,
+				staked_amount: 3_000,
 				eligible_amount: 3_000,
 				earned_amount: 11,
 			}
@@ -178,7 +185,7 @@ fn check_for_unclaimed_rewards_has_eligible_rewards() {
 // check that if an account boosted and then let it run for more than the number
 // of  history retention eras, eligible rewards are correct.
 #[test]
-fn check_for_unclaimed_rewards_returns_correctly_for_old_single_boost() {
+fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
 		let target: MessageSourceId = 10;
@@ -202,12 +209,14 @@ fn check_for_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		// the earliest era should no longer be stored.
 		for i in 0u32..max_history {
 			let era = i + 2u32;
-			let expected_info: UnclaimedRewardInfo<Test> = UnclaimedRewardInfo {
-				reward_era: era.into(),
-				expires_at_block: (era * 10u32 + 120u32).into(),
-				eligible_amount: 1000,
-				earned_amount: 4,
-			};
+			let expected_info: UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>> =
+				UnclaimedRewardInfo {
+					reward_era: era.into(),
+					expires_at_block: (era * 10u32 + 120u32).into(),
+					staked_amount: 1000,
+					eligible_amount: 1000,
+					earned_amount: 4,
+				};
 			assert_eq!(rewards.get(i as usize).unwrap(), &expected_info);
 		}
 	})
