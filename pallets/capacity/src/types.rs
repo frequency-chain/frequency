@@ -4,7 +4,6 @@ use common_primitives::capacity::RewardEra;
 use frame_support::{
 	pallet_prelude::PhantomData, BoundedVec, EqNoBound, PartialEqNoBound, RuntimeDebugNoBound,
 };
-use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::{
@@ -398,19 +397,19 @@ impl<T: Config> ProviderBoostHistory<T> {
 		if self.count().is_zero() {
 			return None;
 		};
-		// have to save this because calling self.count() after self.0.get_mut produces compiler error
-		let current_count = self.count();
+
+		let current_staking_amount = self.get_last_staking_amount();
+		if current_staking_amount.eq(subtract_amount) && self.count().eq(&1usize) {
+			// Should not get here unless rewards have all been claimed, and provider boost history was
+			// correctly updated. This && condition is to protect stakers against loss of rewards in the
+			// case of some bug with payouts and boost history.
+			return Some(0usize);
+		}
 
 		if let Some(entry) = self.0.get_mut(reward_era) {
 			*entry = entry.saturating_sub(*subtract_amount);
-			// if they unstaked everything and there are no other entries, return 0 count (a lie)
-			// so that the storage can be reaped.
-			if current_count.eq(&1usize) && entry.is_zero() {
-				return Some(0usize);
-			}
 		} else {
 			self.remove_oldest_entry_if_full();
-			let current_staking_amount = self.get_last_staking_amount();
 			if self
 				.0
 				.try_insert(*reward_era, current_staking_amount.saturating_sub(*subtract_amount))
@@ -532,11 +531,6 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// Return the size of the reward pool using the current economic model
 	fn reward_pool_size(total_staked: BalanceOf<T>) -> BalanceOf<T>;
 
-	/// Return the list of unclaimed rewards  for `accountId`, using the current economic model
-	fn staking_reward_totals(
-		account_id: Self::AccountId,
-	) -> Result<BoundedVec<UnclaimedRewardInfo<T>, T::ProviderBoostHistoryLimit>, DispatchError>;
-
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
@@ -548,21 +542,4 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// Return the effective amount when staked for a Provider Boost
 	/// The amount is multiplied by a factor > 0 and < 1.
 	fn capacity_boost(amount: BalanceOf<T>) -> BalanceOf<T>;
-}
-
-/// Result of checking a Boost History item to see if it's eligible for a reward.
-#[derive(
-	Copy, Clone, Encode, Eq, Decode, Default, RuntimeDebug, MaxEncodedLen, PartialEq, TypeInfo,
-)]
-#[scale_info(skip_type_params(T))]
-pub struct UnclaimedRewardInfo<T: Config> {
-	/// The Reward Era for which this reward was earned
-	pub reward_era: RewardEra,
-	/// When this reward expires, i.e. can no longer be claimed
-	pub expires_at_block: BlockNumberFor<T>,
-	/// The amount staked in this era that is eligible for rewards.  Does not count additional amounts
-	/// staked in this era.
-	pub eligible_amount: BalanceOf<T>,
-	/// The amount in token of the reward (only if it can be calculated using only on chain data)
-	pub earned_amount: BalanceOf<T>,
 }

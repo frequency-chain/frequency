@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, UnclaimedRewardInfo,
+	ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -10,8 +10,10 @@ use common_primitives::{
 };
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
-	BoundedVec,
+	traits::{
+		tokens::{fungible::Inspect, WithdrawConsequence},
+		ConstU16, ConstU32, ConstU64,
+	},
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
@@ -151,15 +153,6 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		10_000u64.into()
 	}
 
-	fn staking_reward_totals(
-		_account_id: Self::AccountId,
-	) -> Result<
-		BoundedVec<UnclaimedRewardInfo<Test>, <Test as Config>::ProviderBoostHistoryLimit>,
-		DispatchError,
-	> {
-		Ok(BoundedVec::new())
-	}
-
 	// use the pallet version of the era calculation.
 	fn era_staking_reward(
 		amount_staked: Self::Balance,
@@ -212,6 +205,14 @@ fn initialize_reward_pool() {
 	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
+}
+
+pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
+	T::Currency::balance(who)
+}
+
+pub fn assert_transferable<T: Config>(who: &T::AccountId, amount: BalanceOf<T>) {
+	assert_eq!(T::Currency::can_withdraw(who, amount), WithdrawConsequence::Success);
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
