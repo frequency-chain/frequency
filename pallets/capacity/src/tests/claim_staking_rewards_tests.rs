@@ -6,6 +6,7 @@ use crate::{
 		testing_utils::{run_to_block, setup_provider},
 	},
 	Error,
+	Event,
 	Event::ProviderBoostRewardClaimed,
 	MessageSourceId,
 	StakingType::*,
