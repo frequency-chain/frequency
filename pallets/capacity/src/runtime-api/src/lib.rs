@@ -41,6 +41,3 @@ sp_api::decl_runtime_apis! {
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>>;
 	}
 }
-
-// maybe need to go back to UnclaimedRewardInfo and specify Balance/BlockNumber as generics
-// see compute_capacity_fee_details
