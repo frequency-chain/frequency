@@ -34,6 +34,7 @@ describe('index', function () {
       'MsaRuntimeApi',
       'SchemasRuntimeApi',
       'StatefulStorageRuntimeApi',
+      'CapacityRuntimeApi',
     ]);
   });
 

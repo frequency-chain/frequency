@@ -3644,6 +3644,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-capacity",
+ "pallet-capacity-runtime-api",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -6627,6 +6628,17 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.8.0)",
+]
+
+[[package]]
+name = "pallet-capacity-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "parity-scale-codec",
+ "sp-api",
+ "sp-runtime",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.7.2)",
 ]
 
 [[package]]

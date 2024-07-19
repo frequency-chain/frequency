@@ -8,3 +8,4 @@ export { default as statefulStorage } from './statefulStorage.js';
 export { default as handles } from './handles.js';
 export { default as frequency } from './frequency.js';
 export { default as frequencyTxPayment } from './frequencyTxPayment.js';
+export { default as capacity } from './capacity';
