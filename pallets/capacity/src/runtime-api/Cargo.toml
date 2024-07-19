@@ -1,7 +1,7 @@
 [package]
 name = "pallet-capacity-runtime-api"
 version = "0.0.0"
-description = "A package that adds Runtime Api for the Stateful Storage pallet"
+description = "A package that adds Runtime Api for the Capacity pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
 publish = false
