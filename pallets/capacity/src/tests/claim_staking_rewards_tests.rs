@@ -124,13 +124,13 @@ fn claim_staking_rewards_fails_if_no_available_rewards() {
 		// Nothing will be in history
 		assert_noop!(
 			Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)),
-			Error::<Test>::NothingToClaim
+			Error::<Test>::NoRewardsEligibleToClaim
 		);
 
 		run_to_block(15); // Era is 2, but still not available for staking rewards until era 3.
 		assert_noop!(
 			Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)),
-			Error::<Test>::NothingToClaim
+			Error::<Test>::NoRewardsEligibleToClaim
 		);
 	})
 }

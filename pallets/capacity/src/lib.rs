@@ -412,8 +412,6 @@ pub mod pallet {
 		CollectionBoundExceeded,
 		/// This origin has nothing staked for ProviderBoost.
 		NotAProviderBoostAccount,
-		/// There are no unpaid rewards to claim from ProviderBoost staking.
-		NothingToClaim,
 	}
 
 	#[pallet::hooks]
@@ -583,9 +581,9 @@ pub mod pallet {
 		/// for the target, and gives periodic rewards to origin.
 		/// ### Errors
 		///
-		/// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
-		/// - Returns Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
-		/// - Returns Error::CannotChangeStakingType if the staking account exists and staking_type is MaximumCapacity
+		/// - Error::InvalidTarget if attempting to stake to an invalid target.
+		/// - Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
+		/// - Error::CannotChangeStakingType if the staking account exists and staking_type is MaximumCapacity
 		#[pallet::call_index(5)]
 		#[pallet::weight(T::WeightInfo::provider_boost())]
 		pub fn provider_boost(
@@ -614,7 +612,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Claim all outstanding rewards earned from ProviderBoosting.
+		/// Claim all outstanding Provider Boost rewards, up to ProviderBoostHistoryLimit Reward Eras
+		/// in the past.  Accounts should check for unclaimed rewards before calling this extrinsic
+		/// to avoid needless transaction fees.
+		///  Errors:
+		///     - NotAProviderBoostAccount:  if Origin has nothing staked for ProviderBoost
+		///     - NoRewardsEligibleToClaim:  if Origin has no unclaimed rewards to pay out.
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::claim_staking_rewards())]
 		pub fn claim_staking_rewards(origin: OriginFor<T>) -> DispatchResult {
@@ -1070,7 +1073,8 @@ impl<T: Config> Pallet<T> {
 		} // 1r
 	}
 
-	/// Get all unclaimed rewards information for each eligible Reward Era
+	/// Get all unclaimed rewards information for each eligible Reward Era.
+	/// If no unclaimed rewards, returns empty list.
 	pub fn list_unclaimed_rewards(
 		account: &T::AccountId,
 	) -> Result<
@@ -1210,13 +1214,13 @@ impl<T: Config> Pallet<T> {
 	}
 	fn do_claim_rewards(staker: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
 		let rewards = Self::list_unclaimed_rewards(&staker)?;
-		ensure!(!rewards.len().is_zero(), Error::<T>::NothingToClaim);
+		ensure!(!rewards.len().is_zero(), Error::<T>::NoRewardsEligibleToClaim);
 		let zero_balance: BalanceOf<T> = 0u32.into();
 		let total_to_mint: BalanceOf<T> = rewards
 			.iter()
 			.fold(zero_balance, |acc, reward_info| acc.saturating_add(reward_info.earned_amount))
 			.into();
-		ensure!(total_to_mint.gt(&Zero::zero()), Error::<T>::NothingToClaim);
+		ensure!(total_to_mint.gt(&Zero::zero()), Error::<T>::NoRewardsEligibleToClaim);
 		let _minted_unused = T::Currency::mint_into(&staker, total_to_mint)?;
 
 		let mut new_history: ProviderBoostHistory<T> = ProviderBoostHistory::new();

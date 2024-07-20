@@ -161,21 +161,11 @@ The list below is not inclusive. Other structures and storage may be needed to s
 functionality.
 
 ```rust
+use common_primitives::capacity::RewardEra // a u32
+
 pub trait Config: frame_system::Config {
     // ...
 
-    /// A period of `EraLength` blocks in which a Staking Pool applies and
-    /// when Provider Boost rewards may be earned.
-    type RewardEra:  Parameter
-                + Member
-                + MaybeSerializeDeserialize
-                + MaybeDisplay
-                + AtLeast32BitUnsigned
-                + Default
-                + Copy
-                + sp_std::hash::Hash
-                + MaxEncodedLen
-                + TypeInfo;
     /// The number of blocks in a Staking RewardEra
     type EraLength: Get<u32>;
 
@@ -185,15 +175,21 @@ pub trait Config: frame_system::Config {
     /// The trait providing the ProviderBoost economic model calculations and values
     type RewardsProvider: ProviderBoostRewardsProvider;
 
+    /// A staker may not retarget more than MaxRetargetsPerRewardEra
+    type MaxRetargetsPerRewardEra: Get<u32>;
+
     /// The fixed size of the reward pool in each Reward Era.
     type RewardPoolEachEra: Get<BalanceOf<Self>>;
 
     /// the percentage cap per era of an individual Provider Boost reward
     type RewardPercentCap: Get<Permill>;
 
+    /// The number of chunks of Reward Pool history we expect to store
+    /// MUST be a divisor of [`Self::ProviderBoostHistoryLimit`]
+    type RewardPoolChunkLength: Get<u32>;
 };
 ```
-
+### NEW: Retargets
 
 ### NEW: ProviderBoostRewardPools, CurrentEraProviderBoostTotal
 The storage of the total amount staked for the ProviderBoostHistoryLimit number of eras is divided into chunks of
@@ -215,7 +211,7 @@ new Reward Era, when necessary, during `on_initialize`.
 	pub type CurrentEraProviderBoostTotal<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
 ```
 
-### NEW: CurrentEra, RewardEraInfo
+### NEW: CurrentEraInfo, RewardEraInfo
 
 Incremented, like CurrentEpoch, tracks the current RewardEra number and the block when it started.
 Storage is whitelisted because it's accessed every block and would improperly adversely impact all benchmarks.
@@ -268,6 +264,8 @@ In the case of an increase in stake, `staking_type` MUST be a `ProviderBoost` ty
 This means that a single Account Id (origin) must choose between staking for Maximum Capacity or staking for Provider Boost + Rewards.
 Those who wish to do both types of staking must use two different accounts, one for each purpose.
 
+The event `ProviderBoosted` is emitted with the parameters of the extrinsic on success.
+
 
 ```rust
 pub fn provider_boost(
@@ -277,9 +275,9 @@ pub fn provider_boost(
 ) -> DispatchResult {}
 ```
 
-#### 1. claim_rewards(origin)
+#### 1. claim_staking_rewards(origin)
 Mints and transfers all unclaimed rewards to origin.
-The event `StakingRewardClaimed` is emitted with the parameters of the extrinsic.
+The event `ProviderBoostRewardClaimed` is emitted with the parameters of the extrinsic on success.
 
 
 ```rust
@@ -290,7 +288,7 @@ The event `StakingRewardClaimed` is emitted with the parameters of the extrinsic
 ///     - NotAProviderBoostAccount:  if Origin has nothing staked for ProviderBoost
 ///     - NothingToClaim:  if Origin has no unclaimed rewards to pay out.
 #[pallet::call_index(n)]
-pub fn claim_staking_reward(
+pub fn claim_staking_rewards(
    origin: OriginFor<T>,
 );
 ```
@@ -300,7 +298,7 @@ pub fn claim_staking_reward(
 Changes a staking account detail's target MSA Id to a new one by `amount`
 Rules for this are similar to unstaking; if `amount` would leave less than the minimum staking amount for the `from` target, the entire amount is retargeted.
 No more than `T::MaxUnlockingChunks` staking amounts may be retargeted within this Thawing Period.
-Each call creates one chunk. Emits a `StakingTargetChanged` event with the parameters of the extrinsic.
+Each call creates one chunk. Emits a `StakingTargetChanged` event with the parameters of the extrinsic on success.
 
 ```rust
 /// Sets the target of the staking capacity to a new target.
@@ -330,7 +328,7 @@ pub fn change_staking_target(
 
 #### has_unclaimed_rewards
 
-Returns whether `account_id` can claim a reward at all.
+A shortcut for whether `account_id` can claim a reward at all.
 This function will return false if there is no staker-target relationship.
 Staking accounts may claim rewards:
 
@@ -341,12 +339,24 @@ Staking accounts may claim rewards:
 fn has_unclaimed_rewards(account_id: AccountIdOf<T>) -> bool;
 ```
 
+#### list_unclaimed_rewards
+This is used by the `CapacityRuntimeAPI::list_unclaimed_rewards` function and the `claim_rewards` extrinsic.
+```rust
+/// Get all unclaimed rewards information for each eligible Reward Era.
+/// If no unclaimed rewards, returns empty list.
+pub fn list_unclaimed_rewards(
+    account: &T::AccountId,
+) -> Result<
+    BoundedVec<
+        UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
+        T::ProviderBoostHistoryLimit,
+    >,
+    DispatchError>
+```
+
 ### NEW RPCS
 
-There are no custom RPCs for the Capacity pallet, so that work will need to be done first.
-
-The form of this will depend on whether the rewards calculation for an individual account is done by the node or externally
-with a submitted proof. If externally, then unclaimed rewards would not include an earned amount.
+Only a CapacityRuntimeAPI will be built; custom RPCs are deprecated for Polkadot parachains. Use a state call to access this function.
 
 ```rust
 pub struct UnclaimedRewardInfo<T: Config> {
@@ -361,7 +371,7 @@ pub struct UnclaimedRewardInfo<T: Config> {
 	pub earned_amount: BalanceOf<T>,
 }
 
-/// Check what unclaimed rewards origin has and how long they have left to claim them
-/// If no unclaimed rewards, returns empty list.
-fn check_for_unclaimed_rewards(origin: OriginFor<T>) -> Vec<UnclaimedRewardInfo>;
+    // state_call method: CapacityRuntimeApi_list_unclaimed_rewards
+    /// Get the list of unclaimed rewards information for each eligible Reward Era.
+    fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>>;
 ```
