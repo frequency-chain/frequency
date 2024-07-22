@@ -130,6 +130,7 @@ pub fn create_benchmark_extrinsic(
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
 		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
+		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 	);
 
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(
@@ -146,6 +147,7 @@ pub fn create_benchmark_extrinsic(
 			(),
 			(),
 			(),
+			None,
 		),
 	);
 	let signature = raw_payload.using_encoded(|e| sender.sign(e));

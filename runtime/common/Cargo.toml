@@ -87,3 +87,5 @@ try-runtime = [
   "pallet-proxy/try-runtime",
   "pallet-time-release/try-runtime",
 ]
+
+on-chain-release-build = []

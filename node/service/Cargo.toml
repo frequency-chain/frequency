@@ -31,6 +31,7 @@ cli-opt = { default-features = false, path = "../cli-opt" }
 frame-benchmarking = { workspace = true }
 frame-benchmarking-cli = { workspace = true }
 frame-system = { workspace = true }
+frame-metadata-hash-extension = { workspace = true, optional = true }
 pallet-transaction-payment-rpc = { workspace = true }
 sc-basic-authorship = { workspace = true }
 sc-chain-spec = { workspace = true }
@@ -122,10 +123,10 @@ runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
   "polkadot-service/runtime-benchmarks",
 ]
-frequency = ["frequency-runtime"]
-frequency-no-relay = ["frequency-runtime"]
-frequency-local = ["frequency-runtime"]
-frequency-testnet = ["frequency-runtime"]
+frequency = ["frequency-runtime", "frame-metadata-hash-extension"]
+frequency-no-relay = ["frequency-runtime", "frame-metadata-hash-extension"]
+frequency-local = ["frequency-runtime", "frame-metadata-hash-extension"]
+frequency-testnet = ["frequency-runtime", "frame-metadata-hash-extension"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
