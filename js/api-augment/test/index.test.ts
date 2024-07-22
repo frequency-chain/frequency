@@ -27,6 +27,7 @@ describe('index', function () {
   it('should know about runtime apis', function () {
     const topLevelRuntimeApis = Object.keys((api.registry.knownTypes as any).runtime || {});
     assert.deepEqual(topLevelRuntimeApis, [
+      'CapacityRuntimeApi',
       'AdditionalRuntimeApi',
       'CapacityTransactionPaymentRuntimeApi',
       'HandlesRuntimeApi',
@@ -34,7 +35,6 @@ describe('index', function () {
       'MsaRuntimeApi',
       'SchemasRuntimeApi',
       'StatefulStorageRuntimeApi',
-      'CapacityRuntimeApi',
     ]);
   });
 
