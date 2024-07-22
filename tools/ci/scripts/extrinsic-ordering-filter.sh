@@ -1,55 +1,116 @@
 #!/usr/bin/env bash
-# This script is used in a Github Workflow. It helps filtering out what is interesting
-# when comparing metadata and spot what would require a tx version bump.
 
 FILE=$1
 
-# Higlight indexes that were deleted
-function find_deletions() {
-    echo "\n## Deletions\n"
-    RES=$(cat "$FILE" | grep -n '\[\-\]' | tr -s " ")
-    if [ "$RES" ]; then
-        echo "$RES" | awk '{ printf "%s\\n", $0 }'
-    else
-        echo "n/a"
-    fi
+function find_module_changes() {
+    echo "## Modules"
+    echo "- Added"
+    grep '\[+\] modules:' "$FILE" | sed 's/.*modules: /  - /' || echo "  n/a"
+    echo "- Removed"
+    grep '\[-\] modules:' "$FILE" | sed 's/.*modules: /  - /' || echo "  n/a"
+    echo
 }
 
-# Highlight indexes that have been deleted
-function find_index_changes() {
-    echo "\n## Index changes\n"
-    RES=$(cat "$FILE" | grep -E -n -i 'idx:\s*([0-9]+)\s*(->)\s*([0-9]+)' | tr -s " ")
-    if [ "$RES" ]; then
-        echo "$RES" | awk '{ printf "%s\\n", $0 }'
-    else
-        echo "n/a"
-    fi
+function find_removals() {
+    echo "## Removals"
+    # Find all the modules with changes and pull in all the changes after it
+    grep -n -E '\[.*\] idx: .*\((calls:.*|storage:.*)\)' "$FILE" |
+    while read -r mod_line; do
+        module=$(echo "$mod_line" | sed -E 's/^[0-9]+:[[:space:]]*\[([^]]+)\].*/\1/')
+        mod_line_number=$(echo "$mod_line" | sed -E 's/^([0-9]+):.*/\1/')
+        mod_line_number_plus=$(($mod_line_number + 1))
+        # Find all the [-] lines after that line until the next empty line
+        lines=$(sed -n -E "${mod_line_number_plus},\$ {
+            /\[-\]/ {
+                p
+                a\\
+                |
+            }
+            /^$/ q
+        }" "$FILE")
+        # If some were found, then echo out the header, and the lines
+        if [ -n "$lines" ]; then
+          echo "- $module"
+          echo $lines | tr "|" "\n" |
+          while read -r line; do
+          if [ -n "${line}" ]; then
+            echo "  - ${line}"
+          fi
+          done
+        fi
+    done || echo "  n/a"
+    echo
 }
 
-# Highlight values that decreased
-function find_decreases() {
-    echo "\n## Decreases\n"
-    OUT=$(cat "$FILE" | grep -E -i -o '([0-9]+)\s*(->)\s*([0-9]+)' | awk '$1 > $3 { printf "%s;", $0 }')
-    IFS=$';' LIST=("$OUT")
-    unset RES
-    # for line in "${LIST[@]}"; do
-    for line in ${LIST[@]}; do
-        # RES="$RES\n$(cat "$FILE" | grep -E -i -n $line | tr -s " ")"
-        RES="$RES$(cat "$FILE" | grep -E -i -n $line | tr -s " ")\n"
-    done
-
-    if [ "$RES" ]; then
-        echo "$RES" | awk '{ printf "%s\\n", $0 }' | sort -u -g | uniq
-    else
-        echo "n/a"
-    fi
+function find_changes() {
+    echo "## Changes"
+    # Find all the modules with changes and pull in all the changes after it
+    grep -n -E '\[.*\] idx: .*\((calls:.*|storage:.*)\)' "$FILE" |
+    while read -r mod_line; do
+        module=$(echo "$mod_line" | sed -E 's/^[0-9]+:[[:space:]]*\[([^]]+)\].*/\1/')
+        mod_line_number=$(echo "$mod_line" | sed -E 's/^([0-9]+):.*/\1/')
+        mod_line_number_plus=$(($mod_line_number + 1))
+        # Find all the [extrinsic] lines after that line until the next empty line
+        lines=$(sed -n -E "${mod_line_number_plus},\$ {
+            /\[[^\+-]+\]/ {
+                p
+                a\\
+                |
+            }
+            /^$/ q
+        }" "$FILE")
+        # If some were found, then echo out the header, and the lines
+        if [ -n "$lines" ]; then
+          echo "- $module"
+          echo $lines | tr "|" "\n" |
+          while read -r line; do
+          if [ -n "${line}" ]; then
+            echo "  - ${line}"
+          fi
+          done
+        fi
+    done || echo "  n/a"
+    echo
 }
 
-echo "\n------------------------------ SUMMARY -------------------------------"
-echo "\n⚠️ This filter is here to help spotting changes that should be reviewed carefully."
-echo "\n⚠️ It catches only index changes, deletions and value decreases".
+function find_additions() {
+    echo "## Additions"
+    # Find all the modules with changes and pull in all the changes after it
+    grep -n -E '\[.*\] idx: .*\((calls:.*|storage:.*)\)' "$FILE" |
+    while read -r mod_line; do
+        module=$(echo "$mod_line" | sed -E 's/^[0-9]+:[[:space:]]*\[([^]]+)\].*/\1/')
+        mod_line_number=$(echo "$mod_line" | sed -E 's/^([0-9]+):.*/\1/')
+        mod_line_number_plus=$(($mod_line_number + 1))
+        # Find all the [+] lines after that line until the next empty line
+        lines=$(sed -n -E "${mod_line_number_plus},\$ {
+            /\[\+\]/ {
+                p
+                a\\
+                |
+            }
+            /^$/ q
+        }" "$FILE")
+        # If some were found, then echo out the header, and the lines
+        if [ -n "$lines" ]; then
+          echo "- $module"
+          echo $lines | tr "|" "\n" |
+          while read -r line; do
+          if [ -n "${line}" ]; then
+            echo "  - ${line}"
+          fi
+          done
+        fi
+    done || echo "  n/a"
+    echo
+}
 
-find_deletions "$FILE"
-find_index_changes "$FILE"
-find_decreases "$FILE"
-echo "\n----------------------------------------------------------------------\n"
+echo "------------------------------ SUMMARY -------------------------------"
+echo "⚠️ This filter is here to help spotting changes that should be reviewed carefully."
+echo "⚠️ It catches only index changes, deletions and value decreases."
+echo
+
+find_module_changes "$FILE"
+find_removals "$FILE"
+find_additions "$FILE"
+find_changes "$FILE"
+echo "----------------------------------------------------------------------"

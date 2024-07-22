@@ -45,3 +45,12 @@ The information about the runtimes included in this release can be found below.
 	{{ line | safe }}
 {% endfor -%}
 ```
+
+### Metadata Change Summary vs Mainnet
+
+{% set summary = env.METADATA_CHANGE_SUMMARY | split(pat='|') -%}
+```
+{% for line in summary -%}
+	{{ line | safe }}
+{% endfor -%}
+```

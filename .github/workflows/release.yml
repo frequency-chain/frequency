@@ -586,7 +586,7 @@ jobs:
       - name: Compare Metadata
         timeout-minutes: 10
         run: |
-          CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.55.3 metadata ws://ref-node:9944 ws://test-node:9944"
+          CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.57.1 metadata ws://ref-node:9944 ws://test-node:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
@@ -752,6 +752,7 @@ jobs:
             "${RUNTIME_INFO_MAINNET}" \
             "${RUNTIME_INFO_PASEO}" \
             "${IS_FULL_RELEASE}" \
+            "/tmp/metadata-compare-mainnet.txt" \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
