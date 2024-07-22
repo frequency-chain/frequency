@@ -143,6 +143,8 @@ jobs:
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
           echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
+      - name: Install Components
+        run: rustup component add rust-src
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -228,6 +230,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Build Docs
         run: |
+          rustup component add rust-src
           rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
           RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --features frequency
 
@@ -332,6 +335,8 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | bash -s -- -y
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Install Components
+        run: rustup component add rust-src
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \

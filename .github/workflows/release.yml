@@ -97,6 +97,8 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | HOME=`pwd` bash -s -- -y
           echo "PATH=`pwd`/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Install Components
+        run: rustup component add rust-src
       - name: Update Weights for All Pallets
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
