@@ -106,7 +106,7 @@ jobs:
           git diff
       - name: Commit Updated Weights
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
+        uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
@@ -132,11 +132,11 @@ jobs:
           git diff
       - name: Commit Updated Version
         id: commit-updated-version
-        uses: stefanzweifel/git-auto-commit-action@8756aa072ef5b4a080af5dc8fef36c5d586e521d
+        uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842
         with:
           commit_message: "Update versions for release ${{env.NEW_RELEASE_TAG}}"
       - name: Update Release Version Tag
-        uses: rickstaa/action-create-tag@88dbf7ff6fe2405f8e8f6c6fdfd78829bc631f83
+        uses: rickstaa/action-create-tag@a1c7777fcb2fee4f19b0f283ba888afa11678b72
         with:
           tag: ${{env.NEW_RELEASE_TAG}}
           force_push_tag: true
@@ -668,7 +668,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@6fd5cc6eaf7567dbd0f9666061215bb476f012fc
+        uses: mikepenz/release-changelog-builder-action@32e3c96f29a6532607f638797455e9e98cfc703d
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -745,7 +745,7 @@ jobs:
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
-        uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
+        uses: softprops/action-gh-release@c062e08bd532815e2082a85e87e3ef29c3e6d191
         with:
           name: "[Release Candidate] ${{env.NEW_RELEASE_TAG}}"
           prerelease: true
@@ -857,7 +857,7 @@ jobs:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
       - name: Build and Push Parachain Image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -867,7 +867,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -949,7 +949,7 @@ jobs:
           password: ${{secrets.DOCKERHUB_TOKEN}}
       - name: Build and Push Dev Image
         # if: env.TEST_RUN != 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
@@ -959,7 +959,7 @@ jobs:
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           platforms: ${{matrix.docker-platform}}
