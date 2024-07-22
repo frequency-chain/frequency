@@ -678,11 +678,19 @@ jobs:
             {
               "categories": [
                 {
+                  "title": "### Breaking Changes|n|",
+                  "labels": ["change/breaking"]
+                },
+                {
                   "title": "### Major Changes|n|",
                   "labels": ["change/major"]
+                },
+                {
+                  "title": "### Storage Migrations|n|",
+                  "labels": ["change/storage-migration"]
                 }
               ],
-              "template": "#{{CHANGELOG}}|n||n|### Uncategorized Changes|n||n| #{{UNCATEGORIZED}}",
+              "template": "#{{CHANGELOG}}|n||n|### Additional Changes|n||n| #{{UNCATEGORIZED}}",
               "pr_template": "- #{{TITLE}} ##{{NUMBER}}",
               "empty_template": "- No changes",
               "transformers": [
