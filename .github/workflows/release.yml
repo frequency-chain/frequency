@@ -592,8 +592,8 @@ jobs:
           sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           cat ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}} | egrep -n -i ''
           SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}})
-          echo -e $SUMMARY
-          echo -e $SUMMARY >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
+          echo -e "$SUMMARY"
+          echo -e "$SUMMARY" >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
       - name: Show Result
         working-directory: ${{env.OUTPUT_DIR}}
         run: |
