@@ -1,4 +1,8 @@
+{% if env.IS_FULL_RELEASE == 'true' %}
 This release contains the changes from `{{env.PREVIOUS_RELEASE_TAG}}` to `{{env.NEW_RELEASE_TAG}}`.
+{% else %}
+This release candidate contains the changes from `{{env.PREVIOUS_RELEASE_TAG}}` to `{{env.NEW_RELEASE_TAG}}`.
+{% endif %}
 
 Full changelog: https://github.com/frequency-chain/frequency/compare/{{env.PREVIOUS_RELEASE_TAG}}...{{env.NEW_RELEASE_TAG}}
 
@@ -6,11 +10,13 @@ Full changelog: https://github.com/frequency-chain/frequency/compare/{{env.PREVI
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
 - Polkadot-SDK: `v{{env.POLKADOT_VERSION}}`
 
+{% if env.IS_FULL_RELEASE == 'true' %}
 ## Deployed
 
 - Frequency-Paseo Testnet: [TBD]()
 - Frequency Mainnet: [TBD]()
 
+{% endif %}
 ## What's Changed
 
 {% set changelog = env.CHANGELOG | split(pat='|n|') -%}

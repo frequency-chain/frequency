@@ -745,11 +745,13 @@ jobs:
           CHANGELOG: ${{steps.sanitize-changelog.outputs.sanitized}}
           RUNTIME_INFO_PASEO: ${{steps.get-runtimes-info.outputs.runtime_info_paseo}}
           RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
+          IS_FULL_RELEASE: ${{steps.is-full-release.outputs.is-full-release}}
         run: |
           ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
             "${CHANGELOG}" \
             "${RUNTIME_INFO_MAINNET}" \
             "${RUNTIME_INFO_PASEO}" \
+            "${IS_FULL_RELEASE}" \
             > release-notes.md
       - name: Publish Release Candidate on GitHub
         if: steps.is-full-release.outputs.is-full-release != 'true'
