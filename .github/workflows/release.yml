@@ -589,7 +589,6 @@ jobs:
           CMD="docker run --pull always --net=net-${{env.RELEASE_BRANCH_NAME}} jacogr/polkadot-js-tools:0.57.1 metadata ws://ref-node:9944 ws://test-node:9944"
           echo -e "Running:\n$CMD"
           $CMD >> ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
-          sed -z -i 's/\n\n/\n/g' ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}}
           cat ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}} | egrep -n -i ''
           SUMMARY=$(./tools/ci/scripts/extrinsic-ordering-filter.sh ${{env.OUTPUT_DIR}}/${{env.OUTPUT_FILENAME}})
           echo -e "$SUMMARY"
