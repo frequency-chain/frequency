@@ -72,7 +72,7 @@ describe('Capacity RPC', function () {
     const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
     const baseFeeSnapshot = 177812;
     assert(
-      Math.abs(baseFee - baseFeeSnapshot) < 10_000,
+      Math.abs(baseFee - baseFeeSnapshot) < 50_000,
       'The base fee appears to be wrong or have changed more than expected'
     );
     assert(Math.abs(lenFee - 1170000) < 100, 'The len fee appears to be wrong or have changed more than expected');

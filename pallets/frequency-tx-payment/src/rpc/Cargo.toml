@@ -33,6 +33,7 @@ sc-client-api = { workspace = true }
 [features]
 default = ["std"]
 std = [
+  "sp-core/std",
   "parity-scale-codec/std",
   "sp-api/std",
   "sp-runtime/std",
