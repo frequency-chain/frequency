@@ -768,14 +768,6 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	/// If the staking account total is zero we reap storage, otherwise set the account to the new details.
-	// TODO: do not remove this lock unless both types of staking details are cleared.
-	// fn delete_boosting_account(staker: &T::AccountId) {
-	// 	// otherwise call set_lock for the new value containing only the other type of staking account.
-	// 	T::Currency::remove_lock(STAKING_ID, &staker);
-	// 	BoostingAccountLedger::<T>::remove(&staker);
-	// }
-
 	/// Sets target account details.
 	fn set_target_details_for(
 		staker: &T::AccountId,

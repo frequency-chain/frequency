@@ -251,20 +251,25 @@ fn unstake_errors_not_a_staking_account() {
 fn unstaking_everything_reaps_staking_account() {
 	new_test_ext().execute_with(|| {
 		let staker = 500;
+		let booster = 600;
 		let target = 1;
 		let amount = 20;
 		assert_ok!(Capacity::set_epoch_length(RuntimeOrigin::root(), 10));
 
 		register_provider(target, String::from("WithdrawUnst"));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target, amount));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(booster), target, amount));
 
 		run_to_block(1);
 		// unstake everything
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, 20));
 		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(booster), target, 20));
+		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// it should reap the staking account right away
 		assert!(Capacity::get_staking_account_for(&staker).is_none());
+		assert!(Capacity::get_staking_account_for(&booster).is_none());
 	})
 }
 
