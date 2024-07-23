@@ -37,10 +37,6 @@ describe("Capacity: change_staking_target", function() {
     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, oldProvider, tokenMinStake*6n));
     const notAProvider = 9999;
     const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, notAProvider, tokenMinStake*2n);
-    await assert.rejects(call.signAndSend(),
-      (err) => {
-        assert. strictEqual(err?.name, 'InvalidTarget', `expected InvalidTarget, got ${err?.name}`);
-        return true;
-    });
+    await assert.rejects(call.signAndSend(), { name: 'InvalidTarget' });
   });
 });
