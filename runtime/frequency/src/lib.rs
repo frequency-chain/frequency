@@ -298,6 +298,8 @@ pub type SignedExtra = (
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
+);
 );
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;

@@ -12,7 +12,7 @@ version = "0.0.0"
 targets = ["x86_64-unknown-linux-gnu"]
 
 [build-dependencies]
-substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.8.0"}
+substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
@@ -108,6 +108,7 @@ std = [
   "frame-support/std",
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
+  "frame-metadata-hash-extension/std",
   "log/std",
   "pallet-aura/std",
   "pallet-authorship/std",
@@ -147,6 +148,7 @@ std = [
   "polkadot-runtime-common/std",
   "scale-info/std",
   "serde/std",
+  "substrate-wasm-builder",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
@@ -238,4 +240,7 @@ frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
-on-chain-release-build = ["sp-api/disable-logging"]
+on-chain-release-build = ["sp-api/disable-logging", "metadata-hash"]
+
+# Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
+metadata-hash = ["substrate-wasm-builder?/metadata-hash"]

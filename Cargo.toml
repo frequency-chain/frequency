@@ -116,6 +116,7 @@ serde_json = { version = "1.0.86", default-features = false }
 tokio = { version = "1.25.0", default-features = false }
 unicode-normalization = { version = "0.1.22", default-features = false }
 clap = { version = "4.2.5", features = ["derive"] }
+frame-metadata-hash-extension = { version = "0.1.0", default-features = false }
 
 frame-benchmarking-cli = { version = "34.0.0" }
 pallet-transaction-payment-rpc = { version = "32.0.0" }
@@ -152,6 +153,7 @@ sp-wasm-interface = { version = "20.0.0" }
 sp-metadata-ir = { version = "0.6.0" }
 substrate-build-script-utils = { version = "11.0.0" }
 substrate-test-utils = { version = "3.0.0" }
+substrate-wasm-builder = { version = "18.0.1" }
 
 substrate-frame-rpc-system = { version = "30.0.0" }
 substrate-prometheus-endpoint = { version = "0.17.0" }
