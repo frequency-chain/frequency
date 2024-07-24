@@ -241,7 +241,7 @@ frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
-on-chain-release-build = ["sp-api/disable-logging", "metadata-hash"]
+on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 
 # Enable metadata hash generation at compile time for the `CheckMetadataHash` extension.
-metadata-hash = ["substrate-wasm-builder?/metadata-hash"]
+metadata-hash = ["substrate-wasm-builder/metadata-hash"]
