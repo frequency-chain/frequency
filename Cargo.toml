@@ -25,7 +25,7 @@ parity-scale-codec = { version = "3.6.12", default-features = false }
 frame-benchmarking = { version = "30.0.0", default-features = false }
 frame-executive = { version = "30.0.0", default-features = false }
 frame-support = { version = "30.0.0", default-features = false }
-# frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.8.0", default-features = false }
+frame-metadata-hash-extension = { version = "0.1.0", default-features = false }
 frame-system = { version = "30.0.0", default-features = false }
 frame-system-benchmarking = { version = "30.0.0", default-features = false }
 frame-system-rpc-runtime-api = { version = "28.0.0", default-features = false }
@@ -155,6 +155,7 @@ substrate-test-utils = { version = "3.0.0" }
 
 substrate-frame-rpc-system = { version = "30.0.0" }
 substrate-prometheus-endpoint = { version = "0.17.0" }
+substrate-wasm-builder = { version = "18.0.1" }
 try-runtime-cli = { version = "0.40.0" }
 
 [profile.release]
