@@ -32,7 +32,7 @@ fn schemas_migration_to_v4_should_work_as_expected() {
 		let _ = v4::migrate_to_v4::<Test>();
 
 		// Assert
-		let current_version = SchemasPallet::current_storage_version();
+		let current_version = SchemasPallet::in_code_storage_version();
 		assert_eq!(current_version, StorageVersion::new(4));
 
 		let known_schemas = v4::get_known_schemas::<Test>();

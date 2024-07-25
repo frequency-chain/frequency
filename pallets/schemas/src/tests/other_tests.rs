@@ -14,6 +14,7 @@ use common_primitives::{
 use frame_support::{
 	assert_noop, assert_ok, dispatch::RawOrigin, traits::ChangeMembers, weights::Weight, BoundedVec,
 };
+use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
@@ -794,7 +795,7 @@ fn propose_to_create_schema_v2_happy_path() {
 
 		let proposal_index = proposed_events[0].0;
 		let proposal_hash = proposed_events[0].1;
-		let proposal = Council::proposal_of(proposal_hash).unwrap();
+		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// Set up the council members
@@ -943,7 +944,7 @@ fn propose_to_create_schema_name_happy_path() {
 
 		let proposal_index = proposed_events[0].0;
 		let proposal_hash = proposed_events[0].1;
-		let proposal = Council::proposal_of(proposal_hash).unwrap();
+		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// Set up the council members

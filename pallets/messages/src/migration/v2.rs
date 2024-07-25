@@ -105,7 +105,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV2<T> {
 pub fn migrate_to_v2<T: Config>() -> Weight {
 	log::info!(target: LOG_TARGET, "Running storage migration...");
 	let onchain_version = Pallet::<T>::on_chain_storage_version();
-	let current_version = Pallet::<T>::current_storage_version();
+	let current_version = Pallet::<T>::in_code_storage_version();
 	log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
 
 	if onchain_version < 2 {

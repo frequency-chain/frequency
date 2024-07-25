@@ -668,7 +668,7 @@ fn migration_to_v2_should_work_as_expected() {
 
 		let old_count = v2::old::Messages::<Test>::iter().count();
 		let new_count = MessagesV2::<Test>::iter().count();
-		let current_version = MessagesPallet::current_storage_version();
+		let current_version = MessagesPallet::in_code_storage_version();
 
 		assert_eq!(old_count, 0);
 		assert_eq!(new_count, message_per_block.iter().sum::<usize>());
