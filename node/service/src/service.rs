@@ -8,7 +8,7 @@ use sc_client_api::Backend;
 use std::{sync::Arc, time::Duration};
 
 use cumulus_client_cli::CollatorOptions;
-use frequency_runtime::RuntimeApi;
+use frequency_runtime::apis::RuntimeApi;
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
@@ -77,7 +77,7 @@ pub mod frequency_executor {
 		type ExtendHostFunctions = cumulus_client_service::storage_proof_size::HostFunctions;
 
 		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
-			frequency_runtime::api::dispatch(method, data)
+			frequency_runtime::apis::api::dispatch(method, data)
 		}
 
 		fn native_version() -> sc_executor::NativeVersion {
