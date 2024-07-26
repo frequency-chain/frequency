@@ -5,6 +5,7 @@ use common_primitives::{
 	schema::{ModelType, PayloadLocation, SchemaId, SchemaSetting},
 };
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers, weights::Weight, BoundedVec};
+use pallet_collective::ProposalOf;
 use parity_scale_codec::Encode;
 use serial_test::serial;
 
@@ -107,7 +108,7 @@ fn propose_to_create_schema_happy_path() {
 
 		let proposal_index = proposed_events[0].0;
 		let proposal_hash = proposed_events[0].1;
-		let proposal = Council::proposal_of(proposal_hash).unwrap();
+		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// Set up the council members

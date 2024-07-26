@@ -31,6 +31,11 @@ use sp_runtime::{
 	ApplyExtrinsicResult, DispatchError,
 };
 
+use pallet_collective::Members;
+
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use pallet_collective::ProposalCount;
+
 use parity_scale_codec::Encode;
 
 use sp_std::prelude::*;
@@ -114,14 +119,15 @@ impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
 		who: AccountId,
 		proposal: Box<RuntimeCall>,
 	) -> Result<(u32, u32), DispatchError> {
-		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
+		let members = Members::<Runtime, CouncilCollective>::get();
+		let threshold: u32 = ((members.len() / 2) + 1) as u32;
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32 {
-		Council::proposal_count()
+		ProposalCount::<Runtime, CouncilCollective>::get()
 	}
 }
 
@@ -357,7 +363,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 98,
+	spec_version: 99,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -371,7 +377,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 98,
+	spec_version: 99,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -468,6 +474,16 @@ impl frame_system::Config for Runtime {
 	#[cfg(feature = "frequency-no-relay")]
 	type OnSetCode = ();
 	type MaxConsumers = FrameSystemMaxConsumers;
+	///  A new way of configuring migrations that run in a single block.
+	type SingleBlockMigrations = ();
+	/// The migrator that is used to run Multi-Block-Migrations.
+	type MultiBlockMigrator = ();
+	/// A callback that executes in *every block* directly before all inherents were applied.
+	type PreInherents = ();
+	/// A callback that executes in *every block* directly after all inherents were applied.
+	type PostInherents = ();
+	/// A callback that executes in *every block* directly after all transactions were applied.
+	type PostTransactions = ();
 }
 
 impl pallet_msa::Config for Runtime {
@@ -1289,7 +1305,7 @@ impl_runtime_apis! {
 			Executive::execute_block(block)
 		}
 
-		fn initialize_block(header: &<Block as BlockT>::Header) {
+		fn initialize_block(header: &<Block as BlockT>::Header) -> sp_runtime::ExtrinsicInclusionMode {
 			Executive::initialize_block(header)
 		}
 	}
