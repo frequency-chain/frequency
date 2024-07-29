@@ -1,6 +1,6 @@
 [package]
 name = "pallet-frequency-tx-payment-runtime-api"
-version = "0.0.0"
+version = "0.0.1-rc8+polkadot1.9.0"
 description = "A package that adds Runtime Api for payment pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
