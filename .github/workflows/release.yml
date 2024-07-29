@@ -349,6 +349,7 @@ jobs:
       - name: Build Docs
         run: |
           rustup target add wasm32-unknown-unknown --toolchain nightly-2024-03-01
+          rustup component add rust-src --toolchain nightly-2024-03-01
           RUSTDOCFLAGS="--enable-index-page -Zunstable-options" cargo +nightly-2024-03-01 doc --no-deps --workspace --features frequency
       - name: Fix file permissions
         shell: sh
