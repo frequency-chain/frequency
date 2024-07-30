@@ -21,7 +21,7 @@ import { Vec } from '@polkadot/types';
 
 const fundingSource = getFundingSource('capacity-list-unclaimed-rewards');
 
-describe('Capacity: list_unclaimed_rewards', function() {
+describe('Capacity: list_unclaimed_rewards', function () {
   const providerBalance = 2n * DOLLARS;
 
   const setUpForBoosting = async (boosterName: string, providerName: string): Promise<[number, KeyringPair]> => {
@@ -33,10 +33,9 @@ describe('Capacity: list_unclaimed_rewards', function() {
     return [provider.toNumber(), booster];
   };
 
-  it('can be called', async function() {
-    const [_provider, booster] = await setUpForBoosting("booster1", "provider1");
-    const result = ExtrinsicHelper.api.rpc.state.call(
-      'CapacityRuntimeApi_list_unclaimed_rewards', booster.address);
+  it('can be called', async function () {
+    const [_provider, booster] = await setUpForBoosting('booster1', 'provider1');
+    const result = ExtrinsicHelper.api.rpc.state.call('CapacityRuntimeApi_list_unclaimed_rewards', booster.address);
     let count = 0;
     const subscription = result.subscribe((x) => {
       count++;
@@ -47,11 +46,11 @@ describe('Capacity: list_unclaimed_rewards', function() {
     assert(count === 0, `should have been empty but had ${count} items`);
   });
 
-  it('returns correct rewards after enough eras have passed', async function() {
+  it('returns correct rewards after enough eras have passed', async function () {
     if (isTestnet()) {
       this.skip();
     }
-    const [_provider, booster] = await setUpForBoosting("booster2", "provider2");
+    const [_provider, booster] = await setUpForBoosting('booster2', 'provider2');
     console.debug(`Booster pubkey: ${booster.address}`);
 
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
@@ -61,14 +60,21 @@ describe('Capacity: list_unclaimed_rewards', function() {
     const encodedAddr = ExtrinsicHelper.api.registry.createType('AccountId32', booster.address);
 
     const result = await ExtrinsicHelper.apiPromise.rpc.state.call(
-      'CapacityRuntimeApi_list_unclaimed_rewards', encodedAddr);
+      'CapacityRuntimeApi_list_unclaimed_rewards',
+      encodedAddr
+    );
 
-    const decResult: Vec<UnclaimedRewardInfo> = ExtrinsicHelper.api.registry.createType('Vec<UnclaimedRewardInfo>', result);
+    const decResult: Vec<UnclaimedRewardInfo> = ExtrinsicHelper.api.registry.createType(
+      'Vec<UnclaimedRewardInfo>',
+      result
+    );
     let count = 0;
-    assert(decResult.every(item => {
-      count++;
-      return item.staked_amount.toHuman() === '1.0000 UNIT';
-    }));
+    assert(
+      decResult.every((item) => {
+        count++;
+        return item.staked_amount.toHuman() === '1.0000 UNIT';
+      })
+    );
     assert.equal(count, 3);
 
     assert.equal(decResult[0].eligible_amount.toHuman(), '1.0000 UNIT');

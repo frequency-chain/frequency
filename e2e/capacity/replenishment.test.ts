@@ -23,7 +23,6 @@ import { isTestnet } from '../scaffolding/env';
 const fundingSource = getFundingSource('capacity-replenishment');
 
 describe('Capacity Replenishment Testing: ', function () {
-
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
     const stakeKeys = createKeys(name);
     const stakeProviderId = await createMsaAndProvider(fundingSource, stakeKeys, 'ReplProv', 50n * DOLLARS);
@@ -35,7 +34,6 @@ describe('Capacity Replenishment Testing: ', function () {
   before(async function () {
     // Replenishment requires the epoch length to be shorter than testnet (set in globalHooks)
     if (isTestnet()) this.skip();
-
   });
 
   describe('Capacity is replenished', function () {
