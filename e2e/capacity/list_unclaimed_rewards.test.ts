@@ -19,7 +19,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { UnclaimedRewardInfo } from '@frequency-chain/api-augment/interfaces';
 import { Vec } from '@polkadot/types';
 
-const fundingSource = getFundingSource('capacity-replenishment');
+const fundingSource = getFundingSource('capacity-list-unclaimed-rewards');
 
 describe('Capacity: list_unclaimed_rewards', function() {
   const providerBalance = 2n * DOLLARS;
