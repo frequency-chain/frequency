@@ -6,7 +6,7 @@ import {
   CENTS, DOLLARS, createAndFundKeypair, boostProvider,
 } from '../scaffolding/helpers';
 
-const fundingSource = getFundingSource('capacity-replenishment');
+const fundingSource = getFundingSource('capacity-provider-boost');
 
 describe("Capacity: provider_boost extrinsic", function() {
   const providerBalance = 2n * DOLLARS;
