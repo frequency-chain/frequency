@@ -1,5 +1,6 @@
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers};
 
+use pallet_collective::ProposalOf;
 use sp_weights::Weight;
 
 use pretty_assertions::assert_eq;
@@ -52,7 +53,7 @@ fn propose_to_be_provider_happy_path() {
 
 		let proposal_index = proposed_events[0].0;
 		let proposal_hash = proposed_events[0].1;
-		let proposal = Council::proposal_of(proposal_hash).unwrap();
+		let proposal = ProposalOf::<Test, CouncilCollective>::get(proposal_hash).unwrap();
 		let proposal_len: u32 = proposal.encoded_size() as u32;
 
 		// Set up the council members

@@ -10,7 +10,7 @@ use parity_scale_codec::MaxEncodedLen;
 
 use common_primitives::node::AccountId;
 use common_runtime::constants::DAYS;
-use pallet_collective;
+use pallet_collective::{self, Members};
 use smallvec::smallvec;
 use sp_core::{parameter_types, Encode, H256};
 use sp_runtime::{
@@ -49,7 +49,7 @@ impl MaxEncodedLen for SchemaModelMaxBytesBoundedVecLimit {
 	}
 }
 
-type CouncilCollective = pallet_collective::Instance1;
+pub type CouncilCollective = pallet_collective::Instance1;
 impl pallet_collective::Config<CouncilCollective> for Test {
 	type RuntimeOrigin = RuntimeOrigin;
 	type Proposal = RuntimeCall;
@@ -98,14 +98,16 @@ impl pallet_schemas::ProposalProvider<AccountId, RuntimeCall> for CouncilProposa
 		who: AccountId,
 		proposal: Box<RuntimeCall>,
 	) -> Result<(u32, u32), DispatchError> {
-		let threshold: u32 = ((Council::members().len() / 2) + 1) as u32;
+		let members = Members::<Test, CouncilCollective>::get();
+		let threshold: u32 = ((members.len() / 2) + 1) as u32;
 		let length_bound: u32 = proposal.using_encoded(|p| p.len() as u32);
 		Council::do_propose_proposed(who, threshold, proposal, length_bound)
 	}
 
 	#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 	fn proposal_count() -> u32 {
-		Council::proposal_count()
+		use pallet_collective::ProposalCount;
+		ProposalCount::<Test, CouncilCollective>::get()
 	}
 }
 
@@ -155,6 +157,11 @@ impl frame_system::Config for Test {
 	type SS58Prefix = ConstU16<42>;
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
+	type SingleBlockMigrations = ();
+	type MultiBlockMigrator = ();
+	type PreInherents = ();
+	type PostInherents = ();
+	type PostTransactions = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

@@ -68,10 +68,13 @@ pub mod frequency_executor {
 
 	impl sc_executor::NativeExecutionDispatch for FrequencyExecutorDispatch {
 		#[cfg(feature = "runtime-benchmarks")]
-		type ExtendHostFunctions = frame_benchmarking::benchmarking::HostFunctions;
+		type ExtendHostFunctions = (
+			frame_benchmarking::benchmarking::HostFunctions,
+			cumulus_client_service::storage_proof_size::HostFunctions,
+		);
 
 		#[cfg(not(feature = "runtime-benchmarks"))]
-		type ExtendHostFunctions = ();
+		type ExtendHostFunctions = cumulus_client_service::storage_proof_size::HostFunctions;
 
 		fn dispatch(method: &str, data: &[u8]) -> Option<Vec<u8>> {
 			frequency_runtime::api::dispatch(method, data)
