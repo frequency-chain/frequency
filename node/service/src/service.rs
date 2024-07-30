@@ -13,6 +13,7 @@ use frequency_runtime::RuntimeApi;
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 use jsonrpsee::RpcModule;
+use substrate_prometheus_endpoint::Registry;
 
 // Cumulus Imports
 use cumulus_client_collator::service::CollatorService;
@@ -48,7 +49,6 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_blockchain::HeaderBackend;
 use sp_keystore::KeystorePtr;
-use substrate_prometheus_endpoint::Registry;
 
 type FullBackend = TFullBackend<Block>;
 
