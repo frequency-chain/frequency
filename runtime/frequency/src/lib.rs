@@ -288,10 +288,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) => true,
 
-			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
-			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
-			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) |
-			RuntimeCall::Capacity(_) => true,
+			RuntimeCall::Balances(_) | RuntimeCall::Capacity(_) => true,
 			_ => false,
 		}
 	}
