@@ -284,10 +284,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) => true,
 
-			RuntimeCall::Balances(pallet_balances::Call::transfer_keep_alive { .. }) |
-			RuntimeCall::Balances(pallet_balances::Call::transfer_allow_death { .. }) |
-			RuntimeCall::Balances(pallet_balances::Call::transfer_all { .. }) |
-			RuntimeCall::Capacity(_) => true,
+			RuntimeCall::Balances(_) | RuntimeCall::Capacity(_) => true,
 			_ => false,
 		}
 	}
@@ -365,7 +362,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 101,
+	spec_version: 102,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -379,7 +376,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 101,
+	spec_version: 102,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
