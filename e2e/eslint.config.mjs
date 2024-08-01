@@ -3,13 +3,30 @@
 import eslint from '@eslint/js';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
-import mochaPlugin from 'eslint-plugin-mocha';
+import mocha from 'eslint-plugin-mocha';
+
+// Needed for eslint 9
+const mochaConfig = [
+  {
+    name: 'mocha/recommended',
+    languageOptions: {
+      globals: globals.mocha,
+    },
+    plugins: {
+      mocha,
+    },
+    rules: mocha.configs.flat.recommended.rules,
+  },
+];
 
 export default tseslint.config(
   eslint.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
-  mochaPlugin.configs.flat.recommended,
+  ...mochaConfig,
+  {
+    ignores: ['dist/'],
+  },
   {
     languageOptions: {
       globals: { ...globals.node },
