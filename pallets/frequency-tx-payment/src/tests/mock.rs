@@ -7,7 +7,7 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_system::EnsureSigned;
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
@@ -192,7 +192,7 @@ impl WeightToFeeTrait for TransactionByteFee {
 
 impl pallet_transaction_payment::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();

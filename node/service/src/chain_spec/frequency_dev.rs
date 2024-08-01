@@ -33,46 +33,11 @@ pub fn development_config() -> ChainSpec {
 	.with_chain_type(ChainType::Development)
 	.with_protocol_id("dev")
 	.with_genesis_config(development_genesis(
-		// initial collators.
-		vec![
-			(
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
-				get_collator_keys_from_seed("Alice"),
-			),
-			(
-				get_account_id_from_seed::<sr25519::Public>("Bob"),
-				get_collator_keys_from_seed("Bob"),
-			),
-		],
-		// Sudo
-		Some(get_account_id_from_seed::<sr25519::Public>("Alice")),
-		// Endowed Accounts
-		vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie"),
-			get_account_id_from_seed::<sr25519::Public>("Dave"),
-			get_account_id_from_seed::<sr25519::Public>("Eve"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-			get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-			get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
-			common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
-		],
-		// Council members
-		vec![
-			get_account_id_from_seed::<sr25519::Public>("Alice"),
-			get_account_id_from_seed::<sr25519::Public>("Charlie"),
-			get_account_id_from_seed::<sr25519::Public>("Eve"),
-		],
-		// Technical Committee members
-		vec![
-			get_account_id_from_seed::<sr25519::Public>("Bob"),
-			get_account_id_from_seed::<sr25519::Public>("Dave"),
-		],
+		development_invulnerables(),
+		development_root(),
+		development_endowed_accounts(),
+		development_council_members(),
+		development_technical_committee_members(),
 		// ParaId
 		1000.into(),
 	))
@@ -94,7 +59,7 @@ fn load_genesis_schemas() -> Vec<frequency_runtime::pallet_schemas::GenesisSchem
 #[allow(clippy::unwrap_used)]
 fn development_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
-	root_key: Option<AccountId>,
+	root_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
 	council_members: Vec<AccountId>,
 	technical_committee_members: Vec<AccountId>,
@@ -134,7 +99,7 @@ fn development_genesis(
 		parachain_system: Default::default(),
 		sudo: SudoConfig {
 			// Assign network admin rights.
-			key: root_key,
+			key: Some(root_key),
 		},
 		schemas: frequency_runtime::pallet_schemas::GenesisConfig {
 			initial_schemas: load_genesis_schemas(),
@@ -151,4 +116,51 @@ fn development_genesis(
 	};
 
 	serde_json::to_value(&genesis).unwrap()
+}
+
+fn development_endowed_accounts() -> Vec<AccountId> {
+	vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+		get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+		get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+		common_runtime::constants::TREASURY_PALLET_ID.into_account_truncating(),
+	]
+}
+
+fn development_invulnerables() -> Vec<(AccountId, AuraId)> {
+	vec![
+		(
+			get_account_id_from_seed::<sr25519::Public>("Alice"),
+			get_collator_keys_from_seed("Alice"),
+		),
+		(get_account_id_from_seed::<sr25519::Public>("Bob"), get_collator_keys_from_seed("Bob")),
+	]
+}
+
+fn development_root() -> AccountId {
+	get_account_id_from_seed::<sr25519::Public>("Alice")
+}
+
+fn development_council_members() -> Vec<AccountId> {
+	vec![
+		get_account_id_from_seed::<sr25519::Public>("Alice"),
+		get_account_id_from_seed::<sr25519::Public>("Charlie"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
+	]
+}
+
+fn development_technical_committee_members() -> Vec<AccountId> {
+	vec![
+		get_account_id_from_seed::<sr25519::Public>("Bob"),
+		get_account_id_from_seed::<sr25519::Public>("Dave"),
+	]
 }
