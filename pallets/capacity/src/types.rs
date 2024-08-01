@@ -306,7 +306,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// returns the range of 		eras in this chunk
-	/// Used in testing
+	#[cfg(test)]
 	pub fn era_range(&self) -> (RewardEra, RewardEra) {
 		let zero_reward_era: RewardEra = Zero::zero();
 		let zero_balance: BalanceOf<T> = Zero::zero();
@@ -325,7 +325,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// Get the earliest reward era stored in this BoundedBTreeMap
-	/// Used only in testing.
+	#[cfg(test)]
 	pub fn earliest_era(&self) -> Option<&RewardEra> {
 		if let Some((first_era, _first_total)) = self.0.first_key_value() {
 			return Some(first_era);

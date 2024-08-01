@@ -26,7 +26,7 @@
 	missing_docs
 )]
 
-use sp_std::ops::Mul;
+use sp_std::{collections::btree_map::BTreeMap, ops::Mul};
 
 use frame_support::{
 	ensure,
@@ -1045,24 +1045,28 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
 		let current_era = Self::get_current_era().era_index;
 		match Self::get_staking_history_for(account) {
-			Some(provider_boost_history) => {
-				match provider_boost_history.count() {
-					0usize => false,
-					1usize => {
-						// if there is just one era entry and:
-						// it's for the previous era, it means we've already paid out rewards for that era, or they just staked in the last era.
-						// or if it's for the current era, they only just started staking.
-						provider_boost_history
-							.get_entry_for_era(&current_era.saturating_sub(1u32.into()))
-							.is_none() && provider_boost_history
-							.get_entry_for_era(&current_era)
-							.is_none()
-					},
-					_ => true,
-				}
-			},
+			Some(provider_boost_history) =>
+				Self::has_unclaimed_rewards_with_params(current_era, &provider_boost_history),
 			None => false,
 		} // 1r
+	}
+
+	pub(crate) fn has_unclaimed_rewards_with_params(
+		current_era_index: u32,
+		boost_history: &ProviderBoostHistory<T>,
+	) -> bool {
+		match boost_history.count() {
+			0usize => false,
+			1usize => {
+				// if there is just one era entry and:
+				// it's for the previous era, it means we've already paid out rewards for that era, or they just staked in the last era.
+				// or if it's for the current era, they only just started staking.
+				boost_history
+					.get_entry_for_era(&current_era_index.saturating_sub(1u32.into()))
+					.is_none() && boost_history.get_entry_for_era(&current_era_index).is_none()
+			},
+			_ => true,
+		}
 	}
 
 	/// Get all unclaimed rewards information for each eligible Reward Era.
@@ -1076,39 +1080,41 @@ impl<T: Config> Pallet<T> {
 		>,
 		DispatchError,
 	> {
-		if !Self::has_unclaimed_rewards(account) {
+		let current_era_info = Self::get_current_era();
+		let staking_history =
+			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?;
+
+		if !Self::has_unclaimed_rewards_with_params(current_era_info.era_index, &staking_history) {
 			return Ok(BoundedVec::new());
 		}
 
-		let staking_history =
-			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
-
-		let current_era_info = Self::get_current_era(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
-		let mut reward_era = current_era_info.era_index.saturating_sub((max_history).into());
+		let start_era = current_era_info.era_index.saturating_sub((max_history).into());
 		let end_era = current_era_info.era_index.saturating_sub(One::one());
 
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
 		let mut previous_amount: BalanceOf<T> =
-			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
+			staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into())));
 
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
 			T::ProviderBoostHistoryLimit,
 		> = BoundedVec::new();
-		while reward_era.le(&end_era) {
+
+		let mut chunk_cache = BTreeMap::new();
+
+		for reward_era in start_era..=end_era {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {
 				let expires_at_era = reward_era.saturating_add(max_history.into());
 				let expires_at_block = Self::block_at_end_of_era(expires_at_era);
-				let eligible_amount = if staked_amount.lt(&previous_amount) {
-					staked_amount
-				} else {
-					previous_amount
-				};
-				let total_for_era =
-					Self::get_total_stake_for_past_era(reward_era, current_era_info.era_index)?;
+				let eligible_amount = staked_amount.min(previous_amount);
+				let total_for_era = Self::get_total_stake_for_past_era_with_caching(
+					reward_era,
+					current_era_info.era_index,
+					&mut chunk_cache,
+				)?;
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
 					eligible_amount,
 					total_for_era,
@@ -1126,7 +1132,6 @@ impl<T: Config> Pallet<T> {
 				// ^^ there's no good reason for this ever to fail in production but it must be handled.
 				previous_amount = staked_amount;
 			}
-			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
 	}
@@ -1146,9 +1151,10 @@ impl<T: Config> Pallet<T> {
 	}
 
 	// Figure out the history chunk that a given era is in and pull out the total stake for that era.
-	pub(crate) fn get_total_stake_for_past_era(
+	pub(crate) fn get_total_stake_for_past_era_with_caching(
 		reward_era: RewardEra,
 		current_era: RewardEra,
+		cache: &mut BTreeMap<u32, RewardPoolHistoryChunk<T>>,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		// Make sure that the past era is not too old
 		let era_range = current_era.saturating_sub(reward_era);
@@ -1159,7 +1165,14 @@ impl<T: Config> Pallet<T> {
 		);
 
 		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era);
-		let reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
+		let reward_pool_chunk = match cache.get(&chunk_idx) {
+			None => {
+				let chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default();
+				cache.insert(chunk_idx, chunk.clone());
+				chunk
+			},
+			Some(reward) => reward.clone(),
+		};
 		let total_for_era =
 			reward_pool_chunk.total_for_era(&reward_era).ok_or(Error::<T>::EraOutOfRange)?;
 		Ok(*total_for_era)
