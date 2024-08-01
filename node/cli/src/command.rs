@@ -5,6 +5,7 @@ use crate::{
 	cli::{Cli, RelayChainCli, Subcommand},
 };
 use common_primitives::node::Block;
+use cumulus_client_service::storage_proof_size::HostFunctions as ReclaimHostFunctions;
 use frame_benchmarking_cli::BenchmarkCmd;
 use frequency_service::{
 	chain_spec,
@@ -338,7 +339,9 @@ pub fn run() -> Result<()> {
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
-						runner.sync_run(|config| cmd.run::<HashingFor<Block>, ()>(config))
+						runner.sync_run(|config| {
+							cmd.run::<HashingFor<Block>, ReclaimHostFunctions>(config)
+						})
 					} else {
 						return Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."
