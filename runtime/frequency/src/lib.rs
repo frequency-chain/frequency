@@ -298,6 +298,7 @@ pub type SignedExtra = (
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
+	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
