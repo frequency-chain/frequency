@@ -91,6 +91,7 @@ cumulus-pallet-aura-ext = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-session-benchmarking = { workspace = true }
 cumulus-primitives-core = { workspace = true }
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
@@ -105,6 +106,7 @@ std = [
   "cumulus-primitives-aura/std",
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
+  "cumulus-primitives-storage-weight-reclaim/std",
   "frame-executive/std",
   "frame-support/std",
   "frame-system-rpc-runtime-api/std",
