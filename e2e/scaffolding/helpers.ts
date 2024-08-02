@@ -497,7 +497,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const op = await ExtrinsicHelper.createSchemaV3(
+    const op = ExtrinsicHelper.createSchemaV3(
       source,
       AVRO_GRAPH_CHANGE,
       'AvroBinary',

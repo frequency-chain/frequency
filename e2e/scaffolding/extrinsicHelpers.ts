@@ -507,7 +507,6 @@ export class ExtrinsicHelper {
   }
 
   public static deletePublicKey(keys: KeyringPair, publicKey: Uint8Array) {
-    ExtrinsicHelper.api.query.msa;
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.deleteMsaPublicKey(publicKey),
       keys,
