@@ -4,8 +4,6 @@ export default {
   },
   types: {
     RewardEra: 'u32',
-    Balance: 'u128',
-    BlockNumber: 'u32',
     UnclaimedRewardInfo: {
       reward_era: 'RewardEra',
       expires_at_block: 'BlockNumber',
