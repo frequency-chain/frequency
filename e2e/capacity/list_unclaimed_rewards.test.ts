@@ -1,23 +1,17 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import {
   createKeys,
   createMsaAndProvider,
-  stakeToProvider,
-  CENTS,
   DOLLARS,
   createAndFundKeypair,
-  createProviderKeysAndId,
   boostProvider,
-  getNextEpochBlock,
   getNextRewardEraBlock,
 } from '../scaffolding/helpers';
 import { isTestnet } from '../scaffolding/env';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { UnclaimedRewardInfo } from '@frequency-chain/api-augment/interfaces';
-import { Vec } from '@polkadot/types';
 
 const fundingSource = getFundingSource('capacity-list-unclaimed-rewards');
 
@@ -35,15 +29,8 @@ describe('Capacity: list_unclaimed_rewards', function () {
 
   it('can be called', async function () {
     const [_provider, booster] = await setUpForBoosting('booster1', 'provider1');
-    const result = ExtrinsicHelper.api.rpc.state.call('CapacityRuntimeApi_list_unclaimed_rewards', booster.address);
-    let count = 0;
-    const subscription = result.subscribe((x) => {
-      count++;
-    });
-    //  Failing to do this results in "helpful" error:
-    //  `Bad input data provided to list_unclaimed_rewards: Input buffer has still data left after decoding!`
-    subscription.unsubscribe();
-    assert(count === 0, `should have been empty but had ${count} items`);
+    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(booster.address);
+    assert.equal(result.length, 0, `result should have been empty but had ${result.length} items`);
   });
 
   it('returns correct rewards after enough eras have passed', async function () {
@@ -53,37 +40,33 @@ describe('Capacity: list_unclaimed_rewards', function () {
     const [_provider, booster] = await setUpForBoosting('booster2', 'provider2');
     console.debug(`Booster pubkey: ${booster.address}`);
 
+    // Move out of the era we boosted inside of
+    await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
+    // Have three eras where we get rewards
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
 
-    const encodedAddr = ExtrinsicHelper.api.registry.createType('AccountId32', booster.address);
+    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(booster.address);
 
-    const result = await ExtrinsicHelper.apiPromise.rpc.state.call(
-      'CapacityRuntimeApi_list_unclaimed_rewards',
-      encodedAddr
-    );
+    assert.equal(result.length, 4);
 
-    const decResult: Vec<UnclaimedRewardInfo> = ExtrinsicHelper.api.registry.createType(
-      'Vec<UnclaimedRewardInfo>',
-      result
-    );
-    let count = 0;
-    assert(
-      decResult.every((item) => {
-        count++;
-        return item.staked_amount.toHuman() === '1.0000 UNIT';
-      })
-    );
-    assert.equal(count, 3);
+    // This is the era we first boosted in, shouldn't have any rewards
+    assert.equal(result[0].staked_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[0].eligible_amount.toHuman(), '0');
+    assert.equal(result[0].earned_amount.toHuman(), '0');
 
-    assert.equal(decResult[0].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(decResult[0].earned_amount.toHuman(), '3.8000 mUNIT');
+    // Boosted entire eras, should have rewards
+    assert.equal(result[1].staked_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[1].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[1].earned_amount.toHuman(), '3.8000 mUNIT');
 
-    assert.equal(decResult[1].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(decResult[1].earned_amount.toHuman(), '3.8000 mUNIT');
+    assert.equal(result[2].staked_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[2].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[2].earned_amount.toHuman(), '3.8000 mUNIT');
 
-    assert.equal(decResult[2].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(decResult[2].earned_amount.toHuman(), '3.8000 mUNIT');
+    assert.equal(result[3].staked_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[3].eligible_amount.toHuman(), '1.0000 UNIT');
+    assert.equal(result[3].earned_amount.toHuman(), '3.8000 mUNIT');
   });
 });

@@ -8,11 +8,8 @@ import {
   stakeToProvider,
   CENTS,
   DOLLARS,
-  createAndFundKeypair,
   createProviderKeysAndId,
-  getNonce,
 } from '../scaffolding/helpers';
-import { KeyringPair } from '@polkadot/keyring/types';
 
 const fundingSource = getFundingSource('capacity-change-staking-target');
 
