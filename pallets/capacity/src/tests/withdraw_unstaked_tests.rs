@@ -24,7 +24,7 @@ fn withdraw_unstaked_happy_path() {
 
 		// We want to advance to epoch 3 to unlock the first two sets.
 		run_to_block(31);
-		assert_eq!(3u32, Capacity::get_current_epoch());
+		assert_eq!(3u32, CurrentEpoch::<Test>::get());
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 
 		let expected_reaped_value = 3u64;
@@ -90,7 +90,7 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		run_to_block(21);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
 		assert_eq!(0, Balances::locks(&staker).len());
-		assert!(Capacity::get_unstake_unlocking_for(&staker).is_none());
+		assert!(UnstakeUnlocks::<Test>::get(&staker).is_none());
 	})
 }
 

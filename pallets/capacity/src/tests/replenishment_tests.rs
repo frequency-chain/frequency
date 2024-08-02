@@ -2,7 +2,7 @@ use super::{mock::*, testing_utils::*};
 use common_primitives::capacity::Replenishable;
 use frame_support::{assert_noop, assert_ok};
 
-use crate::{BalanceOf, CapacityDetails, Config, CurrentEpoch, Error};
+use crate::{BalanceOf, CapacityDetails, CapacityLedger, Config, CurrentEpoch, Error};
 
 #[test]
 fn impl_replenish_all_for_account_is_successful() {
@@ -29,7 +29,7 @@ fn impl_replenish_all_for_account_is_successful() {
 		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
-		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
+		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
 	});
 }
 
@@ -59,7 +59,7 @@ fn impl_can_replenish_is_false_when_last_replenished_at_is_greater_or_equal_curr
 			last_replenished_at,
 		);
 
-		assert_eq!(Capacity::get_current_epoch(), 0);
+		assert_eq!(CurrentEpoch::<Test>::get(), 0);
 
 		assert_eq!(Capacity::can_replenish(target_msa_id), false);
 

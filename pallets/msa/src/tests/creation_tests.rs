@@ -6,8 +6,8 @@ use frame_support::{assert_noop, assert_ok, dispatch::GetDispatchInfo};
 use sp_weights::Weight;
 
 use crate::{
-	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum, DispatchResult, Error,
-	Event,
+	ensure, tests::mock::*, types::AddProvider, CurrentMsaIdentifierMaximum,
+	DelegatorAndProviderToDelegation, DispatchResult, Error, Event, PublicKeyToMsaId,
 };
 
 use common_primitives::{
@@ -48,9 +48,10 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 
 		// assert
 		let delegator_msa =
-			Msa::get_msa_by_public_key(&AccountId32::new(delegator_account.0)).unwrap();
+			PublicKeyToMsaId::<Test>::get(&AccountId32::new(delegator_account.0)).unwrap();
 
-		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		let provider_info =
+			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(provider_info.is_some(), true);
 
 		let events_occured = System::events();
@@ -247,9 +248,9 @@ fn it_creates_an_msa_account() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::create(test_origin_signed(1)));
 
-		assert_eq!(Msa::get_msa_by_public_key(test_public(1)), Some(1 as MessageSourceId));
+		assert_eq!(PublicKeyToMsaId::<Test>::get(test_public(1)), Some(1 as MessageSourceId));
 
-		assert_eq!(Msa::get_current_msa_identifier_maximum(), 1);
+		assert_eq!(CurrentMsaIdentifierMaximum::<Test>::get(), 1);
 
 		System::assert_last_event(Event::MsaCreated { msa_id: 1, key: test_public(1) }.into());
 	});
@@ -272,6 +273,6 @@ fn it_does_not_allow_duplicate_keys() {
 
 		assert_noop!(Msa::create(test_origin_signed(1)), Error::<Test>::KeyAlreadyRegistered);
 
-		assert_eq!(Msa::get_current_msa_identifier_maximum(), 1);
+		assert_eq!(CurrentMsaIdentifierMaximum::<Test>::get(), 1);
 	});
 }

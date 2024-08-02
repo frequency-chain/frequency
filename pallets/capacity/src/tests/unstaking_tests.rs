@@ -1,7 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, FreezeReason, StakingDetails, StakingTargetDetails, StakingType, UnlockChunk,
+	CapacityDetails, CapacityLedger, FreezeReason, StakingAccountLedger, StakingDetails,
+	StakingTargetDetails, StakingTargetLedger, StakingType, UnlockChunk, UnstakeUnlocks,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
@@ -29,7 +30,7 @@ fn unstake_happy_path() {
 		));
 
 		// Assert that staking account detail values are decremented correctly after unstaking
-		let staking_account_details = Capacity::get_staking_account_for(token_account).unwrap();
+		let staking_account_details = StakingAccountLedger::<Test>::get(token_account).unwrap();
 
 		let expected_unlocking_chunks: BoundedVec<
 			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
@@ -37,7 +38,7 @@ fn unstake_happy_path() {
 		> = BoundedVec::try_from(vec![UnlockChunk { value: unstaking_amount, thaw_at: 2u32 }])
 			.unwrap();
 
-		let unlocking = Capacity::get_unstake_unlocking_for(token_account).unwrap();
+		let unlocking = UnstakeUnlocks::<Test>::get(token_account).unwrap();
 		assert_eq!(unlocking, expected_unlocking_chunks);
 
 		assert_eq!(
@@ -49,7 +50,8 @@ fn unstake_happy_path() {
 		);
 
 		// Assert that staking target detail values are decremented correctly after unstaking
-		let staking_target_details = Capacity::get_target_for(token_account, target).unwrap();
+		let staking_target_details =
+			StakingTargetLedger::<Test>::get(token_account, target).unwrap();
 
 		assert_eq!(
 			staking_target_details,
@@ -60,7 +62,7 @@ fn unstake_happy_path() {
 		);
 
 		// Assert that the capacity detail values for the target are decremented properly after unstaking
-		let capacity_details = Capacity::get_capacity_for(target).unwrap();
+		let capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 
 		assert_eq!(
 			capacity_details,
@@ -102,7 +104,7 @@ fn unstaking_all_by_one_staker_reaps_target() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount1));
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account2), target, staking_amount2));
 
-		let mut capacity_details = Capacity::get_capacity_for(target).unwrap();
+		let mut capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 		assert_eq!(
 			capacity_details,
 			CapacityDetails {
@@ -120,13 +122,13 @@ fn unstaking_all_by_one_staker_reaps_target() {
 		));
 
 		// Assert that the staking details is reaped
-		assert!(Capacity::get_staking_account_for(token_account).is_none());
+		assert!(StakingAccountLedger::<Test>::get(token_account).is_none());
 
 		// Assert target details is reaped
-		assert!(Capacity::get_target_for(token_account, target).is_none());
+		assert!(StakingTargetLedger::<Test>::get(token_account, target).is_none());
 
 		// Assert that capacity account is adjusted correctly
-		capacity_details = Capacity::get_capacity_for(target).unwrap();
+		capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 		assert_eq!(
 			capacity_details,
 			CapacityDetails {
@@ -236,7 +238,7 @@ fn unstaking_everything_reaps_staking_account() {
 		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// it should reap the staking account right away
-		assert!(Capacity::get_staking_account_for(&staker).is_none());
+		assert!(StakingAccountLedger::<Test>::get(&staker).is_none());
 	})
 }
 

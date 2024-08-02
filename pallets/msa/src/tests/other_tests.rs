@@ -13,7 +13,8 @@ use crate::{
 	ensure,
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	Config, DispatchResult, Error, Event, ProviderToRegistryEntry,
+	Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
+	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
 
 use common_primitives::{
@@ -102,7 +103,7 @@ pub fn add_provider_to_msa_is_success() {
 		let delegator = DelegatorId(delegator_msa);
 
 		assert_eq!(
-			Msa::get_delegation(delegator, provider),
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
 			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
 		);
 
@@ -144,7 +145,7 @@ pub fn add_key_with_panic_in_on_success_should_revert_everything() {
 		);
 
 		// assert
-		assert_eq!(Msa::get_msa_by_public_key(&key), None);
+		assert_eq!(PublicKeyToMsaId::<Test>::get(&key), None);
 	});
 }
 
@@ -230,7 +231,7 @@ pub fn revoke_provider_is_successful() {
 		assert_ok!(Msa::revoke_provider(provider, delegator));
 
 		assert_eq!(
-			Msa::get_delegation(delegator, provider).unwrap(),
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap(),
 			Delegation { revoked_at: 1, schema_permissions: Default::default() },
 		);
 	});
@@ -675,6 +676,6 @@ fn try_mutate_delegation_success() {
 			},
 		));
 
-		assert!(Msa::get_delegation(delegator, provider).is_some());
+		assert!(DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).is_some());
 	});
 }

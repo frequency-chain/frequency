@@ -231,7 +231,6 @@ pub struct RewardPoolInfo<Balance> {
 
 /// Reward Pool history
 #[pallet::storage]
-#[pallet::getter(fn get_reward_pool_for_era)]
 pub type StakingRewardPool<T: Config> = <CountedStorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
@@ -243,7 +242,6 @@ Storage is whitelisted because it's accessed every block and would improperly ad
 ```rust
 #[pallet::storage]
 #[pallet::whitelist_storage]
-#[pallet::getter(fn get_current_era)]
 /// Similar to CurrentEpoch
 pub type CurrentEraInfo<T:Config> = StorageValue<_, T::RewardEraInfo, ValueQuery>;
 

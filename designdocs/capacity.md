@@ -323,7 +323,6 @@ Storage for target Capacity usage.
 /// - Keys: MSA Id
 /// - Value: [`CapacityDetails`](types::CapacityDetails)
 #[pallet::storage]
-#[pallet::getter(fn get_capacity_for)]
 pub type CapacityLedger<T: Config> =
   StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;
 ```
@@ -333,7 +332,6 @@ Storage for epoch length
 ```rust
 /// Storage for the epoch length
 #[pallet::storage]
-#[pallet::getter(fn get_epoch_length)]
   pub type EpochLength<T: Config> = StorageValue<_, BlockNumberFor::<T>, ValueQuery, EpochLengthDefault<T>>;
 ```
 
@@ -520,7 +518,6 @@ trait Replenishable {
 /// Storage for the current epoch number
 #[pallet::storage]
 #[pallet::whitelist_storage]
-#[pallet::getter(fn get_current_epoch)]
 pub type CurrentEpoch<T: Config> = StorageValue<_, T::EpochNumber, ValueQuery>;
 ```
 

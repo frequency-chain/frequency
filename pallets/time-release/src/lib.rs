@@ -164,7 +164,6 @@ pub mod module {
 	///
 	/// ReleaseSchedules: `map AccountId => Vec<ReleaseSchedule>`
 	#[pallet::storage]
-	#[pallet::getter(fn release_schedules)]
 	pub type ReleaseSchedules<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
@@ -355,7 +354,7 @@ impl<T: Config> Pallet<T> {
 		who: &T::AccountId,
 		block_number: BlockNumberFor<T>,
 	) -> BoundedVec<ReleaseScheduleOf<T>, T::MaxReleaseSchedules> {
-		let mut schedules = Self::release_schedules(who);
+		let mut schedules = ReleaseSchedules::<T>::get(who);
 		schedules.retain(|schedule| !schedule.frozen_amount(block_number).is_zero());
 
 		if schedules.is_empty() {

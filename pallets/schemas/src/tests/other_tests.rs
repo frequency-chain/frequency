@@ -20,7 +20,8 @@ use serial_test::serial;
 use sp_runtime::{BuildStorage, DispatchError::BadOrigin};
 
 use crate::{
-	Error, Event as AnnouncementEvent, SchemaDescriptor, SchemaName, SchemaNamePayload,
+	CurrentSchemaIdentifierMaximum, Error, Event as AnnouncementEvent,
+	GovernanceSchemaModelMaxBytes, SchemaDescriptor, SchemaName, SchemaNamePayload,
 	SchemaNamespace, SchemaVersionId, MAX_NUMBER_OF_VERSIONS,
 };
 
@@ -31,7 +32,7 @@ fn set_max_schema_size_works_if_root() {
 	new_test_ext().execute_with(|| {
 		let new_size: u32 = 42;
 		assert_ok!(SchemasPallet::set_max_schema_model_bytes(RawOrigin::Root.into(), new_size));
-		let new_schema_size = SchemasPallet::get_schema_model_max_bytes();
+		let new_schema_size = GovernanceSchemaModelMaxBytes::<Test>::get();
 		assert_eq!(new_size, new_schema_size);
 	})
 }
@@ -1069,7 +1070,7 @@ fn genesis_config_build_genesis_schemas() {
 
 	ext.execute_with(|| {
 		System::set_block_number(1);
-		let res = SchemasPallet::get_current_schema_identifier_maximum();
+		let res = CurrentSchemaIdentifierMaximum::<Test>::get();
 
 		// We should have at least 10
 		assert!(res >= 10);

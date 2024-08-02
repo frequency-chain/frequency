@@ -157,7 +157,6 @@ pub mod pallet {
 	/// - Keys: AccountId
 	/// - Value: [`StakingDetails`](types::StakingDetails)
 	#[pallet::storage]
-	#[pallet::getter(fn get_staking_account_for)]
 	pub type StakingAccountLedger<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, StakingDetails<T>>;
 
@@ -165,7 +164,6 @@ pub mod pallet {
 	/// - Keys: AccountId, MSA Id
 	/// - Value: [`StakingTargetDetails`](types::StakingTargetDetails)
 	#[pallet::storage]
-	#[pallet::getter(fn get_target_for)]
 	pub type StakingTargetLedger<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
@@ -179,19 +177,16 @@ pub mod pallet {
 	/// - Keys: MSA Id
 	/// - Value: [`CapacityDetails`](types::CapacityDetails)
 	#[pallet::storage]
-	#[pallet::getter(fn get_capacity_for)]
 	pub type CapacityLedger<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;
 
 	/// Storage for the current epoch number
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_current_epoch)]
 	pub type CurrentEpoch<T: Config> = StorageValue<_, T::EpochNumber, ValueQuery>;
 
 	/// Storage for the current epoch info
 	#[pallet::storage]
-	#[pallet::getter(fn get_current_epoch_info)]
 	pub type CurrentEpochInfo<T: Config> =
 		StorageValue<_, EpochInfo<BlockNumberFor<T>>, ValueQuery>;
 
@@ -203,12 +198,10 @@ pub mod pallet {
 
 	/// Storage for the epoch length
 	#[pallet::storage]
-	#[pallet::getter(fn get_epoch_length)]
 	pub type EpochLength<T: Config> =
 		StorageValue<_, BlockNumberFor<T>, ValueQuery, EpochLengthDefault<T>>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_unstake_unlocking_for)]
 	pub type UnstakeUnlocks<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, UnlockChunkList<T>>;
 
@@ -434,7 +427,7 @@ impl<T: Config> Pallet<T> {
 		ensure!(amount > Zero::zero(), Error::<T>::ZeroAmountNotAllowed);
 		ensure!(T::TargetValidator::validate(target), Error::<T>::InvalidTarget);
 
-		let staking_account = Self::get_staking_account_for(&staker).unwrap_or_default();
+		let staking_account = StakingAccountLedger::<T>::get(&staker).unwrap_or_default();
 		let stakable_amount = Self::get_stakable_amount_for(&staker, amount);
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
@@ -463,10 +456,11 @@ impl<T: Config> Pallet<T> {
 		staking_account.deposit(amount).ok_or(ArithmeticError::Overflow)?;
 
 		let capacity = Self::capacity_generated(amount);
-		let mut target_details = Self::get_target_for(&staker, &target).unwrap_or_default();
+		let mut target_details =
+			StakingTargetLedger::<T>::get(&staker, &target).unwrap_or_default();
 		target_details.deposit(amount, capacity).ok_or(ArithmeticError::Overflow)?;
 
-		let mut capacity_details = Self::get_capacity_for(target).unwrap_or_default();
+		let mut capacity_details = CapacityLedger::<T>::get(target).unwrap_or_default();
 		capacity_details.deposit(&amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 
 		Self::set_staking_account_and_lock(&staker, staking_account)?;
@@ -482,7 +476,7 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		staking_account: &StakingDetails<T>,
 	) -> Result<(), DispatchError> {
-		let unlocks = Self::get_unstake_unlocking_for(staker).unwrap_or_default();
+		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
 		let total_to_lock: BalanceOf<T> = staking_account
 			.active
 			.checked_add(&unlock_chunks_total::<T>(&unlocks))
@@ -527,7 +521,7 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
 		let mut staking_account =
-			Self::get_staking_account_for(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
+			StakingAccountLedger::<T>::get(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::AmountToUnstakeExceedsAmountStaked);
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
@@ -539,10 +533,10 @@ impl<T: Config> Pallet<T> {
 		unstaker: &T::AccountId,
 		actual_unstaked_amount: BalanceOf<T>,
 	) -> Result<(), DispatchError> {
-		let current_epoch: T::EpochNumber = Self::get_current_epoch();
+		let current_epoch: T::EpochNumber = CurrentEpoch::<T>::get();
 		let thaw_at =
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
-		let mut unlocks = Self::get_unstake_unlocking_for(unstaker).unwrap_or_default();
+		let mut unlocks = UnstakeUnlocks::<T>::get(unstaker).unwrap_or_default();
 
 		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> =
 			UnlockChunk { value: actual_unstaked_amount, thaw_at };
@@ -568,11 +562,11 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn do_withdraw_unstaked(
 		staker: &T::AccountId,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let current_epoch = Self::get_current_epoch();
+		let current_epoch = CurrentEpoch::<T>::get();
 		let mut total_unlocking: BalanceOf<T> = Zero::zero();
 
 		let mut unlocks =
-			Self::get_unstake_unlocking_for(staker).ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
+			UnstakeUnlocks::<T>::get(staker).ok_or(Error::<T>::NoUnstakedTokensAvailable)?;
 		let amount_withdrawn = unlock_chunks_reap_thawed::<T>(&mut unlocks, current_epoch);
 		ensure!(!amount_withdrawn.is_zero(), Error::<T>::NoThawedTokenAvailable);
 
@@ -583,7 +577,7 @@ impl<T: Config> Pallet<T> {
 			UnstakeUnlocks::<T>::set(staker, Some(unlocks));
 		}
 
-		let staking_account = Self::get_staking_account_for(staker).unwrap_or_default();
+		let staking_account = StakingAccountLedger::<T>::get(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
 			T::Currency::thaw(&FreezeReason::CapacityStaking.into(), staker)?;
@@ -599,10 +593,10 @@ impl<T: Config> Pallet<T> {
 		target: MessageSourceId,
 		amount: BalanceOf<T>,
 	) -> Result<BalanceOf<T>, DispatchError> {
-		let mut staking_target_details = Self::get_target_for(&unstaker, &target)
+		let mut staking_target_details = StakingTargetLedger::<T>::get(&unstaker, &target)
 			.ok_or(Error::<T>::StakerTargetRelationshipNotFound)?;
 		let mut capacity_details =
-			Self::get_capacity_for(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
+			CapacityLedger::<T>::get(target).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
@@ -640,10 +634,10 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(Self::get_current_epoch_info().epoch_start) >=
-			Self::get_epoch_length()
+		if current_block.saturating_sub(CurrentEpochInfo::<T>::get().epoch_start) >=
+			EpochLength::<T>::get()
 		{
-			let current_epoch = Self::get_current_epoch();
+			let current_epoch = CurrentEpoch::<T>::get();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
 			CurrentEpochInfo::<T>::set(EpochInfo { epoch_start: current_block });
 			T::WeightInfo::on_initialize()
@@ -661,7 +655,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 
 	/// Return the remaining capacity for the Provider MSA Id
 	fn balance(msa_id: MessageSourceId) -> Self::Balance {
-		match Self::get_capacity_for(msa_id) {
+		match CapacityLedger::<T>::get(msa_id) {
 			Some(capacity_details) => capacity_details.remaining_capacity,
 			None => BalanceOf::<T>::zero(),
 		}
@@ -670,7 +664,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 	/// Spend capacity: reduce remaining capacity by the given amount
 	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
-			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+			CapacityLedger::<T>::get(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
 		capacity_details
 			.deduct_capacity_by_amount(amount)
@@ -685,7 +679,7 @@ impl<T: Config> Nontransferable for Pallet<T> {
 	/// Increase all totals for the MSA's CapacityDetails.
 	fn deposit(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =
-			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+			CapacityLedger::<T>::get(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 		capacity_details.deposit(&amount, &Self::capacity_generated(amount));
 		Self::set_capacity_for(msa_id, capacity_details);
 		Ok(())
@@ -697,9 +691,9 @@ impl<T: Config> Replenishable for Pallet<T> {
 
 	fn replenish_all_for(msa_id: MessageSourceId) -> Result<(), DispatchError> {
 		let mut capacity_details =
-			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+			CapacityLedger::<T>::get(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 
-		capacity_details.replenish_all(&Self::get_current_epoch());
+		capacity_details.replenish_all(&CurrentEpoch::<T>::get());
 
 		Self::set_capacity_for(msa_id, capacity_details);
 
@@ -713,14 +707,14 @@ impl<T: Config> Replenishable for Pallet<T> {
 		amount: Self::Balance,
 	) -> Result<(), DispatchError> {
 		let mut capacity_details =
-			Self::get_capacity_for(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
-		capacity_details.replenish_by_amount(amount, &Self::get_current_epoch());
+			CapacityLedger::<T>::get(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
+		capacity_details.replenish_by_amount(amount, &CurrentEpoch::<T>::get());
 		Ok(())
 	}
 
 	fn can_replenish(msa_id: MessageSourceId) -> bool {
-		if let Some(capacity_details) = Self::get_capacity_for(msa_id) {
-			return capacity_details.can_replenish(Self::get_current_epoch())
+		if let Some(capacity_details) = CapacityLedger::<T>::get(msa_id) {
+			return capacity_details.can_replenish(CurrentEpoch::<T>::get());
 		}
 		false
 	}
