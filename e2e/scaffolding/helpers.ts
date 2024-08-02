@@ -463,6 +463,7 @@ export async function boostProvider(
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
   }
 }
+
 export async function getNextEpochBlock() {
   const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();
   const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
