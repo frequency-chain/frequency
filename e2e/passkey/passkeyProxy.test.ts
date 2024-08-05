@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getNextEpochBlock, getNonce } from '../scaffolding/helpers';
+import { createAndFundKeypair, getBlockNumber, getNonce } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -14,7 +14,7 @@ describe('Passkey Pallet Tests', function () {
     let receiverKeys: KeyringPair;
 
     beforeEach(async function () {
-      fundedKeys = await createAndFundKeypair(fundingSource, 100_000_000n);
+      fundedKeys = await createAndFundKeypair(fundingSource, 1_000_000_000n);
       receiverKeys = await createAndFundKeypair(fundingSource);
     });
 
@@ -61,14 +61,14 @@ describe('Passkey Pallet Tests', function () {
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100_000n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
-      await ExtrinsicHelper.runToBlock(await getNextEpochBlock());
+      await ExtrinsicHelper.runToBlock((await getBlockNumber()) + 2);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
       const nonceAfter = await getNonce(fundedKeys);
       assert.equal(nonce + 1, nonceAfter);
