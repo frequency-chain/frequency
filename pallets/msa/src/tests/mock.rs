@@ -9,7 +9,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
-use pallet_collective::{self, Members, ProposalCount};
+use pallet_collective::{self, Members};
 use parity_scale_codec::MaxEncodedLen;
 use sp_core::{
 	offchain::{testing, testing::OffchainState, OffchainDbExt, OffchainWorkerExt},
@@ -24,6 +24,9 @@ use sp_runtime::{
 use sp_std::sync::Arc;
 
 pub use pallet_msa::Call as MsaCall;
+
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_collective::ProposalCount;
 
 use common_primitives::node::AccountId;
 

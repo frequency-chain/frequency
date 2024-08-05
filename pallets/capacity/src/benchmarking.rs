@@ -33,7 +33,7 @@ pub fn create_funded_account<T: Config>(
 // In the benchmarks we expect a new epoch to always start so as to test worst case scenario.
 pub fn set_up_epoch<T: Config>(current_block: BlockNumberFor<T>, current_epoch: T::EpochNumber) {
 	CurrentEpoch::<T>::set(current_epoch);
-	let epoch_start = current_block.saturating_sub(Capacity::<T>::get_epoch_length());
+	let epoch_start = current_block.saturating_sub(EpochLength::<T>::get());
 	CurrentEpochInfo::<T>::set(EpochInfo { epoch_start });
 }
 
@@ -78,7 +78,7 @@ benchmarks! {
 	}: {
 		Capacity::<T>::on_initialize(current_block);
 	} verify {
-		assert_eq!(current_epoch.saturating_add(1u32.into()), Capacity::<T>::get_current_epoch());
+		assert_eq!(current_epoch.saturating_add(1u32.into()), CurrentEpoch::<T>::get());
 		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
 	}
 	unstake {
@@ -120,7 +120,7 @@ benchmarks! {
 		let epoch_length: BlockNumberFor<T> = 9u32.into();
 	}: _ (RawOrigin::Root, epoch_length)
 	verify {
-		assert_eq!(Capacity::<T>::get_epoch_length(), 9u32.into());
+		assert_eq!(EpochLength::<T>::get(), 9u32.into());
 		assert_last_event::<T>(Event::<T>::EpochLengthUpdated {blocks: epoch_length}.into());
 	}
 

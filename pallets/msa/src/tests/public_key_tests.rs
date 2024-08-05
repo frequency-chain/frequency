@@ -9,7 +9,8 @@ use sp_runtime::{ArithmeticError, MultiSignature};
 use crate::{
 	tests::mock::*,
 	types::{AddKeyData, EMPTY_FUNCTION},
-	Config, Error, Event,
+	Config, Error, Event, PayloadSignatureRegistryList, PayloadSignatureRegistryPointer,
+	PublicKeyCountForMsaId, PublicKeyToMsaId,
 };
 
 use common_primitives::{
@@ -232,7 +233,7 @@ fn add_key_with_valid_request_should_store_value_and_event() {
 		));
 
 		// assert
-		let keys_count = Msa::get_public_key_count_by_msa_id(new_msa_id);
+		let keys_count = PublicKeyCountForMsaId::<Test>::get(new_msa_id);
 		assert_eq!(keys_count, 2);
 		System::assert_last_event(
 			Event::PublicKeyAdded { msa_id: 1, key: new_key_pair.public().into() }.into(),
@@ -369,9 +370,12 @@ fn add_public_key_to_msa_registers_two_signatures() {
 			add_new_key_data
 		));
 
-		assert_eq!(Msa::get_payload_signature_registry(owner_signature.clone()).unwrap().0, 10);
 		assert_eq!(
-			Msa::get_payload_signature_pointer().unwrap(),
+			PayloadSignatureRegistryList::<Test>::get(owner_signature.clone()).unwrap().0,
+			10
+		);
+		assert_eq!(
+			PayloadSignatureRegistryPointer::<Test>::get().unwrap(),
 			SignatureRegistryPointer {
 				newest: new_key_signature,
 				newest_expires_at: 10u32.into(),
@@ -419,7 +423,7 @@ fn it_deletes_msa_key_successfully() {
 
 		assert_ok!(Msa::delete_msa_public_key(test_origin_signed(1), test_public(2)));
 
-		let info = Msa::get_msa_by_public_key(&test_public(2));
+		let info = PublicKeyToMsaId::<Test>::get(&test_public(2));
 
 		assert_eq!(info, None);
 
@@ -446,7 +450,7 @@ pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
-		let info = Msa::get_msa_by_public_key(&test_public(1));
+		let info = PublicKeyToMsaId::<Test>::get(&test_public(1));
 
 		assert_eq!(info, Some(1 as MessageSourceId));
 

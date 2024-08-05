@@ -8,8 +8,8 @@ use sp_runtime::traits::Zero;
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 
 use crate::{
-	BalanceOf, CapacityDetails, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo, FreezeReason,
-	StakingDetails, StakingTargetDetails,
+	BalanceOf, CapacityDetails, CapacityLedger, Config, CurrentEpoch, CurrentEpochInfo, EpochInfo,
+	FreezeReason, StakingDetails, StakingTargetDetails, StakingTargetLedger,
 };
 
 use super::{mock::*, testing_utils::*};
@@ -52,7 +52,7 @@ fn start_new_epoch_works() {
 			Capacity::start_new_epoch_if_needed(tc.at_block);
 			assert_eq!(
 				tc.expected_epoch,
-				Capacity::get_current_epoch(),
+				CurrentEpoch::<Test>::get(),
 				"{}: had wrong current epoch",
 				tc.name
 			);
@@ -90,7 +90,7 @@ fn set_target_details_is_successful() {
 		let staker = 100;
 		let target: MessageSourceId = 1;
 
-		assert_eq!(Capacity::get_target_for(&staker, target), None);
+		assert_eq!(StakingTargetLedger::<Test>::get(&staker, target), None);
 
 		let mut target_details = StakingTargetDetails::<BalanceOf<Test>>::default();
 		target_details.amount = 10;
@@ -98,7 +98,7 @@ fn set_target_details_is_successful() {
 
 		Capacity::set_target_details_for(&staker, target, target_details);
 
-		let stored_target_details = Capacity::get_target_for(&staker, target).unwrap();
+		let stored_target_details = StakingTargetLedger::<Test>::get(&staker, target).unwrap();
 
 		assert_eq!(stored_target_details.amount, 10);
 		assert_eq!(stored_target_details.capacity, 10);
@@ -110,7 +110,7 @@ fn set_capacity_details_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target: MessageSourceId = 1;
 
-		assert_eq!(Capacity::get_capacity_for(target), None);
+		assert_eq!(CapacityLedger::<Test>::get(target), None);
 
 		let capacity_details: CapacityDetails<BalanceOf<Test>, <Test as Config>::EpochNumber> =
 			CapacityDetails {
@@ -122,7 +122,7 @@ fn set_capacity_details_is_successful() {
 
 		Capacity::set_capacity_for(target, capacity_details);
 
-		let stored_capacity_details = Capacity::get_capacity_for(target).unwrap();
+		let stored_capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 
 		assert_eq!(stored_capacity_details.remaining_capacity, 10);
 		assert_eq!(stored_capacity_details.total_capacity_issued, 10);
