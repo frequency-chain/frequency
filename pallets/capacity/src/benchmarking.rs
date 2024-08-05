@@ -174,7 +174,7 @@ benchmarks! {
 	}: {
 		Capacity::<T>::start_new_reward_era_if_needed(current_block);
 	} verify {
-		let new_era_info = Capacity::<T>::get_current_era();
+		let new_era_info = CurrentEraInfo::<T>::get();
 		assert_eq!(current_era.saturating_add(1u32.into()), new_era_info.era_index);
 		assert_eq!(current_block, new_era_info.started_at);
 	}

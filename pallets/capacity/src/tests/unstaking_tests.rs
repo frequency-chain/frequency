@@ -364,7 +364,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
-		let pbh = Capacity::get_staking_history_for(staker).unwrap();
+		let pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
@@ -386,7 +386,7 @@ fn unstake_all_by_booster_reaps_boost_history() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
-		let pbh = Capacity::get_staking_history_for(staker).unwrap();
+		let pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
@@ -394,7 +394,7 @@ fn unstake_all_by_booster_reaps_boost_history() {
 		run_to_block(51);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 1_000));
-		assert!(Capacity::get_staking_history_for(staker).is_none());
+		assert!(ProviderBoostHistories::<Test>::get(staker).is_none());
 		assert_eq!(get_balance::<Test>(&staker), 10_016u64);
 		assert_transferable::<Test>(&staker, 16u64);
 	})
@@ -409,7 +409,7 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker), target1, 1_000));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 500));
-		assert!(Capacity::get_staking_history_for(staker).is_none());
+		assert!(ProviderBoostHistories::<Test>::get(staker).is_none());
 	})
 }
 
@@ -487,9 +487,9 @@ fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
 
 		// staking 1k as of block 1, era 1
 		setup_provider(&account, &target, &amount, ProviderBoost);
-		assert!(Capacity::get_staking_history_for(account).is_some());
+		assert!(ProviderBoostHistories::<Test>::get(account).is_some());
 		run_to_block(10);
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
-		assert!(Capacity::get_staking_history_for(account).is_none());
+		assert!(ProviderBoostHistories::<Test>::get(account).is_none());
 	});
 }
