@@ -4,13 +4,11 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
-  push:
-    branches:
-      - chore/boosting-fix-e2e
   pull_request:
     branches:
       - main
       - "*-development" # Feature Branches should suffix with -development
+      - feat/capacity-staking-rewards-impl
 env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed
