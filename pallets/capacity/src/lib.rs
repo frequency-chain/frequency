@@ -279,6 +279,24 @@ pub mod pallet {
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
+	#[pallet::genesis_config]
+	pub struct GenesisConfig<T: Config> {
+		/// Phantom type
+		#[serde(skip)]
+		pub _config: PhantomData<T>,
+	}
+
+	#[pallet::genesis_build]
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
+		fn build(&self) {
+			CurrentEraInfo::<T>::set(RewardEraInfo {
+				era_index: 1u32.into(),
+				started_at: 0u32.into(),
+			});
+			CurrentEraProviderBoostTotal::<T>::set(0u32.into());
+		}
+	}
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
