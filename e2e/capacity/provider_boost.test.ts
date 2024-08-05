@@ -15,27 +15,27 @@ const fundingSource = getFundingSource('capacity-provider-boost');
 describe('Capacity: provider_boost extrinsic', function () {
   const providerBalance = 2n * DOLLARS;
 
-  it('happy path succeeds', async function () {
+  it('An account can do a simple provider boost call', async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     const booster = await createAndFundKeypair(fundingSource, 5n * DOLLARS, 'booster');
     await assert.doesNotReject(boostProvider(fundingSource, booster, provider, 1n * DOLLARS));
   });
 
-  it('fails when they are a Maximized Capacity staker', async function () {
+  it('fails when staker is a Maximized Capacity staker', async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
-    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, 1n * DOLLARS));
+    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, 1n * DOLLARS), {name: "CannotChangeStakingType"});
   });
 
-  it("fails when they don't have enough token", async function () {
+  it("fails when staker doesn't have enough token", async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     const booster = await createAndFundKeypair(fundingSource, 1n * DOLLARS, 'booster');
-    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS));
+    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS), {name: "InsufficientCapacityBalance"});
   });
 
-  it('they can boost multiple times', async function () {
+  it('staker can boost multiple times', async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     const booster = await createAndFundKeypair(fundingSource, 10n * DOLLARS, 'booster');
