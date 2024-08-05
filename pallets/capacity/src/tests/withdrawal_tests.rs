@@ -1,5 +1,5 @@
 use super::{mock::*, testing_utils::*};
-use crate::{BalanceOf, CapacityDetails, Config, Error, Event};
+use crate::{BalanceOf, CapacityDetails, CapacityLedger, Config, Error, Event};
 use common_primitives::capacity::Nontransferable;
 use frame_support::{assert_noop, assert_ok};
 
@@ -32,7 +32,7 @@ fn impl_withdraw_is_successful() {
 		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
-		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
+		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
 	});
 }
 
@@ -74,6 +74,6 @@ fn impl_withdraw_errors_insufficient_balance() {
 		capacity_details.total_capacity_issued = 10u32.into();
 		capacity_details.last_replenished_epoch = 1u32.into();
 
-		assert_eq!(Capacity::get_capacity_for(target_msa_id).unwrap(), capacity_details);
+		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
 	});
 }

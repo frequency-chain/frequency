@@ -9,7 +9,7 @@ use sp_runtime::MultiSignature;
 use crate::{
 	tests::{mock::*, other_tests::set_schema_count},
 	types::AddProvider,
-	Error, Event,
+	DelegatorAndProviderToDelegation, Error, Event,
 };
 use common_primitives::{
 	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId},
@@ -77,7 +77,7 @@ pub fn grant_delegation_changes_schema_permissions() {
 		let delegator = DelegatorId(delegator_msa);
 
 		assert_eq!(
-			Msa::get_delegation(delegator, provider),
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
 			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })
 		);
 
@@ -112,7 +112,10 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		let expected = Delegation { revoked_at: 0u32, schema_permissions: sp };
 
-		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
+		assert_eq!(
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
+			Some(expected)
+		);
 
 		let revoked_block_number: u32 = 100;
 		System::set_block_number(revoked_block_number);
@@ -139,7 +142,10 @@ pub fn grant_delegation_changes_schema_permissions() {
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
 
-		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
+		assert_eq!(
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
+			Some(expected)
+		);
 
 		System::set_block_number(revoked_block_number + 1);
 		// Grant 2, 3, 4
@@ -165,7 +171,10 @@ pub fn grant_delegation_changes_schema_permissions() {
 		assert_ok!(sp.try_insert(4u16, 0u32)); // schema id 4 granted (block 0)
 
 		let expected = Delegation { revoked_at: 0, schema_permissions: sp };
-		assert_eq!(Msa::get_delegation(delegator, provider), Some(expected));
+		assert_eq!(
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider),
+			Some(expected)
+		);
 	});
 }
 
@@ -345,7 +354,8 @@ pub fn revoke_delegation_by_provider_happy_path() {
 		));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		let provider_info =
+			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
 			Some(Delegation { revoked_at: 26, schema_permissions: Default::default() })
@@ -396,7 +406,8 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 		));
 
 		// 6. verify that the provider is revoked
-		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		let provider_info =
+			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
 			Some(Delegation { revoked_at: 2, schema_permissions: Default::default() })
@@ -418,7 +429,8 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 		));
 
 		// 10. Verify that delegation is now valid
-		let provider_info = Msa::get_delegation(DelegatorId(2), ProviderId(1));
+		let provider_info =
+			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
 		assert_eq!(
 			provider_info,
 			Some(Delegation { revoked_at: 0, schema_permissions: Default::default() })

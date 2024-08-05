@@ -6,7 +6,7 @@ use sp_runtime::traits::SignedExtension;
 
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, Event,
-	RewardEraInfo, StakingType,
+	RewardEraInfo, StakingAccountLedger, StakingTargetLedger, StakingType,
 };
 use common_primitives::msa::MessageSourceId;
 
@@ -86,9 +86,9 @@ pub fn setup_provider(
 				*amount
 			));
 		}
-		let target = Capacity::get_target_for(staker, target).unwrap();
+		let target = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 		assert_eq!(target.amount, *amount);
-		let account_staking_type = Capacity::get_staking_account_for(staker).unwrap().staking_type;
+		let account_staking_type = StakingAccountLedger::<Test>::get(staker).unwrap().staking_type;
 		assert_eq!(account_staking_type, staking_type);
 	}
 }

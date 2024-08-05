@@ -116,7 +116,6 @@ pub mod pallet {
 	/// - Keys: k1: `CanonicalBase`, k2: `HandleSuffix`
 	/// - Value: `MessageSourceId`
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_id_for_canonical_and_suffix)]
 	pub type CanonicalBaseHandleAndSuffixToMSAId<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -130,7 +129,6 @@ pub mod pallet {
 	/// - Key: `MessageSourceId`
 	/// - Value: `DisplayHandle`
 	#[pallet::storage]
-	#[pallet::getter(fn get_display_name_for_msa_id)]
 	pub type MSAIdToDisplayName<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -144,7 +142,6 @@ pub mod pallet {
 	/// - Sequence Index: The index of the next suffix to be used for this handle
 	/// - Suffix Min: The minimum suffix value for this handle
 	#[pallet::storage]
-	#[pallet::getter(fn get_current_suffix_index_for_canonical_handle)]
 	pub type CanonicalBaseHandleToSuffixIndex<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
@@ -228,7 +225,7 @@ pub mod pallet {
 			canonical_base: CanonicalBase,
 		) -> Result<SequenceIndex, DispatchError> {
 			let next: SequenceIndex;
-			match Self::get_current_suffix_index_for_canonical_handle(canonical_base) {
+			match CanonicalBaseHandleToSuffixIndex::<T>::get(canonical_base) {
 				None => {
 					next = 0;
 				},
@@ -479,7 +476,7 @@ pub mod pallet {
 			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
 
 			// Get existing handle to retire
-			Self::get_display_name_for_msa_id(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
+			MSAIdToDisplayName::<T>::get(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
 
 			// Retire old handle
 			let old_display_handle: Vec<u8> = Self::do_retire_handle(msa_id)?;
@@ -505,7 +502,7 @@ pub mod pallet {
 		/// * `Option<HandleResponse>` - The handle response if the MSA ID is valid.
 		///
 		pub fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
-			let display_handle = match Self::get_display_name_for_msa_id(msa_id) {
+			let display_handle = match MSAIdToDisplayName::<T>::get(msa_id) {
 				Some((handle, _)) => handle,
 				_ => return None,
 			};
@@ -565,7 +562,7 @@ pub mod pallet {
 					suffixes.push(suffix);
 				}
 				if suffixes.len() == count as usize {
-					break
+					break;
 				}
 			}
 			PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes }
@@ -587,7 +584,7 @@ pub mod pallet {
 			// Convert base handle into a canonical base
 			let (_, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
-			Self::get_msa_id_for_canonical_and_suffix(canonical_base, suffix)
+			CanonicalBaseHandleAndSuffixToMSAId::<T>::get(canonical_base, suffix)
 		}
 
 		/// Claims a handle for a given MSA (MessageSourceId) by validating and storing the base handle,
@@ -608,7 +605,7 @@ pub mod pallet {
 		) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must not already have a handle associated with it
 			ensure!(
-				Self::get_display_name_for_msa_id(msa_id).is_none(),
+				MSAIdToDisplayName::<T>::get(msa_id).is_none(),
 				Error::<T>::MSAHandleAlreadyExists
 			);
 
@@ -734,8 +731,8 @@ pub mod pallet {
 		/// * `DispatchResult` - Returns `Ok` if the handle was successfully retired.
 		pub fn do_retire_handle(msa_id: MessageSourceId) -> Result<Vec<u8>, DispatchError> {
 			// Validation: The MSA must already have a handle associated with it
-			let handle_from_state = Self::get_display_name_for_msa_id(msa_id)
-				.ok_or(Error::<T>::MSAHandleDoesNotExist)?;
+			let handle_from_state =
+				MSAIdToDisplayName::<T>::get(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
 			let display_name_handle = handle_from_state.0;
 			let display_name_str = core::str::from_utf8(&display_name_handle)
 				.map_err(|_| Error::<T>::InvalidHandleEncoding)?;
@@ -768,10 +765,10 @@ pub mod pallet {
 					return Self::validate_canonical_handle_contains_characters_in_supported_ranges(
 						&canonical_handle_str,
 					)
-					.is_ok()
+					.is_ok();
 				},
 				_ => false,
-			}
+			};
 		}
 
 		/// Converts a base handle to a canonical base.

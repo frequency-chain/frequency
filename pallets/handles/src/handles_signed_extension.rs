@@ -56,7 +56,7 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 			))
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
+		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build();
 	}
 }
 

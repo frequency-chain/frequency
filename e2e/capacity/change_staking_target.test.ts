@@ -17,7 +17,7 @@ describe('Capacity: change_staking_target', function () {
   const tokenMinStake: bigint = 1n * CENTS;
   const capacityMin: bigint = tokenMinStake / 50n;
 
-  it('happy path succeeds', async function () {
+  it('successfully stake tokens to a provider', async function () {
     const providerBalance = 2n * DOLLARS;
     const stakeKeys = createKeys('staker');
     const oldProvider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
