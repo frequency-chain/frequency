@@ -3,7 +3,8 @@ use crate::{
 	tests::testing_utils::{
 		run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
 	},
-	BalanceOf, Config, ProviderBoostHistories, ProviderBoostHistory, ProviderBoostRewardsProvider,
+	BalanceOf, Config, CurrentEraInfo, ProviderBoostHistories, ProviderBoostHistory,
+	ProviderBoostRewardsProvider,
 	StakingType::*,
 	UnclaimedRewardInfo,
 };
@@ -112,8 +113,8 @@ fn list_unclaimed_rewards_has_eligible_rewards() {
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
 		run_to_block(51);
-		assert_eq!(Capacity::get_current_era().era_index, 6u32);
-		assert_eq!(Capacity::get_current_era().started_at, 51u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 6u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().started_at, 51u32);
 
 		// rewards for era 6 should not be returned; era 6 is current era and therefore ineligible.
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
@@ -198,8 +199,8 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		run_to_block(131);
-		assert_eq!(Capacity::get_current_era().era_index, 14u32);
-		assert_eq!(Capacity::get_current_era().started_at, 131u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 14u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().started_at, 131u32);
 
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 
