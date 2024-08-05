@@ -1,6 +1,7 @@
 use super::mock::*;
 use crate::{
-	tests::testing_utils::*, BalanceOf, CurrentEraInfo, CurrentEraProviderBoostTotal, RewardEraInfo,
+	tests::testing_utils::*, BalanceOf, CurrentEraInfo, CurrentEraProviderBoostTotal,
+	ProviderBoostRewardPools, RewardEraInfo,
 };
 use common_primitives::{capacity::RewardEra, msa::MessageSourceId};
 use frame_support::assert_ok;
@@ -46,7 +47,7 @@ fn assert_chunk_is_full_and_has_earliest_era_total(
 	era: RewardEra,
 	total: BalanceOf<Test>,
 ) {
-	let chunk = Capacity::get_reward_pool_chunk(chunk_index).unwrap();
+	let chunk = ProviderBoostRewardPools::<Test>::get(chunk_index).unwrap();
 	assert_eq!(chunk.is_full(), is_full, "{:?}", chunk);
 	assert_eq!(chunk.earliest_era(), Some(&era), "{:?}", chunk);
 	assert_eq!(chunk.total_for_era(&era), Some(&total), "{:?}", chunk);
@@ -56,7 +57,7 @@ fn assert_chunk_is_full_and_has_earliest_era_total(
 // asserts that it is the same as `era`, and that it has amount `total`
 fn assert_last_era_total(era: RewardEra, total: BalanceOf<Test>) {
 	let chunk_idx = Capacity::get_chunk_index_for_era(era);
-	let chunk_opt = Capacity::get_reward_pool_chunk(chunk_idx);
+	let chunk_opt = ProviderBoostRewardPools::<Test>::get(chunk_idx);
 	assert!(chunk_opt.is_some(), "No pool for Era: {:?} with chunk index: {:?}", era, chunk_idx);
 	let chunk = chunk_opt.unwrap();
 	let (_earliest, latest) = chunk.era_range();
@@ -65,7 +66,7 @@ fn assert_last_era_total(era: RewardEra, total: BalanceOf<Test>) {
 }
 
 fn assert_chunk_is_empty(chunk_index: u32) {
-	let chunk_opt = Capacity::get_reward_pool_chunk(chunk_index);
+	let chunk_opt = ProviderBoostRewardPools::<Test>::get(chunk_index);
 	if chunk_opt.is_some() {
 		assert!(chunk_opt.unwrap().earliest_era().is_none())
 	} else {
@@ -135,7 +136,7 @@ fn start_new_era_if_needed_updates_reward_pool() {
 #[test]
 fn get_expiration_block_for_era_works() {
 	new_test_ext().execute_with(|| {
-		assert_eq!(Capacity::get_current_era().era_index, 1u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 1u32);
 		assert_eq!(Capacity::block_at_end_of_era(10u32), 100);
 
 		set_era_and_reward_pool(7, 61, 0);
