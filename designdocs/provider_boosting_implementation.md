@@ -79,7 +79,6 @@ pub struct StakingDetails<T: Config> {
 ```rust
 	/// Individual history for each account that has Provider-Boosted.
 	#[pallet::storage]
-	#[pallet::getter(fn get_staking_history_for)]
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 ```
@@ -102,7 +101,7 @@ Those who wish to do both types of staking must use two different accounts, one 
 #### unstake
 
 The unstake parameters are the same, and unstake behavior is the same for `MaximumCapacity` as before, however
-for a `ProviderBoost` staker-target relationship, the behavior must be different. The Provider-Boost account must 
+for a `ProviderBoost` staker-target relationship, the behavior must be different. The Provider-Boost account must
 first claim all unpaid rewards before an unstake can succeed.
 
 ```rust
@@ -140,7 +139,7 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	fn staking_reward_totals(
 		account_id: Self::AccountId,
 	) -> Result<BalanceOf<T>, DispatchError>;
-	
+
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
@@ -194,7 +193,7 @@ pub trait Config: frame_system::Config {
 ### NEW: ProviderBoostRewardPools, CurrentEraProviderBoostTotal
 The storage of the total amount staked for the ProviderBoostHistoryLimit number of eras is divided into chunks of
 BoundedBTreeMaps, which store Key = RewardEra, Value = Total stake for that era.  The chunks are updated in rotating fashion
-in order to minimize reads and writes for listing individual rewards, claiming individual rewards, and changing to a 
+in order to minimize reads and writes for listing individual rewards, claiming individual rewards, and changing to a
 new Reward Era, when necessary, during `on_initialize`.
 
 ```rust
@@ -202,7 +201,6 @@ new Reward Era, when necessary, during `on_initialize`.
 	/// ProviderBoostHistoryLimit is the total number of items, the key is the
 	/// chunk number.
 	#[pallet::storage]
-	#[pallet::getter(fn get_reward_pool_chunk)]
 	pub type ProviderBoostRewardPools<T: Config> =
 		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
 
@@ -219,7 +217,6 @@ Storage is whitelisted because it's accessed every block and would improperly ad
 ```rust
 #[pallet::storage]
 #[pallet::whitelist_storage]
-#[pallet::getter(fn get_current_era)]
 /// Similar to CurrentEpoch
 pub type CurrentEraInfo<T:Config> = StorageValue<_, T::RewardEraInfo, ValueQuery>;
 
@@ -249,7 +246,7 @@ pub enum Error<T> {
     MustFirstClaimRewards,
     /// Too many change_staking_target calls made in this RewardEra.
     MaxRetargetsExceeded,
-    /// Account either has no staking account at all or it is not a ProviderBoost type 
+    /// Account either has no staking account at all or it is not a ProviderBoost type
     NotAProviderBoostAccount,
 }
 ```
@@ -281,7 +278,7 @@ The event `ProviderBoostRewardClaimed` is emitted with the parameters of the ext
 
 
 ```rust
-/// Claim all outstanding Provider Boost rewards, up to ProviderBoostHistoryLimit Reward Eras 
+/// Claim all outstanding Provider Boost rewards, up to ProviderBoostHistoryLimit Reward Eras
 /// in the past.  Accounts should check for unclaimed rewards before calling this extrinsic
 /// to avoid needless transaction fees.
 ///  Errors:
