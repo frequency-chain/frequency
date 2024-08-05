@@ -49,6 +49,11 @@ describe('Capacity: list_unclaimed_rewards', function () {
 
     const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(booster.address);
 
+    console.log(
+      '<><><><><><><>result<><><><><>',
+      (result as any).map((x) => x.toHuman())
+    );
+
     assert(result.length >= 4, 'Might have more than 4 if other blocks formed additional eras');
 
     // This is the era we first boosted in, shouldn't have any rewards
