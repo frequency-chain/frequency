@@ -244,13 +244,11 @@ pub mod pallet {
 
 	/// stores how many times an account has retargeted, and when it last retargeted.
 	#[pallet::storage]
-	#[pallet::getter(fn get_retargets_for)]
 	pub type Retargets<T: Config> = StorageMap<_, Twox64Concat, T::AccountId, RetargetInfo<T>>;
 
 	/// Information about the current reward era. Checked every block.
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_current_era)]
 	pub type CurrentEraInfo<T: Config> =
 		StorageValue<_, RewardEraInfo<RewardEra, BlockNumberFor<T>>, ValueQuery>;
 
@@ -258,7 +256,6 @@ pub mod pallet {
 	/// ProviderBoostHistoryLimit is the total number of items, the key is the
 	/// chunk number.
 	#[pallet::storage]
-	#[pallet::getter(fn get_reward_pool_chunk)]
 	pub type ProviderBoostRewardPools<T: Config> =
 		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
 
@@ -268,7 +265,6 @@ pub mod pallet {
 
 	/// Individual history for each account that has Provider-Boosted.
 	#[pallet::storage]
-	#[pallet::getter(fn get_staking_history_for)]
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
@@ -745,7 +741,7 @@ impl<T: Config> Pallet<T> {
 		capacity_details.deposit(amount, &capacity).ok_or(ArithmeticError::Overflow)?;
 		Self::set_capacity_for(*target, capacity_details);
 
-		let era = Self::get_current_era().era_index;
+		let era = CurrentEraInfo::<T>::get().era_index;
 		Self::upsert_boost_history(staker, era, *amount, true)?;
 
 		let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
@@ -815,7 +811,7 @@ impl<T: Config> Pallet<T> {
 
 		let staking_type = staking_account.staking_type;
 		if staking_type == StakingType::ProviderBoost {
-			let era = Self::get_current_era().era_index;
+			let era = CurrentEraInfo::<T>::get().era_index;
 			Self::upsert_boost_history(&unstaker, era, actual_unstaked_amount, false)?;
 			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
 			CurrentEraProviderBoostTotal::<T>::set(
@@ -968,7 +964,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn start_new_reward_era_if_needed(current_block: BlockNumberFor<T>) -> Weight {
-		let current_era_info: RewardEraInfo<RewardEra, BlockNumberFor<T>> = Self::get_current_era(); // 1r
+		let current_era_info: RewardEraInfo<RewardEra, BlockNumberFor<T>> =
+			CurrentEraInfo::<T>::get(); // 1r
 
 		if current_block.saturating_sub(current_era_info.started_at) >= T::EraLength::get().into() {
 			// 1r
@@ -994,8 +991,8 @@ impl<T: Config> Pallet<T> {
 	/// Returns:
 	///     Error::MaxRetargetsExceeded if they try to retarget too many times in one era.
 	fn update_retarget_record(staker: &T::AccountId) -> Result<(), DispatchError> {
-		let current_era: RewardEra = Self::get_current_era().era_index;
-		let mut retargets = Self::get_retargets_for(staker).unwrap_or_default();
+		let current_era: RewardEra = CurrentEraInfo::<T>::get().era_index;
+		let mut retargets = Retargets::<T>::get(staker).unwrap_or_default();
 		ensure!(retargets.update(current_era).is_some(), Error::<T>::MaxRetargetsExceeded);
 		Retargets::<T>::set(staker, Some(retargets));
 		Ok(())
@@ -1036,7 +1033,7 @@ impl<T: Config> Pallet<T> {
 		boost_amount: BalanceOf<T>,
 		add: bool,
 	) -> Result<(), DispatchError> {
-		let mut boost_history = Self::get_staking_history_for(account).unwrap_or_default();
+		let mut boost_history = ProviderBoostHistories::<T>::get(account).unwrap_or_default();
 
 		let upsert_result = if add {
 			boost_history.add_era_balance(&current_era, &boost_amount)
@@ -1052,8 +1049,8 @@ impl<T: Config> Pallet<T> {
 	}
 
 	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
-		let current_era = Self::get_current_era().era_index;
-		match Self::get_staking_history_for(account) {
+		let current_era = CurrentEraInfo::<T>::get().era_index;
+		match ProviderBoostHistories::<T>::get(account) {
 			Some(provider_boost_history) => {
 				match provider_boost_history.count() {
 					0usize => false,
@@ -1089,10 +1086,10 @@ impl<T: Config> Pallet<T> {
 			return Ok(BoundedVec::new());
 		}
 
-		let staking_history =
-			Self::get_staking_history_for(account).ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
+		let staking_history = ProviderBoostHistories::<T>::get(account)
+			.ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
 
-		let current_era_info = Self::get_current_era(); // cached read, ditto
+		let current_era_info = CurrentEraInfo::<T>::get(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
 		let mut reward_era = current_era_info.era_index.saturating_sub((max_history).into());
@@ -1143,7 +1140,7 @@ impl<T: Config> Pallet<T> {
 	// Returns the block number for the end of the provided era. Assumes `era` is at least this
 	// era or in the future
 	pub(crate) fn block_at_end_of_era(era: RewardEra) -> BlockNumberFor<T> {
-		let current_era_info = Self::get_current_era();
+		let current_era_info = CurrentEraInfo::<T>::get();
 		let era_length: BlockNumberFor<T> = T::EraLength::get().into();
 
 		let era_diff = if current_era_info.era_index.eq(&era) {
@@ -1168,7 +1165,7 @@ impl<T: Config> Pallet<T> {
 		);
 
 		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era);
-		let reward_pool_chunk = Self::get_reward_pool_chunk(chunk_idx).unwrap_or_default(); // 1r
+		let reward_pool_chunk = ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or_default(); // 1r
 		let total_for_era =
 			reward_pool_chunk.total_for_era(&reward_era).ok_or(Error::<T>::EraOutOfRange)?;
 		Ok(*total_for_era)
@@ -1227,7 +1224,7 @@ impl<T: Config> Pallet<T> {
 		let mut new_history: ProviderBoostHistory<T> = ProviderBoostHistory::new();
 		let last_staked_amount =
 			rewards.last().unwrap_or(&UnclaimedRewardInfo::default()).staked_amount;
-		let current_era = Self::get_current_era().era_index;
+		let current_era = CurrentEraInfo::<T>::get().era_index;
 		// We have already paid out for the previous era. Put one entry for the previous era as if that is when they staked,
 		// so they will be credited for current_era.
 		ensure!(
