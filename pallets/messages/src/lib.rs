@@ -103,11 +103,9 @@ pub mod pallet {
 	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_message_index)]
 	pub(super) type BlockMessageIndex<T: Config> = StorageValue<_, MessageIndex, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn get_messages_v2)]
 	pub(super) type MessagesV2<T: Config> = StorageNMap<
 		_,
 		(

@@ -4,7 +4,7 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use crate::{
 	tests::{mock::*, other_tests::set_schema_count},
 	types::PermittedDelegationSchemas,
-	Config, Error,
+	Config, DelegatorAndProviderToDelegation, Error,
 };
 
 use common_primitives::{
@@ -70,7 +70,8 @@ fn grant_permissions_for_schema_success() {
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
-		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let delegation_relationship =
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
 			BlockNumberFor<Test>,
@@ -87,7 +88,8 @@ fn grant_permissions_for_schema_success() {
 
 		assert_ok!(result);
 
-		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let delegation_relationship =
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
 			BlockNumberFor<Test>,
@@ -147,7 +149,8 @@ fn revoke_permissions_for_schema_success() {
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
-		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let delegation_relationship =
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
 			BlockNumberFor<Test>,
@@ -165,7 +168,8 @@ fn revoke_permissions_for_schema_success() {
 
 		assert_ok!(result);
 
-		let delegation_relationship = Msa::get_delegation(delegator, provider).unwrap();
+		let delegation_relationship =
+			DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).unwrap();
 		let mut expected = BoundedBTreeMap::<
 			SchemaId,
 			BlockNumberFor<Test>,
@@ -206,7 +210,7 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 
 		assert_noop!(result, Error::<Test>::SchemaNotGranted);
 
-		let result = Msa::get_delegation(delegator, provider);
+		let result = DelegatorAndProviderToDelegation::<Test>::get(delegator, provider);
 
 		let mut expected = Delegation {
 			revoked_at: 0u32.into(),

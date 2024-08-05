@@ -149,14 +149,12 @@ pub mod pallet {
 	/// is incremented each time a new identifier is created.
 	/// - Value: The current maximum MSA Id
 	#[pallet::storage]
-	#[pallet::getter(fn get_current_msa_identifier_maximum)]
 	pub type CurrentMsaIdentifierMaximum<T> = StorageValue<_, MessageSourceId, ValueQuery>;
 
 	/// Storage type for mapping the relationship between a Delegator and its Provider.
 	/// - Keys: Delegator MSA, Provider MSA
 	/// - Value: [`Delegation`](common_primitives::msa::Delegation)
 	#[pallet::storage]
-	#[pallet::getter(fn get_delegation)]
 	pub type DelegatorAndProviderToDelegation<T: Config> = StorageDoubleMap<
 		_,
 		Twox64Concat,
@@ -171,7 +169,6 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
-	#[pallet::getter(fn get_provider_registry_entry)]
 	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -184,7 +181,6 @@ pub mod pallet {
 	/// - Key: AccountId
 	/// - Value: [`MessageSourceId`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_msa_by_public_key)]
 	pub type PublicKeyToMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, MessageSourceId, OptionQuery>;
 
@@ -192,7 +188,6 @@ pub mod pallet {
 	/// - Key: MSA Id
 	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
-	#[pallet::getter(fn get_public_key_count_by_msa_id)]
 	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
@@ -213,7 +208,6 @@ pub mod pallet {
 	///     - `BlockNumber` when the keyed signature can be ejected from the registry
 	///     - [`MultiSignature`] the forward linked list pointer. This pointer is the next "newest" value.
 	#[pallet::storage]
-	#[pallet::getter(fn get_payload_signature_registry)]
 	pub(super) type PayloadSignatureRegistryList<T: Config> = StorageMap<
 		_,                                   // prefix
 		Twox64Concat,                        // hasher for key1
@@ -228,7 +222,6 @@ pub mod pallet {
 	/// Contains the pointers to the data stored in the `PayloadSignatureRegistryList`
 	/// - Value: [`SignatureRegistryPointer`]
 	#[pallet::storage]
-	#[pallet::getter(fn get_payload_signature_pointer)]
 	pub(super) type PayloadSignatureRegistryPointer<T: Config> =
 		StorageValue<_, SignatureRegistryPointer<BlockNumberFor<T>>>;
 
@@ -236,7 +229,6 @@ pub mod pallet {
 	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	#[pallet::whitelist_storage]
-	#[pallet::getter(fn get_offchain_index_event_count)]
 	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
 	#[pallet::event]
@@ -601,7 +593,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			match Self::get_msa_by_public_key(&who) {
+			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(delegator_msa_id) => {
 					let delegator_id = DelegatorId(delegator_msa_id);
 					let provider_id = ProviderId(provider_msa_id);
@@ -715,7 +707,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			match Self::get_msa_by_public_key(&who) {
+			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(who_msa_id) => {
 					Self::delete_key_for_msa(who_msa_id, &public_key_to_delete)?;
 
@@ -756,7 +748,7 @@ pub mod pallet {
 			// Revoke delegation relationship entry in the delegation registry by expiring it
 			// at the current block
 			// validity checks are in SignedExtension so in theory this should never error.
-			match Self::get_msa_by_public_key(&who) {
+			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					let provider_id = ProviderId(msa_id);
 					let delegator_id = DelegatorId(delegator);
@@ -835,7 +827,7 @@ pub mod pallet {
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
 			// check for valid MSA is in SignedExtension.
-			match Self::get_msa_by_public_key(&who) {
+			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
 					let event = Event::PublicKeyDeleted { key: who };
@@ -936,7 +928,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::MsaIdOverflow`]
 	///
 	pub fn get_next_msa_id() -> Result<MessageSourceId, DispatchError> {
-		let next = Self::get_current_msa_identifier_maximum()
+		let next = CurrentMsaIdentifierMaximum::<T>::get()
 			.checked_add(1)
 			.ok_or(Error::<T>::MsaIdOverflow)?;
 
@@ -1305,12 +1297,12 @@ impl<T: Config> Pallet<T> {
 
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		Self::get_msa_by_public_key(&key)
+		PublicKeyToMsaId::<T>::get(&key)
 	}
 
 	/// Retrieve MSA Id associated with `key` or return `NoKeyExists`
 	pub fn ensure_valid_msa_key(key: &T::AccountId) -> Result<MessageSourceId, DispatchError> {
-		let msa_id = Self::get_msa_by_public_key(key).ok_or(Error::<T>::NoKeyExists)?;
+		let msa_id = PublicKeyToMsaId::<T>::get(key).ok_or(Error::<T>::NoKeyExists)?;
 		Ok(msa_id)
 	}
 
@@ -1426,7 +1418,7 @@ impl<T: Config> Pallet<T> {
 		// Maybe remove the oldest signature and update the oldest
 		if is_registry_full {
 			let (expire_block_number, next_oldest) =
-				Self::get_payload_signature_registry(pointer.oldest.clone())
+				PayloadSignatureRegistryList::<T>::get(pointer.oldest.clone())
 					.ok_or(Error::<T>::SignatureRegistryCorrupted)?;
 
 			ensure!(
@@ -1524,7 +1516,7 @@ impl<T: Config> ProviderLookup for Pallet<T> {
 		delegator: DelegatorId,
 		provider: ProviderId,
 	) -> Option<Delegation<SchemaId, Self::BlockNumber, Self::MaxSchemaGrantsPerDelegation>> {
-		Self::get_delegation(delegator, provider)
+		DelegatorAndProviderToDelegation::<T>::get(delegator, provider)
 	}
 }
 
@@ -1550,7 +1542,7 @@ impl<T: Config> DelegationValidator for Pallet<T> {
 		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
 		DispatchError,
 	> {
-		let info = Self::get_delegation(delegator_id, provider_id)
+		let info = DelegatorAndProviderToDelegation::<T>::get(delegator_id, provider_id)
 			.ok_or(Error::<T>::DelegationNotFound)?;
 		let current_block = frame_system::Pallet::<T>::block_number();
 		let requested_block = match block_number {
@@ -1748,7 +1740,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::HandleNotRetired as u8)
 		);
 
-		let key_count = Pallet::<T>::get_public_key_count_by_msa_id(msa_id);
+		let key_count = PublicKeyCountForMsaId::<T>::get(msa_id);
 		ensure!(
 			key_count == 1,
 			InvalidTransaction::Custom(ValidityError::InvalidMoreThanOneKeyExists as u8)

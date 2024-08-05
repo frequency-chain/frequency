@@ -207,6 +207,10 @@ new Reward Era, when necessary, during `on_initialize`.
 	/// How much is staked this era
 	#[pallet::storage]
 	pub type CurrentEraProviderBoostTotal<T: Config> = StorageValue<_, BalanceOf<T>, ValueQuery>;
+
+  /// Reward Pool history
+  #[pallet::storage]
+  pub type StakingRewardPool<T: Config> = <CountedStorageMap<_, Twox64Concat, RewardEra, RewardPoolInfo<T>;
 ```
 
 ### NEW: CurrentEraInfo, RewardEraInfo

@@ -9,6 +9,7 @@ use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError};
 
 use pallet_balances::Call as BalancesCall;
+use pallet_capacity::CapacityLedger;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
 use pallet_msa::Call as MsaCall;
 
@@ -624,7 +625,7 @@ fn withdraw_fee_replenishes_capacity_account_on_new_epoch_before_deducting_fee()
 
 			assert_withdraw_fee_result(provider_msa_id, call, None);
 
-			let actual_capacity = Capacity::get_capacity_for(provider_account_id).unwrap();
+			let actual_capacity = CapacityLedger::<Test>::get(provider_account_id).unwrap();
 
 			assert_eq!(
 				actual_capacity,
@@ -670,7 +671,7 @@ fn withdraw_fee_does_not_replenish_if_not_new_epoch() {
 
 			assert_withdraw_fee_result(provider_msa_id, call, None);
 
-			let actual_capacity = Capacity::get_capacity_for(provider_account_id).unwrap();
+			let actual_capacity = CapacityLedger::<Test>::get(provider_account_id).unwrap();
 
 			// Capacity details should have only the fee taken out
 			assert_eq!(

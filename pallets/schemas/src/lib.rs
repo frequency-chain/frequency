@@ -188,14 +188,12 @@ pub mod pallet {
 	/// Allows for altering the max bytes without a full chain upgrade
 	/// - Value: Max Bytes
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_model_max_bytes)]
 	pub(super) type GovernanceSchemaModelMaxBytes<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	/// Storage type for current number of schemas
 	/// Useful for retrieving latest schema id
 	/// - Value: Last Schema Id
 	#[pallet::storage]
-	#[pallet::getter(fn get_current_schema_identifier_maximum)]
 	pub(super) type CurrentSchemaIdentifierMaximum<T: Config> =
 		StorageValue<_, SchemaId, ValueQuery>;
 
@@ -203,7 +201,6 @@ pub mod pallet {
 	/// - Key: Schema Id
 	/// - Value: [`SchemaInfo`](SchemaInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_info)]
 	pub(super) type SchemaInfos<T: Config> =
 		StorageMap<_, Twox64Concat, SchemaId, SchemaInfo, OptionQuery>;
 
@@ -211,7 +208,6 @@ pub mod pallet {
 	/// - Key: Schema Id
 	/// - Value: [`BoundedVec`](BoundedVec<T::SchemaModelMaxBytesBoundedVecLimit>)
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_payload)]
 	pub(super) type SchemaPayloads<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -224,7 +220,6 @@ pub mod pallet {
 	/// - Key: Schema Id
 	/// - Value: [`SchemaInfo`](SchemaInfo)
 	#[pallet::storage]
-	#[pallet::getter(fn get_schema_ids)]
 	pub(super) type SchemaNameToIds<T: Config> = StorageDoubleMap<
 		_,
 		Blake2_128Concat,
@@ -737,7 +732,7 @@ pub mod pallet {
 
 		/// Retrieve a schema by id
 		pub fn get_schema_by_id(schema_id: SchemaId) -> Option<SchemaResponse> {
-			match (Self::get_schema_info(schema_id), Self::get_schema_payload(schema_id)) {
+			match (SchemaInfos::<T>::get(schema_id), SchemaPayloads::<T>::get(schema_id)) {
 				(Some(schema_info), Some(payload)) => {
 					let model_vec: Vec<u8> = payload.into_inner();
 					let saved_settings = schema_info.settings;
@@ -761,7 +756,7 @@ pub mod pallet {
 
 		/// Retrieve a schema info by id
 		pub fn get_schema_info_by_id(schema_id: SchemaId) -> Option<SchemaInfoResponse> {
-			if let Some(schema_info) = Self::get_schema_info(schema_id) {
+			if let Some(schema_info) = SchemaInfos::<T>::get(schema_id) {
 				let saved_settings = schema_info.settings;
 				let settings = saved_settings.0.iter().collect::<Vec<SchemaSetting>>();
 				let response = SchemaInfoResponse {
@@ -802,7 +797,7 @@ pub mod pallet {
 		/// * [`Error::SchemaCountOverflow`]
 		///
 		fn get_next_schema_id() -> Result<SchemaId, DispatchError> {
-			let next = Self::get_current_schema_identifier_maximum()
+			let next = CurrentSchemaIdentifierMaximum::<T>::get()
 				.checked_add(1)
 				.ok_or(Error::<T>::SchemaCountOverflow)?;
 
@@ -834,7 +829,7 @@ pub mod pallet {
 				Error::<T>::LessThanMinSchemaModelBytes
 			);
 			ensure!(
-				model.len() <= Self::get_schema_model_max_bytes() as usize,
+				model.len() <= GovernanceSchemaModelMaxBytes::<T>::get() as usize,
 				Error::<T>::ExceedsMaxSchemaModelBytes
 			);
 			// AppendOnly is only valid for Itemized payload location
@@ -882,7 +877,7 @@ pub mod pallet {
 			schema_id: SchemaId,
 			schema_name: &SchemaNamePayload,
 		) -> Result<SchemaName, DispatchError> {
-			let schema_option = Self::get_schema_info(schema_id);
+			let schema_option = SchemaInfos::<T>::get(schema_id);
 			ensure!(schema_option.is_some(), Error::<T>::SchemaIdDoesNotExist);
 			if let Some(info) = schema_option {
 				ensure!(!info.has_name, Error::<T>::SchemaIdAlreadyHasName);
@@ -917,7 +912,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
 	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool {
-		let latest_issue_schema_id = Self::get_current_schema_identifier_maximum();
+		let latest_issue_schema_id = CurrentSchemaIdentifierMaximum::<T>::get();
 		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
 	}
 

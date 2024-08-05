@@ -101,7 +101,7 @@ benchmarks! {
 
 	}: _ (RawOrigin::Signed(caller.clone()))
 	verify {
-		assert!(Msa::<T>::get_msa_by_public_key(caller).is_some());
+		assert!(PublicKeyToMsaId::<T>::get(caller).is_some());
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 	}
 
@@ -119,7 +119,7 @@ benchmarks! {
 		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64.into());
 	}: _ (RawOrigin::Signed(caller), key.clone(), signature, payload)
 	verify {
-		assert!(Msa::<T>::get_msa_by_public_key(key).is_some());
+		assert!(PublicKeyToMsaId::<T>::get(key).is_some());
 	}
 
 	revoke_delegation_by_provider {
@@ -133,7 +133,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
+		assert_eq!(DelegatorAndProviderToDelegation::<T>::get(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
 	}
 
 	add_public_key_to_msa {
@@ -148,7 +148,7 @@ benchmarks! {
 		let owner_signature = MultiSignature::Sr25519(delegator_key_pair.sign(&encoded_add_key_payload).unwrap().into());
 	}: _ (RawOrigin::Signed(provider_public_key.clone()), delegator_public_key.clone(), owner_signature, new_public_key_signature, add_key_payload)
 	verify {
-		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_some());
+		assert!(PublicKeyToMsaId::<T>::get(new_public_key).is_some());
 	}
 
 	delete_msa_public_key {
@@ -167,7 +167,7 @@ benchmarks! {
 
 	}: _(RawOrigin::Signed(caller_and_delegator_public_key), new_public_key.clone())
 	verify {
-		assert!(Msa::<T>::get_msa_by_public_key(new_public_key).is_none());
+		assert!(PublicKeyToMsaId::<T>::get(new_public_key).is_none());
 	}
 
 	retire_msa {
@@ -177,7 +177,7 @@ benchmarks! {
 	}
 	verify {
 		// Assert that the MSA has no accounts
-		let key_count = Msa::<T>::get_public_key_count_by_msa_id(1);
+		let key_count = PublicKeyCountForMsaId::<T>::get(1);
 		assert_eq!(key_count, 0);
 	}
 
@@ -198,7 +198,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(provider_caller), delegator_key, signature, payload)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).is_some());
+		assert!(DelegatorAndProviderToDelegation::<T>::get(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).is_some());
 	}
 
 	revoke_delegation_by_delegator {
@@ -212,7 +212,7 @@ benchmarks! {
 	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id)
 	verify {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-		assert_eq!(Msa::<T>::get_delegation(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
+		assert_eq!(DelegatorAndProviderToDelegation::<T>::get(DelegatorId(delegator_msa_id), ProviderId(provider_msa_id)).unwrap().revoked_at, BlockNumberFor::<T>::from(1u32));
 	}
 
 	create_provider {
@@ -223,7 +223,7 @@ benchmarks! {
 		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
 	}: _ (RawOrigin::Signed(provider_public_key), provider_name)
 	verify {
-		assert!(Msa::<T>::get_provider_registry_entry(ProviderId(provider_msa_id)).is_some());
+		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
 	}
 
 	create_provider_via_governance {

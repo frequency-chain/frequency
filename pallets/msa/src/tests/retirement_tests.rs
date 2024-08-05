@@ -7,7 +7,7 @@ use sp_runtime::MultiSignature;
 use crate::{
 	tests::mock::*,
 	types::{AddKeyData, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Error, Event, ValidityError,
+	CheckFreeExtrinsicUse, Error, Event, PublicKeyCountForMsaId, ValidityError,
 };
 
 use crate::tests::other_tests::{
@@ -42,7 +42,7 @@ fn test_retire_msa_success() {
 		System::assert_last_event(Event::MsaRetired { msa_id }.into());
 
 		// Assert that the MSA has no accounts
-		let key_count = Msa::get_public_key_count_by_msa_id(msa_id);
+		let key_count = PublicKeyCountForMsaId::<Test>::get(msa_id);
 		assert_eq!(key_count, 0);
 
 		// MSA has been retired, perform additional tests

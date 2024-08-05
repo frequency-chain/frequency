@@ -27,7 +27,7 @@ impl MsaLookup for MsaInfoHandler {
 
 	fn get_msa_id(key: &AccountId) -> Option<MessageSourceId> {
 		if *key == test_public(INVALID_MSA_ID as u8) {
-			return None
+			return None;
 		}
 
 		Some(MessageSourceId::decode(&mut key.as_slice()).unwrap())
@@ -39,7 +39,7 @@ impl MsaValidator for MsaInfoHandler {
 
 	fn ensure_valid_msa_key(key: &Self::AccountId) -> Result<MessageSourceId, DispatchError> {
 		if *key == test_public(INVALID_MSA_ID as u8) {
-			return Err(DispatchError::Other("some error"))
+			return Err(DispatchError::Other("some error"));
 		}
 
 		Ok(MessageSourceId::decode(&mut key.as_slice()).unwrap())

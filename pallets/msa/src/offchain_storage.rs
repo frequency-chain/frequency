@@ -136,7 +136,7 @@ fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> L
 					log::info!("Added {} more keys!", counter);
 					if guard.extend_lock().is_err() {
 						log::warn!("lock is expired in block {:?}", block_number);
-						return LockStatus::Released
+						return LockStatus::Released;
 					}
 				}
 			}
@@ -145,7 +145,7 @@ fn offchain_index_initial_state<T: Config>(block_number: BlockNumberFor<T>) -> L
 			log::info!("Finished adding {} keys!", counter);
 		}
 	} else {
-		return LockStatus::Locked
+		return LockStatus::Locked;
 	};
 	LockStatus::Released
 }
@@ -176,7 +176,7 @@ fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 			if reverse_map_msa_keys::<T>(start_block_number) {
 				if guard.extend_lock().is_err() {
 					log::warn!("last processed block lock is expired in block {:?}", block_number);
-					break
+					break;
 				}
 			}
 			last_processed_block_storage.set(&start_block_number);
@@ -410,7 +410,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	// Let's check the status code before we proceed to reading the response.
 	if response.code != 200 {
 		log::warn!("Unexpected status code: {}", response.code);
-		return Err(sp_runtime::offchain::http::Error::Unknown)
+		return Err(sp_runtime::offchain::http::Error::Unknown);
 	}
 
 	// Next we want to fully read the response body and collect it to a vector of bytes.
@@ -446,7 +446,7 @@ fn get_finalized_block_number<T: Config>(
 		Ok(hash) => hash,
 		Err(e) => {
 			log::error!("failure to get the finalized hash {:?}", e);
-			return finalized_block_number
+			return finalized_block_number;
 		},
 	};
 
@@ -457,7 +457,7 @@ fn get_finalized_block_number<T: Config>(
 	while current_block_number > last_block_number {
 		if last_finalized_hash == frame_system::Pallet::<T>::block_hash(current_block_number) {
 			finalized_block_number = Some(current_block_number);
-			break
+			break;
 		}
 		current_block_number.saturating_dec();
 	}
