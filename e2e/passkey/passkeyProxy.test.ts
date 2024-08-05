@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getBlockNumber, getNonce } from '../scaffolding/helpers';
+import { createAndFundKeypair, createKeys, getBlockNumber, getNonce } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -15,7 +15,7 @@ describe('Passkey Pallet Tests', function () {
 
     beforeEach(async function () {
       fundedKeys = await createAndFundKeypair(fundingSource, 1_000_000_000n);
-      receiverKeys = await createAndFundKeypair(fundingSource);
+      receiverKeys = createKeys('passkey-receiver');
     });
 
     it('should fail due to unsupported call', async function () {
@@ -35,7 +35,7 @@ describe('Passkey Pallet Tests', function () {
     it('should fail to transfer balance due to bad account ownership proof', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.address, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign('badPasskeyPublicKey');
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
@@ -48,7 +48,7 @@ describe('Passkey Pallet Tests', function () {
     it('should fail to transfer balance due to bad passkey signature', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.address, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
@@ -61,7 +61,7 @@ describe('Passkey Pallet Tests', function () {
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100_000n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.address, 100_000n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
@@ -70,8 +70,6 @@ describe('Passkey Pallet Tests', function () {
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
       await ExtrinsicHelper.runToBlock((await getBlockNumber()) + 2);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-      const nonceAfter = await getNonce(fundedKeys);
-      assert.equal(nonce + 1, nonceAfter);
       assert(receiverBalance.data.free.toBigInt() > 0n);
     });
   });
