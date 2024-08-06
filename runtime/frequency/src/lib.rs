@@ -539,7 +539,7 @@ impl pallet_capacity::Config for Runtime {
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
-	type RewardPoolEachEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
+	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
 	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = ConstU32<5>;

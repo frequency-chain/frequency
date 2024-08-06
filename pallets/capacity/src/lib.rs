@@ -127,7 +127,7 @@ pub mod pallet {
 		/// The maximum number of unlocking chunks a StakingAccountLedger can have.
 		/// It determines how many concurrent unstaked chunks may exist.
 		#[pallet::constant]
-		type MaxUnlockingChunks: Get<u32> + Clone;
+		type MaxUnlockingChunks: Get<u32>;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
@@ -178,7 +178,7 @@ pub mod pallet {
 
 		/// The fixed size of the reward pool in each Reward Era.
 		#[pallet::constant]
-		type RewardPoolEachEra: Get<BalanceOf<Self>>;
+		type RewardPoolPerEra: Get<BalanceOf<Self>>;
 
 		/// the percentage cap per era of an individual Provider Boost reward
 		#[pallet::constant]
@@ -1117,7 +1117,7 @@ impl<T: Config> Pallet<T> {
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
 					eligible_amount,
 					total_for_era,
-					T::RewardPoolEachEra::get(),
+					T::RewardPoolPerEra::get(),
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1315,13 +1315,10 @@ impl<T: Config> Replenishable for Pallet<T> {
 }
 
 impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
-	type AccountId = T::AccountId;
-	type RewardEra = common_primitives::capacity::RewardEra;
-	type Hash = T::Hash;
 	type Balance = BalanceOf<T>;
 
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		T::RewardPoolEachEra::get()
+		T::RewardPoolPerEra::get()
 	}
 
 	/// Calculate the reward for a single era.  We don't care about the era number,
