@@ -2,7 +2,7 @@ use crate as pallet_capacity;
 
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk,
+	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
 	node::{AccountId, Hash, ProposalProvider},
@@ -168,7 +168,7 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
-		Perbill::from_percent(50u32).mul(amount)
+		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
 	}
 }
 

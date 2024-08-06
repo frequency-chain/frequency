@@ -14,6 +14,10 @@ use sp_runtime::{
 #[cfg(any(feature = "runtime-benchmarks", test))]
 use sp_std::vec::Vec;
 
+/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
+/// this value should be between [0,100]
+pub const STAKED_PERCENTAGE_TO_BOOST: u32 = 50;
+
 #[derive(
 	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
 )]
@@ -306,7 +310,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// returns the range of 		eras in this chunk
-	/// Used in testing
+	#[cfg(test)]
 	pub fn era_range(&self) -> (RewardEra, RewardEra) {
 		let zero_reward_era: RewardEra = Zero::zero();
 		let zero_balance: BalanceOf<T> = Zero::zero();
@@ -325,7 +329,7 @@ impl<T: Config> RewardPoolHistoryChunk<T> {
 	}
 
 	/// Get the earliest reward era stored in this BoundedBTreeMap
-	/// Used only in testing.
+	#[cfg(test)]
 	pub fn earliest_era(&self) -> Option<&RewardEra> {
 		if let Some((first_era, _first_total)) = self.0.first_key_value() {
 			return Some(first_era);
