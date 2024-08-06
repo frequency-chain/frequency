@@ -7,10 +7,11 @@ import {
   CENTS,
   DOLLARS,
   createAndFundKeypair,
-  boostProvider,
+  boostProvider, stakeToProvider,
 } from '../scaffolding/helpers';
 
 const fundingSource = getFundingSource('capacity-provider-boost');
+const tokenMinStake: bigint = 1n * CENTS;
 
 describe('Capacity: provider_boost extrinsic', function () {
   const providerBalance = 2n * DOLLARS;
@@ -25,14 +26,15 @@ describe('Capacity: provider_boost extrinsic', function () {
   it('fails when staker is a Maximized Capacity staker', async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
-    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, 1n * DOLLARS), {name: "CannotChangeStakingType"});
+    await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, provider, tokenMinStake));
+    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, tokenMinStake), {name: "CannotChangeStakingType"});
   });
 
   it("fails when staker doesn't have enough token", async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     const booster = await createAndFundKeypair(fundingSource, 1n * DOLLARS, 'booster');
-    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS), {name: "InsufficientCapacityBalance"});
+    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS), {name: "BalanceTooLowtoStake"});
   });
 
   it('staker can boost multiple times', async function () {

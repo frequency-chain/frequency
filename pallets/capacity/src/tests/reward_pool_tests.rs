@@ -6,8 +6,9 @@ use common_primitives::capacity::RewardEra;
 use frame_support::{assert_ok, traits::Get};
 use std::ops::Add;
 
-// Check eras_tests for how reward pool chunks are expected to be filled during
-// runtime.
+// Check eras_tests for how reward pool chunks are expected to be filled during runtime.
+
+// Fill up a reward pool history chunk by adding 100 in each new era from the starting value.
 fn fill_reward_pool_history_chunk(
 	chunk_index: u32,
 	starting_era: RewardEra,
@@ -67,11 +68,11 @@ fn get_total_stake_for_past_era_works_with_1_full_chunk() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(52);
 		set_era_and_reward_pool(6, 51, 1000);
-		fill_reward_pool_history_chunk(0, 1, 3, 100); // eras 1-3
-		fill_reward_pool_history_chunk(1, 4, 2, 400); // eras 4,5
-		for i in 3u32..=5u32 {
+		fill_reward_pool_history_chunk(0, 0, 3, 0); // eras 1-3
+		fill_reward_pool_history_chunk(1, 3, 2, 300); // eras 4,5
+		for i in 2u32..=4u32 {
 			let expected_total: BalanceOf<Test> = (i * 100u32).into();
-			let actual = Capacity::get_total_stake_for_past_era(i, 6);
+			let actual = Capacity::get_total_stake_for_past_era(i, 5);
 			assert_eq!(actual, Ok(expected_total));
 		}
 		assert!(Capacity::get_total_stake_for_past_era(6, 6).is_err());
@@ -82,15 +83,15 @@ fn get_total_stake_for_past_era_works_with_1_full_chunk() {
 fn get_total_stake_for_past_era_works_with_2_full_chunks() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(72);
-		set_era_and_reward_pool(8, 71, 1000);
-		fill_reward_pool_history_chunk(0, 1, 3, 100);
-		fill_reward_pool_history_chunk(1, 4, 3, 400);
-		fill_reward_pool_history_chunk(2, 7, 1, 700);
-		for i in 1u32..=7u32 {
+		set_era_and_reward_pool(7, 71, 1000);
+		fill_reward_pool_history_chunk(0, 0, 3, 0);
+		fill_reward_pool_history_chunk(1, 3, 3, 300);
+		fill_reward_pool_history_chunk(2, 6, 1, 600);
+		for i in 0u32..=6u32 {
 			let expected_total: BalanceOf<Test> = (i * 100u32).into();
-			assert_eq!(Capacity::get_total_stake_for_past_era(i, 8), Ok(expected_total));
+			assert_eq!(Capacity::get_total_stake_for_past_era(i, 7), Ok(expected_total));
 		}
-		assert!(Capacity::get_total_stake_for_past_era(8, 8).is_err());
+		assert!(Capacity::get_total_stake_for_past_era(7, 7).is_err());
 	})
 }
 
@@ -99,17 +100,17 @@ fn get_total_stake_for_past_era_works_with_full_reward_pool() {
 	new_test_ext().execute_with(|| {
 		System::set_block_number(121);
 		let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
-		set_era_and_reward_pool(13, 121, (2000u32).into());
+		set_era_and_reward_pool(12, 121, (2000u32).into());
 
-		fill_reward_pool_history_chunk(0, 1, 3, 101);
-		fill_reward_pool_history_chunk(1, 4, 3, 401);
-		fill_reward_pool_history_chunk(2, 7, 3, 701);
-		fill_reward_pool_history_chunk(3, 10, 3, 1001);
+		fill_reward_pool_history_chunk(0, 0, 3, 1);
+		fill_reward_pool_history_chunk(1, 3, 3, 301);
+		fill_reward_pool_history_chunk(2, 6, 3, 601);
+		fill_reward_pool_history_chunk(3, 9, 3, 901);
 
-		(1u32..=history_limit).for_each(|era| {
+		(0u32..history_limit).for_each(|era| {
 			let expected_total: BalanceOf<Test> = ((era * 100u32) + 1u32).into();
-			assert_eq!(Capacity::get_total_stake_for_past_era(era, 13), Ok(expected_total));
+			assert_eq!(Capacity::get_total_stake_for_past_era(era, 12), Ok(expected_total));
 		});
-		assert!(Capacity::get_total_stake_for_past_era(13, 13).is_err());
+		assert!(Capacity::get_total_stake_for_past_era(12, 12).is_err());
 	})
 }

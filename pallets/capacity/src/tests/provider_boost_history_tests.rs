@@ -34,7 +34,7 @@ fn multiple_provider_boosts_updates_history_correctly() {
 		// should update era 1 history
 		let mut history = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(history.count(), 1);
-		assert_eq!(history.get_entry_for_era(&1u32).unwrap(), &700u64);
+		assert_eq!(history.get_entry_for_era(&0u32).unwrap(), &700u64);
 
 		system_run_to_block(10);
 		run_to_block(11);
@@ -44,7 +44,7 @@ fn multiple_provider_boosts_updates_history_correctly() {
 		// should add an era 2 history
 		history = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(history.count(), 2);
-		assert_eq!(history.get_entry_for_era(&2u32).unwrap(), &900u64);
+		assert_eq!(history.get_entry_for_era(&1u32).unwrap(), &900u64);
 	})
 }
 
