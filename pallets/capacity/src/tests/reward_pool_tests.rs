@@ -1,9 +1,6 @@
 use crate::{
-	tests::{
-		mock::*,
-		testing_utils::{run_to_block, set_era_and_reward_pool},
-	},
-	BalanceOf, Config, CurrentEraInfo, ProviderBoostRewardPools, RewardPoolHistoryChunk,
+	tests::{mock::*, testing_utils::set_era_and_reward_pool},
+	BalanceOf, Config, ProviderBoostRewardPools, RewardPoolHistoryChunk,
 };
 use common_primitives::capacity::RewardEra;
 use frame_support::{assert_ok, traits::Get};

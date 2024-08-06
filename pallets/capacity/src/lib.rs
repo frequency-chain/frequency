@@ -1081,9 +1081,11 @@ impl<T: Config> Pallet<T> {
 		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
 
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
-		let mut previous_amount: BalanceOf<T> =
-			staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(0u32.into())));
-
+		let mut previous_amount: BalanceOf<T> = match start_era {
+			0 => 0u32.into(),
+			_ =>
+				staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into()))),
+		};
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
 			T::ProviderBoostHistoryLimit,
