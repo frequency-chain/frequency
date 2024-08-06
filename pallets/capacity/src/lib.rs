@@ -953,8 +953,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(CurrentEpochInfo::<T>::get().epoch_start)
-			>= EpochLength::<T>::get()
+		if current_block.saturating_sub(CurrentEpochInfo::<T>::get().epoch_start) >=
+			EpochLength::<T>::get()
 		{
 			let current_epoch = CurrentEpoch::<T>::get();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(One::one()));
@@ -1162,8 +1162,8 @@ impl<T: Config> Pallet<T> {
 		// Make sure that the past era is not too old
 		let era_range = current_era.saturating_sub(reward_era);
 		ensure!(
-			current_era.gt(&reward_era)
-				&& era_range.le(&T::ProviderBoostHistoryLimit::get().into()),
+			current_era.gt(&reward_era) &&
+				era_range.le(&T::ProviderBoostHistoryLimit::get().into()),
 			Error::<T>::EraOutOfRange
 		);
 
