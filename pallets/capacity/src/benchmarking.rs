@@ -163,7 +163,7 @@ benchmarks! {
 	start_new_reward_era_if_needed {
 		let current_block: BlockNumberFor<T> = 1_209_600u32.into();
 		let history_limit: u32 = <T as Config>::ProviderBoostHistoryLimit::get();
-		let total_reward_pool: BalanceOf<T> = <T as Config>::RewardPoolEachEra::get();
+		let total_reward_pool: BalanceOf<T> = <T as Config>::RewardPoolPerEra::get();
 		let unclaimed_balance: BalanceOf<T> = 5_000u32.into();
 		let total_staked_token: BalanceOf<T> = 5_000u32.into();
 		let started_at: BlockNumberFor<T> = current_block.saturating_sub(<T as Config>::EraLength::get().into());
