@@ -7,7 +7,8 @@ import {
   CENTS,
   DOLLARS,
   createAndFundKeypair,
-  boostProvider, stakeToProvider,
+  boostProvider,
+  stakeToProvider,
 } from '../scaffolding/helpers';
 
 const fundingSource = getFundingSource('capacity-provider-boost');
@@ -27,14 +28,16 @@ describe('Capacity: provider_boost extrinsic', function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, provider, tokenMinStake));
-    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, tokenMinStake), {name: "CannotChangeStakingType"});
+    await assert.rejects(boostProvider(fundingSource, stakeKeys, provider, tokenMinStake), {
+      name: 'CannotChangeStakingType',
+    });
   });
 
   it("fails when staker doesn't have enough token", async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     const booster = await createAndFundKeypair(fundingSource, 1n * DOLLARS, 'booster');
-    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS), {name: "BalanceTooLowtoStake"});
+    await assert.rejects(boostProvider(booster, booster, provider, 1n * DOLLARS), { name: 'BalanceTooLowtoStake' });
   });
 
   it('staker can boost multiple times', async function () {

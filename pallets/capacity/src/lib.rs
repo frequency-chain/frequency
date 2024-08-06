@@ -72,6 +72,7 @@ pub mod migration;
 pub mod weights;
 type BalanceOf<T> =
 	<<T as Config>::Currency as InspectFungible<<T as frame_system::Config>::AccountId>>::Balance;
+type ChunkIndex = u32;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -257,7 +258,7 @@ pub mod pallet {
 	/// chunk number.
 	#[pallet::storage]
 	pub type ProviderBoostRewardPools<T: Config> =
-		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
+		StorageMap<_, Twox64Concat, ChunkIndex, RewardPoolHistoryChunk<T>>;
 
 	/// How much is staked this era
 	#[pallet::storage]
@@ -1146,7 +1147,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::EraOutOfRange
 		);
 
-		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era);
+		let chunk_idx: ChunkIndex = Self::get_chunk_index_for_era(reward_era);
 		let reward_pool_chunk = ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or_default(); // 1r
 		let total_for_era =
 			reward_pool_chunk.total_for_era(&reward_era).ok_or(Error::<T>::EraOutOfRange)?;
@@ -1177,9 +1178,8 @@ impl<T: Config> Pallet<T> {
 	// This is where the reward pool gets updated.
 	pub(crate) fn update_provider_boost_reward_pool(era: RewardEra, boost_total: BalanceOf<T>) {
 		// Current era is this era
-		let chunk_idx: u32 = Self::get_chunk_index_for_era(era);
-		let mut new_chunk =
-			ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or(RewardPoolHistoryChunk::new()); // 1r
+		let chunk_idx: ChunkIndex = Self::get_chunk_index_for_era(era);
+		let mut new_chunk = ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or_default(); // 1r
 
 		// If it is full we are resetting.
 		// This assumes that the chunk length is a divisor of the history limit
@@ -1189,6 +1189,7 @@ impl<T: Config> Pallet<T> {
 
 		if new_chunk.try_insert(era, boost_total).is_err() {
 			// Handle the error case that should never happen
+			log::warn!("could not insert a new chunk into provider boost reward pool")
 		}
 		ProviderBoostRewardPools::<T>::set(chunk_idx, Some(new_chunk)); // 1w
 	}
