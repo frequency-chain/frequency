@@ -185,7 +185,7 @@ pub mod pallet {
 		type RewardPercentCap: Get<Permill>;
 
 		/// The number of chunks of Reward Pool history we expect to store
-		/// MUST be a divisor of [`Self::ProviderBoostHistoryLimit`]
+		/// Is a divisor of [`Self::ProviderBoostHistoryLimit`]
 		#[pallet::constant]
 		type RewardPoolChunkLength: Get<u32>;
 	}
