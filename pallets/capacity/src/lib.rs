@@ -268,24 +268,6 @@ pub mod pallet {
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		/// Phantom type
-		#[serde(skip)]
-		pub _config: PhantomData<T>,
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) {
-			CurrentEraInfo::<T>::set(RewardEraInfo {
-				era_index: 1u32.into(),
-				started_at: 0u32.into(),
-			});
-			CurrentEraProviderBoostTotal::<T>::set(0u32.into());
-		}
-	}
-
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -1093,12 +1075,14 @@ impl<T: Config> Pallet<T> {
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
 		let start_era = current_era_info.era_index.saturating_sub((max_history).into());
-		let end_era = current_era_info.era_index.saturating_sub(One::one());
+		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
 
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
-		let mut previous_amount: BalanceOf<T> =
-			staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into())));
-
+		let mut previous_amount: BalanceOf<T> = match start_era {
+			0 => 0u32.into(),
+			_ =>
+				staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into()))),
+		};
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
 			T::ProviderBoostHistoryLimit,
@@ -1180,7 +1164,7 @@ impl<T: Config> Pallet<T> {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
 		// Remove one because eras are 1 indexed
-		let era_u32: u32 = era.saturating_sub(One::one()).into();
+		let era_u32: u32 = era;
 
 		// Add one chunk so that we always have the full history limit in our chunks
 		let cycle: u32 = era_u32 % history_limit.saturating_add(chunk_len);
