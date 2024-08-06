@@ -1095,27 +1095,23 @@ impl<T: Config> Pallet<T> {
 		let current_era_info = CurrentEraInfo::<T>::get(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
-		let mut reward_era = current_era_info.era_index.saturating_sub((max_history).into());
+		let start_era = current_era_info.era_index.saturating_sub((max_history).into());
 		let end_era = current_era_info.era_index.saturating_sub(One::one());
 
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
 		let mut previous_amount: BalanceOf<T> =
-			staking_history.get_amount_staked_for_era(&(reward_era.saturating_sub(1u32.into())));
+			staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into())));
 
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
 			T::ProviderBoostHistoryLimit,
 		> = BoundedVec::new();
-		while reward_era.le(&end_era) {
+		for reward_era in start_era..=end_era {
 			let staked_amount = staking_history.get_amount_staked_for_era(&reward_era);
 			if !staked_amount.is_zero() {
 				let expires_at_era = reward_era.saturating_add(max_history.into());
 				let expires_at_block = Self::block_at_end_of_era(expires_at_era);
-				let eligible_amount = if staked_amount.lt(&previous_amount) {
-					staked_amount
-				} else {
-					previous_amount
-				};
+				let eligible_amount = staked_amount.min(previous_amount);
 				let total_for_era =
 					Self::get_total_stake_for_past_era(reward_era, current_era_info.era_index)?;
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
@@ -1135,7 +1131,6 @@ impl<T: Config> Pallet<T> {
 				// ^^ there's no good reason for this ever to fail in production but it must be handled.
 				previous_amount = staked_amount;
 			}
-			reward_era = reward_era.saturating_add(One::one());
 		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
 	}
@@ -1346,6 +1341,6 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 
 	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
-		Perbill::from_percent(50u32).mul(amount)
+		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
 	}
 }
