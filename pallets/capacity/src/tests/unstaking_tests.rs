@@ -371,7 +371,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 
 		// If unstaking in the next era, this should add a new staking history entry.
 		system_run_to_block(9);
-		run_to_block(51);
+		run_to_block(41);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 400u64));
 
@@ -392,8 +392,8 @@ fn unstake_all_by_booster_reaps_boost_history() {
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
-		system_run_to_block(9);
-		run_to_block(51);
+		system_run_to_block(10);
+		run_to_block(41);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 1_000));
 		assert!(ProviderBoostHistories::<Test>::get(staker).is_none());
@@ -403,7 +403,23 @@ fn unstake_all_by_booster_reaps_boost_history() {
 }
 
 #[test]
-fn unstake_maximum_does_not_change_provider_boost_history() {
+fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+
+		// staking 1k as of block 1, era 9
+		setup_provider(&account, &target, &amount, ProviderBoost);
+		assert!(ProviderBoostHistories::<Test>::get(account).is_some());
+		run_to_block(10);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
+		assert!(ProviderBoostHistories::<Test>::get(account).is_none());
+	});
+}
+
+#[test]
+fn unstake_maximum_immediately_after_staking_does_not_create_provider_boost_history() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000;
 		let target1 = 1;
@@ -420,6 +436,15 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 #[test]
 fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+
+	for i in 0u32..5u32 {
+		staking_history.add_era_balance(&i.into(), &10u64);
+	}
+	assert_eq!(staking_history.get_amount_staked_for_era(&0u32), 10u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&4u32), 50u64);
+
+	staking_history.subtract_era_balance(&4u32.into(), &50u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&5u32), 0u64);
 
 	for i in 10u32..=13u32 {
 		staking_history.add_era_balance(&i.into(), &5u64);
@@ -480,18 +505,3 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 	})
 }
 
-#[test]
-fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
-	new_test_ext().execute_with(|| {
-		let account = 10_000u64;
-		let target: MessageSourceId = 10;
-		let amount = 1_000u64;
-
-		// staking 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, ProviderBoost);
-		assert!(ProviderBoostHistories::<Test>::get(account).is_some());
-		run_to_block(10);
-		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
-		assert!(ProviderBoostHistories::<Test>::get(account).is_none());
-	});
-}

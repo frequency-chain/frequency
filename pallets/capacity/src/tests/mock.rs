@@ -236,7 +236,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| {
 		System::set_block_number(1);
 		initialize_reward_pool();
-		set_era_and_reward_pool(1, 1, 0);
+		set_era_and_reward_pool(0, 1, 0);
 	});
 	ext
 }

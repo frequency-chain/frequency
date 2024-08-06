@@ -12,6 +12,7 @@ use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_ok, traits::Len};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::Get;
+use common_primitives::capacity::RewardEra;
 
 // This tests Capacity implementation of the trait, but uses the mock's constants,
 // to ensure that it's correctly specified in the pallet.
@@ -113,51 +114,51 @@ fn list_unclaimed_rewards_has_eligible_rewards() {
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
 		run_to_block(51);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 6u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 5u32);
 		assert_eq!(CurrentEraInfo::<Test>::get().started_at, 51u32);
 
 		// rewards for era 6 should not be returned; era 6 is current era and therefore ineligible.
 		// eligible amounts for rewards for eras should be:  1=0, 2=1k, 3=2k, 4=2k, 5=3k
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 		assert_eq!(rewards.len(), 5usize);
-		let expected_info: [UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>>; 5] = [
+		let expected_info: Vec<UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>>> = [
 			UnclaimedRewardInfo {
-				reward_era: 1u32,
+				reward_era: 0u32,
 				expires_at_block: 130,
 				staked_amount: 1000,
 				eligible_amount: 0,
 				earned_amount: 0,
 			},
 			UnclaimedRewardInfo {
-				reward_era: 2u32,
+				reward_era: 1u32,
 				expires_at_block: 140,
 				staked_amount: 2000,
 				eligible_amount: 1000,
 				earned_amount: 4,
 			},
 			UnclaimedRewardInfo {
-				reward_era: 3u32,
+				reward_era: 2u32,
 				expires_at_block: 150,
 				staked_amount: 2000,
 				eligible_amount: 2_000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
-				reward_era: 4u32,
+				reward_era: 3u32,
 				expires_at_block: 160,
 				staked_amount: 3000,
 				eligible_amount: 2000,
 				earned_amount: 8,
 			},
 			UnclaimedRewardInfo {
-				reward_era: 5u32,
+				reward_era: 4u32,
 				expires_at_block: 170,
 				staked_amount: 3000,
 				eligible_amount: 3_000,
 				earned_amount: 11,
 			},
-		];
-		for i in 0..5 {
+		].to_vec();
+		for i in 0..expected_info.len() {
 			assert_eq!(rewards.get(i).unwrap(), &expected_info[i]);
 		}
 
@@ -166,7 +167,7 @@ fn list_unclaimed_rewards_has_eligible_rewards() {
 		let max_history: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
 		// the earliest era should no longer be stored.
 		assert_eq!(rewards.len(), max_history as usize);
-		assert_eq!(rewards.get(0).unwrap().reward_era, 2u32);
+		assert_eq!(rewards.get(0).unwrap().reward_era, 1u32);
 
 		// there was no change in stake, so the eligible and earned amounts should be the same as in
 		// reward era 5.
@@ -199,8 +200,12 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		run_to_block(131);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 14u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 13u32);
 		assert_eq!(CurrentEraInfo::<Test>::get().started_at, 131u32);
+
+		let boost_history = ProviderBoostHistories::<Test>::get(account).unwrap();
+		let zero_era: RewardEra = 0;
+		assert!(boost_history.get_entry_for_era(&zero_era).is_some());
 
 		let rewards = Capacity::list_unclaimed_rewards(&account).unwrap();
 
@@ -209,7 +214,7 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 
 		// the earliest era should no longer be stored.
 		for i in 0u32..max_history {
-			let era = i + 2u32;
+			let era = i + 1u32;
 			let expected_info: UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>> =
 				UnclaimedRewardInfo {
 					reward_era: era.into(),

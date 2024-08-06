@@ -21,11 +21,11 @@ fn claim_staking_rewards_leaves_one_history_item_for_current_era() {
 
 		setup_provider(&account, &target, &amount, ProviderBoost);
 		run_to_block(31);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 4u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 
 		let current_history = ProviderBoostHistories::<Test>::get(account).unwrap();
 		assert_eq!(current_history.count(), 1usize);
-		let history_item = current_history.get_entry_for_era(&1u32).unwrap();
+		let history_item = current_history.get_entry_for_era(&0u32).unwrap();
 		assert_eq!(*history_item, amount);
 	})
 }
@@ -57,25 +57,25 @@ fn claim_staking_rewards_mints_and_transfers_expected_total() {
 
 		setup_provider(&account, &target, &amount, ProviderBoost);
 		run_to_block(31);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 4u32);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		System::assert_last_event(
 			Event::<Test>::ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
 		);
 
-		// should have 2 era's worth of payouts: 4 each for eras 2, 3
+		// should have 2 era's worth of payouts: 4 each for eras 1, 2
 		assert_eq!(get_balance::<Test>(&account), 10_008u64);
 
 		// the reward value is unlocked
 		assert_transferable::<Test>(&account, 8u64);
 
-		run_to_block(51);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 6u32);
+		run_to_block(41);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 4u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		System::assert_last_event(
 			ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
 		);
-		// should have 4 for eras 2-5
+		// should have 4 for eras 1-3
 		assert_eq!(get_balance::<Test>(&account), 10_016u64);
 		assert_transferable::<Test>(&account, 16u64);
 	})
