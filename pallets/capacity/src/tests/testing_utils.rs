@@ -14,12 +14,14 @@ pub fn capacity_events() -> Vec<Event<Test>> {
 	let result = System::events()
 		.into_iter()
 		.map(|r| r.event)
-		.filter_map(|e| if let RuntimeEvent::Capacity(inner) = e {
-			log::warn!("inner: {:?}", inner);
-			Some(inner)
-		} else {
-			log::warn!("nothing");
-			None
+		.filter_map(|e| {
+			if let RuntimeEvent::Capacity(inner) = e {
+				log::warn!("inner: {:?}", inner);
+				Some(inner)
+			} else {
+				log::warn!("nothing");
+				None
+			}
 		})
 		.collect::<Vec<_>>();
 

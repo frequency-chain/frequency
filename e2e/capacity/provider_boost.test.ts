@@ -23,7 +23,7 @@ describe('Capacity: provider_boost extrinsic', function () {
     await assert.doesNotReject(boostProvider(fundingSource, booster, provider, 1n * DOLLARS));
   });
 
-  it.only('fails when staker is a Maximized Capacity staker', async function () {
+  it('fails when staker is a Maximized Capacity staker', async function () {
     const stakeKeys = createKeys('booster');
     const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, provider, tokenMinStake));
