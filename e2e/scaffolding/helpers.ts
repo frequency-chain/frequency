@@ -447,8 +447,9 @@ export async function boostProvider(
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
+  console.debug("stakeEvent: ", stakeEvent.toHuman());
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
-
+  console.debug("HERE");
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 

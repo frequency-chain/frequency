@@ -72,12 +72,13 @@ fn claim_staking_rewards_mints_and_transfers_expected_total() {
 		run_to_block(41);
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 4u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
+		// rewards available for one more era
 		System::assert_last_event(
-			ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
+			ProviderBoostRewardClaimed { account, reward_amount: 4u64 }.into(),
 		);
 		// should have 4 for eras 1-3
-		assert_eq!(get_balance::<Test>(&account), 10_016u64);
-		assert_transferable::<Test>(&account, 16u64);
+		assert_eq!(get_balance::<Test>(&account), 10_012u64);
+		assert_transferable::<Test>(&account, 12u64);
 	})
 }
 

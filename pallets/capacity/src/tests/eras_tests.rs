@@ -1,7 +1,7 @@
 use super::mock::*;
 use crate::{
-	tests::testing_utils::*, BalanceOf, CurrentEraInfo, CurrentEraProviderBoostTotal,
-	ProviderBoostRewardPools, RewardEraInfo, Config
+	tests::testing_utils::*, BalanceOf, Config, CurrentEraInfo, CurrentEraProviderBoostTotal,
+	ProviderBoostRewardPools, RewardEraInfo,
 };
 use common_primitives::{capacity::RewardEra, msa::MessageSourceId};
 use frame_support::{assert_ok, traits::Get};
@@ -14,11 +14,11 @@ pub fn boost_provider_and_run_to_end_of_era(
 ) {
 	assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), provider_msa, stake_amount));
 	// want to run to the first block of era so we get the on_initialize updates
-	let first_block_of_era: u32 = ((era+1u32) * 10) + 1;
+	let first_block_of_era: u32 = ((era + 1u32) * 10) + 1;
 	run_to_block(first_block_of_era);
-	let expected_stake =  stake_amount * ( (era + 1u32) as u64);
+	let expected_stake = stake_amount * ((era + 1u32) as u64);
 	assert_eq!(CurrentEraProviderBoostTotal::<Test>::get(), expected_stake);
-	// run to end of era.
+	// system_run to end of era. we don't need the on_initialize updates
 	let era_length: RewardEra = <Test as Config>::EraLength::get();
 	system_run_to_block(first_block_of_era + era_length - 1);
 }
@@ -54,7 +54,13 @@ fn assert_chunk_is_full_and_has_earliest_era_total(
 	let chunk = ProviderBoostRewardPools::<Test>::get(chunk_index).unwrap();
 	assert_eq!(chunk.is_full(), is_full, "Chunk {:?} should be full: {:?}", chunk_index, chunk);
 	assert_eq!(chunk.earliest_era(), Some(&era), "Earliest era should be {:?}, {:?}", era, chunk);
-	assert_eq!(chunk.total_for_era(&era), Some(&total), "Chunk total should be {:?}, {:?}", total, chunk);
+	assert_eq!(
+		chunk.total_for_era(&era),
+		Some(&total),
+		"Chunk total should be {:?}, {:?}",
+		total,
+		chunk
+	);
 }
 
 // gets the last (i.e. latest non-current) stored reward pool era, which is in chunk 0.
@@ -66,15 +72,25 @@ fn assert_last_era_total(era: RewardEra, total: BalanceOf<Test>) {
 	let chunk = chunk_opt.unwrap();
 	let (_earliest, latest) = chunk.era_range();
 	assert_eq!(latest, era);
-	assert_eq!(chunk.total_for_era(&era), Some(&total), "Chunk total should be {:?}, {:?}", total, chunk);
+	assert_eq!(
+		chunk.total_for_era(&era),
+		Some(&total),
+		"Chunk total should be {:?}, {:?}",
+		total,
+		chunk
+	);
 }
 
 fn assert_chunk_is_empty(chunk_index: u32) {
 	let chunk_opt = ProviderBoostRewardPools::<Test>::get(chunk_index);
 	if chunk_opt.is_some() {
 		let chunk = chunk_opt.unwrap();
-		assert!(chunk.earliest_era().is_none(),
-				"Earliest era for chunk {:?} should be None but it is {:?}", chunk_index, chunk)
+		assert!(
+			chunk.earliest_era().is_none(),
+			"Earliest era for chunk {:?} should be None but it is {:?}",
+			chunk_index,
+			chunk
+		)
 	} else {
 		assert!(chunk_opt.is_none(), "Expected chunk {:?} to be empty, but it's not", chunk_index);
 	}
@@ -120,13 +136,13 @@ fn start_new_era_if_needed_updates_reward_pool() {
 		assert_chunk_is_full_and_has_earliest_era_total(2, true, 6, 700);
 		assert_chunk_is_full_and_has_earliest_era_total(3, true, 9, 1000);
 		assert_chunk_is_full_and_has_earliest_era_total(4, true, 12, 1300);
-		assert_last_era_total(15, 1500);
+		assert_last_era_total(14, 1500);
 
 		// check that it all rolls over properly.
 		for i in [15u32, 16u32] {
 			boost_provider_and_run_to_end_of_era(staker, provider_msa, stake_amount, i);
 		}
-		// No Changes
+		// No Changes in chunk content for these eras
 		assert_chunk_is_full_and_has_earliest_era_total(1, true, 3, 400);
 		assert_chunk_is_full_and_has_earliest_era_total(2, true, 6, 700);
 		assert_chunk_is_full_and_has_earliest_era_total(3, true, 9, 1000);
@@ -184,10 +200,10 @@ fn get_chunk_index_for_era_works() {
 				TestCase { era: 9, expected: 3 },
 				TestCase { era: 10, expected: 3 },
 				TestCase { era: 11, expected: 3 },
-				TestCase { era: 12, expected: 4 },// This is not wrong; there is an extra chunk to leave space for cycling
+				TestCase { era: 12, expected: 4 }, // This is not wrong; there is an extra chunk to leave space for cycling
 				TestCase { era: 13, expected: 4 },
 				TestCase { era: 14, expected: 4 },
-				TestCase { era: 15, expected: 0 },// So cycle restarts here, not at 12.
+				TestCase { era: 15, expected: 0 }, // So cycle restarts here, not at 12.
 				TestCase { era: 16, expected: 0 },
 				TestCase { era: 17, expected: 0 },
 				TestCase { era: 18, expected: 1 },
