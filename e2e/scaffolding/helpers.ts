@@ -509,7 +509,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
       'OnChain',
       [],
       'test.graphChangeSchema'
-    );
+    )
     const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
