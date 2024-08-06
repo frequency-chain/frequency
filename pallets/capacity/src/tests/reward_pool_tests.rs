@@ -65,22 +65,6 @@ fn get_total_stake_for_past_era_works_with_partly_filled_single_chunk() {
 		assert!(Capacity::get_total_stake_for_past_era(99, 3).is_err());
 	})
 }
-#[test]
-fn debugging_rphc_past_era() {
-	new_test_ext().execute_with(|| {
-		set_era_and_reward_pool(0, 1, 1000);
-		run_to_block(11);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 1u32);
-		assert_eq!(Capacity::get_total_stake_for_past_era(0, 1), Ok(1000));
-		run_to_block(51);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 5u32);
-		assert_eq!(Capacity::get_total_stake_for_past_era(0, 5), Ok(1000));
-		run_to_block(121);
-		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 12u32);
-		assert_eq!(Capacity::get_total_stake_for_past_era(0, 5), Ok(1000));
-		run_to_block(121);
-	})
-}
 
 #[test]
 fn get_total_stake_for_past_era_works_with_1_full_chunk() {

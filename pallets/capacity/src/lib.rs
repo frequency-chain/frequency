@@ -1165,7 +1165,7 @@ impl<T: Config> Pallet<T> {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
 		// Remove one because eras are 1 indexed
-		let era_u32: u32 = era.saturating_sub(One::one()).into();
+		let era_u32: u32 = era;
 
 		// Add one chunk so that we always have the full history limit in our chunks
 		let cycle: u32 = era_u32 % history_limit.saturating_add(chunk_len);
