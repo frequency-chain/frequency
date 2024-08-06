@@ -34,9 +34,9 @@ describe('Capacity: list_unclaimed_rewards', function () {
   });
 
   it('returns correct rewards after enough eras have passed', async function () {
-    if (isTestnet()) {
-      this.skip();
-    }
+    // this will be too long if run against testnet
+    if (isTestnet()) this.skip();
+
     const [_provider, booster] = await setUpForBoosting('booster2', 'provider2');
     console.debug(`Booster pubkey: ${booster.address}`);
 
