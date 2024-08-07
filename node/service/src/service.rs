@@ -42,7 +42,7 @@ use sc_executor::{
 	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
 };
 
-use sc_network::{NetworkBlock, NetworkService};
+use sc_network::{NetworkBlock, NetworkBackend, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -181,7 +181,7 @@ pub fn new_partial(
 #[allow(clippy::expect_used)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-async fn start_node_impl(
+async fn start_node_impl<N: NetworkBackend<Block, Hash>>(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -217,7 +217,7 @@ async fn start_node_impl(
 	let import_queue_service = params.import_queue.service();
 
 	let net_config: sc_network::config::FullNetworkConfiguration =
-		sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
+		sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
@@ -245,7 +245,7 @@ async fn start_node_impl(
 				transaction_pool: Some(OffchainTransactionPoolFactory::new(
 					transaction_pool.clone(),
 				)),
-				network_provider: network.clone(),
+				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: |_| vec![],
 			});
@@ -492,5 +492,10 @@ pub async fn start_parachain_node(
 	id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
+	match polkadot_config.network.network_backend {
+		sc_network::config::NetworkBackendType::Libp2p =>
+			start_node_impl::<sc_network::NetworkWorker<_, _>>(parachain_config, polkadot_config, collator_options, id, hwbench).await,
+		sc_network::config::NetworkBackendType::Litep2p =>	
+			start_node_impl::<sc_network::Litep2pNetworkBackend>(parachain_config, polkadot_config, collator_options, para_id, hwbench).await,
+	}
 }

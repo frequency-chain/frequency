@@ -23,7 +23,7 @@ use std::task::Poll;
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
 #[allow(clippy::expect_used)]
-pub fn frequency_dev_sealing(
+pub fn start_frequency_dev_sealing_node(
 	config: Configuration,
 	sealing_mode: SealingMode,
 	sealing_interval: u16,
@@ -37,7 +37,7 @@ pub fn frequency_dev_sealing(
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
 	let net_config: sc_network::config::FullNetworkConfiguration =
-		sc_network::config::FullNetworkConfiguration::new(&config.network);
+		sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&config.network);
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -75,7 +75,7 @@ pub fn frequency_dev_sealing(
 				transaction_pool: Some(OffchainTransactionPoolFactory::new(
 					transaction_pool.clone(),
 				)),
-				network_provider: network.clone(),
+				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: |_| vec![],
 			});
