@@ -178,7 +178,7 @@ pub trait Config: frame_system::Config {
     type MaxRetargetsPerRewardEra: Get<u32>;
 
     /// The fixed size of the reward pool in each Reward Era.
-    type RewardPoolEachEra: Get<BalanceOf<Self>>;
+    type RewardPoolPerEra: Get<BalanceOf<Self>>;
 
     /// the percentage cap per era of an individual Provider Boost reward
     type RewardPercentCap: Get<Permill>;

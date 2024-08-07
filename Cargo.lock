@@ -3736,6 +3736,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "staging-parachain-info",
+ "static_assertions",
  "substrate-wasm-builder",
  "system-runtime-api",
 ]

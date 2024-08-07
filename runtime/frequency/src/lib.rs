@@ -32,11 +32,11 @@ use pallet_collective::Members;
 use pallet_collective::ProposalCount;
 
 use parity_scale_codec::Encode;
-
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use static_assertions::const_assert;
 
 use common_primitives::node::{
 	AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -519,6 +519,15 @@ impl pallet_msa::Config for Runtime {
 	>;
 }
 
+parameter_types! {
+	/// The maximum number of eras over which one can claim rewards
+	pub const ProviderBoostHistoryLimit : u32 = 30;
+	/// The number of chunks of Reward Pool history we expect to store
+	pub const RewardPoolChunkLength: u32 = 5;
+}
+// RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
+const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
+
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
@@ -535,14 +544,14 @@ impl pallet_capacity::Config for Runtime {
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type EraLength = CapacityRewardEraLength;
-	type ProviderBoostHistoryLimit = ConstU32<30u32>;
+	type ProviderBoostHistoryLimit = ProviderBoostHistoryLimit;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
-	type RewardPoolEachEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
+	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
 	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
-	type RewardPoolChunkLength = ConstU32<5>;
+	type RewardPoolChunkLength = RewardPoolChunkLength;
 }
 
 impl pallet_schemas::Config for Runtime {

@@ -72,6 +72,7 @@ pub mod migration;
 pub mod weights;
 type BalanceOf<T> =
 	<<T as Config>::Currency as InspectFungible<<T as frame_system::Config>::AccountId>>::Balance;
+type ChunkIndex = u32;
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -127,7 +128,7 @@ pub mod pallet {
 		/// The maximum number of unlocking chunks a StakingAccountLedger can have.
 		/// It determines how many concurrent unstaked chunks may exist.
 		#[pallet::constant]
-		type MaxUnlockingChunks: Get<u32> + Clone;
+		type MaxUnlockingChunks: Get<u32>;
 
 		#[cfg(feature = "runtime-benchmarks")]
 		/// A set of helper functions for benchmarking.
@@ -178,14 +179,14 @@ pub mod pallet {
 
 		/// The fixed size of the reward pool in each Reward Era.
 		#[pallet::constant]
-		type RewardPoolEachEra: Get<BalanceOf<Self>>;
+		type RewardPoolPerEra: Get<BalanceOf<Self>>;
 
 		/// the percentage cap per era of an individual Provider Boost reward
 		#[pallet::constant]
 		type RewardPercentCap: Get<Permill>;
 
 		/// The number of chunks of Reward Pool history we expect to store
-		/// MUST be a divisor of [`Self::ProviderBoostHistoryLimit`]
+		/// Is a divisor of [`Self::ProviderBoostHistoryLimit`]
 		#[pallet::constant]
 		type RewardPoolChunkLength: Get<u32>;
 	}
@@ -257,7 +258,7 @@ pub mod pallet {
 	/// chunk number.
 	#[pallet::storage]
 	pub type ProviderBoostRewardPools<T: Config> =
-		StorageMap<_, Twox64Concat, u32, RewardPoolHistoryChunk<T>>;
+		StorageMap<_, Twox64Concat, ChunkIndex, RewardPoolHistoryChunk<T>>;
 
 	/// How much is staked this era
 	#[pallet::storage]
@@ -267,24 +268,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
-
-	#[pallet::genesis_config]
-	pub struct GenesisConfig<T: Config> {
-		/// Phantom type
-		#[serde(skip)]
-		pub _config: PhantomData<T>,
-	}
-
-	#[pallet::genesis_build]
-	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) {
-			CurrentEraInfo::<T>::set(RewardEraInfo {
-				era_index: 1u32.into(),
-				started_at: 0u32.into(),
-			});
-			CurrentEraProviderBoostTotal::<T>::set(0u32.into());
-		}
-	}
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -1096,12 +1079,14 @@ impl<T: Config> Pallet<T> {
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
 
 		let start_era = current_era_info.era_index.saturating_sub((max_history).into());
-		let end_era = current_era_info.era_index.saturating_sub(One::one());
+		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
 
 		// start with how much was staked in the era before the earliest for which there are eligible rewards.
-		let mut previous_amount: BalanceOf<T> =
-			staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into())));
-
+		let mut previous_amount: BalanceOf<T> = match start_era {
+			0 => 0u32.into(),
+			_ =>
+				staking_history.get_amount_staked_for_era(&(start_era.saturating_sub(1u32.into()))),
+		};
 		let mut unclaimed_rewards: BoundedVec<
 			UnclaimedRewardInfo<BalanceOf<T>, BlockNumberFor<T>>,
 			T::ProviderBoostHistoryLimit,
@@ -1117,7 +1102,7 @@ impl<T: Config> Pallet<T> {
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
 					eligible_amount,
 					total_for_era,
-					T::RewardPoolEachEra::get(),
+					T::RewardPoolPerEra::get(),
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1162,7 +1147,7 @@ impl<T: Config> Pallet<T> {
 			Error::<T>::EraOutOfRange
 		);
 
-		let chunk_idx: u32 = Self::get_chunk_index_for_era(reward_era);
+		let chunk_idx: ChunkIndex = Self::get_chunk_index_for_era(reward_era);
 		let reward_pool_chunk = ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or_default(); // 1r
 		let total_for_era =
 			reward_pool_chunk.total_for_era(&reward_era).ok_or(Error::<T>::EraOutOfRange)?;
@@ -1183,7 +1168,7 @@ impl<T: Config> Pallet<T> {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
 		// Remove one because eras are 1 indexed
-		let era_u32: u32 = era.saturating_sub(One::one()).into();
+		let era_u32: u32 = era;
 
 		// Add one chunk so that we always have the full history limit in our chunks
 		let cycle: u32 = era_u32 % history_limit.saturating_add(chunk_len);
@@ -1193,9 +1178,8 @@ impl<T: Config> Pallet<T> {
 	// This is where the reward pool gets updated.
 	pub(crate) fn update_provider_boost_reward_pool(era: RewardEra, boost_total: BalanceOf<T>) {
 		// Current era is this era
-		let chunk_idx: u32 = Self::get_chunk_index_for_era(era);
-		let mut new_chunk =
-			ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or(RewardPoolHistoryChunk::new()); // 1r
+		let chunk_idx: ChunkIndex = Self::get_chunk_index_for_era(era);
+		let mut new_chunk = ProviderBoostRewardPools::<T>::get(chunk_idx).unwrap_or_default(); // 1r
 
 		// If it is full we are resetting.
 		// This assumes that the chunk length is a divisor of the history limit
@@ -1205,6 +1189,7 @@ impl<T: Config> Pallet<T> {
 
 		if new_chunk.try_insert(era, boost_total).is_err() {
 			// Handle the error case that should never happen
+			log::warn!("could not insert a new chunk into provider boost reward pool")
 		}
 		ProviderBoostRewardPools::<T>::set(chunk_idx, Some(new_chunk)); // 1w
 	}
@@ -1315,13 +1300,10 @@ impl<T: Config> Replenishable for Pallet<T> {
 }
 
 impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
-	type AccountId = T::AccountId;
-	type RewardEra = common_primitives::capacity::RewardEra;
-	type Hash = T::Hash;
 	type Balance = BalanceOf<T>;
 
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		T::RewardPoolEachEra::get()
+		T::RewardPoolPerEra::get()
 	}
 
 	/// Calculate the reward for a single era.  We don't care about the era number,

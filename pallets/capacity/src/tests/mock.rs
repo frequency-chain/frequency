@@ -5,7 +5,7 @@ use crate::{
 	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
-	node::{AccountId, Hash, ProposalProvider},
+	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
@@ -145,12 +145,7 @@ impl pallet_msa::Config for Test {
 // not used yet
 pub struct TestRewardsProvider {}
 
-type TestRewardEra = u32;
-
 impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
-	type AccountId = u64;
-	type RewardEra = TestRewardEra;
-	type Hash = Hash; // use what's in common_primitives::node
 	type Balance = BalanceOf<Test>;
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
@@ -199,7 +194,7 @@ impl pallet_capacity::Config for Test {
 	type ProviderBoostHistoryLimit = ConstU32<12>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
-	type RewardPoolEachEra = ConstU64<10_000>;
+	type RewardPoolPerEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
 }
@@ -241,7 +236,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	ext.execute_with(|| {
 		System::set_block_number(1);
 		initialize_reward_pool();
-		set_era_and_reward_pool(1, 1, 0);
+		set_era_and_reward_pool(0, 1, 0);
 	});
 	ext
 }

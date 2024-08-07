@@ -15,7 +15,7 @@ use sp_runtime::{
 use sp_std::vec::Vec;
 
 /// How much, as a percentage of staked token, to boost a targeted Provider when staking.
-/// this value should be between [0,100]
+/// this value should be between 0 and 100
 pub const STAKED_PERCENTAGE_TO_BOOST: u32 = 50;
 
 #[derive(
@@ -520,15 +520,6 @@ impl<T: Config> RetargetInfo<T> {
 
 /// A trait that provides the Economic Model for Provider Boosting.
 pub trait ProviderBoostRewardsProvider<T: Config> {
-	/// the AccountId this provider is using
-	type AccountId;
-
-	/// the range of blocks over which a Reward Pool is determined and rewards are paid out
-	type RewardEra;
-
-	///  The hasher to use for proofs
-	type Hash;
-
 	/// The type for currency
 	type Balance;
 

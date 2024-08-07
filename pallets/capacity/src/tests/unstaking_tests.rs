@@ -366,17 +366,27 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 		register_provider(target1, String::from("Test Target"));
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
-		let pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
+		let mut pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
-		system_run_to_block(9);
-		run_to_block(51);
+		system_run_to_block(10); // last block of era 0
+		run_to_block(41); // beginning of era 4
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
+		pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
+		assert_eq!(pbh.count(), 1);
+
+		// This adds a new history item for the unstake, in current era, 4
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 400u64));
 
-		assert_eq!(get_balance::<Test>(&staker), 10_016u64);
-		assert_transferable::<Test>(&staker, 16u64);
+		// earned 4 in rewards for eras 3,2,1
+		assert_eq!(get_balance::<Test>(&staker), 10_012u64);
+		assert_transferable::<Test>(&staker, 12u64);
+
+		pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
+		assert_eq!(pbh.count(), 2);
+		let entry = pbh.get_entry_for_era(&4u32.into()).unwrap();
+		assert_eq!(entry, &600u64);
 	})
 }
 
@@ -387,23 +397,25 @@ fn unstake_all_by_booster_reaps_boost_history() {
 		let target1 = 1;
 		register_provider(target1, String::from("Test Target"));
 
+		// Era 0, block 1.
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target1, 1_000));
 		let pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 1);
 
 		// If unstaking in the next era, this should add a new staking history entry.
-		system_run_to_block(9);
-		run_to_block(51);
+		system_run_to_block(10); // last block of era 0
+		run_to_block(41); // First block of Era 4.
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(staker)));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 1_000));
 		assert!(ProviderBoostHistories::<Test>::get(staker).is_none());
-		assert_eq!(get_balance::<Test>(&staker), 10_016u64);
-		assert_transferable::<Test>(&staker, 16u64);
+		// earn 4 each for 3 past eras, 3,2,1
+		assert_eq!(get_balance::<Test>(&staker), 10_012u64);
+		assert_transferable::<Test>(&staker, 12u64);
 	})
 }
 
 #[test]
-fn unstake_maximum_does_not_change_provider_boost_history() {
+fn unstake_maximum_immediately_after_staking_does_not_create_provider_boost_history() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000;
 		let target1 = 1;
@@ -420,6 +432,15 @@ fn unstake_maximum_does_not_change_provider_boost_history() {
 #[test]
 fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
+
+	for i in 0u32..5u32 {
+		staking_history.add_era_balance(&i.into(), &10u64);
+	}
+	assert_eq!(staking_history.get_amount_staked_for_era(&0u32), 10u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&4u32), 50u64);
+
+	staking_history.subtract_era_balance(&4u32.into(), &50u64);
+	assert_eq!(staking_history.get_amount_staked_for_era(&5u32), 0u64);
 
 	for i in 10u32..=13u32 {
 		staking_history.add_era_balance(&i.into(), &5u64);
@@ -478,20 +499,4 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 			Error::<Test>::MustFirstClaimRewards
 		);
 	})
-}
-
-#[test]
-fn unstake_all_if_no_unclaimed_rewards_removes_provider_boost_history() {
-	new_test_ext().execute_with(|| {
-		let account = 10_000u64;
-		let target: MessageSourceId = 10;
-		let amount = 1_000u64;
-
-		// staking 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, ProviderBoost);
-		assert!(ProviderBoostHistories::<Test>::get(account).is_some());
-		run_to_block(10);
-		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount));
-		assert!(ProviderBoostHistories::<Test>::get(account).is_none());
-	});
 }
