@@ -3,6 +3,7 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
+use common_primitives::node::{Block, Hash};
 use core::marker::PhantomData;
 use futures::Stream;
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
@@ -18,7 +19,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::task::Poll;
+use std::{task::Poll, sync::Arc};
 
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
@@ -36,8 +37,7 @@ pub fn start_frequency_dev_sealing_node(
 	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
-	let net_config: sc_network::config::FullNetworkConfiguration =
-		sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&config.network);
+	let net_config  = sc_network::config::FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(&config.network);
 	let sc_service::PartialComponents {
 		client,
 		backend,
