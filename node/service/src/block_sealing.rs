@@ -3,7 +3,7 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::node::{Block, BlockNumber, Hash};
+use common_primitives::node::{Block, Hash};
 use core::marker::PhantomData;
 use futures::Stream;
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};

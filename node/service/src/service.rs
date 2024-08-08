@@ -216,7 +216,7 @@ async fn start_node_impl<N: NetworkBackend<Block, Hash>>(
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let net_config: sc_network::config::FullNetworkConfiguration =
+	let net_config =
 		sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
 
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
@@ -507,7 +507,7 @@ pub async fn start_parachain_node(
 				parachain_config,
 				polkadot_config,
 				collator_options,
-				para_id,
+				id,
 				hwbench,
 			)
 			.await,
