@@ -340,7 +340,7 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| {
-							cmd.run::<HashingFor<Block>, ReclaimHostFunctions>(config)
+							cmd.run_with_spec::<HashingFor<Block>, ReclaimHostFunctions>(Some(config.chain_spec))
 						})
 					} else {
 						return Err("Benchmarking wasn't enabled when building the node. \
