@@ -19,9 +19,10 @@ use super::{
 	AccountId, Balance, Block, Executive, InherentDataExt, Runtime, RuntimeCall,
 	RuntimeGenesisConfig, SessionKeys, System, TransactionPayment, VERSION,
 };
-use crate::{FrequencyTxPayment, Handles, Messages, Msa, Schemas, StatefulStorage};
+use crate::{Capacity, FrequencyTxPayment, Handles, Messages, Msa, Schemas, StatefulStorage};
 
 use common_primitives::{
+	capacity::*,
 	handles::{BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse},
 	messages::MessageResponse,
 	msa::{
@@ -286,6 +287,15 @@ impl_runtime_apis! {
 		}
 		fn validate_handle(base_handle: BaseHandle) -> bool {
 			Handles::validate_handle(base_handle.to_vec())
+		}
+	}
+
+	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
+			match Capacity::list_unclaimed_rewards(&who) {
+				Ok(rewards) => return rewards.into_inner(),
+				Err(_) => return Vec::new(),
+			}
 		}
 	}
 

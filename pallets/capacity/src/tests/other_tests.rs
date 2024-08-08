@@ -193,13 +193,13 @@ fn calculate_capacity_reduction_determines_the_correct_capacity_reduction_amount
 fn impl_balance_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = 10u32;
-		let total_available_amount = 10u32;
+		let remaining_amount = 10u64;
+		let total_available_amount = 10u64;
 
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
-			remaining_amount.into(),
-			total_available_amount.into(),
+			remaining_amount,
+			total_available_amount,
 			1u32,
 		);
 

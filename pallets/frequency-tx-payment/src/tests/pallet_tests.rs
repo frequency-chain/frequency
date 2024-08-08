@@ -839,7 +839,7 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 			let fee =
 				FrequencyTxPayment::compute_capacity_fee_details(call, &dispatch_info.weight, len);
 			assert!(fee.inclusion_fee.is_some());
-			assert!(fee.tip == 0);
+			assert_eq!(fee.tip, 0);
 		});
 }
 

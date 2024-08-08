@@ -3687,6 +3687,7 @@ dependencies = [
  "pallet-authorship",
  "pallet-balances",
  "pallet-capacity",
+ "pallet-capacity-runtime-api",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
@@ -3735,6 +3736,7 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "staging-parachain-info",
+ "static_assertions",
  "substrate-wasm-builder",
  "system-runtime-api",
 ]
@@ -6679,6 +6681,17 @@ dependencies = [
  "scale-info",
  "sp-core",
  "sp-io",
+ "sp-runtime",
+ "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.10.0)",
+]
+
+[[package]]
+name = "pallet-capacity-runtime-api"
+version = "0.0.0"
+dependencies = [
+ "common-primitives",
+ "parity-scale-codec",
+ "sp-api",
  "sp-runtime",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.10.0)",
 ]
@@ -9943,9 +9956,9 @@ dependencies = [
 
 [[package]]
 name = "raw-cpuid"
-version = "11.0.2"
+version = "11.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e29830cbb1290e404f24c73af91c5d8d631ce7e128691e9477556b540cd01ecd"
+checksum = "cb9ee317cfe3fbd54b36a511efc1edd42e216903c9cd575e686dd68a2ba90d8d"
 dependencies = [
  "bitflags 2.5.0",
 ]
@@ -10484,7 +10497,7 @@ dependencies = [
  "log",
  "ring 0.17.8",
  "rustls-pki-types",
- "rustls-webpki 0.102.5",
+ "rustls-webpki 0.102.6",
  "subtle 2.6.1",
  "zeroize",
 ]
@@ -10551,9 +10564,9 @@ dependencies = [
 
 [[package]]
 name = "rustls-webpki"
-version = "0.102.5"
+version = "0.102.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f9a6fccd794a42c2c105b513a2f62bc3fd8f3ba57a4593677ceb0bd035164d78"
+checksum = "8e6b52d4fda176fd835fdc55a835d4a89b8499cad995885a21149d5ad62f852e"
 dependencies = [
  "ring 0.17.8",
  "rustls-pki-types",

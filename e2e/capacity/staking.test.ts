@@ -256,13 +256,13 @@ describe('Capacity Staking Tests', function () {
   });
 
   describe('when attempting to stake below the minimum staking requirements', function () {
-    it('should fail to stake for InsufficientStakingAmount', async function () {
+    it('should fail to stake for StakingAmountBelowMinimum', async function () {
       const stakingKeys = createKeys('stakingKeys');
       const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 150n * CENTS);
       const stakeAmount = 1500n;
 
       const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakeAmount);
-      await assert.rejects(failStakeObj.signAndSend(), { name: 'InsufficientStakingAmount' });
+      await assert.rejects(failStakeObj.signAndSend(), { name: 'StakingAmountBelowMinimum' });
     });
   });
 
