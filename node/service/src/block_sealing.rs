@@ -3,7 +3,7 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::node::{Block, Hash};
+use common_primitives::node::{Block, BlockNumber, Hash};
 use core::marker::PhantomData;
 use futures::Stream;
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
@@ -12,6 +12,7 @@ use sc_consensus_manual_seal::{
 };
 
 use futures::FutureExt;
+use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
 use sp_api::ProvideRuntimeApi;
@@ -19,7 +20,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::{task::Poll, sync::Arc};
+use std::{sync::Arc, task::Poll};
 
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
@@ -37,7 +38,11 @@ pub fn start_frequency_dev_sealing_node(
 	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
-	let net_config  = sc_network::config::FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(&config.network);
+	let net_config = sc_network::config::FullNetworkConfiguration::<
+		_,
+		_,
+		sc_network::NetworkWorker<Block, Hash>,
+	>::new(&config.network);
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -48,6 +53,9 @@ pub fn start_frequency_dev_sealing_node(
 		transaction_pool,
 		other: (_block_import, mut telemetry, _),
 	} = new_partial(&config, true)?;
+	let metrics = sc_network::NetworkWorker::<Block, Hash>::register_notification_metrics(
+		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+	);
 
 	// Build the network components required for the blockchain.
 	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
@@ -61,6 +69,7 @@ pub fn start_frequency_dev_sealing_node(
 			block_announce_validator_builder: None,
 			warp_sync_params: None,
 			block_relay: None,
+			metrics,
 		})?;
 
 	// Start off-chain workers if enabled

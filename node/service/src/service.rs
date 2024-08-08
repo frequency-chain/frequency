@@ -42,7 +42,7 @@ use sc_executor::{
 	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
 };
 
-use sc_network::{NetworkBlock, NetworkBackend, NetworkService};
+use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -494,8 +494,22 @@ pub async fn start_parachain_node(
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	match polkadot_config.network.network_backend {
 		sc_network::config::NetworkBackendType::Libp2p =>
-			start_node_impl::<sc_network::NetworkWorker<_, _>>(parachain_config, polkadot_config, collator_options, id, hwbench).await,
-		sc_network::config::NetworkBackendType::Litep2p =>	
-			start_node_impl::<sc_network::Litep2pNetworkBackend>(parachain_config, polkadot_config, collator_options, para_id, hwbench).await,
+			start_node_impl::<sc_network::NetworkWorker<_, _>>(
+				parachain_config,
+				polkadot_config,
+				collator_options,
+				id,
+				hwbench,
+			)
+			.await,
+		sc_network::config::NetworkBackendType::Litep2p =>
+			start_node_impl::<sc_network::Litep2pNetworkBackend>(
+				parachain_config,
+				polkadot_config,
+				collator_options,
+				para_id,
+				hwbench,
+			)
+			.await,
 	}
 }

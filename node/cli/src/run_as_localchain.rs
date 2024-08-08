@@ -1,5 +1,5 @@
 use crate::cli::Cli;
-use frequency_service::block_sealing::frequency_dev_sealing;
+use frequency_service::block_sealing::start_frequency_dev_sealing_node;
 use sc_cli::SubstrateCli;
 
 pub fn run_as_localchain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
