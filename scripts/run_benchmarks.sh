@@ -8,10 +8,28 @@ PROFILE_DIR=debug
 
 ALL_EXTERNAL_PALLETS=( \
   pallet_balances \
+  pallet_collator_selection \
+  pallet_collective \
+  pallet_democracy \
+  pallet_multisig \
+  pallet_preimage \
+  pallet_scheduler \
+  pallet_session \
+  pallet_timestamp \
+  pallet_treasury \
+  pallet_utility \
+  pallet_proxy \
 )
 ALL_CUSTOM_PALLETS=( \
+  messages \
+  msa \
+  schemas \
   stateful-storage \
   handles \
+  time-release \
+  capacity \
+  frequency-tx-payment \
+  passkey \
 )
 
 declare -a CUSTOM_PALLETS
@@ -172,7 +190,6 @@ function run_benchmark() {
   --output=${4} \
   --template=${5} \
   --additional-trie-layers=${6}
-  ${6}
   if [ -z "${VERBOSE}" ]
   then
     set +x
