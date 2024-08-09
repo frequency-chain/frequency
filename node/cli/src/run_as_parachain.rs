@@ -3,7 +3,6 @@ use cumulus_primitives_core::ParaId;
 use frequency_service::chain_spec;
 use log::info;
 use sc_cli::SubstrateCli;
-use sp_runtime::traits::AccountIdConversion;
 
 pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 	let runner = cli.create_runner(&cli.run.normalize())?;
@@ -34,11 +33,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 			SubstrateCli::create_configuration(&polkadot_cli, &polkadot_cli, tokio_handle)
 				.map_err(|err| format!("Relay chain argument error: {}", err))?;
 
-		let parachain_account =
-			AccountIdConversion::<polkadot_primitives::AccountId>::into_account_truncating(&id);
-
 		info!("Parachain id: {:?}", id);
-		info!("Parachain Account: {}", parachain_account);
 		info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
 		return frequency_service::service::start_parachain_node(
