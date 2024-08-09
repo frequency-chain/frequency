@@ -3,33 +3,15 @@
 export RUST_LOG=info
 THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
-PROFILE=release
-PROFILE_DIR=${PROFILE}
+PROFILE=dev
+PROFILE_DIR=debug
 
 ALL_EXTERNAL_PALLETS=( \
   pallet_balances \
-  pallet_collator_selection \
-  pallet_collective \
-  pallet_democracy \
-  pallet_multisig \
-  pallet_preimage \
-  pallet_scheduler \
-  pallet_session \
-  pallet_timestamp \
-  pallet_treasury \
-  pallet_utility \
-  pallet_proxy \
 )
 ALL_CUSTOM_PALLETS=( \
-  messages \
-  msa \
-  schemas \
   stateful-storage \
   handles \
-  time-release \
-  capacity \
-  frequency-tx-payment \
-  passkey \
 )
 
 declare -a CUSTOM_PALLETS
@@ -185,11 +167,12 @@ function run_benchmark() {
   --chain="frequency-bench" \
   --heap-pages=4096 \
   --wasm-execution=compiled \
-  --additional-trie-layers=5 \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${5}
+  --template=${5} \
+  --additional-trie-layers=${6}
+  ${6}
   if [ -z "${VERBOSE}" ]
   then
     set +x
@@ -208,7 +191,8 @@ for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
   steps=50
   repeat=20
   template=${PROJECT}/.maintain/runtime-weight-template.hbs
-  run_benchmark ${external_pallet} ${steps} ${repeat} ${output} ${template} || exit_err
+  additional_trie_layer=3
+  run_benchmark ${external_pallet} ${steps} ${repeat} ${output} ${template} ${additional_trie_layer} || exit_err
 done
 
 for pallet_name in "${CUSTOM_PALLETS[@]}"; do
@@ -216,7 +200,11 @@ for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   repeat=10
   template=${PROJECT}/.maintain/frame-weight-template.hbs
   output=${PROJECT}/pallets/${pallet_name/_/-}/src/weights.rs
-  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} || exit_err
+  additional_trie_layer=3
+  if [ "$pallet_name" == "stateful-storage" ]; then
+    additional_trie_layer=5
+  fi
+  run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} ${additional_trie_layer} || exit_err
 done
 
 if [[ -n "${OVERHEAD}" ]]
