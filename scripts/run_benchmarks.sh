@@ -3,8 +3,8 @@
 export RUST_LOG=info
 THIS_DIR=$( dirname -- "$0"; )
 PROJECT="${THIS_DIR}/.."
-PROFILE=dev
-PROFILE_DIR=debug
+PROFILE=release
+PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
   pallet_balances \
