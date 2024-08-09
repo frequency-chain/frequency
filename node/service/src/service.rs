@@ -181,7 +181,7 @@ pub fn new_partial(
 #[allow(clippy::expect_used)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-async fn start_node_impl<N: NetworkBackend<Block, Hash>>(
+pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
@@ -216,9 +216,14 @@ async fn start_node_impl<N: NetworkBackend<Block, Hash>>(
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let net_config =
-		sc_network::config::FullNetworkConfiguration::<_, _, N>::new(&parachain_config.network);
+	let net_config = sc_network::config::FullNetworkConfiguration::<
+		_,
+		_,
+		sc_network::NetworkWorker<Block, Hash>,
+	>::new(&parachain_config.network);
 
+	// NOTE: because we use Aura here explicitly, we can use `CollatorSybilResistance::Resistant`
+	// when starting the network.
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
@@ -370,47 +375,36 @@ async fn start_node_impl<N: NetworkBackend<Block, Hash>>(
 
 /// Build the import queue for the parachain runtime.
 #[cfg(not(feature = "frequency-no-relay"))]
+/// Build the import queue for the parachain runtime.
 fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
-) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error> {
-	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-	cumulus_client_consensus_aura::import_queue::<
+) -> sc_consensus::DefaultImportQueue<Block> {
+	cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
 		_,
 		_,
 		_,
 		_,
-		_,
-	>(cumulus_client_consensus_aura::ImportQueueParams {
+	>(
+		client,
 		block_import,
-		client: client.clone(),
-		create_inherent_data_providers: move |_, _| async move {
+		move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
-
-			Ok((slot, timestamp))
+			Ok(timestamp)
 		},
-		registry: config.prometheus_registry(),
-		spawner: &task_manager.spawn_essential_handle(),
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry(),
 		telemetry,
-	})
-	.map_err(Into::into)
+	)
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 fn start_consensus(
 	client: Arc<ParachainClient>,
-	backend: Arc<ParachainBackend>,
 	block_import: ParachainBlockImport,
 	prometheus_registry: Option<&Registry>,
 	telemetry: Option<TelemetryHandle>,
@@ -425,11 +419,9 @@ fn start_consensus(
 	overseer_handle: OverseerHandle,
 	announce_block: Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>,
 ) -> Result<(), sc_service::Error> {
-	use cumulus_client_consensus_aura::collators::lookahead::{self as aura, Params as AuraParams};
-	use sp_core::H256;
-
-	// NOTE: because we use Aura here explicitly, we can use `CollatorSybilResistance::Resistant`
-	// when starting the network.
+	use cumulus_client_consensus_aura::collators::basic::{
+		self as basic_aura, Params as BasicAuraParams,
+	};
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 		task_manager.spawn_handle(),
@@ -448,19 +440,11 @@ fn start_consensus(
 		client.clone(),
 	);
 
-	let params = AuraParams {
+	let params = BasicAuraParams {
 		create_inherent_data_providers: move |_, ()| async move { Ok(()) },
 		block_import,
-		para_client: client.clone(),
-		para_backend: backend,
+		para_client: client,
 		relay_client: relay_chain_interface,
-		code_hash_provider: move |block_hash: H256| {
-			client
-				.code_at(block_hash)
-				.ok()
-				.map(ValidationCode)
-				.map(|c: ValidationCode| c.hash())
-		},
 		sync_oracle,
 		keystore,
 		collator_key,
@@ -469,47 +453,16 @@ fn start_consensus(
 		relay_chain_slot_duration,
 		proposer,
 		collator_service,
-		authoring_duration: Duration::from_millis(1500),
-		reinitialize: false,
+		// Very limited proposal time.
+		authoring_duration: Duration::from_millis(500),
+		collation_request_receiver: None,
 	};
 
 	let fut =
-		aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _, _>(
+		basic_aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _>(
 			params,
 		);
-
 	task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
 	Ok(())
-}
-
-/// Start a parachain node.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-pub async fn start_parachain_node(
-	parachain_config: Configuration,
-	polkadot_config: Configuration,
-	collator_options: CollatorOptions,
-	id: ParaId,
-	hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	match polkadot_config.network.network_backend {
-		sc_network::config::NetworkBackendType::Libp2p =>
-			start_node_impl::<sc_network::NetworkWorker<_, _>>(
-				parachain_config,
-				polkadot_config,
-				collator_options,
-				id,
-				hwbench,
-			)
-			.await,
-		sc_network::config::NetworkBackendType::Litep2p =>
-			start_node_impl::<sc_network::Litep2pNetworkBackend>(
-				parachain_config,
-				polkadot_config,
-				collator_options,
-				id,
-				hwbench,
-			)
-			.await,
-	}
 }
