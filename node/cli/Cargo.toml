@@ -48,7 +48,7 @@ sp-inherents = { workspace = true }
 sp-keyring = { workspace = true }
 sp-runtime = { workspace = true }
 sp-timestamp = { workspace = true }
-try-runtime-cli = { workspace = true, optional = true }
+
 # Polkadot
 polkadot-cli = { workspace = true }
 polkadot-parachain-primitives = { workspace = true }
@@ -73,7 +73,6 @@ cli = [
   "sc-service",
   "frame-benchmarking-cli",
   "frame-benchmarking",
-  "try-runtime-cli",
 ]
 default = ["std", "cli"]
 runtime-benchmarks = [
@@ -85,7 +84,6 @@ runtime-benchmarks = [
 ]
 try-runtime = [
   "frequency-service/try-runtime",
-  "try-runtime-cli/try-runtime",
   "sp-runtime/try-runtime"
 ]
 on-chain-release-build = ["sp-api/disable-logging"]
