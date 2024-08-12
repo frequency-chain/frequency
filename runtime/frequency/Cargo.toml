@@ -21,6 +21,7 @@ log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true }
 smallvec = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -48,6 +49,8 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
+
+polkadot-primitives = { workspace = true, default-features = false}
 
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
@@ -146,10 +149,12 @@ std = [
   "pallet-utility/std",
   "parachain-info/std",
   "parity-scale-codec/std",
+  "polkadot-primitives/std",
   "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "scale-info/std",
   "serde/std",
+  "serde_json/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",

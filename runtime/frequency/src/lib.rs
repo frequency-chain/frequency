@@ -324,6 +324,8 @@ pub type Executive = frame_executive::Executive<
 >;
 
 pub mod apis;
+// Genesis preset configurations.
+pub mod genesis_config_presets;
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats

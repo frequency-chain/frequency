@@ -34,6 +34,9 @@ use common_primitives::{
 	stateful_storage::{ItemizedStoragePageResponse, PaginatedStorageResponse},
 };
 
+// Genesis preset configurations.
+use crate::genesis_config_presets;
+
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use super::{ConsensusHook, ParachainSystem};
 
@@ -149,11 +152,13 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+			get_preset::<RuntimeGenesisConfig>(id,  &genesis_config_presets::get_preset)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			Default::default()
+			vec![
+				sp_genesis_builder::PresetId::from("development"),
+			]
 		}
 	}
 
