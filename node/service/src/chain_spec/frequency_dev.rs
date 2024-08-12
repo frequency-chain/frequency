@@ -5,7 +5,6 @@ use common_runtime::constants::{
 };
 use cumulus_primitives_core::ParaId;
 use frequency_runtime::{AuraId, CouncilConfig, Ss58Prefix, SudoConfig, TechnicalCommitteeConfig};
-use sc_rpc::dev;
 use sc_service::ChainType;
 use sp_core::sr25519;
 use sp_runtime::traits::AccountIdConversion;
