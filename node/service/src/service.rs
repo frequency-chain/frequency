@@ -156,7 +156,7 @@ pub fn new_partial(
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
-	)?;
+	);
 
 	let select_chain =
 		if instant_sealing { Some(LongestChain::new(backend.clone())) } else { None };
