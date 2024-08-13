@@ -21,6 +21,8 @@ log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true, features = ["alloc"] }
+
 smallvec = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -150,6 +152,7 @@ std = [
   "polkadot-runtime-common/std",
   "scale-info/std",
   "serde/std",
+  "serde_json/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
