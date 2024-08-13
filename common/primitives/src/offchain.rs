@@ -3,7 +3,32 @@ use numtoa::NumToA;
 use parity_scale_codec::Decode;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_std::{fmt::Debug, vec, vec::Vec};
+// #[cfg(feature = "std")]
+use sp_externalities::ExternalitiesExt;
+// #[cfg(feature = "std")]
+use sp_runtime_interface::runtime_interface;
 
+#[cfg(feature = "std")]
+sp_externalities::decl_extension! {
+	/// another comment
+	pub struct OcwCustomExt (
+		Option<Vec<u8>>
+	);
+}
+
+/// host functions for custom extension
+#[cfg(feature = "std")]
+pub type HostFunctions = (custom::HostFunctions,);
+
+/// runtime new customized
+// #[cfg(feature = "std")]
+#[runtime_interface]
+pub trait Custom: ExternalitiesExt {
+	/// another function
+	fn get_val(&mut self) -> Option<Option<Vec<u8>>> {
+		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
+	}
+}
 /// Lock expiration timeout in in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account

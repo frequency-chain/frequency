@@ -10,8 +10,10 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
 use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
-use alloc::string::String;
+use alloc::string::{String, ToString};
+// use crate::offchain_storage::alloc::string::ToString;
 use sp_io::offchain_index;
+use scale_info::prelude::format;
 use sp_runtime::{
 	offchain::{
 		storage::StorageValueRef,
@@ -390,6 +392,22 @@ pub struct FinalizedBlockResponse {
 
 /// fetches finalized block hash from rpc
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
+	let mut url = RPC_FINALIZED_BLOCK_REQUEST_URL.to_string();
+	if let Some(f) = common_primitives::offchain::custom::get_val() {
+		log::info!("custom exists");
+		if let Some(d) = f {
+			let body_str = sp_std::str::from_utf8(&d).map_err(|_| {
+				log::warn!("No UTF8 my_val");
+				sp_runtime::offchain::http::Error::Unknown
+			})?;
+			log::info!("custom {}", body_str);
+			url = body_str.to_string();
+			if !url.starts_with("http://") {
+				url = format!("http://{}", url);
+			}
+			log::info!("final {}", url);
+		}
+	}
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
 	// You can also wait indefinitely for the response, however you may still get a timeout
@@ -397,7 +415,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	let deadline =
 		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MS));
 	let body = vec![RPC_FINALIZED_BLOCK_REQUEST_BODY];
-	let request = sp_runtime::offchain::http::Request::post(RPC_FINALIZED_BLOCK_REQUEST_URL, body);
+	let request = sp_runtime::offchain::http::Request::post(&url, body);
 	let pending = request
 		.add_header("Content-Type", "application/json")
 		.deadline(deadline)

@@ -3,14 +3,13 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
+use common_primitives::offchain::OcwCustomExt;
 use core::marker::PhantomData;
-use futures::Stream;
+use futures::{FutureExt, Stream};
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
-
-use futures::FutureExt;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
 use sp_api::ProvideRuntimeApi;
@@ -18,8 +17,15 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::task::Poll;
+use std::{net::SocketAddr, task::Poll};
 
+fn convert_address_to_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
+	match addr {
+		None => None,
+		Some(SocketAddr::V4(v4)) => Some(v4.to_string().into_bytes()),
+		Some(SocketAddr::V6(v6)) => Some(v6.to_string().into_bytes()),
+	}
+}
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
 #[allow(clippy::expect_used)]
@@ -65,7 +71,8 @@ pub fn frequency_dev_sealing(
 
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
-		log::info!("OFFCHAIN WORKER is Enabled!");
+		log::info!("OFFCHAIN WORKER is Enabled! {:?}", config.rpc_addr);
+		let val = convert_address_to_string(&config.rpc_addr);
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -77,7 +84,10 @@ pub fn frequency_dev_sealing(
 				)),
 				network_provider: network.clone(),
 				enable_http_requests: true,
-				custom_extensions: |_| vec![],
+				custom_extensions: move |_hash| {
+					let xx = val.clone();
+					vec![Box::new(OcwCustomExt(xx)) as Box<_>]
+				},
 			});
 
 		// Spawn a task to handle off-chain notifications.
