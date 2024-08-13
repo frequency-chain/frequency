@@ -6,7 +6,7 @@ use frame_support::{
 	traits::{ConstU32, ConstU64, Contains, Everything},
 	weights::WeightToFee as WeightToFeeTrait,
 };
-use pallet_transaction_payment::CurrencyAdapter;
+use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{ConvertInto, IdentityLookup},
@@ -85,7 +85,7 @@ impl frame_system::Config for Test {
 
 impl pallet_transaction_payment::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = WeightToFee;
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
