@@ -3,13 +3,18 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::offchain::OcwCustomExt;
+use common_primitives::{
+	node::{Block, Hash},
+	offchain::OcwCustomExt,
+};
 use core::marker::PhantomData;
 use futures::{FutureExt, Stream};
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
+
+use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
 use sp_api::ProvideRuntimeApi;
@@ -17,7 +22,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::{net::SocketAddr, task::Poll};
+use std::{net::SocketAddr, sync::Arc, task::Poll};
 
 fn convert_address_to_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
 	match addr {
@@ -29,7 +34,7 @@ fn convert_address_to_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
 #[allow(clippy::expect_used)]
-pub fn frequency_dev_sealing(
+pub fn start_frequency_dev_sealing_node(
 	config: Configuration,
 	sealing_mode: SealingMode,
 	sealing_interval: u16,
@@ -42,8 +47,11 @@ pub fn frequency_dev_sealing(
 	};
 	log::info!("📎 Development mode (no relay chain) with {} sealing{}", sealing_mode, extra);
 
-	let net_config: sc_network::config::FullNetworkConfiguration =
-		sc_network::config::FullNetworkConfiguration::new(&config.network);
+	let net_config = sc_network::config::FullNetworkConfiguration::<
+		_,
+		_,
+		sc_network::NetworkWorker<Block, Hash>,
+	>::new(&config.network);
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -54,6 +62,9 @@ pub fn frequency_dev_sealing(
 		transaction_pool,
 		other: (_block_import, mut telemetry, _),
 	} = new_partial(&config, true)?;
+	let metrics = sc_network::NetworkWorker::<Block, Hash>::register_notification_metrics(
+		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
+	);
 
 	// Build the network components required for the blockchain.
 	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
@@ -67,6 +78,7 @@ pub fn frequency_dev_sealing(
 			block_announce_validator_builder: None,
 			warp_sync_params: None,
 			block_relay: None,
+			metrics,
 		})?;
 
 	// Start off-chain workers if enabled
@@ -82,7 +94,7 @@ pub fn frequency_dev_sealing(
 				transaction_pool: Some(OffchainTransactionPoolFactory::new(
 					transaction_pool.clone(),
 				)),
-				network_provider: network.clone(),
+				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: move |_hash| {
 					let xx = val.clone();

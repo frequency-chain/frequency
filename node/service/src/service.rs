@@ -42,7 +42,7 @@ use sc_executor::{
 	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
 };
 
-use sc_network::{NetworkBlock, NetworkService};
+use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -158,7 +158,7 @@ pub fn new_partial(
 		config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
-	)?;
+	);
 
 	let select_chain =
 		if instant_sealing { Some(LongestChain::new(backend.clone())) } else { None };
@@ -183,20 +183,25 @@ pub fn new_partial(
 #[allow(clippy::expect_used)]
 #[sc_tracing::logging::prefix_logs_with("Parachain")]
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-async fn start_node_impl(
+pub async fn start_parachain_node(
 	parachain_config: Configuration,
 	polkadot_config: Configuration,
 	collator_options: CollatorOptions,
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	use sc_client_api::backend;
 	use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
 
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
+
+	let net_config = sc_network::config::FullNetworkConfiguration::<
+		_,
+		_,
+		sc_network::NetworkWorker<Block, Hash>,
+	>::new(&parachain_config.network);
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -218,9 +223,8 @@ async fn start_node_impl(
 	let transaction_pool = params.transaction_pool.clone();
 	let import_queue_service = params.import_queue.service();
 
-	let net_config: sc_network::config::FullNetworkConfiguration =
-		sc_network::config::FullNetworkConfiguration::new(&parachain_config.network);
-
+	// NOTE: because we use Aura here explicitly, we can use `CollatorSybilResistance::Resistant`
+	// when starting the network.
 	let (network, system_rpc_tx, tx_handler_controller, start_network, sync_service) =
 		build_network(BuildNetworkParams {
 			parachain_config: &parachain_config,
@@ -237,6 +241,7 @@ async fn start_node_impl(
 
 	// Start off-chain workers if enabled
 	if parachain_config.offchain_worker.enabled {
+		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
@@ -247,7 +252,7 @@ async fn start_node_impl(
 				transaction_pool: Some(OffchainTransactionPoolFactory::new(
 					transaction_pool.clone(),
 				)),
-				network_provider: network.clone(),
+				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: |_| vec![],
 			});
@@ -264,6 +269,7 @@ async fn start_node_impl(
 	let rpc_builder = {
 		let client = client.clone();
 		let transaction_pool = transaction_pool.clone();
+
 		let backend = match parachain_config.offchain_worker.enabled {
 			true => backend.offchain_storage(),
 			false => None,
@@ -372,41 +378,31 @@ async fn start_node_impl(
 
 /// Build the import queue for the parachain runtime.
 #[cfg(not(feature = "frequency-no-relay"))]
+/// Build the import queue for the parachain runtime.
 fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
 	config: &Configuration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
-) -> Result<sc_consensus::DefaultImportQueue<Block>, sc_service::Error> {
-	let slot_duration = cumulus_client_consensus_aura::slot_duration(&*client)?;
-
-	cumulus_client_consensus_aura::import_queue::<
+) -> sc_consensus::DefaultImportQueue<Block> {
+	cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
 		sp_consensus_aura::sr25519::AuthorityPair,
 		_,
 		_,
 		_,
 		_,
-		_,
-	>(cumulus_client_consensus_aura::ImportQueueParams {
+	>(
+		client,
 		block_import,
-		client: client.clone(),
-		create_inherent_data_providers: move |_, _| async move {
+		move |_, _| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-
-			let slot =
-				sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
-					*timestamp,
-					slot_duration,
-				);
-
-			Ok((slot, timestamp))
+			Ok(timestamp)
 		},
-		registry: config.prometheus_registry(),
-		spawner: &task_manager.spawn_essential_handle(),
+		&task_manager.spawn_essential_handle(),
+		config.prometheus_registry(),
 		telemetry,
-	})
-	.map_err(Into::into)
+	)
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -428,10 +424,6 @@ fn start_consensus(
 	announce_block: Arc<dyn Fn(Hash, Option<Vec<u8>>) + Send + Sync>,
 ) -> Result<(), sc_service::Error> {
 	use cumulus_client_consensus_aura::collators::lookahead::{self as aura, Params as AuraParams};
-	use sp_core::H256;
-
-	// NOTE: because we use Aura here explicitly, we can use `CollatorSybilResistance::Resistant`
-	// when starting the network.
 
 	let proposer_factory = sc_basic_authorship::ProposerFactory::with_proof_recording(
 		task_manager.spawn_handle(),
@@ -454,14 +446,10 @@ fn start_consensus(
 		create_inherent_data_providers: move |_, ()| async move { Ok(()) },
 		block_import,
 		para_client: client.clone(),
-		para_backend: backend,
+		para_backend: backend.clone(),
 		relay_client: relay_chain_interface,
-		code_hash_provider: move |block_hash: H256| {
-			client
-				.code_at(block_hash)
-				.ok()
-				.map(ValidationCode)
-				.map(|c: ValidationCode| c.hash())
+		code_hash_provider: move |block_hash| {
+			client.code_at(block_hash).ok().map(|c| ValidationCode::from(c).hash())
 		},
 		sync_oracle,
 		keystore,
@@ -471,7 +459,8 @@ fn start_consensus(
 		relay_chain_slot_duration,
 		proposer,
 		collator_service,
-		authoring_duration: Duration::from_millis(1500),
+		// Very limited proposal time.
+		authoring_duration: Duration::from_millis(500),
 		reinitialize: false,
 	};
 
@@ -483,16 +472,4 @@ fn start_consensus(
 	task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
 	Ok(())
-}
-
-/// Start a parachain node.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-pub async fn start_parachain_node(
-	parachain_config: Configuration,
-	polkadot_config: Configuration,
-	collator_options: CollatorOptions,
-	id: ParaId,
-	hwbench: Option<sc_sysinfo::HwBench>,
-) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	start_node_impl(parachain_config, polkadot_config, collator_options, id, hwbench).await
 }

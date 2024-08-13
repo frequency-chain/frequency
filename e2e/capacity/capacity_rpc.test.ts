@@ -70,7 +70,7 @@ describe('Capacity RPC', function () {
     assert.notEqual(feeDetails.inclusionFee, undefined, 'should have returned a partialFee');
     assert(feeDetails.inclusionFee.isSome, 'should have returned a partialFee');
     const { baseFee, lenFee, adjustedWeightFee } = feeDetails.inclusionFee.toJSON() as any;
-    const baseFeeSnapshot = 177812;
+    const baseFeeSnapshot = 124103;
     assert(
       Math.abs(baseFee - baseFeeSnapshot) < 50_000,
       'The base fee appears to be wrong or have changed more than expected'
