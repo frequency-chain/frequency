@@ -20,7 +20,7 @@ import {
   CENTS,
   DOLLARS,
   getOrCreateGraphChangeSchema,
-  TokenPerCapacity,
+  getTokenPerCapacity,
   assertEvent,
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
@@ -182,12 +182,12 @@ describe('Capacity Transactions', function () {
 
           const fee = getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
-          const maximumExpectedRemaining = stakedForMsa / TokenPerCapacity - fee;
+          const maximumExpectedRemaining = stakedForMsa / getTokenPerCapacity() - fee;
 
           const remaining = capacityStaked.remainingCapacity.toBigInt();
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
-          assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / TokenPerCapacity);
+          assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / getTokenPerCapacity());
         });
       });
 

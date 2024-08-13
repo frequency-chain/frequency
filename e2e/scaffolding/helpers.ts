@@ -52,6 +52,11 @@ export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
 export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
 
+export function getTokenPerCapacity(): bigint {
+  // Perbil
+  return 1_000_000_000n / ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
+}
+
 export function getTestHandle(prefix = 'test-') {
   return prefix + Math.random().toFixed(10).toString().replaceAll('0.', '');
 }
@@ -425,8 +430,7 @@ export async function stakeToProvider(
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 
-    // let capacityCost: bigint = ExtrinsicHelper.api.consts.capacity.capacityPerToken.toBigInt();
-    const expectedCapacity = tokensToStake / TokenPerCapacity;
+    const expectedCapacity = tokensToStake / getTokenPerCapacity();
 
     assert.equal(
       stakedCapacity,
@@ -572,8 +576,6 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     }
   }
 }
-
-export const TokenPerCapacity = 50n;
 
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
   return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
