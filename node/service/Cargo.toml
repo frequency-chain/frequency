@@ -73,7 +73,7 @@ sp-wasm-interface = { workspace = true }
 
 substrate-frame-rpc-system = { workspace = true }
 substrate-prometheus-endpoint = { workspace = true }
-try-runtime-cli = { workspace = true }
+
 # Polkadot
 polkadot-cli = { workspace = true }
 polkadot-primitives = { workspace = true }
