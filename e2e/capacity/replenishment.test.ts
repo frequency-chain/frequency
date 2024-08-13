@@ -12,7 +12,7 @@ import {
   getOrCreateGraphChangeSchema,
   CENTS,
   DOLLARS,
-  TokenPerCapacity,
+  getTokenPerCapacity,
   assertEvent,
   getCapacity,
   getNonce,
@@ -43,7 +43,7 @@ describe('Capacity Replenishment Testing: ', function () {
   describe('Capacity is replenished', function () {
     it('after new epoch', async function () {
       const totalStaked = 3n * DOLLARS;
-      const expectedCapacity = totalStaked / TokenPerCapacity;
+      const expectedCapacity = totalStaked / getTokenPerCapacity();
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider('ReplFirst', totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
@@ -111,7 +111,7 @@ describe('Capacity Replenishment Testing: ', function () {
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
-      const expectedCapacity = (providerStakeAmt + userStakeAmt) / TokenPerCapacity;
+      const expectedCapacity = (providerStakeAmt + userStakeAmt) / getTokenPerCapacity();
       const totalCapacity = (await getCapacity(stakeProviderId)).totalCapacityIssued.toBigInt();
       assert.equal(expectedCapacity, totalCapacity, `expected ${expectedCapacity} capacity, got ${totalCapacity}`);
 
