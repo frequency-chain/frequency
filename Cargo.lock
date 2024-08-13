@@ -3736,6 +3736,7 @@ dependencies = [
  "polkadot-runtime-common",
  "scale-info",
  "serde",
+ "serde_json",
  "smallvec",
  "sp-api",
  "sp-block-builder",

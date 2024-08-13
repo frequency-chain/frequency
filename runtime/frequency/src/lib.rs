@@ -26,6 +26,8 @@ use sp_runtime::{
 	DispatchError,
 };
 
+pub mod genesis_config_presets;
+
 use pallet_collective::Members;
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]

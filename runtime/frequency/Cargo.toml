@@ -21,6 +21,8 @@ log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true, features = ["alloc"] }
+
 smallvec = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -85,6 +87,7 @@ pallet-passkey = { path = "../../pallets/passkey", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
 # Polkadot
 polkadot-parachain-primitives = { workspace = true }
+# polkadot-primitives = { workspace = true }
 polkadot-runtime-common = { workspace = true }
 # Cumulus
 cumulus-pallet-aura-ext = { workspace = true }
@@ -148,8 +151,10 @@ std = [
   "parity-scale-codec/std",
   "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
+  # "polkadot-primitives/std",
   "scale-info/std",
   "serde/std",
+  "serde_json/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
