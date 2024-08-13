@@ -26,6 +26,9 @@ use sp_runtime::{
 	DispatchError,
 };
 
+pub mod development_genesis;
+pub mod genesis_config_presets;
+
 use pallet_collective::Members;
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
@@ -375,7 +378,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 116,
+	spec_version: 117,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -389,7 +392,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 116,
+	spec_version: 117,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,

@@ -15,6 +15,9 @@ use sp_runtime::{
 use sp_std::prelude::Vec;
 use sp_version::RuntimeVersion;
 
+// Genesis preset configurations.
+use crate::genesis_config_presets;
+
 use super::{
 	AccountId, Balance, Block, Executive, InherentDataExt, Runtime, RuntimeCall,
 	RuntimeGenesisConfig, SessionKeys, System, TransactionPayment, VERSION,
@@ -149,11 +152,13 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+			get_preset::<RuntimeGenesisConfig>(id,  &genesis_config_presets::get_preset)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			Default::default()
+			vec![
+				sp_genesis_builder::PresetId::from("development"),
+			]
 		}
 	}
 
