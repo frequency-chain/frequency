@@ -192,9 +192,9 @@ pub async fn start_parachain_node(
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	use sc_client_db::Backend;
-	use common_primitives::offchain::OcwCustomExt;
 	use crate::block_sealing::convert_address_to_normalized_string;
+	use common_primitives::offchain::OcwCustomExt;
+	use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
 
