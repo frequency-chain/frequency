@@ -8,7 +8,7 @@ use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 /// Dummy chain spec for building and checking
-pub type DummyChainSpec = sc_service::GenericChainSpec<(), Extensions>;
+pub type DummyChainSpec = sc_service::GenericChainSpec<Extensions>;
 
 #[cfg(feature = "frequency")]
 pub mod frequency;

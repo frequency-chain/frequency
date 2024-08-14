@@ -1,15 +1,15 @@
-const { ApiPromise, WsProvider, Keyring } = require('@polkadot/api');
-const fs = require('fs')
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
+import { readFileSync } from "fs";
 
 const run = async () => {
   try {
-    console.log("Parsing Args ...")
+    console.log("Parsing Args ...");
     // 0 & 1 are command context
     const endpoint = process.argv[2];
     const seed = process.argv[3];
     const id = process.argv[4];
     const header = process.argv[5];
-    const wasmFile = process.argv[6]
+    const wasmFile = process.argv[6];
 
     const wsProvider = new WsProvider(endpoint);
 
@@ -22,15 +22,15 @@ const run = async () => {
 
     let wasm;
     try {
-      wasm = fs.readFileSync(wasmFile, 'utf8')
+      wasm = readFileSync(wasmFile).toString("hex");
     } catch (err) {
-      console.error(err)
-      throw err
+      console.error(err);
+      throw err;
     }
 
     let paraGenesisArgs = {
       genesis_head: header,
-      validation_code: wasm,
+      validation_code: "0x" + wasm,
       parachain: true,
     };
 
@@ -38,34 +38,26 @@ const run = async () => {
 
     const nonce = Number((await api.query.system.account(alice.address)).nonce);
 
-    console.log(
-      `--- Submitting extrinsic to register parachain ${id}. (nonce: ${nonce}) ---`
-    );
+    console.log(`--- Submitting extrinsic to register parachain ${id}. (nonce: ${nonce}) ---`);
     const sudoCall = await api.tx.sudo
-      .sudo(api.tx.parasSudoWrapper.sudoScheduleParaInitialize(id, genesis))
+      .sudo(api.tx.paraSudoWrapper.sudoScheduleParaInitialize(id, genesis))
       .signAndSend(alice, { nonce: nonce, era: 0 }, (result) => {
         console.log(`Current status is ${result.status}`);
         if (result.status.isInBlock) {
-          console.log(
-            `Transaction included at blockHash ${result.status.asInBlock}`
-          );
+          console.log(`Transaction included at blockHash ${result.status.asInBlock}`);
           console.log("Waiting for finalization...");
         } else if (result.status.isFinalized) {
-          console.log(
-            `Transaction finalized at blockHash ${result.status.asFinalized}`
-          );
+          console.log(`Transaction finalized at blockHash ${result.status.asFinalized}`);
           sudoCall();
-          process.exit()
+          process.exit();
         } else if (result.isError) {
           console.log(`Transaction Error`);
-          process.exit()
+          process.exit();
         }
       });
-
   } catch (error) {
-    console.log('error:', error);
+    console.log("error:", error);
   }
-
 };
 
 run();
