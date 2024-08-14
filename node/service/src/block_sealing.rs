@@ -24,12 +24,19 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
 use std::{net::SocketAddr, sync::Arc, task::Poll};
 
-fn convert_address_to_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
-	match addr {
-		None => None,
-		Some(SocketAddr::V4(v4)) => Some(v4.to_string().into_bytes()),
-		Some(SocketAddr::V6(v6)) => Some(v6.to_string().into_bytes()),
+const HTTP_PREFIX: &str = "http://";
+
+fn convert_address_to_normalized_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
+	let mut address = match addr {
+		None => return None,
+		Some(SocketAddr::V4(v4)) => v4.to_string(),
+		Some(SocketAddr::V6(v6)) => v6.to_string(),
+	};
+
+	if !address.starts_with(HTTP_PREFIX) {
+		address = format!("{}{}", HTTP_PREFIX, address);
 	}
+	Some(address.into_bytes())
 }
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
@@ -84,7 +91,8 @@ pub fn start_frequency_dev_sealing_node(
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
 		log::info!("OFFCHAIN WORKER is Enabled! {:?}", config.rpc_addr);
-		let val = convert_address_to_string(&config.rpc_addr);
+		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
+			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -97,8 +105,8 @@ pub fn start_frequency_dev_sealing_node(
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: move |_hash| {
-					let xx = val.clone();
-					vec![Box::new(OcwCustomExt(xx)) as Box<_>]
+					let cloned = rpc_address.clone();
+					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
 				},
 			});
 

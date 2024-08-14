@@ -10,9 +10,7 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
 use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
-use alloc::string::{String, ToString};
-// use crate::offchain_storage::alloc::string::ToString;
-use scale_info::prelude::format;
+use alloc::string::String;
 use sp_io::offchain_index;
 use sp_runtime::{
 	offchain::{
@@ -392,22 +390,11 @@ pub struct FinalizedBlockResponse {
 
 /// fetches finalized block hash from rpc
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
-	let mut url = RPC_FINALIZED_BLOCK_REQUEST_URL.to_string();
-	if let Some(f) = common_primitives::offchain::custom::get_val() {
-		log::info!("custom exists");
-		if let Some(d) = f {
-			let body_str = sp_std::str::from_utf8(&d).map_err(|_| {
-				log::warn!("No UTF8 my_val");
-				sp_runtime::offchain::http::Error::Unknown
-			})?;
-			log::info!("custom {}", body_str);
-			url = body_str.to_string();
-			if !url.starts_with("http://") {
-				url = format!("http://{}", url);
-			}
-			log::info!("final {}", url);
-		}
-	}
+	// rpc address provided to offchain worker via custom extension
+	let rpc_address = common_primitives::offchain::custom::get_val()
+		.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into());
+	let url = sp_std::str::from_utf8(&rpc_address)
+		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
 	// You can also wait indefinitely for the response, however you may still get a timeout

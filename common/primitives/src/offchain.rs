@@ -1,31 +1,30 @@
 use crate::msa::MessageSourceId;
 use numtoa::NumToA;
 use parity_scale_codec::Decode;
-use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
-use sp_std::{fmt::Debug, vec, vec::Vec};
-// #[cfg(feature = "std")]
+#[cfg(feature = "std")]
 use sp_externalities::ExternalitiesExt;
-// #[cfg(feature = "std")]
+use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_runtime_interface::runtime_interface;
+use sp_std::{fmt::Debug, vec, vec::Vec};
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
-	/// another comment
+	/// Offchain worker custom extension
 	pub struct OcwCustomExt (
-		Option<Vec<u8>>
+		// rpc address provided to offchain worker
+		Vec<u8>
 	);
 }
 
 /// host functions for custom extension
 #[cfg(feature = "std")]
-pub type HostFunctions = (custom::HostFunctions,);
+pub type CustomExtensionHostFunctions = (custom::HostFunctions,);
 
 /// runtime new customized
-// #[cfg(feature = "std")]
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
 	/// another function
-	fn get_val(&mut self) -> Option<Option<Vec<u8>>> {
+	fn get_val(&mut self) -> Option<Vec<u8>> {
 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
 	}
 }
