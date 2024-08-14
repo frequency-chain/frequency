@@ -16,10 +16,6 @@ sp_externalities::decl_extension! {
 	);
 }
 
-/// host functions for custom extension
-#[cfg(feature = "std")]
-pub type CustomExtensionHostFunctions = (custom::HostFunctions,);
-
 /// runtime new customized
 #[runtime_interface]
 pub trait Custom: ExternalitiesExt {
@@ -28,7 +24,7 @@ pub trait Custom: ExternalitiesExt {
 		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
 	}
 }
-/// Lock expiration timeout in in milli-seconds for msa pallet per msa account
+/// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account
 pub const MSA_ACCOUNT_LOCK_NAME_PREFIX: &[u8; 16] = b"Msa::ofw::lock::";

@@ -26,7 +26,8 @@ use std::{net::SocketAddr, sync::Arc, task::Poll};
 
 const HTTP_PREFIX: &str = "http://";
 
-fn convert_address_to_normalized_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
+/// Normalize and convert SocketAddr to string
+pub fn convert_address_to_normalized_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
 	let mut address = match addr {
 		None => return None,
 		Some(SocketAddr::V4(v4)) => v4.to_string(),

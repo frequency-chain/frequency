@@ -57,14 +57,14 @@ type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 #[cfg(not(feature = "runtime-benchmarks"))]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
-	common_primitives::offchain::CustomExtensionHostFunctions,
+	common_primitives::offchain::custom::HostFunctions,
 );
 
 #[cfg(feature = "runtime-benchmarks")]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
-	common_primitives::offchain::CustomExtensionHostFunctions,
+	common_primitives::offchain::custom::HostFunctions,
 );
 
 pub use frequency_runtime;
@@ -193,6 +193,8 @@ pub async fn start_parachain_node(
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	use sc_client_db::Backend;
+	use common_primitives::offchain::OcwCustomExt;
+	use crate::block_sealing::convert_address_to_normalized_string;
 
 	let parachain_config = prepare_node_config(parachain_config);
 
@@ -245,7 +247,7 @@ pub async fn start_parachain_node(
 	if parachain_config.offchain_worker.enabled {
 		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
+		let rpc_address = convert_address_to_normalized_string(&parachain_config.rpc_addr)
 			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
