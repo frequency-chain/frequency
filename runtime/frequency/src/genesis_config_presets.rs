@@ -1,4 +1,5 @@
 // chain-spec-builder list-presets --runtime-wasm-path ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm
+// chain-spec-builder display-preset  --runtime-wasm-path ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm -p "development"
 
 // use polkadot_primitives::{AccountId, AccountPublic};
 // use polkadot_primitives::AccountPublic;

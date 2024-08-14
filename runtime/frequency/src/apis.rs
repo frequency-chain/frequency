@@ -152,6 +152,11 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
+			// if let Some(id) = id {
+			// 	genesis_config_presets::get_preset(id)
+			// } else {
+			// 	get_preset::<RuntimeGenesisConfig>(&None)
+			// }
 			get_preset::<RuntimeGenesisConfig>(id,  &genesis_config_presets::get_preset)
 		}
 
