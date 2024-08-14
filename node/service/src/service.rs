@@ -38,9 +38,7 @@ use cumulus_relay_chain_interface::{OverseerHandle, RelayChainError, RelayChainI
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
-use sc_executor::{
-	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
-};
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
 use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
