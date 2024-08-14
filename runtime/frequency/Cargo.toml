@@ -160,6 +160,7 @@ std = [
   "sp-runtime/std",
   "sp-session/std",
   "sp-std/std",
+  "cumulus-pallet-session-benchmarking/std",
   "sp-transaction-pool/std",
   "sp-genesis-builder/std",
   "common-runtime/std",

@@ -132,6 +132,24 @@ impl<T: frame_system::Config> pallet_balances::WeightInfo for SubstrateWeight<T>
 		// Minimum execution time: 4_955_000 picoseconds.
 		Weight::from_parts(5_331_000, 0)
 	}
+	fn burn_allow_death() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 27_491_000 picoseconds.
+		Weight::from_parts(28_444_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+	}
+
+	fn burn_keep_alive() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 18_290_000 picoseconds.
+		Weight::from_parts(19_227_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+
+	}
 }
 
 

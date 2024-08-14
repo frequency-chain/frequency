@@ -973,7 +973,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	// TODO: Remove this when Async Backing is activated and the feature is set for cumulus-pallet-parachain-system
-	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = ConsensusHook;
 }
 
