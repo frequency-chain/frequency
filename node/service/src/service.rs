@@ -245,6 +245,8 @@ pub async fn start_parachain_node(
 	if parachain_config.offchain_worker.enabled {
 		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
+		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
+			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -256,7 +258,10 @@ pub async fn start_parachain_node(
 				)),
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
-				custom_extensions: |_| vec![],
+				custom_extensions: move |_hash| {
+					let cloned = rpc_address.clone();
+					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
+				},
 			});
 
 		// Spawn a task to handle off-chain notifications.

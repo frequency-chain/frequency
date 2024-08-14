@@ -90,7 +90,7 @@ pub fn start_frequency_dev_sealing_node(
 
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
-		log::info!("OFFCHAIN WORKER is Enabled! {:?}", config.rpc_addr);
+		log::info!("OFFCHAIN WORKER is Enabled!");
 		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
 			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
