@@ -14,6 +14,7 @@ use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
 
+use crate::common::convert_address_to_normalized_string;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
@@ -22,23 +23,8 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::{Environment, Proposer, SelectChain};
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-use std::{net::SocketAddr, sync::Arc, task::Poll};
+use std::{sync::Arc, task::Poll};
 
-const HTTP_PREFIX: &str = "http://";
-
-/// Normalize and convert SocketAddr to string
-pub fn convert_address_to_normalized_string(addr: &Option<SocketAddr>) -> Option<Vec<u8>> {
-	let mut address = match addr {
-		None => return None,
-		Some(SocketAddr::V4(v4)) => v4.to_string(),
-		Some(SocketAddr::V6(v6)) => v6.to_string(),
-	};
-
-	if !address.starts_with(HTTP_PREFIX) {
-		address = format!("{}{}", HTTP_PREFIX, address);
-	}
-	Some(address.into_bytes())
-}
 /// Function to start Frequency in dev mode without a relay chain
 /// This function is called when --chain dev --sealing= is passed.
 #[allow(clippy::expect_used)]
