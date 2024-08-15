@@ -55,12 +55,16 @@ type FullBackend = TFullBackend<Block>;
 type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
 
 #[cfg(not(feature = "runtime-benchmarks"))]
-type HostFunctions = cumulus_client_service::ParachainHostFunctions;
+type HostFunctions = (
+	cumulus_client_service::ParachainHostFunctions,
+	common_primitives::offchain::custom::HostFunctions,
+);
 
 #[cfg(feature = "runtime-benchmarks")]
 type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
+	common_primitives::offchain::custom::HostFunctions,
 );
 
 pub use frequency_runtime;
@@ -188,6 +192,8 @@ pub async fn start_parachain_node(
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
+	use crate::common::convert_address_to_normalized_string;
+	use common_primitives::offchain::OcwCustomExt;
 	use sc_client_db::Backend;
 
 	let parachain_config = prepare_node_config(parachain_config);
@@ -241,6 +247,8 @@ pub async fn start_parachain_node(
 	if parachain_config.offchain_worker.enabled {
 		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
+		let rpc_address = convert_address_to_normalized_string(&parachain_config.rpc_addr)
+			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -252,7 +260,10 @@ pub async fn start_parachain_node(
 				)),
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
-				custom_extensions: |_| vec![],
+				custom_extensions: move |_hash| {
+					let cloned = rpc_address.clone();
+					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
+				},
 			});
 
 		// Spawn a task to handle off-chain notifications.

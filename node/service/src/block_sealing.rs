@@ -3,15 +3,18 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::node::{Block, Hash};
+use common_primitives::{
+	node::{Block, Hash},
+	offchain::OcwCustomExt,
+};
 use core::marker::PhantomData;
-use futures::Stream;
+use futures::{FutureExt, Stream};
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
 
-use futures::FutureExt;
+use crate::common::convert_address_to_normalized_string;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
@@ -75,6 +78,8 @@ pub fn start_frequency_dev_sealing_node(
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
 		log::info!("OFFCHAIN WORKER is Enabled!");
+		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
+			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
@@ -86,7 +91,10 @@ pub fn start_frequency_dev_sealing_node(
 				)),
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
-				custom_extensions: |_| vec![],
+				custom_extensions: move |_hash| {
+					let cloned = rpc_address.clone();
+					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
+				},
 			});
 
 		// Spawn a task to handle off-chain notifications.
