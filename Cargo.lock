@@ -1562,8 +1562,10 @@ dependencies = [
  "smallvec",
  "sp-api",
  "sp-core",
+ "sp-externalities 0.25.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-io",
  "sp-runtime",
+ "sp-runtime-interface 24.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.11.0)",
 ]
 

@@ -390,6 +390,16 @@ pub struct FinalizedBlockResponse {
 
 /// fetches finalized block hash from rpc
 fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offchain::http::Error> {
+	// we are not able to use the custom extension in benchmarks due to feature conflict
+	let rpc_address = if cfg!(feature = "runtime-benchmarks") {
+		RPC_FINALIZED_BLOCK_REQUEST_URL.into()
+	} else {
+		// rpc address provided to offchain worker via custom extension
+		common_primitives::offchain::custom::get_val()
+			.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
+	};
+	let url = sp_std::str::from_utf8(&rpc_address)
+		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
 	// You can also wait indefinitely for the response, however you may still get a timeout
@@ -397,7 +407,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	let deadline =
 		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MS));
 	let body = vec![RPC_FINALIZED_BLOCK_REQUEST_BODY];
-	let request = sp_runtime::offchain::http::Request::post(RPC_FINALIZED_BLOCK_REQUEST_URL, body);
+	let request = sp_runtime::offchain::http::Request::post(&url, body);
 	let pending = request
 		.add_header("Content-Type", "application/json")
 		.deadline(deadline)

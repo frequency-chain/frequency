@@ -1,10 +1,30 @@
 use crate::msa::MessageSourceId;
 use numtoa::NumToA;
 use parity_scale_codec::Decode;
+#[cfg(feature = "std")]
+use sp_externalities::ExternalitiesExt;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
+use sp_runtime_interface::runtime_interface;
 use sp_std::{fmt::Debug, vec, vec::Vec};
 
-/// Lock expiration timeout in in milli-seconds for msa pallet per msa account
+#[cfg(feature = "std")]
+sp_externalities::decl_extension! {
+	/// Offchain worker custom extension
+	pub struct OcwCustomExt (
+		// rpc address provided to offchain worker
+		Vec<u8>
+	);
+}
+
+/// runtime new customized
+#[runtime_interface]
+pub trait Custom: ExternalitiesExt {
+	/// another function
+	fn get_val(&mut self) -> Option<Vec<u8>> {
+		self.extension::<OcwCustomExt>().map(|ext| ext.0.clone())
+	}
+}
+/// Lock expiration timeout in milli-seconds for msa pallet per msa account
 pub const MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 50;
 /// Lock name prefix for msa account
 pub const MSA_ACCOUNT_LOCK_NAME_PREFIX: &[u8; 16] = b"Msa::ofw::lock::";
