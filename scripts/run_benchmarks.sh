@@ -218,7 +218,7 @@ for pallet_name in "${CUSTOM_PALLETS[@]}"; do
   template=${PROJECT}/.maintain/frame-weight-template.hbs
   output=${PROJECT}/pallets/${pallet_name/_/-}/src/weights.rs
   additional_trie_layer=3
-    if [ "$pallet_name" == "stateful-storage" ]; then
+  if [ "$pallet_name" == "stateful-storage" ]; then
     additional_trie_layer=6
   fi
   run_benchmark pallet_${pallet_name} ${steps} ${repeat} ${output} ${template} ${additional_trie_layer} || exit_err
