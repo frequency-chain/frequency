@@ -8,12 +8,8 @@ import { dirname } from 'path';
 const __filename = fileURLToPath(import.meta.url);
 // Get the directory name from the filename
 const __dirname = dirname(__filename);
-const outdir = path.join(__dirname,"../dist/json/");
+const outdir = path.join(__dirname, '../dist/json/');
 
-fs.mkdirSync( outdir, { recursive: true});
+fs.mkdirSync(outdir, { recursive: true });
 
-fs.writeFileSync(
-	path.join(outdir, "types.json"),
-	JSON.stringify(types, null, 4)
-);
-
+fs.writeFileSync(path.join(outdir, 'types.json'), JSON.stringify(types, null, 4));
