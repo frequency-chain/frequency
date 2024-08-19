@@ -127,6 +127,7 @@ mod tests {
   use common_runtime::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
   use common_runtime::weights::extrinsic_weights::ExtrinsicBaseWeight;
 
+  #[allow(dead_code)]
   struct BlockWeights;
   impl Get<frame_system::limits::BlockWeights> for BlockWeights {
   	fn get() -> frame_system::limits::BlockWeights {

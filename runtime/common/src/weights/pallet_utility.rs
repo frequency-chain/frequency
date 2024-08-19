@@ -86,7 +86,8 @@ mod tests {
   use crate::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
   use crate::weights::extrinsic_weights::ExtrinsicBaseWeight;
 
-  struct BlockWeights;
+#[allow(dead_code)]
+struct BlockWeights;
   impl Get<frame_system::limits::BlockWeights> for BlockWeights {
   	fn get() -> frame_system::limits::BlockWeights {
   		frame_system::limits::BlockWeights::builder()

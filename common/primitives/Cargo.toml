@@ -47,3 +47,4 @@ std = [
   'sp-externalities/std',
   'sp-runtime-interface/std'
 ]
+test = []
