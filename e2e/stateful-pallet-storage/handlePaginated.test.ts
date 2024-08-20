@@ -201,9 +201,9 @@ describe('📗 Stateful Pallet Storage', function () {
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
 
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, 0);
-      await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'StalePageState',
-        section: 'statefulStorage',
+      await assert.rejects(paginated_add_result_1.signAndSend('current'), {
+        name: 'RpcError',
+        message: /1010: Invalid Transaction: Custom error: 9/,
       });
     });
   });
@@ -242,10 +242,10 @@ describe('📗 Stateful Pallet Storage', function () {
     });
 
     it('🛑 should fail call to remove page with stale target hash', async function () {
-      const paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 0);
-      await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
-        name: 'StalePageState',
-        section: 'statefulStorage',
+      const paginated_add_result_1 = ExtrinsicHelper.removePage(providerKeys, schemaId, msa_id, 0, 1000);
+      await assert.rejects(paginated_add_result_1.signAndSend('current'), {
+        name: 'RpcError',
+        message: /1010: Invalid Transaction: Custom error: 9/,
       });
     });
   });

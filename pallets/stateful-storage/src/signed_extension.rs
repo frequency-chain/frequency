@@ -1,12 +1,5 @@
 //! Substrate Signed Extension for validating requests to the stateful storage pallet
-use crate::{
-	stateful_child_tree::StatefulChildTree,
-	types::{
-		ItemizedKey, ItemizedPage, PaginatedKey, PaginatedPage, ITEMIZED_STORAGE_PREFIX,
-		PAGINATED_STORAGE_PREFIX, PALLET_STORAGE_PREFIX,
-	},
-	Call, Config, Error,
-};
+use crate::{Call, Config, Error, Pallet};
 use common_primitives::{
 	msa::{MessageSourceId, MsaValidator, SchemaId},
 	stateful_storage::{PageHash, PageId},
@@ -20,7 +13,7 @@ use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
-	DispatchError, ModuleError,
+	DispatchError,
 };
 
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
@@ -36,54 +29,51 @@ impl<T: Config + Send + Sync> StatefulStorageSignedExtension<T> {
 		Self(sp_std::marker::PhantomData)
 	}
 
-	fn verify_hash(
+	/// Verifies the hashes for an Itemized Stateful Storage extrinsic
+	fn verify_hash_itemized(
 		msa_id: &MessageSourceId,
 		schema_id: &SchemaId,
-		page_id_option: Option<&PageId>,
 		target_hash: &PageHash,
 	) -> TransactionValidity {
-		const TAG_PREFIX: &str = "StatefulStorageHash";
-		let current_hash: PageHash = match page_id_option {
-			Some(page_id) => {
-				// paginated page
-				let keys: PaginatedKey = (*schema_id, *page_id);
-				match StatefulChildTree::<T::KeyHasher>::try_read::<_, PaginatedPage<T>>(
-					&msa_id,
-					PALLET_STORAGE_PREFIX,
-					PAGINATED_STORAGE_PREFIX,
-					&keys,
-				) {
-					Ok(Some(page)) => page.get_hash(),
-					_ => PageHash::default(),
-				}
-			},
-			None => {
-				// Itemized pages don't have a page id
-				let keys: ItemizedKey = (*schema_id,);
-				match StatefulChildTree::<T::KeyHasher>::try_read::<_, ItemizedPage<T>>(
-					&msa_id,
-					PALLET_STORAGE_PREFIX,
-					ITEMIZED_STORAGE_PREFIX,
-					&keys,
-				) {
-					Ok(Some(page)) => page.get_hash(),
-					_ => PageHash::default(),
-				}
-			},
-		};
+		const TAG_PREFIX: &str = "StatefulStorageHashItemized";
 
-		ensure!(
-			&current_hash == target_hash,
-			map_dispatch_error(DispatchError::Other(Error::<T>::StalePageState.into()))
-		);
+		if let Ok(Some(page)) = Pallet::<T>::get_itemized_page_for(*msa_id, *schema_id) {
+			let current_hash: PageHash = page.get_hash();
 
-		let mut transaction = ValidTransaction::with_tag_prefix(TAG_PREFIX);
-		if let Some(page_id) = page_id_option {
-			transaction = transaction.and_provides((msa_id, schema_id, page_id));
-		} else {
-			transaction = transaction.and_provides((msa_id, schema_id));
+			ensure!(
+				&current_hash == target_hash,
+				map_dispatch_error(Error::<T>::StalePageState.into())
+			);
+
+			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+				.and_provides((msa_id, schema_id))
+				.build()
 		}
-		return transaction.build();
+		Ok(Default::default())
+	}
+
+	/// Verifies the hashes for a Paginated Stateful Storage extrinsic
+	fn verify_hash_paginated(
+		msa_id: &MessageSourceId,
+		schema_id: &SchemaId,
+		page_id: &PageId,
+		target_hash: &PageHash,
+	) -> TransactionValidity {
+		const TAG_PREFIX: &str = "StatefulStorageHashPaginated";
+		if let Ok(Some(page)) = Pallet::<T>::get_paginated_page_for(*msa_id, *schema_id, *page_id) {
+			let current_hash: PageHash = page.get_hash();
+
+			ensure!(
+				&current_hash == target_hash,
+				map_dispatch_error(Error::<T>::StalePageState.into())
+			);
+
+			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+				.and_provides((msa_id, schema_id, page_id))
+				.build()
+		}
+
+		Ok(Default::default())
 	}
 }
 
@@ -100,14 +90,12 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for StatefulStorageSignedExtens
 
 /// Map a module DispatchError to an InvalidTransaction::Custom error
 pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
-	log::debug!(
-		target: "runtime::StatefulStorageSignedExtension",
-		"{:?}",
-		&err,
-	);
 	InvalidTransaction::Custom(match err {
-		DispatchError::Module(ModuleError { error, .. }) => error[0],
-		DispatchError::Other(_) => 250u8, // stale page
+		DispatchError::Module(module_err) =>
+			<u32 as Decode>::decode(&mut module_err.error.as_slice())
+				.unwrap_or_default()
+				.try_into()
+				.unwrap_or_default(),
 		_ => 255u8,
 	})
 }
@@ -138,16 +126,8 @@ where
 		Ok(())
 	}
 
-	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
-	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
-	/// * retire_handle
-	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
-	///
-	/// Arguments:
-	/// who: AccountId calling the extrinsic
-	/// call: The pallet extrinsic being called
-	/// unused: _info, _len
-	///
+	/// Filters stateful extrinsics and verifies the hashes to ensure we are proceeding
+	/// with a stale one
 	fn validate(
 		&self,
 		_who: &Self::AccountId,
@@ -158,54 +138,57 @@ where
 		match call.is_sub_type() {
 			Some(Call::apply_item_actions {
 				state_owner_msa_id, schema_id, target_hash, ..
-			}) => Self::verify_hash(state_owner_msa_id, schema_id, None, target_hash),
+			}) => Self::verify_hash_itemized(state_owner_msa_id, schema_id, target_hash),
 			Some(Call::upsert_page {
 				state_owner_msa_id, schema_id, target_hash, page_id, ..
-			}) => Self::verify_hash(state_owner_msa_id, schema_id, Some(page_id), target_hash),
+			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
 			Some(Call::delete_page {
 				state_owner_msa_id, schema_id, target_hash, page_id, ..
-			}) => Self::verify_hash(state_owner_msa_id, schema_id, Some(page_id), target_hash),
+			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
 			Some(Call::apply_item_actions_with_signature { payload, .. }) =>
-				Self::verify_hash(&payload.msa_id, &payload.schema_id, None, &payload.target_hash),
-			Some(Call::upsert_page_with_signature { payload, .. }) => Self::verify_hash(
+				Self::verify_hash_itemized(
+					&payload.msa_id,
+					&payload.schema_id,
+					&payload.target_hash,
+				),
+			Some(Call::upsert_page_with_signature { payload, .. }) => Self::verify_hash_paginated(
 				&payload.msa_id,
 				&payload.schema_id,
-				Some(&payload.page_id),
+				&payload.page_id,
 				&payload.target_hash,
 			),
-			Some(Call::delete_page_with_signature { payload, .. }) => Self::verify_hash(
+			Some(Call::delete_page_with_signature { payload, .. }) => Self::verify_hash_paginated(
 				&payload.msa_id,
 				&payload.schema_id,
-				Some(&payload.page_id),
+				&payload.page_id,
 				&payload.target_hash,
 			),
 			Some(Call::apply_item_actions_with_signature_v2 { payload, delegator_key, .. }) => {
 				let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(delegator_key)
 					.map_err(|e| map_dispatch_error(e))?;
-				Self::verify_hash(
+				Self::verify_hash_itemized(
 					&state_owner_msa_id,
 					&payload.schema_id,
-					None,
 					&payload.target_hash,
 				)
 			},
 			Some(Call::upsert_page_with_signature_v2 { payload, delegator_key, .. }) => {
 				let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(delegator_key)
 					.map_err(|e| map_dispatch_error(e))?;
-				Self::verify_hash(
+				Self::verify_hash_paginated(
 					&state_owner_msa_id,
 					&payload.schema_id,
-					Some(&payload.page_id),
+					&payload.page_id,
 					&payload.target_hash,
 				)
 			},
 			Some(Call::delete_page_with_signature_v2 { payload, delegator_key, .. }) => {
 				let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(delegator_key)
 					.map_err(|e| map_dispatch_error(e))?;
-				Self::verify_hash(
+				Self::verify_hash_paginated(
 					&state_owner_msa_id,
 					&payload.schema_id,
-					Some(&payload.page_id),
+					&payload.page_id,
 					&payload.target_hash,
 				)
 			},
