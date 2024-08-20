@@ -475,7 +475,7 @@ pub mod pallet {
 		/// - Returns `Error::MaxUnlockingChunksExceeded` if attempting to unlock more times than config::MaxUnlockingChunks.
 		/// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
 		/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target (not a Provider)
-		/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked at all
+		/// - Returns `Error::NotAStakingAccount` if `origin` has nothing staked at all
 		/// - Returns `Error::StakerTargetRelationshipNotFound` if `origin` has nothing staked to `target`
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::unstake())]

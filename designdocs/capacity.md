@@ -4,7 +4,7 @@
 
 Feeless transactions are essential in reaching mass adoption as it removes the overhead costs of transactions for app developers to acquire a far-reaching user base.
 
-In this document, I will introduce the concept of [Capacity](https://forums.projectliberty.io/t/05-what-is-capacity-frequency-economics-part-1/248), a non-transferable resource that is associated with an MSA account of a [Registered Provider](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_registration.md), and how Capacity can be acquired through staking, refills, and used to perform transactions such as:
+In this document, I will introduce the concept of [Capacity](https://forums.projectliberty.io/t/05-what-is-capacity-frequency-economics-part-1/248), a non-transferable resource that is associated with a [Message Source Account (MSA)](./README.md#basic-data-model)) of a [Registered Provider](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_registration.md), and how Capacity can be acquired through staking, refills, and used to perform transactions such as:
 
 - Create an MSA.
 - Add a key to an MSA.
@@ -23,89 +23,105 @@ Frequency explains how Capacity can be acquired through staking, refills, and us
 - [Block space allocation for Capacity transactions](#block-space)
 - [Implementation of spending Capacity to perform transactions](#capacity-transactions)
 
-  **Implementation of how to acquire through staking:** <a id='staking'></a>
+### **Implementation of how to acquire Capacity through staking:** <a id='staking'></a>
 
 This section is limited to the interfaces for staking and un-staking tokens.
 
 As a Registered Provider, you can receive Capacity by staking your tokens to the network or when others stake their tokens to the network.
 
-When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards. Rewards are deferred to a supplemental [staking design doc](https://github.com/frequency-chain/frequency/issues/40). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
+When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards. For more information on rewards, please see the [Tokenomics docs](https://docs.frequency.xyz/Tokenomics/index.html). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
 
 Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked (up to the amount staked), but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful, all thawed tokens become unlocked and increase the ability to make more scheduled requests.
 
 Note that the thaw period is measured in Epoch Periods. An Epoch Period is composed of a set number of blocks. The number of blocks for an Epoch will be approximately 100 blocks and can be adjusted through governance.
 
-### **Interfaces for Staking-Pallet**
+#### **Interfaces for Staking-Pallet**
 
-### **Config**
+#### **Config**
+
+```rust
+ #[pallet::config]
+ pub trait Config: frame_system::Config {
+  /// The overarching event type.
+  type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
+  /// The overarching freeze reason.
+  type RuntimeFreezeReason: From<FreezeReason>;
+
+  /// Weight information for extrinsics in this pallet.
+  type WeightInfo: WeightInfo;
+
+  /// Functions that allow a fungible balance to be changed or frozen.
+  type Currency: MutateFreeze<Self::AccountId, Id = Self::RuntimeFreezeReason>
+   + Mutate<Self::AccountId>
+   + InspectFreeze<Self::AccountId>
+   + InspectFungible<Self::AccountId>;
+
+  /// Function that checks if an MSA is a valid target.
+  type TargetValidator: TargetValidator;
+
+  /// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
+  #[pallet::constant]
+  type MinimumStakingAmount: Get<BalanceOf<Self>>;
+
+  /// The minimum required token amount to remain in the account after staking.
+  #[pallet::constant]
+  type MinimumTokenBalance: Get<BalanceOf<Self>>;
+
+  /// The maximum number of unlocking chunks a StakingAccountLedger can have.
+  /// It determines how many concurrent unstaked chunks may exist.
+  #[pallet::constant]
+  type MaxUnlockingChunks: Get<u32>;
+
+  #[cfg(feature = "runtime-benchmarks")]
+  /// A set of helper functions for benchmarking.
+  type BenchmarkHelper: RegisterProviderBenchmarkHelper;
+
+  /// The number of Epochs before you can unlock tokens after unstaking.
+  #[pallet::constant]
+  type UnstakingThawPeriod: Get<u16>;
+
+  /// Maximum number of blocks an epoch can be
+  #[pallet::constant]
+  type MaxEpochLength: Get<BlockNumberFor<Self>>;
+
+  /// A type that provides an Epoch number
+  /// traits pulled from frame_system::Config::BlockNumber
+  type EpochNumber: Parameter
+   + Member
+   + MaybeSerializeDeserialize
+   + MaybeDisplay
+   + AtLeast32BitUnsigned
+   + Default
+   + Copy
+   + sp_std::hash::Hash
+   + MaxEncodedLen
+   + TypeInfo;
+
+  /// How much FRQCY one unit of Capacity costs
+  #[pallet::constant]
+  type CapacityPerToken: Get<Perbill>;
+
+ // ...
+ }
+```
+
+#### **Constants**
+
+FreezeReason is an enum that defines the reason for freezing funds in an account.
 
 ```rust
 
-#[pallet::config]
-pub trait Config: frame_system::Config {
-    /// The overarching event type.
-    type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
-
-    /// Weight information for extrinsics in this pallet.
-    type WeightInfo: WeightInfo;
-
-    /// Function that allows a balance to be locked.
-    type Currency: LockableCurrency<Self::AccountId, Moment = Self::BlockNumber>;
-
-    /// Function that checks if an MSA is a valid target.
-    type TargetValidator: TargetValidator;
-
-    /// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
-    #[pallet::constant]
-    type MinimumStakingAmount: Get<BalanceOf<Self>>;
-
-    /// The maximum number of unlocking chunks a StakingAccountLedger can have.
-    /// It determines how many concurrent unstaked chunks may exist.
-    #[pallet::constant]
-    type MaxUnlockingChunks: Get<u32>;
-
-    #[cfg(feature = "runtime-benchmarks")]
-    /// A set of helper functions for benchmarking.
-    type BenchmarkHelper: RegisterProviderBenchmarkHelper;
-
-    /// The number of Epochs before you can unlock tokens after unstaking.
-    #[pallet::constant]
-    type UnstakingThawPeriod: Get<u16>;
-
-    /// Maximum number of blocks an epoch can be
-    /// currently used as the actual value of epoch length.
-    #[pallet::constant]
-    type MaxEpochLength: Get<BlockNumberFor::<Self>>;
-
-    /// A type that provides an Epoch number
-    /// traits pulled from frame_system::Config::BlockNumber
-    type EpochNumber: Parameter
-        + Member
-        + MaybeSerializeDeserialize
-        + MaybeDisplay
-        + AtLeast32BitUnsigned
-        + Default
-        + Copy
-        + sp_std::hash::Hash
-        + MaxEncodedLen
-        + TypeInfo;
-}trait Config
-```
-
-### **Constants**
-
-LockIdentifier is an eight-character long identifier used to distinguish between different locks.
-
-```rust
-
-/// LockIdentifier is an eight-character long identifier used to distinguish between different locks.
-const STAKING_ID: LockIdentifier = *b"ntwstkg";
+ pub enum FreezeReason {
+  /// The account has staked tokens to the Frequency network.
+  CapacityStaking,
+ }
 
 ```
 
-### **Calls**
+#### **Calls**
 
-**Stake**
+##### **Stake**
 
 Stakes some amount of tokens to the network and generates Capacity.
 
@@ -115,23 +131,21 @@ Stakes some amount of tokens to the network and generates Capacity.
 ///
 /// ### Errors
 ///
-/// - Returns Error::InsufficientBalance if the sender does not have free balance amount needed to stake.
 /// - Returns Error::InvalidTarget if attempting to stake to an invalid target.
 /// - Returns Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
-/// - Returns Error::BalanceTooLowtoStake if the sender does not have
-///           free balance amount > MinimumTokenBalance after staking.
-pub fn stake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
+/// - Returns Error::CannotChangeStakingType if the staking account is a ProviderBoost account
+pub fn stake( origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>,) -> DispatchResult {}
 
 ```
 
 Acceptance Criteria are listed below but can evolve:
 
 1. Dispatched origin is Signed by Staker.
-2. A Target MSA account must be a Registered Provider.
+2. A Target MSA must be a Registered Provider.
 3. When stake amount is greater than the available free-balance, it stakes all available free-balance.
 4. A Staker can stake multiple times and target different providers.
-5. Additional staking increases total locked amount.
-6. The token amount staked is to remain [locked](https://paritytech.github.io/substrate/master/frame_support/traits/trait.LockableCurrency.html) with reason [WithdrawReasons::all()](https://paritytech.github.io/substrate/master/frame_support/traits/tokens/struct.WithdrawReasons.html#method.all).
+5. Additional staking increases total frozen amount.
+6. The token amount staked is to remain [frozen](https://paritytech.github.io/polkadot-sdk/master/frame_support/traits/tokens/fungible/index.html).
 7. Capacity generated by staking to a target is calculated by a configurable capacity-generation function.
 8. Target Registered Provider is issued generated Capacity.
 9. Target Registered Provider issued Capacity becomes available immediately.
@@ -142,7 +156,7 @@ Acceptance Criteria are listed below but can evolve:
 
 Note that we are considering allowing locked tokens to be used to pay transaction fees.
 
-**Unstake**
+##### **Unstake**
 
 Schedules an amount of the stake to be unlocked.
 
@@ -154,9 +168,10 @@ Schedules an amount of the stake to be unlocked.
 /// - Returns `Error::UnstakedAmountIsZero` if `amount` is not greater than zero.
 /// - Returns `Error::MaxUnlockingChunksExceeded` if attempting to unlock more times than config::MaxUnlockingChunks.
 /// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
-/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target
-/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
-pub fn unstake(origin: OriginFor<T>, target: MessageSourceId, amount: BalanceOf<T>) -> DispatchResult {}
+/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target (not a Provider)
+/// - Returns `Error::NotAStakingAccount` if `origin` has nothing staked at all
+/// - Returns `Error::StakerTargetRelationshipNotFound` if `origin` has nothing staked to `target`
+pub fn unstake(origin: OriginFor<T>, target: MessageSourceId, requested_amount: BalanceOf<T>) -> DispatchResult {}
 
 ```
 
@@ -177,18 +192,18 @@ Acceptance Criteria are listed below but can evolve:
 9. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
 10. Emits Unstake event.
 
-**withdraw_unstaked**
+##### **withdraw_unstaked**
 
-Remove locks from unstaked chunks which have completed the UnstakingThawPeriod.
+Unfreeze unstaked chunks which have completed the UnstakingThawPeriod.
 
 ```rust
 
-/// Remove locks from unstaked chunks which have completed UnstakingThawPeriod.
-/// Schedules an amount of the stake to be unlocked.
-/// ### Errors
+/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and unlocks the sum of the thawed values
+/// in the caller's token account.
 ///
-/// - Returns `Error::NoUnstakedTokensAvailable` if there are no unstaking tokens available to withdraw.
-/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked
+/// ### Errors
+///   - Returns `Error::NoUnstakedTokensAvailable` if the account has no unstaking chunks.
+///   - Returns `Error::NoThawedTokenAvailable` if there are unstaking chunks, but none are thawed.
 pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {}
 
 ```
@@ -196,104 +211,108 @@ pub fn withdraw_unstaked(origin: OriginFor<T>) -> DispatchResultWithPostInfo {}
 Acceptance Criteria are listed below but can evolve.
 
 1. Dispatched origin is Signed by Staker.
-2. Sums all chunks that are less than or equal to the current Epoch and removes the lock by amount from the account balance.
-3. Updates `StakingAccountLedger` total with new locking amount.
+2. Sums all chunks that are less than or equal to the current Epoch and unfreezes by amount from the account balance.
+3. Updates `StakingAccountLedger` total with new frozen amount.
 4. If an account has nothing at stake, clean up storage by removing StakingLedger and TargetLedger entries.
 5. Emits event Withdrawn to notify that a withdrawal was made.
 
-### **Errors**
+#### **Errors**
 
 ```rust
 
-pub enum Error<T> {
+ pub enum Error<T> {
   /// Staker attempted to stake to an invalid staking target.
   InvalidTarget,
   /// Capacity is not available for the given MSA.
-  InsufficientBalance,
+  InsufficientCapacityBalance,
   /// Staker is attempting to stake an amount below the minimum amount.
   StakingAmountBelowMinimum,
-  /// Staker is attempting to stake a zero amount.
+  /// Staker is attempting to stake a zero amount.  DEPRECATED
+  /// #[deprecated(since = "1.13.0", note = "Use StakingAmountBelowMinimum instead")]
   ZeroAmountNotAllowed,
-  /// Origin has no Staking Account
+  /// This AccountId does not have a staking account.
   NotAStakingAccount,
   /// No staked value is available for withdrawal; either nothing is being unstaked,
-  /// or nothing has passed the thaw period.
+  /// or nothing has passed the thaw period.  (5)
   NoUnstakedTokensAvailable,
   /// Unstaking amount should be greater than zero.
   UnstakedAmountIsZero,
-  /// Amount to unstake is greater than the amount staked.
-  AmountToUnstakeExceedsAmountStaked,
-  /// Attempting to unstake from a target that has not been staked to.
-  StakingAccountNotFound,
-  /// Attempting to get a staker / target relationship that does not exist.
+  /// Amount to unstake or change targets is greater than the amount staked.
+  InsufficientStakingBalance,
+  /// Attempted to get a staker / target relationship that does not exist.
   StakerTargetRelationshipNotFound,
-  /// Attempting to get the target's capacity that does not exist.
+  /// Attempted to get the target's capacity that does not exist.
   TargetCapacityNotFound,
-  /// Staker reached the limit number for the allowed amount of unlocking chunks.
+  /// Staker has reached the limit of unlocking chunks and must wait for at least one thaw period
+  /// to complete. (10)
   MaxUnlockingChunksExceeded,
-  /// Increase Capacity increase exceeds the total available Capacity for target.
+  /// Capacity increase exceeds the total available Capacity for target.
   IncreaseExceedsAvailable,
-  /// Attempting to set the epoch length to a value greater than the max epoch length.
+  /// Attempted to set the Epoch length to a value greater than the max Epoch length.
   MaxEpochLengthExceeded,
   /// Staker is attempting to stake an amount that leaves a token balance below the minimum amount.
   BalanceTooLowtoStake,
-}
+  /// There are no unstaked token amounts that have passed their thaw period.
+  NoThawedTokenAvailable,
+  /// ...
+ }
 
 ```
 
-### **Events**
+#### **Events**
 
 ```rust
 
-pub enum Event<T: Config> {
+ pub enum Event<T: Config> {
   /// Tokens have been staked to the Frequency network.
   Staked {
-    /// The token account that staked tokens to the network.
-    account: T::AccountId,
-    /// The MSA that a token account targeted to receive Capacity based on this staking amount.
-    target: MessageSourceId,
-    /// An amount that was staked.
-    amount: BalanceOf<T>,
-    /// The Capacity amount issued to the target as a result of the stake.
-    capacity: BalanceOf<T>,
+   /// The token account that staked tokens to the network.
+   account: T::AccountId,
+   /// The MSA that a token account targeted to receive Capacity based on this staking amount.
+   target: MessageSourceId,
+   /// An amount that was staked.
+   amount: BalanceOf<T>,
+   /// The Capacity amount issued to the target as a result of the stake.
+   capacity: BalanceOf<T>,
   },
-  /// Unsstaked token that has thawed was unlocked for the given account
+  /// Unstaked token that has thawed was unlocked for the given account
   StakeWithdrawn {
-    /// the account that withdrew its stake
-    account: T::AccountId,
-    /// the total amount withdrawn, i.e. put back into free balance.
-    amount: BalanceOf<T>,
+   /// the account that withdrew its stake
+   account: T::AccountId,
+   /// the total amount withdrawn, i.e. put back into free balance.
+   amount: BalanceOf<T>,
   },
   /// A token account has unstaked the Frequency network.
   UnStaked {
-    /// The token account that staked tokens to the network.
-    account: T::AccountId,
-    /// The MSA that a token account targeted to receive Capacity to unstake from.
-    target: MessageSourceId,
-    /// An amount that was unstaked.
-    amount: BalanceOf<T>,
-    /// The Capacity amount that was reduced from a target.
-    capacity: BalanceOf<T>,
+   /// The token account that unstaked tokens from the network.
+   account: T::AccountId,
+   /// The MSA target that will now have Capacity reduced as a result of unstaking.
+   target: MessageSourceId,
+   /// The amount that was unstaked.
+   amount: BalanceOf<T>,
+   /// The Capacity amount that was reduced from a target.
+   capacity: BalanceOf<T>,
   },
   /// The Capacity epoch length was changed.
   EpochLengthUpdated {
-    /// The new length of an epoch in blocks.
-    blocks: BlockNumberFor<T>,
+   /// The new length of an epoch in blocks.
+   blocks: BlockNumberFor<T>,
   },
   /// Capacity has been withdrawn from a MessageSourceId.
   CapacityWithdrawn {
-    /// The MSA from which Capacity has been withdrawn.
-    msa_id: MessageSourceId,
-    /// The amount of Capacity withdrawn from MSA.
-    amount: BalanceOf<T>,
+   /// The MSA from which Capacity has been withdrawn.
+   msa_id: MessageSourceId,
+   /// The amount of Capacity withdrawn from MSA.
+   amount: BalanceOf<T>,
   },
-}
+  /// ...
+ }
 
 ```
 
-### **Storage**
+#### **Storage**
 
-**Staking Storage**
+##### **Staking Storage**
 
 Storage for keeping records of staking accounting.
 
@@ -312,8 +331,14 @@ Storage to record how many tokens were targeted to an MSA.
 
 /// Storage to record how many tokens were targeted to an MSA.
 #[pallet::storage]
-pub type StakingTargetLedger<T: Config> =
-  StorageDoubleMap<_, Twox64Concat, T::AccountId, Twox64Concat, MessageSourceId, StakingTargetDetails<T>;
+ pub type StakingTargetLedger<T: Config> = StorageDoubleMap<
+  _,
+  Twox64Concat,
+  T::AccountId,
+  Twox64Concat,
+  MessageSourceId,
+  StakingTargetDetails<BalanceOf<T>>,
+ >;
 ```
 
 Storage for target Capacity usage.
@@ -340,11 +365,15 @@ The type used for storing information about the targeted MSA that received Capac
 ```rust
 /// Details about the total token amount targeted to an MSA.
 /// The Capacity that the target will receive.
-pub struct StakingTargetDetails<T: Config> {
-  /// The total amount of tokens that have been targeted to the MSA.
-  pub amount: BalanceOf<T>,
-  /// The total Capacity that an MSA received.
-  pub capacity: BalanceOf<T>,
+#[derive(Default, PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
+pub struct StakingTargetDetails<Balance>
+where
+    Balance: Default + Saturating + Copy + CheckedAdd + CheckedSub,
+{
+    /// The total amount of tokens that have been targeted to the MSA.
+    pub amount: Balance,
+    /// The total Capacity that an MSA received.
+    pub capacity: Balance,
 }
 
 ```
@@ -353,48 +382,51 @@ The type used for storing information about staking details.
 
 ```rust
 
-pub struct StakingDetails<Balance, BlockNumber> {
-  /// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
-  pub active: Balance,
-  /// The total amount of tokens in `active` and `unlocking`
-  pub total: Balance,
-  /// Unstaked balances that are thawing or awaiting withdrawal.
-  pub unlocking: BoundedVec<UnlockChunk<BalanceOf<T>>, T::MaxUnlockingChunks>,
+#[derive(
+    TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
+)]
+#[scale_info(skip_type_params(T))]
+pub struct StakingDetails<T: Config> {
+    /// The amount a Staker has staked, minus the sum of all tokens in `unlocking`.
+    pub active: BalanceOf<T>,
+    /// The type of staking for this staking account
+    pub staking_type: StakingType,
 }
 
 ```
 
-The type that is used to record a single request for a number of tokens to be unlocked.
+The type that is used to record a single request for a number of tokens to be unfrozen.
 
 ```rust
 
+#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct UnlockChunk<Balance, EpochNumber> {
-  /// Amount to be unlocked.
-  #[codec(compact)]
-  value: Balance,
-  /// Epoch at which point funds are unlocked.
-  #[codec(compact)]
-  thaw_at: EpochNumber,
+    /// Amount to be unfrozen.
+    pub value: Balance,
+    /// Block number at which point funds are unfrozen.
+    pub thaw_at: EpochNumber,
 }
 
 ```
 
-### **Interfaces for Capacity-Pallet**
+#### **Interfaces for Capacity-Pallet**
 
-### **Calls**
+#### **Calls**
 
-**Set_epoch_length**
+##### **Set_epoch_length**
 
 The extrinsic that sets the length of Epoch in number of blocks through governance.
 
 ```rust
 
-/// Sets the Epoch Period through governance.
+/// Sets the epoch period length (in blocks).
+///
+/// # Requires
+/// * Root Origin
 ///
 /// ### Errors
-///
-/// - Returns Error::BadOrigin if sender is not root.
-pub fn set_epoch_period(origin: OriginFor<T>, blocks: MessageSourceId) {}
+/// - Returns `Error::MaxEpochLengthExceeded` if `length` is greater than T::MaxEpochLength.
+pub fn set_epoch_length(origin: OriginFor<T>, length: BlockNumberFor<T>) -> DispatchResult {}
 
 ```
 
@@ -404,16 +436,18 @@ Acceptance Criteria are listed below but can evolve:
 2. Sets the new Epoch-Period.
 3. New Epoch-Period begins at the Next Epoch's start.
 
-**Capacity Storage**
+##### **Capacity Storage**
 
 Storage for the issuance of Capacity to Registered Providers:
 
 ```rust
 
-/// Storage for an MSA's Capacity balance details.
+/// Storage for target Capacity usage.
+/// - Keys: MSA Id
+/// - Value: [`CapacityDetails`](types::CapacityDetails)
 #[pallet::storage]
-pub type CapacityOf<T: Config> =
-  StorageMap<_, Blake2_128Concat, MessageSourceId, CapacityDetails<T::Balance>>;
+pub type CapacityLedger<T: Config> =
+    StorageMap<_, Twox64Concat, MessageSourceId, CapacityDetails<BalanceOf<T>, T::EpochNumber>>;
 
 ```
 
@@ -434,31 +468,38 @@ pub struct CapacityDetails<Balance> {
 
 ```
 
-### **Traits**
+#### **Traits**
 
 As mentioned above, Capacity is non-transferable and implements the following interface to reduce and increase capacity on an MSA.
 
 ```rust
 
-traits Nontransferable {
-  type Balance;
+pub trait Nontransferable {
+    /// Scalar type for representing balance of an account.
+    type Balance: Balance;
 
-  /// The available Capacity for an MSA account.
-  fn balance(msa_id: MessageSourceId) -> Result<Balance, DispatchError>;
+    /// The balance Capacity for an MSA.
+    fn balance(msa_id: MessageSourceId) -> Self::Balance;
 
-  /// Reduce the available Capacity of an MSA account.
-  fn deduct(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+    /// Reduce Capacity of an MSA by amount.
+    fn deduct(msa_id: MessageSourceId, capacity_amount: Self::Balance)
+        -> Result<(), DispatchError>;
 
-  /// Increase the available Capacity for an MSA account.
-  fn deposit(msa_id: MessageSourceId, amount: Balance) -> Result<Balance, DispatchError>;
+    /// Increase Staked Token + Capacity amounts of an MSA. (unused)
+    fn deposit(
+        msa_id: MessageSourceId,
+        token_amount: Self::Balance,
+        capacity_amount: Self::Balance,
+    ) -> Result<(), DispatchError>;
 }
 
 ```
 
-**Implementation of how to Replenish** <a id='replenish'></a>
+### **Implementation of how to Replenish** <a id='replenish'></a>
+
 Replenishable means that all Capacity is replenished after a fixed period called an Epoch Period. An Epoch Period is composed of a set number of blocks. In the example below, the Epoch Period is three blocks. The initial Epoch Period will be around 100 blocks. This Epoch Period may be modified through governance.
 
-To support scaling, Capacity is replenished lazily for each Capacity Target. When the Target attempts to post a message, their remaining capacity and last*replenished_epoch is checked. If they are out of capacity \_and* their last_replenished_epoch is less than the current epoch, then the Target's capacity is automatically replenished to their total allowed, minus the amount needed for the current transaction. The last_replenished_epoch is then set to the current epoch.
+To support scaling, Capacity is replenished lazily for each Capacity Target. When the Target attempts to post a message, their remaining capacity and last `replenished_epoch` is checked. If they are out of capacity **and** their `last_replenished_epoch` is less than the current epoch, then the Target's capacity is automatically replenished to their total allowed, minus the amount needed for the current transaction. The `last_replenished_epoch` is then set to the current epoch.
 
 Consumers of Capacity may choose a strategy for posting transactions:
 
@@ -473,7 +514,7 @@ Capacity can be replenished by making your first Capacity transaction during a n
 
 The following interface is implemented on Capacity-Pallet to facilitate replenishment:
 
-### **Hooks**
+#### **Hooks**
 
 ```rust
 
@@ -490,7 +531,7 @@ Acceptance Criteria are listed below but can evolve:
 2. At the start of a new Epoch Period, `EpochNumber` storage is increased by 1.
 3. At the start of a new block, `CurrentBlockUsedCapacity` storage is reset.
 
-### Traits
+#### Traits
 
 Replenishable trait implemented on Capacity-Pallet. This trait is used to replenish the Capacity of a Registered Provider.
 
@@ -510,7 +551,7 @@ trait Replenishable {
 }
 ```
 
-**Storage**
+#### **Storage**
 
 `CurrentEpoch` help keep count of the number of Epoch-Periods:
 
@@ -522,7 +563,7 @@ pub type CurrentEpoch<T: Config> = StorageValue<_, T::EpochNumber, ValueQuery>;
 ```
 
 To facilitate keeping track of the Capacity consumed in a block.
-_(Not yet implemented)_
+*(Not yet implemented)*
 
 ```rust
 
@@ -532,7 +573,7 @@ pub type CurrentBlockUsedCapacity<T: Config> = StorageValue<_, BalanceOf<T>, Val
 
 ```
 
-**Prioritization of Capacity transactions** <a id='priority'></a>
+### **Prioritization of Capacity transactions** <a id='priority'></a>
 
 Substrate default prioritization is composed of the transaction length, weight, and tip. Adding a tip allows you to increase your priority and thus increases the chance that your transaction is added to the next block.
 
@@ -540,7 +581,7 @@ Capacity transactions do not have the ability to tip, unlike token transactions.
 
 To prevent token transactions from dominating block space, we prioritize Capacity transactions over token transactions. Additionally, we put a limit on the amount of block space Capacity transactions can consume. This new priority allows Capacity transactions to fill up their allocated space first and once the limit has been reached allow for token transactions to fill up the remaining block. We flip the prioritization in this manner because we expect more Capacity transactions than non-capacity transactions. The following section will describe how the block space is filled.
 
-**Block space allocation for Capacity transactions** <a id='block-space'></a>
+### **Block space allocation for Capacity transactions** <a id='block-space'></a> (*not implemented yet*)
 
 We expect more Capacity transactions versus non-capacity transactions. To prevent Capacity transactions from dominating block space, we extend what Substrate does to distribute block space among Mandatory, Operational, and Normal transactions.
 
@@ -635,7 +676,7 @@ Acceptance Criteria are listed below but can evolve:
 1. Only run validation, pre-dispatch, and post-dispatch on calls that match Capacity Transactions.
 2. Adding the Capacity transaction weight to the block-weight total should not cause an overflow.
 3. Given Call is a Capacity transaction, it checks that the extrinsic does not exceed the size of the `max_total` allocated weight.
-4. Given Call is a Capacity Transaction, it checks that adding the transaction _length_ will not exceed the [max length](https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html) for the Normal dispatch class.
+4. Given Call is a Capacity Transaction, it checks that adding the transaction *length* will not exceed the [max length](https://paritytech.github.io/substrate/master/frame_system/limits/struct.BlockLength.html) for the Normal dispatch class.
 5. Given the call is a Capacity transaction, checks that adding the weight of the transaction will not exceed the `max_total` weight of Normal transactions
    1. base_weight + transaction weight + total weight < current total weight of normal transactions.
 6. Given Call is a Capacity transaction, check that adding the transaction weight will not exceed the `max_total` weight of Capacity Transactions.
@@ -662,7 +703,7 @@ Acceptance Criteria are listed below but can evolve:
 
 **Implementation of using Capacity** <a id='capacity-transactions'></a>
 
-**Transaction payment**
+### **Transaction payment**
 
 When submitting a transaction, it is validated at the transaction pool before including it in a block. The validation is implemented with a [SignedExtension](https://docs.rs/sp-runtime/latest/sp_runtime/traits/trait.SignedExtension.html) that validates that the signer has enough token or Capacity to submit the transaction.
 
@@ -670,9 +711,9 @@ When submitting a transaction, it is validated at the transaction pool before in
 
 Capacity introduces an additional form of payment for transacting. As a result, FRAME's Transaction-Payment-Pallet can be modified or wrapped to toggle between token and Capacity transactions. The following implementation introduces the Dual-Payment-Pallet, a wrapper for the Transaction-Payment-Pallet, and augments it with additional functionality. In addition, it implements the `pay_with_capacity` extrinsic used to distinguish between Capacity transactions and Token transactions.
 
-**Calls**
+### **Calls**
 
-`ChargeTransactionPayment` struct type is used to implement a SignedExtension which validates that the signer has enough Capacity or Token to transact. The struct is a named tuple that holds a tip amount. Note that tipping is only limited to Token transactions. Capacity transactions cannot tip. Any tip that is added to Capacity transactions is ignored.
+`ChargeTransactionPayment` struct type is used to implement a SignedExtension which validates that the signer has enough Capacity or Token to transact. The struct is a named tuple that holds a tip amount. Note that tipping is limited to only Token transactions. Capacity transactions cannot tip. Any tip that is added to Capacity transactions is ignored.
 
 ```rust
 
@@ -688,10 +729,11 @@ pub struct ChargeTransactionPayment<T: Config>(#[codec(compact)] BalanceOf<T>);
 
 ```rust
 
-impl<T: Config> ChargeTransactionPayment<T>
+impl<T: Config> ChargeFrqTransactionPayment<T>
 where
-  CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>> + From<CallOf<T>>,
-  BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeCapacityBalanceOf<T>>,
+    BalanceOf<T>: Send + Sync + FixedPointOperand + IsType<ChargeCapacityBalanceOf<T>>,
+    <T as frame_system::Config>::RuntimeCall:
+        Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
 {
   /// Withdraws fees from either Token or Capacity transactions.
   ///
@@ -726,11 +768,11 @@ An enum is used for describing whether the payment was made with Capacity, Token
 #[derive(Encode, Decode, DefaultNoBound, TypeInfo)]
 pub enum InitialPayment<T: Config> {
   /// Pay no fee.
-  Nothing,
+  Free,
   /// Pay fee with Token.
   Token(LiquidityInfoOf<T>),
   /// Pay fee with Capacity.
-  Capacity(ChargeCapacityBalanceOf<T>),
+  Capacity,
 }
 
 ```
@@ -740,19 +782,31 @@ Below are the interfaces of the SignedExtension that ChargeTransactionPayment im
 ```rust
 
 /// Implement signed extension SignedExtension to validate that a transaction payment can be withdrawn for a Capacity or Token account. This allows transactions to be dropped from the transaction pool if the signer does not have enough to pay the fee. Pre-dispatch withdraws the actual payment from the account, and Post-dispatch refunds over charges made at pre-dispatch.
-impl<T: Config + Send + Sync> SignedExtension for ChargeTransactionPayment<T>
+impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
-  BalanceOf<T>: Send + Sync + FixedPointOperand + From<u64> + IsType<ChargeCapacityBalanceOf<T>>,
-  CallOf<T>: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>>,
+    <T as frame_system::Config>::RuntimeCall:
+        IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+
+    BalanceOf<T>: Send
+        + Sync
+        + FixedPointOperand
+        + From<u64>
+        + IsType<ChargeCapacityBalanceOf<T>>
+        + IsType<CapacityBalanceOf<T>>,
 {
-  const IDENTIFIER: &'static str = "ChargePayment";
-  type AccountId = T::AccountId;
-  type Call = CallOf<T>;
-  type AdditionalSigned = ();
+    const IDENTIFIER: &'static str = "ChargeTransactionPayment";
+    type AccountId = T::AccountId;
+    type Call = <T as frame_system::Config>::RuntimeCall;
+    type AdditionalSigned = ();
   /// The type that gets past to post-dispatch.
   /// The InitialPayment allows post-dispatch to know to what account
   /// a refund should be applied.
-  type Pre = (BalanceOf<T>, Self::AccountId, InitialPayment<T>);
+    type Pre = (
+        // tip
+        BalanceOf<T>,
+        Self::AccountId,
+        InitialPayment<T>,
+    );
 
   /// Below, you can find validate, pre-dispatch, and post-dispatch interfaces.
   ...
@@ -881,7 +935,7 @@ Acceptance Criteria are listed below but can evolve:
 2. At the start of an Epoch Period, `CurrentEpoch` storage is increased by 1.
 3. At the start of an Epoch Period, calculate the next epoch length.
 4. At the start of a new block, `CurrentBlockUsedCapacity` storage is reset.
-5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block. _(Not yet implemented)_
+5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block. *(Not yet implemented)*
 
 **Create a new Epoch based on the moving average of used Capacity**
 
