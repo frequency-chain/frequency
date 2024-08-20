@@ -9,6 +9,7 @@ publish = false
 repository = "https://github.com/frequency-chain/frequency/"
 version = "0.0.0"
 
+
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
@@ -53,3 +54,4 @@ std = [
   "sp-io/std",
 ]
 try-runtime = ["frame-support/try-runtime"]
+test = []

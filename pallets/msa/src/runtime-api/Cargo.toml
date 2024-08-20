@@ -27,3 +27,4 @@ std = [
   "frame-support/std",
   'common-primitives/std',
 ]
+test = []
