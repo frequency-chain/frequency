@@ -288,8 +288,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckNonZeroSender<Runtime>,
-	frame_system::CheckSpecVersion<Runtime>,
-	frame_system::CheckTxVersion<Runtime>,
+	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
 	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
@@ -297,6 +296,7 @@ pub type SignedExtra = (
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	pallet_stateful_storage::signed_extension::StatefulStorageSignedExtension<Runtime>,
 	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );

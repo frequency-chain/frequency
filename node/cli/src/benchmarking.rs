@@ -118,8 +118,10 @@ pub fn create_benchmark_extrinsic(
 		.unwrap_or(2) as u64;
 	let extra: runtime::SignedExtra = (
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
-		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
-		frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+		(
+			frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+			frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+		),
 		frame_system::CheckGenesis::<runtime::Runtime>::new(),
 		frame_system::CheckEra::<runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
 			period,
@@ -130,6 +132,7 @@ pub fn create_benchmark_extrinsic(
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
 		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
+		pallet_stateful_storage::signed_extension::StatefulStorageSignedExtension::<runtime::Runtime>::new(),
 		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
 	);
@@ -139,10 +142,10 @@ pub fn create_benchmark_extrinsic(
 		extra.clone(),
 		(
 			(),
-			runtime::VERSION.spec_version,
-			runtime::VERSION.transaction_version,
+			(runtime::VERSION.spec_version, runtime::VERSION.transaction_version),
 			genesis_hash,
 			best_hash,
+			(),
 			(),
 			(),
 			(),
