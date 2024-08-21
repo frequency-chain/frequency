@@ -101,8 +101,8 @@ pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 }
 
 impl<T: Config + Send + Sync> SignedExtension for StatefulStorageSignedExtension<T>
-	where
-		T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+where
+	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
 {
 	type AccountId = T::AccountId;
 	type Call = T::RuntimeCall;
@@ -139,14 +139,14 @@ impl<T: Config + Send + Sync> SignedExtension for StatefulStorageSignedExtension
 	) -> TransactionValidity {
 		match call.is_sub_type() {
 			Some(Call::apply_item_actions {
-					 state_owner_msa_id, schema_id, target_hash, ..
-				 }) => Self::verify_hash_itemized(state_owner_msa_id, schema_id, target_hash),
+				state_owner_msa_id, schema_id, target_hash, ..
+			}) => Self::verify_hash_itemized(state_owner_msa_id, schema_id, target_hash),
 			Some(Call::upsert_page {
-					 state_owner_msa_id, schema_id, target_hash, page_id, ..
-				 }) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
+				state_owner_msa_id, schema_id, target_hash, page_id, ..
+			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
 			Some(Call::delete_page {
-					 state_owner_msa_id, schema_id, target_hash, page_id, ..
-				 }) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
+				state_owner_msa_id, schema_id, target_hash, page_id, ..
+			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
 			Some(Call::apply_item_actions_with_signature { payload, .. }) =>
 				Self::verify_hash_itemized(
 					&payload.msa_id,
