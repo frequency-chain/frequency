@@ -123,6 +123,8 @@ impl<T: Config + Send + Sync> SignedExtension for StatefulStorageSignedExtension
 		_info: &DispatchInfoOf<Self::Call>,
 		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
+		// Since we already check the hash in stateful-storage-pallet extrinsics we do not need to
+		// check the hash before dispatching
 		Ok(())
 	}
 
