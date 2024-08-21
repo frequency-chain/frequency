@@ -29,9 +29,9 @@ This section is limited to the interfaces for staking and un-staking tokens.
 
 As a Registered Provider, you can receive Capacity by staking your tokens to the network or when others stake their tokens to the network.
 
-When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards. For more information on rewards, please see the [Tokenomics docs](https://docs.frequency.xyz/Tokenomics/index.html). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are locked until you decide to unstake.
+When staking tokens to the network, the network generates Capacity based on a Capacity-generating function that considers usage and other criteria. When you stake tokens, you will also provide a target Registered Provider to receive the Capacity generated. In exchange for staking Token to the network, you receive rewards. For more information on rewards, please see the [Tokenomics docs](https://docs.frequency.xyz/Tokenomics/index.html). You may increase your stake to network many times and target different Service Providers each time you stake. Note every time you stake to network your tokens are frozen until you decide to unstake.
 
-Unstaking tokens allow you to schedule a number of tokens to be unlocked from your balance. There is no limit on the amount that you can schedule to be unlocked (up to the amount staked), but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unlocked using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful, all thawed tokens become unlocked and increase the ability to make more scheduled requests.
+Unstaking tokens allow you to schedule a number of tokens to be unfrozen from your balance. There is no limit on the amount that you can schedule to be unfrozen (up to the amount staked), but there is a limit on how many scheduled requests you can make. After scheduling tokens to be unfrozen using **`unstake`**, you can withdraw those tokens after a thaw period has elapsed by using the **`withdraw_unstaked`** extrinsic. If the call is successful, all thawed tokens become unfrozen and increase the ability to make more scheduled requests.
 
 Note that the thaw period is measured in Epoch Periods. An Epoch Period is composed of a set number of blocks. The number of blocks for an Epoch will be approximately 100 blocks and can be adjusted through governance.
 
@@ -154,7 +154,7 @@ Acceptance Criteria are listed below but can evolve:
 12. Note: MinimumStakingAmount should be greater or equal to the existential deposit.
 13. Note: MinimumTokenBalance should be greater or equal to the existential deposit.
 
-Note that we are considering allowing locked tokens to be used to pay transaction fees.
+Note that we are considering allowing frozen tokens to be used to pay transaction fees.
 
 ##### **Unstake**
 
@@ -178,7 +178,7 @@ pub fn unstake(origin: OriginFor<T>, target: MessageSourceId, requested_amount: 
 Acceptance Criteria are listed below but can evolve:
 
 1. Dispatched origin is Signed by Staker.
-2. Schedules a portion of the stake to be unlocked and ready for transfer after the `confg::UnstakingThawPeriod` ends.
+2. Schedules a portion of the stake to be unfrozen and ready for transfer after the `confg::UnstakingThawPeriod` ends.
 3. The amount unstaked must be greater than 0.
 4. Issued Capacity to the target is reduced by using a weighted average:
 
@@ -189,7 +189,7 @@ Acceptance Criteria are listed below but can evolve:
 6. The amount unstaked cannot exceed the amount staked.
 7. If the result of the unstaking would be to leave a balance below `config::MinimumStakingAmount`, the entire amount will be unstaked to avoid leaving dust.
 8. when an account has never been a staking account and an attempt to call unstake an error message of NotAStakingAccount should be returned.
-9. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unlocking).
+9. If you have a staking account and your active balance is zero, then an error message of AmountToUnstakeExceedsAmountStaked should be returned (the test should include unfreezing).
 10. Emits Unstake event.
 
 ##### **withdraw_unstaked**
@@ -892,7 +892,7 @@ Here I will discuss two alternative options for managing congestion with differe
 1. Create a new Epoch Period based on total Capacity usage.
 2. Create a new Epoch Period based on the moving average of used Capacity.
 
-**Create a new Epoch Period based on total Capacity usage**
+### **Create a new Epoch Period based on total Capacity usage**
 
 Epochs Periods are used to manage congestion on the network. Instead of having a contiguous fixed Epoch Period at the end of the current Epoch Period, we can change the length of the next Epoch based on network demand. We can calculate demand for Capacity based on the current Epoch “fullness.” The Epoch “fullness” is a target used to increase or decrease the next Epoch Period to keep the total Capacity used in an Epoch as close as possible to the target.
 
@@ -937,7 +937,7 @@ Acceptance Criteria are listed below but can evolve:
 4. At the start of a new block, `CurrentBlockUsedCapacity` storage is reset.
 5. At the start of a new block, `CurrentEpochUsedCapacity` storage is incremented with the total Capacity used in the previous block. *(Not yet implemented)*
 
-**Create a new Epoch based on the moving average of used Capacity**
+### **Create a new Epoch based on the moving average of used Capacity**
 
 To manage congestion, the following solution uses the moving average of Capacity used after each block to calculate the next Epoch Period. Unlike the previous implementation, a new Epoch is created after the moving average of used Capacity goes below a configurable threshold called `config::MovingAverageBound`. An essential difference from the other solutions is that it becomes less predictable to know when a new Epoch Period starts.
 
