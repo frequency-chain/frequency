@@ -959,6 +959,7 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 }
 
 /// Configurations for passkey pallet
+#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 impl pallet_passkey::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -1251,6 +1252,8 @@ construct_runtime!(
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
+		// Currently enabled only under feature flag
+		#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 	}
 );
@@ -1287,7 +1290,8 @@ mod benches {
 		[pallet_time_release, TimeRelease]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
-		[pallet_passkey, Passkey]
+		// Todo: uncomment after removing the feature flag
+		// [pallet_passkey, Passkey]
 	);
 }
 
