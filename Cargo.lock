@@ -3707,6 +3707,7 @@ dependencies = [
  "pallet-frequency-tx-payment",
  "pallet-handles",
  "pallet-msa",
+ "pallet-stateful-storage",
  "pallet-transaction-payment",
  "polkadot-cli",
  "polkadot-parachain-primitives",

@@ -40,6 +40,7 @@ use sp_std::prelude::*;
 mod stateful_child_tree;
 pub mod types;
 
+pub mod signed_extension;
 pub mod weights;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
@@ -939,7 +940,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Gets a paginated storage for desired parameters
-	fn get_paginated_page_for(
+	pub fn get_paginated_page_for(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 		page_id: PageId,
@@ -955,7 +956,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Gets an itemized storage for desired parameters
-	fn get_itemized_page_for(
+	pub fn get_itemized_page_for(
 		msa_id: MessageSourceId,
 		schema_id: SchemaId,
 	) -> Result<Option<ItemizedPage<T>>, DispatchError> {
