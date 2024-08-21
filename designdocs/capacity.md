@@ -198,7 +198,7 @@ Unfreeze unstaked chunks which have completed the UnstakingThawPeriod.
 
 ```rust
 
-/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and unlocks the sum of the thawed values
+/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and thaws(unfreezes) the sum of the thawed values
 /// in the caller's token account.
 ///
 /// ### Errors
