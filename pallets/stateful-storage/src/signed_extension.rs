@@ -16,9 +16,9 @@ use sp_runtime::{
 	DispatchError,
 };
 
-/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
-/// purpose of this is to ensure that the target_hash is verified in transaction pool before getting
-/// into block. This is to reduce the chance that capacity consumption due to stale hash
+/// The SignedExtension trait is implemented on StatefulStorageSignedExtension to validate the
+/// request. The purpose of this is to ensure that the target_hash is verified in transaction pool
+/// before getting into block. This is to reduce the chance of capacity consumption due to stale hash
 #[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct StatefulStorageSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
@@ -128,7 +128,7 @@ where
 		Ok(())
 	}
 
-	/// Filters stateful extrinsics and verifies the hashes to ensure we are proceeding
+	/// Filters stateful extrinsics and verifies the hashes to ensure we are not proceeding
 	/// with a stale one
 	fn validate(
 		&self,
@@ -143,7 +143,7 @@ where
 			}) => Self::verify_hash_itemized(state_owner_msa_id, schema_id, target_hash),
 			Some(Call::upsert_page {
 				state_owner_msa_id, schema_id, target_hash, page_id, ..
-			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),
+			}) |
 			Some(Call::delete_page {
 				state_owner_msa_id, schema_id, target_hash, page_id, ..
 			}) => Self::verify_hash_paginated(state_owner_msa_id, schema_id, page_id, target_hash),

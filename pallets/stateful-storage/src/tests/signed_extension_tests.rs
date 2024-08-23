@@ -32,6 +32,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 		let signature = MultiSignature::Sr25519(sp_core::sr25519::Signature::from_raw(sig));
 		let (msa_id, delegator_1) = get_signature_account();
 		let delegator_key = delegator_1.public();
+		let wrong_hash = 10;
 		assert_ok!(StatefulStoragePallet::apply_item_actions(
 			RuntimeOrigin::signed(caller_1.clone()),
 			msa_id,
@@ -50,19 +51,19 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 		let calls: Vec<<Test as frame_system::Config>::RuntimeCall> = vec![
 			RuntimeCall::StatefulStoragePallet(Call::apply_item_actions {
 				actions: BoundedVec::try_from(actions.clone()).unwrap(),
-				target_hash: NONEXISTENT_PAGE_HASH,
+				target_hash: wrong_hash,
 				state_owner_msa_id: msa_id,
 				schema_id: itemized_schema_id,
 			}),
 			RuntimeCall::StatefulStoragePallet(Call::upsert_page {
 				payload: BoundedVec::try_from(payload.clone()).unwrap(),
-				target_hash: NONEXISTENT_PAGE_HASH,
+				target_hash: wrong_hash,
 				state_owner_msa_id: msa_id,
 				schema_id: paginated_schema_id,
 				page_id: 0,
 			}),
 			RuntimeCall::StatefulStoragePallet(Call::delete_page {
-				target_hash: NONEXISTENT_PAGE_HASH,
+				target_hash: wrong_hash,
 				state_owner_msa_id: msa_id,
 				schema_id: paginated_schema_id,
 				page_id: 0,
@@ -70,7 +71,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			RuntimeCall::StatefulStoragePallet(Call::apply_item_actions_with_signature {
 				payload: ItemizedSignaturePayload {
 					actions: BoundedVec::try_from(actions.clone()).unwrap(),
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					msa_id,
 					schema_id: itemized_schema_id,
 					expiration: 0,
@@ -81,7 +82,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			RuntimeCall::StatefulStoragePallet(Call::apply_item_actions_with_signature_v2 {
 				payload: ItemizedSignaturePayloadV2 {
 					actions: BoundedVec::try_from(actions.clone()).unwrap(),
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					schema_id: itemized_schema_id,
 					expiration: 0,
 				},
@@ -91,7 +92,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			RuntimeCall::StatefulStoragePallet(Call::upsert_page_with_signature {
 				payload: PaginatedUpsertSignaturePayload {
 					payload: BoundedVec::try_from(payload.clone()).unwrap(),
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					schema_id: paginated_schema_id,
 					page_id: 0,
 					expiration: 0,
@@ -102,7 +103,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			}),
 			RuntimeCall::StatefulStoragePallet(Call::delete_page_with_signature {
 				payload: PaginatedDeleteSignaturePayload {
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					schema_id: paginated_schema_id,
 					page_id: 0,
 					expiration: 0,
@@ -114,7 +115,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			RuntimeCall::StatefulStoragePallet(Call::upsert_page_with_signature_v2 {
 				payload: PaginatedUpsertSignaturePayloadV2 {
 					payload: BoundedVec::try_from(payload.clone()).unwrap(),
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					schema_id: paginated_schema_id,
 					page_id: 0,
 					expiration: 0,
@@ -124,7 +125,7 @@ fn signed_extension_validation_with_stale_hash_should_fail() {
 			}),
 			RuntimeCall::StatefulStoragePallet(Call::delete_page_with_signature_v2 {
 				payload: PaginatedDeleteSignaturePayloadV2 {
-					target_hash: NONEXISTENT_PAGE_HASH,
+					target_hash: wrong_hash,
 					schema_id: paginated_schema_id,
 					page_id: 0,
 					expiration: 0,

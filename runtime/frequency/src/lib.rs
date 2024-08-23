@@ -288,6 +288,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 /// The SignedExtension to the basic transaction logic.
 pub type SignedExtra = (
 	frame_system::CheckNonZeroSender<Runtime>,
+	// merging these types so that we can have more than 12 extensions
 	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
