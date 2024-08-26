@@ -32,7 +32,10 @@ use frame_support::{
 	ensure,
 	traits::{
 		fungible::Inspect,
-		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
+		tokens::{
+			fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
+			Fortitude, Preservation,
+		},
 		Get, Hooks,
 	},
 	weights::Weight,
@@ -450,7 +453,7 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and unlocks the sum of the thawed values
+		/// Removes all thawed UnlockChunks from caller's UnstakeUnlocks and thaws(unfreezes) the sum of the thawed values
 		/// in the caller's token account.
 		///
 		/// ### Errors
@@ -475,7 +478,7 @@ pub mod pallet {
 		/// - Returns `Error::MaxUnlockingChunksExceeded` if attempting to unlock more times than config::MaxUnlockingChunks.
 		/// - Returns `Error::AmountToUnstakeExceedsAmountStaked` if `amount` exceeds the amount currently staked.
 		/// - Returns `Error::InvalidTarget` if `target` is not a valid staking target (not a Provider)
-		/// - Returns `Error:: NotAStakingAccount` if `origin` has nothing staked at all
+		/// - Returns `Error::NotAStakingAccount` if `origin` has nothing staked at all
 		/// - Returns `Error::StakerTargetRelationshipNotFound` if `origin` has nothing staked to `target`
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::unstake())]
@@ -633,7 +636,9 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::ZeroAmountNotAllowed`]
 	/// * [`Error::InvalidTarget`]
+	/// * [`Error::CannotChangeStakingType`]
 	/// * [`Error::BalanceTooLowtoStake`]
+	/// * [`Error::StakingAmountBelowMinimum`]
 	///
 	fn ensure_can_stake(
 		staker: &T::AccountId,
@@ -652,14 +657,8 @@ impl<T: Config> Pallet<T> {
 		let stakable_amount = Self::get_stakable_amount_for(&staker, amount);
 
 		ensure!(stakable_amount > Zero::zero(), Error::<T>::BalanceTooLowtoStake);
-
-		let new_active_staking_amount = staking_details
-			.active
-			.checked_add(&stakable_amount)
-			.ok_or(ArithmeticError::Overflow)?;
-
 		ensure!(
-			new_active_staking_amount >= T::MinimumStakingAmount::get(),
+			stakable_amount >= T::MinimumStakingAmount::get(),
 			Error::<T>::StakingAmountBelowMinimum
 		);
 
@@ -828,7 +827,8 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let account_balance = T::Currency::balance(&staker);
+		let account_balance =
+			T::Currency::reducible_balance(&staker, Preservation::Preserve, Fortitude::Polite);
 		account_balance
 			.saturating_sub(T::MinimumTokenBalance::get())
 			.min(proposed_amount)

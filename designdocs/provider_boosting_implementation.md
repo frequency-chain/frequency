@@ -251,6 +251,41 @@ pub enum Error<T> {
 }
 ```
 
+### NEW: Events
+
+```rust
+  /// ...
+  /// The target of a staked amount was changed to a new MessageSourceId
+  StakingTargetChanged {
+   /// The account that retargeted the staking amount
+   account: T::AccountId,
+   /// The Provider MSA that the staking amount is taken from
+   from_msa: MessageSourceId,
+   /// The Provider MSA that the staking amount is retargeted to
+   to_msa: MessageSourceId,
+   /// The amount in token that was retargeted
+   amount: BalanceOf<T>,
+  },
+  /// Tokens have been staked on the network for Provider Boosting
+  ProviderBoosted {
+   /// The token account that staked tokens to the network.
+   account: T::AccountId,
+   /// The MSA that a token account targeted to receive Capacity based on this staking amount.
+   target: MessageSourceId,
+   /// An amount that was staked.
+   amount: BalanceOf<T>,
+   /// The Capacity amount issued to the target as a result of the stake.
+   capacity: BalanceOf<T>,
+  },
+  /// Provider Boost Token Rewards have been minted and transferred to the staking account.
+  ProviderBoostRewardClaimed {
+   /// The token account claiming and receiving the reward from ProviderBoost staking
+   account: T::AccountId,
+   /// The reward amount
+   reward_amount: BalanceOf<T>,
+  },
+```
+
 ### NEW Extrinsics
 
 #### provider_boost(origin, target, amount)
