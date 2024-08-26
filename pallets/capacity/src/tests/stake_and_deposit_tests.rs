@@ -255,10 +255,10 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
 
 		// Check that StakingAccountLedger is updated.
-		assert_eq!(StakingAccountLedger::<Test>::get(account).unwrap().active, 190);
+		assert_eq!(StakingAccountLedger::<Test>::get(account).unwrap().active, 189);
 
 		// Check that StakingTargetLedger is updated.
-		assert_eq!(StakingTargetLedger::<Test>::get(account, target).unwrap().amount, 190);
+		assert_eq!(StakingTargetLedger::<Test>::get(account, target).unwrap().amount, 189);
 		assert_eq!(StakingTargetLedger::<Test>::get(account, target).unwrap().capacity, 19);
 
 		// Check that CapacityLedger is updated.
@@ -275,7 +275,7 @@ fn get_stakable_amount_for_works() {
 		// An amount greater than the free balance
 		let amount = 230;
 		let res: u64 = Capacity::get_stakable_amount_for(&account, amount);
-		assert_eq!(res, 190);
+		assert_eq!(res, 189);
 	})
 }
 
