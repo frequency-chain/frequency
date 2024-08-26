@@ -45,9 +45,9 @@ pub struct StakingDetails<T: Config> {
 /// The type that is used to record a single request for a number of tokens to be unlocked.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 pub struct UnlockChunk<Balance, EpochNumber> {
-	/// Amount to be unlocked.
+	/// Amount to be unfrozen.
 	pub value: Balance,
-	/// Block number at which point funds are unlocked.
+	/// Block number at which point funds are unfrozen.
 	pub thaw_at: EpochNumber,
 }
 
