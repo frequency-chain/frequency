@@ -478,7 +478,7 @@ pub trait Nontransferable {
     /// Scalar type for representing balance of an account.
     type Balance: Balance;
 
-    /// The balance Capacity for an MSA.
+    /// The available Capacity for an MSA.
     fn balance(msa_id: MessageSourceId) -> Self::Balance;
 
     /// Reduce Capacity of an MSA by amount.
