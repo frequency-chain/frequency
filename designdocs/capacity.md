@@ -286,7 +286,7 @@ Acceptance Criteria are listed below but can evolve.
   UnStaked {
    /// The token account that unstaked tokens from the network.
    account: T::AccountId,
-   /// The MSA target that will now have Capacity reduced as a result of unstaking.
+   /// The MSA target that will have reduced Capacity as a result of unstaking.
    target: MessageSourceId,
    /// The amount that was unstaked.
    amount: BalanceOf<T>,
