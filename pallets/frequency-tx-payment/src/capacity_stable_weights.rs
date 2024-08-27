@@ -10,7 +10,7 @@
 	unused_imports
 )]
 
-use frame_support::{traits::Get, weights::{Weight, constants::{RocksDbWeight, WEIGHT_REF_TIME_PER_NANOS}}};
+use frame_support::{traits::Get, weights::{Weight, constants::WEIGHT_REF_TIME_PER_NANOS}};
 use sp_std::marker::PhantomData;
 
 /// The base fee for extrinsics is calculated by running benchmarks.
@@ -291,8 +291,8 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(85_480_476, 12434)
 			// Standard Error: 25_131
 			.saturating_add(Weight::from_parts(107_272, 0).saturating_mul(b.into()))
-			.saturating_add(RocksDbWeight::get().reads(3_u64))
-			.saturating_add(RocksDbWeight::get().writes(3_u64))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
 	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
 	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
@@ -311,7 +311,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(95_748_064, 12434)
 			// Standard Error: 9_821
 			.saturating_add(Weight::from_parts(212_118, 0).saturating_mul(b.into()))
-			.saturating_add(RocksDbWeight::get().reads(3_u64))
-			.saturating_add(RocksDbWeight::get().writes(4_u64))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 }

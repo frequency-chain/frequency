@@ -61,7 +61,7 @@ use frame_support::{
 		ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, EqualPrivilegeOnly,
 		InstanceFilter, LinearStoragePrice,
 	},
-	weights::{constants::RocksDbWeight, ConstantMultiplier, Weight},
+	weights::{ConstantMultiplier, Weight},
 	Twox128,
 };
 
@@ -100,6 +100,7 @@ use common_primitives::{
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId},
 };
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 use sp_runtime::{
@@ -373,7 +374,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 108,
+	spec_version: 109,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -387,7 +388,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 108,
+	spec_version: 109,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,

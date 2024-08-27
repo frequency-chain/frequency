@@ -22,7 +22,10 @@ use frame_support::{
 
 use pallet_capacity::CapacityLedger;
 
-pub use common_runtime::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
+pub use common_runtime::{
+	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
+	weights::rocksdb_weights::constants::RocksDbWeight,
+};
 
 use frame_support::weights::Weight;
 
@@ -61,7 +64,7 @@ impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = BlockWeights;
 	type BlockLength = ();
-	type DbWeight = ();
+	type DbWeight = RocksDbWeight;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Nonce = u64;

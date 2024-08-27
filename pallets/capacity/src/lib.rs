@@ -32,7 +32,7 @@ use frame_support::{
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
-	weights::{constants::RocksDbWeight, Weight},
+	weights::Weight,
 };
 
 use sp_runtime::{
@@ -645,7 +645,7 @@ impl<T: Config> Pallet<T> {
 				.saturating_add(T::DbWeight::get().writes(2))
 		} else {
 			// 1 for get_current_epoch_info, 1 for get_epoch_length
-			T::DbWeight::get().reads(2u64).saturating_add(RocksDbWeight::get().writes(1))
+			T::DbWeight::get().reads(2u64).saturating_add(T::DbWeight::get().writes(1))
 		}
 	}
 }
