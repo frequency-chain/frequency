@@ -5,5 +5,4 @@ mod child_tree_tests;
 mod delete_page_tests;
 mod itemized_operations_tests;
 mod other_tests;
-mod signed_extension_tests;
 mod upsert_page_tests;

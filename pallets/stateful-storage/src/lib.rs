@@ -39,8 +39,6 @@ use sp_std::prelude::*;
 
 mod stateful_child_tree;
 pub mod types;
-
-pub mod signed_extension;
 pub mod weights;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
