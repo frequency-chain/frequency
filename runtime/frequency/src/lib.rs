@@ -1449,10 +1449,10 @@ impl StaleHashCheckExtension {
 			}) => Self::extract_hash_data(call),
 			RuntimeCall::FrequencyTxPayment(
 				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
-			) => calls.iter().map(|c| Self::extract_hash_data(c)).flatten().collect(),
+			) => calls.iter().flat_map(|c| Self::extract_hash_data(c)).collect(),
 			RuntimeCall::Utility(UtilityCall::batch { calls, .. }) |
 			RuntimeCall::Utility(UtilityCall::batch_all { calls, .. }) =>
-				calls.iter().map(|c| Self::extract_hash_data(c)).flatten().collect(),
+				calls.iter().flat_map(|c| Self::extract_hash_data(c)).collect(),
 			_ => vec![],
 		}
 	}
