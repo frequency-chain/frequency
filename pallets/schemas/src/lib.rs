@@ -838,6 +838,13 @@ pub mod pallet {
 					payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
+			// SignatureRequired is only valid for Itemized and Paginated payload locations
+			ensure!(
+				!settings.contains(&SchemaSetting::SignatureRequired) ||
+					payload_location == PayloadLocation::Itemized ||
+					payload_location == PayloadLocation::Paginated,
+				Error::<T>::InvalidSetting
+			);
 			let schema_name = match optional_schema_name {
 				None => None,
 				Some(name_payload) => {
