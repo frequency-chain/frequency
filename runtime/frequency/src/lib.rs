@@ -28,6 +28,7 @@ use sp_runtime::{
 
 pub mod development_genesis;
 pub mod genesis_config_presets;
+pub mod paseo_genesis;
 
 use pallet_collective::Members;
 
