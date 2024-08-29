@@ -38,3 +38,6 @@ EXPOSE 9944
 VOLUME ["/data"]
 
 ENTRYPOINT [ "/frequency/frequency-start.sh" ]
+
+HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
+	CMD ["./scripts/healthcheck.sh"]

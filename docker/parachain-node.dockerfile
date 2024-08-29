@@ -37,5 +37,9 @@ VOLUME ["/chain-data"]
 
 ENTRYPOINT ["/frequency/frequency"]
 
+HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
+	CMD ["./scripts/healthcheck.sh"]
+
+
 # Params which can be overriden from CLI
 # CMD ["", "", ...]
