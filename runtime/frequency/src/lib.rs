@@ -26,6 +26,7 @@ use sp_runtime::{
 	DispatchError,
 };
 
+pub mod development_genesis;
 pub mod genesis_config_presets;
 
 use pallet_collective::Members;
