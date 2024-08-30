@@ -1,4 +1,4 @@
-use crate::{development_genesis::*, paseo_genesis::*};
+use crate::{development_genesis::*, mainnet_genesis::*, paseo_genesis::*};
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<sp_std::vec::Vec<u8>> {
 	let patch = match id.try_into() {
@@ -17,6 +17,14 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<sp_std::vec::Vec<
 			paseo_council_members(),
 			paseo_technical_committee_members(),
 			2000.into(),
+		),
+		Ok("mainnet") => frequency_genesis(
+			frequency_initial_authorities(),
+			frequency_endowed_accounts(),
+			frequency_council_members(),
+			frequency_technical_committee_members(),
+			100_000 * UNITS,
+			2091.into(),
 		),
 		_ => return None,
 	};
