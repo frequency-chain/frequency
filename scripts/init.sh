@@ -48,25 +48,55 @@ stop-frequency-docker)
   docker-compose down
   ;;
 
-start-frequency)
+start-paseo-collator-alice)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --features frequency-local
+  cargo build --release --features frequency-local
 
-  parachain_dir=$base_dir/parachain/${para_id}
-  mkdir -p $parachain_dir;
+  parachain_dir_alice=$base_dir/parachain/alice/${para_id}
+  mkdir -p $parachain_dir_alice;
 
   if [ "$2" == "purge" ]; then
     echo "purging parachain..."
-    rm -rf $parachain_dir
+    rm -rf $parachain_dir_alice
   fi
+
+  "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_alice/data
 
   ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --alice \
-    --base-path=$parachain_dir/data \
+    --base-path=$parachain_dir_alice/data \
     --wasm-execution=compiled \
     --force-authoring \
     --port $((30333)) \
     --rpc-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --rpc-methods=Unsafe \
+    --trie-cache-size 0 \
+    $offchain_params \
+  ;;
+
+start-paseo-collator-bob)
+  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
+  cargo build --release --features frequency-local
+
+  parachain_dir_bob=$base_dir/parachain/bob/${para_id}
+  mkdir -p $parachain_dir_bob;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir_bob
+  fi
+
+  "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_bob/data
+
+  ./scripts/run_collator.sh \
+    --chain="frequency-paseo-local" --bob \
+    --base-path=$parachain_dir_bob/data \
+    --wasm-execution=compiled \
+    --force-authoring \
+    --port $((30332)) \
+    --rpc-port $((9943)) \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
@@ -199,7 +229,7 @@ register-frequency-paseo-local)
   echo "reserving and registering parachain with relay via first available slot..."
 
   cd scripts/js/onboard
-  yarn && yarn register "ws://0.0.0.0:9946" "//Alice"
+  npm i && npm run register "ws://0.0.0.0:9946" "//Alice"
   ;;
 
 onboard-frequency-paseo-local)
@@ -207,27 +237,26 @@ onboard-frequency-paseo-local)
 
    onboard_dir="$base_dir/onboard"
    mkdir -p $onboard_dir
-
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
+
+   # THE `-r` is important for it to be binary instead of hex
     if [ "$docker_onboard" == "true" ]; then
       genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-paseo-local")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-paseo-local" > $wasm_location
+      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     else
-      genesis=$(./target/debug/frequency export-genesis-state --chain="frequency-paseo-local")
-      ./target/debug/frequency export-genesis-wasm --chain="frequency-paseo-local" > $wasm_location
+      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+      ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     fi
 
-  echo "WASM path:" "${wasm_location}"
-
   cd scripts/js/onboard
-  yarn && yarn onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" $wasm_location
+  npm i && npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" "${wasm_location}"
   ;;
 
 offboard-frequency-paseo-local)
   echo "cleaning up parachain for id '$para_id'..."
 
   cd scripts/js/onboard
-  yarn && yarn cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
+  npm i && npm run cleanup "ws://0.0.0.0:9946" "//Alice" ${para_id}
   ;;
 
 upgrade-frequency-paseo-local)

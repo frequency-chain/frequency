@@ -14,8 +14,7 @@ use sp_core::ByteArray;
 use sp_runtime::traits::AccountIdConversion;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
-pub type ChainSpec =
-	sc_service::GenericChainSpec<frequency_runtime::RuntimeGenesisConfig, Extensions>;
+pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 
 use super::{get_properties, Extensions};
 

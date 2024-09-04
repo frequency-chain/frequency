@@ -38,9 +38,7 @@ use cumulus_relay_chain_interface::{OverseerHandle, RelayChainError, RelayChainI
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
-use sc_executor::{
-	HeapAllocStrategy, NativeElseWasmExecutor, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY,
-};
+use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
 use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
@@ -49,6 +47,8 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerH
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_blockchain::HeaderBackend;
 use sp_keystore::KeystorePtr;
+
+use common_runtime::prod_or_testnet_or_local;
 
 type FullBackend = TFullBackend<Block>;
 
@@ -468,8 +468,7 @@ fn start_consensus(
 		relay_chain_slot_duration,
 		proposer,
 		collator_service,
-		// Very limited proposal time.
-		authoring_duration: Duration::from_millis(500),
+		authoring_duration: Duration::from_millis(prod_or_testnet_or_local!(500, 2000, 2000)),
 		reinitialize: false,
 	};
 

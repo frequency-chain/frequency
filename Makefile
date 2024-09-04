@@ -14,6 +14,13 @@ start:
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
 
+
+start-paseo-collator-alice:
+	./scripts/init.sh start-paseo-collator-alice
+
+start-paseo-collator-bob:
+	./scripts/init.sh start-paseo-collator-bob
+
 start-frequency:
 	./scripts/init.sh start-frequency
 

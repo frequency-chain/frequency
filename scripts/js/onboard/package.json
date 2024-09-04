@@ -4,19 +4,19 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "onboard": "node onboard.js",
-    "register": "node register.js",
-    "upgrade-dev": "node devUpgrade.js",
-    "upgrade-auth": "node authUpgrade.js",
-    "upgrade-enact": "node enactUpgrade.js",
-    "cleanup": "node offboard.js"
+    "onboard": "node onboard.mjs",
+    "register": "node register.mjs",
+    "upgrade-dev": "node devUpgrade.mjs",
+    "upgrade-auth": "node authUpgrade.mjs",
+    "upgrade-enact": "node enactUpgrade.mjs",
+    "cleanup": "node offboard.mjs"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^7.6.1",
-    "@polkadot/util": "^8.7.1",
-    "@polkadot/util-crypto": "^8.3.3"
+    "@polkadot/api": "^12.4.2",
+    "@polkadot/util": "^13.0.2",
+    "@polkadot/util-crypto": "^13.0.2"
   }
 }

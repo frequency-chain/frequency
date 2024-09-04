@@ -1,6 +1,6 @@
-const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api");
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 
-const fs = require("fs");
+import { readFileSync } from "fs";
 
 async function main() {
   try {
@@ -11,16 +11,16 @@ async function main() {
     const api = await ApiPromise.create({ provider });
     const keyring = new Keyring({ type: "sr25519" });
     const sudo = keyring.addFromUri(seed);
-    console.log(`--- Submitting extrinsic to authorize testnet-2000 upgrade ---`);
+    console.log(`--- Submitting extrinsic to upgrade dev node ---`);
     let wasm;
     try {
-      wasm = "0x" + fs.readFileSync(wasmFile).toString("hex");
+      wasm = "0x" + readFileSync(wasmFile).toString("hex");
     } catch (err) {
       console.error(err);
       throw err;
     }
     const sudoCall = await api.tx.sudo
-      .sudo(api.tx.parachainSystem.enactAuthorizedUpgrade(wasm))
+      .sudoUncheckedWeight(api.tx.system.setCodeWithoutChecks(wasm), { refTime: 1 })
       .signAndSend(sudo, (result) => {
         console.log(`Current status is ${result.status}`);
         if (result.status.isInBlock) {

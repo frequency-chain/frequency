@@ -12,8 +12,6 @@ sudo_secret=$1
 ws_provider=$2
 wasm_location=$3
 
-cd scripts/js/onboard 
+cd scripts/js/onboard
 
-yarn && yarn upgrade-enact $ws_provider $sudo_secret $wasm_location 
-
-
+npm i && npm run upgrade-enact $ws_provider $sudo_secret $wasm_location
