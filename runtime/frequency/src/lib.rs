@@ -26,9 +26,6 @@ use sp_runtime::{
 	DispatchError,
 };
 
-pub mod development_genesis;
-pub mod genesis_config_presets;
-
 use pallet_collective::Members;
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
@@ -113,6 +110,8 @@ use sp_runtime::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
 	},
 };
+
+mod genesis;
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;
