@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - "*-development" # Feature Branches should suffix with -development
+      - "chore/mv-development-genesis-to-runtime-issue-*"
 env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed

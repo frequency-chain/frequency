@@ -16,7 +16,8 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-hex-literal = { workspace = true, optional = true }
+hex = { workspace = true, default-features = false }
+hex-literal = { workspace = true }
 log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
@@ -180,7 +181,6 @@ runtime-benchmarks = [
   "frame-system-benchmarking",
   "frame-system-benchmarking/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
-  "hex-literal",
   "pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",
