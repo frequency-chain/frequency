@@ -2,6 +2,7 @@ use crate::{
 	convert_to_canonical,
 	converter::{
 		replace_confusables, split_display_name, strip_diacriticals, strip_unicode_whitespace,
+		trim_and_collapse_whitespace,
 	},
 };
 
@@ -143,4 +144,14 @@ fn test_split_display_name_failure() {
 	// u16::MAX + 1
 	assert_eq!(split_display_name("hello.65536"), None);
 	assert_eq!(split_display_name("hello.999999999"), None);
+}
+
+#[test]
+fn test_trim_and_collapse_whitespace() {
+	assert_eq!(trim_and_collapse_whitespace("   h  e llo "), "h e llo");
+	assert_eq!(trim_and_collapse_whitespace("   h e l  lo  "), "h e l lo");
+	assert_eq!(
+		trim_and_collapse_whitespace("\u{3000}h\u{2000}e\u{000D}l\u{2002}l\u{000C}o\u{0009}"),
+		"h e l l o"
+	);
 }

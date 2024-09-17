@@ -84,7 +84,7 @@ pub fn split_display_name(display_name_str: &str) -> Option<(String, HandleSuffi
 	let parts: Vec<&str> = display_name_str.split(HANDLE_DELIMITER).collect();
 	let base_handle_str = parts[0].to_string();
 	if parts.len() != 2 {
-		return None
+		return None;
 	}
 
 	let suffix = parts[1];
@@ -107,4 +107,22 @@ pub fn strip_unicode_whitespace(input_str: &str) -> String {
 		.chars()
 		.filter(|character| !character.is_whitespace())
 		.collect::<alloc::string::String>()
+}
+
+/// Trims whitespace from the head and tail and collapses all other whitespace to just a single space
+///
+/// # Arguments
+///
+/// * `input_str` - A string slice that holds the input string from which the whitespace characters need to be trimmed and collapsed
+///
+/// # Returns
+///
+/// A new string without any Unicode whitespace characters.
+pub fn trim_and_collapse_whitespace(input_str: &str) -> String {
+	// Benchmarked as slightly faster than https://crates.io/crates/collapse
+	input_str
+		.split_whitespace()
+		.filter(|s| !s.is_empty())
+		.collect::<Vec<_>>()
+		.join(" ")
 }

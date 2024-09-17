@@ -36,7 +36,7 @@ The high level requirements for user handles are:
 * **Suffix**: A suffix is a numeric value that is appended to a base handle to make it unique.  The suffix is randomly constrained and selected within a range configured on chain.
 * **Delimiter**: A delimiter is a character that is used to separate the base handle and suffix.  The delimiter is a period (.) by default.
 * **Display Handle**: A display handle is formed by concatenating the base handle and suffix with the delimiter.  The display handle is the handle that is displayed to the user.
-  
+
 ### Handle Guidelines
 
 * User handles must be unique and each MSA can only be mapped to one handle.
@@ -48,6 +48,7 @@ The high level requirements for user handles are:
 * Suffix will be randomly constrained.
 * Homoglyph versions of handles should still resolve to the same ```msa_id``` (e.g. ```user.1234``` and ```u$er.1234``` should resolve to the same ```msa_id```).
 * `Display Handle` is the handle that is displayed to the user and must be unique.
+* `Base Handle` should have UTF-8 whitespace trimmed and concatenated (e.g. ```   u  s \t\t  e\tr ``` will be trimmed to ```u s e r```).
 
 ## Proposal
 
@@ -66,7 +67,7 @@ Handles```registry``` on Frequency chain.
 
 ### Handle replay attack
 
-To prevent replay attacks, the chain will require a mortality period for handles. This can be included in signed payload from user as a `expiration` field. The chain will check if the `expiration` is greater than the current block number. If not, the transaction will fail.  
+To prevent replay attacks, the chain will require a mortality period for handles. This can be included in signed payload from user as a `expiration` field. The chain will check if the `expiration` is greater than the current block number. If not, the transaction will fail.
 
 ### Handling Race Conditions
 
@@ -135,7 +136,7 @@ ClaimHandlePayload {
 
 ### Claim handle
 
- As a network, Frequency should allow users to choose their own handle, while the chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the base handle with the suffix.
+ As a network, Frequency should allow users to choose their own handle, while the chain will generate a random numeric suffix within the range of suffixes allowed. The display handle will be the base handle with whitespace trimmed and concatenated with the suffix.
 
 Input
 

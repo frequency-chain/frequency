@@ -77,6 +77,8 @@ impl<T: Config> HandleProvider for Pallet<T> {
 #[frame_support::pallet]
 pub mod pallet {
 
+	use handles_utils::trim_and_collapse_whitespace;
+
 	use super::*;
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -711,8 +713,9 @@ pub mod pallet {
 			base_handle: &str,
 			suffix: HandleSuffix,
 		) -> Result<DisplayHandle, DispatchError> {
+			let base_handle_trimmed = trim_and_collapse_whitespace(base_handle);
 			let mut full_handle_vec: Vec<u8> = vec![];
-			full_handle_vec.extend(base_handle.as_bytes());
+			full_handle_vec.extend(base_handle_trimmed.as_bytes());
 			full_handle_vec.push(HANDLE_DELIMITER as u8); // The delimiter
 			let mut buff = [0u8; SUFFIX_MAX_DIGITS];
 			full_handle_vec.extend(suffix.numtoa(10, &mut buff));
