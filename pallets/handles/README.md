@@ -9,7 +9,7 @@ Provides MSAs with an optional, but unique handle.
 A handle consists of:
 - **Base Handle:** The user's chosen handle. It is *not* guaranteed to be unique without the suffix. It is linked to a normalized version for Handle to MSA Id resolution. See [UTF-8 Support](#utf-8-support) and [Homoglyph Attack Resistence](#homoglyph-attack-resistence) below.
 - **Suffix:** A suffix is a unique numeric value appended to a user's base handle to make it unique.
-- **Display Handle:** The user's original (un-normalized, but with whitespace trimmed and concatenated) base handle string and the suffix together (`base`.`suffix`) constitute a unique identifier for a user.
+- **Display Handle:** The user's original (un-normalized, but with whitespace trimmed and consolidated) base handle string and the suffix together (`base`.`suffix`) constitute a unique identifier for a user.
 
 ### UTF-8 Support
 
