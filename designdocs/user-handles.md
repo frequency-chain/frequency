@@ -67,7 +67,7 @@ Handles```registry``` on Frequency chain.
 
 ### Handle replay attack
 
-To prevent replay attacks, the chain will require a mortality period for handles. This can be included in signed payload from user as a `expiration` field. The chain will check if the `expiration` is greater than the current block number. If not, the transaction will fail.
+To prevent replay attacks, the chain will require a mortality period for handles. This can be included in the user's signed payload as an `expiration` field. The chain will check if the `expiration` is greater than the current block number. If not, the transaction will fail.
 
 ### Handling Race Conditions
 
