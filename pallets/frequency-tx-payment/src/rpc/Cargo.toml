@@ -1,6 +1,6 @@
 [package]
 name = "pallet-frequency-tx-payment-rpc"
-version = "0.0.0"
+version = "1.13.1+polkadot1.13.0"
 description = "A package that adds RPC to payment pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
