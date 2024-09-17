@@ -375,7 +375,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 110,
+	spec_version: 111,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -389,7 +389,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 110,
+	spec_version: 111,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1483,7 +1483,7 @@ impl StaleHashCheckExtension {
 
 			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 				.and_provides((msa_id, schema_id))
-				.build()
+				.build();
 		}
 		Ok(Default::default())
 	}
@@ -1510,7 +1510,7 @@ impl StaleHashCheckExtension {
 
 			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 				.and_provides((msa_id, schema_id, page_id))
-				.build()
+				.build();
 		}
 
 		Ok(Default::default())

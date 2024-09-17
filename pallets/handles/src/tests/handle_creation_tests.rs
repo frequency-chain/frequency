@@ -359,6 +359,35 @@ fn claim_handle_with_max_bytes_should_get_correct_display_handle() {
 }
 
 #[test]
+fn claim_handle_with_various_spaces_should_get_correct_display_handle() {
+	new_test_ext().execute_with(|| {
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 100;
+		let handle = "\u{2000}\u{3000}\u{2000}w\u{2000}h\u{000D}itesp\u{2002}a\u{000C}ce\u{0009}\u{2002}\u{0009}";
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, handle.as_bytes().to_vec(), expiration);
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload.clone()
+		));
+		let msa_id = MessageSourceId::decode(&mut &alice.public().encode()[..]).unwrap();
+		let handle = Handles::get_handle_for_msa(msa_id);
+		assert!(handle.is_some());
+		let handle_result = handle.unwrap();
+		assert_eq!(handle_result.base_handle, "w h itesp a ce".as_bytes().to_vec());
+		assert!(handle_result.suffix > 0);
+		let display_handle = "whitespace.".to_owned() +  &handle_result.suffix.to_string();
+		let display_handle_vec = display_handle.as_bytes().to_vec();
+		let msa_id_from_state =
+			Handles::get_msa_id_for_handle(display_handle_vec.try_into().unwrap());
+		assert!(msa_id_from_state.is_some());
+		assert_eq!(msa_id_from_state.unwrap(), msa_id);
+	});
+}
+
+#[test]
 fn test_verify_handle_length() {
 	new_test_ext().execute_with(|| {
 		// Max bytes handle is ok
