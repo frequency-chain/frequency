@@ -14,6 +14,9 @@ use cli_opt::SealingMode;
 /// Sub-commands supported by the collator.
 #[derive(Debug, clap::Subcommand)]
 pub enum Subcommand {
+	/// Key management cli utilities
+	#[command(subcommand)]
+	Key(sc_cli::KeySubcommand),
 	/// Build a chain specification.
 	BuildSpec(sc_cli::BuildSpecCmd),
 

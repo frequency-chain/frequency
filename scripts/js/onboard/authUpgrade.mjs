@@ -1,4 +1,4 @@
-const { ApiPromise, WsProvider, Keyring } = require("@polkadot/api");
+import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
 
 async function main() {
   try {

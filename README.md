@@ -216,12 +216,12 @@ make start-interval
 
 ### Mixed Terminal/Docker
 
-This option runs one collator node as local host process and two relay chain validator nodes in each own docker container.
+This option runs two collator nodes as local host processes and two relay chain validator nodes, each in its own docker container.
 
 1. Start relay chain validator nodes.
 
    ```sh
-   make start-relay
+   make start-paseo-relay
    ```
 
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
@@ -232,13 +232,16 @@ This option runs one collator node as local host process and two relay chain val
    make register
    ```
 
-1. Start Frequency as parachain. This step will generate genesis/wasm and start the parachain collator.
+1. Start Frequency as parachain with a single collator.
 
    ```sh
-   make start-frequency
+   make start-paseo-collator-alice
+   ```
+   ```sh
+   make start-paseo-collator-bob
    ```
 
-1. Onboard Frequency to the relay chain
+1.  Generate genesis/wasm and onboard Frequency to the relay chain.
    ```sh
    make onboard
    ```

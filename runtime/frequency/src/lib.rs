@@ -46,6 +46,7 @@ use common_primitives::node::{
 pub use common_runtime::{
 	constants::{currency::EXISTENTIAL_DEPOSIT, *},
 	fee::WeightToFee,
+	prod_or_testnet_or_local,
 	proxy::ProxyType,
 };
 
@@ -374,7 +375,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 110,
+	spec_version: 112,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -388,7 +389,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 110,
+	spec_version: 112,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -961,17 +962,25 @@ impl pallet_passkey::Config for Runtime {
 	type Currency = Balances;
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	feature = "frequency",
+	feature = "runtime-benchmarks",
+	feature = "frequency-lint-check",
+))]
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
 /// into the relay chain.
 const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
+
+#[cfg(any(feature = "frequency-testnet", feature = "frequency-local"))]
+const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
+
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 /// How many parachain blocks are processed by the relay chain per parent. Limits the
 /// number of blocks authored per slot.
 const BLOCK_PROCESSING_VELOCITY: u32 = 1;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 /// Relay chain slot duration, in milliseconds.
-const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6000;
+const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
@@ -987,8 +996,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type ReservedXcmpWeight = ();
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
-	// TODO: Remove this when Async Backing is activated and the feature is set for cumulus-pallet-parachain-system
-	#[cfg(feature = "parameterized-consensus-hook")]
 	type ConsensusHook = ConsensusHook;
 }
 
@@ -1026,7 +1033,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = AuraMaxAuthorities;
-	type AllowMultipleBlocksPerSlot = ConstBool<false>;
+	type AllowMultipleBlocksPerSlot = ConstBool<{ prod_or_testnet_or_local!(false, true, true) }>;
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 
@@ -1476,7 +1483,7 @@ impl StaleHashCheckExtension {
 
 			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 				.and_provides((msa_id, schema_id))
-				.build()
+				.build();
 		}
 		Ok(Default::default())
 	}
@@ -1503,7 +1510,7 @@ impl StaleHashCheckExtension {
 
 			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
 				.and_provides((msa_id, schema_id, page_id))
-				.build()
+				.build();
 		}
 
 		Ok(Default::default())

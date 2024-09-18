@@ -4,7 +4,7 @@ version: "3"
 services:
   relay_paseo_alice:
     container_name: alice
-    image: "parity/polkadot:v1.1.0"
+    image: "parity/polkadot:v1.13.0"
     platform: linux/x86_64
     hostname: relay_alice
     ports:
@@ -26,12 +26,12 @@ services:
       --rpc-cors=all
       --rpc-methods=Unsafe
       --alice
-      --log="main"
+      -ltxpool=trace
     restart: unless-stopped
 
   relay_paseo_bob:
     container_name: bob
-    image: "parity/polkadot:v1.1.0"
+    image: "parity/polkadot:v1.13.0"
     platform: linux/x86_64
     hostname: relay_bob
     ports:
@@ -72,5 +72,5 @@ services:
       - "30333:30333" # p2p port
       - "9944:9944" # ws and rpc port
     depends_on:
-      - relay_alice
-      - relay_bob
+      - relay_paseo_alice
+      - relay_paseo_bob
