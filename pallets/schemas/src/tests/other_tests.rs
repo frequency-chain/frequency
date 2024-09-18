@@ -756,7 +756,33 @@ fn create_schema_via_governance_v2_with_append_only_setting_and_non_itemized_sho
 		);
 	})
 }
+#[test]
+fn create_schema_via_governance_v2_with_signature_required_setting_and_wrong_location_should_fail()
+{
+	new_test_ext().execute_with(|| {
+		sudo_set_max_schema_size();
 
+		// arrange
+		let settings = vec![SchemaSetting::SignatureRequired];
+		let sender: AccountId = test_public(1);
+
+		for location in vec![PayloadLocation::OnChain, PayloadLocation::IPFS] {
+			// act and assert
+			assert_noop!(
+				SchemasPallet::create_schema_via_governance_v2(
+					RuntimeOrigin::from(pallet_collective::RawOrigin::Members(2, 3)),
+					sender.clone(),
+					create_bounded_schema_vec(r#"{"name":"John Doe"}"#),
+					ModelType::AvroBinary,
+					location,
+					BoundedVec::try_from(settings.clone()).unwrap(),
+					None,
+				),
+				Error::<Test>::InvalidSetting
+			);
+		}
+	})
+}
 /// Test that a request to be a provider, makes the MSA a provider after the council approves it.
 #[test]
 fn propose_to_create_schema_v2_happy_path() {
