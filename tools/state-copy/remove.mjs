@@ -19,37 +19,23 @@ async function getKeys(api, storageKey) {
   return result;
 }
 
-export async function copy(sourceUrl, destUrl, storageKey, sudoUri = "//Alice", filterKeys = []) {
-  // Connect to the state source
-  const sourceProvider = new WsProvider(sourceUrl);
-  const sourceApi = await ApiPromise.create({ provider: sourceProvider });
-
+export async function remove(destUrl, storageKey, sudoUri = "//Alice", filterKeys = []) {
   // Connect to destination source
   const destProvider = new WsProvider(destUrl);
   const destApi = await ApiPromise.create({ provider: destProvider });
 
-  console.log("Connected to both networks");
+  console.log("Connected to destination network");
 
-  // Get all keys from the specified pallet
-  const keys = (await getKeys(sourceApi, storageKey)).filter((k) => !filterKeys.includes(k));
+  // Get all keys from the specified storage key prefix
+  const keys = (await getKeys(destApi, storageKey)).filter((k) => !filterKeys.includes(k));
   console.log(`Found ${keys.length} keys under ${storageKey}...`);
-
-  // Fetch values for all keys
-  const storageKV = await Promise.all(
-    keys.map(async (key) => {
-      const value = await sourceApi.rpc.state.getStorage(key);
-      return [key, value.toHex()];
-    }),
-  );
-
-  console.log("Fetched all values", storageKV);
 
   const sudoAccount = keyring.createFromUri(sudoUri);
 
-  // Prepare and send sudo.sudo(system.setStorage()) call
-  const sudoCall = destApi.tx.sudo.sudo(destApi.tx.system.setStorage(storageKV));
+  // Prepare and send sudo.sudo(system.killStorage()) call
+  const sudoCall = destApi.tx.sudo.sudo(destApi.tx.system.killStorage(keys));
 
-  console.log("Submitting sudo call to set storage...");
+  console.log("Submitting sudo call to remove storage...");
   await new Promise(async (resolve, reject) => {
     const unsub = await sudoCall.signAndSend(sudoAccount, ({ status, events }) => {
       if (status.isInBlock || status.isFinalized) {
@@ -60,10 +46,10 @@ export async function copy(sourceUrl, destUrl, storageKey, sudoUri = "//Alice", 
         const failure = events.find((x) => destApi.events.system.ExtrinsicFailed.is(x.event));
         unsub();
         if (success && !failure) {
-          console.log("State copy successful");
+          console.log("State removal successful");
           resolve();
         } else {
-          console.error("State copy FAILED!");
+          console.error("State removal FAILED!");
           reject();
         }
       }
