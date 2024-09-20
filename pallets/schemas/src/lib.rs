@@ -233,6 +233,8 @@ pub mod pallet {
 	#[pallet::genesis_config]
 	pub struct GenesisConfig<T: Config> {
 		/// Maximum schema size in bytes at genesis
+		pub initial_schema_identifier_max: u16,
+		/// Maximum schema size in bytes at genesis
 		pub initial_max_schema_model_size: u32,
 		/// Genesis Schemas to load for development
 		pub initial_schemas: Vec<GenesisSchema>,
@@ -244,6 +246,7 @@ pub mod pallet {
 	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
+				initial_schema_identifier_max: 16_000,
 				initial_max_schema_model_size: 1024,
 				initial_schemas: Default::default(),
 				_config: Default::default(),
@@ -286,6 +289,9 @@ pub mod pallet {
 				)
 				.expect("Failed to set Schema in Genesis!");
 			}
+
+			// Set the maximum manually
+			CurrentSchemaIdentifierMaximum::<T>::put(self.initial_schema_identifier_max);
 		}
 	}
 
