@@ -18,12 +18,36 @@ export const types = Object.entries(definitions).reduce((acc, [_key, value]) => 
 /**
  * Build up the rpc calls for ApiPromise.create
  */
-export const rpc = Object.entries(definitions).reduce((acc, [key, value]) => {
-  return {
-    ...acc,
-    [key]: value.rpc,
-  };
-}, {});
+export const rpc = Object.entries(definitions).reduce(
+  (acc, [key, value]) => {
+    return {
+      ...acc,
+      [key]: value.rpc,
+    };
+  },
+  // v1 rpc calls to be ignored
+  {
+    transactionWatch_v1: {
+      submitAndWatch: {},
+      unwatch: {},
+    },
+    transaction_v1: {
+      broadcast: {},
+      stop: {},
+    },
+    chainHead_v1: {
+      body: {},
+      call: {},
+      continue: {},
+      follow: {},
+      header: {},
+      stopOperation: {},
+      storage: {},
+      unfollow: {},
+      unpin: {},
+    },
+  }
+);
 
 /**
  * Frequency Specific Signed Extensions
