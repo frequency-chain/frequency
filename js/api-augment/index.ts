@@ -1,9 +1,11 @@
 import { ExtDef } from '@polkadot/types/extrinsic/signedExtensions/types';
+import { DefinitionRpc } from '@polkadot/types/types';
 import './interfaces/types-lookup.js';
 import './interfaces/augment-api.js';
 import './interfaces/augment-types.js';
 import './interfaces/index.js';
 import * as definitions from './interfaces/definitions.js';
+import { v1SubstrateRpcs } from './substrate_v1_rpcs.js';
 
 /**
  * Build up the types for ApiPromise.create
@@ -18,7 +20,7 @@ export const types = Object.entries(definitions).reduce((acc, [_key, value]) => 
 /**
  * Build up the rpc calls for ApiPromise.create
  */
-export const rpc = Object.entries(definitions).reduce(
+export const rpc: Record<string, Record<string, DefinitionRpc>> = Object.entries(definitions).reduce(
   (acc, [key, value]) => {
     return {
       ...acc,
@@ -26,27 +28,7 @@ export const rpc = Object.entries(definitions).reduce(
     };
   },
   // v1 rpc calls to be ignored
-  {
-    transactionWatch_v1: {
-      submitAndWatch: {},
-      unwatch: {},
-    },
-    transaction_v1: {
-      broadcast: {},
-      stop: {},
-    },
-    chainHead_v1: {
-      body: {},
-      call: {},
-      continue: {},
-      follow: {},
-      header: {},
-      stopOperation: {},
-      storage: {},
-      unfollow: {},
-      unpin: {},
-    },
-  }
+  { ...v1SubstrateRpcs }
 );
 
 /**
