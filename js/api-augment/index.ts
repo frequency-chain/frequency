@@ -38,6 +38,14 @@ export const signedExtensions: ExtDef = {
     extrinsic: {},
     payload: {},
   },
+  StaleHashCheckExtension: {
+    extrinsic: {},
+    payload: {},
+  },
+  StorageWeightReclaim: {
+    extrinsic: {},
+    payload: {},
+  },
 };
 
 /**
