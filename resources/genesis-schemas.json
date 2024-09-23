@@ -71,5 +71,70 @@
     "settings": [],
     "model": "{\"type\":\"record\",\"name\":\"UserPrivateConnectionsChunk\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"keyId\",\"type\":\"long\",\"doc\":\"User-Assigned Key Identifier\"},{\"name\":\"pridList\",\"type\":{\"type\":\"array\",\"items\":{\"name\":\"prid\",\"type\":\"fixed\",\"size\":8,\"doc\":\"Pseudonymous Relationship Identifier\"}}},{\"doc\":\"lib_sodium sealed box\",\"name\":\"encryptedCompressedPrivateGraph\",\"type\":\"bytes\"}],\"types\":[{\"type\":\"array\",\"name\":\"PrivateGraph\",\"namespace\":\"org.dsnp\",\"items\":{\"type\":\"record\",\"name\":\"GraphEdge\",\"fields\":[{\"name\":\"userId\",\"type\":\"long\",\"doc\":\"DSNP User Id of object of relationship\"},{\"name\":\"since\",\"type\":\"long\",\"doc\":\"Unix epoch in seconds when this relationship was originally established rounded to the nearest 1000\"}]}}]}",
     "name": ""
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.user-attribute-set"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.dsnp-content-attribute-set"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subject\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"subjectContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"attributeSetType\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"issuer\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.ext-content-attribute-set"
+  },
+  {
+    "model_type": "AvroBinary",
+    "payload_location": "Itemized",
+    "settings": [
+      "SignatureRequired"
+    ],
+    "model": "{\"type\":\"record\",\"name\":\"PublicKey\",\"namespace\":\"org.dsnp\",\"fields\":[{\"name\":\"publicKey\",\"doc\":\"Multicodec public key\",\"type\":\"bytes\"}]}",
+    "name": "dsnp.public-key-assertion-method"
+  },
+  {
+    "model_type": "AvroBinary",
+    "payload_location": "Itemized",
+    "settings": [],
+    "model": "{\"namespace\":\"org.dsnp\",\"name\":\"ProfileResource\",\"type\":\"record\",\"doc\":\"Profile-linked resource\",\"fields\":[{\"name\":\"type\",\"type\":\"int\",\"doc\":\"Type of resource\"},{\"name\":\"contentAddress\",\"type\":\"string\",\"doc\":\"Content address for the resource\"}]}",
+    "name": "dsnp.profile-resources"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.tombstone"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
+    "name": "dsnp.broadcast"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"inReplyTo\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false}]",
+    "name": "dsnp.reply"
+  },
+  {
+    "model_type": "Parquet",
+    "payload_location": "IPFS",
+    "settings": [],
+    "model": "[{\"name\":\"announcementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"contentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"fromId\",\"column_type\":{\"INTEGER\":{\"bit_width\":64,\"sign\":false}},\"compression\":\"GZIP\",\"bloom_filter\":true},{\"name\":\"url\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetAnnouncementType\",\"column_type\":{\"INTEGER\":{\"bit_width\":32,\"sign\":true}},\"compression\":\"GZIP\",\"bloom_filter\":false},{\"name\":\"targetContentHash\",\"column_type\":\"STRING\",\"compression\":\"GZIP\",\"bloom_filter\":true}]",
+    "name": "dsnp.update"
   }
 ]
