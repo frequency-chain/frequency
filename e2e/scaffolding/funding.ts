@@ -14,6 +14,7 @@ export const fundingSources = [
   'capacity-staking',
   'capacity-transactions',
   'capacity-unstaking',
+  'check-metadata-hash',
   'frequency-misc',
   'handles',
   'load-signature-registry',
@@ -21,6 +22,7 @@ export const fundingSources = [
   'misc-util-batch',
   'msa-create-msa',
   'msa-key-management',
+  'passkey-proxy',
   'proxy-pallet',
   'scenarios-grant-delegation',
   'schemas-create',
@@ -29,7 +31,6 @@ export const fundingSources = [
   'stateful-storage-handle-sig-req',
   'sudo-transactions',
   'time-release',
-  'passkey-proxy',
 ] as const;
 
 // Get the correct key for this Funding Source

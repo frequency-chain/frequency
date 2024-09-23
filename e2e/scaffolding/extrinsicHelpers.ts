@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import { ApiPromise, ApiRx } from '@polkadot/api';
-import { ApiTypes, AugmentedEvent, SubmittableExtrinsic } from '@polkadot/api/types';
+import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
 import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
@@ -175,14 +175,14 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   // This uses automatic nonce management by default.
-  public async signAndSend(inputNonce?: AutoNonce) {
+  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
       return await firstValueFrom(
-        op.signAndSend(this.keys, { nonce, era: 0 }).pipe(
+        op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
