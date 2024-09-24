@@ -648,7 +648,7 @@ pub mod pallet {
 			Ok(display_handle.into_inner())
 		}
 
-		/// Checks that handle base string is valid
+		/// Checks that handle base string is valid before canonicalization
 		fn validate_base_handle(base_handle: Vec<u8>) -> Result<String, DispatchError> {
 			// Convert base handle to UTF-8 string slice while validating.
 			let base_handle_str =
@@ -664,10 +664,6 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			ensure!(
-				!is_reserved_canonical_handle(&base_handle_str),
-				Error::<T>::HandleIsNotAllowed
-			);
 			ensure!(
 				!contains_blocked_characters(&base_handle_str),
 				Error::<T>::HandleContainsBlockedCharacters
