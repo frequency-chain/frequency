@@ -19,7 +19,7 @@ async function getKeys(api, storageKey) {
   return result;
 }
 
-export async function remove(destUrl, storageKey, sudoUri = "//Alice", filterKeys = []) {
+export async function removeStorageKeys(destUrl, storageKey, sudoUri = "//Alice", filterKeys = []) {
   // Connect to destination source
   const destProvider = new WsProvider(destUrl);
   const destApi = await ApiPromise.create({ provider: destProvider });
