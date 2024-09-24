@@ -35,7 +35,7 @@ pub fn convert_to_canonical(input_str: &str) -> alloc::string::String {
 	let white_space_stripped = strip_unicode_whitespace(input_str);
 	let diacriticals_stripped = strip_diacriticals(&white_space_stripped);
 	let confusables_removed = replace_confusables(&diacriticals_stripped);
-	confusables_removed.to_ascii_lowercase()
+	confusables_removed.to_lowercase()
 }
 
 /// Replaces any characters in the input string that are confusable with a different character.

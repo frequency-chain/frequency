@@ -1,22 +1,23 @@
 use crate::validator::{
-	consists_of_supported_unicode_character_sets, contains_blocked_characters, is_reserved_handle,
+	consists_of_supported_unicode_character_sets, contains_blocked_characters,
+	is_reserved_canonical_handle,
 };
 
 #[test]
-fn test_is_reserved_handle_happy_path() {
+fn test_is_reserved_canonical_handle_happy_path() {
 	let reserved_handles: Vec<&str> =
 		vec!["admin", "everyone", "all", "mod", "moderator", "administrator", "here", "channel"];
 
 	for handle in reserved_handles {
-		assert!(is_reserved_handle(handle));
+		assert!(is_reserved_canonical_handle(crate::convert_to_canonical(handle).as_str()));
 	}
 }
 
 #[test]
-fn test_is_reserved_handle_negative() {
+fn test_is_reserved_canonical_handle_negative() {
 	let handles: Vec<&str> = vec!["albert", "coca_cola", "freemont"];
 	for handle in handles {
-		assert!(!is_reserved_handle(handle));
+		assert!(!is_reserved_canonical_handle(crate::convert_to_canonical(handle).as_str()));
 	}
 }
 
