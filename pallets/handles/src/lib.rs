@@ -617,11 +617,7 @@ pub mod pallet {
 			let (canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
-			Self::validate_canonical_handle_contains_characters_in_supported_ranges(
-				&canonical_handle_str,
-			)?;
-
-			Self::validate_canonical_handle_length(&canonical_handle_str)?;
+			Self::validate_canonical_handle(&canonical_handle_str)?;
 
 			// Generate suffix from the next available index into the suffix sequence
 			let suffix_sequence_index =
@@ -679,25 +675,29 @@ pub mod pallet {
 			Ok(base_handle_str)
 		}
 
-		fn validate_canonical_handle_contains_characters_in_supported_ranges(
-			base_handle_str: &str,
-		) -> DispatchResult {
+		/// Validate that the canonical handle:
+		/// - contains characters ONLY in supported ranges
+		/// - Does NOT contain reserved words
+		/// - Is between (inclusive) `HANDLE_CHARS_MIN` and `HANDLE_CHARS_MAX`
+		fn validate_canonical_handle(canonical_base_handle_str: &str) -> DispatchResult {
 			// Validation: The handle must consist of characters not containing reserved words or blocked characters
 			ensure!(
-				consists_of_supported_unicode_character_sets(&base_handle_str),
+				consists_of_supported_unicode_character_sets(&canonical_base_handle_str),
 				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
 			);
-			Ok(())
-		}
+			ensure!(
+				!is_reserved_canonical_handle(&canonical_base_handle_str),
+				Error::<T>::HandleIsNotAllowed
+			);
 
-		fn validate_canonical_handle_length(canonical_handle_str: &str) -> DispatchResult {
-			let len = canonical_handle_str.chars().count() as u32;
+			let len = canonical_base_handle_str.chars().count() as u32;
 
 			// Validation: `Canonical` character length must be within range
 			ensure!(
 				len >= HANDLE_CHARS_MIN && len <= HANDLE_CHARS_MAX,
 				Error::<T>::InvalidHandleCharacterLength
 			);
+
 			Ok(())
 		}
 
@@ -768,10 +768,7 @@ pub mod pallet {
 					let (canonical_handle_str, _) =
 						Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
-					return Self::validate_canonical_handle_contains_characters_in_supported_ranges(
-						&canonical_handle_str,
-					)
-					.is_ok();
+					return Self::validate_canonical_handle(&canonical_handle_str).is_ok();
 				},
 				_ => false,
 			};
