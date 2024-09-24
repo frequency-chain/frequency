@@ -10,7 +10,21 @@ use constants::ALLOWED_UNICODE_CHARACTER_RANGES;
 
 /// Reserved words that cannot be used as the handle.
 const RESERVED_WORDS: [&str; 8] =
-	["admin", "everyone", "all", "administrator", "mod", "moderator", "here", "channel"];
+	["adm1n", "every0ne", "a11", "adm1n1strat0r", "m0d", "m0derat0r", "here", "channe1"];
+
+// We MUST have the RESERVED_WORDS constant as canonical.
+// Cannot easily be canonicalized at compile time currently
+#[test]
+fn ensure_reserved_words_canonical() {
+	for &word in &RESERVED_WORDS {
+		let canonical = crate::convert_to_canonical(word);
+		assert_eq!(
+			word, canonical,
+			"The reserved word '{}' MUST match canonical form: '{}'",
+			word, canonical
+		);
+	}
+}
 
 /// Characters that cannot be used in the handle.
 const BLOCKED_CHARACTERS: [char; 16] =
