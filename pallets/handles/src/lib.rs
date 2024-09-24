@@ -38,7 +38,7 @@ use handles_utils::{
 	suffix::generate_unique_suffixes,
 	validator::{
 		consists_of_supported_unicode_character_sets, contains_blocked_characters,
-		is_reserved_handle,
+		is_reserved_canonical_handle,
 	},
 };
 
@@ -668,7 +668,10 @@ pub mod pallet {
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
-			ensure!(!is_reserved_handle(&base_handle_str), Error::<T>::HandleIsNotAllowed);
+			ensure!(
+				!is_reserved_canonical_handle(&base_handle_str),
+				Error::<T>::HandleIsNotAllowed
+			);
 			ensure!(
 				!contains_blocked_characters(&base_handle_str),
 				Error::<T>::HandleContainsBlockedCharacters

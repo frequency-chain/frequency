@@ -39,16 +39,16 @@ fn ensure_sorted_blocked_characters() {
 	assert_eq!(BLOCKED_CHARACTERS, sorted);
 }
 
-/// Determines whether a given string is a reserved handle in the current context.
+/// Determines whether a given canonicalized string is a reserved handle in the current context.
 ///
 /// # Arguments
 ///
-/// * `input_str` - A string slice representing the handle to check.
+/// * `input_str` - A string slice representing the canonicalized handle to check.
 ///
 /// # Returns
 ///
 /// A boolean value indicating whether the string is a reserved handle (`true`) or not (`false`).
-pub fn is_reserved_handle(input_str: &str) -> bool {
+pub fn is_reserved_canonical_handle(input_str: &str) -> bool {
 	RESERVED_WORDS.contains(&input_str)
 }
 
