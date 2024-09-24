@@ -20,7 +20,7 @@ const STORAGE_KEY = "0xeec6f3c13d26ae2507c99b6751e19e76";
 const FILTER_OUT = [
   "0xeec6f3c13d26ae2507c99b6751e19e76d5d9c370c6c8aee1116ee09d6811b0d5", // governanceSchemaModelMaxBytes
   "0xeec6f3c13d26ae2507c99b6751e19e764e7b9012096b41c4eb3aaf947f6ea429", // palletVersion
-  // Comment this out if you INCLUDE setting the currentSchemaIdentifierMaximum from the SOURCE
+  // Comment this out to INCLUDE setting the currentSchemaIdentifierMaximum from the SOURCE
   "0xeec6f3c13d26ae2507c99b6751e19e765b81a4f27a1e406724e3a53d909f29cd", // currentSchemaIdentifierMaximum
 ];
 
