@@ -66,7 +66,7 @@ export default {
     SchemasRuntimeApi: [
       {
         methods: {
-          get_schema_by_id: {
+          get_by_schema_id: {
             description: 'Fetch the schema by id',
             params: [
               {
