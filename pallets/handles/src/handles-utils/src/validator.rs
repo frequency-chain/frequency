@@ -28,7 +28,7 @@ fn ensure_reserved_words_canonical() {
 
 /// Characters that cannot be used in the handle.
 const BLOCKED_CHARACTERS: [char; 17] =
-	['"', '#', '%', '(', ')', ',', '.', ':', ';', '<', '>', '@', '\\', '`', '{', '}', '/'];
+	['"', '#', '%', '(', ')', ',', '.', '/', ':', ';', '<', '>', '@', '\\', '`', '{', '}'];
 
 // We MUST have the BLOCKED_CHARACTERS constant sorted or we cannot use the faster `binary_search` function.
 // Cannot easily be sorted at compile time currently
