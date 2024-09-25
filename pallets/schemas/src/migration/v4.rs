@@ -71,20 +71,19 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 		assert_eq!(onchain_version, SCHEMA_STORAGE_VERSION);
 		// check to ensure updates took place
 		let known_schemas = get_known_schemas::<T>();
-		for (schema_id, schema_name) in known_schemas.into_iter() {
+		for (schema_id, (schema_name, should_clear)) in known_schemas.into_iter() {
 			// safe to use unwrap since only used in try_runtime
 			let bounded = BoundedVec::try_from(schema_name).unwrap();
 			let parsed_name = SchemaName::try_parse::<T>(bounded, true).unwrap();
 			let current_versions =
 				SchemaNameToIds::<T>::get(parsed_name.namespace, parsed_name.descriptor);
 
-			let mut expected = SchemaVersionId::default();
-			let _ = expected.add::<T>(schema_id);
-
-			assert_eq!(
-				current_versions, expected,
-				"Expected versions did not match for {}",
-				schema_id
+			// Just check that it contains the correct value, not position anymore
+			assert!(
+				current_versions.ids.iter().any(|&id| id == schema_id),
+				"Current versions does not contain schema_id {} for name {:?}",
+				schema_id,
+				parsed_name
 			);
 		}
 		log::info!(target: LOG_TARGET, "Finished post_upgrade");
