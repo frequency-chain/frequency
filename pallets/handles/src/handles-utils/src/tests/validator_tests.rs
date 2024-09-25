@@ -47,6 +47,7 @@ fn test_contains_blocked_characters_negative() {
 // Translations of "I can eat glass" from https://www.kermitproject.org/utf8.html
 // Some translations: https://translate.glosbe.com/
 // Others from Wikipedia
+// Many are (supposed to be) common names or greetings, or translations of "beautiful flower"
 #[rustfmt::skip]
 #[test]
 fn test_consists_of_supported_unicode_character_sets_happy_path() {
@@ -106,7 +107,7 @@ fn test_consists_of_supported_unicode_character_sets_happy_path() {
 		"ᦉᦱᧃ ᦃᦺᦟᦹ", 												// New Tai Le
 		"ᨆᨗᨕᨚ ᨅᨔᨒᨀ", 												// Buginese
 		"ᨠᩯᩬ ᨴᩱᨶᩣ ᨧᩥᨶᩬᩁᩣ", 											// Tai Tham
-		"ᬳᬸᬜ ᬳᬶᬦ ᬳᬸᬢ᭄ᬤᬸᬳ᭄ᬯᬸᬭ᭄", // Balinese lit. 'How many years have we been here?'
+		"ᬳᬸᬜ ᬳᬶᬦ ᬳᬸᬢ᭄ᬤᬸᬳ᭄ᬯᬸᬭ᭄", 									// Balinese
 		"ᮞᮀᮛᮥᮔ᮪ ᮞᮩᮞᮤ ᮊᮔ᮪ᮓᮥ", 											// Sundanese
 		"ᯀᯩᯖ᯲ᯔ ᯂᯞᯒ ᯊᯭᯉᯮ ᯂᯪᯒᯖᯮ ᯘᯮ", 								// Batak
 		"ᰗᰱᰠ ᰛᰥᰧ ᰛᰣᰵ ᰔᰠᰯ", 											// Lepcha
