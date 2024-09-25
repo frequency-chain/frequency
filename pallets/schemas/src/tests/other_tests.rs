@@ -1098,8 +1098,8 @@ fn genesis_config_build_genesis_schemas() {
 		System::set_block_number(1);
 		let res = CurrentSchemaIdentifierMaximum::<Test>::get();
 
-		// We should have at least 10
-		assert!(res >= 10);
+		// Should be set to 16_000
+		assert!(res == 16_000);
 
 		// Check that the first schema exists
 		let res = SchemasPallet::get_schema_by_id(1);
