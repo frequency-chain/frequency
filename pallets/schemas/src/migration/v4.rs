@@ -1,9 +1,9 @@
+#[cfg(feature = "try-runtime")]
+use crate::types::SCHEMA_STORAGE_VERSION;
 use crate::{
 	pallet::{SchemaInfos, SchemaNameToIds},
 	Config, Pallet, SchemaId, SchemaName, LOG_TARGET,
 };
-#[cfg(feature = "try-runtime")]
-use crate::{types::SCHEMA_STORAGE_VERSION, SchemaVersionId};
 use common_primitives::utils::{get_chain_type_by_genesis_hash, DetectedChainType};
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -71,7 +71,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 		assert_eq!(onchain_version, SCHEMA_STORAGE_VERSION);
 		// check to ensure updates took place
 		let known_schemas = get_known_schemas::<T>();
-		for (schema_id, (schema_name, should_clear)) in known_schemas.into_iter() {
+		for (schema_id, (schema_name, _should_clear)) in known_schemas.into_iter() {
 			// safe to use unwrap since only used in try_runtime
 			let bounded = BoundedVec::try_from(schema_name).unwrap();
 			let parsed_name = SchemaName::try_parse::<T>(bounded, true).unwrap();
@@ -81,9 +81,8 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 			// Just check that it contains the correct value, not position anymore
 			assert!(
 				current_versions.ids.iter().any(|&id| id == schema_id),
-				"Current versions does not contain schema_id {} for name {:?}",
-				schema_id,
-				parsed_name
+				"Current versions does not contain schema_id {}",
+				schema_id
 			);
 		}
 		log::info!(target: LOG_TARGET, "Finished post_upgrade");
