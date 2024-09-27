@@ -1,9 +1,9 @@
+#[cfg(feature = "try-runtime")]
+use crate::types::SCHEMA_STORAGE_VERSION;
 use crate::{
 	pallet::{SchemaInfos, SchemaNameToIds},
 	Config, Pallet, SchemaId, SchemaName, LOG_TARGET,
 };
-#[cfg(feature = "try-runtime")]
-use crate::{types::SCHEMA_STORAGE_VERSION, SchemaVersionId};
 use common_primitives::utils::{get_chain_type_by_genesis_hash, DetectedChainType};
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -14,7 +14,7 @@ use sp_runtime::TryRuntimeError;
 use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 /// get known schema names for mainnet
-pub fn get_known_schemas<T: Config>() -> BTreeMap<SchemaId, Vec<u8>> {
+pub fn get_known_schemas<T: Config>() -> BTreeMap<SchemaId, (Vec<u8>, bool)> {
 	let genesis_block: BlockNumberFor<T> = 0u32.into();
 	let genesis = <frame_system::Pallet<T>>::block_hash(genesis_block);
 
@@ -22,13 +22,15 @@ pub fn get_known_schemas<T: Config>() -> BTreeMap<SchemaId, Vec<u8>> {
 		get_chain_type_by_genesis_hash(&genesis.encode()[..])
 	{
 		// only return what needs to change which for this case is only on mainnet
+		// (schema_id, name, clear prior versions)
 		BTreeMap::from([
-			(5, b"dsnp.update".to_vec()),
-			(6, b"dsnp.profile".to_vec()),
-			(7, b"dsnp.public-key-key-agreement".to_vec()),
-			(8, b"dsnp.public-follows".to_vec()),
-			(9, b"dsnp.private-follows".to_vec()),
-			(10, b"dsnp.private-connections".to_vec()),
+			(5, (b"dsnp.update".to_vec(), true)),
+			(19, (b"dsnp.update".to_vec(), false)),
+			(6, (b"dsnp.profile".to_vec(), true)),
+			(7, (b"dsnp.public-key-key-agreement".to_vec(), false)),
+			(8, (b"dsnp.public-follows".to_vec(), false)),
+			(9, (b"dsnp.private-follows".to_vec(), false)),
+			(10, (b"dsnp.private-connections".to_vec(), false)),
 		])
 	} else {
 		BTreeMap::new()
@@ -69,19 +71,17 @@ impl<T: Config> OnRuntimeUpgrade for MigrateToV4<T> {
 		assert_eq!(onchain_version, SCHEMA_STORAGE_VERSION);
 		// check to ensure updates took place
 		let known_schemas = get_known_schemas::<T>();
-		for (schema_id, schema_name) in known_schemas.into_iter() {
+		for (schema_id, (schema_name, _should_clear)) in known_schemas.into_iter() {
 			// safe to use unwrap since only used in try_runtime
 			let bounded = BoundedVec::try_from(schema_name).unwrap();
 			let parsed_name = SchemaName::try_parse::<T>(bounded, true).unwrap();
 			let current_versions =
 				SchemaNameToIds::<T>::get(parsed_name.namespace, parsed_name.descriptor);
 
-			let mut expected = SchemaVersionId::default();
-			let _ = expected.add::<T>(schema_id);
-
-			assert_eq!(
-				current_versions, expected,
-				"Expected versions did not match for {}",
+			// Just check that it contains the correct value, not position anymore
+			assert!(
+				current_versions.ids.iter().any(|&id| id == schema_id),
+				"Current versions does not contain schema_id {}",
 				schema_id
 			);
 		}
@@ -104,7 +104,7 @@ pub fn migrate_to_v4<T: Config>() -> Weight {
 		let mut writes = 0u64;
 		let mut bytes = 0u64;
 
-		for (schema_id, schema_name) in known_schemas.iter() {
+		for (schema_id, (schema_name, should_clear)) in known_schemas.iter() {
 			reads.saturating_inc();
 
 			if let Some(mut schema) = SchemaInfos::<T>::get(&schema_id) {
@@ -122,7 +122,9 @@ pub fn migrate_to_v4<T: Config>() -> Weight {
 										.saturating_add(schema_version_id.encode().len() as u64);
 
 									// clear the old/wrong one in case they exist
-									schema_version_id.ids.clear();
+									if *should_clear {
+										schema_version_id.ids.clear();
+									}
 									let _ = schema_version_id.add::<T>(*schema_id);
 
 									// set schema as having a name
