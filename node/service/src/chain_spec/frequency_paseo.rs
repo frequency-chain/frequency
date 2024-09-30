@@ -54,6 +54,6 @@ pub fn local_paseo_testnet_config() -> ChainSpec {
 	.with_protocol_id("frequency-paseo-local")
 	.with_properties(properties)
 	.with_chain_type(ChainType::Local)
-	.with_genesis_config_preset_name("frequency-local")
+	.with_genesis_config_preset_name("frequency-testnet")
 	.build()
 }
