@@ -27,9 +27,9 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
+common-runtime = { path = "../../runtime/common", default-features = false }
 
 [dev-dependencies]
-common-runtime = { path = "../../runtime/common", default-features = false }
 env_logger = { workspace = true }
 pretty_assertions = { workspace = true }
 sp-keystore = { workspace = true }

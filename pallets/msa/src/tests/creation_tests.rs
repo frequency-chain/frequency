@@ -276,3 +276,45 @@ fn it_does_not_allow_duplicate_keys() {
 		assert_eq!(CurrentMsaIdentifierMaximum::<Test>::get(), 1);
 	});
 }
+
+#[test]
+fn verify_signature_with_wrapped_bytes() {
+	new_test_ext().execute_with(|| {
+		let provider_msa = 1;
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+
+		let expiration: BlockNumber = 10;
+
+		let add_provider_payload = AddProvider::new(provider_msa, None, expiration);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+
+		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
+
+		assert!(Msa::verify_signature(
+			&signature,
+			&key_pair_delegator.public().into(),
+			add_provider_payload.encode()
+		));
+	});
+}
+
+#[test]
+fn verify_signature_without_wrapped_bytes() {
+	new_test_ext().execute_with(|| {
+		let provider_msa = 1;
+		let (key_pair_delegator, _) = sr25519::Pair::generate();
+
+		let expiration: BlockNumber = 10;
+
+		let add_provider_payload = AddProvider::new(provider_msa, None, expiration);
+
+		let signature: MultiSignature =
+			key_pair_delegator.sign(&add_provider_payload.encode()).into();
+
+		assert!(Msa::verify_signature(
+			&signature,
+			&key_pair_delegator.public().into(),
+			add_provider_payload.encode()
+		));
+	});
+}

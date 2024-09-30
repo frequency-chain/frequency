@@ -46,14 +46,13 @@ use common_primitives::{
 	msa::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
-	node::Verify,
 	schema::{PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaSetting},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
 	},
-	utils::wrap_binary_data,
 };
+
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 pub use pallet::*;
@@ -687,10 +686,12 @@ impl<T: Config> Pallet<T> {
 		signer: &T::AccountId,
 		payload: Vec<u8>,
 	) -> DispatchResult {
-		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-		let wrapped_payload = wrap_binary_data(payload);
+		let key = T::ConvertIntoAccountId32::convert(signer.clone());
 
-		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+		ensure!(
+			common_runtime::signature::check_signature(signature, key, payload),
+			Error::<T>::InvalidSignature
+		);
 
 		Ok(())
 	}

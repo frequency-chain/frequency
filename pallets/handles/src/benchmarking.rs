@@ -3,6 +3,7 @@
 
 use super::*;
 use crate::Pallet as Handles;
+use common_primitives::utils::wrap_binary_data;
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;

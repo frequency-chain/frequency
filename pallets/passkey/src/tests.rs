@@ -1,6 +1,7 @@
 //! Unit tests for the passkey module.
 use super::*;
 use crate::mock::Passkey;
+use common_primitives::utils::wrap_binary_data;
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::RawOrigin};
 use frame_system::{limits::BlockLength, Call as SystemCall};
 use mock::*;

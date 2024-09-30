@@ -4,6 +4,7 @@ use crate::{types::ItemAction, Pallet as StatefulStoragePallet};
 use common_primitives::{
 	schema::{ModelType, PayloadLocation},
 	stateful_storage::{PageHash, PageId},
+	utils::wrap_binary_data,
 };
 use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::assert_ok;
