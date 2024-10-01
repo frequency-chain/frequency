@@ -16,11 +16,14 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-hex-literal = { workspace = true, optional = true }
+hex = { workspace = true, default-features = false }
+hex-literal = { workspace = true }
 log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 serde = { workspace = true, optional = true, features = ["derive"] }
+serde_json = { workspace = true, optional = true, features = ["alloc"] }
+
 smallvec = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -150,6 +153,7 @@ std = [
   "polkadot-runtime-common/std",
   "scale-info/std",
   "serde/std",
+  "serde_json/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
@@ -177,7 +181,6 @@ runtime-benchmarks = [
   "frame-system-benchmarking",
   "frame-system-benchmarking/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
-  "hex-literal",
   "pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",

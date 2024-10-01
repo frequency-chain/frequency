@@ -149,11 +149,32 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<sp_genesis_builder::PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+			get_preset::<RuntimeGenesisConfig>(id,  &crate::genesis::presets::get_preset)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			Default::default()
+			let mut presets = vec![];
+
+			#[cfg(any(
+				feature = "frequency-no-relay",
+				feature = "frequency-local",
+				feature = "frequency-lint-check"
+			))]
+			presets.extend(
+			vec![
+				sp_genesis_builder::PresetId::from("development"),
+				sp_genesis_builder::PresetId::from("frequency-local"),
+				sp_genesis_builder::PresetId::from("frequency"),
+			]);
+
+
+			#[cfg(feature = "frequency-testnet")]
+			presets.push(sp_genesis_builder::PresetId::from("frequency-testnet"));
+
+			#[cfg(feature = "frequency")]
+			presets.push(sp_genesis_builder::PresetId::from("frequency"));
+
+			presets
 		}
 	}
 
