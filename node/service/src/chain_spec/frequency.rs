@@ -17,6 +17,28 @@ pub fn load_frequency_spec() -> ChainSpec {
 }
 
 #[allow(clippy::unwrap_used)]
+fn frequency_genesis_config() -> serde_json::Value {
+	let mut output: serde_json::Value =
+		serde_json::from_slice(include_bytes!("../../../../resources/frequency.json").as_slice())
+			.map_err(|e| format!("Invalid JSON blob {:?}", e))
+			.unwrap();
+
+	if let Some(runtime) = output["genesis"]["runtime"].as_object_mut() {
+		runtime.remove("vesting");
+		runtime["parachainSystem"] = serde_json::json!({});
+		runtime["treasury"] = serde_json::json!({});
+		runtime["auraExt"] = serde_json::json!({});
+	}
+
+	if let Some(system) = output["genesis"]["runtime"]["system"].as_object_mut() {
+		system.remove("code");
+	}
+
+	let runtime = &output["genesis"]["runtime"];
+	runtime.clone()
+}
+
+#[allow(clippy::unwrap_used)]
 pub fn benchmark_mainnet_config() -> ChainSpec {
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
@@ -38,6 +60,6 @@ pub fn benchmark_mainnet_config() -> ChainSpec {
 		"/dns4/0.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWBd4aEArNvXECtt2JHQACBdFmeafpyfre3q81iM1xCcpP".parse().unwrap(),
 		"/dns4/1.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
 	])
-	.with_genesis_config_preset_name("frequency")
+	.with_genesis_config_patch(frequency_genesis_config())
 	.build()
 }
