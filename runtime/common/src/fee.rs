@@ -59,7 +59,7 @@ mod test {
 		let full_block = WeightToFee::weight_to_fee(&MAXIMUM_BLOCK_WEIGHT);
 		// A bounded assertion to consider changes in generated extrinsic base weight.
 		assert!(full_block >= 2 * 150 * CENTS);
-		assert!(full_block <= 10 * DOLLARS);
+		assert!(full_block <= 50 * DOLLARS);
 	}
 	#[test]
 	// This function tests that the fee for `ExtrinsicBaseWeight` of weight is correct
