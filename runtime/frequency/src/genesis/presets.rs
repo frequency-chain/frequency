@@ -61,13 +61,26 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 
 #[allow(clippy::unwrap_used)]
 fn frequency_genesis_config() -> serde_json::Value {
-	let output: serde_json::Value =
+	let mut output: serde_json::Value =
 		serde_json::from_slice(include_bytes!("../../../../resources/frequency.json").as_slice())
 			.map_err(|e| format!("Invalid JSON blob {:?}", e))
 			.unwrap();
 
-	let runtime = &output["genesis"]["runtime"];
-	runtime.clone()
+	#[cfg(feature = "runtime-benchmarks")]
+	{
+		if let Some(runtime) = output["genesis"]["runtime"].as_object_mut() {
+			runtime.remove("vesting");
+			runtime["parachainSystem"] = serde_json::json!({});
+			runtime["treasury"] = serde_json::json!({});
+			runtime["auraExt"] = serde_json::json!({});
+		}
+
+		if let Some(system) = output["genesis"]["runtime"]["system"].as_object_mut() {
+			system.remove("code");
+		}
+	}
+
+	output["genesis"]["runtime"].clone()
 }
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
