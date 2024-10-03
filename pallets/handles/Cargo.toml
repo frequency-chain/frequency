@@ -28,8 +28,9 @@ sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 handles-utils = { default-features = false, path = "src/handles-utils" }
-[dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
+
+[dev-dependencies]
 env_logger = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }

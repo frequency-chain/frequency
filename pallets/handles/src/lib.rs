@@ -50,20 +50,18 @@ use common_primitives::benchmarks::MsaBenchmarkHelper;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
-	utils::wrap_binary_data,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
 use numtoa::*;
 pub use pallet::*;
 use sp_core::crypto::AccountId32;
-use sp_runtime::{
-	traits::{Convert, Verify},
-	DispatchError, MultiSignature,
-};
+use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 use sp_std::{prelude::*, vec::Vec};
 
 pub mod handles_signed_extension;
+
+use common_runtime::signature::check_signature;
 
 pub mod weights;
 pub use weights::*;
@@ -285,10 +283,9 @@ pub mod pallet {
 			signer: &T::AccountId,
 			payload: Vec<u8>,
 		) -> DispatchResult {
-			let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-			let wrapped_payload = wrap_binary_data(payload);
+			let key = T::ConvertIntoAccountId32::convert(signer.clone());
 
-			ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
+			ensure!(check_signature(signature, key, payload), Error::<T>::InvalidSignature);
 
 			Ok(())
 		}

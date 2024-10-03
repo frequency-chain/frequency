@@ -10,6 +10,7 @@ use crate::{
 	},
 	types::*,
 };
+use common_primitives::utils::wrap_binary_data;
 use frame_benchmarking::benchmarks;
 use frame_support::assert_ok;
 use sp_core::{crypto::KeyTypeId, Encode};

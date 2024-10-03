@@ -30,9 +30,9 @@ common-primitives = { default-features = false, path = "../../common/primitives"
 serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true, features = ["alloc"] }
 hex = { workspace = true, default-features = false, features = ["alloc"] }
+common-runtime = { path = "../../runtime/common", default-features = false }
 
 [dev-dependencies]
-common-runtime = { path = "../../runtime/common", default-features = false }
 pallet-schemas = { path = "../schemas", default-features = false }
 pallet-handles = { path = "../handles", default-features = false }
 pallet-collective = { workspace = true }

@@ -16,8 +16,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-use common_primitives::utils::wrap_binary_data;
-use common_runtime::extensions::check_nonce::CheckNonce;
+use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
@@ -27,7 +26,7 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
 	generic::Era,
-	traits::{Convert, Dispatchable, SignedExtension, Verify, Zero},
+	traits::{Convert, Dispatchable, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
@@ -315,14 +314,12 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		signature: &MultiSignature,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-		let signed_payload: Vec<u8> = wrap_binary_data(signed_data.clone().into());
 
-		let verified = signature.verify(&signed_payload[..], &key);
-		if verified {
-			Ok(())
-		} else {
-			Err(Error::<T>::InvalidAccountSignature.into())
+		if !check_signature(signature, key, signed_data.clone()) {
+			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
+
+		Ok(())
 	}
 }
 

@@ -39,6 +39,8 @@ use frame_support::{
 };
 use parity_scale_codec::{Decode, Encode};
 
+use common_runtime::signature::check_signature;
+
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
@@ -57,9 +59,7 @@ use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
-	traits::{
-		BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Verify, Zero,
-	},
+	traits::{BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Zero},
 	ArithmeticError, DispatchError, MultiSignature,
 };
 use sp_std::{prelude::*, vec};
@@ -461,7 +461,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())?;
+			ensure!(
+				Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode()),
+				Error::<T>::InvalidSignature
+			);
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 
@@ -551,9 +554,10 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 
-			// delegator must have signed the payload.
-			Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode())
-				.map_err(|_| Error::<T>::AddProviderSignatureVerificationFailed)?;
+			ensure!(
+				Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode()),
+				Error::<T>::AddProviderSignatureVerificationFailed
+			);
 
 			Self::register_signature(&proof, add_provider_payload.expiration.into())?;
 			let (provider_id, delegator_id) =
@@ -647,19 +651,23 @@ pub mod pallet {
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
 
-			Self::verify_signature(
-				&msa_owner_proof,
-				&msa_owner_public_key,
-				add_key_payload.encode(),
-			)
-			.map_err(|_| Error::<T>::MsaOwnershipInvalidSignature)?;
+			ensure!(
+				Self::verify_signature(
+					&msa_owner_proof,
+					&msa_owner_public_key,
+					add_key_payload.encode()
+				),
+				Error::<T>::MsaOwnershipInvalidSignature
+			);
 
-			Self::verify_signature(
-				&new_key_owner_proof,
-				&add_key_payload.new_public_key.clone(),
-				add_key_payload.encode(),
-			)
-			.map_err(|_| Error::<T>::NewKeyOwnershipInvalidSignature)?;
+			ensure!(
+				Self::verify_signature(
+					&new_key_owner_proof,
+					&add_key_payload.new_public_key,
+					add_key_payload.encode()
+				),
+				Error::<T>::NewKeyOwnershipInvalidSignature
+			);
 
 			Self::register_signature(&msa_owner_proof, add_key_payload.expiration)?;
 			Self::register_signature(&new_key_owner_proof, add_key_payload.expiration)?;
@@ -1095,13 +1103,10 @@ impl<T: Config> Pallet<T> {
 		signature: &MultiSignature,
 		signer: &T::AccountId,
 		payload: Vec<u8>,
-	) -> DispatchResult {
+	) -> bool {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-		let wrapped_payload = wrap_binary_data(payload);
 
-		ensure!(signature.verify(&wrapped_payload[..], &key), Error::<T>::InvalidSignature);
-
-		Ok(())
+		check_signature(signature, key, payload)
 	}
 
 	/// Add a provider to a delegator with the default permissions
