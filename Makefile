@@ -167,7 +167,7 @@ benchmarks-pallet_proxy-local
 
 .PHONY: benchmarks
 benchmarks:
-	./scripts/run_benchmarks.sh
+	sh -x ./scripts/run_benchmarks.sh
 
 #
 # Target to run benchmarks for local development. Uses the "bench-dev" profile,
