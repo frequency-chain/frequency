@@ -411,7 +411,8 @@ jobs:
       - name: Output Metadata
         run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
-        run: npm run build
+        run: | 
+          npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
         uses: actions/upload-artifact@v4
@@ -718,6 +719,12 @@ jobs:
           pattern: artifacts-*-${{github.run_id}}
           path: /tmp
           merge-multiple: true
+      - name: Download api-augment artifacts
+        id: download-js
+        uses: actions/download-artifact@v4
+        with:
+          name: js-api-augment-${{github.run_id}}/js/api-augment/json
+          path: /tmp/polkadot-api-types-json
       - name: List Downloaded Artifacts
         working-directory: /tmp
         run: |
