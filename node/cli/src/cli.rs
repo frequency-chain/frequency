@@ -93,7 +93,7 @@ pub struct Cli {
 
 	/// Interval in seconds for interval sealing.
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long, help = "The interval in seconds", default_value = "12", value_name = "SECONDS")]
+	#[clap(long, help = "The interval in seconds", default_value = "6", value_name = "SECONDS")]
 	pub sealing_interval: NonZeroU16,
 
 	/// Whether to create empty blocks in manual and interval sealing modes.

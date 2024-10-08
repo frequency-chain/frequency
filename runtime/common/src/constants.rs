@@ -25,7 +25,7 @@ pub type MaxSchemaGrants = ConstU32<30>;
 /// up by `pallet_aura` to implement `fn slot_duration()`.
 ///
 /// Change this to adjust the block time.
-pub const MILLISECS_PER_BLOCK: u64 = prod_or_testnet_or_local!(12_000, 6_000, 6_000);
+pub const MILLISECS_PER_BLOCK: u64 = 6_000;
 
 // NOTE: Currently it is not possible to change the slot duration after the chain has started.
 //       Attempting to do so will brick block production.
@@ -64,13 +64,6 @@ pub const AVERAGE_ON_INITIALIZE_RATIO: Perbill = Perbill::from_percent(5);
 /// `Operational` extrinsics.
 pub const NORMAL_DISPATCH_RATIO: Perbill = Perbill::from_percent(75);
 
-#[cfg(not(any(feature = "frequency-testnet", feature = "frequency-local")))]
-/// We allow for 0.5 of a second of compute with a 12 second average block time.
-pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(WEIGHT_REF_TIME_PER_SECOND, 0)
-	.saturating_div(2)
-	.set_proof_size(cumulus_primitives_core::relay_chain::MAX_POV_SIZE as u64);
-
-#[cfg(any(feature = "frequency-testnet", feature = "frequency-local"))]
 /// We allow for 2 seconds of compute with a 6 second average block time.
 pub const MAXIMUM_BLOCK_WEIGHT: Weight = Weight::from_parts(
 	WEIGHT_REF_TIME_PER_SECOND.saturating_mul(2),
@@ -92,7 +85,7 @@ pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
 /// The maximum size of the provider name (in bytes)
 pub type MsaMaxProviderNameSize = ConstU32<16>;
 /// The number of blocks per virtual bucket
-pub type MSAMortalityWindowSize = ConstU32<100>;
+pub type MSAMortalityWindowSize = ConstU32<{ 20 * MINUTES }>;
 /// The upper limit on total stored signatures.
 /// Set to an average of 50 signatures per block
 pub type MSAMaxSignaturesStored = ConstU32<50_000>;
@@ -135,13 +128,8 @@ pub type MinReleaseTransfer = ConstU128<0>;
 pub const MAX_RELEASE_SCHEDULES: u32 = 50;
 // -end- TimeRelease Pallet ---
 
-#[cfg(any(feature = "frequency-testnet", feature = "frequency-local"))]
 // --- Timestamp Pallet ---
 pub type MinimumPeriod = ConstU64<0>;
-
-#[cfg(not(any(feature = "frequency-testnet", feature = "frequency-local")))]
-// --- Timestamp Pallet ---
-pub type MinimumPeriod = ConstU64<{ SLOT_DURATION / 2 }>;
 // -end- Timestamp Pallet ---
 
 // --- Authorship Pallet ---
@@ -349,8 +337,8 @@ parameter_types! {
 pub type MaxPaginatedPageId = ConstU16<32>;
 /// The maximum number of actions in itemized actions
 pub type MaxItemizedActionsCount = ConstU32<5>;
-/// The number of blocks for Stateful mortality is 24 hours
-pub type StatefulMortalityWindowSize = ConstU32<14400>;
+/// The number of blocks for Stateful mortality is 48 hours
+pub type StatefulMortalityWindowSize = ConstU32<{ 2 * DAYS }>;
 // -end- Stateful Storage Pallet
 
 impl Default for MaxItemizedPageSizeBytes {
@@ -397,7 +385,7 @@ impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
-pub type CapacityMaxEpochLength = ConstU32<7_200>; // one day, assuming 12 second blocks.
+pub type CapacityMaxEpochLength = ConstU32<{ 2 * DAYS }>; // Two days, assuming 6 second blocks.
 
 #[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]
 pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days given the above

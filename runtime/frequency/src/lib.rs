@@ -60,7 +60,7 @@ use frame_support::{
 		fungible::HoldConsideration,
 		tokens::{PayFromAccount, UnityAssetBalanceConversion},
 		ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, EqualPrivilegeOnly,
-		InstanceFilter, LinearStoragePrice,
+		GetStorageVersion, InstanceFilter, LinearStoragePrice, OnRuntimeUpgrade,
 	},
 	weights::{ConstantMultiplier, Weight},
 	Twox128,
@@ -102,8 +102,6 @@ use common_primitives::{
 	stateful_storage::{PageHash, PageId},
 };
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
-#[cfg(feature = "try-runtime")]
-use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 use sp_runtime::{
 	traits::{DispatchInfoOf, SignedExtension},
 	transaction_validity::{
@@ -337,8 +335,27 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(pallet_schemas::migration::v4::MigrateToV4<Runtime>,),
+	(MigratePalletsCurrentStorage<Runtime>, pallet_capacity::migration::v4::MigrationToV4<Runtime>),
 >;
+
+pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+
+impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T> {
+	fn on_runtime_upgrade() -> Weight {
+		use sp_core::Get;
+
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
+			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
+		{
+			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
+				.put::<pallet_collator_selection::Pallet<T>>();
+
+			log::info!("Setting version on pallet_collator_selection");
+		}
+
+		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
 
 pub mod apis;
 
@@ -377,7 +394,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 119,
+	spec_version: 120,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -391,7 +408,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 119,
+	spec_version: 120,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -964,16 +981,9 @@ impl pallet_passkey::Config for Runtime {
 	type Currency = Balances;
 }
 
-#[cfg(any(
-	feature = "frequency",
-	feature = "runtime-benchmarks",
-	feature = "frequency-lint-check",
-))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 /// Maximum number of blocks simultaneously accepted by the Runtime, not yet included
 /// into the relay chain.
-const UNINCLUDED_SEGMENT_CAPACITY: u32 = 1;
-
-#[cfg(any(feature = "frequency-testnet", feature = "frequency-local"))]
 const UNINCLUDED_SEGMENT_CAPACITY: u32 = 3;
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -1035,7 +1045,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type DisabledValidators = ();
 	type MaxAuthorities = AuraMaxAuthorities;
-	type AllowMultipleBlocksPerSlot = ConstBool<{ prod_or_testnet_or_local!(false, true, true) }>;
+	type AllowMultipleBlocksPerSlot = ConstBool<true>;
 	type SlotDuration = ConstU64<SLOT_DURATION>;
 }
 

@@ -136,7 +136,7 @@ start-frequency-instant)
   ;;
 
 start-frequency-interval)
-  defaultInterval=12
+  defaultInterval=6
   interval=${3-$defaultInterval}
   printf "\nBuilding Frequency without relay.  Running with interval sealing with interval of $interval seconds...\n"
   cargo build --features frequency-no-relay
