@@ -411,8 +411,7 @@ jobs:
       - name: Output Metadata
         run: ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}} export-metadata --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
-        run: | 
-          npm run build
+        run: npm run build
         working-directory: js/api-augment
       - name: Upload Dist Dir
         uses: actions/upload-artifact@v4
