@@ -610,8 +610,6 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
   }
 }
 
-export const BoostAdjustment = 20n;  // divide by 20 or 5% of Maximum Capacity
-
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
   return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
 }

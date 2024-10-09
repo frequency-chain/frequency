@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
 	BalanceOf, CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason,
-	StakingAccountLedger, StakingDetails, StakingTargetLedger,
+	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
 };
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};

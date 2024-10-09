@@ -1,6 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	Config, CurrentEraProviderBoostTotal, Error, Event, FreezeReason, StakingDetails, StakingType,
+	CapacityLedger, Config, CurrentEraProviderBoostTotal, Error, Event, FreezeReason,
+	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
@@ -17,14 +18,14 @@ fn provider_boost_works() {
 
 		// Check that StakingAccountLedger is updated.
 		let boost_account: StakingDetails<Test> =
-			Capacity::get_staking_account_for(account).unwrap();
+			StakingAccountLedger::<Test>::get(account).unwrap();
 
 		// Check that the staking account has the correct staking type.
 		assert_eq!(boost_account.active, 200);
 		assert_eq!(boost_account.staking_type, StakingType::ProviderBoost);
 
 		// Check that the capacity generated is correct. (5% of amount staked, since 10% is what's in the mock)
-		let capacity_details = Capacity::get_capacity_for(target).unwrap();
+		let capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 		assert_eq!(capacity_details.total_capacity_issued, capacity);
 
 		let events = capacity_events();
@@ -41,7 +42,7 @@ fn provider_boost_works() {
 			200u64
 		);
 
-		let target_details = Capacity::get_target_for(account, target).unwrap();
+		let target_details = StakingTargetLedger::<Test>::get(account, target).unwrap();
 		assert_eq!(target_details.amount, amount);
 	});
 }
@@ -72,7 +73,7 @@ fn provider_boost_updates_staking_details() {
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 		let boost_details: StakingDetails<Test> =
-			Capacity::get_staking_account_for(account).unwrap();
+			StakingAccountLedger::<Test>::get(account).unwrap();
 		assert_eq!(boost_details.active, 500);
 	})
 }
