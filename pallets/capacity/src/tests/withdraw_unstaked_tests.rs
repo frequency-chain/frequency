@@ -89,7 +89,6 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 		// wait for thaw
 		run_to_block(21);
 		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
-		assert_eq!(<Test as Config>::Currency::balance_frozen(&FreezeReason::CapacityStaking.into(),&staker),
 
 		assert_eq!(
 			<Test as Config>::Currency::balance_frozen(
@@ -98,8 +97,9 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 			),
 			0u64
 		);
-		assert!(Capacity::get_unstake_unlocking_for(&staker).is_none());
-	})
+
+		assert!(UnstakeUnlocks::<Test>::get(&staker).is_none());
+	});
 }
 
 #[test]

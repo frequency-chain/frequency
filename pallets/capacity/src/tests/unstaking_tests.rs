@@ -1,8 +1,10 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, CapacityLedger, FreezeReason, StakingAccountLedger, StakingDetails,
-	StakingTargetDetails, StakingTargetLedger, StakingType, UnlockChunk, UnstakeUnlocks,
+	CapacityDetails, CapacityLedger, CurrentEraProviderBoostTotal, FreezeReason,
+	ProviderBoostHistories, ProviderBoostHistory, StakingAccountLedger, StakingDetails,
+	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::ProviderBoost,
+	UnlockChunk, UnstakeUnlocks,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{

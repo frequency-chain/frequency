@@ -22,13 +22,13 @@ fn assert_capacity_details(
 		total_capacity_issued,
 		last_replenished_epoch: 0,
 	};
-	let from_capacity_details: TestCapacityDetails = Capacity::get_capacity_for(msa_id).unwrap();
+	let from_capacity_details: TestCapacityDetails = CapacityLedger::<Test>::get(msa_id).unwrap();
 	assert_eq!(from_capacity_details, expected_from_details);
 }
 
 fn assert_target_details(staker: u64, msa_id: MessageSourceId, amount: u64, capacity: u64) {
 	let expected_from_target_details: TestTargetDetails = StakingTargetDetails { amount, capacity };
-	let from_target_details = Capacity::get_target_for(staker, msa_id).unwrap();
+	let from_target_details = StakingTargetLedger::<Test>::get(staker, msa_id).unwrap();
 	assert_eq!(from_target_details, expected_from_target_details);
 }
 
@@ -114,7 +114,7 @@ fn assert_total_capacity(msas: Vec<MessageSourceId>, total: u64) {
 	let sum = msas
 		.into_iter()
 		.map(|a| {
-			let capacity_details: TestCapacityDetails = Capacity::get_capacity_for(a).unwrap();
+			let capacity_details: TestCapacityDetails = CapacityLedger::<Test>::get(a).unwrap();
 			capacity_details.total_capacity_issued
 		})
 		.fold(0, |a, b| a + b);
@@ -188,7 +188,7 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 			last_replenished_epoch: 0,
 		};
 		let from_capacity_details: TestCapacityDetails =
-			Capacity::get_capacity_for(from_msa).unwrap();
+			CapacityLedger::<Test>::get(from_msa).unwrap();
 		assert_eq!(from_capacity_details, expected_from_details);
 
 		let expected_to_details: TestCapacityDetails = CapacityDetails {
@@ -198,17 +198,17 @@ fn do_retarget_deletes_staking_target_details_if_zero_balance() {
 			last_replenished_epoch: 0,
 		};
 
-		let to_capacity_details = Capacity::get_capacity_for(to_msa).unwrap();
+		let to_capacity_details = CapacityLedger::<Test>::get(to_msa).unwrap();
 		assert_eq!(to_capacity_details, expected_to_details);
 
-		assert!(Capacity::get_target_for(staker, from_msa).is_none());
+		assert!(StakingTargetLedger::<Test>::get(staker, from_msa).is_none());
 
 		let expected_to_target_details: TestTargetDetails =
 			StakingTargetDetails { amount: 2 * amount, capacity: 2 };
-		let to_target_details = Capacity::get_target_for(staker, to_msa).unwrap();
+		let to_target_details = StakingTargetLedger::<Test>::get(staker, to_msa).unwrap();
 		assert_eq!(to_target_details, expected_to_target_details);
 
-		assert!(Capacity::get_target_for(staker, from_msa).is_none());
+		assert!(StakingTargetLedger::<Test>::get(staker, from_msa).is_none());
 	})
 }
 
