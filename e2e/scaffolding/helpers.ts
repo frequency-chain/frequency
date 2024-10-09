@@ -50,8 +50,7 @@ export interface Sr25519Signature {
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
-export const BoostAdjustment = 2n;  // divide by 2 or 50% of Maximum Capacity
-
+export const BOOST_ADJUSTMENT = 2n; // divide by 2 or 50% of Maximum Capacity
 
 export function getTokenPerCapacity(): bigint {
   // Perbil
@@ -460,7 +459,7 @@ export async function boostProvider(
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 
-    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BoostAdjustment;
+    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BOOST_ADJUSTMENT;
 
     assert.equal(
       stakedCapacity,
@@ -513,7 +512,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
       'OnChain',
       [],
       'test.graphChangeSchema'
-    )
+    );
     const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
@@ -613,8 +612,6 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
     }
   }
 }
-
-export const BoostAdjustment = 20n;  // divide by 20 or 5% of Maximum Capacity
 
 export async function getCapacity(providerId: u64): Promise<PalletCapacityCapacityDetails> {
   return (await ExtrinsicHelper.apiPromise.query.capacity.capacityLedger(providerId)).unwrap();
