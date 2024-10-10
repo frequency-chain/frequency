@@ -59,6 +59,7 @@ sp-core = { workspace = true }
 sp-inherents = { workspace = true }
 sp-io = { workspace = true }
 sp-genesis-builder = { workspace = true }
+static_assertions = { workspace = true }
 
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
@@ -72,6 +73,7 @@ pallet-time-release = { path = "../../pallets/time-release", default-features = 
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }
 pallet-capacity = { path = "../../pallets/capacity", default-features = false }
+pallet-capacity-runtime-api = { path="../../pallets/capacity/src/runtime-api", default-features = false }
 pallet-frequency-tx-payment = { path = "../../pallets/frequency-tx-payment", default-features = false }
 pallet-frequency-tx-payment-runtime-api = { path = "../../pallets/frequency-tx-payment/src/runtime-api", default-features = false }
 pallet-messages = { path = "../../pallets/messages", default-features = false }
@@ -119,6 +121,7 @@ std = [
   "pallet-authorship/std",
   "pallet-balances/std",
   "pallet-capacity/std",
+  "pallet-capacity-runtime-api/std",
   "pallet-collator-selection/std",
   "pallet-collective/std",
   "pallet-democracy/std",

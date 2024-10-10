@@ -63,7 +63,7 @@ fn impl_can_replenish_is_false_when_last_replenished_at_is_greater_or_equal_curr
 
 		assert_eq!(Capacity::can_replenish(target_msa_id), false);
 
-		CurrentEpoch::<Test>::set(1u32.into());
+		CurrentEpoch::<Test>::set(1);
 
 		assert_eq!(Capacity::can_replenish(target_msa_id), false);
 	});
@@ -84,7 +84,7 @@ fn impl_can_replenish_is_true_when_last_replenished_at_is_less_than_current_epoc
 			last_replenished_at,
 		);
 
-		CurrentEpoch::<Test>::set(3u32.into());
+		CurrentEpoch::<Test>::set(3);
 
 		assert_eq!(Capacity::can_replenish(target_msa_id), true);
 	});
