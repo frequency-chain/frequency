@@ -50,7 +50,7 @@ export interface Sr25519Signature {
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
-export const BoostAdjustment = 2n;  // divide by 2 or 50% of Maximum Capacity
+export const BOOST_ADJUSTMENT = 2n;  // divide by 2 or 50% of Maximum Capacity
 
 
 export function getTokenPerCapacity(): bigint {
@@ -456,7 +456,7 @@ export async function boostProvider(
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 
-    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BoostAdjustment;
+    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BOOST_ADJUSTMENT;
 
     assert.equal(
       stakedCapacity,
