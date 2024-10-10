@@ -722,7 +722,7 @@ jobs:
         id: download-js
         uses: actions/download-artifact@v4
         with:
-          name: js-api-augment-${{github.run_id}}/js/api-augment/json
+          name: js-api-augment-${{github.run_id}}/json
           path: /tmp/polkadot-api-types-json
       - name: List Downloaded Artifacts
         working-directory: /tmp
