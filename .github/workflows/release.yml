@@ -769,6 +769,7 @@ jobs:
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
+            /tmp/polkadot-api-types-json/json/types.json
       - name: Publish Full Release on GitHub
         if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: softprops/action-gh-release@9d7c94cfd0a1f3ed45544c887983e9fa900f0564
