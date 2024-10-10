@@ -33,7 +33,7 @@ describe('Capacity: list_unclaimed_rewards', function () {
     assert.equal(result.length, 0, `result should have been empty but had ${result.length} items`);
   });
 
-  it.only('returns correct rewards after enough eras have passed', async function () {
+  it('returns correct rewards after enough eras have passed', async function () {
     // this will be too long if run against testnet
     if (isTestnet()) this.skip();
 
