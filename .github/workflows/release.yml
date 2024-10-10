@@ -722,7 +722,7 @@ jobs:
         id: download-js
         uses: actions/download-artifact@v4
         with:
-          name: js-api-augment-${{github.run_id}}/json
+          name: js-api-augment-${{github.run_id}}/
           path: /tmp/polkadot-api-types-json
       - name: List Downloaded Artifacts
         working-directory: /tmp
@@ -778,6 +778,7 @@ jobs:
           files: |
             /tmp/frequency*.*
             /tmp/metadata-compare-*
+            /tmp/polkadot-api-types-json/json/types.json
       - name: Get Latest Commit
         id: get-latest-commit
         run: |
