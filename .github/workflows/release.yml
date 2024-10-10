@@ -542,7 +542,7 @@ jobs:
             --name test-node \
             ubuntu:24.04 \
               /bin/sh -c "chmod +x /app/${{env.TEST_BIN_FILENAME}} && /app/${{env.TEST_BIN_FILENAME}} \
-              --chain=frequency-bench \
+              --chain=frequency \
               --rpc-external \
               --rpc-cors=all \
               --rpc-methods=Unsafe \
@@ -561,7 +561,7 @@ jobs:
             --name ref-node \
             ubuntu:24.04 \
               /bin/sh -c "chmod +x /app/${{env.REF_BIN_FILENAME}} && /app/${{env.REF_BIN_FILENAME}} \
-              --chain=frequency-bench \
+              --chain=frequency \
               --rpc-external \
               --rpc-cors=all \
               --rpc-methods=Unsafe \
