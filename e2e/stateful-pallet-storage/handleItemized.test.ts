@@ -180,10 +180,7 @@ describe('📗 Stateful Pallet Storage', function () {
         add_actions,
         0
       );
-      await assert.rejects(itemized_add_result_1.signAndSend('current'), {
-        name: 'RpcError',
-        message: /1010: Invalid Transaction: Custom error: 9/,
-      });
+      await assert.rejects(itemized_add_result_1.fundAndSend(fundingSource), { name: 'StalePageState' });
     });
   });
 
@@ -288,10 +285,7 @@ describe('📗 Stateful Pallet Storage', function () {
       };
       const remove_actions = [remove_action];
       const op = ExtrinsicHelper.applyItemActions(providerKeys, schemaId_deletable, msa_id, remove_actions, 0);
-      await assert.rejects(op.signAndSend('current'), {
-        name: 'RpcError',
-        message: /1010: Invalid Transaction: Custom error: 9/,
-      });
+      await assert.rejects(op.fundAndSend(fundingSource), { name: 'StalePageState' });
     });
   });
 

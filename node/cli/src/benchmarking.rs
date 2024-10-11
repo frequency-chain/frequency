@@ -13,7 +13,6 @@ use sp_core::{Encode, Pair};
 use sp_keyring::Sr25519Keyring;
 use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 
-use frequency_runtime::StaleHashCheckExtension;
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
 use sp_inherents::InherentDataProvider;
@@ -133,7 +132,6 @@ pub fn create_benchmark_extrinsic(
 		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
 		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
 		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
-		StaleHashCheckExtension,
 		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
 	);
@@ -146,7 +144,6 @@ pub fn create_benchmark_extrinsic(
 			(runtime::VERSION.spec_version, runtime::VERSION.transaction_version),
 			genesis_hash,
 			best_hash,
-			(),
 			(),
 			(),
 			(),
