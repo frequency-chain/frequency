@@ -31,7 +31,7 @@ use pallet_collective::Members;
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 use pallet_collective::ProposalCount;
 
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::Encode;
 
 use sp_std::prelude::*;
 #[cfg(feature = "std")]
@@ -53,8 +53,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
-	ensure,
-	pallet_prelude::{DispatchResultWithPostInfo, TypeInfo},
+	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
 	traits::{
 		fungible::HoldConsideration,
@@ -96,18 +95,7 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
-use common_primitives::{
-	msa::MessageSourceId,
-	schema::SchemaId,
-	stateful_storage::{PageHash, PageId},
-};
 use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
-use sp_runtime::{
-	traits::{DispatchInfoOf, SignedExtension},
-	transaction_validity::{
-		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransaction,
-	},
-};
 
 mod genesis;
 
@@ -311,7 +299,6 @@ pub type SignedExtra = (
 	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
 	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-	StaleHashCheckExtension,
 	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );
@@ -394,7 +381,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 120,
+	spec_version: 121,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -408,7 +395,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 120,
+	spec_version: 121,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -915,7 +902,6 @@ use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
-use pallet_utility::Call as UtilityCall;
 
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
@@ -1267,279 +1253,6 @@ construct_runtime!(
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 	}
 );
-
-/// The SignedExtension trait is implemented on StaleHashCheckExtension to validate the
-/// request. The purpose of this is to ensure that the target_hash is verified in transaction pool
-/// before getting into block. This is to reduce the chance of capacity consumption due to stale hash
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
-pub struct StaleHashCheckExtension;
-
-/// Extracted data type from transactions to verify target hash
-struct HashCheckData {
-	message_source_id: MessageSourceId,
-	schema_id: SchemaId,
-	page: Option<PageId>,
-	hash: PageHash,
-}
-
-impl HashCheckData {
-	fn new_itemized(
-		message_source_id: MessageSourceId,
-		schema_id: SchemaId,
-		hash: PageHash,
-	) -> Self {
-		Self { message_source_id, schema_id, page: None, hash }
-	}
-
-	fn new_paginated(
-		message_source_id: MessageSourceId,
-		schema_id: SchemaId,
-		page_id: PageId,
-		hash: PageHash,
-	) -> Self {
-		Self { message_source_id, schema_id, page: Some(page_id), hash }
-	}
-}
-
-impl sp_std::fmt::Debug for StaleHashCheckExtension {
-	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		write!(f, "StaleHashCheckExtension")
-	}
-	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
-		Ok(())
-	}
-}
-
-impl SignedExtension for StaleHashCheckExtension {
-	const IDENTIFIER: &'static str = "StaleHashCheckExtension";
-	type AccountId = AccountId;
-	type Call = RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
-
-	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
-		Ok(())
-	}
-
-	fn validate(
-		&self,
-		_who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> TransactionValidity {
-		let mut valid_tx = ValidTransaction::default();
-		for trx in Self::extract_hash_data(call) {
-			match trx.page {
-				Some(page_id) => {
-					let r = Self::verify_hash_paginated(
-						&trx.message_source_id,
-						&trx.schema_id,
-						&page_id,
-						&trx.hash,
-					);
-					valid_tx = valid_tx.combine_with(r?);
-				},
-				None => {
-					let r = Self::verify_hash_itemized(
-						&trx.message_source_id,
-						&trx.schema_id,
-						&trx.hash,
-					);
-					valid_tx = valid_tx.combine_with(r?);
-				},
-			}
-		}
-		Ok(valid_tx)
-	}
-
-	/// Pre dispatch hook. Called before extriniscs execution in the block.
-	fn pre_dispatch(
-		self,
-		_who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		// Since we already check the hash in stateful-storage-pallet extrinsics we do not need to
-		// check the hash before dispatching
-		Ok(())
-	}
-}
-impl StaleHashCheckExtension {
-	/// extracts the relevant data to check the hash
-	fn extract_hash_data(call: &RuntimeCall) -> Vec<HashCheckData> {
-		match call {
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions {
-				state_owner_msa_id,
-				schema_id,
-				target_hash,
-				..
-			}) => vec![HashCheckData::new_itemized(*state_owner_msa_id, *schema_id, *target_hash)],
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page {
-				state_owner_msa_id,
-				schema_id,
-				target_hash,
-				page_id,
-				..
-			}) |
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page {
-				state_owner_msa_id,
-				schema_id,
-				target_hash,
-				page_id,
-				..
-			}) => vec![HashCheckData::new_paginated(
-				*state_owner_msa_id,
-				*schema_id,
-				*page_id,
-				*target_hash,
-			)],
-			RuntimeCall::StatefulStorage(
-				StatefulStorageCall::apply_item_actions_with_signature { payload, .. },
-			) => vec![HashCheckData::new_itemized(
-				payload.msa_id,
-				payload.schema_id,
-				payload.target_hash,
-			)],
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature {
-				payload,
-				..
-			}) => vec![HashCheckData::new_paginated(
-				payload.msa_id,
-				payload.schema_id,
-				payload.page_id,
-				payload.target_hash,
-			)],
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature {
-				payload,
-				..
-			}) => vec![HashCheckData::new_paginated(
-				payload.msa_id,
-				payload.schema_id,
-				payload.page_id,
-				payload.target_hash,
-			)],
-			RuntimeCall::StatefulStorage(
-				StatefulStorageCall::apply_item_actions_with_signature_v2 {
-					payload,
-					delegator_key,
-					..
-				},
-			) => match Msa::ensure_valid_msa_key(delegator_key) {
-				Ok(state_owner_msa_id) => vec![HashCheckData::new_itemized(
-					state_owner_msa_id,
-					payload.schema_id,
-					payload.target_hash,
-				)],
-				_ => vec![],
-			},
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 {
-				payload,
-				delegator_key,
-				..
-			}) => match Msa::ensure_valid_msa_key(delegator_key) {
-				Ok(state_owner_msa_id) => vec![HashCheckData::new_paginated(
-					state_owner_msa_id,
-					payload.schema_id,
-					payload.page_id,
-					payload.target_hash,
-				)],
-				_ => vec![],
-			},
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 {
-				payload,
-				delegator_key,
-				..
-			}) => match Msa::ensure_valid_msa_key(delegator_key) {
-				Ok(state_owner_msa_id) => vec![HashCheckData::new_paginated(
-					state_owner_msa_id,
-					payload.schema_id,
-					payload.page_id,
-					payload.target_hash,
-				)],
-				_ => vec![],
-			},
-			RuntimeCall::FrequencyTxPayment(FrequencyPaymentCall::pay_with_capacity {
-				call,
-				..
-			}) => Self::extract_hash_data(call),
-			RuntimeCall::FrequencyTxPayment(
-				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
-			) => calls.iter().flat_map(|c| Self::extract_hash_data(c)).collect(),
-			RuntimeCall::Utility(UtilityCall::batch { calls, .. }) |
-			RuntimeCall::Utility(UtilityCall::batch_all { calls, .. }) =>
-				calls.iter().flat_map(|c| Self::extract_hash_data(c)).collect(),
-			_ => vec![],
-		}
-	}
-
-	/// Verifies the hashes for an Itemized Stateful Storage extrinsic
-	fn verify_hash_itemized(
-		msa_id: &MessageSourceId,
-		schema_id: &SchemaId,
-		target_hash: &PageHash,
-	) -> TransactionValidity {
-		const TAG_PREFIX: &str = "StatefulStorageHashItemized";
-
-		if let Ok(Some(page)) = StatefulStorage::get_itemized_page_for(*msa_id, *schema_id) {
-			let current_hash: PageHash = page.get_hash();
-			ensure!(
-				&current_hash == target_hash,
-				Self::map_dispatch_error(
-					pallet_stateful_storage::Error::<Runtime>::StalePageState.into()
-				)
-			);
-
-			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
-				.and_provides((msa_id, schema_id))
-				.build();
-		}
-		Ok(Default::default())
-	}
-
-	/// Verifies the hashes for a Paginated Stateful Storage extrinsic
-	fn verify_hash_paginated(
-		msa_id: &MessageSourceId,
-		schema_id: &SchemaId,
-		page_id: &PageId,
-		target_hash: &PageHash,
-	) -> TransactionValidity {
-		const TAG_PREFIX: &str = "StatefulStorageHashPaginated";
-		if let Ok(Some(page)) =
-			StatefulStorage::get_paginated_page_for(*msa_id, *schema_id, *page_id)
-		{
-			let current_hash: PageHash = page.get_hash();
-
-			ensure!(
-				&current_hash == target_hash,
-				Self::map_dispatch_error(
-					pallet_stateful_storage::Error::<Runtime>::StalePageState.into()
-				)
-			);
-
-			return ValidTransaction::with_tag_prefix(TAG_PREFIX)
-				.and_provides((msa_id, schema_id, page_id))
-				.build();
-		}
-
-		Ok(Default::default())
-	}
-
-	/// Map a module DispatchError to an InvalidTransaction::Custom error
-	fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
-		InvalidTransaction::Custom(match err {
-			DispatchError::Module(module_err) =>
-				<u32 as Decode>::decode(&mut module_err.error.as_slice())
-					.unwrap_or_default()
-					.try_into()
-					.unwrap_or_default(),
-			_ => 255u8,
-		})
-	}
-}
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
