@@ -23,7 +23,7 @@ fn development_genesis_config() -> serde_json::Value {
 		default_session_keys(),
 		default_council_members(),
 		default_technical_committee_members(),
-		Default::default(),
+		super::helpers::load_genesis_schemas(),
 		1000.into(),
 	)
 }
