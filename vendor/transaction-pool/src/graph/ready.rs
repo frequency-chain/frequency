@@ -509,7 +509,11 @@ impl<Hash: hash::Hash + Member, Ex> sc_transaction_pool_api::ReadyTransactions
 	for BestIterator<Hash, Ex>
 {
 	fn report_invalid(&mut self, tx: &Self::Item) {
-		BestIterator::report_invalid(self, tx)
+		// HACK: This is a temparary hack for https://github.com/frequency-chain/frequency/issues/1927
+		// See the issue for more details
+		// Why: Valid transactions were being marked as invalid to do blocks
+		// Cost: Invalid transactions will not be removed from the pool until the node restarts
+		// BestIterator::report_invalid(self, tx)
 	}
 }
 
