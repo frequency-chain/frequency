@@ -508,7 +508,7 @@ impl<Hash: hash::Hash + Member, Ex> BestIterator<Hash, Ex> {
 impl<Hash: hash::Hash + Member, Ex> sc_transaction_pool_api::ReadyTransactions
 	for BestIterator<Hash, Ex>
 {
-	fn report_invalid(&mut self, tx: &Self::Item) {
+	fn report_invalid(&mut self, _tx: &Self::Item) {
 		// HACK: This is a temparary hack for https://github.com/frequency-chain/frequency/issues/1927
 		// See the issue for more details
 		// Why: Valid transactions were being marked as invalid to do blocks
@@ -523,7 +523,7 @@ impl<Hash: hash::Hash + Member, Ex> BestIterator<Hash, Ex> {
 	/// As a consequence, all values that depend on the invalid one will be skipped.
 	/// When given transaction is not in the pool it has no effect.
 	/// When invoked on a fully drained iterator it has no effect either.
-	pub fn report_invalid(&mut self, tx: &Arc<Transaction<Hash, Ex>>) {
+	pub fn _report_invalid(&mut self, tx: &Arc<Transaction<Hash, Ex>>) {
 		if let Some(to_report) = self.all.get(&tx.hash) {
 			debug!(
 				target: LOG_TARGET,
