@@ -1,6 +1,6 @@
 [package]
 name = "pallet-stateful-storage-runtime-api"
-version = "0.0.0"
+version = "1.14.1-rc1+polkadot1.13.0"
 description = "A package that adds Runtime Api for the Stateful Storage pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
