@@ -52,7 +52,7 @@ numtoa = "0.2.4"
 enumflags2 = "0.7.7"
 serde = { version = "1.0", default-features = false }
 serial_test = { version = "0.9.0", default-features = false }
-base64-url = { version =  "3.0.0", default-features = false }
+base64-url = { version = "3.0.0", default-features = false }
 p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
 
 # substrate pallets
@@ -119,8 +119,8 @@ tokio = { version = "1.25.0", default-features = false }
 unicode-normalization = { version = "0.1.22", default-features = false }
 clap = { version = "4.2.5", features = ["derive"] }
 
-sp-externalities = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false}
-sp-runtime-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false}
+sp-externalities = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
+sp-runtime-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
@@ -158,6 +158,10 @@ substrate-test-utils = { git = "https://github.com/paritytech/polkadot-sdk", bra
 
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
+
+[patch.'https://github.com/paritytech/polkadot-sdk']
+sc-transaction-pool = { path = "./vendor/transaction-pool" }
+sc-transaction-pool-api = { path = "./vendor/transaction-pool/api" }
 
 [profile.release]
 panic = "unwind"
