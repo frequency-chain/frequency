@@ -7,7 +7,7 @@ import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from 
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
 
-const SOURCE_AMOUNT = 100_000_000_000_000n;
+const SOURCE_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
 
 async function fundAllSources() {
   const root = getRootFundingSource().keys;
@@ -15,9 +15,17 @@ async function fundAllSources() {
   const nonce = await getNonce(root);
   await Promise.all(
     fundingSources.map((dest, i) => {
-      return ExtrinsicHelper.transferFunds(root, getFundingSource(dest), SOURCE_AMOUNT).signAndSend(nonce + i);
+      try {
+        const testFundingSource = getFundingSource(dest);
+        console.log(dest, testFundingSource.address.toString());
+        return ExtrinsicHelper.transferFunds(root, testFundingSource, SOURCE_AMOUNT).signAndSend(nonce + i);
+      } catch (e) {
+        console.error('Unable to fund soruce', { dest, nonce: nonce + i });
+        throw e;
+      }
     })
   );
+  console.log('Root funding complete!');
 }
 
 async function devSudoActions() {
