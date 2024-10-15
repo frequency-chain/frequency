@@ -279,8 +279,8 @@ describe('Capacity Staking Tests', function () {
   describe('when staking an amount and account balance is too low', function () {
     it('fails to stake and errors BalanceTooLowtoStake', async function () {
       const stakingKeys = createKeys('stakingKeys');
-      const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 10n * CENTS);
-      const stakingAmount = 1n * DOLLARS;
+      const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 1n * DOLLARS);
+      const stakingAmount = 2n * DOLLARS;
 
       const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'BalanceTooLowtoStake' });
