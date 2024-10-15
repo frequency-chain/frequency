@@ -199,12 +199,15 @@ describe('Capacity Transactions', function () {
         before(async function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
+          const numberOfTests = BigInt(this.test!.parent!.tests.length);
+          // Stake the amount for each test
+          await assert.doesNotReject(
+            stakeToProvider(fundingSource, fundingSource, capacityProvider, numberOfTests * amountStaked)
+          );
         });
 
         beforeEach(async function () {
           starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
-          // Stake each time so that we always have enough capacity to do the call
-          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
         });
 
         it('successfully pays with Capacity for eligible transaction - addIPFSMessage', async function () {
@@ -249,11 +252,12 @@ describe('Capacity Transactions', function () {
           [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
           assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
           assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
-        });
 
-        beforeEach(async function () {
-          // Stake each time so that we always have enough capacity to do the call
-          await assert.doesNotReject(stakeToProvider(fundingSource, fundingSource, capacityProvider, amountStaked));
+          // Stake the amount for each test
+          const numberOfTests = BigInt(this.test!.parent!.tests.length);
+          await assert.doesNotReject(
+            stakeToProvider(fundingSource, fundingSource, capacityProvider, numberOfTests * amountStaked)
+          );
         });
 
         it('successfully pays with Capacity for eligible transaction - applyItemActions', async function () {
