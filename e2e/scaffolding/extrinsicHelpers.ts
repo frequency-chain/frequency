@@ -190,7 +190,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
           }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => status.isFinalized), // Some transactions need to wait for finality
           this.parseResult(this.event)
         )
       );
