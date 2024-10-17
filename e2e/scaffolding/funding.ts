@@ -13,6 +13,7 @@ export const fundingSources = [
   'capacity-rpcs',
   'capacity-staking',
   'capacity-transactions',
+  'capacity-transactions-batch',
   'capacity-unstaking',
   'check-metadata-hash',
   'frequency-misc',
