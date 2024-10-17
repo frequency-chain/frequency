@@ -18,7 +18,7 @@ import { getFundingSource } from '../scaffolding/funding';
 
 const fundingSource = getFundingSource('stateful-storage-handle-itemized');
 
-describe('📗 Stateful Pallet Storage', function () {
+describe('📗 Stateful Pallet Storage Itemized', function () {
   let schemaId_deletable: SchemaId;
   let schemaId_unsupported: SchemaId;
   let delegatorKeys: KeyringPair;
