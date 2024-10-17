@@ -1,10 +1,8 @@
 import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
-import { u8aToHex } from '@polkadot/util/u8a/toHex';
-import { u8aWrapBytes } from '@polkadot/util';
 import assert from 'assert';
-import { AddKeyData, AddProviderPayload, EventMap, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, EventMap, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import {
