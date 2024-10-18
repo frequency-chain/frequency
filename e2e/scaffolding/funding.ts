@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 import { Keyring } from '@polkadot/api';
 import { isTestnet } from './env';
 
-const coreFundingSourcesSeed = 'salt glare message absent guess transfer oblige refuse keen current lunar pilot';
+const coreFundingSourcesSeed = 'panda mimic spell athlete much spoil raccoon hamster obey merit group castle';
 const keyring = new Keyring({ type: 'sr25519' });
 
 // This is a list of the funding sources.

@@ -174,23 +174,55 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     this.api = ExtrinsicHelper.api;
   }
 
+  private async hasTokens(): Promise<boolean> {
+    const account = await ExtrinsicHelper.getAccountInfo(this.keys.address);
+    return account.data.free.toBigInt() > 0n;
+  }
+
   // This uses automatic nonce management by default.
-  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}) {
+  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}, requireTokens = true) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
+
+      // If this is nonce 0, we check to make sure we have money first?
+      // Perhaps we need to make sure it is a requirement for this call?
+      // Perhaps just block on balances?
+      // If we have only status.isFinalized, we don't appear to get the Invalid issue (which happens around forks)
+
+      // Wait for the account to have tokens before sending?
+      if (requireTokens) {
+        const timeoutId = setTimeout(() => {
+          throw new Error(
+            `Token requirement timeout for ${this.keys.address.toString()}, ${JSON.stringify(op.toHuman())}`
+          );
+        }, 40_000);
+        while (!this.hasTokens()) {
+          await new Promise((resolve) => setTimeout(resolve, 6000));
+        }
+        clearTimeout(timeoutId);
+      }
+
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
             if (result.isError) {
+              console.error(
+                result.toHuman(),
+                op.toHuman(),
+                op.toHex(),
+                this.keys.address.toString(),
+                nonce,
+                result.status.toHuman()
+              );
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
           }),
-          filter(({ status }) => status.isFinalized), // Some transactions need to wait for finality
+          filter(({ status }) => status.isInBlock || status.isFinalized), // Some transactions need to wait for finality
           this.parseResult(this.event)
         )
       );
