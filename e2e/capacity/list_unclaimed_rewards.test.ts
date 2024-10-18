@@ -38,7 +38,6 @@ describe('Capacity: list_unclaimed_rewards', function () {
     if (isTestnet()) this.skip();
 
     const [_provider, booster] = await setUpForBoosting('booster2', 'provider2');
-    console.debug(`Booster pubkey: ${booster.address}`);
 
     // Move out of the era we boosted inside of
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());

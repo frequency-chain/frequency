@@ -92,19 +92,13 @@ pub use pallet_time_release;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::Contains;
-
-use common_primitives::{
-	msa::MessageSourceId,
-	schema::SchemaId,
-	stateful_storage::{PageHash, PageId},
-};
-use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 
 mod genesis;
 
@@ -571,7 +565,7 @@ impl pallet_capacity::Config for Runtime {
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type EraLength = ConstU32<{ 14 * DAYS }>;
+	type EraLength = CapacityRewardEraLength;
 	type ProviderBoostHistoryLimit = ConstU32<30u32>;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
