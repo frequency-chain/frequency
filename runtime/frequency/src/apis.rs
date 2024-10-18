@@ -19,7 +19,7 @@ use super::{
 	AccountId, Balance, Block, Executive, InherentDataExt, Runtime, RuntimeCall,
 	RuntimeGenesisConfig, SessionKeys, System, TransactionPayment, VERSION,
 };
-use crate::{FrequencyTxPayment, Handles, Messages, Msa, Schemas, StatefulStorage};
+use crate::{Capacity, FrequencyTxPayment, Handles, Messages, Msa, Schemas, StatefulStorage};
 
 use common_primitives::{
 	handles::{BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse},
@@ -38,10 +38,10 @@ use common_primitives::{
 use super::{ConsensusHook, ParachainSystem};
 
 #[cfg(feature = "try-runtime")]
-use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-
-#[cfg(feature = "try-runtime")]
 use crate::RuntimeBlockWeights;
+use common_primitives::capacity::UnclaimedRewardInfo;
+#[cfg(feature = "try-runtime")]
+use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 
 pub use common_runtime::constants::SLOT_DURATION;
 
@@ -380,4 +380,13 @@ impl_runtime_apis! {
 			Ok(batches)
 		}
 	}
+	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
+			match Capacity::list_unclaimed_rewards(&who) {
+				Ok(rewards) => return rewards.into_inner(),
+				Err(_) => return Vec::new(),
+			}
+		}
+	}
+
 }

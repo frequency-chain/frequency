@@ -1,8 +1,15 @@
 pub mod capacity_details_tests;
+mod change_staking_target_tests;
+mod claim_staking_rewards_tests;
 pub mod epochs_tests;
+mod eras_tests;
 pub mod mock;
 pub mod other_tests;
+mod provider_boost_history_tests;
+mod provider_boost_tests;
 pub mod replenishment_tests;
+mod reward_pool_tests;
+mod rewards_provider_tests;
 pub mod stake_and_deposit_tests;
 pub mod staking_account_details_tests;
 pub mod staking_target_details_tests;
