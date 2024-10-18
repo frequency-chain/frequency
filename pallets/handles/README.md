@@ -8,14 +8,14 @@ Provides MSAs with an optional, but unique handle.
 
 A handle consists of:
 - **Base Handle:** The user's chosen handle. It is *not* guaranteed to be unique without the suffix. It is linked to a normalized version for Handle to MSA Id resolution. See [Normalization Details](#normalization-details) below.
-- **Suffix:** A suffix is a unique numeric value appended to a user's base handle to make it unique.
+- **Suffix:** The suffix is a numeric value appended to the user's base handle to ensure the display handle (base handle + suffix) is unique.
 - **Display Handle:** The user's original (un-normalized, but with whitespace trimmed and consolidated) base handle string and the suffix together (`base`.`suffix`) constitute a unique identifier for a user.
 
 ### Suffixes
 
-TO allow multiple users to select the same handle, a distinguishing unique suffix is appended to to form the Display Handle.
+In order to allow multiple users to select the same base handle, a unique numeric suffix is appended to the Base Handle to form the Display Handle.
 The suffix is generated from a random sequence such that each suffix is unique based on the normalized version of the handle.
-Thus for example, if there are two users who choose the handle `alice`, one would be `alice.57` and the other `alice.84`.
+For example, if there are two users who choose the handle `alice`, one would be `alice.57` and the other `alice.84`.
 
 ## Normalization Details
 
