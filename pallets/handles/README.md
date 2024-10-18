@@ -7,25 +7,56 @@ Creates human-readable, homoglyph-attack resistant handles for MSAs.
 Provides MSAs with an optional, but unique handle.
 
 A handle consists of:
-- **Base Handle:** The user's chosen handle. It is *not* guaranteed to be unique without the suffix. It is linked to a normalized version for Handle to MSA Id resolution. See [UTF-8 Support](#utf-8-support) and [Homoglyph Attack Resistence](#homoglyph-attack-resistence) below.
-- **Suffix:** A suffix is a unique numeric value appended to a user's base handle to make it unique.
+- **Base Handle:** The user's chosen handle. It is *not* guaranteed to be unique without the suffix. It is linked to a normalized version for Handle to MSA Id resolution. See [Normalization Details](#normalization-details) below.
+- **Suffix:** The suffix is a numeric value appended to the user's base handle to ensure the display handle (base handle + suffix) is unique.
 - **Display Handle:** The user's original (un-normalized, but with whitespace trimmed and consolidated) base handle string and the suffix together (`base`.`suffix`) constitute a unique identifier for a user.
 
-### UTF-8 Support
+### Suffixes
 
-Handles are able to have many allowed ranges of UTF-8.
-Some ranges, such as emoji, are currently not allowed.
-Due to the handling of homoglyphs, some handles will resolve to the same value.
-For example, while the display may have diacriticals or homoglyphs, the handle is stored with diacriticals and homoglyphs normalized.
-So `Zoë.35` and `Zoe.35` will both resolve to the same MSA Id.
+In order to allow multiple users to select the same base handle, a unique numeric suffix is appended to the Base Handle to form the Display Handle.
+The suffix is generated from a random sequence such that each suffix is unique based on the normalized version of the handle.
+For example, if there are two users who choose the handle `alice`, one would be `alice.57` and the other `alice.84`.
 
-### Homoglyph Attack Resistance
+## Normalization Details
+
+For safety, user handles are normalized for lookup purposes. An end user can therefore be reasonably assured that a display handle with the correct numeric suffix resolves to the desired user, regardless of the variant of the displayed base. (ie, for the suffix `.25`, all variants of the normalized base `a1ice` resolve to the same user: `a1ice`, `alice`, `alicë`, `a1icé`, etc...)
+
+
+### Character Normalization
+
+Normalization removes diacriticals and converts to the lowercase version of the character.
+For example, `Zaë` will be normalized `zae`.
+
+### Homoglyph Normalization
 
 Two or more characters that appear the same to the user are [homoglyphs](https://en.wikipedia.org/wiki/Homoglyph).
-To prevent most homoglyph attacks where one user attempts to impersonate another, the user's requested Base Handle is converted to a canonical, normalized version of the handle.
-The canonical version determines the suffix series that is chosen.
-An end user can therefore be reasonably assured that a display handle with the correct numeric suffix resolves to the desired user, regardless of the homoglyph-variant of the displayed base. (ie, for the suffix `.25`, all variants of the canonical base `a1ice` resolve to the same user: `a1ice`, `alice`, `alicë`, `a1icé`, etc...)
+To prevent most homoglyph attacks where one user attempts to impersonate another, the normalization converts all known homoglyphs to a single character.
+Thus, any version that normalizes to the same value are considered to be the same.
+For example, for the suffix `.25`, all variants of the normalized base `a1ice` resolve to the same user: `a1ice`, `alice`, `alicë`, `a1icé`, etc...
 
+## Handle Requirements
+
+To programmatically check if a handle is valid, see the [`validate_handle` RPC](#RPCs).
+
+### Pre-Normalization Validation
+
+- MUST be UTF-8
+- MUST NOT be more than 26 bytes
+- MUST not contain one of the blocked characters: ``" # % ( ) , . / : ; < > @ \ ` { }``
+
+### Post-Normalization Validation
+
+- MUST have a character length of at least 3 and no more than 20
+- MUST not be a reserved word or a [homoglyph](#homoglyph-attack-resistance) of it:
+  - `adm1n` (`admin`)
+  - `every0ne` (`everyone`)
+  - `a11` (`all`)
+  - `adm1n1strat0r` (`administrator`)
+  - `m0d` (`mod`)
+  - `m0derat0r` (`moderator`)
+  - `here` (`here`)
+  - `channe1` (`channel`)
+- MUST only contain characters from the allowed unicode ranges (See [`ALLOWED_UNICODE_CHARACTER_RANGES`](https://github.com/frequency-chain/frequency/blob/main/pallets/handles/src/handles-utils/constants.rs) for the full list)
 
 ### Actions
 
