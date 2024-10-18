@@ -403,6 +403,4 @@ parameter_types! {
 pub type CapacityRewardEraLength =
 	ConstU32<{ prod_or_testnet_or_local!(14 * DAYS, 1 * HOURS, 50) }>;
 
-pub type CapacityChangeStakingTargetThawEras = ConstU32<5>;
-
 // -end- Capacity Pallet ---

@@ -109,19 +109,13 @@ pub use pallet_time_release;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::Contains;
-
-use common_primitives::{
-	msa::MessageSourceId,
-	schema::SchemaId,
-	stateful_storage::{PageHash, PageId},
-};
-use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 
 mod genesis;
 
@@ -409,7 +403,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 125,
+	spec_version: 130,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -423,7 +417,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 125,
+	spec_version: 130,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -586,8 +580,8 @@ impl pallet_capacity::Config for Runtime {
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type EraLength = ConstU32<{ 14 * DAYS }>;
-	type ProviderBoostHistoryLimit = ConstU32<30u32>;
+	type EraLength = CapacityRewardEraLength;
+	type ProviderBoostHistoryLimit = ProviderBoostHistoryLimit;
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
