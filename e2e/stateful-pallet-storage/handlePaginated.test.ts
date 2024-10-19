@@ -19,7 +19,7 @@ import { getFundingSource } from '../scaffolding/funding';
 const badSchemaId = 65_534;
 const fundingSource = getFundingSource('stateful-storage-handle-paginated');
 
-describe('📗 Stateful Pallet Storage', function () {
+describe('📗 Stateful Pallet Storage Paginated', function () {
   let schemaId: SchemaId;
   let schemaId_unsupported: SchemaId;
   let delegatorKeys: KeyringPair;
