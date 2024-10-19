@@ -46,7 +46,7 @@ export function getBroadcastSchema() {
 export function getDummySchema() {
   switch (process.env.CHAIN_ENVIRONMENT) {
     case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 12;
+      return 16_074;
   }
   return null;
 }
@@ -54,7 +54,7 @@ export function getDummySchema() {
 export function getAvroChatMessagePaginatedSchema() {
   switch (process.env.CHAIN_ENVIRONMENT) {
     case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 14;
+      return 16_075;
   }
   return null;
 }
@@ -62,7 +62,7 @@ export function getAvroChatMessagePaginatedSchema() {
 export function getAvroChatMessageItemizedSchema() {
   switch (process.env.CHAIN_ENVIRONMENT) {
     case CHAIN_ENVIRONMENT.PASEO_TESTNET:
-      return 13;
+      return 16_073;
   }
   return null;
 }
