@@ -13,6 +13,7 @@ export const fundingSources = [
   'capacity-rpcs',
   'capacity-staking',
   'capacity-transactions',
+  'capacity-transactions-batch',
   'capacity-unstaking',
   'check-metadata-hash',
   'frequency-misc',
@@ -36,7 +37,12 @@ export const fundingSources = [
 // Get the correct key for this Funding Source
 export function getFundingSource(name: (typeof fundingSources)[number]) {
   if (fundingSources.includes(name)) {
-    return keyring.addFromUri(`${coreFundingSourcesSeed}//${name}`, { name }, 'sr25519');
+    try {
+      return keyring.addFromUri(`${coreFundingSourcesSeed}//${name}`, { name }, 'sr25519');
+    } catch (e) {
+      console.error('Failed to build funding source: ', { name });
+      throw e;
+    }
   }
   throw new Error(`Unable to locate "${name}" in the list of funding sources`);
 }
