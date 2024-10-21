@@ -202,8 +202,8 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
 
       const paginated_add_result_1 = ExtrinsicHelper.upsertPage(providerKeys, schemaId, msa_id, page_id, payload_1, 0);
       await assert.rejects(paginated_add_result_1.signAndSend('current'), {
-        message: 'Target page hash does not match current page hash',
         name: 'StalePageState',
+        section: 'statefulStorage',
       });
     });
   });
