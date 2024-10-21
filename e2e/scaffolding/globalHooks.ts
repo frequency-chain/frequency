@@ -18,7 +18,7 @@ async function fundAllSources() {
       try {
         const testFundingSource = getFundingSource(dest);
         console.log(dest, testFundingSource.address.toString());
-        return ExtrinsicHelper.transferFunds(root, testFundingSource, SOURCE_AMOUNT).signAndSend(nonce + i);
+        return ExtrinsicHelper.transferFunds(root, testFundingSource, SOURCE_AMOUNT).signAndSend(nonce + i, {}, true);
       } catch (e) {
         console.error('Unable to fund soruce', { dest, nonce: nonce + i });
         throw e;

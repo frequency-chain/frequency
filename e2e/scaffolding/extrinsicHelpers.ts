@@ -3,7 +3,7 @@ import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from './helpers';
@@ -175,11 +175,12 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   // This uses automatic nonce management by default.
-  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}) {
+  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}, requiresFinality = false) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
       const op = this.extrinsic();
+
       // Era is 0 for tests due to issues with BirthBlock
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
@@ -190,7 +191,12 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
           }),
-          filter(({ status }) => status.isFinalized), // Some transactions need to wait for finality
+          // Some transactions need to wait for finality
+          filter(
+            requiresFinality
+              ? ({ status }) => status.isFinalized
+              : ({ status }) => status.isInBlock || status.isFinalized
+          ),
           this.parseResult(this.event)
         )
       );
@@ -250,7 +256,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
-      await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
+      await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend('auto', {}, true);
     }
   }
 
