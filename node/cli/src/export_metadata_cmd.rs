@@ -52,7 +52,7 @@ impl ExportMetadataCmd {
 		let maybe_hash = client.hash(block_number.into())?;
 		let block_hash = maybe_hash.ok_or_else(|| Error::from("Block not found"))?;
 
-		let metadata: Bytes = api.metadata(block_hash).unwrap().into();
+		let metadata: Bytes = api.metadata_at_version(block_hash, 15u32).unwrap().unwrap().into();
 		let result = json!({ "result": metadata });
 
 		let file: Box<dyn io::Write> = match &self.output {
