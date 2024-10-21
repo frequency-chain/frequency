@@ -23,7 +23,7 @@
     "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
     "build:types-json": "node scripts/generate.mjs",
     "postbuild": "npm run package && npm run build:types-json",
-    "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_getMetadata\", \"params\":[]}' http://localhost:9944 -o ./metadata.json",
+    "fetch:local": "curl -H \"Content-Type: application/json\" -d '{\"id\":\"1\", \"jsonrpc\":\"2.0\", \"method\": \"state_call\", \"params\":[\"Metadata_metadata_at_version\", \"0x0f000000\"]}' http://localhost:9944 -o ./metadata.json",
     "generate:defs": "node --import=tsx/esm node_modules/.bin/polkadot-types-from-defs --package @frequency-chain/api-augment --input ./interfaces --endpoint ./metadata.json",
     "generate:meta": "node --import=tsx/esm node_modules/.bin/polkadot-types-from-chain --package @frequency-chain/api-augment --endpoint ./metadata.json --output ./interfaces",
     "test": "mocha --import=tsx  ./test/**/*.test.ts",
