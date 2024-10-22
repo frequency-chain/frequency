@@ -1,6 +1,6 @@
 [package]
 name = "system-runtime-api"
-version = "0.0.0"
+version = "1.14.1-rc2+polkadot1.13.0"
 description = "Additional RPC package for Frequency"
 authors = ["Frequency"]
 license = "Apache-2.0"
