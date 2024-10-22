@@ -598,21 +598,28 @@ impl<B: ChainApi> ValidatedPool<B> {
 			return vec![]
 		}
 
-		log::debug!(target: LOG_TARGET, "Removing invalid transactions: {:?}", hashes);
+		// HACK: This is a temparary hack for https://github.com/frequency-chain/frequency/issues/1927
+		// See the issue for more details
+		// Why: Valid transactions were being marked as invalid to do blocks
+		// Cost: Invalid transactions will not be removed from the pool until the node restarts
+		log::debug!(target: LOG_TARGET, "HACK LOG: NOT Removing invalid transactions: {:?}", hashes);
+		return vec![];
 
-		// temporarily ban invalid transactions
-		self.rotator.ban(&Instant::now(), hashes.iter().cloned());
+		// log::debug!(target: LOG_TARGET, "Removing invalid transactions: {:?}", hashes);
 
-		let invalid = self.pool.write().remove_subtree(hashes);
+		// // temporarily ban invalid transactions
+		// self.rotator.ban(&Instant::now(), hashes.iter().cloned());
 
-		log::debug!(target: LOG_TARGET, "Removed invalid transactions: {:?}", invalid);
+		// let invalid = self.pool.write().remove_subtree(hashes);
 
-		let mut listener = self.listener.write();
-		for tx in &invalid {
-			listener.invalid(&tx.hash);
-		}
+		// log::debug!(target: LOG_TARGET, "Removed invalid transactions: {:?}", invalid);
 
-		invalid
+		// let mut listener = self.listener.write();
+		// for tx in &invalid {
+		// 	listener.invalid(&tx.hash);
+		// }
+
+		// invalid
 	}
 
 	/// Get an iterator for ready transactions ordered by priority
