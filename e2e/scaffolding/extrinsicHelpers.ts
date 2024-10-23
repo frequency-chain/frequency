@@ -6,7 +6,7 @@ import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types
 import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, log, Sr25519Signature } from './helpers';
+import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, Sr25519Signature } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -324,6 +324,11 @@ export class ExtrinsicHelper {
     ExtrinsicHelper.api = await connect(providerUrl);
     // For single state queries (api.query), ApiPromise is better
     ExtrinsicHelper.apiPromise = await connectPromise(providerUrl);
+  }
+
+  public static async getLastFinalizedBlock(): Promise<SignedBlock> {
+    const finalized = await ExtrinsicHelper.apiPromise.rpc.chain.getFinalizedHead();
+    return ExtrinsicHelper.apiPromise.rpc.chain.getBlock(finalized);
   }
 
   public static getLastBlock(): Promise<SignedBlock> {
@@ -851,12 +856,38 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static async runToBlock(blockNumber: number) {
-    let currentBlock = await getBlockNumber();
+  public static async waitForFinalization(ofBlockNumber?: number) {
+    const start = Date.now();
+    const blockNumber = ofBlockNumber || (await getBlockNumber());
+    let currentBlock = await getFinalizedBlockNumber();
     while (currentBlock < blockNumber) {
+      if (start + 48_000 < Date.now()) {
+        throw new Error(
+          `Waiting for Finalized Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+        );
+      }
       // In Testnet, just wait
       if (hasRelayChain()) {
-        await new Promise((r) => setTimeout(r, 4_000));
+        await new Promise((r) => setTimeout(r, 3_000));
+      } else {
+        await ExtrinsicHelper.apiPromise.rpc.engine.createBlock(true, true);
+      }
+      currentBlock = await getFinalizedBlockNumber();
+    }
+  }
+
+  public static async runToBlock(blockNumber: number) {
+    const start = Date.now();
+    let currentBlock = await getBlockNumber();
+    while (currentBlock < blockNumber) {
+      if (start + 48_000 < Date.now()) {
+        throw new Error(
+          `Waiting to run to Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+        );
+      }
+      // In Testnet, just wait
+      if (hasRelayChain()) {
+        await new Promise((r) => setTimeout(r, 3_000));
       } else {
         await ExtrinsicHelper.apiPromise.rpc.engine.createBlock(true, true);
       }
