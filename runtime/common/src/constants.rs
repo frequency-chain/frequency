@@ -245,7 +245,8 @@ pub type MaximumCapacityBatchLength = ConstU8<10>;
 // -end- Frequency Transaction Payment Pallet ---
 
 // --- Session Pallet ---
-pub type SessionPeriod = ConstU32<{ 6 * HOURS }>;
+pub type SessionPeriod =
+	ConstU32<{ prod_or_testnet_or_local!(6 * HOURS, 30 * MINUTES, 5 * MINUTES) }>;
 pub type SessionOffset = ZERO;
 // -end- Session Pallet ---
 
