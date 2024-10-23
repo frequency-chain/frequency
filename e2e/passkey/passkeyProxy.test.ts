@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getNextEpochBlock, getNonce } from '../scaffolding/helpers';
+import { createAndFundKeypair, getBlockNumber, getNextEpochBlock, getNonce } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -68,7 +68,7 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
-      await ExtrinsicHelper.waitForFinalization();
+      await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 2);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
       const nonceAfter = await getNonce(fundedKeys);
       assert.equal(nonce + 1, nonceAfter);
