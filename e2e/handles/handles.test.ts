@@ -11,7 +11,7 @@ import { hasRelayChain } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
 
 const fundingSource = getFundingSource('handles');
-const expirationOffset = hasRelayChain() ? 10 : 100;
+const expirationOffset = hasRelayChain() ? 4 : 100;
 
 describe('🤝 Handles', function () {
   describe('Claim and Retire', function () {
