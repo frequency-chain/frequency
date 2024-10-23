@@ -174,6 +174,8 @@ describe('MSA Key management', function () {
   describe('provider msa', function () {
     it('should disallow retiring MSA belonging to a provider', async function () {
       const [providerKeys] = await createProviderKeysAndId(fundingSource);
+      // Make sure we are finalized before trying to retire
+      await ExtrinsicHelper.waitForFinalization();
       const retireOp = ExtrinsicHelper.retireMsa(providerKeys);
       await assert.rejects(retireOp.signAndSend('current'), {
         name: 'RpcError',

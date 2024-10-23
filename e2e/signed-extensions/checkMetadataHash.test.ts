@@ -19,6 +19,7 @@ const fundingSource = getFundingSource('check-metadata-hash');
 // This is skipped as it requires the e2e tests to be run
 // against a Frequency build that has the metadata-hash feature
 // enabled. That feature is a large increase in compile time however.
+// eslint-disable-next-line mocha/no-skipped-tests
 describe.skip('Check Metadata Hash', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;
