@@ -68,9 +68,9 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
-      await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 2);
+      await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 1);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
-      const nonceAfter = await getNonce(fundedKeys);
+      const nonceAfter = (await ExtrinsicHelper.getAccountInfo(fundedKeys.address)).nonce.toNumber();
       assert.equal(nonce + 1, nonceAfter);
       assert(receiverBalance.data.free.toBigInt() > 0n);
     });
