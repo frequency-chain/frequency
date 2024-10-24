@@ -78,6 +78,10 @@ export async function generateDelegationPayload(
   };
 }
 
+export async function getFinalizedBlockNumber(): Promise<number> {
+  return (await ExtrinsicHelper.getLastFinalizedBlock()).block.header.number.toNumber();
+}
+
 export async function getBlockNumber(): Promise<number> {
   return (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber();
 }
