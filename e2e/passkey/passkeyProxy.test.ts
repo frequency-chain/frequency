@@ -13,8 +13,8 @@ describe('Passkey Pallet Tests', function () {
     let fundedKeys: KeyringPair;
     let receiverKeys: KeyringPair;
 
-    beforeEach(async function () {
-      fundedKeys = await createAndFundKeypair(fundingSource, 100_000_000n);
+    before(async function () {
+      fundedKeys = await createAndFundKeypair(fundingSource, 300_000_000n);
       receiverKeys = await createAndFundKeypair(fundingSource);
     });
 
@@ -61,14 +61,14 @@ describe('Passkey Pallet Tests', function () {
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {
       const accountPKey = fundedKeys.publicKey;
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100n);
-      const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100_000_000n);
+      const { passKeyPrivateKey, passKeyPublicKey } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
-      await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 1);
+      await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 2);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
       const nonceAfter = (await ExtrinsicHelper.getAccountInfo(fundedKeys.address)).nonce.toNumber();
       assert.equal(nonce + 1, nonceAfter);
