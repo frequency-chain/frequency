@@ -381,7 +381,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 122,
+	spec_version: 123,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -395,7 +395,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 122,
+	spec_version: 123,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -956,7 +956,6 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 }
 
 /// Configurations for passkey pallet
-#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 impl pallet_passkey::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -1248,8 +1247,6 @@ construct_runtime!(
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason} = 64,
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
-		// Currently enabled only under feature flag
-		#[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 	}
 );
