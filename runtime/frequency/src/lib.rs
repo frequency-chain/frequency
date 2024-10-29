@@ -1311,7 +1311,6 @@ cumulus_pallet_parachain_system::register_validate_block! {
 
 // The implementation has to be here due to the linking in the macro.
 // It CANNOT be extracted into a separate file
-// Test with: subxt metadata --version 15 -f json | jq .[1].V15.apis
 sp_api::impl_runtime_apis! {
 	impl sp_consensus_aura::AuraApi<Block, AuraId> for Runtime {
 		fn slot_duration() -> sp_consensus_aura::SlotDuration {
@@ -1690,6 +1689,6 @@ mod tests {
 
 	#[test]
 	fn runtime_apis_are_populated() {
-		assert!(!RUNTIME_API_VERSIONS.is_empty());
+		assert!(RUNTIME_API_VERSIONS.len() > 0);
 	}
 }
