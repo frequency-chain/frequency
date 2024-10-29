@@ -496,7 +496,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
 
 export async function getNextRewardEraBlock(): Promise<number> {
   const eraInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEraInfo();
-  const actualEraLength: number = 50;
+  const actualEraLength: number = ExtrinsicHelper.api.consts.capacity.eraLength.toNumber();
   return actualEraLength + eraInfo.startedAt.toNumber() + 1;
 }
 
