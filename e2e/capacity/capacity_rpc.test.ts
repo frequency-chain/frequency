@@ -54,7 +54,10 @@ describe('Capacity RPC', function () {
     // Actual weights and fee
     const {
       weight: { refTime, proofSize },
-    } = await ExtrinsicHelper.apiPromise.call.transactionPaymentApi.queryInfo(call.toHex(), 0);
+    } = await ExtrinsicHelper.apiPromise.call.transactionPaymentApi.queryInfo(call.toU8a(), call.length);
+    // Why does it need to be call.toU8a() above instead of just call or call.toHex()?
+    // https://github.com/polkadot-js/apps/issues/10994
+
     const weightFee = await ExtrinsicHelper.apiPromise.call.transactionPaymentApi.queryWeightToFee({
       refTime,
       proofSize,

@@ -21,11 +21,11 @@
     "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
     "@helia/unixfs": "^4.0.0",
     "@noble/curves": "^1.6.0",
-    "@polkadot-api/merkleize-metadata": "^1.1.7",
-    "@polkadot/api": "14.1.1",
-    "@polkadot/types": "14.1.1",
-    "@polkadot/util": "13.2.1",
-    "helia": "^5.0.1",
+    "@polkadot-api/merkleize-metadata": "^1.1.9",
+    "@polkadot/api": "14.2.1",
+    "@polkadot/types": "14.2.1",
+    "@polkadot/util": "13.2.2",
+    "helia": "^5.1.0",
     "multiformats": "^13.3.0",
     "rxjs": "^7.8.1",
     "workerpool": "^9.2.0"
@@ -37,12 +37,11 @@
     "eslint": "^9.13.0",
     "eslint-plugin-mocha": "^10.5.0",
     "globals": "^15.11.0",
-    "mocha": "^10.7.3",
-    "node-datachannel": "^0.12.0",
+    "mocha": "^10.8.0",
     "prettier": "^3.3.3",
     "sinon": "^19.0.2",
-    "tsx": "^4.19.1",
+    "tsx": "^4.19.2",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.10.0"
+    "typescript-eslint": "^8.12.2"
   }
 }
