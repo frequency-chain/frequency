@@ -381,7 +381,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 123,
+	spec_version: 124,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -395,7 +395,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 123,
+	spec_version: 124,
 	impl_version: 0,
 	apis: apis::RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1283,8 +1283,7 @@ mod benches {
 		[pallet_time_release, TimeRelease]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
-		// Todo: uncomment after removing the feature flag
-		// [pallet_passkey, Passkey]
+		[pallet_passkey, Passkey]
 	);
 }
 
