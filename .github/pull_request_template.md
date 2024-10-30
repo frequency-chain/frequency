@@ -9,7 +9,7 @@ Closes <!-- issue # -->
 
 # Checklist
 - [ ] Updated Pallet Readme?
-- [ ] Updated js/api-augment for Custom RPC OR Runtime API?
+- [ ] Updated js/api-augment for Custom RPC APIs?
 - [ ] Design doc(s) updated?
 - [ ] Unit Tests added?
 - [ ] e2e Tests added?
