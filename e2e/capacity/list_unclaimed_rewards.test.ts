@@ -51,11 +51,9 @@ describe('Capacity: list_unclaimed_rewards', function () {
     assert(result.length >= 4, `Length should be >= 4 but is ${result.length}`);
 
     // This is the era we first boosted in, shouldn't have any rewards
-    const firstResult = result[0]
-    console.debug({firstResult});
-    assert.equal(firstResult.stakedAmount.toHuman(), '100,000,000');
-    assert.equal(firstResult.eligibleAmount.toHuman(), '0');
-    assert.equal(firstResult.earnedAmount.toHuman(), '0');
+    assert.equal(result[0].stakedAmount.toHuman(), '100,000,000');
+    assert.equal(result[0].eligibleAmount.toHuman(), '0');
+    assert.equal(result[0].earnedAmount.toHuman(), '0');
 
     // Boosted entire eras, should have rewards
     assert.equal(result[1].stakedAmount.toHuman(), '100,000,000');

@@ -1168,7 +1168,6 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn get_chunk_index_for_era(era: RewardEra) -> u32 {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();
 		let chunk_len = T::RewardPoolChunkLength::get();
-		// Remove one because eras are 1 indexed
 		let era_u32: u32 = era;
 
 		// Add one chunk so that we always have the full history limit in our chunks
