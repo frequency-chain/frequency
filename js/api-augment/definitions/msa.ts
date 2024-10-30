@@ -73,62 +73,9 @@ export default {
       provider_id: 'ProviderId',
       permissions: 'Vec<SchemaGrantResponse>',
     },
-  },
-  runtime: {
-    MsaRuntimeApi: [
-      {
-        methods: {
-          has_delegation: {
-            description:
-              'Check to see if a delegation existed between the given delegator and provider at a given block',
-            params: [
-              {
-                name: 'delegator_id',
-                type: 'DelegatorId',
-              },
-              {
-                name: 'provider_id',
-                type: 'ProviderId',
-              },
-              {
-                name: 'block_number',
-                type: 'BlockNumber',
-              },
-              {
-                name: 'schema_id',
-                type: 'Option<SchemaId>',
-              },
-            ],
-            type: 'bool',
-          },
-          get_granted_schemas_by_msa_id: {
-            description:
-              'Get the list of schema ids (if any) that exist in any delegation between the delegator and provider',
-            params: [
-              {
-                name: 'delegator_id',
-                type: 'DelegatorId',
-              },
-              {
-                name: 'provider_id',
-                type: 'ProviderId',
-              },
-            ],
-            type: 'Option<Vec<SchemaGrantResponse>>',
-          },
-          get_all_granted_delegations_by_msa_id: {
-            description: 'Get the list of all delegated providers with schema permission grants',
-            params: [
-              {
-                name: 'delegator_msa_id',
-                type: 'DelegatorId',
-              },
-            ],
-            type: 'Vec<DelegationResponse>',
-          },
-        },
-        version: 2,
-      },
-    ],
+    // Runtime types
+    // Not sure why these have to be noted here, but they do
+    CommonPrimitivesMsaDelegatorId: 'u64',
+    CommonPrimitivesMsaProviderId: 'u64',
   },
 };

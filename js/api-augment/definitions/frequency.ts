@@ -28,19 +28,8 @@ export default {
       event: 'u8',
       data: 'Vec<u8>',
     },
-  },
-  runtime: {
-    AdditionalRuntimeApi: [
-      {
-        methods: {
-          get_events: {
-            description: 'Get the events with simple SCALE decoding',
-            params: [],
-            type: 'Vec<RpcEvent>',
-          },
-        },
-        version: 1,
-      },
-    ],
+    // Part of the auraApi that is missing the type.
+    // Unsure why, but can safely be here.
+    SpConsensusSlotsSlotDuration: 'u64',
   },
 };

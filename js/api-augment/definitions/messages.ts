@@ -38,41 +38,4 @@ export default {
       next_index: 'Option<u32>',
     },
   },
-  runtime: {
-    MessagesRuntimeApi: [
-      {
-        methods: {
-          get_messages_by_schema_and_block: {
-            description: 'Retrieve the messages for a particular schema and block number',
-            params: [
-              {
-                name: 'schema_id',
-                type: 'SchemaId',
-              },
-              {
-                name: 'schema_payload_location',
-                type: 'PayloadLocation',
-              },
-              {
-                name: 'block_number',
-                type: 'BlockNumber',
-              },
-            ],
-            type: 'Vec<MessageResponse>',
-          },
-          get_schema_by_id: {
-            description: 'Retrieve a schema by id',
-            params: [
-              {
-                name: 'schema_id',
-                type: 'SchemaId',
-              },
-            ],
-            type: 'Option<SchemaResponse>',
-          },
-        },
-        version: 1,
-      },
-    ],
-  },
 };

@@ -26,7 +26,7 @@
     "@polkadot/types": "14.2.1",
     "@polkadot/util": "13.2.2",
     "helia": "^5.1.0",
-    "multiformats": "^13.3.0",
+    "multiformats": "^13.3.1",
     "rxjs": "^7.8.1",
     "workerpool": "^9.2.0"
   },
@@ -37,7 +37,7 @@
     "eslint": "^9.13.0",
     "eslint-plugin-mocha": "^10.5.0",
     "globals": "^15.11.0",
-    "mocha": "^10.8.0",
+    "mocha": "^10.8.1",
     "prettier": "^3.3.3",
     "sinon": "^19.0.2",
     "tsx": "^4.19.2",
