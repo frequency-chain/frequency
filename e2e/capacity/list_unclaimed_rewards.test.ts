@@ -51,21 +51,23 @@ describe('Capacity: list_unclaimed_rewards', function () {
     assert(result.length >= 4, `Length should be >= 4 but is ${result.length}`);
 
     // This is the era we first boosted in, shouldn't have any rewards
-    assert.equal(result[0].staked_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[0].eligible_amount.toHuman(), '0');
-    assert.equal(result[0].earned_amount.toHuman(), '0');
+    const firstResult = result[0]
+    console.debug({firstResult});
+    assert.equal(firstResult.stakedAmount.toHuman(), '100,000,000');
+    assert.equal(firstResult.eligibleAmount.toHuman(), '0');
+    assert.equal(firstResult.earnedAmount.toHuman(), '0');
 
     // Boosted entire eras, should have rewards
-    assert.equal(result[1].staked_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[1].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[1].earned_amount.toHuman(), '3.8000 mUNIT');
+    assert.equal(result[1].stakedAmount.toHuman(), '100,000,000');
+    assert.equal(result[1].eligibleAmount.toHuman(), '100,000,000');
+    assert.equal(result[1].earnedAmount.toHuman(), '380,000');
 
-    assert.equal(result[2].staked_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[2].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[2].earned_amount.toHuman(), '3.8000 mUNIT');
+    assert.equal(result[2].stakedAmount.toHuman(), '100,000,000');
+    assert.equal(result[2].eligibleAmount.toHuman(), '100,000,000');
+    assert.equal(result[2].earnedAmount.toHuman(), '380,000');
 
-    assert.equal(result[3].staked_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[3].eligible_amount.toHuman(), '1.0000 UNIT');
-    assert.equal(result[3].earned_amount.toHuman(), '3.8000 mUNIT');
+    assert.equal(result[3].stakedAmount.toHuman(), '100,000,000');
+    assert.equal(result[3].eligibleAmount.toHuman(), '100,000,000');
+    assert.equal(result[3].earnedAmount.toHuman(), '380,000');
   });
 });
