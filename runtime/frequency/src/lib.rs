@@ -1298,8 +1298,7 @@ mod benches {
 		[pallet_time_release, TimeRelease]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
-		// Todo: uncomment after removing the feature flag
-		// [pallet_passkey, Passkey]
+		[pallet_passkey, Passkey]
 	);
 }
 
