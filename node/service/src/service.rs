@@ -8,7 +8,7 @@ use sc_client_api::Backend;
 use std::{sync::Arc, time::Duration};
 
 use cumulus_client_cli::CollatorOptions;
-use frequency_runtime::apis::RuntimeApi;
+use frequency_runtime::RuntimeApi;
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};

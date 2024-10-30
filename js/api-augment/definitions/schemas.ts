@@ -62,33 +62,4 @@ export default {
       schema_id: 'SchemaId',
     },
   },
-  runtime: {
-    SchemasRuntimeApi: [
-      {
-        methods: {
-          get_by_schema_id: {
-            description: 'Fetch the schema by id',
-            params: [
-              {
-                name: 'schema_id',
-                type: 'SchemaId',
-              },
-            ],
-            type: 'Option<SchemaResponse>',
-          },
-          get_schema_versions_by_name: {
-            description: 'Fetch the schema versions by name',
-            params: [
-              {
-                name: 'schema_name',
-                type: 'Vec<u8>',
-              },
-            ],
-            type: 'Option<Vec<SchemaVersionResponse>>',
-          },
-        },
-        version: 2,
-      },
-    ],
-  },
 };
