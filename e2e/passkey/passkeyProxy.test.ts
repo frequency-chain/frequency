@@ -70,6 +70,8 @@ describe('Passkey Pallet Tests', function () {
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));
       await ExtrinsicHelper.waitForFinalization((await getBlockNumber()) + 2);
       const receiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys.address);
+      // adding some delay before fetching the nonce to ensure it is updated
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       const nonceAfter = (await ExtrinsicHelper.getAccountInfo(fundedKeys.address)).nonce.toNumber();
       assert.equal(nonce + 1, nonceAfter);
       assert(receiverBalance.data.free.toBigInt() > 0n);
