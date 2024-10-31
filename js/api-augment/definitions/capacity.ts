@@ -12,18 +12,4 @@ export default {
       earned_amount: 'Balance',
     },
   },
-  runtime: {
-    CapacityRuntimeApi: [
-      {
-        methods: {
-          list_unclaimed_rewards: {
-            description: 'List any rewards that can be claimed up to the previous Reward Era',
-            params: [{ name: 'address', type: 'AccountId' }],
-            type: 'Vec<UnclaimedRewardInfo>',
-          },
-        },
-        version: 1,
-      },
-    ],
-  },
 };
