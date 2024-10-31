@@ -10,6 +10,9 @@ const keyring = new Keyring({ type: 'sr25519' });
 // tldr: Each test file should have a separate funding source listed below
 export const fundingSources = [
   'capacity-replenishment',
+  'capacity-provider-boost',
+  'capacity-list-unclaimed-rewards',
+  'capacity-change-staking-target',
   'capacity-rpcs',
   'capacity-staking',
   'capacity-transactions',

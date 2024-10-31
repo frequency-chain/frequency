@@ -42,6 +42,7 @@ use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
+use static_assertions::const_assert;
 
 use common_primitives::{
 	handles::{BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse},
@@ -60,7 +61,10 @@ use common_primitives::{
 };
 
 pub use common_runtime::{
-	constants::{currency::EXISTENTIAL_DEPOSIT, *},
+	constants::{
+		currency::{CENTS, EXISTENTIAL_DEPOSIT},
+		*,
+	},
 	fee::WeightToFee,
 	prod_or_testnet_or_local,
 	proxy::ProxyType,
@@ -105,14 +109,14 @@ pub use pallet_time_release;
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
 
+use common_primitives::capacity::UnclaimedRewardInfo;
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 pub use common_runtime::{
 	constants::MaxSchemaGrants,
 	weights,
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::Contains;
-
-use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 
 mod genesis;
 
@@ -339,7 +343,11 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>, pallet_capacity::migration::v4::MigrationToV4<Runtime>),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		pallet_capacity::migration::v4::MigrationToV4<Runtime>,
+		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
+	),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
@@ -396,7 +404,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 125,
+	spec_version: 130,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -410,7 +418,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 125,
+	spec_version: 130,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -549,6 +557,15 @@ impl pallet_msa::Config for Runtime {
 	>;
 }
 
+parameter_types! {
+	/// The maximum number of eras over which one can claim rewards
+	pub const ProviderBoostHistoryLimit : u32 = 30;
+	/// The number of chunks of Reward Pool history we expect to store
+	pub const RewardPoolChunkLength: u32 = 5;
+}
+// RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
+const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
+
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
@@ -564,6 +581,15 @@ impl pallet_capacity::Config for Runtime {
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type EraLength = CapacityRewardEraLength;
+	type ProviderBoostHistoryLimit = ProviderBoostHistoryLimit;
+	type RewardsProvider = Capacity;
+	type MaxRetargetsPerRewardEra = ConstU32<2>;
+	// Value determined by desired inflation rate limits for chosen economic model
+	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
+	type RewardPercentCap = CapacityRewardCap;
+	// Must evenly divide ProviderBoostHistoryLimit
+	type RewardPoolChunkLength = RewardPoolChunkLength;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -748,7 +774,7 @@ impl pallet_democracy::Config for Runtime {
 	type EnactmentPeriod = EnactmentPeriod;
 	type RuntimeEvent = RuntimeEvent;
 	type FastTrackVotingPeriod = FastTrackVotingPeriod;
-	type InstantAllowed = frame_support::traits::ConstBool<true>;
+	type InstantAllowed = ConstBool<true>;
 	type LaunchPeriod = LaunchPeriod;
 	type MaxProposals = DemocracyMaxProposals;
 	type MaxVotes = DemocracyMaxVotes;
@@ -1579,6 +1605,15 @@ sp_api::impl_runtime_apis! {
 		}
 		fn validate_handle(base_handle: BaseHandle) -> bool {
 			Handles::validate_handle(base_handle.to_vec())
+		}
+	}
+	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
+		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
+			match Capacity::list_unclaimed_rewards(&who) {
+				Ok(rewards) => return rewards.into_inner(),
+				Err(_) => return Vec::new(),
+			}
+
 		}
 	}
 
