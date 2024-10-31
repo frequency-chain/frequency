@@ -3,6 +3,7 @@
 //! ## Quick Links
 //! - [Configuration: `Config`](Config)
 //! - [Extrinsics: `Call`](Call)
+//! - [Runtime API: `CapacityRuntimeApi`](../pallet_capacity_runtime_api/trait.CapacityRuntimeApi.html)
 //! - [Event Enum: `Event`](Event)
 //! - [Error Enum: `Error`](Error)
 #![doc = include_str!("../README.md")]
@@ -1259,7 +1260,6 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		let mut capacity_details =
 			CapacityLedger::<T>::get(msa_id).ok_or(Error::<T>::TargetCapacityNotFound)?;
 		capacity_details.deposit(&token_amount, &capacity_amount);
-		// 		capacity_details.deposit(&amount, &Self::capacity_generated(amount)); is this the old one?
 		Self::set_capacity_for(msa_id, capacity_details);
 		Ok(())
 	}
