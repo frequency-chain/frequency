@@ -70,9 +70,9 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_capacity/pall
 ### RPCs
 Custom RPCs are not enabled for this pallet. The following RuntimeAPI functions may be accessed by making a state call, for example:
 ```javascript
-    const encodedAddr = ExtrinsicHelper.api.registry.createType('AccountId32', booster.address);  // where booster is a polkadot/keyring Keypair type
+    const encodedAddr = api.registry.createType('AccountId32', booster.address);  // where booster is a polkadot/keyring Keypair type
     let result = await api.rcp.state.call('CapacityRuntimeApi_list_unclaimed_rewards', encodedAddr);
-    const decodedResult: Vec<UnclaimedRewardInfo> = ExtrinsicHelper.api.registry.createType('Vec<UnclaimedRewardInfo>', result);
+    const decodedResult: Vec<UnclaimedRewardInfo> = api.registry.createType('Vec<UnclaimedRewardInfo>', result);
 ```
 
 | Name                   | Description                                                         | Query                                       | Runtime Added |
