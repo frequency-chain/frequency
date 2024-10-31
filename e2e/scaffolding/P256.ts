@@ -20,11 +20,12 @@ export async function createPassKeyCall(
   call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
   const ext_call_type = ExtrinsicHelper.api.registry.createType('Call', call);
+  console.log(`sig length ${accountSignature.length}`)
   const passkeyCall = {
     accountId: accountPKey,
     accountNonce: nonce,
     accountOwnershipProof: {
-      Sr25519: accountSignature,
+      Ecdsa: accountSignature,
     },
     call: ext_call_type,
   };

@@ -16,7 +16,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
+use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
@@ -28,7 +28,7 @@ use sp_runtime::{
 	generic::Era,
 	traits::{Convert, Dispatchable, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
-	AccountId32, MultiSignature,
+	AccountId32,
 };
 use sp_std::{vec, vec::Vec};
 
@@ -50,9 +50,11 @@ mod tests;
 pub mod weights;
 pub use weights::*;
 
+use common_primitives::{signatures::UnifiedSignature, utils::wrap_binary_data};
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
 use frame_system::CheckWeight;
+use sp_runtime::traits::Verify;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -274,7 +276,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		let signature = self.0.passkey_call.account_ownership_proof.clone();
 		let signer = &self.0.passkey_call.account_id;
 
-		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
+		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature.into())
 			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
 
 		// checking the passkey signature to ensure access to the passkey
@@ -311,15 +313,30 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	fn check_account_signature(
 		signer: &T::AccountId,
 		signed_data: &Vec<u8>,
-		signature: &MultiSignature,
+		signature: &UnifiedSignature,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-		if !check_signature(signature, key, signed_data.clone()) {
+		if !Self::check_signature(signature, key, signed_data.clone()) {
 			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
 
 		Ok(())
+	}
+
+	fn check_signature(
+		signature: &UnifiedSignature,
+		signer: AccountId32,
+		payload: Vec<u8>,
+	) -> bool {
+		let verify_signature = |payload: &[u8]| signature.verify(payload, &signer.clone().into());
+
+		if verify_signature(&payload) {
+			return true;
+		}
+
+		let wrapped_payload = wrap_binary_data(payload);
+		verify_signature(&wrapped_payload)
 	}
 }
 

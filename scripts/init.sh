@@ -106,7 +106,7 @@ start-paseo-collator-bob)
 
 start-frequency-instant)
   printf "\nBuilding Frequency without relay. Running with instant sealing ...\n"
-  cargo build --features frequency-no-relay
+  cargo build --features frequency-no-relay,force-debug
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -121,7 +121,7 @@ start-frequency-instant)
     --state-pruning archive \
     -lbasic-authorship=debug \
     -ltxpool=debug \
-    -lruntime=debug \
+    -lruntime=trace \
     --sealing=instant \
     --wasm-execution=compiled \
     --no-telemetry \

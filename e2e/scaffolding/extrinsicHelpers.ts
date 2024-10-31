@@ -4,7 +4,7 @@ import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
 import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
-import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
+import {AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult, SignerPayloadRaw} from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, Sr25519Signature } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
@@ -267,6 +267,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     try {
       return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
     } catch (e) {
+      console.error(e);
       if ((e as any).name === 'RpcError') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
       }
@@ -918,5 +919,35 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
+  }
+
+  // eslint-disable-next-line consistent-return, class-methods-use-this
+  public static async getRawPayloadForSigning(
+    tx: SubmittableExtrinsic<'promise', ISubmittableResult>,
+    signerAddress: string,
+  ): Promise<SignerPayloadRaw> {
+    const dummyError = 'Stop here';
+
+    let signRaw: SignerPayloadRaw;
+    try {
+      await tx.signAsync(signerAddress, {
+        signer: {
+          signRaw: (raw) => {
+            signRaw = raw;
+            // Interrupt the signing process to get the raw payload, as encoded by polkadot-js
+            throw new Error(dummyError);
+          },
+          // signPayload: (payload) => {
+          //   console.log(payload);
+          // },
+        }
+      });
+    } catch (e: any) {
+      if (e?.message !== dummyError) {
+        throw e;
+      }
+    }
+
+    return signRaw;
   }
 }

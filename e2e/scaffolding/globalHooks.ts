@@ -35,9 +35,9 @@ async function devSudoActions() {
 }
 
 function drainAllSources() {
-  const keys = fundingSources.map((source) => getFundingSource(source));
-  const root = getRootFundingSource().keys;
-  return drainKeys(keys, root.address);
+  // const keys = fundingSources.map((source) => getFundingSource(source));
+  // const root = getRootFundingSource().keys;
+  // return drainKeys(keys, root.address);
 }
 
 export async function mochaGlobalSetup() {

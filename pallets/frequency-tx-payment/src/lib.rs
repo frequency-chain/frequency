@@ -23,6 +23,7 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+use sp_core::hexdisplay::HexDisplay;
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
@@ -420,12 +421,15 @@ where
 		if fee.is_zero() {
 			return Ok((fee, InitialPayment::Free))
 		}
-
+		log::info!(target: "ETHEREUM", "fee is {:?}  top: {:?}  info={:?}  call={:?}", fee, tip, info, HexDisplay::from(&call.encode()));
 		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
 			who, call, info, fee, tip,
 		)
 		.map(|i| (fee, InitialPayment::Token(i)))
-		.map_err(|_| -> TransactionValidityError { InvalidTransaction::Payment.into() })
+		.map_err(|e| -> TransactionValidityError {
+			log::error!(target: "ETHEREUM", "withdraw_token_fee {:?}", e);
+			TransactionValidityError::Invalid(InvalidTransaction::Payment)
+		})
 	}
 }
 
@@ -477,8 +481,9 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
+		log::info!(target: "ETHEREUM", "trx validate 0x{:?}", HexDisplay::from(&who.encode()));
 		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
-
+		log::info!(target: "ETHEREUM", "trx after validate {:?}", who);
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info,
 			len,

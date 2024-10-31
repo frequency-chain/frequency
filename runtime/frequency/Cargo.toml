@@ -99,6 +99,7 @@ cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
+sp-debug-derive = { package = "sp-debug-derive", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 
 [features]
 default = ["std"]
@@ -172,6 +173,9 @@ std = [
   "system-runtime-api/std",
   "substrate-wasm-builder",
   "frame-metadata-hash-extension/std",
+]
+force-debug=[
+	"sp-debug-derive/force-debug",
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",

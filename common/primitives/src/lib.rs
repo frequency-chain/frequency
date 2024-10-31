@@ -41,3 +41,6 @@ pub mod offchain;
 #[cfg(feature = "runtime-benchmarks")]
 /// Benchmarking helper trait
 pub mod benchmarks;
+
+/// Signatures
+pub mod signatures;

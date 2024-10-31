@@ -3,8 +3,8 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
 import { Codec } from '@polkadot/types/types';
-import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
-import { mnemonicGenerate } from '@polkadot/util-crypto';
+import {hexToU8a, u8aToHex, u8aWrapBytes} from '@polkadot/util';
+import {encodeAddress, mnemonicGenerate} from '@polkadot/util-crypto';
 import {
   verbose,
   getGraphChangeSchema,
@@ -37,6 +37,7 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
+import type { KeypairType } from "@polkadot/util-crypto/types";
 
 export interface Account {
   uri: string;
@@ -236,12 +237,12 @@ export function drainFundedKeys(dest: string) {
   return drainKeys([...createdKeys.values()], dest);
 }
 
-export function createKeys(name: string = 'first pair'): KeyringPair {
+export function createKeys(name: string = 'first pair', keyType: KeypairType = 'sr25519'): KeyringPair {
   const mnemonic = mnemonicGenerate();
   // create & add the pair to the keyring with the type and some additional
   // metadata specified
-  const keyring = new Keyring({ type: 'sr25519' });
-  const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
+  const keyring = new Keyring({ type: keyType });
+  const keypair = keyring.addFromUri(mnemonic, { name }, keyType);
 
   createdKeys.set(keypair.address, keypair);
   return keypair;
@@ -283,14 +284,24 @@ export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
   keyName?: string,
-  nonce?: number
+  nonce?: number,
+  keyType: KeypairType = 'sr25519',
 ): Promise<KeyringPair> {
-  const keypair = createKeys(keyName);
-
+  const keypair = createKeys(keyName, keyType);
   await fundKeypair(source, keypair, amount || (await getExistentialDeposit()), nonce);
   log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${keypair.address}`);
 
   return keypair;
+}
+
+export function getConvertedEthereumAccount(
+  accountId20Hex: string
+) : string {
+  const addressBytes = hexToU8a(accountId20Hex);
+  const result = new Uint8Array(32);
+  result.fill(0, 0, 12);
+  result.set(addressBytes, 12);
+  return encodeAddress(result);
 }
 
 export async function createAndFundKeypairs(
