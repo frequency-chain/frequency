@@ -404,7 +404,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 130,
+	spec_version: 131,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -418,7 +418,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 130,
+	spec_version: 131,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -586,7 +586,7 @@ impl pallet_capacity::Config for Runtime {
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
-	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(172_602_740u128) }>;
+	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(153_424_650u128) }>;
 	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
