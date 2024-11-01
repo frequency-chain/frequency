@@ -5,6 +5,7 @@ import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aWrapBytes } from '@polkadot/util';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { sha256 } from '@noble/hashes/sha256';
+import {MultiSignature} from "@polkadot/types/interfaces";
 
 export function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
   const passKeyPrivateKey = secp256r1.utils.randomPrivateKey();
@@ -16,17 +17,14 @@ export function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
 export async function createPassKeyCall(
   accountPKey: Uint8Array,
   nonce: number,
-  accountSignature: Uint8Array,
+  accountSignature: MultiSignature,
   call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
   const ext_call_type = ExtrinsicHelper.api.registry.createType('Call', call);
-  console.log(`sig length ${accountSignature.length}`)
   const passkeyCall = {
     accountId: accountPKey,
     accountNonce: nonce,
-    accountOwnershipProof: {
-      Ecdsa: accountSignature,
-    },
+    accountOwnershipProof: accountSignature,
     call: ext_call_type,
   };
 

@@ -38,6 +38,7 @@ import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import type { KeypairType } from "@polkadot/util-crypto/types";
+import { getUnifiedAddress } from "./ethereum";
 
 export interface Account {
   uri: string;
@@ -292,16 +293,6 @@ export async function createAndFundKeypair(
   log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${keypair.address}`);
 
   return keypair;
-}
-
-export function getConvertedEthereumAccount(
-  accountId20Hex: string
-) : string {
-  const addressBytes = hexToU8a(accountId20Hex);
-  const result = new Uint8Array(32);
-  result.fill(0, 0, 12);
-  result.set(addressBytes, 12);
-  return encodeAddress(result);
 }
 
 export async function createAndFundKeypairs(
@@ -597,7 +588,7 @@ export async function getCapacity(providerId: u64): Promise<PalletCapacityCapaci
 }
 
 export async function getNonce(keys: KeyringPair): Promise<number> {
-  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(keys.address);
+  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(getUnifiedAddress(keys));
   return nonce.toNumber();
 }
 

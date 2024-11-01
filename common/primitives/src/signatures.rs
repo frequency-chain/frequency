@@ -94,8 +94,8 @@ impl Verify for UnifiedSignature {
 				Err(()) => false,
 			},
 			(Self::Ecdsa(ref sig), who) => {
-				log::info!(target:"ETHEREUM", "inside ecdsa signature verifier");
-				let m = sp_io::hashing::blake2_256(msg.get());
+				log::info!(target:"ETHEREUM", "inside ecdsa signature verifier 0x{:?}",HexDisplay::from(&msg.get()));
+				let m = sp_io::hashing::keccak_256(msg.get());
 				match sp_io::crypto::secp256k1_ecdsa_recover(sig.as_ref(), &m) {
 					Ok(pubkey) => {
 						let mut hashed = sp_io::hashing::keccak_256(pubkey.as_ref());

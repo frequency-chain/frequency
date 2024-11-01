@@ -7,26 +7,27 @@
 
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from './extrinsicHelpers';
+import {getUnifiedAddress} from "./ethereum";
 
 export type AutoNonce = number | 'auto' | 'current';
 
 const nonceCache = new Map<string, number>();
 
 const getNonce = async (keys: KeyringPair) => {
-  return (await ExtrinsicHelper.getAccountInfo(keys.address)).nonce.toNumber();
+  return (await ExtrinsicHelper.getAccountInfo(getUnifiedAddress(keys))).nonce.toNumber();
 };
 
 const reset = (keys: KeyringPair) => {
-  nonceCache.delete(keys.address);
+  nonceCache.delete(getUnifiedAddress(keys));
 };
 
 const current = async (keys: KeyringPair): Promise<number> => {
-  return nonceCache.get(keys.address) || (await getNonce(keys));
+  return nonceCache.get(getUnifiedAddress(keys)) || (await getNonce(keys));
 };
 
 const increment = async (keys: KeyringPair) => {
   const nonce = await current(keys);
-  nonceCache.set(keys.address, nonce + 1);
+  nonceCache.set(getUnifiedAddress(keys), nonce + 1);
   return nonce;
 };
 
@@ -46,7 +47,7 @@ const auto = (keys: KeyringPair, inputNonce: AutoNonce = 'auto'): Promise<number
     case 'current':
       return current(keys);
     default:
-      nonceCache.set(keys.address, inputNonce + 1);
+      nonceCache.set(getUnifiedAddress(keys), inputNonce + 1);
       return Promise.resolve(inputNonce);
   }
 };

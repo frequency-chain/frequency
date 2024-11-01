@@ -24,6 +24,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
+import {getUnifiedAddress} from "./ethereum";
 
 export interface ReleaseSchedule {
   start: number;
@@ -275,6 +276,19 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
+  public async sendUnsigned() {
+    const op = this.extrinsic();
+    try {
+      return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+    } catch (e) {
+      console.error(e);
+      if ((e as any).name === 'RpcError') {
+        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+      }
+      throw e;
+    }
+  }
+
   private parseResult<ApiType extends ApiTypes = 'rxjs', T extends AnyTuple = AnyTuple, N = unknown>(
     targetEvent?: AugmentedEvent<ApiType, T, N>
   ) {
@@ -348,7 +362,7 @@ export class ExtrinsicHelper {
   /** Balance Extrinsics */
   public static transferFunds(source: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(dest.address, amount),
+      () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(dest), amount),
       source,
       ExtrinsicHelper.api.events.balances.Transfer
     );
@@ -919,35 +933,5 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
-  }
-
-  // eslint-disable-next-line consistent-return, class-methods-use-this
-  public static async getRawPayloadForSigning(
-    tx: SubmittableExtrinsic<'promise', ISubmittableResult>,
-    signerAddress: string,
-  ): Promise<SignerPayloadRaw> {
-    const dummyError = 'Stop here';
-
-    let signRaw: SignerPayloadRaw;
-    try {
-      await tx.signAsync(signerAddress, {
-        signer: {
-          signRaw: (raw) => {
-            signRaw = raw;
-            // Interrupt the signing process to get the raw payload, as encoded by polkadot-js
-            throw new Error(dummyError);
-          },
-          // signPayload: (payload) => {
-          //   console.log(payload);
-          // },
-        }
-      });
-    } catch (e: any) {
-      if (e?.message !== dummyError) {
-        throw e;
-      }
-    }
-
-    return signRaw;
   }
 }

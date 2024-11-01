@@ -33,16 +33,18 @@ where
 		}
 	}
 	fn unlookup(x: Self::Target) -> Self::Source {
-		let encoded = x.encode();
-		match encoded[..12].eq(&[0u8; 12]) {
-			true => {
-				log::info!(target: "ETHEREUM", "unlookup before 0x{:?}", HexDisplay::from(&encoded));
-				let mut address20 = [0u8; 20];
-				address20[..].copy_from_slice(&encoded[12..]);
-				log::info!(target: "ETHEREUM", "unlookup after 0x{:?}", HexDisplay::from(&address20));
-				MultiAddress::Address20(address20)
-			},
-			false => MultiAddress::Id(x),
-		}
+		MultiAddress::Id(x)
+		// This should probably leave commented out since we are always dealing with 32 byte accounts
+		// let encoded = x.encode();
+		// match encoded[..12].eq(&[0u8; 12]) {
+		// 	true => {
+		// 		log::info!(target: "ETHEREUM", "unlookup before 0x{:?}", HexDisplay::from(&encoded));
+		// 		let mut address20 = [0u8; 20];
+		// 		address20[..].copy_from_slice(&encoded[12..]);
+		// 		log::info!(target: "ETHEREUM", "unlookup after 0x{:?}", HexDisplay::from(&address20));
+		// 		MultiAddress::Address20(address20)
+		// 	},
+		// 	false => MultiAddress::Id(x),
+		// }
 	}
 }
