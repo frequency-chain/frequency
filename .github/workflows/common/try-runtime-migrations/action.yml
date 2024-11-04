@@ -24,7 +24,7 @@ runs:
       shell: bash
 
     - name: Run runtime checks
-      uses: paritytech/try-runtime-gha@v0.1.0
+      uses: paritytech/try-runtime-gha@v0.2.0
       with:
         runtime-package: ${{ inputs.runtime-package }}
         node-uri: ${{ inputs.runtime-uri }}

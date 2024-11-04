@@ -40,24 +40,45 @@ The Capacity Pallet provides for:
 
 ### Extrinsics
 
-| Name/Description                 | Caller        | Payment | Key Events                                                                                                    | Runtime Added |
-| -------------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------------- | ------------- |
-| `stake`<br />Lock tokens to grant Capacity to a Provider | Token Account | Tokens | [`Staked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked) | 1             |
-| `unstake`<br />Begin the process of unlocking tokens by unstaking currently staked tokens | Token Account | Tokens | [`UnStaked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.UnStaked) | 1             |
-| `withdraw_unstaked`<br />Complete the process of unlocking tokens staked by releasing locks on expired unlock chunks | Token Account | Tokens | [`StakeWithdrawn`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakeWithdrawn) | 1             |
+| Name/Description                                                                                                     | Caller        | Payment | Key Events                                                                                                                                | Runtime Added |
+|----------------------------------------------------------------------------------------------------------------------| ------------- | ------- |-------------------------------------------------------------------------------------------------------------------------------------------| ------------- |
+| `change_staking_target`<br /> Change the target of a stake from one Provider to the other.                           | Token Account | Tokens | [`StakingTargetChanged`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakingTargetChanged) | 1             |
+| `claim_staking_rewards`<br /> Mint and pay out eligible staking rewards from Provider Boosting.                      | Token Account | Tokens | [`ProviderBoostRewardClaimed`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.ProviderBoostRewardClaimed) | 1             |
+| `provider_boost`<br />Lock tokens to grant Capacity to a Provider and earn token Rewards                             | Token Account | Tokens | [`ProviderBoosted`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked)                    | 1             |
+| `stake`<br />Lock tokens to grant Capacity to a Provider                                                             | Token Account | Tokens | [`Staked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.Staked)                             | 1             |
+| `unstake`<br />Begin the process of unlocking tokens by unstaking currently staked tokens                            | Token Account | Tokens | [`UnStaked`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.UnStaked)                         | 1             |
+| `withdraw_unstaked`<br />Complete the process of unlocking tokens staked by releasing locks on expired unlock chunks | Token Account | Tokens | [`StakeWithdrawn`](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/enum.Event.html#variant.StakeWithdrawn)             | 1             |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/struct.Pallet.html) for more details.
 
 ### State Queries
 
-| Name      | Description         | Query                    | Runtime Added |
-| --------- | ------------------- | ------------------------ | ------------- |
-| Get Capacity Ledger | Returns the Capacity balance details for a Provider's MSA Id  | `capacityLedger` | 1             |
-| Get Current Epoch | Returns the current Capacity Epoch number  | `currentEpoch` | 1             |
-| Get Current Epoch Info | Returns information about the current Capacity Epoch such as the starting block number | `currentEpochInfo` | 1             |
-| Get Staking Account Ledger | Returns information about an account's current staking details | `stakingAccountLedger` | 1             |
-| Staking Target Ledger | Returns information about an account's current staking details for a specific target Provider MSA Id | `stakingTargetLedger` | 1             |
-| Get Unstake Information | Returns the information about an account's current unstaking details and the unlocking chunks | `unstakeUnlocks` | 1             |
+| Name                             | Description                                                                                       | Query                       | Runtime Added |
+|----------------------------------|---------------------------------------------------------------------------------------------------|-----------------------------|---------------|
+| Get Capacity Ledger              | Returns the Capacity balance details for a Provider's MSA Id                                      | `capacityLedger`            | 1             |
+| Get Current Epoch                | Returns the current Capacity Epoch number                                                         | `currentEpoch`              | 1             |
+| Get Current Epoch Info           | Returns information about the current Capacity Epoch such as the starting block number            | `currentEpochInfo`          | 1             |
+| Current Era Info                 | Returns the index of the current era and the block when it started                                | `currentEraInfo`            | 1             |
+| Current Era Provider Boost Total | Returns the total amount of token staked this Reward Era, as of the current block                 | `currentProviderBoostTotal` | 1             | 
+| Provider Boost Histories         | Returns the ProviderBoostHistory stored for the provided AccountId                                | `providerBoostHistories`    | 1 |
+| Provider Boost Reward Pool       | Returns the Provider Boost Reward Pool Chunk at the given index                                   | `providerBoostRewardBools`  | 1 |
+| Retargets                        | Returns the count of retargets and what era was the last retarget, for the provided AccountId.    | `retargets`                 | 1 |
+| Get Staking Account Ledger       | Returns information about an account's current staking details                                    | `stakingAccountLedger`      | 1             |
+| Staking Target Ledger            | Returns information about an account's current staking details for a specific target Provider MSA Id | `stakingTargetLedger`       | 1             |
+| Get Unstake Information          | Returns the information about an account's current unstaking details and the unlocking chunks     | `unstakeUnlocks`            | 1             |
+
+### RPCs
+Custom RPCs are not enabled for this pallet. The following RuntimeAPI functions may be accessed by making a state call, for example:
+```javascript
+    const encodedAddr = api.registry.createType('AccountId32', booster.address);  // where booster is a polkadot/keyring Keypair type
+    let result = await api.rcp.state.call('CapacityRuntimeApi_list_unclaimed_rewards', encodedAddr);
+    const decodedResult: Vec<UnclaimedRewardInfo> = api.registry.createType('Vec<UnclaimedRewardInfo>', result);
+```
+
+| Name                   | Description                                                         | Query                                       | Runtime Added |
+|------------------------|---------------------------------------------------------------------|---------------------------------------------|---------------|
+| List unclaimed rewards | Returns a list of `UnclaimedRewardInfo` for the provided `AccountId`. | `CapacityRuntimeApi_list_unclaimed_rewards` | 1 |
+
 
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_capacity/pallet/storage_types/index.html) for additional state queries and details.

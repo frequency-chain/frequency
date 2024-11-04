@@ -66,11 +66,13 @@ This document does not:
 
 ### Formula
 
-The Provider Boost reward in FRQCY tokens for a given Era <i>e</i> is
+The Provider Boost reward in FRQCY tokens for a given Era <i>e</i> is a simple interest model, with the following formula:
 
 R = <i>min</i>(R<sub>era</sub>*L<sub>u</sub>/L<sub>T</sub>, L<sub>u</sub>*P<sub>max</sub>)
 
-Put into words, if the pool of Rewards per Era is R<sub>era</sub> FRQCY, then the Reward amount in FRQCY earned by a given Provider Booster will be proportional to how much they've locked for Provider Boosting out of the total, OR P<sub>max</sub> times the amount locked, whichever is less.
+Put into words, if the pool of Rewards per Era is 
+
+R<sub>era</sub> FRQCY, then the Reward amount in FRQCY earned by a given Provider Booster will be proportional to how much they've locked for Provider Boosting out of the total OR P<sub>max</sub> times the amount locked, whichever is less.
 
 Put another way, there is a fixed number of tokens to be rewarded each Era (R<sub>era</sub>), split up according to each Provider Boost account holder's percentage of the locked total. However, the reward return each Era for every individual account (P<sub>max</sub>) is capped at some rate, for example, 10%.
 
@@ -93,4 +95,4 @@ Rewards are not prorated; they are calculated only for balances held for an enti
 - Provider Boost Rewards are not minted until they are explicitly <i>claimed</i> by the Provider Boost account holder, by calling a non-free extrinsic.
 - Rewards must be claimed within a certain number of Provider Boost Eras.
 - When claimed, all available, unexpired Rewards for each previous Era are minted and transferred to the same account that locked them.
-- **Is there a cap on how much can be claimed at once?**
+- Currently there is no cap on how much can be claimed at once.

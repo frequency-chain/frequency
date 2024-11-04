@@ -6,6 +6,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
+import { MultiSignature } from "@polkadot/types/interfaces";
 const fundingSource = getFundingSource('passkey-proxy');
 
 describe('Passkey Pallet Tests', function () {
@@ -25,7 +26,7 @@ describe('Passkey Pallet Tests', function () {
       const remarksCalls = ExtrinsicHelper.api.tx.system.remark('passkey-test');
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
-      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, remarksCalls);
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, { Sr25519: accountSignature} as MultiSignature, remarksCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
@@ -38,7 +39,7 @@ describe('Passkey Pallet Tests', function () {
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign('badPasskeyPublicKey');
-      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, { Sr25519: accountSignature} as MultiSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
@@ -51,7 +52,7 @@ describe('Passkey Pallet Tests', function () {
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
-      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, { Sr25519: accountSignature} as MultiSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, true);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
@@ -64,7 +65,7 @@ describe('Passkey Pallet Tests', function () {
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100_000_000n);
       const { passKeyPrivateKey, passKeyPublicKey } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
-      const passkeyCall = await createPassKeyCall(accountPKey, nonce, accountSignature, transferCalls);
+      const passkeyCall = await createPassKeyCall(accountPKey, nonce, { Sr25519: accountSignature} as MultiSignature, transferCalls);
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
       assert.doesNotReject(passkeyProxy.fundAndSendUnsigned(fundingSource));

@@ -47,7 +47,7 @@ To programmatically check if a handle is valid, see the [`validate_handle` RPC](
 ### Post-Normalization Validation
 
 - MUST have a character length of at least 3 and no more than 20
-- MUST not be a reserved word or a [homoglyph](#homoglyph-attack-resistance) of it:
+- MUST not be a reserved word or a [homoglyph](#homoglyph-normalization) of it:
   - `adm1n` (`admin`)
   - `every0ne` (`everyone`)
   - `a11` (`all`)

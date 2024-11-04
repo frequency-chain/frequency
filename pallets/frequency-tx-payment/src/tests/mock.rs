@@ -11,7 +11,7 @@ use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
-	AccountId32, BuildStorage, Perbill,
+	AccountId32, BuildStorage, Perbill, Permill,
 };
 
 use frame_support::{
@@ -208,6 +208,7 @@ pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(TEST_TOKEN_PER_CAPACITY);
+	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
 
 impl pallet_capacity::Config for Test {
@@ -228,6 +229,13 @@ impl pallet_capacity::Config for Test {
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type EraLength = ConstU32<5>;
+	type ProviderBoostHistoryLimit = ConstU32<6>;
+	type RewardsProvider = Capacity;
+	type MaxRetargetsPerRewardEra = ConstU32<5>;
+	type RewardPoolPerEra = ConstU64<10_000>;
+	type RewardPercentCap = TestRewardCap;
+	type RewardPoolChunkLength = ConstU32<2>;
 }
 
 use pallet_balances::Call as BalancesCall;

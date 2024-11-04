@@ -52,7 +52,7 @@ export interface Sr25519Signature {
 export const TEST_EPOCH_LENGTH = 50;
 export const CENTS = 1000000n;
 export const DOLLARS = 100n * CENTS;
-export const STARTING_BALANCE = 6n * CENTS + DOLLARS;
+export const BOOST_ADJUSTMENT = 2n; // divide by 2 or 50% of Maximum Capacity
 
 export function getTokenPerCapacity(): bigint {
   // Perbil
@@ -89,6 +89,7 @@ export async function getBlockNumber(): Promise<number> {
 }
 
 let cacheED: null | bigint = null;
+
 export async function getExistentialDeposit(): Promise<bigint> {
   if (cacheED !== null) return cacheED;
   return (cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt());
@@ -448,6 +449,30 @@ export async function stakeToProvider(
   }
 }
 
+export async function boostProvider(
+  source: KeyringPair,
+  keys: KeyringPair,
+  providerId: u64,
+  tokensToStake: bigint
+): Promise<void> {
+  const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
+  const { target: stakeEvent } = await stakeOp.fundAndSend(source);
+  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+  if (stakeEvent) {
+    const stakedCapacity = stakeEvent.data.capacity;
+
+    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BOOST_ADJUSTMENT;
+
+    assert.equal(
+      stakedCapacity,
+      expectedCapacity,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
+    );
+  } else {
+    return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
+  }
+}
+
 export async function getNextEpochBlock() {
   const epochInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEpochInfo();
   const actualEpochLength = await ExtrinsicHelper.apiPromise.query.capacity.epochLength();
@@ -471,19 +496,26 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
+export async function getNextRewardEraBlock(): Promise<number> {
+  const eraInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEraInfo();
+  const actualEraLength: number = ExtrinsicHelper.api.consts.capacity.eraLength.toNumber();
+  return actualEraLength + eraInfo.startedAt.toNumber() + 1;
+}
+
 export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise<u16> {
   const existingSchemaId = getGraphChangeSchema();
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const { target: createSchemaEvent, eventMap } = await ExtrinsicHelper.createSchemaV3(
+    const op = await ExtrinsicHelper.createSchemaV3(
       source,
       AVRO_GRAPH_CHANGE,
       'AvroBinary',
       'OnChain',
       [],
       'test.graphChangeSchema'
-    ).fundAndSend(source);
+    );
+    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
       return createSchemaEvent.data.schemaId;

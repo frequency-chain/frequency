@@ -1,19 +1,27 @@
 use crate as pallet_capacity;
 
+use crate::{
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
+	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+};
 use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU16, ConstU32, ConstU64},
+	traits::{
+		tokens::{fungible::Inspect, WithdrawConsequence},
+		ConstU16, ConstU32, ConstU64,
+	},
 };
 use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, IdentityLookup},
-	AccountId32, BuildStorage, DispatchError, Perbill,
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
+	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
+use sp_std::ops::Mul;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -134,9 +142,35 @@ impl pallet_msa::Config for Test {
 	type MaxSignaturesStored = ConstU32<8000>;
 }
 
+// not used yet
+pub struct TestRewardsProvider {}
+
+impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
+	type Balance = BalanceOf<Test>;
+
+	// To reflect new economic model behavior of having a constant RewardPool amount.
+	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
+		10_000u64.into()
+	}
+
+	// use the pallet version of the era calculation.
+	fn era_staking_reward(
+		amount_staked: Self::Balance,
+		total_staked: Self::Balance,
+		reward_pool_size: Self::Balance,
+	) -> Self::Balance {
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
+	}
+
+	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
+		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
+	}
+}
+
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
+	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
 impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -156,6 +190,29 @@ impl pallet_capacity::Config for Test {
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;
+	type EraLength = ConstU32<10>;
+	type ProviderBoostHistoryLimit = ConstU32<12>;
+	type RewardsProvider = Capacity;
+	type MaxRetargetsPerRewardEra = ConstU32<5>;
+	type RewardPoolPerEra = ConstU64<10_000>;
+	type RewardPercentCap = TestRewardCap;
+	type RewardPoolChunkLength = ConstU32<3>;
+}
+
+fn initialize_reward_pool() {
+	let history_limit: u32 = <Test as Config>::ProviderBoostHistoryLimit::get();
+	let chunks = history_limit.saturating_div(<Test as Config>::RewardPoolChunkLength::get());
+	for i in 0u32..chunks {
+		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
+	}
+}
+
+pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
+	T::Currency::balance(who)
+}
+
+pub fn assert_transferable<T: Config>(who: &T::AccountId, amount: BalanceOf<T>) {
+	assert_eq!(T::Currency::can_withdraw(who, amount), WithdrawConsequence::Success);
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
@@ -176,6 +233,10 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	let mut ext = sp_io::TestExternalities::new(t);
-	ext.execute_with(|| System::set_block_number(1));
+	ext.execute_with(|| {
+		System::set_block_number(1);
+		initialize_reward_pool();
+		set_era_and_reward_pool(0, 1, 0);
+	});
 	ext
 }
