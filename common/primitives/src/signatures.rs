@@ -12,6 +12,7 @@ use sp_core::{
 	hexdisplay::HexDisplay,
 	sr25519, ByteArray, H256,
 };
+use scale_info::prelude::format;
 use sp_runtime::{
 	traits,
 	traits::{Lazy, Verify},
@@ -95,7 +96,8 @@ impl Verify for UnifiedSignature {
 			},
 			(Self::Ecdsa(ref sig), who) => {
 				log::info!(target:"ETHEREUM", "inside ecdsa signature verifier 0x{:?}",HexDisplay::from(&msg.get()));
-				let m = sp_io::hashing::keccak_256(msg.get());
+				let m = eth_message(&format!("<Frequency>0x{:?}</Frequency>", HexDisplay::from(&msg.get())));
+				log::info!(target:"ETHEREUM", "prefixed hashed 0x{:?}",HexDisplay::from(&m));
 				match sp_io::crypto::secp256k1_ecdsa_recover(sig.as_ref(), &m) {
 					Ok(pubkey) => {
 						let mut hashed = sp_io::hashing::keccak_256(pubkey.as_ref());
@@ -111,7 +113,11 @@ impl Verify for UnifiedSignature {
 		}
 	}
 }
-
+fn eth_message(message: &str) -> [u8; 32] {
+	let prefixed = format!("{}{}{}", "\x19Ethereum Signed Message:\n", message.len(), message);
+	log::info!(target:"ETHEREUM", "prefixed {:?}",prefixed);
+	sp_io::hashing::keccak_256(prefixed.as_bytes())
+}
 /// Public key for any known crypto algorithm.
 #[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
