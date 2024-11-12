@@ -266,7 +266,19 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
     const op = this.extrinsic();
     try {
-      return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+      return await firstValueFrom(
+        op.send().pipe(
+          tap((result) => {
+            // If we learn a transaction has an error status (this does NOT include RPC errors)
+            // Then throw an error
+            if (result.isError) {
+              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+            }
+          }),
+          filter(({ status }) => status.isInBlock || status.isFinalized),
+          this.parseResult(this.event)
+        )
+      );
     } catch (e) {
       if ((e as any).name === 'RpcError') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
