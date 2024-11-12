@@ -28,6 +28,7 @@ export const fundingSources = [
   'msa-create-msa',
   'msa-key-management',
   'passkey-proxy',
+  'passkey-proxy-ethereum',
   'proxy-pallet',
   'scenarios-grant-delegation',
   'schemas-create',

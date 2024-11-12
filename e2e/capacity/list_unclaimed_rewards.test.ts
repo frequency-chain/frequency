@@ -12,6 +12,7 @@ import {
 } from '../scaffolding/helpers';
 import { isTestnet } from '../scaffolding/env';
 import { KeyringPair } from '@polkadot/keyring/types';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const fundingSource = getFundingSource('capacity-list-unclaimed-rewards');
 
@@ -29,7 +30,9 @@ describe('Capacity: list_unclaimed_rewards', function () {
 
   it('can be called', async function () {
     const [_provider, booster] = await setUpForBoosting('booster1', 'provider1');
-    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(booster.address);
+    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(
+      getUnifiedAddress(booster)
+    );
     assert.equal(result.length, 0, `result should have been empty but had ${result.length} items`);
   });
 
@@ -46,7 +49,9 @@ describe('Capacity: list_unclaimed_rewards', function () {
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
     await ExtrinsicHelper.runToBlock(await getNextRewardEraBlock());
 
-    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(booster.address);
+    const result = await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.listUnclaimedRewards(
+      getUnifiedAddress(booster)
+    );
 
     assert(result.length >= 4, `Length should be >= 4 but is ${result.length}`);
 

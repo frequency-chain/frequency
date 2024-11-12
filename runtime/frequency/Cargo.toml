@@ -101,6 +101,7 @@ cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
+sp-debug-derive = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -263,3 +264,6 @@ metadata-hash = ["substrate-wasm-builder/metadata-hash"]
 frequency-lint-check = []
 test = []
 parameterized-consensus-hook = []
+force-debug=[
+	"sp-debug-derive/force-debug",
+]

@@ -54,6 +54,7 @@ serde = { version = "1.0", default-features = false }
 serial_test = { version = "0.9.0", default-features = false }
 base64-url = { version =  "3.0.0", default-features = false }
 p256 = { version = "0.13.2", default-features = false, features = ["ecdsa"] }
+libsecp256k1 = { version = "0.7", default-features = false }
 
 # substrate pallets
 pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
@@ -159,6 +160,7 @@ substrate-test-utils = { git = "https://github.com/paritytech/polkadot-sdk", bra
 
 substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
+sp-debug-derive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 
 [profile.release]
 panic = "unwind"

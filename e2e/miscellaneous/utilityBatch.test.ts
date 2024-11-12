@@ -4,6 +4,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { DOLLARS, createAndFundKeypair } from '../scaffolding/helpers';
 import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const fundingSource = getFundingSource('misc-util-batch');
 
@@ -19,7 +20,7 @@ describe('Utility Batch Filtering', function () {
   it('should successfully execute ✅ batch with allowed calls', async function () {
     // good batch: with only allowed calls
     const goodBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    goodBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(recipient.address, 1000));
+    goodBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(recipient), 1000));
     goodBatch.push(ExtrinsicHelper.api.tx.system.remark('Hello From Batch'));
     goodBatch.push(ExtrinsicHelper.api.tx.msa.create());
     const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, goodBatch);
@@ -32,7 +33,7 @@ describe('Utility Batch Filtering', function () {
     // bad batch: with a mix of allowed and disallowed calls
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
     //allowed
-    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(recipient.address, 1000));
+    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(recipient), 1000));
     badBatch.push(ExtrinsicHelper.api.tx.system.remark('Hello From Batch'));
     // not allowed
     badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle());
@@ -51,7 +52,7 @@ describe('Utility Batch Filtering', function () {
   it('should fail to execute ❌ batch with disallowed calls', async function () {
     // bad batch: with a mix of allowed and disallowed calls
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(recipient.address, 1000));
+    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(recipient), 1000));
     badBatch.push(ExtrinsicHelper.api.tx.system.remark('Hello From Batch'));
     badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle());
     badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa());
@@ -67,7 +68,7 @@ describe('Utility Batch Filtering', function () {
   it('should fail to execute ❌ forceBatch with disallowed calls', async function () {
     // bad batch: with a mix of allowed and disallowed calls
     const badBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(recipient.address, 1000));
+    badBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(recipient), 1000));
     badBatch.push(ExtrinsicHelper.api.tx.system.remark('Hello From Batch'));
     badBatch.push(ExtrinsicHelper.api.tx.handles.retireHandle());
     badBatch.push(ExtrinsicHelper.api.tx.msa.retireMsa());
@@ -127,7 +128,7 @@ describe('Utility Batch Filtering', function () {
     // batch with nested batch
     const nestedBatch: SubmittableExtrinsic<ApiTypes>[] = [];
     const innerBatch: SubmittableExtrinsic<ApiTypes>[] = [];
-    innerBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(recipient.address, 1000));
+    innerBatch.push(ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(recipient), 1000));
     innerBatch.push(ExtrinsicHelper.api.tx.system.remark('Hello From Batch'));
     nestedBatch.push(ExtrinsicHelper.api.tx.utility.batch(innerBatch));
     const batch = ExtrinsicHelper.executeUtilityBatchAll(sender, nestedBatch);
