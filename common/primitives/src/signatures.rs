@@ -225,7 +225,7 @@ impl std::fmt::Display for UnifiedSigner {
 		match *self {
 			Self::Ed25519(ref who) => write!(fmt, "ed25519: {}", who),
 			Self::Sr25519(ref who) => write!(fmt, "sr25519: {}", who),
-			Self::Ecdsa(ref who) => write!(fmt, "ethereum: {}", who),
+			Self::Ecdsa(ref who) => write!(fmt, "ecdsa: {}", who),
 		}
 	}
 }
