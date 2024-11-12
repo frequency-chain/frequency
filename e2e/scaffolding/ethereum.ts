@@ -74,6 +74,10 @@ export function getConvertedEthereumPublicKey(pair: KeyringPair): Uint8Array {
   return result;
 }
 
+/**
+ * converts an ethereum account to SS58 format
+ * @param accountId20Hex
+ */
 function getConvertedEthereumAccount(accountId20Hex: string): string {
   const addressBytes = hexToU8a(accountId20Hex);
   const result = new Uint8Array(32);
