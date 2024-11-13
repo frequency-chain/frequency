@@ -38,6 +38,7 @@ import {
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource('capacity-transactions');
@@ -92,7 +93,7 @@ describe('Capacity Transactions', function () {
 
           authorizedKeys.push(await createAndFundKeypair(fundingSource, 50_000_000n));
           defaultPayload.msaId = capacityProvider;
-          defaultPayload.newPublicKey = authorizedKeys[0].publicKey;
+          defaultPayload.newPublicKey = getUnifiedPublicKey(authorizedKeys[0]);
 
           const payload = await generateAddKeyPayload(defaultPayload);
           const addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);

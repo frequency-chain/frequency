@@ -57,6 +57,8 @@ export interface EcdsaSignature {
   Ecdsa: `0x${string}`;
 }
 
+export type MultiSignatureType = Sr25519Signature | Ed25519Signature | EcdsaSignature;
+
 export interface Address20MultiAddress {
   Address20: number[];
 }
@@ -77,6 +79,19 @@ export function getTestHandle(prefix = 'test-') {
 
 export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signature {
   return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) };
+}
+
+export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType {
+  switch (keys.type) {
+    case 'ecdsa':
+      throw new Error('Ecdsa key type is not supported!');
+    case 'sr25519':
+      return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) };
+    case 'ed25519':
+      return { Ed25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) };
+    case 'ethereum':
+      return { Ecdsa: u8aToHex(keys.sign(data.toU8a())) };
+  }
 }
 
 export async function generateDelegationPayload(
@@ -148,7 +163,7 @@ export async function generateItemizedActionsPayloadAndSignature(
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
   const payload = ExtrinsicHelper.api.registry.createType(payloadType, payloadData);
-  const signature = signPayloadSr25519(signingKeys, payload);
+  const signature = signPayload(signingKeys, payload);
 
   return { payload: payloadData, signature };
 }
@@ -341,8 +356,12 @@ export async function createProviderKeysAndId(source: KeyringPair, amount?: bigi
   return [providerKeys, providerId];
 }
 
-export async function createDelegator(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
-  const keys = await createAndFundKeypair(source, amount);
+export async function createDelegator(
+  source: KeyringPair,
+  amount?: bigint,
+  keyType: KeypairType = 'sr25519'
+): Promise<[KeyringPair, u64]> {
+  const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
   const createMsa = ExtrinsicHelper.createMsa(keys);
   const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
   const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
@@ -354,11 +373,11 @@ export async function createDelegatorAndDelegation(
   source: KeyringPair,
   schemaId: u16 | u16[],
   providerId: u64,
-  providerKeys: KeyringPair
+  providerKeys: KeyringPair,
+  keyType: KeypairType = 'sr25519'
 ): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa
-  const [keys, delegatorMsaId] = await createDelegator(source);
-
+  const [keys, delegatorMsaId] = await createDelegator(source, undefined, keyType);
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
@@ -369,7 +388,7 @@ export async function createDelegatorAndDelegation(
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(
     keys,
     providerKeys,
-    signPayloadSr25519(keys, addProviderData),
+    signPayload(keys, addProviderData),
     payload
   );
   await grantDelegationOp.fundAndSend(source);
@@ -666,8 +685,8 @@ export async function assertAddNewKey(
   newControlKeypair: KeyringPair
 ) {
   const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-  const ownerSig: Sr25519Signature = signPayloadSr25519(capacityKeys, addKeyPayloadCodec);
-  const newSig: Sr25519Signature = signPayloadSr25519(newControlKeypair, addKeyPayloadCodec);
+  const ownerSig: MultiSignatureType = signPayload(capacityKeys, addKeyPayloadCodec);
+  const newSig: MultiSignatureType = signPayload(newControlKeypair, addKeyPayloadCodec);
   const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(capacityKeys, ownerSig, newSig, addKeyPayload);
   const { eventMap } = await addPublicKeyOp.signAndSend();
   assertEvent(eventMap, 'system.ExtrinsicSuccess');

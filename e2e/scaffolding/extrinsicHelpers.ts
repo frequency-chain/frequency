@@ -6,7 +6,7 @@ import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types
 import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, Sr25519Signature } from './helpers';
+import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -24,7 +24,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from './ethereum';
 
 export interface ReleaseSchedule {
   start: number;
@@ -234,7 +234,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   public getEstimatedTxFee(): Promise<bigint> {
     return firstValueFrom(
       this.extrinsic()
-        .paymentInfo(this.keys)
+        .paymentInfo(getUnifiedAddress(this.keys))
         .pipe(map((info) => info.partialFee.toBigInt()))
     );
   }
@@ -479,7 +479,7 @@ export class ExtrinsicHelper {
     return new Extrinsic(
       () =>
         ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernance(
-          keys.publicKey,
+          getUnifiedPublicKey(keys),
           JSON.stringify(model),
           modelType,
           payloadLocation,
@@ -502,7 +502,7 @@ export class ExtrinsicHelper {
     return new Extrinsic(
       () =>
         ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernanceV2(
-          keys.publicKey,
+          getUnifiedPublicKey(keys),
           JSON.stringify(model),
           modelType,
           payloadLocation,
@@ -526,12 +526,13 @@ export class ExtrinsicHelper {
 
   public static addPublicKeyToMsa(
     keys: KeyringPair,
-    ownerSignature: Sr25519Signature,
-    newSignature: Sr25519Signature,
+    ownerSignature: MultiSignatureType,
+    newSignature: MultiSignatureType,
     payload: AddKeyData
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.addPublicKeyToMsa(keys.publicKey, ownerSignature, newSignature, payload),
+      () =>
+        ExtrinsicHelper.api.tx.msa.addPublicKeyToMsa(getUnifiedPublicKey(keys), ownerSignature, newSignature, payload),
       keys,
       ExtrinsicHelper.api.events.msa.PublicKeyAdded
     );
@@ -560,12 +561,16 @@ export class ExtrinsicHelper {
   public static createSponsoredAccountWithDelegation(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: AddProviderPayload
   ) {
     return new Extrinsic(
       () =>
-        ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(delegatorKeys.publicKey, signature, payload),
+        ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
       providerKeys,
       ExtrinsicHelper.api.events.msa.MsaCreated
     );
@@ -574,11 +579,11 @@ export class ExtrinsicHelper {
   public static grantDelegation(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: AddProviderPayload
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.grantDelegation(delegatorKeys.publicKey, signature, payload),
+      () => ExtrinsicHelper.api.tx.msa.grantDelegation(getUnifiedPublicKey(delegatorKeys), signature, payload),
       providerKeys,
       ExtrinsicHelper.api.events.msa.DelegationGranted
     );
@@ -666,13 +671,13 @@ export class ExtrinsicHelper {
   public static applyItemActionsWithSignature(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: ItemizedSignaturePayload
   ) {
     return new Extrinsic(
       () =>
         ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(
-          delegatorKeys.publicKey,
+          getUnifiedPublicKey(delegatorKeys),
           signature,
           payload
         ),
@@ -684,13 +689,13 @@ export class ExtrinsicHelper {
   public static applyItemActionsWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: ItemizedSignaturePayloadV2
   ) {
     return new Extrinsic(
       () =>
         ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignatureV2(
-          delegatorKeys.publicKey,
+          getUnifiedPublicKey(delegatorKeys),
           signature,
           payload
         ),
@@ -702,11 +707,16 @@ export class ExtrinsicHelper {
   public static deletePageWithSignature(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: PaginatedDeleteSignaturePayload
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(delegatorKeys.publicKey, signature, payload),
+      () =>
+        ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
     );
@@ -715,12 +725,16 @@ export class ExtrinsicHelper {
   public static deletePageWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: PaginatedDeleteSignaturePayloadV2
   ) {
     return new Extrinsic(
       () =>
-        ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignatureV2(delegatorKeys.publicKey, signature, payload),
+        ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignatureV2(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
     );
@@ -729,11 +743,16 @@ export class ExtrinsicHelper {
   public static upsertPageWithSignature(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: PaginatedUpsertSignaturePayload
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(delegatorKeys.publicKey, signature, payload),
+      () =>
+        ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated
     );
@@ -742,12 +761,16 @@ export class ExtrinsicHelper {
   public static upsertPageWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
-    signature: Sr25519Signature,
+    signature: MultiSignatureType,
     payload: PaginatedUpsertSignaturePayloadV2
   ) {
     return new Extrinsic(
       () =>
-        ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignatureV2(delegatorKeys.publicKey, signature, payload),
+        ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignatureV2(
+          getUnifiedPublicKey(delegatorKeys),
+          signature,
+          payload
+        ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated
     );
@@ -772,7 +795,7 @@ export class ExtrinsicHelper {
   public static claimHandle(delegatorKeys: KeyringPair, payload: any) {
     const proof = { Sr25519: u8aToHex(delegatorKeys.sign(u8aWrapBytes(payload.toU8a()))) };
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.handles.claimHandle(delegatorKeys.publicKey, proof, payload),
+      () => ExtrinsicHelper.api.tx.handles.claimHandle(getUnifiedPublicKey(delegatorKeys), proof, payload),
       delegatorKeys,
       ExtrinsicHelper.api.events.handles.HandleClaimed
     );

@@ -11,7 +11,7 @@ import {
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getConvertedEthereumPublicKey, getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey, getUnifiedAddress } from '../scaffolding/ethereum';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 const fundingSource = getFundingSource('passkey-proxy-ethereum');
@@ -30,7 +30,7 @@ describe('Passkey Pallet Ethereum Tests', function () {
 
     it('should transfer via passkeys with root sr25519 key into an ethereum style account', async function () {
       const initialReceiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys);
-      const accountPKey = fundedSr25519Keys.publicKey;
+      const accountPKey = getUnifiedPublicKey(fundedSr25519Keys);
       const nonce = await getNonce(fundedSr25519Keys);
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(
         getUnifiedAddress(receiverKeys),
@@ -52,7 +52,7 @@ describe('Passkey Pallet Ethereum Tests', function () {
 
     it('should transfer via passkeys with root ethereum style key into another one', async function () {
       const initialReceiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys);
-      const accountPKey = getConvertedEthereumPublicKey(fundedEthereumKeys);
+      const accountPKey = getUnifiedPublicKey(fundedEthereumKeys);
       console.log(`accountPKey ${u8aToHex(accountPKey)}`);
       const nonce = await getNonce(fundedEthereumKeys);
       const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(

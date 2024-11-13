@@ -8,6 +8,10 @@ import { Keyring } from '@polkadot/api';
 import { Keypair } from '@polkadot/util-crypto/types';
 import { Address20MultiAddress } from './helpers';
 
+/**
+ * Returns unified 32 bytes SS58 accountId
+ * @param pair
+ */
 export function getUnifiedAddress(pair: KeyringPair): string {
   if ('ethereum' === pair.type) {
     const etheAddressHex = ethereumEncode(pair.publicKey);
@@ -17,6 +21,24 @@ export function getUnifiedAddress(pair: KeyringPair): string {
     throw new Error(`ecdsa type is not supported!`);
   }
   return pair.address;
+}
+
+/**
+ * Returns ethereum style public key with prefixed zeros example: 0x00000000000000000000000019a701d23f0ee1748b5d5f883cb833943096c6c4
+ * @param pair
+ */
+export function getUnifiedPublicKey(pair: KeyringPair): Uint8Array {
+  if ('ethereum' === pair.type) {
+    const publicKeyBytes = hexToU8a(ethereumEncode(pair.publicKey));
+    const result = new Uint8Array(32);
+    result.fill(0, 0, 12);
+    result.set(publicKeyBytes, 12);
+    return result;
+  }
+  if (pair.type === 'ecdsa') {
+    throw new Error(`ecdsa type is not supported!`);
+  }
+  return pair.publicKey;
 }
 
 export function getEthereumStyleSigner(ethereumPair: KeyringPair): Signer {
@@ -60,18 +82,6 @@ export function getAccountId20MultiAddress(pair: KeyringPair): Address20MultiAdd
   const etheAddress = ethereumEncode(pair.publicKey);
   const ethAddress20 = Array.from(hexToU8a(etheAddress));
   return { Address20: ethAddress20 };
-}
-
-/**
- * Returns ethereum style public key with prefixed zeros example: 0x00000000000000000000000019a701d23f0ee1748b5d5f883cb833943096c6c4
- * @param pair
- */
-export function getConvertedEthereumPublicKey(pair: KeyringPair): Uint8Array {
-  const publicKeyBytes = hexToU8a(ethereumEncode(pair.publicKey));
-  const result = new Uint8Array(32);
-  result.fill(0, 0, 12);
-  result.set(publicKeyBytes, 12);
-  return result;
 }
 
 /**
