@@ -51,6 +51,17 @@ export default tseslint.config(
         },
       ],
       'allow-namespace': 'off',
+	  'no-restricted-syntax': [
+			'error',
+		  {
+			  "message": 'Direct usage of keyPair.address is not allowed in this file. please use getUnifiedAddress function.',
+			  "selector": 'MemberExpression[property.name="address"]'
+		  },
+		  {
+			  "message": 'Direct usage of keyPair.publicKey is not allowed in this file. please use getUnifiedPublicKey function',
+			  "selector": 'MemberExpression[property.name="publicKey"]'
+		  },
+	  ],
     },
   }
 );
