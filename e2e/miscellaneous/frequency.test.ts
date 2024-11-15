@@ -6,6 +6,7 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const fundingSource: KeyringPair = getFundingSource('frequency-misc');
 
@@ -26,7 +27,7 @@ describe('Frequency', function () {
       const beforeBlockNumber = await getBlockNumber();
 
       const extrinsic = new Extrinsic(
-        () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(keypairB.address, 1n * DOLLARS),
+        () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(keypairB), 1n * DOLLARS),
         keypairA,
         ExtrinsicHelper.api.events.balances.Transfer
       );
@@ -56,7 +57,7 @@ describe('Frequency', function () {
       const nonce = await getNonce(keypairB);
       for (let i = 0; i < 10; i += 2) {
         const extrinsic = new Extrinsic(
-          () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(keypairA.address, 1n * DOLLARS),
+          () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(keypairA), 1n * DOLLARS),
           keypairB,
           ExtrinsicHelper.api.events.balances.Transfer
         );
@@ -71,7 +72,7 @@ describe('Frequency', function () {
       // applying the missing nonce values to next transactions to unblock the stuck ones
       for (const missing of missingNonce) {
         const extrinsic = new Extrinsic(
-          () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(keypairA.address, 1n * DOLLARS),
+          () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(keypairA), 1n * DOLLARS),
           keypairB,
           ExtrinsicHelper.api.events.balances.Transfer
         );

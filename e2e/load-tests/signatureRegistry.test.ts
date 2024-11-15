@@ -13,6 +13,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64, Option } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 interface GeneratedMsa {
   id: u64;
@@ -73,12 +74,15 @@ async function checkKeys(startingNumber: number, keysToTest: KeyringPair[]) {
     let msaOption = await getMsaFromKey(key);
     if (!msaOption.isSome) {
       console.log(
-        `The ${startingNumber + i} key (${key.address}) failed to be associated with an MSA. Trying another block...`
+        `The ${startingNumber + i} key (${getUnifiedAddress(key)}) failed to be associated with an MSA. Trying another block...`
       );
       await createBlock();
       msaOption = await getMsaFromKey(key);
     }
-    assert(msaOption.isSome, `The ${startingNumber + i} key (${key.address}) failed to be associated with an MSA.`);
+    assert(
+      msaOption.isSome,
+      `The ${startingNumber + i} key (${getUnifiedAddress(key)}) failed to be associated with an MSA.`
+    );
   }
 }
 
@@ -129,7 +133,7 @@ async function createBlock(wait: number = 300) {
 }
 
 function getMsaFromKey(keys: KeyringPair): Promise<Option<u64>> {
-  return ExtrinsicHelper.apiPromise.query.msa.publicKeyToMsaId(keys.address);
+  return ExtrinsicHelper.apiPromise.query.msa.publicKeyToMsaId(getUnifiedAddress(keys));
 }
 
 async function createMsa(keys: KeyringPair): Promise<u64> {

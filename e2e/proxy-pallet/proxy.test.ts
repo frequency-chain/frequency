@@ -4,6 +4,7 @@ import { createAndFundKeypair } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const DOLLARS = 100000000n; // 100_000_000
 
@@ -21,7 +22,7 @@ describe('Proxy', function () {
 
     it('Creates a Proxy', async function () {
       const extrinsic = new Extrinsic(
-        () => ExtrinsicHelper.api.tx.proxy.addProxy(proxyKeys.address, 'Any', 0),
+        () => ExtrinsicHelper.api.tx.proxy.addProxy(getUnifiedAddress(proxyKeys), 'Any', 0),
         stashKeys,
         ExtrinsicHelper.api.events.proxy.ProxyAdded
       );
@@ -34,9 +35,9 @@ describe('Proxy', function () {
       const extrinsic = new Extrinsic(
         () =>
           ExtrinsicHelper.api.tx.proxy.proxy(
-            stashKeys.address,
+            getUnifiedAddress(stashKeys),
             'Any',
-            ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS)
+            ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(proxyKeys), 1n * DOLLARS)
           ),
         proxyKeys,
         ExtrinsicHelper.api.events.balances.Transfer
@@ -48,7 +49,7 @@ describe('Proxy', function () {
 
     it('Can remove the proxy', async function () {
       const extrinsic = new Extrinsic(
-        () => ExtrinsicHelper.api.tx.proxy.removeProxy(proxyKeys.address, 'Any', 0),
+        () => ExtrinsicHelper.api.tx.proxy.removeProxy(getUnifiedAddress(proxyKeys), 'Any', 0),
         stashKeys,
         ExtrinsicHelper.api.events.proxy.ProxyRemoved
       );
@@ -69,7 +70,7 @@ describe('Proxy', function () {
 
     it('Creates a Proxy', async function () {
       const extrinsic = new Extrinsic(
-        () => ExtrinsicHelper.api.tx.proxy.addProxy(proxyKeys.address, 'NonTransfer', 0),
+        () => ExtrinsicHelper.api.tx.proxy.addProxy(getUnifiedAddress(proxyKeys), 'NonTransfer', 0),
         stashKeys,
         ExtrinsicHelper.api.events.proxy.ProxyAdded
       );
@@ -82,9 +83,9 @@ describe('Proxy', function () {
       const extrinsic = new Extrinsic(
         () =>
           ExtrinsicHelper.api.tx.proxy.proxy(
-            stashKeys.address,
+            getUnifiedAddress(stashKeys),
             'Any',
-            ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS)
+            ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(proxyKeys), 1n * DOLLARS)
           ),
         proxyKeys,
         ExtrinsicHelper.api.events.system.ExtrinsicFailed
@@ -100,10 +101,10 @@ describe('Proxy', function () {
       const extrinsic = new Extrinsic(
         () =>
           ExtrinsicHelper.api.tx.proxy.proxy(
-            stashKeys.address,
+            getUnifiedAddress(stashKeys),
             'Any',
             ExtrinsicHelper.api.tx.utility.batch([
-              ExtrinsicHelper.api.tx.balances.transferAllowDeath(proxyKeys.address, 1n * DOLLARS),
+              ExtrinsicHelper.api.tx.balances.transferAllowDeath(getUnifiedAddress(proxyKeys), 1n * DOLLARS),
             ])
           ),
         proxyKeys,
@@ -118,7 +119,7 @@ describe('Proxy', function () {
 
     it('Can remove the proxy', async function () {
       const extrinsic = new Extrinsic(
-        () => ExtrinsicHelper.api.tx.proxy.removeProxy(proxyKeys.address, 'NonTransfer', 0),
+        () => ExtrinsicHelper.api.tx.proxy.removeProxy(getUnifiedAddress(proxyKeys), 'NonTransfer', 0),
         stashKeys,
         ExtrinsicHelper.api.events.proxy.ProxyRemoved
       );

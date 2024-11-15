@@ -45,7 +45,7 @@ describe('Capacity Staking Tests', function () {
       await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, tokenMinStake));
 
       // Confirm that the tokens were locked in the stakeKeys account using the query API
-      const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+      const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
       assert.equal(
         stakedAcctInfo.data.frozen,
         tokenMinStake,
@@ -107,7 +107,7 @@ describe('Capacity Staking Tests', function () {
       assert.equal(amount, tokenMinStake, 'should return a StakeWithdrawn event with 1M amount');
 
       // Confirm that the tokens were unstaked in the stakeKeys account using the query API
-      const unStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+      const unStakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
       assert.equal(unStakedAcctInfo.data.frozen, 0, 'should return an account with 0 frozen balance');
 
       // Confirm that the staked capacity was removed from the stakeProviderId account using the query API
@@ -143,7 +143,7 @@ describe('Capacity Staking Tests', function () {
           trackedFrozenBalance += tokenMinStake;
 
           // Confirm that the tokens were staked in the stakeKeys account using the query API
-          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
 
           const increasedFrozen: bigint = stakedAcctInfo.data.frozen.toBigInt();
 
@@ -233,7 +233,7 @@ describe('Capacity Staking Tests', function () {
           );
 
           // Confirm that the tokens were not staked in the stakeKeys account using the query API
-          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(additionalKeys.address);
+          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(additionalKeys);
 
           const increasedFrozen: bigint = stakedAcctInfo.data.frozen.toBigInt();
 

@@ -537,10 +537,10 @@ describe('Capacity Transactions', function () {
         it('successfully pays with Capacity for eligible transaction - claimHandle [available balance < ED]', async function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, capacityKeys, capacityProvider, amountStaked));
           // Empty the account to ensure the balance is less than ED
-          await ExtrinsicHelper.emptyAccount(capacityKeys, fundingSource.address).signAndSend();
+          await ExtrinsicHelper.emptyAccount(capacityKeys, fundingSource).signAndSend();
           // Confirm that the available balance is less than ED
           // The available balance is the free balance minus the frozen balance
-          const capacityAcctInfo = await ExtrinsicHelper.getAccountInfo(capacityKeys.address);
+          const capacityAcctInfo = await ExtrinsicHelper.getAccountInfo(capacityKeys);
           assert.equal(capacityAcctInfo.data.frozen.toBigInt(), amountStaked);
           assert.equal(capacityAcctInfo.data.free.toBigInt(), amountStaked);
 

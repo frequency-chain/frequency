@@ -37,6 +37,8 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
+import { getUnifiedAddress } from './ethereum';
+import { KeypairType } from '@polkadot/util-crypto/types';
 
 export interface Account {
   uri: string;
@@ -45,6 +47,18 @@ export interface Account {
 
 export interface Sr25519Signature {
   Sr25519: `0x${string}`;
+}
+
+export interface Ed25519Signature {
+  Ed25519: `0x${string}`;
+}
+
+export interface EcdsaSignature {
+  Ecdsa: `0x${string}`;
+}
+
+export interface Address20MultiAddress {
+  Address20: number[];
 }
 
 export const TEST_EPOCH_LENGTH = 50;
@@ -233,18 +247,18 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 // Keep track of all the funded keys so that we can drain them at the end of the test
 const createdKeys = new Map<string, KeyringPair>();
 
-export function drainFundedKeys(dest: string) {
+export function drainFundedKeys(dest: KeyringPair) {
   return drainKeys([...createdKeys.values()], dest);
 }
 
-export function createKeys(name: string = 'first pair'): KeyringPair {
+export function createKeys(name: string = 'first pair', keyType: KeypairType = 'sr25519'): KeyringPair {
   const mnemonic = mnemonicGenerate();
   // create & add the pair to the keyring with the type and some additional
   // metadata specified
-  const keyring = new Keyring({ type: 'sr25519' });
-  const keypair = keyring.addFromUri(mnemonic, { name }, 'sr25519');
+  const keyring = new Keyring({ type: keyType });
+  const keypair = keyring.addFromUri(mnemonic, { name }, keyType);
 
-  createdKeys.set(keypair.address, keypair);
+  createdKeys.set(getUnifiedAddress(keypair), keypair);
   return keypair;
 }
 
@@ -257,11 +271,11 @@ function canDrainAccount(info: FrameSystemAccountInfo): boolean {
   );
 }
 
-export async function drainKeys(keyPairs: KeyringPair[], dest: string) {
+export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
   try {
     await Promise.all(
       keyPairs.map(async (keypair) => {
-        const info = await ExtrinsicHelper.getAccountInfo(keypair.address);
+        const info = await ExtrinsicHelper.getAccountInfo(keypair);
         // Only drain keys that can be
         if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
       })
@@ -284,12 +298,13 @@ export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
   keyName?: string,
-  nonce?: number
+  nonce?: number,
+  keyType: KeypairType = 'sr25519'
 ): Promise<KeyringPair> {
-  const keypair = createKeys(keyName);
+  const keypair = createKeys(keyName, keyType);
 
   await fundKeypair(source, keypair, amount || (await getExistentialDeposit()), nonce);
-  log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${keypair.address}`);
+  log('Funded', `Name: ${keyName || 'None provided'}`, `Address: ${getUnifiedAddress(keypair)}`);
 
   return keypair;
 }
@@ -297,13 +312,14 @@ export async function createAndFundKeypair(
 export async function createAndFundKeypairs(
   source: KeyringPair,
   keyNames: string[],
-  amountOverExDep: bigint = 100_000_000n
+  amountOverExDep: bigint = 100_000_000n,
+  keyType: KeypairType = 'sr25519'
 ): Promise<KeyringPair[]> {
   const nonce = await getNonce(source);
   const existentialDeposit = await getExistentialDeposit();
 
   const wait: Promise<KeyringPair>[] = keyNames.map((keyName, i) => {
-    const keypair = createKeys(keyName + ` ${i}th`);
+    const keypair = createKeys(keyName + ` ${i}th`, keyType);
 
     return fundKeypair(source, keypair, existentialDeposit + amountOverExDep, nonce + i).then(() => keypair);
   });
@@ -618,7 +634,7 @@ export async function getCapacity(providerId: u64): Promise<PalletCapacityCapaci
 }
 
 export async function getNonce(keys: KeyringPair): Promise<number> {
-  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(keys.address);
+  const nonce = await ExtrinsicHelper.apiPromise.call.accountNonceApi.accountNonce(getUnifiedAddress(keys));
   return nonce.toNumber();
 }
 

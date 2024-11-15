@@ -6,6 +6,7 @@ pub use sp_runtime::{
 };
 use sp_std::{boxed::Box, vec::Vec};
 
+use crate::signatures::UnifiedSignature;
 use frame_support::dispatch::DispatchResultWithPostInfo;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
@@ -31,7 +32,7 @@ pub type BlockNumber = u32;
 pub type Header = generic::Header<BlockNumber, BlakeTwo256>;
 
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-pub type Signature = MultiSignature;
+pub type Signature = UnifiedSignature;
 
 /// Index of a transaction in the chain.
 pub type Index = u32;
