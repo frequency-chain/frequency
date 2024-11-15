@@ -67,7 +67,7 @@ export function getEthereumStyleSigner(ethereumPair: KeyringPair): Signer {
  * @param pair
  */
 export function getAccountId20MultiAddress(pair: KeyringPair): Address20MultiAddress {
-  if (pair.type !== "ethereum") {
+  if (pair.type !== 'ethereum') {
     throw new Error(`Only ethereum keys are supported!`);
   }
   const etheAddress = ethereumEncode(pair.publicKey);
