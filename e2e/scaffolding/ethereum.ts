@@ -22,7 +22,6 @@ export function getUnifiedAddress(pair: KeyringPair): string {
 export function getEthereumStyleSigner(ethereumPair: KeyringPair): Signer {
   return {
     signRaw: async (payload): Promise<SignerResult> => {
-      console.log(`raw_payload: ${payload.data}`);
       const sig = ethereumPair.sign(prefixEthereumTags(payload.data));
       const prefixedSignature = new Uint8Array(sig.length + 1);
       prefixedSignature[0] = 2;
@@ -51,7 +50,6 @@ function wrapCustomFrequencyTag(hexPayload: string): Uint8Array {
  */
 function prefixEthereumTags(hexPayload: string): Uint8Array {
   const wrapped = `\x19Ethereum Signed Message:\n${hexPayload.length}${hexPayload}`;
-  console.log(`wrapped ${wrapped}`);
   const buffer = Buffer.from(wrapped, 'utf-8');
   return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
 }

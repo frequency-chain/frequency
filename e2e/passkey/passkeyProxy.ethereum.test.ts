@@ -25,7 +25,7 @@ describe('Passkey Pallet Ethereum Tests', function () {
     before(async function () {
       fundedSr25519Keys = await createAndFundKeypair(fundingSource, 300_000_000n);
       fundedEthereumKeys = await createAndFundKeypair(fundingSource, 300_000_000n, undefined, undefined, 'ethereum');
-      receiverKeys = await createAndFundKeypair(fundingSource);
+      receiverKeys = await createAndFundKeypair(fundingSource, undefined, undefined, undefined, 'ethereum');
     });
 
     it('should transfer via passkeys with root sr25519 key into an ethereum style account', async function () {
@@ -51,7 +51,6 @@ describe('Passkey Pallet Ethereum Tests', function () {
     });
 
     it('should transfer via passkeys with root ethereum style key into another one', async function () {
-      const initialReceiverBalance = await ExtrinsicHelper.getAccountInfo(receiverKeys);
       const accountPKey = getConvertedEthereumPublicKey(fundedEthereumKeys);
       console.log(`accountPKey ${u8aToHex(accountPKey)}`);
       const nonce = await getNonce(fundedEthereumKeys);

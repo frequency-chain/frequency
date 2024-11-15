@@ -275,13 +275,13 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 		return true
 	}
 
-	// this is a check that would only happen if the signature message is raw
+	// signature of raw payload, compatible with polkadotJs signatures
 	let hashed = sp_io::hashing::keccak_256(&msg.get());
 	if verify_signature(signature.as_ref(), &hashed, signer) {
 		return true
 	}
 
-	// frequency wrapped for metamask compatibility
+	// frequency wrapped for Metamask compatibility
 	let frequency_wrapped =
 		eth_message_hash(&format!("<Frequency>0x{:?}</Frequency>", HexDisplay::from(&msg.get())));
 	verify_signature(&signature.as_ref(), &frequency_wrapped, signer)
@@ -307,6 +307,7 @@ mod tests {
 
 	#[test]
 	fn ethereum_prefixed_eip191_signatures_should_work() {
+		// payload is random and the signature is generated over that payload by a standard EIP-191 signer
 		let payload = from_hex("0x0a0300e659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e028c7d0a3500000000830000000100000026c1147602cf6557f4e0068a78cd4b22b6f6b03e106d05618cde8537e4ffe454c1f285c69f563934857a63463571d57723fbad6ac7de44611ed674f02c04c2ae00").expect("Should convert");
 		let signature_raw = from_hex("0x056ca64d31251a1f20733ce2a741e2963c87a9674a35f8619b6b97210ae8c8b54c2853da1b943dd95ac3b893b37f69ca7dc38c13f8ec92a235b00ae03426505900").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
@@ -325,6 +326,7 @@ mod tests {
 
 	#[test]
 	fn ethereum_raw_signatures_should_work() {
+		// payload is random and the signature is generated over that payload by PolkadotJs and ethereum keypair
 		let payload = from_hex("0x0a0300e659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e028c7d0a3500000000830000000100000026c1147602cf6557f4e0068a78cd4b22b6f6b03e106d05618cde8537e4ffe454b63f7774106903a22684c02eeebe2fdc903ac945bf25962fd9d05e7e0ddfb44f00").expect("Should convert");
 		let signature_raw = from_hex("0xd740c8294967b36236c5e05861a55bad75d0866c4a6f63d4918a39769a9582b872299a3411cc0f31b5f631261d669fc21ce427ee23999a91df5f0e74dfbbfc6c00").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
@@ -343,6 +345,7 @@ mod tests {
 
 	#[test]
 	fn ethereum_custom_wrapped_signatures_should_work() {
+		// payload is random and the signature is generated over that payload by Metamask signer
 		let payload = from_hex("0x0a0300e659a7a1628cdd93febc04a4e0646ea20e9f5f0ce097d9a05290d4a9e054df4e028c7d0a3500000000830000000100000026c1147602cf6557f4e0068a78cd4b22b6f6b03e106d05618cde8537e4ffe4548de1bcb12a1d42e58b218a7abb03cb629111625cf3449640d837c5aa98b87d8e00").expect("Should convert");
 		let signature_raw = from_hex("0x9633e747bcd951bdb9d98ff84c65562e1f62bd059c578a942859e1695f2472aa0dbaab48c28f6dbc795baa73c27252d97e8dc2170fd7d69694d5cd1863fb968c00").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
