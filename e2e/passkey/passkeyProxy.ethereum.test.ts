@@ -4,7 +4,6 @@ import {
   createAndFundKeypair,
   EcdsaSignature,
   getBlockNumber,
-  getNextEpochBlock,
   getNonce,
   Sr25519Signature,
 } from '../scaffolding/helpers';
