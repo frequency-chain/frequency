@@ -23,10 +23,7 @@ use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, Relaych
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
-	traits::{
-		AccountIdConversion, AccountIdLookup, BlakeTwo256, Block as BlockT, ConvertInto,
-		IdentityLookup,
-	},
+	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
@@ -118,6 +115,7 @@ pub use common_runtime::{
 };
 use frame_support::traits::Contains;
 
+mod ethereum;
 mod genesis;
 
 /// Interface to collective pallet to propose a proposal.
@@ -474,7 +472,7 @@ impl frame_system::Config for Runtime {
 	/// The aggregated dispatch type that is available for extrinsics.
 	type RuntimeCall = RuntimeCall;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	type Lookup = AccountIdLookup<AccountId, ()>;
+	type Lookup = EthereumCompatibleAccountIdLookup<AccountId, ()>;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Nonce = Index;
 	/// The block type.
@@ -938,6 +936,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
 }
 
+use crate::ethereum::EthereumCompatibleAccountIdLookup;
 use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;

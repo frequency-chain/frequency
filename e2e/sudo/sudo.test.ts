@@ -205,7 +205,7 @@ describe('Sudo required', function () {
           assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
 
           // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
-          let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+          let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
           assert.equal(
             stakedAcctInfo.data.reserved,
             proposalBond,
@@ -222,7 +222,7 @@ describe('Sudo required', function () {
           assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
           // Confirm that the tokens were slashed from the stakeKeys account using the query API
-          stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys.address);
+          stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
           assert.equal(
             stakedAcctInfo.data.reserved,
             0n,

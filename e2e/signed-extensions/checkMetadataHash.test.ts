@@ -13,6 +13,7 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex } from '@polkadot/util';
+import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const fundingSource = getFundingSource('check-metadata-hash');
 
@@ -30,7 +31,7 @@ describe.skip('Check Metadata Hash', function () {
   });
 
   it('should successfully transfer funds', async function () {
-    const tx = ExtrinsicHelper.api.tx.balances.transferKeepAlive(accountWithNoFunds.address, 5_000_000n);
+    const tx = ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(accountWithNoFunds), 5_000_000n);
 
     const api = ExtrinsicHelper.apiPromise;
     const metadata = await api.call.metadata.metadataAtVersion(15);

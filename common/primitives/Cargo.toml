@@ -30,11 +30,14 @@ sp-std = { workspace = true }
 numtoa = { workspace = true }
 sp-externalities = { workspace = true }
 sp-runtime-interface = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["hmac"] }
+log = "0.4.22"
 
 [features]
 default = ['std']
 runtime-benchmarks = []
 std = [
+  'libsecp256k1/std',
   'parity-scale-codec/std',
   'frame-support/std',
   'frame-system/std',

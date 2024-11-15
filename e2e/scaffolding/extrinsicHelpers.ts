@@ -24,6 +24,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
+import { getUnifiedAddress } from './ethereum';
 
 export interface ReleaseSchedule {
   start: number;
@@ -246,7 +247,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   async fundOperation(source: KeyringPair) {
     const [amount, accountInfo] = await Promise.all([
       this.getEstimatedTxFee(),
-      ExtrinsicHelper.getAccountInfo(this.keys.address),
+      ExtrinsicHelper.getAccountInfo(this.keys),
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
@@ -256,17 +257,42 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
 
   public async fundAndSend(source: KeyringPair) {
     await this.fundOperation(source);
-    log('Fund and Send', `Fund Source: ${source.address}`);
+    log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
     return this.signAndSend();
   }
 
   public async fundAndSendUnsigned(source: KeyringPair) {
     await this.fundOperation(source);
-    log('Fund and Send', `Fund Source: ${source.address}`);
+    log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
+    const op = this.extrinsic();
+    try {
+      return await firstValueFrom(
+        op.send().pipe(
+          tap((result) => {
+            // If we learn a transaction has an error status (this does NOT include RPC errors)
+            // Then throw an error
+            if (result.isError) {
+              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+            }
+          }),
+          filter(({ status }) => status.isInBlock || status.isFinalized),
+          this.parseResult(this.event)
+        )
+      );
+    } catch (e) {
+      if ((e as any).name === 'RpcError') {
+        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+      }
+      throw e;
+    }
+  }
+
+  public async sendUnsigned() {
     const op = this.extrinsic();
     try {
       return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
     } catch (e) {
+      console.error(e);
       if ((e as any).name === 'RpcError') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
       }
@@ -336,8 +362,8 @@ export class ExtrinsicHelper {
   }
 
   /** Query Extrinsics */
-  public static getAccountInfo(address: string): Promise<FrameSystemAccountInfo> {
-    return ExtrinsicHelper.apiPromise.query.system.account(address);
+  public static getAccountInfo(keyPair: KeyringPair): Promise<FrameSystemAccountInfo> {
+    return ExtrinsicHelper.apiPromise.query.system.account(getUnifiedAddress(keyPair));
   }
 
   public static getSchemaMaxBytes() {
@@ -347,15 +373,15 @@ export class ExtrinsicHelper {
   /** Balance Extrinsics */
   public static transferFunds(source: KeyringPair, dest: KeyringPair, amount: Compact<u128> | AnyNumber) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(dest.address, amount),
+      () => ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedAddress(dest), amount),
       source,
       ExtrinsicHelper.api.events.balances.Transfer
     );
   }
 
-  public static emptyAccount(source: KeyringPair, dest: KeyringPair['address']) {
+  public static emptyAccount(source: KeyringPair, dest: KeyringPair) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.balances.transferAll(dest, false),
+      () => ExtrinsicHelper.api.tx.balances.transferAll(getUnifiedAddress(dest), false),
       source,
       ExtrinsicHelper.api.events.balances.Transfer
     );
@@ -737,7 +763,7 @@ export class ExtrinsicHelper {
 
   public static timeReleaseTransfer(keys: KeyringPair, who: KeyringPair, schedule: ReleaseSchedule) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.timeRelease.transfer(who.address, schedule),
+      () => ExtrinsicHelper.api.tx.timeRelease.transfer(getUnifiedAddress(who), schedule),
       keys,
       ExtrinsicHelper.api.events.timeRelease.ReleaseScheduleAdded
     );
@@ -913,7 +939,7 @@ export class ExtrinsicHelper {
 
   public static submitProposal(keys: KeyringPair, spendAmount: AnyNumber | Compact<u128>) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.treasury.proposeSpend(spendAmount, keys.address),
+      () => ExtrinsicHelper.api.tx.treasury.proposeSpend(spendAmount, getUnifiedAddress(keys)),
       keys,
       ExtrinsicHelper.api.events.treasury.Proposed
     );

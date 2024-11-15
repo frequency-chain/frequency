@@ -6,18 +6,19 @@ import { ExtrinsicHelper } from './extrinsicHelpers';
 import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
+import { getUnifiedAddress } from './ethereum';
 
 const SOURCE_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
 
 async function fundAllSources() {
   const root = getRootFundingSource().keys;
-  console.log('Root funding source: ', root.address);
+  console.log('Root funding source: ', getUnifiedAddress(root));
   const nonce = await getNonce(root);
   await Promise.all(
     fundingSources.map((dest, i) => {
       try {
         const testFundingSource = getFundingSource(dest);
-        console.log(dest, testFundingSource.address.toString());
+        console.log(dest, getUnifiedAddress(testFundingSource).toString());
         return ExtrinsicHelper.transferFunds(root, testFundingSource, SOURCE_AMOUNT).signAndSend(nonce + i);
       } catch (e) {
         console.error('Unable to fund soruce', { dest, nonce: nonce + i });
@@ -37,7 +38,7 @@ async function devSudoActions() {
 function drainAllSources() {
   const keys = fundingSources.map((source) => getFundingSource(source));
   const root = getRootFundingSource().keys;
-  return drainKeys(keys, root.address);
+  return drainKeys(keys, root);
 }
 
 export async function mochaGlobalSetup() {
