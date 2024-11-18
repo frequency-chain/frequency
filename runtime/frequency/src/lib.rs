@@ -655,7 +655,10 @@ impl pallet_time_release::Config for Runtime {
 impl pallet_timestamp::Config for Runtime {
 	/// A timestamp: milliseconds since the unix epoch.
 	type Moment = u64;
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 	type OnTimestampSet = Aura;
+	#[cfg(feature = "frequency-no-relay")]
+	type OnTimestampSet = ();
 	type MinimumPeriod = MinimumPeriod;
 	type WeightInfo = weights::pallet_timestamp::SubstrateWeight<Runtime>;
 }
