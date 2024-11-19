@@ -421,14 +421,7 @@ jobs:
           if-no-files-found: error
 
   build-js-schemas:
-    needs: build-binaries
     name: Build JS Schemas
-    env:
-      NETWORK: local
-      BUILD_PROFILE: release
-      BIN_DIR: target/release
-      RELEASE_FILENAME_PREFIX: frequency-local
-      ARCH: amd64
     runs-on: ubuntu-22.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
     steps:

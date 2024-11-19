@@ -475,7 +475,10 @@ jobs:
       - name: Test
         run: npm test
         working-directory: js/schemas
-      - name: Build & Publish Dry Run
+      - name: Build
+        run: npm run build
+        working-directory: js/schemas
+      - name: Publish Dry Run
         run: npm publish --dry-run
         working-directory: js/schemas/dist
       - name: Generate npm tarball
