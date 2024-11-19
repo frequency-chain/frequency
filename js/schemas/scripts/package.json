@@ -1,0 +1,13 @@
+{
+  "name": "schema-data",
+  "version": "1.0.0",
+  "description": "Gets data from mainnet and outputs them in the format used by schema package",
+  "scripts": {
+    "generate": "node fetchSchemaData.mjs"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "^13.2.1"
+  }
+}
