@@ -60,6 +60,7 @@ pub fn get_msa_ids<T: Config>() -> Vec<MessageSourceId> {
 		]
 	} else {
 		if cfg!(test) {
+			// this allows to test the mainnet path
 			vec![1]
 		} else {
 			// we are going to use hooks for this multi-block migration so this is empty to only flag that
