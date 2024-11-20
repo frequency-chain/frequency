@@ -52,8 +52,8 @@ Here is an example of a schema info object
 
 ## Upgrades and Matching Versions
 
-Assuming you are using no deprecated methods, any release version should work against a release version of `@frequency-chain/schemas`.
-If you are working against a development version it is suggested that you match against the commit hash using `v0.0.0-[First 6 of the commit hash]`.
+Assuming you are using no deprecated methods, any release version of `@frequency-chain/schemas` should work against a release version of a Frequency node.
+If you are working against a development node it is suggested that you match the package version against the commit hash using `v0.0.0-[First 6 of the commit hash]`.
 
 Changelog is maintained in the [releases for Frequency](https://github.com/frequency-chain/frequency/releases).
 
