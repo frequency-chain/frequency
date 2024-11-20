@@ -183,7 +183,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Up Cargo Deny
         run: |
-          cargo install --force --locked cargo-deny
+        # using older version of cargo deny since the new one requires rustc version >= 1.81
+          cargo install --force --locked cargo-deny@0.16.1
           cargo generate-lockfile
       - name: Run Cargo Deny
         run: cargo deny check --hide-inclusion-graph -c deny.toml
