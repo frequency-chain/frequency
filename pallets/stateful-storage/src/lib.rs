@@ -36,7 +36,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;
-
+/// storage migrations
+pub mod migration;
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
@@ -59,6 +60,8 @@ pub use pallet::*;
 use sp_core::{bounded::BoundedVec, crypto::AccountId32};
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 pub use weights::*;
+
+const LOG_TARGET: &str = "runtime::stateful-storage";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -124,6 +127,7 @@ pub mod pallet {
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
+	#[pallet::storage_version(STATEFUL_STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
 	#[pallet::error]
