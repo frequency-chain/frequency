@@ -36,7 +36,7 @@ After importing, any of the following **Maps** can be used to fetch desired sche
 
 Here is an example of a schema info object
 
-```json
+```javascript
   {
     id: 7,
     namespace: 'dsnp',
