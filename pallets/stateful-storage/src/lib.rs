@@ -130,6 +130,11 @@ pub mod pallet {
 	#[pallet::storage_version(STATEFUL_STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
 
+	/// A temporary storage for migration
+	/// At the start of the next block this storage is set to 0
+	#[pallet::storage]
+	pub(super) type MigrationPageIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
+
 	#[pallet::error]
 	pub enum Error<T> {
 		/// Page would exceed the highest allowable PageId
@@ -222,6 +227,27 @@ pub mod pallet {
 			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
+			// this should get removed after rolling out to testnet
+			#[cfg(any(feature = "frequency-testnet", test))]
+			{
+				let page_index = <MigrationPageIndex<T>>::get();
+				let (weight, continue_migration) = migration::v1::paginated_migration_testnet::<T>(
+					MIGRATION_PAGE_SIZE,
+					page_index,
+				);
+				if continue_migration {
+					<MigrationPageIndex<T>>::set(page_index.saturating_add(1));
+				}
+				T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
+			}
+			#[cfg(not(any(feature = "frequency-testnet", test)))]
+			Weight::zero()
+		}
 	}
 
 	#[pallet::call]
