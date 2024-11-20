@@ -131,7 +131,6 @@ pub mod pallet {
 	pub struct Pallet<T>(_);
 
 	/// A temporary storage for migration
-	/// At the start of the next block this storage is set to 0
 	#[pallet::storage]
 	pub(super) type MigrationPageIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
