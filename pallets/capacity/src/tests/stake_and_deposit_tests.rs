@@ -272,10 +272,10 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 fn get_stakable_amount_for_works() {
 	new_test_ext().execute_with(|| {
 		let account = 200;
-		// An amount greater than the free balance
+		// An amount greater than the free balance should not be stakable
 		let amount = 230;
 		let res: u64 = Capacity::get_stakable_amount_for(&account, amount);
-		assert_eq!(res, 189);
+		assert_eq!(res, 0);
 	})
 }
 
