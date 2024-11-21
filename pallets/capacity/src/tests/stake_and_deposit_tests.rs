@@ -244,7 +244,7 @@ fn stake_an_account_can_stake_to_multiple_targets() {
 }
 
 #[test]
-fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
+fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_zero() {
 	new_test_ext().execute_with(|| {
 		let target: MessageSourceId = 1;
 		register_provider(target, String::from("Foo"));
@@ -252,7 +252,11 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_maximum() {
 		// An amount greater than the free balance
 		let amount = 230;
 
-		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, amount));
+		assert_noop!(
+			Capacity::stake(RuntimeOrigin::signed(account), target, amount),
+			Error::<Test>::BalanceTooLowtoStake
+		);
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, 189));
 
 		// Check that StakingAccountLedger is updated.
 		assert_eq!(StakingAccountLedger::<Test>::get(account).unwrap().active, 189);

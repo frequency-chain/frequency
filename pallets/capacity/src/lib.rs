@@ -835,7 +835,7 @@ impl<T: Config> Pallet<T> {
 		let account_balance =
 			T::Currency::reducible_balance(&staker, Preservation::Preserve, Fortitude::Polite);
 		let stakable_amount = account_balance.saturating_sub(T::MinimumTokenBalance::get());
-		if stakable_amount > proposed_amount {
+		if stakable_amount >= proposed_amount {
 			proposed_amount
 		} else {
 			Zero::zero()
