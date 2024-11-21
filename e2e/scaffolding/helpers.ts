@@ -84,7 +84,7 @@ export function signPayloadSr25519(keys: KeyringPair, data: Codec): Sr25519Signa
 export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType {
   switch (keys.type) {
     case 'ecdsa':
-      throw new Error('Ecdsa key type is not supported!');
+      throw new Error('Ecdsa key type is not supported and it should be replaced with ethereum ones!');
     case 'sr25519':
       return { Sr25519: u8aToHex(keys.sign(u8aWrapBytes(data.toU8a()))) };
     case 'ed25519':

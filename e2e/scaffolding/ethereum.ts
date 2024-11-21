@@ -19,7 +19,7 @@ export function getUnifiedAddress(pair: KeyringPair): string {
     return getSS58AccountFromEthereumAccount(etheAddressHex);
   }
   if (pair.type === 'ecdsa') {
-    throw new Error(`ecdsa type is not supported!`);
+    throw new Error('Ecdsa key type is not supported and it should be replaced with ethereum ones!');
   }
   return pair.address;
 }
@@ -37,7 +37,7 @@ export function getUnifiedPublicKey(pair: KeyringPair): Uint8Array {
     return result;
   }
   if (pair.type === 'ecdsa') {
-    throw new Error(`ecdsa type is not supported!`);
+    throw new Error('Ecdsa key type is not supported and it should be replaced with ethereum ones!');
   }
   return pair.publicKey;
 }
