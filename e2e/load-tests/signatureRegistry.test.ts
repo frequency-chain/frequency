@@ -13,7 +13,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64, Option } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 interface GeneratedMsa {
   id: u64;
@@ -154,7 +154,7 @@ async function addSigs(msaId: u64, keys: KeyringPair, blockNumber: number, nonce
 
   const defaultPayload: AddKeyData = {};
   defaultPayload.msaId = msaId;
-  defaultPayload.newPublicKey = newKeys.publicKey;
+  defaultPayload.newPublicKey = getUnifiedPublicKey(newKeys);
   const payload = await generateAddKeyPayload(defaultPayload, 100, blockNumber);
 
   const addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);

@@ -1,5 +1,5 @@
 import { SubmittableExtrinsic } from '@polkadot/api/types';
-import { base64UrlToUint8Array, Sr25519Signature, Ed25519Signature, EcdsaSignature } from './helpers';
+import { base64UrlToUint8Array, MultiSignatureType } from './helpers';
 import { secp256r1 } from '@noble/curves/p256';
 import { ISubmittableResult } from '@polkadot/types/types';
 import { u8aWrapBytes } from '@polkadot/util';
@@ -16,7 +16,7 @@ export function createPassKeyAndSignAccount(accountPKey: Uint8Array) {
 export async function createPassKeyCall(
   accountPKey: Uint8Array,
   nonce: number,
-  accountSignature: Sr25519Signature | Ed25519Signature | EcdsaSignature,
+  accountSignature: MultiSignatureType,
   call: SubmittableExtrinsic<'rxjs', ISubmittableResult>
 ) {
   const ext_call_type = ExtrinsicHelper.api.registry.createType('Call', call);

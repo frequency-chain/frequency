@@ -12,6 +12,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 const fundingSource = getFundingSource('passkey-proxy');
 
 describe('Passkey Pallet Tests', function () {
@@ -25,7 +26,7 @@ describe('Passkey Pallet Tests', function () {
     });
 
     it('should fail due to unsupported call', async function () {
-      const accountPKey = fundedKeys.publicKey;
+      const accountPKey = getUnifiedPublicKey(fundedKeys);
       const nonce = await getNonce(fundedKeys);
 
       const remarksCalls = ExtrinsicHelper.api.tx.system.remark('passkey-test');
@@ -40,9 +41,9 @@ describe('Passkey Pallet Tests', function () {
     });
 
     it('should fail to transfer balance due to bad account ownership proof', async function () {
-      const accountPKey = fundedKeys.publicKey;
+      const accountPKey = getUnifiedPublicKey(fundedKeys);
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedPublicKey(receiverKeys), 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign('badPasskeyPublicKey');
       const multiSignature: Sr25519Signature = { Sr25519: u8aToHex(accountSignature) };
@@ -54,9 +55,9 @@ describe('Passkey Pallet Tests', function () {
     });
 
     it('should fail to transfer balance due to bad passkey signature', async function () {
-      const accountPKey = fundedKeys.publicKey;
+      const accountPKey = getUnifiedPublicKey(fundedKeys);
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 0n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(getUnifiedPublicKey(receiverKeys), 0n);
       const { passKeyPrivateKey, passKeyPublicKey, passkeySignature } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const multiSignature: Sr25519Signature = { Sr25519: u8aToHex(accountSignature) };
@@ -68,9 +69,12 @@ describe('Passkey Pallet Tests', function () {
     });
 
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {
-      const accountPKey = fundedKeys.publicKey;
+      const accountPKey = getUnifiedPublicKey(fundedKeys);
       const nonce = await getNonce(fundedKeys);
-      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(receiverKeys.publicKey, 100_000_000n);
+      const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(
+        getUnifiedPublicKey(receiverKeys),
+        100_000_000n
+      );
       const { passKeyPrivateKey, passKeyPublicKey } = createPassKeyAndSignAccount(accountPKey);
       const accountSignature = fundedKeys.sign(u8aWrapBytes(passKeyPublicKey));
       const multiSignature: Sr25519Signature = { Sr25519: u8aToHex(accountSignature) };

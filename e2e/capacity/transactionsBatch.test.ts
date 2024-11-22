@@ -16,6 +16,7 @@ import {
   getTestHandle,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource('capacity-transactions-batch');
@@ -49,7 +50,7 @@ describe('Capacity Transactions Batch', function () {
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);
       const delegatorKeys = createKeys('delegatorKeys');
       const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-        delegatorKeys.publicKey,
+        getUnifiedPublicKey(delegatorKeys),
         signPayloadSr25519(delegatorKeys, addProviderData),
         addProviderPayload
       );
@@ -70,7 +71,7 @@ describe('Capacity Transactions Batch', function () {
       };
 
       const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
-        delegatorKeys.publicKey,
+        getUnifiedPublicKey(delegatorKeys),
         claimHandleProof,
         claimHandlePayload
       );
@@ -95,7 +96,7 @@ describe('Capacity Transactions Batch', function () {
       const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);
       const delegatorKeys = createKeys('delegatorKeys');
       const createSponsoredAccountWithDelegation = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-        delegatorKeys.publicKey,
+        getUnifiedPublicKey(delegatorKeys),
         signPayloadSr25519(delegatorKeys, addProviderData),
         addProviderPayload
       );
@@ -116,7 +117,7 @@ describe('Capacity Transactions Batch', function () {
       };
 
       const claimHandle = ExtrinsicHelper.api.tx.handles.claimHandle(
-        delegatorKeys.publicKey,
+        getUnifiedPublicKey(delegatorKeys),
         calimHandleProof,
         claimHandlePayload
       );

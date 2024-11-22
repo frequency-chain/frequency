@@ -19,6 +19,7 @@ import {
   assertAddNewKey,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource('capacity-transactions-fail');
@@ -111,7 +112,7 @@ describe('Capacity Transaction Failures', function () {
 
         // As current owner, add a new set of control keys that do not have a balance.
         const newControlKeypair = createKeys('NewKeyNoBalance');
-        const newPublicKey = newControlKeypair.publicKey;
+        const newPublicKey = getUnifiedPublicKey(newControlKeypair);
         const addKeyPayload: AddKeyData = await generateAddKeyPayload({
           msaId: capacityProvider,
           newPublicKey: newPublicKey,
@@ -193,7 +194,7 @@ describe('Capacity Transaction Failures', function () {
         // Add new key
         const newKeyPayload: AddKeyData = await generateAddKeyPayload({
           msaId: new u64(ExtrinsicHelper.api.registry, capacityProvider),
-          newPublicKey: noTokensKeys.publicKey,
+          newPublicKey: getUnifiedPublicKey(noTokensKeys),
         });
         const addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newKeyPayload);
 

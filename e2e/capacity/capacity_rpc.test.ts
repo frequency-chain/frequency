@@ -13,6 +13,7 @@ import {
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource('capacity-rpcs');
@@ -46,7 +47,7 @@ describe('Capacity RPC', function () {
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);
     const delegatorKeys = createKeys('delegatorKeys');
     const call = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-      delegatorKeys.publicKey,
+      getUnifiedPublicKey(delegatorKeys),
       signPayloadSr25519(delegatorKeys, addProviderData),
       addProviderPayload
     );
@@ -89,7 +90,7 @@ describe('Capacity RPC', function () {
     const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', addProviderPayload);
     const delegatorKeys = createKeys('delegatorKeys');
     const insideTx = ExtrinsicHelper.api.tx.msa.createSponsoredAccountWithDelegation(
-      delegatorKeys.publicKey,
+      getUnifiedPublicKey(delegatorKeys),
       signPayloadSr25519(delegatorKeys, addProviderData),
       addProviderPayload
     );
