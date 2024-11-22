@@ -6,7 +6,7 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
-import { getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const fundingSource: KeyringPair = getFundingSource('frequency-misc');
 
@@ -23,7 +23,7 @@ describe('Frequency', function () {
     it('Get events successfully', async function () {
       const balance_pallet = new u8(ExtrinsicHelper.api.registry, 10);
       const transfer_event = new u8(ExtrinsicHelper.api.registry, 2);
-      const dest_account = u8aToHex(keypairB.publicKey).slice(2);
+      const dest_account = u8aToHex(getUnifiedPublicKey(keypairB)).slice(2);
       const beforeBlockNumber = await getBlockNumber();
 
       const extrinsic = new Extrinsic(
@@ -66,7 +66,7 @@ describe('Frequency', function () {
       }
       // wait a little for all of the above transactions to get queued
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      const missingNonce = await ExtrinsicHelper.getMissingNonceValues(keypairB.publicKey);
+      const missingNonce = await ExtrinsicHelper.getMissingNonceValues(getUnifiedPublicKey(keypairB));
       assert.equal(missingNonce.length, 4, 'Could not get missing nonce values');
 
       // applying the missing nonce values to next transactions to unblock the stuck ones
