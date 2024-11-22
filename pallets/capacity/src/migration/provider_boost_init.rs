@@ -3,6 +3,8 @@ use frame_support::{
 	pallet_prelude::Weight,
 	traits::{Get, OnRuntimeUpgrade},
 };
+#[cfg(feature = "try-runtime")]
+use sp_runtime::TryRuntimeError;
 
 #[cfg(feature = "try-runtime")]
 use sp_std::vec::Vec;

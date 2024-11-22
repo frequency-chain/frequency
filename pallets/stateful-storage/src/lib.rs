@@ -36,7 +36,8 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;
-
+/// storage migrations
+pub mod migration;
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
@@ -59,6 +60,8 @@ pub use pallet::*;
 use sp_core::{bounded::BoundedVec, crypto::AccountId32};
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 pub use weights::*;
+
+const LOG_TARGET: &str = "runtime::stateful-storage";
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -124,7 +127,12 @@ pub mod pallet {
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
+	#[pallet::storage_version(STATEFUL_STORAGE_VERSION)]
 	pub struct Pallet<T>(_);
+
+	/// A temporary storage for migration
+	#[pallet::storage]
+	pub(super) type MigrationPageIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	#[pallet::error]
 	pub enum Error<T> {
@@ -218,6 +226,27 @@ pub mod pallet {
 			/// previous content hash before removal
 			prev_content_hash: PageHash,
 		},
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
+			// this should get removed after rolling out to testnet
+			#[cfg(any(feature = "frequency-testnet", test))]
+			{
+				let page_index = <MigrationPageIndex<T>>::get();
+				let (weight, continue_migration) = migration::v1::paginated_migration_testnet::<T>(
+					MIGRATION_PAGE_SIZE,
+					page_index,
+				);
+				if continue_migration {
+					<MigrationPageIndex<T>>::set(page_index.saturating_add(1));
+				}
+				T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
+			}
+			#[cfg(not(any(feature = "frequency-testnet", test)))]
+			Weight::zero()
+		}
 	}
 
 	#[pallet::call]

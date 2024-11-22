@@ -16,10 +16,11 @@ use common_primitives::{
 		SchemaSetting,
 	},
 };
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU32},
+	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
 	Twox128,
 };
 use frame_system as system;
@@ -32,7 +33,7 @@ use sp_runtime::{
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = SchemaId::MAX;
-pub const INVALID_MSA_ID: MessageSourceId = 100;
+pub const INVALID_MSA_ID: MessageSourceId = 100_000_000;
 pub const TEST_ACCOUNT_SEED: [u8; 32] = [0; 32];
 
 // Configure a mock runtime to test the pallet.
@@ -48,7 +49,7 @@ impl system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
-	type DbWeight = ();
+	type DbWeight = RocksDbWeight;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
 	type Nonce = u64;
@@ -406,7 +407,9 @@ fn get_signature_benchmarks_public_account() -> sr25519::Public {
 }
 
 pub fn test_public(n: MessageSourceId) -> AccountId32 {
-	AccountId32::new([n as u8; 32])
+	let mut array = [0u8; 32];
+	array[0..8].copy_from_slice(&n.to_le_bytes());
+	AccountId32::new(array)
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -419,4 +422,16 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
+}
+
+/// advances the block
+pub fn run_to_block(n: u32) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		System::on_initialize(System::block_number());
+		StatefulStoragePallet::on_initialize(System::block_number());
+	}
 }
