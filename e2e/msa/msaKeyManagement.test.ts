@@ -14,6 +14,7 @@ import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
+import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const maxU64 = 18_446_744_073_709_551_615n;
 const fundingSource = getFundingSource('msa-key-management');
@@ -41,7 +42,7 @@ describe('MSA Key management', function () {
 
       // Default payload making it easier to test `addPublicKeyToMsa`
       defaultPayload.msaId = msaId;
-      defaultPayload.newPublicKey = secondaryKey.publicKey;
+      defaultPayload.newPublicKey = getUnifiedPublicKey(secondaryKey);
     });
 
     beforeEach(async function () {
@@ -157,7 +158,7 @@ describe('MSA Key management', function () {
       const thirdKey = createKeys();
       const newPayload = await generateAddKeyPayload({
         ...defaultPayload,
-        newPublicKey: thirdKey.publicKey,
+        newPublicKey: getUnifiedPublicKey(thirdKey),
       });
       addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
       ownerSig = signPayloadSr25519(secondaryKey, addKeyData);
@@ -167,7 +168,7 @@ describe('MSA Key management', function () {
       assert.notEqual(event, undefined, 'should have added public key');
 
       // Cleanup
-      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, thirdKey.publicKey).signAndSend());
+      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
     });
   });
 
@@ -200,7 +201,7 @@ describe('MSA Key management', function () {
 
       const payload = await generateAddKeyPayload({
         msaId,
-        newPublicKey: secondaryKey.publicKey,
+        newPublicKey: getUnifiedPublicKey(secondaryKey),
       });
       const payloadData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
       const ownerSig = signPayloadSr25519(keys, payloadData);
@@ -219,7 +220,7 @@ describe('MSA Key management', function () {
     });
 
     it('should fail to delete public key for self', async function () {
-      const op = ExtrinsicHelper.deletePublicKey(keys, keys.publicKey);
+      const op = ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(keys));
       await assert.rejects(op.signAndSend('current'), {
         name: 'RpcError',
         message: /Custom error: 4/,
@@ -229,7 +230,7 @@ describe('MSA Key management', function () {
     it("should fail to delete key if not authorized for key's MSA", async function () {
       const [providerKeys] = await createProviderKeysAndId(fundingSource);
 
-      const op = ExtrinsicHelper.deletePublicKey(providerKeys, keys.publicKey);
+      const op = ExtrinsicHelper.deletePublicKey(providerKeys, getUnifiedPublicKey(keys));
       await assert.rejects(op.signAndSend('current'), {
         name: 'RpcError',
         message: /Custom error: 5/,
@@ -238,7 +239,7 @@ describe('MSA Key management', function () {
 
     it("should test for 'NoKeyExists' error", async function () {
       const key = createKeys('nothing key');
-      const op = ExtrinsicHelper.deletePublicKey(keys, key.publicKey);
+      const op = ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(key));
       await assert.rejects(op.signAndSend('current'), {
         name: 'RpcError',
         message: /Custom error: 1/,
@@ -246,7 +247,7 @@ describe('MSA Key management', function () {
     });
 
     it('should delete secondary key', async function () {
-      const op = ExtrinsicHelper.deletePublicKey(keys, secondaryKey.publicKey);
+      const op = ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(secondaryKey));
       const { target: event } = await op.signAndSend();
       assert.notEqual(event, undefined, 'should have returned PublicKeyDeleted event');
     });

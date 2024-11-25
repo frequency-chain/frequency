@@ -114,7 +114,8 @@ pub use common_runtime::{
 	weights::{block_weights::BlockExecutionWeight, extrinsic_weights::ExtrinsicBaseWeight},
 };
 use frame_support::traits::Contains;
-
+#[cfg(feature = "try-runtime")]
+use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 mod ethereum;
 mod genesis;
 
@@ -345,6 +346,7 @@ pub type Executive = frame_executive::Executive<
 		MigratePalletsCurrentStorage<Runtime>,
 		pallet_capacity::migration::v4::MigrationToV4<Runtime>,
 		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
+		pallet_stateful_storage::migration::v1::MigrateToV1<Runtime>,
 	),
 >;
 

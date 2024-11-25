@@ -33,6 +33,7 @@ common-runtime = { path = "../../runtime/common", default-features = false }
 env_logger = { workspace = true }
 pretty_assertions = { workspace = true }
 sp-keystore = { workspace = true }
+hex = { workspace = true, default-features = false, features = ["alloc"] }
 
 [features]
 default = ['std']
