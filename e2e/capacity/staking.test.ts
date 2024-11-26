@@ -285,5 +285,14 @@ describe('Capacity Staking Tests', function () {
       const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'BalanceTooLowtoStake' });
     });
+
+    it('fails to stake when stake is >= than stakable_amount + minimum token balance', async function () {
+      const stakingKeys = createKeys('stakingKeys');
+      const providerId = await createMsaAndProvider(fundingSource, stakingKeys, 'stakingKeys', 1n * DOLLARS);
+      const stakingAmount = 1n * DOLLARS;
+
+      const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
+      await assert.rejects(failStakeObj.signAndSend(), { name: 'BalanceTooLowtoStake' });
+    });
   });
 });
