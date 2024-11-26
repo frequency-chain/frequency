@@ -19,6 +19,10 @@ use sp_std::{
 };
 use twox_hash::XxHash64;
 
+/// Migration page size
+pub const MIGRATION_PAGE_SIZE: u32 = 20;
+/// Current storage version of the pallet.
+pub const STATEFUL_STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
 /// pallet storage prefix
 pub const PALLET_STORAGE_PREFIX: &[u8] = b"stateful-storage";
 /// itemized storage prefix

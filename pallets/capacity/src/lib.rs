@@ -834,9 +834,12 @@ impl<T: Config> Pallet<T> {
 	) -> BalanceOf<T> {
 		let account_balance =
 			T::Currency::reducible_balance(&staker, Preservation::Preserve, Fortitude::Polite);
-		account_balance
-			.saturating_sub(T::MinimumTokenBalance::get())
-			.min(proposed_amount)
+		let stakable_amount = account_balance.saturating_sub(T::MinimumTokenBalance::get());
+		if stakable_amount >= proposed_amount {
+			proposed_amount
+		} else {
+			Zero::zero()
+		}
 	}
 
 	pub(crate) fn do_withdraw_unstaked(
