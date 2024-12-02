@@ -25,11 +25,11 @@ describe('Capacity Transactions Batch', function () {
   describe('pay_with_capacity_batch_all', function () {
     let capacityProviderKeys: KeyringPair;
     let capacityProvider: u64;
-    let schemaId: u16;
     let defaultPayload: AddProviderPayload;
     const amountStaked = 9n * DOLLARS;
 
     beforeEach(async function () {
+      const schemaId: u16 = new u16(ExtrinsicHelper.api.registry, 1);
       capacityProviderKeys = createKeys('CapacityProviderKeys');
       capacityProvider = await createMsaAndProvider(
         fundingSource,
