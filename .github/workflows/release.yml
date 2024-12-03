@@ -1050,6 +1050,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -1077,7 +1082,7 @@ jobs:
       - name: Release Candidate on NPM
         if: env.TEST_RUN != 'true' &&
           steps.is-full-release.outputs.is-full-release != 'true'
-        run: npm publish --access public
+        run: npm publish --tag next --access public
         working-directory: ./js/api-augment/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
@@ -1091,6 +1096,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
