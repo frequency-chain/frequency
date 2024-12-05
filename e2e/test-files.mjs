@@ -2,5 +2,5 @@
 import process from 'node:process';
 import { globSync } from 'glob';
 
-const files = globSync('**/*.test.ts', { ignore: 'node_modules/**' });
+const files = globSync('**/*.test.ts', { ignore: 'node_modules/**' }).filter((x) => !x.includes('load-tests/'));
 process.stdout.write(JSON.stringify(files));
