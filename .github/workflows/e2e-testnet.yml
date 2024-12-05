@@ -64,7 +64,7 @@ jobs:
         # Assuming tests are all *.test.ts
         run: |
           npm run test:relay-list
-          echo "files=$(npm run test:relay-list)"  >> "$GITHUB_OUTPUT"
+          echo "files='$(npm run --silent test:relay-list)'"  >> "$GITHUB_OUTPUT"
 
   run-e2e:
     name: Run E2E Tests
