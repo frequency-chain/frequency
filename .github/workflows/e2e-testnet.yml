@@ -69,6 +69,8 @@ jobs:
     name: Run E2E Tests
     needs: run-e2e-setup
     strategy:
+      # Even if one fails, keep the others going
+      fail-fast: false
       matrix:
         test-file: ${{ fromJson(needs.run-e2e-setup.outputs.test-files) }}
     runs-on: ubuntu-latest
