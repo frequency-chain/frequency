@@ -61,9 +61,10 @@ jobs:
       - name: Generate Test Matrix
         working-directory: e2e
         id: list-tests
+        # Assuming tests are all *.test.ts
         run: |
-          # Assuming tests are all *.test.ts
-          echo "files=$(find . -name '*.test.ts' -not -path './node_modules/*' | tr '\n' ' ')"  >> "$GITHUB_OUTPUT"
+          npm run test:relay-list
+          echo "files=$(npm run test:relay-list)"  >> "$GITHUB_OUTPUT"
 
   run-e2e:
     name: Run E2E Tests
