@@ -16,7 +16,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const maxU64 = 18_446_744_073_709_551_615n;
-const fundingSource = getFundingSource('msa-key-management-ethereum');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('MSA Key management Ethereum', function () {
   describe('addPublicKeyToMsa Ethereum', function () {

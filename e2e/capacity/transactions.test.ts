@@ -41,7 +41,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource('capacity-transactions');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity Transactions', function () {
   describe('pay_with_capacity', function () {

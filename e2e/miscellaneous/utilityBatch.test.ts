@@ -6,7 +6,7 @@ import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '../scaffolding/ethereum';
 
-const fundingSource = getFundingSource('misc-util-batch');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Utility Batch Filtering', function () {
   let sender: KeyringPair;
