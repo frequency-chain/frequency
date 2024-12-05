@@ -16,7 +16,7 @@ import {
 import { SchemaGrantResponse, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('scenarios-grant-delegation');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Delegation Scenario Tests', function () {
   let keys: KeyringPair;

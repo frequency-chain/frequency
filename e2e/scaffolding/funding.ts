@@ -5,55 +5,21 @@ import { isTestnet } from './env';
 const coreFundingSourcesSeed = 'salt glare message absent guess transfer oblige refuse keen current lunar pilot';
 const keyring = new Keyring({ type: 'sr25519' });
 
-// This is a list of the funding sources.
-// New ones should be added to support additional parallel testing
-// tldr: Each test file should have a separate funding source listed below
-export const fundingSources = [
-  'capacity-replenishment',
-  'capacity-provider-boost',
-  'capacity-list-unclaimed-rewards',
-  'capacity-change-staking-target',
-  'capacity-rpcs',
-  'capacity-staking',
-  'capacity-transactions',
-  'capacity-transactions-batch',
-  'capacity-transactions-fail',
-  'capacity-unstaking',
-  'check-metadata-hash',
-  'frequency-misc',
-  'frequency-balance-ethereum',
-  'handles',
-  'load-signature-registry',
-  'messages-add-ipfs',
-  'misc-util-batch',
-  'msa-create-msa',
-  'msa-key-management',
-  'msa-key-management-ethereum',
-  'passkey-proxy',
-  'passkey-proxy-ethereum',
-  'stateful-storage-ethereum',
-  'proxy-pallet',
-  'scenarios-grant-delegation',
-  'grant-delegation-ethereum',
-  'schemas-create',
-  'stateful-storage-handle-itemized',
-  'stateful-storage-handle-paginated',
-  'stateful-storage-handle-sig-req',
-  'sudo-transactions',
-  'time-release',
-] as const;
-
 // Get the correct key for this Funding Source
-export function getFundingSource(name: (typeof fundingSources)[number]) {
-  if (fundingSources.includes(name)) {
-    try {
-      return keyring.addFromUri(`${coreFundingSourcesSeed}//${name}`, { name }, 'sr25519');
-    } catch (e) {
-      console.error('Failed to build funding source: ', { name });
-      throw e;
-    }
+export function getFundingSource(name: string) {
+  // Check if we are getting a full path, and if we are, chop it off
+  // Every derived path should be either be a full path or relative to the e2e root
+  const derivedPath = (name.includes('/e2e/') ? name.replace(/.*\/e2e\//, '') : name).replaceAll('/', '-');
+  if (!derivedPath.includes('.test.ts')) {
+    console.error("The requested funding source was not a test file, so it wouldn't be funded!", { derivedPath });
+    throw new Error('Asked for a non-funded source');
   }
-  throw new Error(`Unable to locate "${name}" in the list of funding sources`);
+  try {
+    return keyring.addFromUri(`${coreFundingSourcesSeed}//${derivedPath}`, { name: derivedPath }, 'sr25519');
+  } catch (e) {
+    console.error('Failed to build funding source: ', { derivedPath });
+    throw e;
+  }
 }
 
 export function getSudo() {

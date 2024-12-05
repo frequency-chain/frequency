@@ -13,7 +13,7 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('schemas-create');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('#createSchema', function () {
   let keys: KeyringPair;

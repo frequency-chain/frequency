@@ -28,7 +28,7 @@ describe('Sudo required', function () {
   before(function () {
     if (isTestnet()) this.skip();
     sudoKey = getSudo().keys;
-    fundingSource = getFundingSource('sudo-transactions');
+    fundingSource = getFundingSource(import.meta.url);
   });
 
   describe('schema#setMaxSchemaModelBytes', function () {

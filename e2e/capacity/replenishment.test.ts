@@ -20,7 +20,7 @@ import {
 import { getFundingSource } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
 
-const fundingSource = getFundingSource('capacity-replenishment');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity Replenishment Testing: ', function () {
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {

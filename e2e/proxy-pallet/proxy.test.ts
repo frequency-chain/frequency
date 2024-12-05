@@ -8,7 +8,7 @@ import { getUnifiedAddress } from '../scaffolding/ethereum';
 
 const DOLLARS = 100000000n; // 100_000_000
 
-const fundingSource: KeyringPair = getFundingSource('proxy-pallet');
+const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 
 describe('Proxy', function () {
   describe('Basic Any Proxy Successes', function () {

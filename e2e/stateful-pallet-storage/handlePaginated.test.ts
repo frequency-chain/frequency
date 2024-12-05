@@ -17,7 +17,7 @@ import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 const badSchemaId = 65_534;
-const fundingSource = getFundingSource('stateful-storage-handle-paginated');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('📗 Stateful Pallet Storage Paginated', function () {
   let schemaId: SchemaId;

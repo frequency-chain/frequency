@@ -15,7 +15,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex } from '@polkadot/util';
 import { getUnifiedAddress } from '../scaffolding/ethereum';
 
-const fundingSource = getFundingSource('check-metadata-hash');
+const fundingSource = getFundingSource(import.meta.url);
 
 // This is skipped as it requires the e2e tests to be run
 // against a Frequency build that has the metadata-hash feature

@@ -5,7 +5,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('msa-create-msa');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Create Accounts', function () {
   let keys: KeyringPair;

@@ -13,7 +13,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
-const fundingSource = getFundingSource('passkey-proxy');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Passkey Pallet Tests', function () {
   describe('proxy basic tests', function () {

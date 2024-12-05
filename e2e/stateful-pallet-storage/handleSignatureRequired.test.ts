@@ -23,7 +23,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('stateful-storage-handle-sig-req');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('📗 Stateful Pallet Storage Signature Required', function () {
   let itemizedSchemaId: SchemaId;
