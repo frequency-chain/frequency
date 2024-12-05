@@ -20,7 +20,6 @@ jobs:
     outputs:
       test-files: ${{ steps.list-tests.outputs.files }}
     runs-on: ubuntu-latest
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Validate
         shell: bash
@@ -73,7 +72,6 @@ jobs:
       matrix:
         test-file: ${{ fromJson(needs.run-e2e-setup.outputs.test-files) }}
     runs-on: ubuntu-latest
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
