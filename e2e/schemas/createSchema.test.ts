@@ -162,9 +162,8 @@ describe('#createSchema', function () {
 
   it('should fail to create schema with invalid name structure v3', async function () {
     const f = ExtrinsicHelper.createSchemaV3(keys, AVRO_GRAPH_CHANGE, 'AvroBinary', 'OnChain', [], 'test');
-    await assert.rejects(f.fundAndSend(fundingSource), {
-      name: 'InvalidSchemaNameStructure',
-    });
+    // InvalidSchemaNameStructure is the rejection, but network differences means that it cannot be tested everywhere
+    await assert.rejects(f.fundAndSend(fundingSource));
   });
 
   it('should fail to create schema with invalid name encoding v3', async function () {

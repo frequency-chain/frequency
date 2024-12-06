@@ -15,10 +15,11 @@ env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
 
 jobs:
-  run-e2e:
-    name: Run E2E Tests
-    runs-on: ubuntu-22.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:latest
+  run-e2e-setup:
+    name: Run E2E Test Prep
+    outputs:
+      test-files: ${{ steps.list-tests.outputs.files }}
+    runs-on: ubuntu-latest
     steps:
       - name: Validate
         shell: bash
@@ -42,16 +43,59 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
         working-directory: e2e
-      - name: Run e2e Tests
+      - name: Fund e2e Tests
         working-directory: e2e
         env:
           CHAIN_ENVIRONMENT: paseo-testnet
           WS_PROVIDER_URL: ${{ vars.E2E_TESTNET_PASEO_RPC }}
           FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.PASEO_E2E_TEST_SEED_PHRASE }}
-        run: npm run test:relay
+        run: npm run test:relay-funding
+
+      - name: Generate Test Matrix
+        working-directory: e2e
+        id: list-tests
+        # Assuming tests are all *.test.ts
+        run: |
+          npm run test:relay-list
+          echo "files=$(npm run --silent test:relay-list)"  >> "$GITHUB_OUTPUT"
+
+  run-e2e:
+    name: Run E2E Tests
+    needs: run-e2e-setup
+    strategy:
+      # Even if one fails, keep the others going
+      fail-fast: false
+      matrix:
+        test-file: ${{ fromJson(needs.run-e2e-setup.outputs.test-files) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{github.event.inputs.branch}}
+      - name: Set Env Vars
+        run: |
+          echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "npm"
+          cache-dependency-path: e2e/package-lock.json
+      - name: Install Built api-augment
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
+        working-directory: e2e
+      - name: E2E Test - ${{ matrix.test-file }}
+        working-directory: e2e
+        env:
+          CHAIN_ENVIRONMENT: paseo-testnet
+          WS_PROVIDER_URL: ${{ vars.E2E_TESTNET_PASEO_RPC }}
+          FUNDING_ACCOUNT_SEED_PHRASE: ${{ secrets.PASEO_E2E_TEST_SEED_PHRASE }}
+        run: npm run test:relay-single -- ${{ matrix.test-file }}

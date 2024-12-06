@@ -15,7 +15,7 @@ Note: this is for the "createMsa" tests
 
 `npm run test:serial -- --grep createMsa`
 
-See below for running load tests.
+See below for running load tests and relay chain tests.
 
 Notes on E2E Testing
 ============================
@@ -99,3 +99,27 @@ make start-manual
 cd e2e
 npm run test:load
 ```
+
+Relay Chain Testing
+==================
+There are a few tweaks to running the tests against the relay chain.
+
+1. The funding for the tests can be in a separate command
+2. The tests can be run entirely separately
+
+Run the tests all in parallel
+```
+npm run test:relay
+```
+
+Just do the funding
+```
+npm run test:relay-funding
+```
+
+Run just one test
+```
+npm run test:relay-single <test file>
+```
+
+See `.github/workflows/e2e-testnet.yml` for how it works in CI
