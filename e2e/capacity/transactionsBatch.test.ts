@@ -19,7 +19,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource('capacity-transactions-batch');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity Transactions Batch', function () {
   describe('pay_with_capacity_batch_all', function () {

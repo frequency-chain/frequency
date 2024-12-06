@@ -1,30 +1,59 @@
 // These run ONCE per entire test run
-
 import { cryptoWaitReady } from '@polkadot/util-crypto';
 import workerpool from 'workerpool';
+import { globSync } from 'glob';
 import { ExtrinsicHelper } from './extrinsicHelpers';
-import { fundingSources, getFundingSource, getRootFundingSource, getSudo } from './funding';
+import { getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
 import { getUnifiedAddress } from './ethereum';
+import type { KeyringPair } from '@polkadot/keyring/types';
 
-const SOURCE_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
+const DEFAULT_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
+const MINIMUM_DIFF_AMOUNT = 100_000_000n; // 1 UNIT
 
-async function fundAllSources() {
+// This will always include files that we don't care about, but that is ok.
+// The reduction in complexity is worth the extra transfers
+function getAllTestFiles() {
+  return globSync('**/*.test.ts', { ignore: 'node_modules/**' });
+}
+
+async function fundAccountAmount(dest: KeyringPair): Promise<{ dest: KeyringPair; amount: bigint }> {
+  const accountInfo = await ExtrinsicHelper.getAccountInfo(dest);
+  console.log(
+    'Checking Funding: ',
+    getUnifiedAddress(dest).toString(),
+    'Free Balance',
+    accountInfo.data.free.toHuman()
+  );
+  const freeBalance = accountInfo.data.free.toBigInt();
+
+  // Only fund up to the amount needed, so that we don't have to drain the persistent accounts each time
+  if (freeBalance >= DEFAULT_AMOUNT - MINIMUM_DIFF_AMOUNT) {
+    return { dest, amount: 0n };
+  }
+  return { dest, amount: DEFAULT_AMOUNT - (freeBalance - MINIMUM_DIFF_AMOUNT) };
+}
+
+function fundSourceTransfer(root: KeyringPair, dest: KeyringPair, amount: bigint, nonce: number) {
+  try {
+    // Only transfer the ammount needed
+    return ExtrinsicHelper.transferFunds(root, dest, amount).signAndSend(nonce);
+  } catch (e) {
+    console.error('Unable to fund soruce', { dest });
+    throw e;
+  }
+}
+
+async function fundAccountsToDefault(dests: KeyringPair[]) {
   const root = getRootFundingSource().keys;
   console.log('Root funding source: ', getUnifiedAddress(root));
   const nonce = await getNonce(root);
+  const fundingList = await Promise.all(dests.map(fundAccountAmount));
   await Promise.all(
-    fundingSources.map((dest, i) => {
-      try {
-        const testFundingSource = getFundingSource(dest);
-        console.log(dest, getUnifiedAddress(testFundingSource).toString());
-        return ExtrinsicHelper.transferFunds(root, testFundingSource, SOURCE_AMOUNT).signAndSend(nonce + i);
-      } catch (e) {
-        console.error('Unable to fund soruce', { dest, nonce: nonce + i });
-        throw e;
-      }
-    })
+    fundingList
+      .filter(({ amount }) => amount > 0n)
+      .map(({ amount, dest }, i) => fundSourceTransfer(root, dest, amount, nonce + i))
   );
   console.log('Root funding complete!');
 }
@@ -35,17 +64,11 @@ async function devSudoActions() {
   await setEpochLength(sudo, TEST_EPOCH_LENGTH);
 }
 
-function drainAllSources() {
-  const keys = fundingSources.map((source) => getFundingSource(source));
-  const root = getRootFundingSource().keys;
-  return drainKeys(keys, root);
-}
-
-export async function mochaGlobalSetup() {
+export async function mochaGlobalSetup(context) {
   console.log('Global Setup Start', 'Reported CPU Count: ', workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize(providerUrl);
-  await fundAllSources();
+  await fundAccountsToDefault(getAllTestFiles().map(getFundingSource));
 
   // Sudo is only when not on Testnet
   if (isDev()) await devSudoActions();
@@ -55,7 +78,6 @@ export async function mochaGlobalSetup() {
 
 export async function mochaGlobalTeardown() {
   console.log('Global Teardown Start');
-  await drainAllSources();
   await ExtrinsicHelper.api.disconnect();
   await ExtrinsicHelper.apiPromise.disconnect();
   console.log('Global Teardown Complete');

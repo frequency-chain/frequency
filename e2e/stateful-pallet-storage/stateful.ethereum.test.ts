@@ -19,7 +19,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('stateful-storage-ethereum');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('📗 Stateful Pallet Storage Ethereum', function () {
   let itemizedSchemaId: SchemaId;

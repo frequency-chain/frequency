@@ -8,7 +8,7 @@ import { getFundingSource } from '../scaffolding/funding';
 
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
-const fundingSource = getFundingSource('capacity-unstaking');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity Unstaking Tests', function () {
   describe('unstake()', function () {

@@ -21,7 +21,7 @@ import { getFundingSource } from '../scaffolding/funding';
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
 const capacityMin: bigint = tokenMinStake / 50n;
-const fundingSource = getFundingSource('capacity-staking');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity Staking Tests', function () {
   // The frozen balance is initialized and tracked throughout the staking end to end tests

@@ -16,7 +16,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('stateful-storage-handle-itemized');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('📗 Stateful Pallet Storage Itemized', function () {
   let schemaId_deletable: SchemaId;

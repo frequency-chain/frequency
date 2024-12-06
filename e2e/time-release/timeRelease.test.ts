@@ -31,7 +31,7 @@ function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedule {
   };
 }
 
-const fundingSource: KeyringPair = getFundingSource('time-release');
+const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 
 describe('TimeRelease', function () {
   let vesterKeys: KeyringPair;

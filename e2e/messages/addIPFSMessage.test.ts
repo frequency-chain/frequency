@@ -11,7 +11,7 @@ import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('messages-add-ipfs');
+const fundingSource = getFundingSource(import.meta.url);
 const ipfs_payload_data = 'This is a test of Frequency.';
 const ipfs_payload_len = ipfs_payload_data.length + 1;
 

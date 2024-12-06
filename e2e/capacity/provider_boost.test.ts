@@ -11,7 +11,7 @@ import {
   stakeToProvider,
 } from '../scaffolding/helpers';
 
-const fundingSource = getFundingSource('capacity-provider-boost');
+const fundingSource = getFundingSource(import.meta.url);
 const tokenMinStake: bigint = 1n * CENTS;
 
 describe('Capacity: provider_boost extrinsic', function () {

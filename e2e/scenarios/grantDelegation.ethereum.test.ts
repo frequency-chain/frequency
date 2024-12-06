@@ -13,7 +13,7 @@ import {
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('grant-delegation-ethereum');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Delegation Scenario Tests Ethereum', function () {
   let keys: KeyringPair;

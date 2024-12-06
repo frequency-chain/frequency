@@ -11,7 +11,7 @@ import {
   createProviderKeysAndId,
 } from '../scaffolding/helpers';
 
-const fundingSource = getFundingSource('capacity-change-staking-target');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity: change_staking_target', function () {
   const tokenMinStake: bigint = 1n * CENTS;
