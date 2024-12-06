@@ -66,6 +66,8 @@ const LOG_TARGET: &str = "runtime::stateful-storage";
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::migration::v1::{get_chain_type, get_testnet_msa_ids};
+	use common_primitives::utils::DetectedChainType;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -232,19 +234,18 @@ pub mod pallet {
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
 			// this should get removed after rolling out to testnet
-			#[cfg(any(feature = "frequency-testnet", test))]
-			{
+			if DetectedChainType::FrequencyPaseoTestNet == get_chain_type::<T>() || cfg!(test) {
 				let page_index = <MigrationPageIndex<T>>::get();
-				let (weight, continue_migration) = migration::v1::paginated_migration_testnet::<T>(
-					MIGRATION_PAGE_SIZE,
-					page_index,
-				);
-				if continue_migration {
+				if get_testnet_msa_ids().len() as u32 > page_index * MIGRATION_PAGE_SIZE {
+					let (weight, _) = migration::v1::paginated_migration_testnet::<T>(
+						MIGRATION_PAGE_SIZE,
+						page_index,
+					);
 					<MigrationPageIndex<T>>::set(page_index.saturating_add(1));
+					return T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
 				}
-				T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
+				return T::DbWeight::get().reads_writes(1, 0)
 			}
-			#[cfg(not(any(feature = "frequency-testnet", test)))]
 			Weight::zero()
 		}
 	}

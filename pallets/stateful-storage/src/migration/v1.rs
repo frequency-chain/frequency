@@ -23,7 +23,6 @@ use sp_runtime::TryRuntimeError;
 use sp_std::{vec, vec::Vec};
 
 /// testnet specific msa ids for migration
-#[cfg(any(feature = "frequency-testnet", test))]
 pub fn get_testnet_msa_ids() -> Vec<MessageSourceId> {
 	vec![
 		8004, 8009, 8816, 8817, 8818, 8819, 8820, 8822, 8823, 8824, 8825, 8826, 9384, 9753, 9919,
@@ -229,7 +228,6 @@ pub fn migrate_msa_ids<T: Config>(msa_ids: &[MessageSourceId]) -> Weight {
 }
 
 /// paginated migration for testnet
-#[cfg(any(feature = "frequency-testnet", test))]
 pub fn paginated_migration_testnet<T: Config>(page_size: u32, page_index: u32) -> (Weight, bool) {
 	let msa_ids: Vec<MessageSourceId> = get_testnet_msa_ids();
 	let mut chunks = msa_ids.chunks(page_size as usize);
