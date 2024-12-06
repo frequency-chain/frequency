@@ -6,7 +6,7 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '../scaffolding/ethereum';
 
-const fundingSource: KeyringPair = getFundingSource('frequency-balance-ethereum');
+const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 
 describe('Balance transfer ethereum', function () {
   describe('setup', function () {

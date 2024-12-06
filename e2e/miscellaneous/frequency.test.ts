@@ -8,7 +8,7 @@ import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 
-const fundingSource: KeyringPair = getFundingSource('frequency-misc');
+const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 
 describe('Frequency', function () {
   describe('setup', function () {

@@ -14,7 +14,7 @@ import { isTestnet } from '../scaffolding/env';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { getUnifiedAddress } from '../scaffolding/ethereum';
 
-const fundingSource = getFundingSource('capacity-list-unclaimed-rewards');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity: list_unclaimed_rewards', function () {
   const providerBalance = 2n * DOLLARS;

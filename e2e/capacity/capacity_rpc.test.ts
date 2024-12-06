@@ -16,7 +16,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource('capacity-rpcs');
+const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity RPC', function () {
   let capacityProviderKeys: KeyringPair;

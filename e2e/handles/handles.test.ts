@@ -10,7 +10,7 @@ import { getBlockNumber } from '../scaffolding/helpers';
 import { hasRelayChain } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource('handles');
+const fundingSource = getFundingSource(import.meta.url);
 const expirationOffset = hasRelayChain() ? 4 : 100;
 
 describe('🤝 Handles', function () {
