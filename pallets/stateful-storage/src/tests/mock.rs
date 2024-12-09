@@ -20,7 +20,7 @@ use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 use frame_support::{
 	dispatch::DispatchResult,
 	parameter_types,
-	traits::{ConstU16, ConstU32, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32},
 	Twox128,
 };
 use frame_system as system;
@@ -422,16 +422,4 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
-}
-
-/// advances the block
-pub fn run_to_block(n: u32) {
-	while System::block_number() < n {
-		if System::block_number() > 1 {
-			System::on_finalize(System::block_number());
-		}
-		System::set_block_number(System::block_number() + 1);
-		System::on_initialize(System::block_number());
-		StatefulStoragePallet::on_initialize(System::block_number());
-	}
 }

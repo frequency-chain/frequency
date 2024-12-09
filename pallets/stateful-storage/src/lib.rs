@@ -36,8 +36,7 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
 use sp_std::prelude::*;
-/// storage migrations
-pub mod migration;
+
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
@@ -61,13 +60,9 @@ use sp_core::{bounded::BoundedVec, crypto::AccountId32};
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
 pub use weights::*;
 
-const LOG_TARGET: &str = "runtime::stateful-storage";
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::migration::v1::{get_chain_type, get_testnet_msa_ids};
-	use common_primitives::utils::DetectedChainType;
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
@@ -233,19 +228,6 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_initialize(_current: BlockNumberFor<T>) -> Weight {
-			// this should get removed after rolling out to testnet
-			if DetectedChainType::FrequencyPaseoTestNet == get_chain_type::<T>() || cfg!(test) {
-				let page_index = <MigrationPageIndex<T>>::get();
-				if get_testnet_msa_ids().len() as u32 > page_index * MIGRATION_PAGE_SIZE {
-					let (weight, _) = migration::v1::paginated_migration_testnet::<T>(
-						MIGRATION_PAGE_SIZE,
-						page_index,
-					);
-					<MigrationPageIndex<T>>::set(page_index.saturating_add(1));
-					return T::DbWeight::get().reads_writes(1, 1).saturating_add(weight)
-				}
-				return T::DbWeight::get().reads_writes(1, 0)
-			}
 			Weight::zero()
 		}
 	}
