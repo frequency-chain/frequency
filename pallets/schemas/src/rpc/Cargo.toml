@@ -1,6 +1,6 @@
 [package]
 name = "pallet-schemas-rpc"
-version = "0.0.0"
+version = "1.15.2-rc1+polkadot1.13.0"
 description = "RPC package for schemas"
 authors = ["Frequency"]
 license = "Apache-2.0"
