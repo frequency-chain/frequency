@@ -71,8 +71,6 @@ mod benchmarking;
 #[cfg(test)]
 mod tests;
 
-/// storage migrations
-pub mod migration;
 pub mod weights;
 type BalanceOf<T> =
 	<<T as Config>::Currency as InspectFungible<<T as frame_system::Config>::AccountId>>::Balance;

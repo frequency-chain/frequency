@@ -22,8 +22,6 @@
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
-/// migration module
-pub mod migration;
 #[cfg(test)]
 mod tests;
 
@@ -54,8 +52,6 @@ pub use weights::*;
 
 use cid::Cid;
 use frame_system::pallet_prelude::*;
-
-const LOG_TARGET: &str = "runtime::messages";
 
 #[frame_support::pallet]
 pub mod pallet {

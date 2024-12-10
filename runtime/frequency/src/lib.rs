@@ -342,11 +342,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(
-		MigratePalletsCurrentStorage<Runtime>,
-		pallet_capacity::migration::v4::MigrationToV4<Runtime>,
-		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
-	),
+	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
