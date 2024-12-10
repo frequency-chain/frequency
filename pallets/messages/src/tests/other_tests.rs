@@ -1,10 +1,6 @@
 use crate::{tests::mock::*, BlockMessageIndex, Error, Event as MessageEvent, Message, MessagesV2};
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	traits::OnInitialize,
-	BoundedVec,
-};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
 use parity_scale_codec::Encode;
