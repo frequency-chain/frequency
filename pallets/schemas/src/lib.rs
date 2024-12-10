@@ -49,8 +49,6 @@ mod benchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::SchemaBenchmarkHelper;
 use common_primitives::schema::{SchemaInfoResponse, SchemaVersionResponse};
-/// migration module
-pub mod migration;
 mod types;
 
 pub use pallet::*;
@@ -59,8 +57,6 @@ pub use types::*;
 pub use weights::*;
 
 mod serde;
-
-const LOG_TARGET: &str = "runtime::schemas";
 
 #[frame_support::pallet]
 pub mod pallet {

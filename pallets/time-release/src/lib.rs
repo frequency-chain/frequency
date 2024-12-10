@@ -42,9 +42,6 @@ mod mock;
 #[cfg(test)]
 mod tests;
 
-/// storage migrations
-pub mod migration;
-
 mod types;
 pub use types::*;
 

@@ -342,12 +342,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(
-		MigratePalletsCurrentStorage<Runtime>,
-		pallet_capacity::migration::v4::MigrationToV4<Runtime>,
-		pallet_capacity::migration::provider_boost_init::ProviderBoostInit<Runtime>,
-		pallet_stateful_storage::migration::v1::MigrateToV1<Runtime>,
-	),
+	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
@@ -404,7 +399,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 136,
+	spec_version: 137,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -418,7 +413,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 136,
+	spec_version: 137,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

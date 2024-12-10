@@ -1,15 +1,6 @@
-use crate::{
-	migration::{v2, v2::old::OldMessage},
-	tests::mock::*,
-	BlockMessageIndex, Error, Event as MessageEvent, Message, MessagesV2,
-};
+use crate::{tests::mock::*, BlockMessageIndex, Error, Event as MessageEvent, Message, MessagesV2};
 use common_primitives::{messages::MessageResponse, schema::*};
-use frame_support::{
-	assert_err, assert_noop, assert_ok,
-	pallet_prelude::{GetStorageVersion, StorageVersion},
-	traits::OnInitialize,
-	BoundedVec,
-};
+use frame_support::{assert_err, assert_noop, assert_ok, traits::OnInitialize, BoundedVec};
 use frame_system::{EventRecord, Phase};
 use multibase::Base;
 use parity_scale_codec::Encode;
@@ -633,67 +624,4 @@ fn map_to_response_ipfs() {
 		payload_length: Some(10),
 	};
 	assert_eq!(msg.map_to_response(42, PayloadLocation::IPFS, 1), expected);
-}
-
-#[test]
-fn migration_to_v2_should_work_as_expected() {
-	new_test_ext().execute_with(|| {
-		// Setup
-		let schema_id: SchemaId = IPFS_SCHEMA_ID;
-		let cid = &DUMMY_CID_BASE32[..];
-		let message_per_block = vec![3, 4, 5, 6];
-		let payload = (
-			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
-			IPFS_PAYLOAD_LENGTH,
-		)
-			.encode();
-
-		let mut counter = 0;
-		for (idx, count) in message_per_block.iter().enumerate() {
-			let mut list = BoundedVec::default();
-			for _ in 0..*count {
-				list.try_push(OldMessage {
-					msa_id: Some(10),
-					payload: payload.clone().try_into().unwrap(),
-					index: counter,
-					provider_msa_id: 1,
-				})
-				.unwrap();
-				counter += 1;
-			}
-			v2::old::Messages::<Test>::insert(idx as u32, schema_id, list);
-		}
-
-		let _ = v2::migrate_to_v2::<Test>();
-
-		let old_count = v2::old::Messages::<Test>::iter().count();
-		let new_count = MessagesV2::<Test>::iter().count();
-		let current_version = MessagesPallet::in_code_storage_version();
-
-		assert_eq!(old_count, 0);
-		assert_eq!(new_count, message_per_block.iter().sum::<usize>());
-		assert_eq!(current_version, StorageVersion::new(2));
-
-		let mut total_index = 0u16;
-		for (block, count) in message_per_block.iter().enumerate() {
-			for _ in 0..*count {
-				assert!(MessagesV2::<Test>::get((block as u32, schema_id, total_index)).is_some());
-				total_index += 1;
-			}
-			// should not exist
-			assert!(MessagesV2::<Test>::get((block as u32, schema_id, total_index)).is_none());
-		}
-	});
-}
-
-#[test]
-fn migration_to_v2_should_have_correct_prefix() {
-	new_test_ext().execute_with(|| {
-		use frame_support::storage::generator::StorageDoubleMap;
-		let pallet_prefix = v2::old::Messages::<Test>::pallet_prefix();
-		let storage_prefix = v2::old::Messages::<Test>::storage_prefix();
-
-		assert_eq!(&b"MessagesPallet"[..], pallet_prefix);
-		assert_eq!(&b"Messages"[..], storage_prefix);
-	});
 }
