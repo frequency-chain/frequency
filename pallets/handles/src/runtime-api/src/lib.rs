@@ -28,7 +28,6 @@ sp_api::decl_runtime_apis! {
 
 	/// Runtime Version for Handles
 	/// - MUST be incremented if anything changes
-	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
 	#[api_version(2)]
 
