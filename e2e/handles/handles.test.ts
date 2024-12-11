@@ -119,6 +119,10 @@ describe('🤝 Handles', function () {
         assert(msaOption.isSome, 'msaOption should be Some');
         const msaFromHandle = msaOption.unwrap();
         assert.equal(msaFromHandle.toString(), msa_id.toString(), 'msaFromHandle should be equal to msa_id');
+
+        // Check that the rpc returns the index as > 0
+        const apiCheck = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle(handle);
+        assert(apiCheck.suffix_index > 0);
       });
     });
 
