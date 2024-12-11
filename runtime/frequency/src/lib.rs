@@ -42,7 +42,9 @@ use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 
 use common_primitives::{
-	handles::{BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse},
+	handles::{
+		BaseHandle, CheckHandleResponse, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse,
+	},
 	messages::MessageResponse,
 	msa::{
 		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
@@ -1590,6 +1592,7 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
+	#[api_version(3)]
 	impl pallet_handles_runtime_api::HandlesRuntimeApi<Block> for Runtime {
 		fn get_handle_for_msa(msa_id: MessageSourceId) -> Option<HandleResponse> {
 			Handles::get_handle_for_msa(msa_id)
@@ -1605,7 +1608,11 @@ sp_api::impl_runtime_apis! {
 		fn validate_handle(base_handle: BaseHandle) -> bool {
 			Handles::validate_handle(base_handle.to_vec())
 		}
+		fn check_handle(base_handle: BaseHandle) -> CheckHandleResponse {
+			Handles::check_handle(base_handle)
+		}
 	}
+
 	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
 			match Capacity::list_unclaimed_rewards(&who) {

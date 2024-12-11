@@ -166,4 +166,59 @@ describe('🤝 Handles', function () {
       assert.equal(res.toHuman(), false);
     });
   });
+
+  describe('checkHandle basic test', function () {
+    it('expected outcome for a good handle', async function () {
+      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('Little Bobby Tables');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        base_handle: 'Little Bobby Tables',
+        canonical_base: 'l1tt1eb0bbytab1es',
+        suffix_index: '0',
+        suffixes_available: true,
+        valid: true,
+      });
+    });
+
+    it('expected outcome for a bad handle', async function () {
+      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('Robert`DROP TABLE STUDENTS;--');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        base_handle: 'Robert`DROP TABLE STUDENTS;--',
+        canonical_base: '',
+        suffix_index: '0',
+        suffixes_available: false,
+        valid: false,
+      });
+    });
+
+    it('expected outcome for a good handle with complex whitespace via Runtime API', async function () {
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('नी हुन्‍न् ।');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        baseHandle: '0xe0a4a8e0a58020e0a4b9e0a581e0a4a8e0a58de2808de0a4a8e0a58d20e0a5a4',
+        canonicalBase: '0xe0a4a8e0a4b9e0a4a8e0a4a8e0a5a4',
+        suffixIndex: '0',
+        suffixesAvailable: true,
+        valid: true,
+      });
+    });
+
+    it('expected outcome for a good handle with complex whitespace via Custom API', async function () {
+      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('नी हुन्‍न् ।');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        base_handle: 'नी हुन्‍न् ।',
+        canonical_base: 'नहनन।',
+        suffix_index: '0',
+        suffixes_available: true,
+        valid: true,
+      });
+
+      // Ensure these are the same canonically
+      const withoutWhitespace = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('नी हुन्न् ।');
+      assert(!withoutWhitespace.isEmpty, 'Expected a response');
+      assert.equal(withoutWhitespace.toHuman().canonical_base, res.toHuman().canonical_base);
+    });
+  });
 });
