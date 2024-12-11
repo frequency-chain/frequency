@@ -44,6 +44,16 @@ export default {
       ],
       type: 'bool',
     },
+    checkHandle: {
+      description: 'Check the handle and return various data about it',
+      params: [
+        {
+          name: 'base_handle',
+          type: 'String',
+        },
+      ],
+      type: 'CheckHandleResponse',
+    },
   },
   types: {
     HandleSuffix: 'u16',
@@ -55,6 +65,13 @@ export default {
     PresumptiveSuffixesResponse: {
       suffixes: 'Vec<HandleSuffix>',
       base_handle: 'String',
+    },
+    CheckHandleResponse: {
+      base_handle: 'String',
+      canonical_base: 'String',
+      suffix_index: 'u16',
+      suffixes_available: 'bool',
+      valid: 'bool',
     },
   },
 };

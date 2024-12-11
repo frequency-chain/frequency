@@ -94,3 +94,21 @@ pub struct PresumptiveSuffixesResponse {
 	/// The suffixes
 	pub suffixes: Vec<HandleSuffix>,
 }
+
+/// Output response for retrieving the next suffixes for a given handle
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+#[derive(Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
+pub struct CheckHandleResponse {
+	/// The base handle
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub base_handle: Vec<u8>,
+	/// The canonical handle
+	#[cfg_attr(feature = "std", serde(with = "as_string"))]
+	pub canonical_base: Vec<u8>,
+	/// The current suffix index
+	pub suffix_index: u16,
+	/// Are additional suffixes available?
+	pub suffixes_available: bool,
+	/// Validity
+	pub valid: bool,
+}

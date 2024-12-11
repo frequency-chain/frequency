@@ -48,6 +48,8 @@ fn test_contains_blocked_characters_negative() {
 // Some translations: https://translate.glosbe.com/
 // Others from Wikipedia
 // Many are (supposed to be) common names or greetings, or translations of "beautiful flower"
+// Helpful tool to convert strings into points for testing:
+//     https://onlinetools.com/utf8/convert-utf8-to-code-points
 #[rustfmt::skip]
 #[test]
 fn test_consists_of_supported_unicode_character_sets_happy_path() {
