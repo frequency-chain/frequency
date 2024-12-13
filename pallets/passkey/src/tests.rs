@@ -116,6 +116,7 @@ impl TestPasskeyPayloadBuilder {
 }
 
 #[test]
+#[allow(deprecated)]
 fn proxy_call_with_signed_origin_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -134,6 +135,7 @@ fn proxy_call_with_signed_origin_should_fail() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn proxy_call_with_unsigned_origin_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -285,6 +287,7 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn fee_withdrawn_for_failed_call() {
 	new_test_ext().execute_with(|| {
 		// arrange

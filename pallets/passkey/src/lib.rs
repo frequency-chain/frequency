@@ -186,7 +186,7 @@ pub mod module {
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
-			let payload = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
 
 			let frame_system_validity =
 				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
@@ -199,14 +199,8 @@ pub mod module {
 			)
 			.validate()?;
 			// this is the last since it is the heaviest
-			// Requires different calls for v1 vs v2
-			let signature_validity = match call {
-				Call::proxy { payload } =>
-					PasskeySignatureCheck::new(payload.clone()).validate()?,
-				Call::proxy_v2 { payload } =>
-					PasskeySignatureCheckV2::new(payload.clone()).validate()?,
-				_ => return Err(InvalidTransaction::Call.into()),
-			};
+			let signature_validity =
+				PasskeySignatureCheck::new(payload.clone(), is_legacy_call).validate()?;
 
 			let valid_tx = valid_tx
 				.combine_with(frame_system_validity)
@@ -220,7 +214,7 @@ pub mod module {
 		/// Checking and executing a list of operations pre_dispatch
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
-			let payload = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
 			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
@@ -228,14 +222,7 @@ pub mod module {
 			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			// this is the last since it is the heaviest
-			// Requires different calls for v1 vs v2
-			match call {
-				Call::proxy { payload } =>
-					PasskeySignatureCheck::new(payload.clone()).pre_dispatch(),
-				Call::proxy_v2 { payload } =>
-					PasskeySignatureCheckV2::new(payload.clone()).pre_dispatch(),
-				_ => return Err(InvalidTransaction::Call.into()),
-			}
+			PasskeySignatureCheck::new(payload.clone(), is_legacy_call).pre_dispatch()
 		}
 	}
 }
@@ -246,15 +233,18 @@ where
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
-	/// Filtering the valid calls and extracting the Payload V2 from inside the call
-	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayloadV2<T>, TransactionValidityError> {
+	/// Filtering the valid calls and extracting the Payload V2 from inside the call and returning if this
+	/// is a legacy call or not
+	fn filter_valid_calls(
+		call: &Call<T>,
+	) -> Result<(PasskeyPayloadV2<T>, bool), TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok(payload.clone().into()),
+				return Ok((payload.clone().into(), true)),
 			Call::proxy_v2 { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok(payload.clone()),
+				return Ok((payload.clone(), false)),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -299,99 +289,70 @@ where
 /// 2. Passkey P256 signature of the account public key
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-struct PasskeySignatureCheck<T: Config>(pub PasskeyPayload<T>);
-
-/// Passkey V2 signatures check which verifies 2 signatures
-/// 1. Account signature of the P256 public key
-/// 2. Passkey P256 signature of the account public key
-#[derive(Encode, Decode, Clone, TypeInfo)]
-#[scale_info(skip_type_params(T))]
-struct PasskeySignatureCheckV2<T: Config>(pub PasskeyPayloadV2<T>);
-
-/// Check the signature on passkey public key by the account id
-/// Returns Ok(()) if the signature is valid
-/// Returns Err(InvalidAccountSignature) if the signature is invalid
-/// # Arguments
-/// * `signer` - The account id of the signer
-/// * `signed_data` - The signed data
-/// * `signature` - The signature
-/// # Return
-/// * `Ok(())` if the signature is valid
-/// * `Err(InvalidAccountSignature)` if the signature is invalid
-fn check_account_signature<T: Config>(
-	signer: &T::AccountId,
-	signed_data: &Vec<u8>,
-	signature: &MultiSignature,
-) -> DispatchResult {
-	let key = T::ConvertIntoAccountId32::convert((*signer).clone());
-
-	if !check_signature(signature, key, signed_data.clone()) {
-		return Err(Error::<T>::InvalidAccountSignature.into());
-	}
-
-	Ok(())
-}
-
-/// Validation logic for the two signatures for a passkey call
-/// Returns Ok(()) if the signatures are valid
-fn validate_payload_pieces<T: Config>(
-	account_ownership_proof: &MultiSignature,
-	signer: &T::AccountId,
-	p256_signer: &PasskeyPublicKey,
-	p256_signature: &VerifiablePasskeySignature,
-	p256_signed_data: &Vec<u8>,
-) -> TransactionValidity {
-	// checking account signature to verify ownership of the account used
-	check_account_signature::<T>(signer, &p256_signer.inner().to_vec(), &account_ownership_proof)
-		.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
-	p256_signature
-		.try_verify(&p256_signed_data, &p256_signer)
-		.map_err(|e| match e {
-			PasskeyVerificationError::InvalidProof =>
-				TransactionValidityError::Invalid(InvalidTransaction::BadSigner),
-			_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
-		})?;
-
-	Ok(ValidTransaction::default())
+struct PasskeySignatureCheck<T: Config> {
+	payload: PasskeyPayloadV2<T>,
+	is_legacy_payload: bool,
 }
 
 impl<T: Config> PasskeySignatureCheck<T> {
-	pub fn new(passkey_payload: PasskeyPayload<T>) -> Self {
-		Self(passkey_payload)
+	pub fn new(passkey_payload: PasskeyPayloadV2<T>, is_legacy_payload: bool) -> Self {
+		Self { payload: passkey_payload, is_legacy_payload }
 	}
+
 	pub fn validate(&self) -> TransactionValidity {
-		validate_payload_pieces::<T>(
-			&self.0.passkey_call.account_ownership_proof,
-			&self.0.passkey_call.account_id,
-			&self.0.passkey_public_key,
-			&self.0.verifiable_passkey_signature,
-			&self.0.passkey_call.encode(),
-		)
+		// checking account signature to verify ownership of the account used
+		let signed_data = self.payload.passkey_public_key.clone();
+		let signature = self.payload.account_ownership_proof.clone();
+		let signer = &self.payload.passkey_call.account_id;
+
+		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
+			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
+
+		// checking the passkey signature to ensure access to the passkey
+		let p256_signed_data = match self.is_legacy_payload {
+			true => PasskeyPayload::from(self.payload.clone()).passkey_call.encode(),
+			false => self.payload.passkey_call.encode(),
+		};
+		let p256_signature = self.payload.verifiable_passkey_signature.clone();
+		let p256_signer = self.payload.passkey_public_key.clone();
+
+		p256_signature
+			.try_verify(&p256_signed_data, &p256_signer)
+			.map_err(|e| match e {
+				PasskeyVerificationError::InvalidProof =>
+					TransactionValidityError::Invalid(InvalidTransaction::BadSigner),
+				_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
+			})?;
+
+		Ok(ValidTransaction::default())
 	}
 
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
 		let _ = self.validate()?;
 		Ok(())
 	}
-}
 
-impl<T: Config> PasskeySignatureCheckV2<T> {
-	pub fn new(passkey_payload: PasskeyPayloadV2<T>) -> Self {
-		Self(passkey_payload)
-	}
+	/// Check the signature on passkey public key by the account id
+	/// Returns Ok(()) if the signature is valid
+	/// Returns Err(InvalidAccountSignature) if the signature is invalid
+	/// # Arguments
+	/// * `signer` - The account id of the signer
+	/// * `signed_data` - The signed data
+	/// * `signature` - The signature
+	/// # Return
+	/// * `Ok(())` if the signature is valid
+	/// * `Err(InvalidAccountSignature)` if the signature is invalid
+	fn check_account_signature(
+		signer: &T::AccountId,
+		signed_data: &Vec<u8>,
+		signature: &MultiSignature,
+	) -> DispatchResult {
+		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-	pub fn validate(&self) -> TransactionValidity {
-		validate_payload_pieces::<T>(
-			&self.0.account_ownership_proof,
-			&self.0.passkey_call.account_id,
-			&self.0.passkey_public_key,
-			&self.0.verifiable_passkey_signature,
-			&self.0.passkey_call.encode(),
-		)
-	}
+		if !check_signature(signature, key, signed_data.clone()) {
+			return Err(Error::<T>::InvalidAccountSignature.into());
+		}
 
-	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
-		let _ = self.validate()?;
 		Ok(())
 	}
 }
