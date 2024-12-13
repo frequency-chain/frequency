@@ -109,12 +109,17 @@ impl<T: Config> From<PasskeyPayload<T>> for PasskeyPayloadV2<T> {
 	}
 }
 
-impl<T: Config> From<PasskeyCall<T>> for PasskeyCallV2<T> {
-	fn from(call: PasskeyCall<T>) -> Self {
-		PasskeyCallV2 {
-			account_id: call.account_id,
-			account_nonce: call.account_nonce,
-			call: call.call,
+impl<T: Config> From<PasskeyPayloadV2<T>> for PasskeyPayload<T> {
+	fn from(payload: PasskeyPayloadV2<T>) -> Self {
+		PasskeyPayload {
+			passkey_public_key: payload.passkey_public_key,
+			verifiable_passkey_signature: payload.verifiable_passkey_signature,
+			passkey_call: PasskeyCall {
+				account_id: payload.passkey_call.account_id,
+				account_ownership_proof: payload.account_ownership_proof,
+				account_nonce: payload.passkey_call.account_nonce,
+				call: payload.passkey_call.call,
+			},
 		}
 	}
 }
