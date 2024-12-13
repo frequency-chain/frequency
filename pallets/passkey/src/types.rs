@@ -43,6 +43,20 @@ pub struct PasskeyPayload<T: Config> {
 	pub passkey_call: PasskeyCall<T>,
 }
 
+/// Passkey Payload V2
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PasskeyPayloadV2<T: Config> {
+	/// passkey public key
+	pub passkey_public_key: PasskeyPublicKey,
+	/// a self-contained verifiable passkey signature with all required metadata
+	pub verifiable_passkey_signature: VerifiablePasskeySignature,
+	/// passkey_public_key signed by account_id's private key
+	pub account_ownership_proof: MultiSignature,
+	/// PassKey Call
+	pub passkey_call: PasskeyCallV2<T>,
+}
+
 /// A verifiable Pass key contains all the required information to verify a passkey signature
 #[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 pub struct VerifiablePasskeySignature {
@@ -66,6 +80,43 @@ pub struct PasskeyCall<T: Config> {
 	pub account_ownership_proof: MultiSignature,
 	/// Extrinsic call
 	pub call: Box<<T as Config>::RuntimeCall>,
+}
+
+/// Inner Passkey call V2
+#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[scale_info(skip_type_params(T))]
+pub struct PasskeyCallV2<T: Config> {
+	/// account id which is the origin of this call
+	pub account_id: T::AccountId,
+	/// account nonce
+	pub account_nonce: T::Nonce,
+	/// Extrinsic call
+	pub call: Box<<T as Config>::RuntimeCall>,
+}
+
+impl<T: Config> From<PasskeyPayload<T>> for PasskeyPayloadV2<T> {
+	fn from(payload: PasskeyPayload<T>) -> Self {
+		PasskeyPayloadV2 {
+			passkey_public_key: payload.passkey_public_key,
+			verifiable_passkey_signature: payload.verifiable_passkey_signature,
+			account_ownership_proof: payload.passkey_call.account_ownership_proof,
+			passkey_call: PasskeyCallV2 {
+				account_id: payload.passkey_call.account_id,
+				account_nonce: payload.passkey_call.account_nonce,
+				call: payload.passkey_call.call,
+			},
+		}
+	}
+}
+
+impl<T: Config> From<PasskeyCall<T>> for PasskeyCallV2<T> {
+	fn from(call: PasskeyCall<T>) -> Self {
+		PasskeyCallV2 {
+			account_id: call.account_id,
+			account_nonce: call.account_nonce,
+			call: call.call,
+		}
+	}
 }
 
 impl PasskeySignature {
