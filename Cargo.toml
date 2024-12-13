@@ -162,6 +162,17 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 sp-debug-derive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 
+[profile.dev]
+panic = "unwind"
+lto = false
+codegen-units = 1
+debug = true
+opt-level = 0
+
+[profile.dev.package."*"]
+debug = true
+opt-level = 0
+
 [profile.release]
 panic = "unwind"
 lto = true

@@ -1,3 +1,8 @@
+// Succinct Proof of Concept
+// #![no_main]
+// use sp1_zkvm;
+#![feature(core_intrinsics)]
+
 // Duplicated here to reduce the build dependencies
 #[allow(unused)]
 const FREQUENCY_TESTNET_TOKEN: &str = "XRQCY";
@@ -33,6 +38,12 @@ fn main() {
 	any(feature = "frequency-no-relay", feature = "frequency-local")
 ))]
 fn main() {
+	// Magic to attach debugger to the build process
+	// from here: https://github.com/vadimcn/codelldb/blob/master/MANUAL.md#attaching-debugger-to-the-current-process-rust
+	let url = format!("vscode://vadimcn.vscode-lldb/launch/config?{{'request':'attach','pid':{}}}", std::process::id());
+	std::process::Command::new("code").arg("--open-url").arg(url).output().unwrap();
+	std::thread::sleep_ms(10000); // Wait for debugger to attach
+	std::intrinsics::breakpoint();
 	substrate_wasm_builder::WasmBuilder::init_with_defaults()
 		.enable_metadata_hash(FREQUENCY_LOCAL_TOKEN, TOKEN_DECIMALS)
 		.build()
@@ -42,3 +53,5 @@ fn main() {
 /// this crate for wasm to speed up the compilation.
 #[cfg(not(feature = "std"))]
 fn main() {}
+
+// sp1_zkvm::entrypoint!(main);
