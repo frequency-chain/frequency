@@ -984,4 +984,12 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
   }
+
+  public static executePassKeyProxyV2(keys: KeyringPair, payload: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.passkey.proxyV2(payload),
+      keys,
+      ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
+    );
+  }
 }

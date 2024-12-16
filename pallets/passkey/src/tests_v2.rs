@@ -80,16 +80,15 @@ impl TestPasskeyPayloadBuilder {
 		self
 	}
 
-	pub fn build(&self) -> (PasskeyPayload<Test>, Public) {
+	pub fn build(&self) -> (PasskeyPayloadV2<Test>, Public) {
 		let wrapped_binary = wrap_binary_data(self.payload_to_sign.clone());
 		let signature: MultiSignature = self.key_pair.sign(wrapped_binary.as_slice()).into();
 		let client_data = base64_url::decode(REPLACED_CLIENT_DATA_JSON).unwrap();
 		let authenticator = base64_url::decode(AUTHENTICATOR_DATA).unwrap();
 		let bad_authenticator = b"bad_auth".to_vec();
-		let call: PasskeyCall<Test> = PasskeyCall {
+		let call: PasskeyCallV2<Test> = PasskeyCallV2 {
 			account_id: self.key_pair.public().into(),
 			account_nonce: self.nonce.into(),
-			account_ownership_proof: signature,
 			call: Box::new(self.call.clone()),
 		};
 		let passkey_signature = passkey_sign(
@@ -102,13 +101,14 @@ impl TestPasskeyPayloadBuilder {
 			},
 		)
 		.unwrap();
-		let payload = PasskeyPayload {
+		let payload = PasskeyPayloadV2 {
 			passkey_public_key: self.passkey_public_key.clone(),
 			verifiable_passkey_signature: VerifiablePasskeySignature {
 				signature: passkey_signature,
 				client_data_json: client_data.try_into().unwrap(),
 				authenticator_data: authenticator.try_into().unwrap(),
 			},
+			account_ownership_proof: signature,
 			passkey_call: call,
 		};
 		(payload, self.key_pair.public())
@@ -116,7 +116,6 @@ impl TestPasskeyPayloadBuilder {
 }
 
 #[test]
-#[allow(deprecated)]
 fn proxy_call_with_signed_origin_should_fail() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -130,12 +129,14 @@ fn proxy_call_with_signed_origin_should_fail() {
 			.build();
 
 		// assert
-		assert_noop!(Passkey::proxy(RuntimeOrigin::signed(account_pk.into()), payload), BadOrigin);
+		assert_noop!(
+			Passkey::proxy_v2(RuntimeOrigin::signed(account_pk.into()), payload),
+			BadOrigin
+		);
 	});
 }
 
 #[test]
-#[allow(deprecated)]
 fn proxy_call_with_unsigned_origin_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -145,7 +146,7 @@ fn proxy_call_with_unsigned_origin_should_work() {
 			.build();
 
 		// assert
-		assert_ok!(Passkey::proxy(RuntimeOrigin::none(), payload));
+		assert_ok!(Passkey::proxy_v2(RuntimeOrigin::none(), payload));
 	});
 }
 
@@ -160,7 +161,8 @@ fn validate_unsigned_with_bad_account_signature_should_fail() {
 			.with_funded_account(10000000000)
 			.build();
 
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
 	});
@@ -179,7 +181,8 @@ fn validate_unsigned_with_bad_passkey_signature_should_fail() {
 			.with_invalid_passkey_signature()
 			.build();
 
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::BadSigner.into());
 	});
@@ -196,7 +199,8 @@ fn validate_unsigned_with_low_funds_should_fail() {
 			.build();
 
 		// act
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 		// assert
 		assert_eq!(res, InvalidTransaction::Payment.into());
 	});
@@ -214,7 +218,8 @@ fn validate_unsigned_with_funds_should_pass() {
 			.build();
 
 		// act
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert!(res.is_ok());
@@ -233,7 +238,7 @@ fn pre_dispatch_with_funds_should_pass() {
 			.build();
 
 		// act
-		let res = Passkey::pre_dispatch(&Call::proxy { payload });
+		let res = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert!(res.is_ok());
@@ -251,7 +256,7 @@ fn pre_dispatch_with_low_funds_should_fail() {
 			.build();
 
 		// act
-		let res = Passkey::pre_dispatch(&Call::proxy { payload });
+		let res = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(res, InvalidTransaction::Payment);
@@ -277,7 +282,8 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 		let initial_balance = Balances::free_balance(&account_id);
 
 		// act
-		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert!(res.is_ok());
@@ -287,7 +293,6 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn fee_withdrawn_for_failed_call() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -309,9 +314,9 @@ fn fee_withdrawn_for_failed_call() {
 		// act
 		let validate_result = Passkey::validate_unsigned(
 			TransactionSource::InBlock,
-			&Call::proxy { payload: payload.clone() },
+			&Call::proxy_v2 { payload: payload.clone() },
 		);
-		let extrinsic_result = Passkey::proxy(RuntimeOrigin::none(), payload);
+		let extrinsic_result = Passkey::proxy_v2(RuntimeOrigin::none(), payload);
 
 		// assert
 		assert!(validate_result.is_ok());
@@ -335,7 +340,7 @@ fn validate_unsigned_with_unsupported_call_should_fail() {
 			.build();
 
 		// act
-		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::Call);
@@ -364,7 +369,7 @@ fn validate_unsigned_with_used_nonce_should_fail_with_stale() {
 		frame_system::Account::<Test>::insert(who, account);
 
 		// act
-		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::Stale);
@@ -393,7 +398,7 @@ fn validate_unsigned_with_correct_nonce_should_work() {
 		frame_system::Account::<Test>::insert(who.clone(), account);
 
 		// act
-		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert!(v.is_ok());
@@ -417,7 +422,7 @@ fn validate_unsigned_with_exceeding_weights_should_fail() {
 			.build();
 
 		// act
-		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+		let v = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::ExhaustsResources);
@@ -445,7 +450,7 @@ fn pre_dispatch_unsigned_with_used_nonce_should_fail_with_stale() {
 		frame_system::Account::<Test>::insert(who, account);
 
 		// act
-		let v = Passkey::pre_dispatch(&Call::proxy { payload });
+		let v = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::Stale);
@@ -470,7 +475,7 @@ fn pre_dispatch_unsigned_with_future_nonce_should_fail_with_future() {
 			.build();
 
 		// act
-		let v = Passkey::pre_dispatch(&Call::proxy { payload });
+		let v = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::Future);
@@ -490,7 +495,7 @@ fn pre_dispatch_unsigned_should_increment_nonce_on_success() {
 		let account_1_pk: <Test as frame_system::Config>::AccountId = account_pk.into();
 
 		// act
-		assert_ok!(Passkey::pre_dispatch(&Call::proxy { payload }));
+		assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
 
 		// assert
 		let account = frame_system::Account::<Test>::get(&account_1_pk);
@@ -512,7 +517,7 @@ fn pre_dispatch_with_exceeding_weight_should_fail() {
 			.build();
 
 		// act
-		let v = Passkey::pre_dispatch(&Call::proxy { payload });
+		let v = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert_err!(v, InvalidTransaction::ExhaustsResources);

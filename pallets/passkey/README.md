@@ -18,6 +18,7 @@ The Passkey pallet provides for:
 ## Interactions
 
 ### Extrinsic verification
+
 Because the Polkadot SDK currently lacks support for P256 signatures, we had to use an unsigned
 extrinsic to allow this custom verification before dispatching transactions. To achieve this, we
 added P256 signature verification within the `ValidateUnsigned` trait implementation for the pallet.
@@ -27,10 +28,10 @@ checks within the ValidateUnsigned trait implementation to mitigate potential vu
 
 ### Extrinsics
 
-| Name/Description                       | Caller | Payment            | Key Events                                                                                                                                | Runtime Added |
-|----------------------------------------|--------| ------------------ |-------------------------------------------------------------------------------------------------------------------------------------------|---------------|
-| `proxy`<br />Proxies an extrinsic call | Anyone   | Tokens | [`TransactionExecutionSuccess`](https://frequency-chain.github.io/frequency/pallet_passkey/module/enum.Event.html#variant.TransactionExecutionSuccess) | 92            |
+| Name/Description                                                                                                                            | Caller          | Payment | Key Events                                                                                                                                             | Runtime Added |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
+| `proxy`<br />Proxies an extrinsic call                                                                                                      | Anyone          | Tokens  | [`TransactionExecutionSuccess`](https://frequency-chain.github.io/frequency/pallet_passkey/module/enum.Event.html#variant.TransactionExecutionSuccess) | 92            |
+| ------------------------------------------------------------------------------------------------------------------------------------------- | --------------- |
+| `proxy_v2`<br />Proxies an extrinsic call                                                                                                   | Anyone          | Tokens  | [`TransactionExecutionSuccess`](https://frequency-chain.github.io/frequency/pallet_passkey/module/enum.Event.html#variant.TransactionExecutionSuccess) | 92            |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_passkey/module/struct.Pallet.html) for more details.
-
-
