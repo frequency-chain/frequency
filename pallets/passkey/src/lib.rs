@@ -46,6 +46,8 @@ mod test_common;
 mod mock;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod tests_v2;
 
 pub mod weights;
 pub use weights::*;
@@ -125,6 +127,7 @@ pub mod module {
 		/// Proxies an extrinsic call by changing the origin to `account_id` inside the payload.
 		/// Since this is an unsigned extrinsic all the verification checks are performed inside
 		/// `validate_unsigned` and `pre_dispatch` hooks.
+		#[deprecated(since = "1.15.2", note = "Use proxy_v2 instead")]
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
@@ -132,9 +135,27 @@ pub mod module {
 			let total = overhead.saturating_add(dispatch_info.weight);
 			(total, dispatch_info.class)
 		})]
+		#[allow(deprecated)]
 		pub fn proxy(
 			origin: OriginFor<T>,
 			payload: PasskeyPayload<T>,
+		) -> DispatchResultWithPostInfo {
+			Self::proxy_v2(origin, payload.into())
+		}
+
+		/// Proxies an extrinsic call by changing the origin to `account_id` inside the payload.
+		/// Since this is an unsigned extrinsic all the verification checks are performed inside
+		/// `validate_unsigned` and `pre_dispatch` hooks.
+		#[pallet::call_index(1)]
+		#[pallet::weight({
+			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
+			let overhead = T::WeightInfo::pre_dispatch();
+			let total = overhead.saturating_add(dispatch_info.weight);
+			(total, dispatch_info.class)
+		})]
+		pub fn proxy_v2(
+			origin: OriginFor<T>,
+			payload: PasskeyPayloadV2<T>,
 		) -> DispatchResultWithPostInfo {
 			ensure_none(origin)?;
 			let transaction_account_id = payload.passkey_call.account_id.clone();
@@ -165,7 +186,7 @@ pub mod module {
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
-			let payload = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
 
 			let frame_system_validity =
 				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
@@ -178,7 +199,8 @@ pub mod module {
 			)
 			.validate()?;
 			// this is the last since it is the heaviest
-			let signature_validity = PasskeySignatureCheck::new(payload.clone()).validate()?;
+			let signature_validity =
+				PasskeySignatureCheck::new(payload.clone(), is_legacy_call).validate()?;
 
 			let valid_tx = valid_tx
 				.combine_with(frame_system_validity)
@@ -192,7 +214,7 @@ pub mod module {
 		/// Checking and executing a list of operations pre_dispatch
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
-			let payload = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
 			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
@@ -200,7 +222,7 @@ pub mod module {
 			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			// this is the last since it is the heaviest
-			PasskeySignatureCheck::new(payload.clone()).pre_dispatch()
+			PasskeySignatureCheck::new(payload.clone(), is_legacy_call).pre_dispatch()
 		}
 	}
 }
@@ -211,12 +233,18 @@ where
 	<T as frame_system::Config>::RuntimeCall:
 		From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
-	/// Filtering the valid calls and extracting the payload from inside the call
-	fn filter_valid_calls(call: &Call<T>) -> Result<PasskeyPayload<T>, TransactionValidityError> {
+	/// Filtering the valid calls and extracting the Payload V2 from inside the call and returning if this
+	/// is a legacy call or not
+	fn filter_valid_calls(
+		call: &Call<T>,
+	) -> Result<(PasskeyPayloadV2<T>, bool), TransactionValidityError> {
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok(payload.clone()),
+				return Ok((payload.clone().into(), true)),
+			Call::proxy_v2 { payload }
+				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
+				return Ok((payload.clone(), false)),
 			_ => return Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -225,13 +253,13 @@ where
 /// Passkey specific nonce check which is a wrapper around `CheckNonce` extension
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-struct PasskeyNonceCheck<T: Config>(pub PasskeyCall<T>);
+struct PasskeyNonceCheck<T: Config>(pub PasskeyCallV2<T>);
 
 impl<T: Config> PasskeyNonceCheck<T>
 where
 	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo>,
 {
-	pub fn new(passkey_call: PasskeyCall<T>) -> Self {
+	pub fn new(passkey_call: PasskeyCallV2<T>) -> Self {
 		Self(passkey_call)
 	}
 
@@ -261,26 +289,32 @@ where
 /// 2. Passkey P256 signature of the account public key
 #[derive(Encode, Decode, Clone, TypeInfo)]
 #[scale_info(skip_type_params(T))]
-struct PasskeySignatureCheck<T: Config>(pub PasskeyPayload<T>);
+struct PasskeySignatureCheck<T: Config> {
+	payload: PasskeyPayloadV2<T>,
+	is_legacy_payload: bool,
+}
 
 impl<T: Config> PasskeySignatureCheck<T> {
-	pub fn new(passkey_payload: PasskeyPayload<T>) -> Self {
-		Self(passkey_payload)
+	pub fn new(passkey_payload: PasskeyPayloadV2<T>, is_legacy_payload: bool) -> Self {
+		Self { payload: passkey_payload, is_legacy_payload }
 	}
 
 	pub fn validate(&self) -> TransactionValidity {
 		// checking account signature to verify ownership of the account used
-		let signed_data = self.0.passkey_public_key.clone();
-		let signature = self.0.passkey_call.account_ownership_proof.clone();
-		let signer = &self.0.passkey_call.account_id;
+		let signed_data = self.payload.passkey_public_key.clone();
+		let signature = self.payload.account_ownership_proof.clone();
+		let signer = &self.payload.passkey_call.account_id;
 
 		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
 			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
 
 		// checking the passkey signature to ensure access to the passkey
-		let p256_signed_data = self.0.passkey_call.encode();
-		let p256_signature = self.0.verifiable_passkey_signature.clone();
-		let p256_signer = self.0.passkey_public_key.clone();
+		let p256_signed_data = match self.is_legacy_payload {
+			true => PasskeyPayload::from(self.payload.clone()).passkey_call.encode(),
+			false => self.payload.passkey_call.encode(),
+		};
+		let p256_signature = self.payload.verifiable_passkey_signature.clone();
+		let p256_signer = self.payload.passkey_public_key.clone();
 
 		p256_signature
 			.try_verify(&p256_signed_data, &p256_signer)

@@ -28,7 +28,7 @@ mod app_sr25519 {
 
 type SignerId = app_sr25519::Public;
 
-fn generate_payload<T: Config>() -> PasskeyPayload<T> {
+fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
 	let test_account_1_account_id =
 		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
@@ -47,22 +47,22 @@ fn generate_payload<T: Config>() -> PasskeyPayload<T> {
 	let inner_call: <T as Config>::RuntimeCall =
 		frame_system::Call::<T>::remark { remark: vec![] }.into();
 
-	let call: PasskeyCall<T> = PasskeyCall {
+	let call: PasskeyCallV2<T> = PasskeyCallV2 {
 		account_id: test_account_1_account_id,
 		account_nonce: T::Nonce::zero(),
-		account_ownership_proof: signature,
 		call: Box::new(inner_call),
 	};
 
 	let passkey_signature =
 		passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
-	let payload = PasskeyPayload {
+	let payload = PasskeyPayloadV2 {
 		passkey_public_key,
 		verifiable_passkey_signature: VerifiablePasskeySignature {
 			signature: passkey_signature,
 			client_data_json: client_data.try_into().unwrap(),
 			authenticator_data: authenticator.try_into().unwrap(),
 		},
+		account_ownership_proof: signature,
 		passkey_call: call,
 	};
 	payload
@@ -77,13 +77,13 @@ benchmarks! {
 	validate {
 		let payload = generate_payload::<T>();
 	}: {
-		assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload }));
+		assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload }));
 	}
 
 	pre_dispatch {
 		let payload = generate_payload::<T>();
 	}: {
-		assert_ok!(Passkey::pre_dispatch(&Call::proxy { payload }));
+		assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
 	}
 
 	impl_benchmark_test_suite!(
