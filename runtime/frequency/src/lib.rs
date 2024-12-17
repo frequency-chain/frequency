@@ -1609,7 +1609,7 @@ sp_api::impl_runtime_apis! {
 			Handles::validate_handle(base_handle.to_vec())
 		}
 		fn check_handle(base_handle: BaseHandle) -> CheckHandleResponse {
-			Handles::check_handle(base_handle)
+			Handles::check_handle(base_handle.to_vec())
 		}
 	}
 
