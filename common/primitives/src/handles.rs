@@ -112,3 +112,15 @@ pub struct CheckHandleResponse {
 	/// Validity
 	pub valid: bool,
 }
+
+impl Default for CheckHandleResponse {
+	fn default() -> Self {
+		Self {
+			base_handle: Vec::new(),
+			canonical_base: Vec::new(),
+			suffix_index: 0,
+			suffixes_available: false,
+			valid: false,
+		}
+	}
+}

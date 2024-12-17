@@ -583,16 +583,13 @@ pub mod pallet {
 		///
 		/// * `CheckHandleResponse`
 		///
-		pub fn check_handle(base_handle: BaseHandle) -> CheckHandleResponse {
+		pub fn check_handle(base_handle: Vec<u8>) -> CheckHandleResponse {
 			let valid = Self::validate_handle(base_handle.to_vec());
 
 			if !valid {
 				return CheckHandleResponse {
-					valid,
-					suffix_index: 0,
-					suffixes_available: false,
 					base_handle: base_handle.into(),
-					canonical_base: vec![],
+					..Default::default()
 				};
 			}
 
