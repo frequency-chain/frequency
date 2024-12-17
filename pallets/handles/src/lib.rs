@@ -567,6 +567,53 @@ pub mod pallet {
 			PresumptiveSuffixesResponse { base_handle: base_handle.into(), suffixes }
 		}
 
+		/// Check a base handle for validity and collect information on it
+		///
+		/// This function takes a `Vec<u8>` handle and checks to make sure it is:
+		/// - Valid
+		/// - Has suffixes remaining
+		///
+		/// It also returns the original input as well as the canonical version
+		///
+		/// # Arguments
+		///
+		/// * `handle` - The handle to check.
+		///
+		/// # Returns
+		///
+		/// * `CheckHandleResponse`
+		///
+		pub fn check_handle(base_handle: Vec<u8>) -> CheckHandleResponse {
+			let valid = Self::validate_handle(base_handle.to_vec());
+
+			if !valid {
+				return CheckHandleResponse {
+					base_handle: base_handle.into(),
+					..Default::default()
+				};
+			}
+
+			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
+
+			// Convert base handle into a canonical base
+			let (_canonical_handle_str, canonical_base) =
+				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+
+			let suffix_index =
+				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())
+					.unwrap_or_default();
+
+			let suffixes_available = suffix_index < T::HandleSuffixMax::get();
+
+			CheckHandleResponse {
+				base_handle: base_handle.into(),
+				suffix_index,
+				suffixes_available,
+				valid,
+				canonical_base: canonical_base.into(),
+			}
+		}
+
 		/// Retrieve a `MessageSourceId` for a given handle.
 		///
 		/// # Arguments

@@ -105,7 +105,11 @@ pub fn split_display_name(display_name_str: &str) -> Option<(String, HandleSuffi
 pub fn strip_unicode_whitespace(input_str: &str) -> String {
 	input_str
 		.chars()
-		.filter(|character| !character.is_whitespace())
+		// U+200C is a zero-width Non-joiner needed for some writing systems
+		// U+200D is a zero-width joiner needed for some writing systems
+		.filter(|character| {
+			!character.is_whitespace() && character.ne(&'\u{200C}') && character.ne(&'\u{200D}')
+		})
 		.collect::<alloc::string::String>()
 }
 

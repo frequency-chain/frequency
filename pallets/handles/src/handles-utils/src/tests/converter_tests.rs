@@ -77,6 +77,8 @@ fn test_strip_unicode_whitespace() {
 		'\u{202F}', // narrow no-break space
 		'\u{205F}', // medium mathematical space
 		'\u{3000}', // ideographic space
+		'\u{200C}', // Zero-width Non Joiner
+		'\u{200D}', // Zero-width Joiner
 	];
 	let whitespace_string: String = whitespace_chars.into_iter().collect();
 	let string_with_whitespace =
