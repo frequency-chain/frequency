@@ -11,8 +11,8 @@
 use common_helpers::rpc::map_rpc_result;
 use common_primitives::{
 	handles::{
-		BaseHandle, CheckHandleResponse, DisplayHandle, HandleResponse,
-		PresumptiveSuffixesResponse, DEFAULT_SUFFIX_COUNT, MAX_SUFFIXES_COUNT,
+		BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse,
+		DEFAULT_SUFFIX_COUNT, MAX_SUFFIXES_COUNT,
 	},
 	msa::MessageSourceId,
 };
@@ -52,10 +52,6 @@ pub trait HandlesApi<BlockHash> {
 	/// validate a handle
 	#[method(name = "handles_validateHandle")]
 	fn validate_handle(&self, base_handle: String) -> RpcResult<bool>;
-
-	/// check a handle
-	#[method(name = "handles_checkHandle")]
-	fn check_handle(&self, base_handle: String) -> RpcResult<CheckHandleResponse>;
 }
 
 /// The client handler for the API used by Frequency Service RPC with `jsonrpsee`
@@ -135,17 +131,6 @@ where
 		let at = self.client.info().best_hash;
 		let base_handle: BaseHandle = base_handle.into_bytes().try_into().unwrap_or_default();
 		let result = api.validate_handle(at, base_handle);
-		map_rpc_result(result)
-	}
-
-	fn check_handle(&self, base_handle: String) -> RpcResult<CheckHandleResponse> {
-		let api = self.client.runtime_api();
-		let at = self.client.info().best_hash;
-		let base_handle: BaseHandle = base_handle
-			.into_bytes()
-			.try_into()
-			.map_err(|_| HandlesRpcError::InvalidHandle)?;
-		let result = api.check_handle(at, base_handle);
 		map_rpc_result(result)
 	}
 }

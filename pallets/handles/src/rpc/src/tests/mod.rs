@@ -4,7 +4,7 @@ use super::*;
 use rpc_mock::*;
 
 use common_primitives::{
-	handles::{BaseHandle, CheckHandleResponse, DisplayHandle, PresumptiveSuffixesResponse},
+	handles::{BaseHandle, DisplayHandle, PresumptiveSuffixesResponse},
 	node::Block,
 };
 use pallet_handles_runtime_api::HandlesRuntimeApi;
@@ -39,16 +39,6 @@ sp_api::mock_impl_runtime_apis! {
 
 		fn validate_handle(_base_handle: BaseHandle) -> bool {
 			true
-		}
-
-		fn check_handle(base_handle: BaseHandle) -> CheckHandleResponse {
-			CheckHandleResponse {
-				base_handle: base_handle.clone().into(),
-				valid: true,
-				suffix_index: 0,
-				suffixes_available: true,
-				canonical_base: "canonical_base".into()
-			}
 		}
 	}
 }
@@ -103,18 +93,4 @@ async fn get_msa_for_handle_with_success() {
 
 	assert_eq!(true, result.is_ok());
 	assert_eq!(Some(VALID_MSA_ID), result.unwrap());
-}
-
-#[tokio::test]
-async fn check_handle_with_success() {
-	let client = Arc::new(TestApi {});
-	let api = HandlesHandler::new(client);
-	let result = api.check_handle("base_handle".to_string());
-
-	assert_eq!(true, result.is_ok());
-	let response = result.unwrap();
-	assert!(response.valid);
-	assert!(response.suffixes_available);
-	assert_eq!(b"base_handle".to_vec(), response.base_handle);
-	assert_eq!(b"canonical_base".to_vec(), response.canonical_base);
 }

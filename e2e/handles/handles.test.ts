@@ -121,8 +121,8 @@ describe('🤝 Handles', function () {
         assert.equal(msaFromHandle.toString(), msa_id.toString(), 'msaFromHandle should be equal to msa_id');
 
         // Check that the rpc returns the index as > 0
-        const apiCheck = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle(handle);
-        assert(apiCheck.suffix_index > 0);
+        const apiCheck = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle(handle);
+        assert(apiCheck.suffixIndex.toNumber() > 0);
       });
     });
 
@@ -173,30 +173,30 @@ describe('🤝 Handles', function () {
 
   describe('checkHandle basic test', function () {
     it('expected outcome for a good handle', async function () {
-      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('Little Bobby Tables');
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('Little Bobby Tables');
       assert(!res.isEmpty, 'Expected a response');
       assert.deepEqual(res.toHuman(), {
-        base_handle: 'Little Bobby Tables',
-        canonical_base: 'l1tt1eb0bbytab1es',
-        suffix_index: '0',
-        suffixes_available: true,
+        baseHandle: 'Little Bobby Tables',
+        canonicalBase: 'l1tt1eb0bbytab1es',
+        suffixIndex: '0',
+        suffixesAvailable: true,
         valid: true,
       });
     });
 
     it('expected outcome for a bad handle', async function () {
-      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('Robert`DROP TABLE STUDENTS;--');
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('Robert`DROP TABLE STUDENTS;--');
       assert(!res.isEmpty, 'Expected a response');
       assert.deepEqual(res.toHuman(), {
-        base_handle: 'Robert`DROP TABLE STUDENTS;--',
-        canonical_base: '',
-        suffix_index: '0',
-        suffixes_available: false,
+        baseHandle: 'Robert`DROP TABLE STUDENTS;--',
+        canonicalBase: '',
+        suffixIndex: '0',
+        suffixesAvailable: false,
         valid: false,
       });
     });
 
-    it('expected outcome for a good handle with complex whitespace via Runtime API', async function () {
+    it('expected outcome for a good handle with complex whitespace', async function () {
       const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('नी हुन्‍न् ।');
       assert(!res.isEmpty, 'Expected a response');
       assert.deepEqual(res.toHuman(), {
@@ -206,23 +206,6 @@ describe('🤝 Handles', function () {
         suffixesAvailable: true,
         valid: true,
       });
-    });
-
-    it('expected outcome for a good handle with complex whitespace via Custom API', async function () {
-      const res = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('नी हुन्‍न् ।');
-      assert(!res.isEmpty, 'Expected a response');
-      assert.deepEqual(res.toHuman(), {
-        base_handle: 'नी हुन्‍न् ।',
-        canonical_base: 'नहनन।',
-        suffix_index: '0',
-        suffixes_available: true,
-        valid: true,
-      });
-
-      // Ensure these are the same canonically
-      const withoutWhitespace = await ExtrinsicHelper.apiPromise.rpc.handles.checkHandle('नी हुन्न् ।');
-      assert(!withoutWhitespace.isEmpty, 'Expected a response');
-      assert.equal(withoutWhitespace.toHuman().canonical_base, res.toHuman().canonical_base);
     });
   });
 });
