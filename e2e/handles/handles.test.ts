@@ -119,6 +119,10 @@ describe('🤝 Handles', function () {
         assert(msaOption.isSome, 'msaOption should be Some');
         const msaFromHandle = msaOption.unwrap();
         assert.equal(msaFromHandle.toString(), msa_id.toString(), 'msaFromHandle should be equal to msa_id');
+
+        // Check that the rpc returns the index as > 0
+        const apiCheck = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle(handle);
+        assert(apiCheck.suffixIndex.toNumber() > 0);
       });
     });
 
@@ -164,6 +168,44 @@ describe('🤝 Handles', function () {
       assert.equal(res.toHuman(), true);
       res = await ExtrinsicHelper.validateHandle('Bobbay😀😀');
       assert.equal(res.toHuman(), false);
+    });
+  });
+
+  describe('checkHandle basic test', function () {
+    it('expected outcome for a good handle', async function () {
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('Little Bobby Tables');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        baseHandle: 'Little Bobby Tables',
+        canonicalBase: 'l1tt1eb0bbytab1es',
+        suffixIndex: '0',
+        suffixesAvailable: true,
+        valid: true,
+      });
+    });
+
+    it('expected outcome for a bad handle', async function () {
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('Robert`DROP TABLE STUDENTS;--');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        baseHandle: 'Robert`DROP TABLE STUDENTS;--',
+        canonicalBase: '',
+        suffixIndex: '0',
+        suffixesAvailable: false,
+        valid: false,
+      });
+    });
+
+    it('expected outcome for a good handle with complex whitespace', async function () {
+      const res = await ExtrinsicHelper.apiPromise.call.handlesRuntimeApi.checkHandle('नी हुन्‍न् ।');
+      assert(!res.isEmpty, 'Expected a response');
+      assert.deepEqual(res.toHuman(), {
+        baseHandle: '0xe0a4a8e0a58020e0a4b9e0a581e0a4a8e0a58de2808de0a4a8e0a58d20e0a5a4',
+        canonicalBase: '0xe0a4a8e0a4b9e0a4a8e0a4a8e0a5a4',
+        suffixIndex: '0',
+        suffixesAvailable: true,
+        valid: true,
+      });
     });
   });
 });

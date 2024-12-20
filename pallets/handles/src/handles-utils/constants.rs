@@ -3,6 +3,7 @@
 use core::ops::RangeInclusive;
 
 #[cfg(test)]
+#[allow(dead_code)]
 pub fn build_allowed_char_ranges() -> Vec<RangeInclusive<u16>> {
 	let mut new_allowed: Vec<RangeInclusive<u16>> = Vec::new();
 	let mut last: RangeInclusive<u16> = RangeInclusive::new(0u16, 0u16);
@@ -33,7 +34,7 @@ pub fn build_allowed_char_ranges() -> Vec<RangeInclusive<u16>> {
 #[rustfmt::skip]
 pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 54] = [
 0x0020..=0x007A,
-0x0080..=0x0024F,
+0x0080..=0x024F,
 0x02B0..=0x04FF,
 0x0531..=0x058A,
 0x0591..=0x05F4,
@@ -70,7 +71,7 @@ pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 54] = [
 0x1B80..=0x1BB9,
 0x1BC0..=0x1C7F,
 0x1E00..=0x1FFF,
-0x200C..=0x206F,
+0x200C..=0x200D,
 0x2C80..=0x2CFF,
 0x2D30..=0x2D7F,
 0x3040..=0x30FF,
@@ -146,7 +147,7 @@ pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 54] = [
 //     0x1C50..=0x1C7F, // Ol Chiki
 //     0x1E00..=0x1EFF, // Latin Extended Additional
 //     0x1F00..=0x1FFF, // Greek Extended
-//     0x200C..=0x206F, // General punctuation, used in some languages to indicate syllables such as glottal stops
+//     0x200C..=0x200D, // General punctuation Limited to the Zero-width Joiners
 //     0x2C80..=0x2CFF, // Coptic
 //     0x2D30..=0x2D7F, // Tifinagh
 //     0x3040..=0x309F, // Hiragana

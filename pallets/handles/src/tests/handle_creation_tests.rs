@@ -1,5 +1,8 @@
 use crate::{tests::mock::*, Error, Event};
-use common_primitives::{handles::HANDLE_BYTES_MAX, msa::MessageSourceId};
+use common_primitives::{
+	handles::{CheckHandleResponse, HANDLE_BYTES_MAX},
+	msa::MessageSourceId,
+};
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
 use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
@@ -418,5 +421,41 @@ fn test_validate_handle() {
 
 		let handle_with_emoji = format_args!("John{}", '\u{1F600}').to_string();
 		assert_eq!(Handles::validate_handle(handle_with_emoji.as_bytes().to_vec()), false);
+	})
+}
+
+#[test]
+fn test_check_handle() {
+	new_test_ext().execute_with(|| {
+		let good_handle: String = String::from("MyBonny");
+		assert_eq!(
+			Handles::check_handle(good_handle.as_bytes().to_vec()),
+			CheckHandleResponse {
+				base_handle: good_handle.as_bytes().to_vec(),
+				suffix_index: 0,
+				suffixes_available: true,
+				valid: true,
+				canonical_base: String::from("myb0nny").as_bytes().to_vec(),
+			}
+		);
+
+		let too_long_handle: String =
+			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
+		assert_eq!(
+			Handles::check_handle(too_long_handle.as_bytes().to_vec()),
+			CheckHandleResponse {
+				base_handle: too_long_handle.as_bytes().to_vec(),
+				..Default::default()
+			}
+		);
+
+		let handle_with_emoji = format_args!("John{}", '\u{1F600}').to_string();
+		assert_eq!(
+			Handles::check_handle(handle_with_emoji.as_bytes().to_vec()),
+			CheckHandleResponse {
+				base_handle: handle_with_emoji.as_bytes().to_vec(),
+				..Default::default()
+			}
+		);
 	})
 }

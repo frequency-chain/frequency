@@ -18,7 +18,9 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{
-	handles::{BaseHandle, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse},
+	handles::{
+		BaseHandle, CheckHandleResponse, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse,
+	},
 	msa::MessageSourceId,
 };
 
@@ -28,7 +30,6 @@ sp_api::decl_runtime_apis! {
 
 	/// Runtime Version for Handles
 	/// - MUST be incremented if anything changes
-	/// - Also update in js/api-augment
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
 	#[api_version(2)]
 
@@ -46,5 +47,9 @@ sp_api::decl_runtime_apis! {
 
 		/// Check if a handle is valid
 		fn validate_handle(base_handle: BaseHandle) -> bool;
+
+		#[api_version(3)]
+		/// Return information about a given handle
+		fn check_handle(base_handle: BaseHandle) -> CheckHandleResponse;
 	}
 }
