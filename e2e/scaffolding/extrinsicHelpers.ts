@@ -3,7 +3,7 @@ import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
@@ -290,7 +290,19 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   public async sendUnsigned() {
     const op = this.extrinsic();
     try {
-      return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
+      return await firstValueFrom(
+        op.send().pipe(
+          tap((result) => {
+            // If we learn a transaction has an error status (this does NOT include RPC errors)
+            // Then throw an error
+            if (result.isError) {
+              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+            }
+          }),
+          filter(({ status }) => status.isInBlock || status.isFinalized),
+          this.parseResult(this.event)
+        )
+      );
     } catch (e) {
       console.error(e);
       if ((e as any).name === 'RpcError') {
