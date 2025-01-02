@@ -3,7 +3,7 @@ import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import { FrameSystemAccountInfo, PalletPasskeyPasskeyPayload, SpRuntimeDispatchError } from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
@@ -264,6 +264,10 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   public async fundAndSendUnsigned(source: KeyringPair) {
     await this.fundOperation(source);
     log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
+    return this.sendUnsigned();
+  }
+
+  public async sendUnsigned() {
     const op = this.extrinsic();
     try {
       return await firstValueFrom(
@@ -279,18 +283,6 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
           this.parseResult(this.event)
         )
       );
-    } catch (e) {
-      if ((e as any).name === 'RpcError') {
-        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
-      }
-      throw e;
-    }
-  }
-
-  public async sendUnsigned() {
-    const op = this.extrinsic();
-    try {
-      return await firstValueFrom(op.send().pipe(this.parseResult(this.event)));
     } catch (e) {
       console.error(e);
       if ((e as any).name === 'RpcError') {
