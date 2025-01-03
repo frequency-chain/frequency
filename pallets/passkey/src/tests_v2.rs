@@ -11,7 +11,7 @@ use crate::test_common::{
 	utilities::*,
 };
 use pallet_balances::Call as BalancesCall;
-use sp_core::{sr25519, sr25519::Public, Pair};
+use sp_core::{bytes::from_hex, ecdsa, sr25519, sr25519::Public, Pair};
 use sp_runtime::{traits::One, DispatchError::BadOrigin};
 
 struct TestPasskeyPayloadBuilder {
@@ -521,5 +521,40 @@ fn pre_dispatch_with_exceeding_weight_should_fail() {
 
 		// assert
 		assert_err!(v, InvalidTransaction::ExhaustsResources);
+	});
+}
+
+#[test]
+fn passkey_example_should_work() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let account_id = AccountId32::new(from_hex("0x000000000000000000000000cf613044ccd8c1c60f561b99bd1fd2daef89625f").unwrap().try_into().unwrap());
+		let pass_key_public_key = PasskeyPublicKey(from_hex("0x029bd263885e5eeaea31fa3b2e78ab1106d2cb1995045777fca3b38913a755d250").unwrap().try_into().unwrap());
+		let payload = PasskeyPayloadV2 {
+			passkey_public_key: pass_key_public_key,
+			verifiable_passkey_signature: VerifiablePasskeySignature {
+				signature: from_hex("0x30440220498c9d752c98f4cec77bb386f48dc52ccc6523f386c8942b3d50ff9dbdb4046a02205d2f2e3fa8bf27fd5c8f0d7f1ae8724a30dab1dac758019459114a447357c54b").unwrap().try_into().unwrap(),
+				authenticator_data: from_hex("0x49960de5880e8c687434170f6476605b8fe4aeb9a28632c7995cf3ba831d97630500000003").unwrap().try_into().unwrap(),
+				client_data_json: from_hex("0x7b2274797065223a22776562617574686e2e676574222c226368616c6c656e6765223a227372576f2d4a49393564336332393362774e756469747a53687a4f636849577a584d336478376d554f4351222c226f726967696e223a22687474703a2f2f6c6f63616c686f73743a3536353135222c2263726f73734f726967696e223a66616c73657d").unwrap().try_into().unwrap(),
+			},
+			account_ownership_proof: MultiSignature::Ecdsa(ecdsa::Signature::from_raw(from_hex("0xa0d9b3fe775b4be9d2b52f37f8a21c30be037a858f85cca82bce58ac05a95d9621063978dc086a83532e839882e701f2b7134541a4814526c888b8650c3eb5f81b").unwrap().try_into().unwrap())),
+			passkey_call: PasskeyCallV2 {
+				account_id: account_id.clone(),
+				account_nonce: 0,
+				call: Box::new(RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] })),
+			},
+		};
+		assert_ok!(Balances::force_set_balance(
+			RawOrigin::Root.into(),
+			account_id.into(),
+			10000000000
+		));
+
+		// act
+		let res =
+			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
+
+		// assert
+		assert!(res.is_ok());
 	});
 }
