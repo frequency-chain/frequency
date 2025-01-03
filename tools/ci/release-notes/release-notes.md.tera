@@ -46,7 +46,7 @@ The information about the runtimes included in this release can be found below.
 {% endfor -%}
 ```
 
-### Metadata Change Summary vs Mainnet
+### Metadata Change Summary
 
 {% set summary = env.METADATA_CHANGE_SUMMARY | split(pat='|') -%}
 ```
