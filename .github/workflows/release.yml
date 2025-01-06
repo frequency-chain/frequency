@@ -554,12 +554,14 @@ jobs:
           echo "Downloaded binaries: $(ls -l $download_dir)"
           mkdir -p ${{env.BIN_DIR}}
           mv ${{env.REF_DOWNLOAD_DIR}}/${{env.BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.REF_BIN_FILENAME}}
-          mv ${{env.TEST_DOWNLOAD_DIR}}/artifacts-binary-local-${{github.run_id}} ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
+          mv "${download_dir}/${{env.BIN_FILENAME}}" ${{env.BIN_DIR}}/${{env.TEST_BIN_FILENAME}}
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
+          echo "Binary Directory:"
+          ls -la ./
       - name: Docker network
         run: docker network create net-${{env.RELEASE_BRANCH_NAME}}
       - name: Start Test Node
