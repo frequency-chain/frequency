@@ -533,7 +533,7 @@ jobs:
         id: get-previous-full-release-version
         uses: ./.github/workflows/common/get-previous-full-release-version
         with:
-          full-release-version-tag: v1.15.0
+          full-release-version-tag: ${{env.LATEST_FULL_RELEASE_TAG}}
       - name: Fetch Reference Binary
         uses: robinraju/release-downloader@a96f54c1b5f5e09e47d9504526e96febd949d4c2
         with:
