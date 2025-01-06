@@ -6,7 +6,7 @@ homepage = "https://frequency.xyz/"
 license = "Apache-2.0"
 name = "frequency-cli"
 repository = "https://github.com/frequency-chain/frequency/"
-version = "0.0.0"
+version = "0.0.1-rc3+polkadot1.13.0"
 
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
