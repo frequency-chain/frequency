@@ -513,8 +513,8 @@ jobs:
     runs-on: ubuntu-22.04
     env:
       BIN_DIR: target/release
-      BIN_FILENAME: frequency-dev.amd64
-      TEST_BIN_FILENAME: frequency-dev.amd64
+      BIN_FILENAME: frequency-local.amd64
+      TEST_BIN_FILENAME: frequency-local.amd64
       TEST_DOWNLOAD_DIR: download-test
       REF_BIN_FILENAME: frequency-ref.amd64
       REF_DOWNLOAD_DIR: download-ref
@@ -544,7 +544,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{env.NETWORK}}-${{github.run_id}}
+          pattern: artifacts-binary-local-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
       - name: Rename and Move Binaries
         run: |
