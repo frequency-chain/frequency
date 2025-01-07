@@ -25,9 +25,9 @@
     "@helia/unixfs": "^4.0.1",
     "@noble/curves": "^1.8.0",
     "@polkadot-api/merkleize-metadata": "^1.1.12",
-    "@polkadot/api": "15.1.1",
-    "@polkadot/types": "15.1.1",
-    "@polkadot/util": "13.2.3",
+    "@polkadot/api": "15.2.1",
+    "@polkadot/types": "15.2.1",
+    "@polkadot/util": "13.3.1",
     "helia": "^5.1.1",
     "multiformats": "^13.3.1",
     "rxjs": "^7.8.1",
@@ -46,6 +46,6 @@
     "sinon": "^19.0.2",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2",
-    "typescript-eslint": "^8.19.0"
+    "typescript-eslint": "^8.19.1"
   }
 }
