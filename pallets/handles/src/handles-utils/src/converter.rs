@@ -130,3 +130,63 @@ pub fn trim_and_collapse_whitespace(input_str: &str) -> String {
 		.collect::<Vec<_>>()
 		.join(" ")
 }
+
+/// Creates a new `HandleConverter` instance with a built confusables map.
+/// replacing confusable characters, and stripping diacritical marks.
+/// The resulting string is converted to lowercase ASCII characters.
+/// The only difference with `convert_to_canonical` is that it is not stripping whitespace
+/// # Arguments
+///
+/// * `input_str` - The input string to convert to canonical form.
+///
+/// # Returns
+///
+/// A new string in canonical form.
+///
+pub fn convert_to_canonical_no_whitespace_strip(input_str: &str) -> alloc::string::String {
+	let diacriticals_stripped = strip_diacriticals(&input_str);
+	let confusables_removed = replace_confusables(&diacriticals_stripped);
+	confusables_removed.to_lowercase()
+}
+
+#[test]
+#[allow(dead_code)]
+#[ignore = "use only to regenerate mapped substitutions"]
+pub fn export_substitutions_no_whitespace() {
+	use crate::{consists_of_supported_unicode_character_sets, contains_blocked_characters};
+
+	for ch in 0u32..=65_534 {
+		if let Some(character) = char::from_u32(ch) {
+			let my_str = character.to_string();
+			// consists_of_supported_unicode_character_sets currently does not support any character bigger than u16
+			if contains_blocked_characters(&my_str) ||
+				!consists_of_supported_unicode_character_sets(&my_str)
+			{
+				continue;
+			}
+
+			let changed = convert_to_canonical_no_whitespace_strip(&my_str);
+			if contains_blocked_characters(&changed) ||
+				!consists_of_supported_unicode_character_sets(&changed)
+			{
+				continue;
+			}
+			let chars: Vec<_> = changed.chars().collect();
+			if chars.is_empty() {
+				continue;
+			}
+			if chars.len() > 1 {
+				println!(
+					"0x{:X}\t0x{}",
+					character as u32,
+					hex::encode(changed.as_bytes()).to_uppercase()
+				);
+			} else {
+				let new_char = *chars.get(0).unwrap();
+				if character != new_char {
+					println!("0x{:X}\t0x{:X}", character as u32, new_char as u32);
+				}
+			}
+		}
+	}
+}

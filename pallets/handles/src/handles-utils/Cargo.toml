@@ -15,6 +15,7 @@ phf = { workspace = true, features = ["macros"] }
 oorandom = { workspace = true }
 unicode-normalization = { workspace = true }
 twox-hash = { workspace = true, features = ["digest_0_10"] }
+hex = { workspace = true, default-features = true }
 
 [features]
 default = ["std"]
