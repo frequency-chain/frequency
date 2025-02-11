@@ -77,6 +77,7 @@ ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error is used by a few dependencies, and while unmaintained, is not currently an issue." },
   { id = "RUSTSEC-2024-0388", reason = "This is an inner dependency that would get updated when cumulus-primitives-core v0.7.0 is updated to a newer version"},
   { id = "RUSTSEC-2024-0384", reason = "This is an inner dependency that would get updated when libp2p v0.51.4 and wasm-timer v0.2.5 are updated to a newer version"},
+  { id = "RUSTSEC-2024-0421", reason = "None of the upgrade attempts were successful. So we have to try upgrading to newer versions in future."}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
