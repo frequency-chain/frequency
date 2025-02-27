@@ -215,7 +215,7 @@ check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-paseo-local
+	SKIP_WASM_BUILD= cargo check --features frequency-local
 
 check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
