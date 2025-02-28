@@ -26,7 +26,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
-cid = { version = "0.11", default-features = false }
+cid = { version = "0.9.0", default-features = false }
 multibase = { version = "0.9", default-features = false }
 
 [dev-dependencies]
