@@ -1,9 +1,4 @@
 #![allow(missing_docs)]
-use common_runtime::constants::{Ss58Prefix, FREQUENCY_TOKEN, TOKEN_DECIMALS};
-use cumulus_primitives_core::ParaId;
-
-use sc_service::ChainType;
-use sc_telemetry::TelemetryEndpoints;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
@@ -19,6 +14,11 @@ pub fn load_frequency_spec() -> ChainSpec {
 #[cfg(feature = "runtime-benchmarks")]
 #[allow(clippy::unwrap_used)]
 pub fn benchmark_mainnet_config() -> ChainSpec {
+	use common_runtime::constants::{Ss58Prefix, FREQUENCY_TOKEN, TOKEN_DECIMALS};
+	use cumulus_primitives_core::ParaId;
+	use sc_service::ChainType;
+	use sc_telemetry::TelemetryEndpoints;
+
 	let properties =
 		get_properties(FREQUENCY_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
 	let para_id: ParaId = 2091.into();
