@@ -16,6 +16,7 @@ pub fn load_frequency_spec() -> ChainSpec {
 		.unwrap()
 }
 
+#[cfg(feature = "runtime-benchmarks")]
 #[allow(clippy::unwrap_used)]
 pub fn benchmark_mainnet_config() -> ChainSpec {
 	let properties =
@@ -33,7 +34,7 @@ pub fn benchmark_mainnet_config() -> ChainSpec {
 	).with_chain_type(
 		ChainType::Live
 	).with_telemetry_endpoints(
-		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0), ("wss://telemetry.frequency.xyz/submit/".into(), 0)]).unwrap()	
+		TelemetryEndpoints::new(vec![("wss://telemetry.polkadot.io/submit/".into(), 0), ("wss://telemetry.frequency.xyz/submit/".into(), 0)]).unwrap()
 	).with_boot_nodes(vec![
 		"/dns4/0.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWBd4aEArNvXECtt2JHQACBdFmeafpyfre3q81iM1xCcpP".parse().unwrap(),
 		"/dns4/1.boot.frequency.xyz/tcp/30333/ws/p2p/12D3KooWCW8d7Yz2d3Jcb49rWcNppRNEs1K2NZitCpPtrHSQb6dw".parse().unwrap(),
