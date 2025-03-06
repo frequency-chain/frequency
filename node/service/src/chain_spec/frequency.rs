@@ -1,9 +1,8 @@
 #![allow(missing_docs)]
+use super::Extensions;
 
 /// Specialized `ChainSpec` for the normal parachain runtime.
 pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
-
-use super::{get_properties, Extensions};
 
 #[allow(clippy::unwrap_used)]
 pub fn load_frequency_spec() -> ChainSpec {
@@ -14,6 +13,7 @@ pub fn load_frequency_spec() -> ChainSpec {
 #[cfg(feature = "runtime-benchmarks")]
 #[allow(clippy::unwrap_used)]
 pub fn benchmark_mainnet_config() -> ChainSpec {
+	use super::get_properties;
 	use common_runtime::constants::{Ss58Prefix, FREQUENCY_TOKEN, TOKEN_DECIMALS};
 	use cumulus_primitives_core::ParaId;
 	use sc_service::ChainType;
