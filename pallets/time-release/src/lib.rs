@@ -30,19 +30,23 @@ use frame_support::{
 	},
 	BoundedVec,
 };
-use frame_system::{ensure_root, ensure_signed, pallet_prelude::*};
+use frame_system::{
+	ensure_root, ensure_signed,
+	pallet_prelude::*,
+	{self as system},
+};
 use sp_runtime::{
 	traits::{BlockNumberProvider, CheckedAdd, StaticLookup, Zero},
 	ArithmeticError,
 };
-use sp_std::vec::Vec;
+use sp_std::{boxed::Box, vec::Vec};
 
 #[cfg(test)]
 mod mock;
 #[cfg(test)]
 mod tests;
 
-mod types;
+pub mod types;
 pub use types::*;
 
 pub mod weights;
@@ -55,6 +59,10 @@ pub use module::*;
 
 #[frame_support::pallet]
 pub mod module {
+	use frame_support::{dispatch::PostDispatchInfo, traits::IsSubType};
+use frame_system::RawOrigin;
+use sp_runtime::traits::Dispatchable;
+
 	use super::*;
 
 	pub(crate) type BalanceOf<T> = <<T as Config>::Currency as InspectFungible<
@@ -113,6 +121,22 @@ pub mod module {
 
 		/// The block-number provider.
 		type BlockNumberProvider: BlockNumberProvider<BlockNumber = BlockNumberFor<Self>>;
+
+		/// The aggregate call type
+		type RuntimeCall: Parameter
+			+ Dispatchable<
+				RuntimeOrigin = Self::RuntimeOrigin,
+				PostInfo = PostDispatchInfo,
+			>
+			+ From<Call<Self>>
+			+ IsType<<Self as frame_system::Config>::RuntimeCall>;
+
+		/// The scheduler provider
+		type SchedulerProvider: SchedulerProviderTrait<
+			OriginFor<Self>,
+			BlockNumberFor<Self>,
+			<Self as Config>::RuntimeCall,
+		>;
 	}
 
 	#[pallet::error]
@@ -331,6 +355,35 @@ pub mod module {
 			Self::deposit_event(Event::Claimed { who, amount: frozen_amount });
 			Ok(())
 		}
+
+		/// Creates a scheduled time-release transfer
+		///
+		/// # Events
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::WeightInfo::transfer())]
+		pub fn schedule_transfer(
+			origin: OriginFor<T>,
+			dest: <T::Lookup as StaticLookup>::Source,
+		) -> DispatchResult {
+			let account = ensure_signed(origin)?;
+
+			let schedule = ReleaseSchedule::<BlockNumberFor<T>, BalanceOf<T>> {
+				start: 0u32.into(),
+				period: 10u32.into(),
+				period_count: 2u32,
+				per_period: 10u32.into(),
+			};
+
+			let schedule_call = <T as self::Config>::RuntimeCall::from(Call::<T>::transfer { dest, schedule });
+
+			let _ = T::SchedulerProvider::schedule(
+				RawOrigin::Signed(account).into(),
+				BlockNumberFor::<T>::from(4u32),
+				Box::new(schedule_call),
+			)?;
+
+			Ok(())
+		}
 	}
 }
 
@@ -408,7 +461,7 @@ impl<T: Config> Pallet<T> {
 		// empty release schedules cleanup the storage and thaw the funds
 		if bounded_schedules.is_empty() {
 			Self::delete_release_schedules(who)?;
-			return Ok(())
+			return Ok(());
 		}
 
 		let total_amount =

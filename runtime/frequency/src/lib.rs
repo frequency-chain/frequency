@@ -77,6 +77,7 @@ use frame_support::{
 	parameter_types,
 	traits::{
 		fungible::HoldConsideration,
+		schedule::LOWEST_PRIORITY,
 		tokens::{PayFromAccount, UnityAssetBalanceConversion},
 		ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, EqualPrivilegeOnly,
 		GetStorageVersion, InstanceFilter, LinearStoragePrice, OnRuntimeUpgrade,
@@ -103,7 +104,7 @@ pub use pallet_frequency_tx_payment::{capacity_stable_weights, types::GetStableW
 pub use pallet_msa;
 pub use pallet_passkey;
 pub use pallet_schemas;
-pub use pallet_time_release;
+pub use pallet_time_release::types::SchedulerProviderTrait;
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -121,7 +122,20 @@ use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
 mod ethereum;
 mod genesis;
 
-/// Interface to collective pallet to propose a proposal.
+pub struct SchedulerProvider;
+
+impl SchedulerProviderTrait<RuntimeOrigin, BlockNumber, RuntimeCall> for SchedulerProvider {
+	fn schedule(
+		origin: RuntimeOrigin,
+		when: BlockNumber,
+		call: Box<RuntimeCall>,
+	) -> Result<(), DispatchError> {
+		let _ = Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call);
+
+		Ok(())
+	}
+}
+
 pub struct CouncilProposalProvider;
 
 impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
@@ -647,6 +661,8 @@ impl pallet_time_release::Config for Runtime {
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type SchedulerProvider = SchedulerProvider;
+	type RuntimeCall = RuntimeCall;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
