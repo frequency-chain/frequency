@@ -376,8 +376,12 @@ use sp_runtime::traits::Dispatchable;
 
 			let schedule_call = <T as self::Config>::RuntimeCall::from(Call::<T>::transfer { dest, schedule });
 
+			// let origin = <T as Config>::RuntimeOrigin::from(RawOrigin::Root);
+			
 			let _ = T::SchedulerProvider::schedule(
-				RawOrigin::Signed(account).into(),
+				// RawOrigin::Signed(account).into(),
+				RawOrigin::Root.into()
+				,
 				BlockNumberFor::<T>::from(4u32),
 				Box::new(schedule_call),
 			)?;

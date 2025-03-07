@@ -130,7 +130,7 @@ impl SchedulerProviderTrait<RuntimeOrigin, BlockNumber, RuntimeCall> for Schedul
 		when: BlockNumber,
 		call: Box<RuntimeCall>,
 	) -> Result<(), DispatchError> {
-		let _ = Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call);
+		let _ = Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call)?;
 
 		Ok(())
 	}
