@@ -365,7 +365,7 @@ use sp_runtime::traits::Dispatchable;
 			origin: OriginFor<T>,
 			dest: <T::Lookup as StaticLookup>::Source,
 		) -> DispatchResult {
-			let account = ensure_signed(origin)?;
+			// let account = ensure_signed(origin)?;
 
 			let schedule = ReleaseSchedule::<BlockNumberFor<T>, BalanceOf<T>> {
 				start: 0u32.into(),
@@ -380,8 +380,7 @@ use sp_runtime::traits::Dispatchable;
 			
 			let _ = T::SchedulerProvider::schedule(
 				// RawOrigin::Signed(account).into(),
-				RawOrigin::Root.into()
-				,
+				RawOrigin::Root.into(),
 				BlockNumberFor::<T>::from(4u32),
 				Box::new(schedule_call),
 			)?;

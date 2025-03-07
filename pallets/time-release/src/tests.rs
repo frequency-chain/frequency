@@ -416,6 +416,19 @@ fn exceeding_maximum_schedules_should_fail() {
 }
 
 #[test]
+fn schedule_transfer_success() {
+	ExtBuilder::build().execute_with(|| {
+		assert_ok!(TimeRelease::schedule_transfer(RuntimeOrigin::signed(ALICE), BOB,));
+		let schedules = pallet_scheduler::Agenda::<Test>::get(4u32);
+		assert_eq!(schedules.len(), 1);
+		
+		println!("scheudles {:?}", schedules);
+		// assert_eq!(schedules[0], Some(schedule));
+
+	});
+}
+
+#[test]
 fn cliff_release_works() {
 	const VESTING_AMOUNT: u64 = 12;
 	const VESTING_PERIOD: u32 = 20;
