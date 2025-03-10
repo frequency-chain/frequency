@@ -688,8 +688,9 @@ jobs:
         run: |
           echo "PREVIOUS_RELEASE_TAG=${{steps.get-previous-full-release-version.outputs.version}}" >> $GITHUB_ENV
       - name: Install Tera CLI
+        # TODO: Update to v0.5.0 once Rust version is > 1.83.0
         run: |
-          cargo install --locked --git https://github.com/chevdor/tera-cli
+          cargo install --locked --git https://github.com/chevdor/tera-cli --tag v0.4.0
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Verify Tera CLI Install
         run: |

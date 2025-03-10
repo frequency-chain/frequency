@@ -1,3 +1,4 @@
+# TODO: Update Tera in CI to v0.5.0 once Rust version is > 1.83.0
 [toolchain]
 channel = "1.76.0"
 components = [ "clippy", "rust-docs", "rustfmt","rustc-dev", "rustc", "rust-src"]
