@@ -162,6 +162,10 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk
 substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0" }
 sp-debug-derive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 
+# hotfix for https://github.com/paritytech/polkadot-sdk/issues/7653
+[patch.'https://github.com/w3f/fflonk']
+fflonk = { git = "https://www.github.com/w3f/fflonk", rev = "be95d4c971b1d15b5badfc06ff13f5c07987d484" }
+
 [profile.release]
 panic = "unwind"
 lto = true
