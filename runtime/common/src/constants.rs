@@ -121,8 +121,7 @@ pub type HandleSuffixMax = ConstU16<99>;
 // -end- Handles Pallet
 
 // --- TimeRelease Pallet ---
-// Update
-pub type MinReleaseTransfer = ConstU128<0>;
+pub type MinReleaseTransfer = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 
 /// Update
 pub const MAX_RELEASE_SCHEDULES: u32 = 50;

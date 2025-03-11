@@ -7902,6 +7902,8 @@ dependencies = [
  "frame-system",
  "log",
  "pallet-balances",
+ "pallet-preimage",
+ "pallet-scheduler",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -16069,3 +16071,13 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
+
+[[patch.unused]]
+name = "bandersnatch_vrfs"
+version = "0.0.4"
+source = "git+https://github.com/davxy/ring-vrf.git?rev=48b642a#48b642a0888990c1b9daabab426b46221133f87c"
+
+[[patch.unused]]
+name = "fflonk"
+version = "0.1.1"
+source = "git+https://www.github.com/w3f/fflonk?rev=be95d4c971b1d15b5badfc06ff13f5c07987d484#be95d4c971b1d15b5badfc06ff13f5c07987d484"
