@@ -5,7 +5,7 @@ use frame_support::{
 	assert_noop, assert_ok,
 	error::BadOrigin,
 	traits::{
-		fungible::{Inspect, InspectFreeze},
+		fungible::{Inspect, InspectFreeze, InspectHold},
 		tokens::{Fortitude, WithdrawConsequence},
 	},
 };
@@ -411,6 +411,237 @@ fn exceeding_maximum_schedules_should_fail() {
 		assert_noop!(
 			TimeRelease::update_release_schedules(RuntimeOrigin::root(), BOB, schedules),
 			Error::<Test>::MaxReleaseSchedulesExceeded
+		);
+	});
+}
+
+#[test]
+fn schedule_transfer_success() {
+	ExtBuilder::build().execute_with(|| {
+		let current_relay_block_number = 15u32;
+		let current_frequency_block_number = 5u32;
+
+		run_to_block(current_frequency_block_number);
+		MockBlockNumberProvider::set(current_relay_block_number);
+
+		let schedule = ReleaseSchedule {
+			// relay block number
+			start: 25u32.into(),
+			period: 5u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+
+		let schedule_frequency_blocknumber =
+			BlockNumberFor::<Test>::from(current_relay_block_number + 5);
+
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule,
+			schedule_frequency_blocknumber,
+		));
+
+		let schedules = pallet_scheduler::Agenda::<Test>::get(schedule_frequency_blocknumber);
+		assert_eq!(schedules.len(), 1);
+
+		let hold_balance = PalletBalances::balance_on_hold(
+			&HoldReason::TimeReleaseScheduledVesting.into(),
+			&ALICE,
+		);
+		assert_eq!(hold_balance, 20u64);
+
+		run_to_block(current_relay_block_number + 5);
+		let schedules = pallet_scheduler::Agenda::<Test>::get(4u32);
+		assert_eq!(schedules.len(), 0);
+
+		let hold_balance_at_execution = PalletBalances::balance_on_hold(
+			&HoldReason::TimeReleaseScheduledVesting.into(),
+			&ALICE,
+		);
+		assert_eq!(hold_balance_at_execution, 0u64);
+
+		assert_eq!(PalletBalances::free_balance(BOB), 20u64);
+		assert_eq!(
+			PalletBalances::balance_frozen(&FreezeReason::TimeReleaseVesting.into(), &BOB),
+			20u64
+		);
+	});
+}
+
+#[test]
+fn multiple_schedule_transfer_success() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+
+		let when = BlockNumberFor::<Test>::from(4u32);
+
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule,
+			when
+		));
+		let schedules = pallet_scheduler::Agenda::<Test>::get(4u32);
+		assert_eq!(schedules.len(), 1);
+		let hold_balance = PalletBalances::balance_on_hold(
+			&HoldReason::TimeReleaseScheduledVesting.into(),
+			&ALICE,
+		);
+		assert_eq!(hold_balance, 20u64);
+
+		// Adding another schedule increases the hold
+
+		let schedule_2 = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+
+		let when = BlockNumberFor::<Test>::from(4u32);
+
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule_2,
+			when
+		));
+		let schedules = pallet_scheduler::Agenda::<Test>::get(4u32);
+		assert_eq!(schedules.len(), 2);
+		let hold_balance = PalletBalances::balance_on_hold(
+			&HoldReason::TimeReleaseScheduledVesting.into(),
+			&ALICE,
+		);
+		assert_eq!(hold_balance, 40u64);
+	});
+}
+
+#[test]
+fn schedule_transfer_fails_if_invalid_block_number() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+		let invalid_block_number = 0u32;
+		assert_noop!(
+			TimeRelease::schedule_transfer(
+				RuntimeOrigin::signed(ALICE),
+				BOB,
+				schedule,
+				invalid_block_number
+			),
+			pallet_scheduler::Error::<Test>::TargetBlockNumberInPast
+		);
+	});
+}
+
+#[test]
+fn schedule_transfer_fails_if_bad_origin() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+		let when = BlockNumberFor::<Test>::from(4u32);
+		assert_noop!(
+			TimeRelease::schedule_transfer(RuntimeOrigin::signed(CHARLIE), BOB, schedule, when),
+			BadOrigin
+		);
+	});
+}
+
+#[test]
+fn execute_scheduled_transfer_success() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+		let when = BlockNumberFor::<Test>::from(4u32);
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule.clone(),
+			when
+		));
+
+		assert_ok!(TimeRelease::execute_scheduled_transfer(
+			Origin::<Test>::TimeRelease(ALICE).into(),
+			BOB,
+			schedule
+		));
+		assert_eq!(PalletBalances::free_balance(BOB), 20u64);
+	});
+}
+
+#[test]
+fn execute_scheduled_transfer_fails_if_insufficient_hold_balance() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+		let when = BlockNumberFor::<Test>::from(4u32);
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule.clone(),
+			when
+		));
+
+		let bad_schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 1000u32.into(),
+		};
+
+		assert_noop!(
+			TimeRelease::execute_scheduled_transfer(
+				Origin::<Test>::TimeRelease(ALICE).into(),
+				BOB,
+				bad_schedule
+			),
+			Error::<Test>::InsufficientBalanceToFreeze
+		);
+	});
+}
+
+#[test]
+fn execute_scheduled_transfer_fails_if_bad_origin() {
+	ExtBuilder::build().execute_with(|| {
+		let schedule = ReleaseSchedule {
+			start: 6u32.into(),
+			period: 10u32.into(),
+			period_count: 2u32,
+			per_period: 10u32.into(),
+		};
+		let when = BlockNumberFor::<Test>::from(4u32);
+		assert_ok!(TimeRelease::schedule_transfer(
+			RuntimeOrigin::signed(ALICE),
+			BOB,
+			schedule.clone(),
+			when
+		));
+
+		assert_noop!(
+			TimeRelease::execute_scheduled_transfer(RuntimeOrigin::signed(CHARLIE), BOB, schedule),
+			BadOrigin
 		);
 	});
 }

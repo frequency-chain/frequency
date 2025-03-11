@@ -3,11 +3,17 @@
 use super::*;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU64, EnsureOrigin, Everything},
+	traits::{
+		schedule::LOWEST_PRIORITY, ConstU32, ConstU64, EitherOfDiverse, EnsureOrigin,
+		EqualPrivilegeOnly, Everything,
+	},
 };
-use frame_system::RawOrigin;
+use frame_system::{EnsureRoot, RawOrigin};
 use sp_core::H256;
-use sp_runtime::{traits::IdentityLookup, BuildStorage};
+use sp_runtime::{traits::IdentityLookup, BuildStorage, Perbill};
+
+use pallet_preimage;
+use pallet_scheduler;
 
 use crate as pallet_time_release;
 
@@ -58,8 +64,61 @@ impl pallet_balances::Config for Test {
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxFreezes = ConstU32<1>;
-	type RuntimeHoldReason = ();
-	type RuntimeFreezeReason = ();
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
+}
+
+impl pallet_preimage::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
+	type Currency = ();
+	type ManagerOrigin = EnsureRoot<AccountId>;
+	type Consideration = ();
+}
+
+parameter_types! {
+	pub BlockWeights: frame_system::limits::BlockWeights =
+		frame_system::limits::BlockWeights::simple_max(
+			Weight::from_parts(2_000_000_000_000, u64::MAX),
+		);
+}
+
+parameter_types! {
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(80) *
+		BlockWeights::get().max_block;
+}
+
+pub struct EnsureTimeReleaseOrigin;
+
+impl EnsureOrigin<RuntimeOrigin> for EnsureTimeReleaseOrigin {
+	type Success = AccountId;
+
+	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
+		match o.clone().into() {
+			Ok(pallet_time_release::Origin::<Test>::TimeRelease(who)) => Ok(who),
+			_ => Err(o),
+		}
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn try_successful_origin() -> Result<RuntimeOrigin, ()> {
+		Ok(RuntimeOrigin::root())
+	}
+}
+
+impl pallet_scheduler::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type PalletsOrigin = OriginCaller;
+	type RuntimeCall = RuntimeCall;
+	type MaximumWeight = MaximumSchedulerWeight;
+	/// Origin to schedule or cancel calls
+	/// Set to Root or a simple majority of the Frequency Council
+	type ScheduleOrigin = EitherOfDiverse<EnsureTimeReleaseOrigin, EnsureRoot<AccountId>>;
+	type MaxScheduledPerBlock = ConstU32<10>;
+	type WeightInfo = common_runtime::weights::pallet_scheduler::SubstrateWeight<Test>;
+	type OriginPrivilegeCmp = EqualPrivilegeOnly;
+	type Preimages = Preimage;
 }
 
 pub struct EnsureAliceOrBob;
@@ -99,14 +158,19 @@ impl BlockNumberProvider for MockBlockNumberProvider {
 
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type Currency = PalletBalances;
-	type MinReleaseTransfer = ConstU64<0>;
+	type MinReleaseTransfer = ConstU64<1u64>;
 	type TransferOrigin = EnsureAliceOrBob;
 	type WeightInfo = ();
 	type MaxReleaseSchedules = ConstU32<50>;
 	type BlockNumberProvider = MockBlockNumberProvider;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type Balance = Balance;
+	type RuntimeCall = RuntimeCall;
+	type SchedulerProvider = SchedulerProvider;
+	type TimeReleaseOrigin = EnsureTimeReleaseOrigin;
 }
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
@@ -115,8 +179,10 @@ construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system::{Pallet, Call, Storage, Config<T>, Event<T>},
-		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>, FreezeReason},
+		TimeRelease: pallet_time_release::{Pallet, Storage, Call, Event<T>, Config<T>, FreezeReason, HoldReason, Origin<T>},
 		PalletBalances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		Preimage: pallet_preimage::{Pallet, Call, Storage, Event<T>, HoldReason},
+		Scheduler: pallet_scheduler::{Pallet, Call, Storage, Event<T>}
 	}
 );
 
@@ -128,6 +194,32 @@ pub const DAVE: AccountId = 4;
 pub const ALICE_BALANCE: u64 = 100;
 pub const CHARLIE_BALANCE: u64 = 30;
 pub const DAVE_BALANCE: u64 = 200;
+
+pub struct SchedulerProvider;
+
+impl SchedulerProviderTrait<RuntimeOrigin, u32, RuntimeCall> for SchedulerProvider {
+	fn schedule(
+		origin: RuntimeOrigin,
+		when: u32,
+		call: Box<RuntimeCall>,
+	) -> Result<(), DispatchError> {
+		let _ = Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call)?;
+
+		Ok(())
+	}
+}
+
+// Remove capacity on_initialize, needed to emulate pre-existing block height
+pub fn run_to_block(n: u32) {
+	while System::block_number() < n {
+		if System::block_number() > 1 {
+			System::on_finalize(System::block_number());
+		}
+		System::set_block_number(System::block_number() + 1);
+		Scheduler::on_initialize(System::block_number());
+		System::on_initialize(System::block_number());
+	}
+}
 
 #[derive(Default)]
 pub struct ExtBuilder;
