@@ -607,9 +607,9 @@ pub mod pallet {
 		/// Claim all outstanding Provider Boost rewards, up to ProviderBoostHistoryLimit Reward Eras
 		/// in the past.  Accounts should check for unclaimed rewards before calling this extrinsic
 		/// to avoid needless transaction fees.
-		///  Errors:
-		///     - NotAProviderBoostAccount:  if Origin has nothing staked for ProviderBoost
-		///     - NoRewardsEligibleToClaim:  if Origin has no unclaimed rewards to pay out.
+		/// ### Errors:
+		/// - NotAProviderBoostAccount:  if Origin has nothing staked for ProviderBoost
+		/// - NoRewardsEligibleToClaim:  if Origin has no unclaimed rewards to pay out.
 		#[pallet::call_index(6)]
 		#[pallet::weight(T::WeightInfo::claim_staking_rewards())]
 		pub fn claim_staking_rewards(origin: OriginFor<T>) -> DispatchResult {
