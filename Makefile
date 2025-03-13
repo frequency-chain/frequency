@@ -215,7 +215,7 @@ check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-paseo-local
+	SKIP_WASM_BUILD= cargo check --features frequency-local
 
 check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
@@ -231,6 +231,7 @@ js:
 build:
 	cargo build --features frequency-no-relay
 
+# run this one to test
 build-benchmarks:
 	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace
 
