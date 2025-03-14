@@ -27,6 +27,8 @@ common-runtime = { path = "../../runtime/common", default-features = false }
 chrono = { workspace = true }
 pallet-balances = { workspace = true }
 common-primitives = { default-features = false, path = "../../common/primitives" }
+pallet-scheduler = { workspace = true }
+pallet-preimage = { workspace = true }
 
 [features]
 default = ["std"]
