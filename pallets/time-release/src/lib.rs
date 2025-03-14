@@ -90,7 +90,7 @@ pub mod module {
 	/// Create a hold reason for this pallet that is aggregated by 'contract_runtime'.
 	#[pallet::composite_enum]
 	pub enum HoldReason {
-		/// Funds are frozen until
+		/// Funds reserved/held for scheduled transfers
 		TimeReleaseScheduledVesting,
 	}
 
@@ -324,7 +324,7 @@ pub mod module {
 			let to = T::Lookup::lookup(dest)?;
 
 			let total_amount = schedule.total_amount().ok_or(ArithmeticError::Overflow)?;
-			Self::ensure_suffient_free_balance(&from, &to, total_amount)?;
+			Self::ensure_sufficient_free_balance(&from, &to, total_amount)?;
 
 			Self::finalize_vesting_transfer_from_free_balance(&from, &to, schedule.clone())?;
 
@@ -401,7 +401,7 @@ pub mod module {
 			let to = T::Lookup::lookup(dest.clone())?;
 
 			let total_amount = Self::validate_and_get_schedule_amount(&schedule)?;
-			Self::ensure_suffient_free_balance(&from, &to, total_amount)?;
+			Self::ensure_sufficient_free_balance(&from, &to, total_amount)?;
 
 			let _ = Self::update_schedule_vesting_hold(
 				&from,
@@ -656,7 +656,7 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	fn ensure_suffient_free_balance(
+	fn ensure_sufficient_free_balance(
 		from: &T::AccountId,
 		to: &T::AccountId,
 		amount: BalanceOf<T>,
