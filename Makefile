@@ -229,23 +229,23 @@ js:
 
 .PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release
 build:
-	cargo build --features frequency-no-relay
+	cargo build --features frequency-no-relay --locked
 
 # run this one to test
 build-benchmarks:
-	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace
+	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace --locked
 
 build-no-relay:
-	cargo build --features frequency-no-relay
+	cargo build --features frequency-no-relay --locked
 
 build-local:
-	cargo build --features frequency-local
+	cargo build --features frequency-local --locked
 
 build-testnet:
-	cargo build --features frequency-testnet
+	cargo build --features frequency-testnet --locked
 
 build-mainnet:
-	cargo build --features frequency
+	cargo build --features frequency --locked
 
 build-testnet-release:
 	cargo build --locked --features frequency-testnet --release
