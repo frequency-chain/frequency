@@ -22,5 +22,5 @@ sp-io = { workspace = true }
 common-primitives = { path = "../primitives", default-features = false }
 
 [features]
-default = ['std']
+default = []
 std = ['sp-runtime/std', 'sp-api/std', 'sp-io/std', 'common-primitives/std']
