@@ -35,7 +35,8 @@ common-runtime = { path = '../../runtime/common', default-features = false }
 rand = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = "1.0"
+serde_json = { workspace = true }
+#serde_json = { workspace = true, default-features = true }
 
 [features]
 default = ['std']

@@ -917,10 +917,10 @@ impl pallet_treasury::Config for Runtime {
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
 	/// - 3/5ths of the Frequency Council
-	type ApproveOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-	>;
+	// type ApproveOrigin = EitherOfDiverse<
+	// 	EnsureRoot<AccountId>,
+	// 	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	// >;
 
 	/// Who rejects treasury proposals?
 	/// - Root (sudo or governance)
@@ -937,16 +937,16 @@ impl pallet_treasury::Config for Runtime {
 	/// Rejected proposals lose their bond
 	/// This takes the slashed amount and is often set to the Treasury
 	/// We burn it so there is no incentive to the treasury to reject to enrich itself
-	type OnSlash = ();
+	// type OnSlash = ();
 
 	/// Bond 5% of a treasury proposal
-	type ProposalBond = ProposalBondPercent;
+	// type ProposalBond = ProposalBondPercent;
 
 	/// Minimum bond of 100 Tokens
-	type ProposalBondMinimum = ProposalBondMinimum;
+	// type ProposalBondMinimum = ProposalBondMinimum;
 
 	/// Max bond of 1_000 Tokens
-	type ProposalBondMaximum = ProposalBondMaximum;
+	// type ProposalBondMaximum = ProposalBondMaximum;
 
 	/// Pay out on a 4-week basis
 	type SpendPeriod = SpendPeriod;
@@ -1289,8 +1289,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
 		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
-		} = 1,
+			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
