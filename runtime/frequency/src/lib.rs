@@ -128,10 +128,17 @@ pub struct SchedulerProvider;
 impl SchedulerProviderTrait<RuntimeOrigin, BlockNumber, RuntimeCall> for SchedulerProvider {
 	fn schedule(
 		origin: RuntimeOrigin,
+		id: [u8; 32],
 		when: BlockNumber,
 		call: Box<RuntimeCall>,
 	) -> Result<(), DispatchError> {
-		Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call)?;
+		Scheduler::schedule_named(origin, id, when, None, LOWEST_PRIORITY, call)?;
+
+		Ok(())
+	}
+
+	fn cancel(origin: RuntimeOrigin, id: [u8; 32]) -> Result<(), DispatchError> {
+		Scheduler::cancel_named(origin, id)?;
 
 		Ok(())
 	}
@@ -416,7 +423,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 144,
+	spec_version: 145,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -430,7 +437,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 144,
+	spec_version: 145,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
