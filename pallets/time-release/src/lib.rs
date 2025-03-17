@@ -184,6 +184,10 @@ pub mod module {
 		AmountLow,
 		/// Failed because the maximum release schedules was exceeded
 		MaxReleaseSchedulesExceeded,
+		/// A scheduled transfer with the same identifier already exists.
+		DuplicateScheduleName,
+		/// No scheduled transfer found for the given identifier.
+		NotFound,
 	}
 
 	#[pallet::event]
@@ -223,6 +227,11 @@ pub mod module {
 		BoundedVec<ReleaseScheduleOf<T>, T::MaxReleaseSchedules>,
 		ValueQuery,
 	>;
+
+	/// Tracks the amount of funds reserved for each scheduled transfer, keyed by the transfer's identifier.
+	#[pallet::storage]
+	pub type ScheduleReservedAmounts<T: Config> =
+		StorageMap<_, Twox64Concat, ScheduleName, BalanceOf<T>>;
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
@@ -395,9 +404,10 @@ pub mod module {
 		/// * [`ArithmeticError::Overflow] - Failed because of an overflow.
 		///
 		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::schedule_transfer().saturating_add(T::WeightInfo::execute_scheduled_transfer()))]
-		pub fn schedule_transfer(
+		#[pallet::weight(T::WeightInfo::schedule_named_transfer().saturating_add(T::WeightInfo::execute_scheduled_named_transfer()))]
+		pub fn schedule_named_transfer(
 			origin: OriginFor<T>,
+			id: ScheduleName,
 			dest: <T::Lookup as StaticLookup>::Source,
 			schedule: ReleaseScheduleOf<T>,
 			when: BlockNumberFor<T>,
@@ -405,15 +415,42 @@ pub mod module {
 			let from = T::TransferOrigin::ensure_origin(origin)?;
 			let to = T::Lookup::lookup(dest.clone())?;
 
+			ensure!(
+				!ScheduleReservedAmounts::<T>::contains_key(&id),
+				Error::<T>::DuplicateScheduleName
+			);
+
 			let total_amount = Self::validate_and_get_schedule_amount(&schedule)?;
 			Self::ensure_sufficient_free_balance(&from, &to, total_amount)?;
 
-			Self::update_schedule_vesting_hold(
+			Self::hold_funds_for_scheduled_vesting(
 				&from,
 				schedule.total_amount().ok_or(ArithmeticError::Overflow)?,
 			)?;
 
-			Self::schedule_transfer_for(from.clone(), dest, schedule, when)?;
+			Self::insert_reserved_amount(
+				id,
+				schedule.total_amount().ok_or(ArithmeticError::Overflow)?,
+			)?;
+
+			Self::schedule_transfer_for(id, from.clone(), dest, schedule, when)?;
+
+			Ok(())
+		}
+
+		/// Cancels a scheduled transfer by its unique identifier.
+		/// Releases any funds held for the specified transfer.
+		#[pallet::call_index(6)]
+		#[pallet::weight(T::WeightInfo::cancel_scheduled_named_transfer(<T as Config>::MaxReleaseSchedules::get() / 2))]
+		pub fn cancel_scheduled_named_transfer(
+			origin: OriginFor<T>,
+			id: ScheduleName,
+		) -> DispatchResult {
+			let who = T::TransferOrigin::ensure_origin(origin)?;
+
+			T::SchedulerProvider::cancel(Origin::<T>::TimeRelease(who.clone()).into(), id)?;
+
+			Self::release_reserved_funds_by_id(id, &who)?;
 
 			Ok(())
 		}
@@ -443,9 +480,10 @@ pub mod module {
 		///
 		/// * [`Event::ReleaseScheduleAdded`] - Indicates that a new release schedule was added.
 		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::execute_scheduled_transfer())]
-		pub fn execute_scheduled_transfer(
+		#[pallet::weight(T::WeightInfo::execute_scheduled_named_transfer())]
+		pub fn execute_scheduled_named_transfer(
 			origin: OriginFor<T>,
+			id: ScheduleName,
 			dest: <T::Lookup as StaticLookup>::Source,
 			schedule: ReleaseScheduleOf<T>,
 		) -> DispatchResult {
@@ -461,6 +499,8 @@ pub mod module {
 				schedule.clone(),
 				Self::transfer_from_hold_balance,
 			)?;
+
+			ScheduleReservedAmounts::<T>::remove(id);
 
 			Self::deposit_event(Event::ReleaseScheduleAdded {
 				from,
@@ -516,19 +556,22 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn schedule_transfer_for(
+		id: ScheduleName,
 		from: T::AccountId,
 		dest: <T::Lookup as StaticLookup>::Source,
 		schedule: ReleaseScheduleOf<T>,
 		when: BlockNumberFor<T>,
 	) -> DispatchResult {
 		let schedule_call =
-			<T as self::Config>::RuntimeCall::from(Call::<T>::execute_scheduled_transfer {
+			<T as self::Config>::RuntimeCall::from(Call::<T>::execute_scheduled_named_transfer {
+				id,
 				dest,
 				schedule,
 			});
 
-		let _ = T::SchedulerProvider::schedule(
+		T::SchedulerProvider::schedule(
 			Origin::<T>::TimeRelease(from).into(),
+			id,
 			when,
 			Box::new(schedule_call),
 		)?;
@@ -572,11 +615,25 @@ impl<T: Config> Pallet<T> {
 		Ok(())
 	}
 
-	fn update_schedule_vesting_hold(
+	fn hold_funds_for_scheduled_vesting(
 		who: &T::AccountId,
 		hold_amount: BalanceOf<T>,
 	) -> DispatchResult {
 		T::Currency::hold(&HoldReason::TimeReleaseScheduledVesting.into(), who, hold_amount)?;
+		Ok(())
+	}
+
+	fn release_reserved_funds_by_id(id: ScheduleName, who: &T::AccountId) -> DispatchResult {
+		let amount = ScheduleReservedAmounts::<T>::take(id).ok_or(Error::<T>::NotFound)?;
+
+		T::Currency::release(&HoldReason::TimeReleaseScheduledVesting.into(), who, amount, Exact)?;
+
+		Ok(())
+	}
+
+	fn insert_reserved_amount(id: ScheduleName, amount: BalanceOf<T>) -> DispatchResult {
+		ScheduleReservedAmounts::<T>::insert(id, amount);
+
 		Ok(())
 	}
 
