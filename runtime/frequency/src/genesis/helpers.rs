@@ -72,7 +72,7 @@ pub fn build_genesis(
 			candidacy_bond,
 			..Default::default()
 		},
-		session: SessionConfig { keys: session_keys },
+		session: SessionConfig { keys: session_keys, non_authority_keys: Default::default() },
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),

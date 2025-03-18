@@ -109,15 +109,16 @@ pub fn new_partial(
 		.transpose()?;
 
 	let heap_pages = config
+		.executor
 		.default_heap_pages
 		.map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static { extra_pages: h as _ });
 
 	let executor = ParachainExecutor::builder()
-		.with_execution_method(config.wasm_method)
+		.with_execution_method(config.executor.wasm_method)
 		.with_onchain_heap_alloc_strategy(heap_pages)
 		.with_offchain_heap_alloc_strategy(heap_pages)
-		.with_max_runtime_instances(config.max_runtime_instances)
-		.with_runtime_cache_size(config.runtime_cache_size)
+		.with_max_runtime_instances(config.executor.max_runtime_instances)
+		.with_runtime_cache_size(config.executor.runtime_cache_size)
 		.build();
 
 	let (client, backend, keystore_container, task_manager) =
@@ -192,7 +193,7 @@ pub async fn start_parachain_node(
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	use crate::common::convert_address_to_normalized_string;
+	use crate::common::listen_addrs_to_normalized_strings;
 	use common_primitives::offchain::OcwCustomExt;
 	use sc_client_db::Backend;
 
@@ -247,7 +248,7 @@ pub async fn start_parachain_node(
 	if parachain_config.offchain_worker.enabled {
 		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_address = convert_address_to_normalized_string(&parachain_config.rpc_addr)
+		let rpc_address = listen_addrs_to_normalized_strings(&parachain_config.rpc_addr)
 			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
@@ -471,10 +472,9 @@ fn start_consensus(
 		reinitialize: false,
 	};
 
-	let fut =
-		aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _>(
-			params,
-		);
+	let fut = aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _>(
+		params,
+	);
 
 	task_manager.spawn_essential_handle().spawn("aura", None, fut);
 
