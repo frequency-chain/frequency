@@ -40,7 +40,7 @@ use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
-use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
+use sc_network::{config::FullNetworkConfiguration, NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
