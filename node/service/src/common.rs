@@ -1,7 +1,6 @@
 #![allow(missing_docs)]
-use std::net::SocketAddr;
 use sc_service::config::RpcEndpoint;
-use common_primitives::offchain::OcwCustomExt;
+use std::net::SocketAddr;
 
 const HTTP_PREFIX: &str = "http://";
 
@@ -9,8 +8,7 @@ const HTTP_PREFIX: &str = "http://";
 pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Option<Vec<Vec<u8>>> {
 	let mut addresses = match addr {
 		None => Vec::new(),
-		Some(rpc_endpoints) => {
-			rpc_endpoints
+		Some(rpc_endpoints) => rpc_endpoints
 			.iter()
 			.map(|endpoint| {
 				let socket_addr = endpoint.listen_addr;
@@ -25,8 +23,7 @@ pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Op
 				address.into_bytes()
 			})
 			.filter(|addr| addr.len() > 0)
-			.collect()
-		}
+			.collect(),
 	};
 
 	Some(addresses)
