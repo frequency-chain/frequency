@@ -92,10 +92,13 @@ pub fn start_frequency_dev_sealing_node(
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: move |_hash| {
-					rpc_addresses.iter().map(|a| {
-						let addr_cloned = a.clone();
-						Box::new(OcwCustomExt(addr_cloned)) as Box<_>
-					}).collect()
+					rpc_addresses
+						.iter()
+						.map(|a| {
+							let addr_cloned = a.clone();
+							Box::new(OcwCustomExt(addr_cloned)) as Box<_>
+						})
+						.collect()
 				},
 			});
 

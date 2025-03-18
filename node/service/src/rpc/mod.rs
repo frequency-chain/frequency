@@ -5,10 +5,10 @@
 
 #![warn(missing_docs)]
 
-use std::sync::Arc;
-use futures::channel::mpsc;
-use jsonrpsee::{RpcModule};
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
+use futures::channel::mpsc;
+use jsonrpsee::RpcModule;
+use std::sync::Arc;
 
 use sc_client_api::{AuxStore, StorageProvider};
 use sc_client_db::Backend as DbBackend;
@@ -90,7 +90,8 @@ where
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
 			// send EngineCommands to the background block authorship task.
-			ManualSeal::new(command_sink).into_rpc())?;
+			ManualSeal::new(command_sink).into_rpc(),
+		)?;
 	}
 	Ok(module)
 }
