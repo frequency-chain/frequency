@@ -14,7 +14,7 @@ use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
 
-use crate::common::convert_address_to_normalized_string;
+use crate::common::listen_addrs_to_normalized_strings;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
@@ -45,7 +45,7 @@ pub fn start_frequency_dev_sealing_node(
 		_,
 		_,
 		sc_network::NetworkWorker<Block, Hash>,
-	>::new(&config.network);
+	>::new(&config.network, None); // 2nd param, metrics_registry: Option<Metrics>
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -70,7 +70,7 @@ pub fn start_frequency_dev_sealing_node(
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync_params: None,
+			warp_sync_config: None,
 			block_relay: None,
 			metrics,
 		})?;
@@ -78,7 +78,7 @@ pub fn start_frequency_dev_sealing_node(
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
+		let rpc_addresses = listen_addrs_to_normalized_strings(&config.rpc.addr)
 			.expect("rpc-addr is not a valid input!");
 		let offchain_workers =
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
@@ -92,8 +92,10 @@ pub fn start_frequency_dev_sealing_node(
 				network_provider: Arc::new(network.clone()),
 				enable_http_requests: true,
 				custom_extensions: move |_hash| {
-					let cloned = rpc_address.clone();
-					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
+					rpc_addresses.iter().map(|a| {
+						let addr_cloned = a.clone();
+						Box::new(OcwCustomExt(addr_cloned)) as Box<_>
+					}).collect()
 				},
 			});
 
@@ -204,14 +206,12 @@ pub fn start_frequency_dev_sealing_node(
 			false => None,
 		};
 
-		Box::new(move |deny_unsafe, _| {
+		Box::new(move |_| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
-				deny_unsafe,
 				command_sink: command_sink.clone(),
 			};
-
 			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		})
 	};

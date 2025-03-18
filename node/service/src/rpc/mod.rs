@@ -6,7 +6,8 @@
 #![warn(missing_docs)]
 
 use std::sync::Arc;
-
+use futures::channel::mpsc;
+use jsonrpsee::{RpcModule};
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 
 use sc_client_api::{AuxStore, StorageProvider};
@@ -21,7 +22,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 mod frequency_rpc;
 
 /// A type representing all RPC extensions.
-pub type RpcExtension = jsonrpsee::RpcModule<()>;
+pub type RpcExtension = RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
@@ -29,10 +30,8 @@ pub struct FullDeps<C, P> {
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
-	/// Whether to deny unsafe calls
-	pub deny_unsafe: DenyUnsafe,
 	/// Manual seal command sink
-	pub command_sink: Option<futures::channel::mpsc::Sender<EngineCommand<Hash>>>,
+	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -75,9 +74,9 @@ where
 	use pallet_stateful_storage_rpc::{StatefulStorageApiServer, StatefulStorageHandler};
 
 	let mut module = RpcExtension::new(());
-	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
+	let FullDeps { client, pool, command_sink } = deps;
 
-	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;
@@ -86,12 +85,12 @@ where
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
 	module.merge(CapacityPaymentHandler::new(client.clone()).into_rpc())?;
 	module.merge(FrequencyRpcHandler::new(client, pool).into_rpc())?;
+
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
 			// send EngineCommands to the background block authorship task.
-			ManualSeal::new(command_sink).into_rpc(),
-		)?;
+			ManualSeal::new(command_sink).into_rpc())?;
 	}
 	Ok(module)
 }
