@@ -4,6 +4,7 @@ use super::*;
 use crate::Pallet as TimeReleasePallet;
 
 use frame_benchmarking::{account, benchmarks, whitelist_account, whitelisted_caller};
+use frame_support::traits::fungible::InspectHold;
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::{traits::TrailingZeroInput, SaturatedConversion};
 use sp_std::prelude::*;
@@ -27,6 +28,10 @@ fn lookup_of_account<T: Config>(
 }
 
 benchmarks! {
+	where_clause {  where
+		<T as frame_system::Config>::RuntimeOrigin: From<Origin<T>> + From<<T as frame_system::Config>::RuntimeOrigin>,
+	}
+
 	transfer {
 		let schedule = Schedule::<T> {
 			start: 0u32.into(),
@@ -43,6 +48,60 @@ benchmarks! {
 		let to: T::AccountId = account("to", 1, SEED);
 		let to_lookup = lookup_of_account::<T>(to.clone());
 	}: _(RawOrigin::Signed(from), to_lookup, schedule.clone())
+	verify {
+		assert_eq!(
+			T::Currency::total_balance(&to),
+			schedule.total_amount().unwrap()
+		);
+	}
+
+	schedule_transfer {
+		let schedule = Schedule::<T> {
+			start: 0u32.into(),
+			period: 2u32.into(),
+			period_count: 3,
+			per_period: T::MinReleaseTransfer::get(),
+		};
+
+
+		let from = T::AccountId::decode(&mut TrailingZeroInput::zeroes()).unwrap();
+		whitelist_account!(from);
+		let total = schedule.total_amount().unwrap();
+		set_balance::<T>(&from, DOLLARS.into());
+
+		let to: T::AccountId = account("to", 1, SEED);
+		let to_lookup = lookup_of_account::<T>(to.clone());
+		let when = 10u32.into();
+
+	}: _(RawOrigin::Signed(from.clone()), to_lookup, schedule.clone(), when)
+	verify {
+		assert_eq!(
+			T::Currency::balance_on_hold(&HoldReason::TimeReleaseScheduledVesting.into(), &from),
+			schedule.total_amount().unwrap());
+	}
+
+	execute_scheduled_transfer {
+		let schedule = Schedule::<T> {
+			start: 0u32.into(),
+			period: 2u32.into(),
+			period_count: 3,
+			per_period: DOLLARS.into(),
+		};
+
+		let from = T::AccountId::decode(&mut TrailingZeroInput::zeroes()).unwrap();
+		let to: T::AccountId = account("to", 1, SEED);
+
+
+		whitelist_account!(from);
+
+		// set hold balance of sender
+		let total = schedule.total_amount().unwrap();
+		set_balance::<T>(&from, (total * 2u32.into() * DOLLARS.into()).into());
+		let _ = T::Currency::hold(&HoldReason::TimeReleaseScheduledVesting.into(), &from, total * DOLLARS.into());
+
+		let to_lookup = lookup_of_account::<T>(to.clone());
+		let origin = Origin::<T>::TimeRelease(from.clone());
+	}: _(origin, to_lookup, schedule.clone())
 	verify {
 		assert_eq!(
 			T::Currency::total_balance(&to),
