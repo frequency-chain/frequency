@@ -34,8 +34,9 @@ use core::marker::PhantomData;
 /// Weight functions needed for `pallet_time_release`.
 pub trait WeightInfo {
 	fn transfer() -> Weight;
-	fn schedule_transfer() -> Weight;
-	fn execute_scheduled_transfer() -> Weight;
+	fn schedule_named_transfer() -> Weight;
+	fn execute_scheduled_named_transfer() -> Weight;
+	fn cancel_scheduled_named_transfer() -> Weight;
 	fn claim(i: u32, ) -> Weight;
 	fn update_release_schedules(i: u32, ) -> Weight;
 }
@@ -68,7 +69,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Scheduler::Agenda` (r:1 w:1)
 	/// Proof: `Scheduler::Agenda` (`max_values`: None, `max_size`: Some(10463), added: 12938, mode: `MaxEncodedLen`)
-	fn schedule_transfer() -> Weight {
+	fn schedule_named_transfer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `107`
 		//  Estimated: `14423`
@@ -91,7 +92,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
-	fn execute_scheduled_transfer() -> Weight {
+	fn execute_scheduled_named_transfer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `271`
 		//  Estimated: `5409`
@@ -100,6 +101,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+
+	fn cancel_scheduled_named_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `271`
+		//  Estimated: `5409`
+		// Minimum execution time: 66_357_000 picoseconds.
+		Weight::from_parts(66_829_000, 5409)
+			.saturating_add(T::DbWeight::get().reads(7_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+
+	}
+
 	/// Storage: `ParachainSystem::ValidationData` (r:1 w:0)
 	/// Proof: `ParachainSystem::ValidationData` (`max_values`: Some(1), `max_size`: None, mode: `Measured`)
 	/// Storage: `TimeRelease::ReleaseSchedules` (r:1 w:1)
@@ -170,7 +183,7 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Scheduler::Agenda` (r:1 w:1)
 	/// Proof: `Scheduler::Agenda` (`max_values`: None, `max_size`: Some(10463), added: 12938, mode: `MaxEncodedLen`)
-	fn schedule_transfer() -> Weight {
+	fn schedule_named_transfer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `107`
 		//  Estimated: `14423`
@@ -193,7 +206,17 @@ impl WeightInfo for () {
 	/// Proof: `Balances::Freezes` (`max_values`: None, `max_size`: Some(85), added: 2560, mode: `MaxEncodedLen`)
 	/// Storage: `Balances::Locks` (r:1 w:0)
 	/// Proof: `Balances::Locks` (`max_values`: None, `max_size`: Some(1299), added: 3774, mode: `MaxEncodedLen`)
-	fn execute_scheduled_transfer() -> Weight {
+	fn execute_scheduled_named_transfer() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `271`
+		//  Estimated: `5409`
+		// Minimum execution time: 66_357_000 picoseconds.
+		Weight::from_parts(66_829_000, 5409)
+			.saturating_add(RocksDbWeight::get().reads(7_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+
+	fn cancel_scheduled_named_transfer() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `271`
 		//  Estimated: `5409`
@@ -293,7 +316,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_execute_scheduled_transfer() {
+	fn test_execute_scheduled_named_transfer() {
 		assert!(
 			BlockWeights::get()
 				.per_class
