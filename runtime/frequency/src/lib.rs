@@ -118,6 +118,8 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
+use sp_runtime::traits::transaction_extension::AsTransactionExtension;
+
 mod ethereum;
 mod genesis;
 
@@ -318,9 +320,11 @@ pub type SignedExtra = (
 	frame_system::CheckEra<Runtime>,
 	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
-	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
-	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
+	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+	AsTransactionExtension<
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	>,
 	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );
@@ -1510,7 +1514,7 @@ sp_api::impl_runtime_apis! {
 			let dispatch_weight = match &uxt.function {
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
-					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).weight
+					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
 				},
 				_ => {
 					Weight::zero()

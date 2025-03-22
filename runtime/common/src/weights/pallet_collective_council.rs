@@ -297,6 +297,40 @@ impl<T: frame_system::Config> pallet_collective::WeightInfo for SubstrateWeight<
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 			.saturating_add(Weight::from_parts(0, 32).saturating_mul(p.into()))
 	}
+	fn kill(d: u32, p: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1896 + d * (212 ±0) + p * (41 ±0)`
+		//  Estimated: `5205 + d * (1910 ±14) + p * (43 ±0)`
+		// Minimum execution time: 24_956_000 picoseconds.
+		Weight::from_parts(25_382_488, 5205)
+			// Standard Error: 374_961
+			.saturating_add(Weight::from_parts(31_856_043, 0).saturating_mul(d.into()))
+			// Standard Error: 5_806
+			.saturating_add(Weight::from_parts(288_259, 0).saturating_mul(p.into()))
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().reads((2_u64).saturating_mul(d.into())))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+			.saturating_add(T::DbWeight::get().writes((3_u64).saturating_mul(d.into())))
+			.saturating_add(Weight::from_parts(0, 1910).saturating_mul(d.into()))
+			.saturating_add(Weight::from_parts(0, 43).saturating_mul(p.into()))
+	}
+	/// Storage: `Council::ProposalOf` (r:1 w:0)
+	/// Proof: `Council::ProposalOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `Council::CostOf` (r:1 w:1)
+	/// Proof: `Council::CostOf` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	/// Storage: `Balances::Holds` (r:1 w:1)
+	/// Proof: `Balances::Holds` (`max_values`: None, `max_size`: Some(355), added: 2830, mode: `MaxEncodedLen`)
+	fn release_proposal_cost() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1997`
+		//  Estimated: `5462`
+		// Minimum execution time: 67_153_000 picoseconds.
+		Weight::from_parts(70_174_000, 5462)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(3_u64))
+	}
 }
 
 
@@ -439,6 +473,30 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 2206
+		);
+	}
+	#[test]
+	fn test_kill() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 5205
+		);
+	}
+	#[test]
+	fn test_release_proposal_cost() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 5462
 		);
 	}
 }
