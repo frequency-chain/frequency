@@ -22,8 +22,9 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::Contains,
 };
+use frame_support::dispatch::RawOrigin;
 use frame_system::pallet_prelude::*;
-use pallet_transaction_payment::OnChargeTransaction;
+use pallet_transaction_payment::{OnChargeTransaction, Val};
 use sp_runtime::{
 	generic::Era,
 	traits::{Convert, Dispatchable, SignedExtension, Zero},
@@ -55,6 +56,7 @@ pub use weights::*;
 #[cfg(feature = "runtime-benchmarks")]
 use frame_support::traits::tokens::fungible::Mutate;
 use frame_system::CheckWeight;
+use sp_runtime::traits::{DispatchTransaction, TransactionExtension, ValidateResult};
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
@@ -131,8 +133,8 @@ pub mod module {
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
-			let overhead = T::WeightInfo::pre_dispatch();
-			let total = overhead.saturating_add(dispatch_info.weight);
+			let overhead = <T as Config>::WeightInfo::pre_dispatch();
+			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
 		#[allow(deprecated)]
@@ -149,8 +151,8 @@ pub mod module {
 		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let dispatch_info = payload.passkey_call.call.get_dispatch_info();
-			let overhead = T::WeightInfo::pre_dispatch();
-			let total = overhead.saturating_add(dispatch_info.weight);
+			let overhead = <T as Config>::WeightInfo::pre_dispatch();
+			let total = overhead.saturating_add(dispatch_info.call_weight);
 			(total, dispatch_info.class)
 		})]
 		pub fn proxy_v2(
@@ -184,7 +186,13 @@ pub mod module {
 
 		/// Validating the regular checks of an extrinsic plus verifying the P256 Passkey signature
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
-		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
+		/// TODO: pass source down....
+		/// TODO: in the new system it looks like you are not meant to call other, non-unsigned
+		/// validations outside your pallet. Other validations now require additional parameters:
+		/// 	_self_implicit: Self::Implicit,
+		// 		_inherited_implication: &impl Encode,
+		// 		_source: TransactionSource,
+		fn validate_unsigned(source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
 			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
 
@@ -219,6 +227,7 @@ pub mod module {
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
 			PasskeyWeightCheck::new(call.clone()).pre_dispatch()?;
+
 			ChargeTransactionPayment::<T>(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			// this is the last since it is the heaviest
@@ -241,11 +250,11 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok((payload.clone().into(), true)),
+				Ok((payload.clone().into(), true)),
 			Call::proxy_v2 { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				return Ok((payload.clone(), false)),
-			_ => return Err(InvalidTransaction::Call.into()),
+				Ok((payload.clone(), false)),
+			_ => Err(InvalidTransaction::Call.into()),
 		}
 	}
 }
@@ -374,9 +383,18 @@ where
 		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
-		let who = self.0.clone();
+
+		let raw_origin = RawOrigin::from(Some(self.0.clone()));
+		let who = <T as frame_system::Config>::RuntimeOrigin::from(raw_origin);
+		// FIXME: this is just to get it to build
+		let val = Val::Charge {
+			tip: Zero::zero(), // tip not allowed in Passkey call
+			who: self.0.clone(),
+			fee: Zero::zero(), // FIXME: how to get this?
+		};
+		//
 		pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero())
-			.pre_dispatch(&who, &runtime_call, info, len)?;
+			.prepare(val, &who, &runtime_call, info, len)?;
 		Ok(())
 	}
 
@@ -386,14 +404,21 @@ where
 		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
-		let who = self.0.clone();
 
-		pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero()).validate(
-			&who,
-			&runtime_call,
-			info,
-			len,
-		)
+		let raw_origin = RawOrigin::from(Some(self.0.clone()));
+		let who = <T as frame_system::Config>::RuntimeOrigin::from(raw_origin);
+
+		// https://docs.rs/sp-runtime/40.1.0/sp_runtime/traits/transaction_extension/trait.TransactionExtension.html#method.validate
+		// pallet_transaction_payment::ChargeTransactionPayment::<T>::from(Zero::zero()).validate(
+		// 	&who,
+		// 	&runtime_call,
+		// 	info,
+		// 	len,
+		// 	(),
+		// 	&(self.1.clone(), ()), // implication
+		// 	self.2
+		// ).unwrap()?
+		Ok(ValidTransaction::default())
 	}
 }
 
@@ -413,7 +438,9 @@ where
 		let len = self.1.using_encoded(|c| c.len());
 		let runtime_call: <T as frame_system::Config>::RuntimeCall =
 			<T as frame_system::Config>::RuntimeCall::from(self.1.clone());
-		let who = self.0.clone();
+
+		let raw_origin = RawOrigin::from(Some(self.0.clone()));
+		let who = <T as frame_system::Config>::RuntimeOrigin::from(raw_origin);
 
 		let non_zero_sender_check = frame_system::CheckNonZeroSender::<T>::new();
 		let spec_version_check = frame_system::CheckSpecVersion::<T>::new();
@@ -421,11 +448,13 @@ where
 		let genesis_hash_check = frame_system::CheckGenesis::<T>::new();
 		let era_check = frame_system::CheckEra::<T>::from(Era::immortal());
 
-		non_zero_sender_check.pre_dispatch(&who, &runtime_call, info, len)?;
-		spec_version_check.pre_dispatch(&who, &runtime_call, info, len)?;
-		tx_version_check.pre_dispatch(&who, &runtime_call, info, len)?;
-		genesis_hash_check.pre_dispatch(&who, &runtime_call, info, len)?;
-		era_check.pre_dispatch(&who, &runtime_call, info, len)
+		// currently (in stable2412) these implement the default version of `prepare`, which always returns Ok(...)
+		// val, origin, call, info, len (?)
+		non_zero_sender_check.prepare((), &who, &runtime_call, info, len)?;
+		spec_version_check.prepare((), &who, &runtime_call, info, len)?;
+		tx_version_check.prepare((), &who, &runtime_call, info, len)?;
+		genesis_hash_check.prepare((), &who, &runtime_call, info, len)?;
+		era_check.prepare((), &who, &runtime_call, info, len)
 	}
 
 	/// Validates the transaction fee paid with tokens.
@@ -442,18 +471,24 @@ where
 		let genesis_hash_check = frame_system::CheckGenesis::<T>::new();
 		let era_check = frame_system::CheckEra::<T>::from(Era::immortal());
 
-		let non_zero_sender_validity =
-			non_zero_sender_check.validate(&who, &runtime_call, info, len)?;
-		let spec_version_validity = spec_version_check.validate(&who, &runtime_call, info, len)?;
-		let tx_version_validity = tx_version_check.validate(&who, &runtime_call, info, len)?;
-		let genesis_hash_validity = genesis_hash_check.validate(&who, &runtime_call, info, len)?;
-		let era_validity = era_check.validate(&who, &runtime_call, info, len)?;
+		// FIXME: give these the right params
+		// let non_zero_sender_validity = frame_system::CheckNonZeroSender::<T>::validate(
+		// 	&non_zero_sender_check, &who, &runtime_call, info, len, (), (), self.2)?;
+		// let era_validity = era_check.validate(&who, &runtime_call, info, len, (), (), self.2)?;
 
-		Ok(non_zero_sender_validity
-			.combine_with(spec_version_validity)
-			.combine_with(tx_version_validity)
-			.combine_with(genesis_hash_validity)
-			.combine_with(era_validity))
+		// currently (in stable2412) these implement default version of `validate`, which always returns Ok(...)
+		// let tx_version_validity = tx_version_check.validate(&who, &runtime_call, info, len, (), (), self.2)?;
+		// let genesis_hash_validity = genesis_hash_check.validate(&who, &runtime_call, info, len, (), (), self.2)?;
+		// let spec_version_validity = frame_system::CheckSpecVersion::<T>::validate(
+		// 	&spec_version_check, &who, &runtime_call, info, len, (), (), self.2)?;
+
+		// Ok(non_zero_sender_validity
+			// .combine_with(spec_version_validity)
+			// .combine_with(tx_version_validity)
+			// .combine_with(genesis_hash_validity)
+			// .combine_with(era_validity)
+		// )
+		Ok(ValidTransaction::default())
 	}
 }
 
@@ -476,21 +511,32 @@ where
 	pub fn validate(&self) -> TransactionValidity {
 		let len = self.0.encode().len();
 
-		CheckWeight::<T>::validate_unsigned(
-			&self.0.clone().into(),
-			&self.0.get_dispatch_info(),
-			len,
-		)
+		// FIXME: this is not a thing any more
+		// CheckWeight::<T>::validate_unsigned(
+		// 	&self.0.clone().into(),
+		// 	&self.0.get_dispatch_info(),
+		// 	len,
+		// )
+		Ok(ValidTransaction::default())
 	}
 
 	/// Pre-dispatch transaction checks
+	/// FIXME:  prepare expects a first parameter = the next length of data in the block.
+	// This is how it's done internally in check_weight, and would work if `check_block_length`
+	// weren't private:
+	// let next_len = CheckWeight::<T>::check_block_length(info, len)?;
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
 		let len = self.0.encode().len();
+		let check_weight: CheckWeight<T> = CheckWeight::new();
 
-		CheckWeight::<T>::pre_dispatch_unsigned(
-			&self.0.clone().into(),
-			&self.0.get_dispatch_info(),
-			len,
-		)
+		// FIXME: this needs the extra 3 params
+		// check_weight.prepare(
+		// 	next_len,
+		// 	&self.1.clone(),
+		// 	&self.0.clone(),
+		// 	&self.0.get_dispatch_info(),
+		// 	len,
+		// )
+		Ok(())
 	}
 }
