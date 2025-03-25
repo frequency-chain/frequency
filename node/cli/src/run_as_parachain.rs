@@ -1,5 +1,6 @@
 use crate::cli::{Cli, RelayChainCli};
 use cumulus_primitives_core::ParaId;
+use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
 use frequency_service::chain_spec;
 use log::info;
 use sc_cli::SubstrateCli;
@@ -12,7 +13,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		let hwbench = (!cli.no_hardware_benchmarks)
 			.then_some(config.database.path().map(|database_path| {
 				let _ = std::fs::create_dir_all(database_path);
-				sc_sysinfo::gather_hwbench(Some(database_path))
+				sc_sysinfo::gather_hwbench(Some(database_path), &SUBSTRATE_REFERENCE_HARDWARE)
 			}))
 			.flatten();
 

@@ -16,6 +16,7 @@ use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
 use sp_inherents::InherentDataProvider;
+use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 use sp_timestamp;
 use std::{sync::Arc, time::Duration};
 
@@ -116,7 +117,7 @@ pub fn create_benchmark_extrinsic(
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let extra: runtime::SignedExtra = (
+	let extra: runtime::TxExtension = (
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		(
 			frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
@@ -127,11 +128,11 @@ pub fn create_benchmark_extrinsic(
 			period,
 			best_block.saturated_into(),
 		)),
-		common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce),
+		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
-		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
-		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
-		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
+		AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
+		AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
+		AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
 		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
 	);
@@ -183,6 +184,7 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 			para_blocks_per_relay_epoch: 2,
 			relay_randomness_config: (),
 			additional_key_values: Some(vec![]),
+			upgrade_go_ahead: None,
 		};
 
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
