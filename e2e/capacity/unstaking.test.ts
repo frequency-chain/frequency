@@ -3,8 +3,16 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { u64 } from '@polkadot/types';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { createKeys, createMsaAndProvider, CENTS, DOLLARS } from '../scaffolding/helpers';
+import {
+  createKeys,
+  createMsaAndProvider,
+  CENTS,
+  DOLLARS,
+  createAndFundKeypair,
+  boostProvider
+} from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
+import {getUnifiedAddress} from "../scaffolding/ethereum";
 
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
@@ -34,6 +42,28 @@ describe('Capacity Unstaking Tests', function () {
         await assert.rejects(failUnstakeObj.signAndSend(), { name: 'NotAStakingAccount' });
       });
     });
+
+    describe("when account has staked", function () {
+      it("succeeds when boosting a provider and no unclaimed rewards", async function () {
+        const stakeKeys = createKeys('booster');
+        const providerBalance = 2n * DOLLARS;
+        const provider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
+        const booster = await createAndFundKeypair(fundingSource, 10n * DOLLARS, 'booster');
+        await assert.doesNotReject(boostProvider(fundingSource, booster, provider, 4n * DOLLARS));
+        const boosterAddr = getUnifiedAddress(booster);
+
+        let result = await ExtrinsicHelper.apiPromise.query.capacity.stakingAccountLedger(boosterAddr);
+        const startingAmount = result.unwrap().active.toNumber();
+        assert.equal(startingAmount, 4n * DOLLARS);
+
+        // Unboost 1mil from provider—this succeeds
+        const unstakeOp = ExtrinsicHelper.unstake(booster, provider, 1n * DOLLARS);
+        assert.doesNotReject(unstakeOp.fundAndSend(fundingSource));
+        result = await ExtrinsicHelper.apiPromise.query.capacity.stakingAccountLedger(boosterAddr);
+        const afterUnstakeAmount = result.unwrap().active.toNumber();
+        assert.equal(3n * DOLLARS, afterUnstakeAmount);
+      });
+    });
   });
 
   describe('withdraw_unstaked()', function () {
@@ -51,4 +81,5 @@ describe('Capacity Unstaking Tests', function () {
       });
     });
   });
+
 });

@@ -881,6 +881,14 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static claimStakingRewards(keys: KeyringPair) {
+    return new Extrinsic(
+        () => ExtrinsicHelper.api.tx.capacity.claimStakingRewards(),
+        keys,
+        ExtrinsicHelper.api.events.capacity.ProviderBoostRewardClaimed
+    );
+  }
+
   public static payWithCapacityBatchAll(keys: KeyringPair, calls: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.frequencyTxPayment.payWithCapacityBatchAll(calls),

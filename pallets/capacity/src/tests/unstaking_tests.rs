@@ -500,3 +500,24 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		);
 	})
 }
+
+#[test]
+fn unstake_succeeds_and_updates_ledger_correctly() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount_to_stake = 3_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount_to_stake, ProviderBoost);
+
+		// staking 2k as of block 11, era 2
+		run_to_block(11);
+		assert_eq!(StakingAccountLedger::<Test>::get(account).unwrap().active, 3_000u64);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1_000u64));
+		assert_eq!(StakingAccountLedger::<Test>::get(account).unwrap().active, 2_000u64);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1_000u64));
+	})
+}
