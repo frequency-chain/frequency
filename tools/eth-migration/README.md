@@ -15,3 +15,6 @@ Some scripts and tools to facilitate the key migration
 
 ## Get Token keys
 `npm run token-keys`
+
+### Select token keys which are also control keys
+`jq -c 'select(.msaId != 0)' tokens-keys.txt`

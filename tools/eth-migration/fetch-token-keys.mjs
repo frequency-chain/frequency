@@ -66,13 +66,15 @@ function getPublicKeys(results) {
 }
 
 export async function printPublicKeysAndTokens(sourceApi, publicKeys) {
-	let promises = [];
+	let accountPromises = [];
+	let controlKeyPromises = [];
 	for (const publicKey of publicKeys) {
-		promises.push(sourceApi.query.system.account(publicKey));
+		accountPromises.push(sourceApi.query.system.account(publicKey));
+		controlKeyPromises.push(sourceApi.query.msa.publicKeyToMsaId(publicKey));
 	}
 
-	if (promises.length > 0) {
-		printResults(await Promise.all(promises), publicKeys);
+	if (accountPromises.length > 0) {
+		printResults(publicKeys, await Promise.all(accountPromises), await Promise.all(controlKeyPromises));
 	}
 }
 
@@ -91,11 +93,12 @@ export async function printPublicKeysAndTokens(sourceApi, publicKeys) {
 // 		}
 // 	}
 // }
-function printResults(results, keys) {
-	for (let i = 0; i < results.length ; i++) {
+function printResults(publicKeys, accountResults, controlKeyResult) {
+	for (let i = 0; i < accountResults.length ; i++) {
 		const obj = {
-			publicKey: keys[i],
-			values: results[i],
+			publicKey: publicKeys[i],
+			msaId: controlKeyResult[i].isSome ? controlKeyResult[i].unwrap().toNumber() : 0,
+			values: accountResults[i],
 		};
 		console.log(`${JSON.stringify(obj)}`);
 	}
