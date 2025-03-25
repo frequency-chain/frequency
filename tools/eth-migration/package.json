@@ -1,0 +1,14 @@
+{
+  "name": "eth-migration",
+  "version": "1.0.0",
+  "description": "A set of scripts to facilitate ETH key migration",
+  "scripts": {
+    "control-keys": "node fetch-control-keys.mjs",
+    "offchain-keys": "node fetch-offchain-index-keys.mjs"
+  },
+  "author": "",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "^15.2.1"
+  }
+}
