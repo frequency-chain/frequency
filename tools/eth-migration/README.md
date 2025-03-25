@@ -2,11 +2,11 @@
 Some scripts and tools to facilitate the key migration
 
 ## Get Onchain msa id and keys
-`npm run control-keys`
+`npm run control-keys --silent`
 
 
 ## Get Offchain Indexed msa id and keys
-`npm run offchain-keys`
+`npm run offchain-keys --silent`
 
 ### Sort and Compare to see any discrepancies
 1. `sort -t',' -k1,1n -k2,2 onchain-keys.txt >> onchain-keys-sorted.txt`
@@ -14,7 +14,7 @@ Some scripts and tools to facilitate the key migration
 3. `diff onchain-keys-sorted.txt offchain-keys-sorted.txt`
 
 ## Get Token keys
-`npm run token-keys`
+`npm run token-keys --silent`
 
 ### Select token keys which are also control keys
 `jq -c 'select(.msaId != 0)' tokens-keys.txt`
