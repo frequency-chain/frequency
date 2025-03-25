@@ -4,7 +4,8 @@
   "description": "A set of scripts to facilitate ETH key migration",
   "scripts": {
     "control-keys": "node fetch-control-keys.mjs",
-    "offchain-keys": "node fetch-offchain-index-keys.mjs"
+    "offchain-keys": "node fetch-offchain-index-keys.mjs",
+    "token-keys": "node fetch-token-keys.mjs"
   },
   "author": "",
   "license": "Apache-2.0",
