@@ -18,3 +18,7 @@ Some scripts and tools to facilitate the key migration
 
 ### Select token keys which are also control keys
 `jq -c 'select(.msaId != 0)' tokens-keys.txt`
+
+## Get the difference between on-chain control keys and Custodial Wallet
+1.  fill in the CW DB connection string and other details
+2. `npm run cw-compare`
