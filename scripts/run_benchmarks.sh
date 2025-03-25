@@ -179,6 +179,7 @@ ${OVERHEAD}"
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
   set -x
+  set -e
   ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \

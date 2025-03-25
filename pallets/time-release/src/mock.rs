@@ -115,7 +115,7 @@ impl pallet_scheduler::Config for Test {
 	/// Origin to schedule or cancel calls
 	/// Set to Root or a simple majority of the Frequency Council
 	type ScheduleOrigin = EitherOfDiverse<EnsureTimeReleaseOrigin, EnsureRoot<AccountId>>;
-	type MaxScheduledPerBlock = ConstU32<10>;
+	type MaxScheduledPerBlock = ConstU32<50>;
 	type WeightInfo = common_runtime::weights::pallet_scheduler::SubstrateWeight<Test>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
 	type Preimages = Preimage;
@@ -200,10 +200,17 @@ pub struct SchedulerProvider;
 impl SchedulerProviderTrait<RuntimeOrigin, u32, RuntimeCall> for SchedulerProvider {
 	fn schedule(
 		origin: RuntimeOrigin,
+		id: ScheduleName,
 		when: u32,
 		call: Box<RuntimeCall>,
 	) -> Result<(), DispatchError> {
-		let _ = Scheduler::schedule(origin, when, None, LOWEST_PRIORITY, call)?;
+		Scheduler::schedule_named(origin, id, when, None, LOWEST_PRIORITY, call)?;
+
+		Ok(())
+	}
+
+	fn cancel(origin: RuntimeOrigin, id: ScheduleName) -> Result<(), DispatchError> {
+		Scheduler::cancel_named(origin, id)?;
 
 		Ok(())
 	}

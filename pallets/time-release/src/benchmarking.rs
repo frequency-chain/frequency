@@ -55,7 +55,7 @@ benchmarks! {
 		);
 	}
 
-	schedule_transfer {
+	schedule_named_transfer {
 		let schedule = Schedule::<T> {
 			start: 0u32.into(),
 			period: 2u32.into(),
@@ -72,15 +72,14 @@ benchmarks! {
 		let to: T::AccountId = account("to", 1, SEED);
 		let to_lookup = lookup_of_account::<T>(to.clone());
 		let when = 10u32.into();
-
-	}: _(RawOrigin::Signed(from.clone()), to_lookup, schedule.clone(), when)
+	}: _(RawOrigin::Signed(from.clone()),  [1u8; 32], to_lookup, schedule.clone(), when)
 	verify {
 		assert_eq!(
 			T::Currency::balance_on_hold(&HoldReason::TimeReleaseScheduledVesting.into(), &from),
 			schedule.total_amount().unwrap());
 	}
 
-	execute_scheduled_transfer {
+	execute_scheduled_named_transfer {
 		let schedule = Schedule::<T> {
 			start: 0u32.into(),
 			period: 2u32.into(),
@@ -101,7 +100,7 @@ benchmarks! {
 
 		let to_lookup = lookup_of_account::<T>(to.clone());
 		let origin = Origin::<T>::TimeRelease(from.clone());
-	}: _(origin, to_lookup, schedule.clone())
+	}: _(origin, [1u8; 32],to_lookup, schedule.clone())
 	verify {
 		assert_eq!(
 			T::Currency::total_balance(&to),
@@ -164,6 +163,36 @@ benchmarks! {
 			schedule.total_amount().unwrap() * BalanceOf::<T>::from(i)
 		);
 	}
+
+	cancel_scheduled_named_transfer {
+		let i in 1 .. (T::MaxReleaseSchedules::get());
+
+		let mut schedule = Schedule::<T> {
+			start: 0u32.into(),
+			period: 2u32.into(),
+			period_count: 2,
+			per_period: T::MinReleaseTransfer::get(),
+		};
+
+		let from = T::AccountId::decode(&mut TrailingZeroInput::zeroes()).unwrap();
+		set_balance::<T>(&from, schedule.total_amount().unwrap() * BalanceOf::<T>::from(i) + DOLLARS.into());
+
+		let to: T::AccountId = whitelisted_caller();
+		let to_lookup = lookup_of_account::<T>(to.clone());
+
+		for j in 0..i {
+			schedule.start = i.into();
+
+			TimeReleasePallet::<T>::schedule_named_transfer(RawOrigin::Signed(from.clone()).into(), [j as u8 ; 32], to_lookup.clone(), schedule.clone(), 4u32.into())?;
+		}
+
+		let origin = RawOrigin::Signed(from.clone());
+		let schedule_name = [0u8; 32];
+	}: _(origin, schedule_name)
+	verify {
+		ensure!(ScheduleReservedAmounts::<T>::get([0u8 ; 32]).is_none(), "Schedule not canceled");
+	}
+
 
 	impl_benchmark_test_suite!(
 		TimeReleasePallet,
