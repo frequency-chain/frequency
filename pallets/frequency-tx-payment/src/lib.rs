@@ -23,9 +23,11 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-use sp_runtime::traits::TransactionExtension;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{
+		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, TransactionExtension,
+		Zero,
+	},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };
@@ -520,13 +522,13 @@ where
 					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
 					// FIXME: can't clone initial payment.  LiquidityInfo doesn't implement Clone
 					// if let (Some(pre)) = maybe_pre {
-						// pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-						// 	pallet_transaction_payment::Pre::Charge { tip, who, imbalance: initial_payment.clone()},
-						// 	info,
-						// 	post_info,
-						// 	len,
-						// 	result,
-						// )?;
+					// pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+					// 	pallet_transaction_payment::Pre::Charge { tip, who, imbalance: initial_payment.clone()},
+					// 	info,
+					// 	post_info,
+					// 	len,
+					// 	result,
+					// )?;
 					// }
 				},
 				// If it's capacity, do nothing

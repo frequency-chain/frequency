@@ -6,7 +6,7 @@ const HTTP_PREFIX: &str = "http://";
 
 /// Normalize and convert SocketAddr to string
 pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Option<Vec<Vec<u8>>> {
-	let mut addresses = match addr {
+	let addresses = match addr {
 		None => Vec::new(),
 		Some(rpc_endpoints) => rpc_endpoints
 			.iter()

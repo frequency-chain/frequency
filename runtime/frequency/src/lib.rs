@@ -17,9 +17,9 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use cumulus_pallet_parachain_system::DefaultCoreSelector;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
-
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
@@ -312,13 +312,13 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 }
 
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
+pub type TxExtension = (
 	frame_system::CheckNonZeroSender<Runtime>,
 	// merging these types so that we can have more than 12 extensions
 	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
-	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+	frame_system::CheckNonce<Runtime>,
 	frame_system::CheckWeight<Runtime>,
 	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
 	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
@@ -339,7 +339,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -409,7 +409,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 // IMPORTANT: Remember to update spec_version in above struct too
@@ -423,7 +423,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -526,6 +526,8 @@ impl frame_system::Config for Runtime {
 	type PostInherents = ();
 	/// A callback that executes in *every block* directly after all transactions were applied.
 	type PostTransactions = ();
+	// FIXME: ExtensionsWeightInfo what to use?
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_msa::Config for Runtime {
@@ -689,6 +691,8 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
+	// FIXME: DoneSlashHandler what to use?
+	type DoneSlashHandler = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -754,6 +758,16 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	// FIXME: what to use for DisapproveOrigin,KillOrigin,Consideration
+	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type Consideration = ();
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -768,6 +782,15 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	type DisapproveOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+		frame_system::EnsureRoot<AccountId>,
+	>;
+	type Consideration = ();
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -929,6 +952,8 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = PayoutSpendPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
+	// FIXME: BlockNumberProvider what to use?
+	type BlockNumberProvider = ();
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
@@ -940,6 +965,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
+	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
 
 use crate::ethereum::EthereumCompatibleAccountIdLookup;
@@ -1040,6 +1066,8 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
+	// FIXME: SelectCore what to use?
+	type SelectCore = DefaultCoreSelector<Runtime>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]

@@ -100,7 +100,8 @@ pub fn start_frequency_dev_sealing_node(
 						})
 						.collect()
 				},
-			});
+			})
+			.expect("offchain worker initialization failure");
 
 		// Spawn a task to handle off-chain notifications.
 		// This task is responsible for processing off-chain events or data for the blockchain.
@@ -131,7 +132,7 @@ pub fn start_frequency_dev_sealing_node(
 		// Channel for the RPC handler to communicate with the authorship task.
 		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
 
-		let pool = transaction_pool.pool().clone();
+		let pool = transaction_pool.clone();
 
 		// For instant sealing, set up a stream that automatically creates and finalizes
 		// blocks as soon as transactions arrive.
@@ -141,13 +142,11 @@ pub fn start_frequency_dev_sealing_node(
 		let import_stream = match sealing_mode {
 			SealingMode::Manual => futures::stream::empty().boxed(),
 			SealingMode::Instant =>
-				Box::pin(pool.validated_pool().import_notification_stream().map(|_| {
-					EngineCommand::SealNewBlock {
-						create_empty: true,
-						finalize: true,
-						parent_hash: None,
-						sender: None,
-					}
+				Box::pin(pool.import_notification_stream().map(|_| EngineCommand::SealNewBlock {
+					create_empty: true,
+					finalize: true,
+					parent_hash: None,
+					sender: None,
 				})),
 			SealingMode::Interval => {
 				let interval = std::time::Duration::from_secs(sealing_interval.into());
