@@ -501,6 +501,7 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 	})
 }
 
+// Regression test for #2295 Unstake 2nd time in same era after claiming rewards fails
 #[test]
 fn unstake_succeeds_and_updates_ledger_correctly() {
 	new_test_ext().execute_with(|| {

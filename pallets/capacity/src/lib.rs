@@ -1053,6 +1053,16 @@ impl<T: Config> Pallet<T> {
 							.get_entry_for_era(&current_era)
 							.is_none()
 					},
+					2usize => {
+						let unclaimed_list = Self::list_unclaimed_rewards(account).unwrap_or_default();
+						let res = unclaimed_list
+							.into_iter()
+							.filter(|unclaimed_reward_info| {
+								unclaimed_reward_info.earned_amount.gt(&0u32.into()) &&
+									unclaimed_reward_info.reward_era.ne(&current_era)
+							}).collect::<Vec<_>>();
+						res.len() > 0
+					},
 					_ => true,
 				}
 			},
@@ -1071,10 +1081,6 @@ impl<T: Config> Pallet<T> {
 		>,
 		DispatchError,
 	> {
-		if !Self::has_unclaimed_rewards(account) {
-			return Ok(BoundedVec::new());
-		}
-
 		let staking_history = ProviderBoostHistories::<T>::get(account)
 			.ok_or(Error::<T>::NotAProviderBoostAccount)?; // cached read
 
