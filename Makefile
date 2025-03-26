@@ -229,29 +229,29 @@ js:
 
 .PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release
 build:
-	cargo build --features frequency-no-relay --locked
+	cargo build --features frequency-no-relay
 
 # run this one to test
 build-benchmarks:
-	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace --locked
+	cargo build --release --features runtime-benchmarks,frequency-lint-check --workspace
 
 build-no-relay:
-	cargo build --features frequency-no-relay --locked
+	cargo build --features frequency-no-relay
 
 build-local:
-	cargo build --features frequency-local --locked
+	cargo build --features frequency-local
 
 build-testnet:
-	cargo build --features frequency-testnet --locked
+	cargo build --features frequency-testnet
 
 build-mainnet:
-	cargo build --features frequency --locked
+	cargo build --features frequency
 
 build-testnet-release:
-	cargo build --locked --features frequency-testnet --release
+	cargo build --features frequency-testnet --release
 
 build-mainnet-release:
-	cargo build --locked --features  frequency --release
+	cargo build --features  frequency --release
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
@@ -307,7 +307,7 @@ try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
 
 try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
-	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
+	cargo build --release --features frequency-testnet,try-runtime -q && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
