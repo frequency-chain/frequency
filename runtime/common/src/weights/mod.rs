@@ -19,6 +19,7 @@
 
 pub mod block_weights;
 pub mod extrinsic_weights;
+pub mod frame_system_extensions;
 pub mod pallet_balances;
 pub mod pallet_collator_selection;
 pub mod pallet_collective_council;
