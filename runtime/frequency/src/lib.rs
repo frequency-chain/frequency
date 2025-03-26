@@ -548,8 +548,7 @@ impl frame_system::Config for Runtime {
 	type PostInherents = ();
 	/// A callback that executes in *every block* directly after all transactions were applied.
 	type PostTransactions = ();
-	// FIXME: ExtensionsWeightInfo what to use?
-	type ExtensionsWeightInfo = ();
+	type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
 }
 
 impl pallet_msa::Config for Runtime {
@@ -736,7 +735,6 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
-	// FIXME: DoneSlashHandler what to use?
 	type DoneSlashHandler = ();
 }
 // Needs parameter_types! for the Weight type
@@ -807,7 +805,7 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
-	// FIXME: what to use for DisapproveOrigin,KillOrigin,Consideration
+	// TODO: what to use for DisapproveOrigin,KillOrigin,Consideration
 	type DisapproveOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
@@ -1001,8 +999,7 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = PayoutSpendPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-	// FIXME: BlockNumberProvider what to use?
-	type BlockNumberProvider = ();
+	type BlockNumberProvider = System;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
@@ -1115,7 +1112,6 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
-	// FIXME: SelectCore what to use?
 	type SelectCore = DefaultCoreSelector<Runtime>;
 }
 

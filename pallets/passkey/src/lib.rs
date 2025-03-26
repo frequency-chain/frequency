@@ -187,7 +187,8 @@ pub mod module {
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		/// TODO: pass source down....
 		/// TODO: in the new system it looks like you are not meant to call other, non-unsigned
-		/// validations outside your pallet. Other validations now require additional parameters:
+		/// validations outside your pallet. Other validations now require additional parameters
+		/// but most extensions will not use them:
 		/// 	_self_implicit: Self::Implicit,
 		// 		_inherited_implication: &impl Encode,
 		// 		_source: TransactionSource,
