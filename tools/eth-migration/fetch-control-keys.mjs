@@ -3,7 +3,7 @@ console.warn = () => {};
 
 import { ApiPromise, WsProvider } from "@polkadot/api";
 
-const SOURCE_URL = "wss://1.rpc.frequency.xyz";
+const SOURCE_URL = process.env["FREQUENCY_URL"] || "wss://1.rpc.frequency.xyz";
 const BATCH_SIZE = 1000;
 
 const options = {
@@ -35,55 +35,28 @@ export async function fetchControlKeysFromState(sourceUrl) {
 	const sourceProvider = new WsProvider(sourceUrl);
 	const sourceApi = await ApiPromise.create({provider: sourceProvider, ...options});
 
-	// msa pallet + publicKeyToMsaId
-	const prefixKeys = "0x9f76716a68a582c703dd9e44700429b927e2ea47730fb1c9d7cedc4c78d1d67e";
+	let startKey;
+	let result;
+	do {
+		result = await sourceApi.query.msa.publicKeyToMsaId.entriesPaged({
+			args: [],
+			pageSize: BATCH_SIZE,
+			startKey
+		});
 
-	let result = await sourceApi.rpc.state.getKeysPaged(prefixKeys, BATCH_SIZE);
+		result.forEach(([key, value]) => {
+			if (!value.isSome) {
+				console.error(`No MsaId for ${key.args[0].toHex()}`);
+			} else {
+				console.log(`${value.unwrap().toString()},${key.args[0].toHex()}`);
+			}
+		});
 
-	while (result.length === BATCH_SIZE) {
-		await printPublicKeysWithMsaId(sourceApi, getPublicKeys(result));
-
-		const lastKey = result[result.length - 1];
-		result = await sourceApi.rpc.state.getKeysPaged(prefixKeys, BATCH_SIZE, lastKey);
-	}
-
-	await printPublicKeysWithMsaId(sourceApi, getPublicKeys(result));
-}
-
-function getPublicKeys(results) {
-	const publicKeys = [];
-	for (const r of results) {
-		const wholeKey = r.toHex();
-		const publicKey = wholeKey.substring(wholeKey.length - 64);
-		publicKeys.push(`0x${publicKey}`);
-	}
-	return publicKeys;
-}
-
-export async function printPublicKeysWithMsaId(sourceApi, publicKeys) {
-	let promises = [];
-	for (const publicKey of publicKeys) {
-		promises.push(sourceApi.query.msa.publicKeyToMsaId(publicKey));
-	}
-
-	if (promises.length > 0) {
-		printResults(await Promise.all(promises), publicKeys);
-	}
-}
-
-function printResults(results, keys) {
-	for (let i = 0; i < results.length ; i++) {
-		const r = results[i];
-		const k = keys[i];
-		if (!r.isSome) {
-			console.error(`No MsaId for ${k}`);
-		} else {
-			const msaId = r.unwrap();
-			console.log(`${msaId},${k}`);
+		if (result.length > 0) {
+			startKey = result[result.length - 1][0];
 		}
-	}
+	} while (result.length > 0);
 }
-
 
 async function main() {
 	try {

@@ -3,7 +3,7 @@ console.warn = () => {};
 
 import { ApiPromise, WsProvider } from "@polkadot/api";
 
-const SOURCE_URL = "wss://1.rpc.frequency.xyz";
+const SOURCE_URL = process.env["FREQUENCY_URL"] || "wss://1.rpc.frequency.xyz";
 const PROMISE_BATCH_SIZE = 500;
 
 const options = {
@@ -59,7 +59,7 @@ function printRpcResults(results, batchNumber) {
 	let index = 0;
 	for (const r of results) {
 		if (!r.isSome) {
-			console.error(`No keys for MsaId: ${(batchNumber * PROMISE_BATCH_SIZE + index)}!`);
+			console.error(`No keys for MsaId: ${(batchNumber * PROMISE_BATCH_SIZE + index +1)}!`);
 		} else {
 			const keys = r.unwrap();
 			for (const key of keys.msa_keys){
