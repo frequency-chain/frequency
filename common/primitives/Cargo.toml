@@ -34,7 +34,7 @@ libsecp256k1 = { workspace = true, features = ["hmac"] }
 log = "0.4.22"
 
 [features]
-default = []
+default = ['std']
 runtime-benchmarks = []
 std = [
   'libsecp256k1/std',

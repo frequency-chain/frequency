@@ -17146,13 +17146,3 @@ dependencies = [
  "cc",
  "pkg-config",
 ]
-
-[[patch.unused]]
-name = "fflonk"
-version = "0.1.1"
-source = "git+https://www.github.com/w3f/fflonk?rev=be95d4c971b1d15b5badfc06ff13f5c07987d484#be95d4c971b1d15b5badfc06ff13f5c07987d484"
-
-[[patch.unused]]
-name = "ring"
-version = "0.1.0"
-source = "git+https://github.com/davxy/ring-proof?rev=a24b371b8d51725ac2ce195aa3369b31df6c9873#a24b371b8d51725ac2ce195aa3369b31df6c9873"

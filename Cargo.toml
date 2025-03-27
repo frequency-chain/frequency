@@ -11,13 +11,6 @@ resolver = "2"
 
 [patch.crates-io]
 cid = { git="https://github.com/multiformats/rust-cid", tag ="v0.10.1" }
-#multihash={git="https://github.com/multiformats/rust-multihash", tag="v0.18.1"}
-
-[patch.'https://github.com/w3f/fflonk']
-fflonk = { git = "https://www.github.com/w3f/fflonk", rev = "be95d4c971b1d15b5badfc06ff13f5c07987d484" }
-
-[patch.'https://github.com/w3f/ring-proof']
-ring = { git ="https://github.com/davxy/ring-proof", rev="a24b371b8d51725ac2ce195aa3369b31df6c9873"}
 
 [workspace.dependencies]
 log = { version = "0.4.17", default-features = false }
@@ -93,7 +86,7 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", bran
 polkadot-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 
 # cumulus
-# Q: set all cumulus pallets , default-features = false ?
+# TODO: set all cumulus pallets , default-features = false ?
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 cumulus-client-collator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 cumulus-client-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }

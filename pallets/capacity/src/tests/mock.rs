@@ -8,6 +8,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
+use common_runtime::weights;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
@@ -66,6 +67,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Test>;
 }
 
 impl pallet_balances::Config for Test {
@@ -82,6 +84,7 @@ impl pallet_balances::Config for Test {
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;

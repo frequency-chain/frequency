@@ -170,7 +170,7 @@ export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
   public readonly extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
-  private keys: KeyringPair;
+  keys: KeyringPair;
   public api: ApiRx;
 
   constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>, keys: KeyringPair, targetEvent?: IsEvent<C, N>) {
@@ -230,6 +230,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .payWithCapacity(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
+            tap((result) => {
+              if (result.isError) {
+                console.error(result.toHuman());
+                throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+              }
+            }),
+            // comment out filter to debug hangs
           filter(({ status }) => status.isInBlock || status.isFinalized),
           this.parseResult(this.event)
         )

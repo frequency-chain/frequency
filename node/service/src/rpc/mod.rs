@@ -5,10 +5,9 @@
 
 #![warn(missing_docs)]
 
-use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
-use futures::channel::mpsc;
-use jsonrpsee::RpcModule;
 use std::sync::Arc;
+
+use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
 
 use sc_client_api::{AuxStore, StorageProvider};
 use sc_client_db::Backend as DbBackend;
@@ -22,7 +21,7 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 mod frequency_rpc;
 
 /// A type representing all RPC extensions.
-pub type RpcExtension = RpcModule<()>;
+pub type RpcExtension = jsonrpsee::RpcModule<()>;
 
 /// Full client dependencies
 pub struct FullDeps<C, P> {
@@ -31,7 +30,7 @@ pub struct FullDeps<C, P> {
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
 	/// Manual seal command sink
-	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
+	pub command_sink: Option<futures::channel::mpsc::Sender<EngineCommand<Hash>>>,
 }
 
 /// Instantiate all RPC extensions.
@@ -85,7 +84,6 @@ where
 	module.merge(HandlesHandler::new(client.clone()).into_rpc())?;
 	module.merge(CapacityPaymentHandler::new(client.clone()).into_rpc())?;
 	module.merge(FrequencyRpcHandler::new(client, pool).into_rpc())?;
-
 	if let Some(command_sink) = command_sink {
 		module.merge(
 			// We provide the rpc handler with the sending end of the channel to allow the rpc
