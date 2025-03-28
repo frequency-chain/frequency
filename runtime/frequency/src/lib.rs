@@ -318,7 +318,7 @@ pub type TxExtension = (
 	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
-	frame_system::CheckNonce<Runtime>,
+	AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
 	frame_system::CheckWeight<Runtime>,
 	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
 	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
