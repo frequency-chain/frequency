@@ -33,9 +33,8 @@
 
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure,
 	pallet_prelude::*,
-	traits::IsSubType,
+	traits::{IsSubType, OriginTrait},
 };
 use parity_scale_codec::{Decode, Encode};
 
@@ -59,7 +58,11 @@ use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{
-	traits::{BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Zero},
+	impl_tx_ext_default,
+	traits::{
+		AsSystemOriginSigner, BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf,
+		Dispatchable, Implication, SignedExtension, TransactionExtension, ValidateResult, Zero,
+	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
 use sp_std::{prelude::*, vec};
@@ -1791,7 +1794,7 @@ pub enum ValidityError {
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
+		Self(PhantomData)
 	}
 }
 

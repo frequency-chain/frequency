@@ -73,6 +73,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 	type WeightInfo = ();
 	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
 	type MaxProposalWeight = MaxProposalWeight;
+	type DisapproveOrigin = EnsureRoot<AccountId>;
+	type KillOrigin = EnsureRoot<AccountId>;
+	type Consideration = ();
 }
 
 impl frame_system::Config for Test {
@@ -105,6 +108,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_schemas::Config for Test {

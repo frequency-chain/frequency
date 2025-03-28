@@ -373,13 +373,15 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
+					let should_record_proof = false;
 
 					cmd.run(
-						config,
+						chain_name(),
 						partials.client,
 						inherent_benchmark_data()?,
 						Vec::new(),
 						&ext_builder,
+						should_record_proof,
 					)
 				}),
 				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
@@ -474,10 +476,10 @@ impl CliConfiguration<Self> for RelayChainCli {
 		_support_url: &String,
 		_impl_version: &String,
 		_logger_hook: F,
-		_config: &sc_service::Configuration,
+		// _config: &sc_service::Configuration,
 	) -> Result<()>
 	where
-		F: FnOnce(&mut sc_cli::LoggerBuilder, &sc_service::Configuration),
+		F: FnOnce(&mut sc_cli::LoggerBuilder),
 	{
 		unreachable!("PolkadotCli is never initialized; qed");
 	}
