@@ -3,21 +3,35 @@ import pg from "pg";
 
 const { Client } = pg;
 
+// Database host
+const DB_HOST = process.env["DB_HOST"];
+// Database port
+const DB_PORT = process.env["DB_PORT"] || 5432;
+// Database username
+const DB_USERNAME = process.env["DB_USERNAME"];
+// Database password
+const DB_PASSWORD = process.env["DB_PASSWORD"];
+// Database name
+const DB_NAME = process.env["DB_NAME"];
+// Your query db table name
+const DB_TABLE_NAME = process.env["DB_TABLE"];
+// Your DB column to compare
+const DB_COLUMN_NAME = process.env["DB_COLUMN"];
+// DB query condition
+const DB_CONDITION = process.env["DB_CONDITION"];
+// Path to your input file
+const INPUT_FILE_LOCATION = process.env["INPUT_FILE"] || 'file.txt';
+
 // Configuration
 const dbConfig = {
-	host: 'Host',     // Database host
-	port: 5432,            // Database port
-	database: 'database_name',   // Database name
-	user: 'user_name', // Database username
-	password: 'password' // Database password
+	host: DB_HOST,
+	port: DB_PORT,
+	database: DB_NAME,
+	user: DB_USERNAME,
+	password: DB_PASSWORD,
 };
 
-const inputFilePath = 'file.txt';     // Path to your input file
-const tableName = 'table_name';       // Your database table name
-const columnName = 'column_name';     // Column to compare
-const condition = 'some_condition'; 	 // Condition
-
-async function compareValues(inputFilePath, dbConfig, tableName, columnName) {
+async function compareValues(inputFilePath, dbConfig, tableName, columnName, condition) {
 	// Read values from file
 	const fileContent = await fs.readFile(inputFilePath, 'utf-8');
 	const fileValues = new Set(
@@ -71,7 +85,7 @@ async function compareValues(inputFilePath, dbConfig, tableName, columnName) {
 }
 
 // Run the comparison
-compareValues(inputFilePath, dbConfig, tableName, columnName)
+compareValues(INPUT_FILE_LOCATION, dbConfig, DB_TABLE_NAME, DB_COLUMN_NAME, DB_CONDITION)
 	.then(result => {
 		// Optional: Do something with the results
 		console.log('Comparison completed');
