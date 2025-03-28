@@ -128,7 +128,7 @@ pub fn create_benchmark_extrinsic(
 			period,
 			best_block.saturated_into(),
 		)),
-		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
+		AsTransactionExtension(common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce)),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
 		AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
