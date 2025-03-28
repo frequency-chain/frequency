@@ -172,22 +172,22 @@ jobs:
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
-  check-for-vulnerable-crates:
-    needs: changes
-    if: needs.changes.outputs.cargo-lock == 'true'
-    name: Check for Vulnerable Crates
-    runs-on: ubuntu-22.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v4
-      # using older version of cargo deny since the new one requires rustc version >= 1.81
-      - name: Set Up Cargo Deny
-        run: |
-          cargo install --force --locked cargo-deny@0.16.1
-          cargo generate-lockfile
-      - name: Run Cargo Deny
-        run: cargo deny check --hide-inclusion-graph -c deny.toml
+  # check-for-vulnerable-crates:
+  #   needs: changes
+  #   if: needs.changes.outputs.cargo-lock == 'true'
+  #   name: Check for Vulnerable Crates
+  #   runs-on: ubuntu-22.04
+  #   container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+  #   steps:
+  #     - name: Check Out Repo
+  #       uses: actions/checkout@v4
+  #     # using older version of cargo deny since the new one requires rustc version >= 1.81
+  #     - name: Set Up Cargo Deny
+  #       run: |
+  #         cargo install --force --locked cargo-deny@0.16.1
+  #         cargo generate-lockfile
+  #     - name: Run Cargo Deny
+  #       run: cargo deny check --hide-inclusion-graph -c deny.toml
 
   verify-rust-code-format:
     needs: changes

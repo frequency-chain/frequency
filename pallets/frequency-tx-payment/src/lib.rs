@@ -193,7 +193,7 @@ pub mod pallet {
 		#[pallet::weight({
 		let dispatch_info = call.get_dispatch_info();
 		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
-		let total = capacity_overhead.saturating_add(dispatch_info.call_weight);
+		let total = capacity_overhead.saturating_add(dispatch_info.total_weight());
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
 		})]
 		pub fn pay_with_capacity(
@@ -211,7 +211,7 @@ pub mod pallet {
 		#[pallet::weight({
 		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
 		let dispatch_weight = dispatch_infos.iter()
-				.map(|di| di.call_weight)
+				.map(|di| di.total_weight())
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
 
 		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();

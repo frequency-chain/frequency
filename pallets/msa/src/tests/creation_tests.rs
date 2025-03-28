@@ -239,7 +239,10 @@ fn it_create_has_weight() {
 		let call = MsaCall::<Test>::create {};
 		let dispatch_info = call.get_dispatch_info();
 
-		assert!(dispatch_info.weight.ref_time() > Weight::from_parts(10_000 as u64, 0).ref_time());
+		assert!(
+			dispatch_info.total_weight().ref_time() >
+				Weight::from_parts(10_000 as u64, 0).ref_time()
+		);
 	});
 }
 

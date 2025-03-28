@@ -71,6 +71,7 @@ impl system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;

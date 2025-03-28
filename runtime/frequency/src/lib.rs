@@ -77,9 +77,11 @@ use frame_support::{
 	parameter_types,
 	traits::{
 		fungible::HoldConsideration,
+		schedule::LOWEST_PRIORITY,
 		tokens::{PayFromAccount, UnityAssetBalanceConversion},
-		ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, EqualPrivilegeOnly,
-		GetStorageVersion, InstanceFilter, LinearStoragePrice, OnRuntimeUpgrade,
+		ConstBool, ConstU128, ConstU32, ConstU64, EitherOfDiverse, EnsureOrigin,
+		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
+		OnRuntimeUpgrade,
 	},
 	weights::{ConstantMultiplier, Weight},
 	Twox128,
@@ -103,7 +105,7 @@ pub use pallet_frequency_tx_payment::{capacity_stable_weights, types::GetStableW
 pub use pallet_msa;
 pub use pallet_passkey;
 pub use pallet_schemas;
-pub use pallet_time_release;
+pub use pallet_time_release::types::{ScheduleName, SchedulerProviderTrait};
 
 // Polkadot Imports
 use polkadot_runtime_common::{BlockHashCount, SlowAdjustingFeeUpdate};
@@ -118,12 +120,34 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-use sp_runtime::traits::transaction_extension::AsTransactionExtension;
+use sp_runtime::traits::{
+	transaction_extension::AsTransactionExtension, AsTransactionAuthorizedOrigin,
+};
 
 mod ethereum;
 mod genesis;
 
-/// Interface to collective pallet to propose a proposal.
+pub struct SchedulerProvider;
+
+impl SchedulerProviderTrait<RuntimeOrigin, BlockNumber, RuntimeCall> for SchedulerProvider {
+	fn schedule(
+		origin: RuntimeOrigin,
+		id: ScheduleName,
+		when: BlockNumber,
+		call: Box<RuntimeCall>,
+	) -> Result<(), DispatchError> {
+		Scheduler::schedule_named(origin, id, when, None, LOWEST_PRIORITY, call)?;
+
+		Ok(())
+	}
+
+	fn cancel(origin: RuntimeOrigin, id: [u8; 32]) -> Result<(), DispatchError> {
+		Scheduler::cancel_named(origin, id)?;
+
+		Ok(())
+	}
+}
+
 pub struct CouncilProposalProvider;
 
 impl ProposalProvider<AccountId, RuntimeCall> for CouncilProposalProvider {
@@ -405,7 +429,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 143,
+	spec_version: 145,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -419,7 +443,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frequency-testnet"),
 	impl_name: create_runtime_str!("frequency"),
 	authoring_version: 1,
-	spec_version: 143,
+	spec_version: 145,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -637,12 +661,32 @@ impl pallet_multisig::Config for Runtime {
 /// Need this declaration method for use + type safety in benchmarks
 pub type MaxReleaseSchedules = ConstU32<{ MAX_RELEASE_SCHEDULES }>;
 
+pub struct EnsureTimeReleaseOrigin;
+
+impl EnsureOrigin<RuntimeOrigin> for EnsureTimeReleaseOrigin {
+	type Success = AccountId;
+
+	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
+		match o.clone().into() {
+			Ok(pallet_time_release::Origin::<Runtime>::TimeRelease(who)) => Ok(who),
+			_ => Err(o),
+		}
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn try_successful_origin() -> Result<RuntimeOrigin, ()> {
+		Ok(RuntimeOrigin::root())
+	}
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
 impl pallet_time_release::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
 	type Currency = Balances;
+	type RuntimeOrigin = RuntimeOrigin;
+	type RuntimeHoldReason = RuntimeHoldReason;
 	type MinReleaseTransfer = MinReleaseTransfer;
 	type TransferOrigin = EnsureSigned<AccountId>;
 	type WeightInfo = pallet_time_release::weights::SubstrateWeight<Runtime>;
@@ -652,6 +696,9 @@ impl pallet_time_release::Config for Runtime {
 	#[cfg(feature = "frequency-no-relay")]
 	type BlockNumberProvider = System;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type SchedulerProvider = SchedulerProvider;
+	type RuntimeCall = RuntimeCall;
+	type TimeReleaseOrigin = EnsureTimeReleaseOrigin;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_timestamp/index.html for
@@ -709,9 +756,13 @@ impl pallet_scheduler::Config for Runtime {
 	/// Origin to schedule or cancel calls
 	/// Set to Root or a simple majority of the Frequency Council
 	type ScheduleOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
+		EitherOfDiverse<
+			EnsureRoot<AccountId>,
+			pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 1, 2>,
+		>,
+		EnsureTimeReleaseOrigin,
 	>;
+
 	type MaxScheduledPerBlock = SchedulerMaxScheduledPerBlock;
 	type WeightInfo = weights::pallet_scheduler::SubstrateWeight<Runtime>;
 	type OriginPrivilegeCmp = EqualPrivilegeOnly;
@@ -1303,7 +1354,7 @@ construct_runtime!(
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
 		// FRQC Update
-		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, FreezeReason} = 40,
+		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, Origin<T>, FreezeReason, HoldReason} = 40,
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
 		Proxy: pallet_proxy = 43,
