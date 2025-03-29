@@ -300,7 +300,7 @@ fn fee_withdrawn_for_failed_call() {
 				dest: test_account_2_key_pair.public().into(),
 				value: amount,
 			}))
-			.with_funded_account(amount)
+			.with_funded_account(amount - 10)
 			.build();
 
 		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
@@ -315,8 +315,13 @@ fn fee_withdrawn_for_failed_call() {
 
 		// assert
 		assert!(validate_result.is_ok());
+		println!("{:?}", extrinsic_result);
 		assert!(extrinsic_result.is_err());
 		let final_balance = Balances::free_balance(&account_id);
+		// initial_balance 9999999990
+		// final_balance 9999999990
+		println!("initial_balance {:?}", initial_balance);
+		println!("final_balance {:?}", final_balance);
 		assert!(final_balance < initial_balance);
 	});
 }
