@@ -8104,6 +8104,7 @@ dependencies = [
  "log",
  "p256",
  "pallet-balances",
+ "pallet-sudo",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",

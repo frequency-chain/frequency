@@ -120,8 +120,9 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-use sp_runtime::traits::AsTransactionAuthorizedOrigin;
-use sp_runtime::traits::transaction_extension::AsTransactionExtension;
+use sp_runtime::traits::{
+	transaction_extension::AsTransactionExtension, AsTransactionAuthorizedOrigin,
+};
 
 mod ethereum;
 mod genesis;
