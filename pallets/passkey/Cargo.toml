@@ -25,6 +25,8 @@ p256 = { workspace = true }
 base64-url = { workspace = true }
 serde_json = { workspace = true, features = ["alloc"] }
 pallet-transaction-payment = { workspace = true }
+# it does not build independently without pallet-sudo/std
+pallet-sudo = { workspace = true, optional = true }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
@@ -49,6 +51,8 @@ std = [
   "frame-benchmarking/std",
   "common-primitives/std",
   "common-runtime/std",
+  "pallet-sudo/std",
+  "pallet-transaction-payment/std"
 ]
 runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
