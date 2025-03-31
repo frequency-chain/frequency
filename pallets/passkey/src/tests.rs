@@ -259,7 +259,7 @@ fn pre_dispatch_with_low_funds_should_fail() {
 }
 
 #[test]
-fn validate_unsigned_should_fee_removed_on_successful_validation() {
+fn validate_unsigned_should_not_remove_fee_on_successful_validation() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
@@ -282,6 +282,34 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 		// assert
 		assert!(res.is_ok());
 		let final_balance = Balances::free_balance(&account_id);
+		assert_eq!(final_balance, initial_balance);
+	});
+}
+
+#[test]
+fn pre_dispatch_should_remove_fee_on_successful_validation() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		let (payload, account_pk) = TestPasskeyPayloadBuilder::new()
+			.with_a_valid_passkey()
+			.with_passkey_as_payload()
+			.with_call(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: test_account_2_key_pair.public().into(),
+				value: 100,
+			}))
+			.with_funded_account(10000000000)
+			.build();
+
+		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
+		let initial_balance = Balances::free_balance(&account_id);
+
+		// act
+		let res = Passkey::pre_dispatch(&Call::proxy { payload });
+
+		// assert
+		assert!(res.is_ok());
+		let final_balance = Balances::free_balance(&account_id);
 		assert!(final_balance < initial_balance);
 	});
 }
@@ -300,28 +328,20 @@ fn fee_withdrawn_for_failed_call() {
 				dest: test_account_2_key_pair.public().into(),
 				value: amount,
 			}))
-			.with_funded_account(amount - 10)
+			.with_funded_account(amount)
 			.build();
 
 		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
 		let initial_balance = Balances::free_balance(&account_id);
 
 		// act
-		let validate_result = Passkey::validate_unsigned(
-			TransactionSource::InBlock,
-			&Call::proxy { payload: payload.clone() },
-		);
+		let validate_result = Passkey::pre_dispatch(&Call::proxy { payload: payload.clone() });
 		let extrinsic_result = Passkey::proxy(RuntimeOrigin::none(), payload);
 
 		// assert
 		assert!(validate_result.is_ok());
-		println!("{:?}", extrinsic_result);
 		assert!(extrinsic_result.is_err());
 		let final_balance = Balances::free_balance(&account_id);
-		// initial_balance 9999999990
-		// final_balance 9999999990
-		println!("initial_balance {:?}", initial_balance);
-		println!("final_balance {:?}", final_balance);
 		assert!(final_balance < initial_balance);
 	});
 }
