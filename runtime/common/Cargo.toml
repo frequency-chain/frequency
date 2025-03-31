@@ -63,6 +63,7 @@ std = [
   "pallet-treasury/std",
   "pallet-utility/std",
   "pallet-proxy/std",
+  "pallet-sudo/std",
   "pallet-timestamp/std",
   "pallet-scheduler/std",
   "sp-core/std",
