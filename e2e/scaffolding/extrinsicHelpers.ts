@@ -1,4 +1,5 @@
 import '@frequency-chain/api-augment';
+import assert from "assert";
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -11,7 +12,13 @@ import {
 } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
+import {
+  getBlockNumber,
+  getExistentialDeposit,
+  getFinalizedBlockNumber,
+  log,
+  MultiSignatureType
+} from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -170,11 +177,16 @@ export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
   public readonly extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
+  public readonly extrinsicFoo: SubmittableExtrinsic<"promise", T> | undefined;
   keys: KeyringPair;
   public api: ApiRx;
 
-  constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>, keys: KeyringPair, targetEvent?: IsEvent<C, N>) {
-    this.extrinsic = extrinsic;
+  constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>,
+              keys: KeyringPair,
+              targetEvent?: IsEvent<C, N>,
+              promiseExtrinsic?: SubmittableExtrinsic<'promise', T>) {
+      this.extrinsic = extrinsic;
+      if (promiseExtrinsic) this.extrinsicFoo = promiseExtrinsic;
     this.keys = keys;
     this.event = targetEvent;
     this.api = ExtrinsicHelper.api;
@@ -185,21 +197,70 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
-      const op = this.extrinsic();
-      // Era is 0 for tests due to issues with BirthBlock
-      return await firstValueFrom(
+      if (this.extrinsicFoo) {
+        let res;
+        const unsub = await this.extrinsicFoo.signAndSend(
+            this.keys,
+            ({ status, events, dispatchError }) => {
+              if (status.isInBlock || status.isFinalized) {
+                events
+                    // find/filter for failed events
+                    .filter( ({ event }) =>
+                        ExtrinsicHelper.api.events.system.ExtrinsicFailed.is(event)
+                    )
+                    // we know that data for system.ExtrinsicFailed is
+                    // (DispatchError, DispatchInfo)
+                    .forEach(({ event: { data: [error, info] } }) => {
+                      if (error.isModule) {
+                        // for module errors, we have the section indexed, lookup
+                        const decoded = ExtrinsicHelper.api.registry.findMetaError(error.asModule);
+                        const { docs, method, section } = decoded;
+
+                        console.log(`${section}.${method}: ${docs.join(' ')}`);
+                      } else {
+                        // Other, CannotLookup, BadOrigin, no extra info
+                        throw(error.toString());
+                      }
+                    });
+              }
+              // status would still be set, but in the case of error we can shortcut
+              // to just check it (so an error would indicate InBlock or Finalized)
+              if (dispatchError) {
+                if (dispatchError.isModule) {
+                  // for module errors, we have the section indexed, lookup
+                  const decoded = ExtrinsicHelper.api.registry.findMetaError(dispatchError.asModule);
+                  const { docs, name, section } = decoded;
+
+                  console.log(`${section}.${name}: ${docs.join(' ')}`);
+                } else {
+                  // Other, CannotLookup, BadOrigin, no extra info
+                  console.log(dispatchError.toString());
+                }
+              }
+              res = events;
+            });
+        unsub();
+        return res;
+      } else {
+        const op = this.extrinsic();
+        // Era is 0 for tests due to issues with BirthBlock
+        return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
-          tap((result) => {
-            // If we learn a transaction has an error status (this does NOT include RPC errors)
-            // Then throw an error
-            if (result.isError) {
-              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
-            }
-          }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
-          this.parseResult(this.event)
-        )
-      );
+                tap((result) => {
+                  console.log(result.status.toHuman());
+                  // If we learn a transaction has an error status (this does NOT include RPC errors)
+                  // Then throw an error
+                  if (result.isError) {
+                    throw new CallError(
+                      result,
+                      `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`);
+                  }
+                }),
+                filter(({ status }) => status.isInBlock || status.isFinalized),
+                this.parseResult(this.event)
+            )
+        );
+      }
     } catch (e) {
       if ((e as any).name === 'RpcError' && inputNonce === 'auto') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
@@ -232,11 +293,12 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .pipe(
             tap((result) => {
               if (result.isError) {
-                console.error(result.toHuman());
-                throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+                throw new CallError(
+                  result,
+                  `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status is ${result.status}`);
               }
             }),
-            // comment out filter to debug hangs
+            // Can comment out filter to help debug hangs
           filter(({ status }) => status.isInBlock || status.isFinalized),
           this.parseResult(this.event)
         )
@@ -247,7 +309,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     return firstValueFrom(
       this.extrinsic()
         .paymentInfo(getUnifiedAddress(this.keys))
-        .pipe(map((info) => info.partialFee.toBigInt()))
+        .pipe(map((info) => info.partialFee.toBigInt() * 2n))
     );
   }
 
@@ -263,13 +325,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
-      await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
+      await assert.doesNotReject(ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend());
     }
   }
 
   public async fundAndSend(source: KeyringPair) {
     await this.fundOperation(source);
-    log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
+    log('Fund and Send', `${this.extrinsic().method.method} Fund Source: ${getUnifiedAddress(source)}`);
     return this.signAndSend();
   }
 
@@ -525,7 +587,10 @@ export class ExtrinsicHelper {
 
   /** MSA Extrinsics */
   public static createMsa(keys: KeyringPair) {
-    return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.create(), keys, ExtrinsicHelper.api.events.msa.MsaCreated);
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.create(),
+      keys,
+      ExtrinsicHelper.api.events.msa.MsaCreated);
   }
 
   public static addPublicKeyToMsa(

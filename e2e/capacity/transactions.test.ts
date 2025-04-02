@@ -23,7 +23,6 @@ import {
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
   generateItemizedSignaturePayload,
-  createDelegator,
   generatePaginatedUpsertSignaturePayload,
   generatePaginatedDeleteSignaturePayload,
   getOrCreateDummySchema,
@@ -34,7 +33,7 @@ import {
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
   getTestHandle,
-  assertHasMessage,
+  assertHasMessage, createMsa,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
@@ -213,7 +212,7 @@ describe('Capacity Transactions', function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
           // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
+          [delegatorProviderId, delegatorKeys] = await createMsa(fundingSource);
           assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
           assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
