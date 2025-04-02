@@ -183,7 +183,6 @@ function run_benchmark() {
   ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \
-  --chain="frequency-bench" \
   --heap-pages=4096 \
   --wasm-execution=compiled \
   --steps=${2} \
