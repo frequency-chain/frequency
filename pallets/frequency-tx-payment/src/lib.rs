@@ -19,6 +19,7 @@ use frame_support::{
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
+use frame_support::traits::fungible::NativeOrWithId;
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};

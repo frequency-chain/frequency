@@ -16,7 +16,6 @@ pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Op
 					let mut address = match socket_addr {
 						SocketAddr::V4(v4) => v4.to_string(),
 						SocketAddr::V6(v6) => v6.to_string(),
-						_ => "".to_string(),
 					};
 					if !address.starts_with(HTTP_PREFIX) {
 						address = format!("{}{}", HTTP_PREFIX, address);
