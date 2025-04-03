@@ -39,9 +39,13 @@ use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
+use sc_cli::TransactionPoolParams;
 use sc_network::{config::FullNetworkConfiguration, NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
-use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
+use sc_service::{
+	Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager,
+	TransactionPoolOptions,
+};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_blockchain::HeaderBackend;
@@ -136,14 +140,38 @@ pub fn new_partial(
 		telemetry
 	});
 
-	// See https://github.com/paritytech/polkadot-sdk/pull/4639 for how to enable the fork-aware pool.
+	// default to Fork-Aware pool
+	// Warning: This overrides all the TransactionPoolParams with the default values (config.transaction_pool)
+	let pool_params = TransactionPoolParams {
+		pool_limit: 8192,
+		pool_kbytes: 20480,
+		pool_type: sc_cli::TransactionPoolType::ForkAware,
+		tx_ban_seconds: Some(1800),
+	};
+	let transaction_pool_option = match instant_sealing {
+		true => TransactionPoolOptions::new_with_params(
+			pool_params.pool_limit,
+			pool_params.pool_kbytes,
+			pool_params.tx_ban_seconds,
+			sc_transaction_pool::TransactionPoolType::SingleState,
+			true,
+		),
+		false => TransactionPoolOptions::new_with_params(
+			pool_params.pool_limit,
+			pool_params.pool_kbytes,
+			pool_params.tx_ban_seconds,
+			sc_transaction_pool::TransactionPoolType::ForkAware,
+			false,
+		),
+	};
+
 	let transaction_pool = Arc::from(
 		sc_transaction_pool::Builder::new(
 			task_manager.spawn_essential_handle(),
 			client.clone(),
 			config.role.is_authority().into(),
 		)
-		.with_options(config.transaction_pool.clone())
+		.with_options(transaction_pool_option)
 		.with_prometheus(config.prometheus_registry())
 		.build(),
 	);
