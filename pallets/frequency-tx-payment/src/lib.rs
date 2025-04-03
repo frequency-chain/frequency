@@ -516,20 +516,17 @@ where
 		if let Some((tip, who, initial_payment)) = maybe_pre {
 			match initial_payment {
 				// If this is a Token transaction, passthrough
-				InitialPayment::Token(_already_withdrawn) => {
+				InitialPayment::Token(already_withdrawn) => {
 					// post_dispatch_details eliminated the Option from the first param.
 					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
 					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
-					// FIXME: can't clone initial payment.  LiquidityInfo doesn't implement Clone
-					// if let (Some(pre)) = maybe_pre {
-					// pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-					// 	pallet_transaction_payment::Pre::Charge { tip, who, imbalance: initial_payment.clone()},
-					// 	info,
-					// 	post_info,
-					// 	len,
-					// 	result,
-					// )?;
-					// }
+					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+						pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn},
+						info,
+						post_info,
+						len,
+						result,
+					)?;
 				},
 				// If it's capacity, do nothing
 				InitialPayment::Capacity => {
