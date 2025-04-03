@@ -6,6 +6,7 @@ use frame_support::{
 	pallet_prelude::InvalidTransaction,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
+#[allow(deprecated)]
 use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity};
 
 // Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
@@ -301,6 +302,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_transactions() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -366,6 +368,7 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (owner_msa_id, owner_key_pair) = create_account();

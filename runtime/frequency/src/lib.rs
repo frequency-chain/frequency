@@ -17,16 +17,18 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+#[allow(unused)] // compiler lies
 use cumulus_pallet_parachain_system::DefaultCoreSelector;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
+use sp_std::borrow::Cow;
 
 use pallet_collective::Members;
 
@@ -120,9 +122,8 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-use sp_runtime::traits::{
-	transaction_extension::AsTransactionExtension, AsTransactionAuthorizedOrigin,
-};
+#[allow(deprecated)]
+use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
@@ -336,6 +337,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 }
 
 /// The SignedExtension to the basic transaction logic.
+#[allow(deprecated)]
 pub type TxExtension = (
 	frame_system::CheckNonZeroSender<Runtime>,
 	// merging these types so that we can have more than 12 extensions
@@ -426,8 +428,8 @@ impl_opaque_keys! {
 #[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
 	spec_version: 145,
 	impl_version: 0,
@@ -440,8 +442,8 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 #[cfg(not(feature = "frequency"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency-testnet"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency-testnet"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
 	spec_version: 145,
 	impl_version: 0,
@@ -807,7 +809,6 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
-	// TODO: what to use for DisapproveOrigin,KillOrigin,Consideration
 	type DisapproveOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,

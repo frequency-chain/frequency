@@ -64,6 +64,7 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 }
 
 benchmarks! {
+	// TODO: this is failing with InvalidPayloadLocation
 	add_onchain_message {
 		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
 		let message_source_id = DelegatorId(2);

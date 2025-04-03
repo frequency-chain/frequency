@@ -1,6 +1,7 @@
 use crate::{handles_signed_extension::HandlesSignedExtension, tests::mock::*};
 use frame_support::{assert_ok, dispatch::DispatchInfo};
 use sp_core::{sr25519, Pair};
+#[allow(deprecated)]
 use sp_runtime::traits::SignedExtension;
 
 /// Assert that retiring a handle passes the signed extension HandlesSignedExtension
@@ -28,6 +29,7 @@ fn signed_extension_retire_handle_success() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
+		#[allow(deprecated)]
 		let result = HandlesSignedExtension::<Test>::new().validate(
 			&alice.public().into(),
 			call_retire_handle,

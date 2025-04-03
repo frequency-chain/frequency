@@ -15,7 +15,7 @@
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{fungible::NativeOrWithId, IsSubType, IsType},
+	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
 	DefaultNoBound,
 };
@@ -23,6 +23,7 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
 	traits::{
 		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, TransactionExtension,
@@ -443,6 +444,7 @@ impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
 	<T as frame_system::Config>::RuntimeCall:
@@ -459,6 +461,7 @@ where
 	type AccountId = T::AccountId;
 	type Call = <T as frame_system::Config>::RuntimeCall;
 	type AdditionalSigned = ();
+	#[allow(deprecated)]
 	type Pre = (
 		// tip
 		BalanceOf<T>,
@@ -473,6 +476,7 @@ where
 	}
 
 	/// Frequently called by the transaction queue to validate all extrinsics:
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,
@@ -493,6 +497,7 @@ where
 	}
 
 	/// Do any pre-flight stuff for a signed transaction.
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -506,6 +511,7 @@ where
 	}
 
 	/// Do any post-flight stuff for an extrinsic.
+	#[allow(deprecated)]
 	fn post_dispatch(
 		maybe_pre: Option<Self::Pre>,
 		info: &DispatchInfoOf<Self::Call>,

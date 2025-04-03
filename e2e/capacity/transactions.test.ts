@@ -217,7 +217,7 @@ describe('Capacity Transactions', function () {
           assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
           // Stake the amount for each test
-          // FIXME: running out of funds, adding 1 to cover Capacity cost, should debug to see if
+          // TODO: running out of funds, adding 1 to cover Capacity cost, should debug to see if
           // there is something else going on.
           const numberOfTests = BigInt(this.test!.parent!.tests.length) + 1n;
           await assert.doesNotReject(

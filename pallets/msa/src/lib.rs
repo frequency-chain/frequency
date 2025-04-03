@@ -34,7 +34,7 @@
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::{IsSubType, OriginTrait},
+	traits::IsSubType,
 };
 use parity_scale_codec::{Decode, Encode};
 
@@ -57,11 +57,12 @@ use frame_system::pallet_prelude::*;
 use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
+#[allow(deprecated)]
+#[allow(unused)]
 use sp_runtime::{
-	impl_tx_ext_default,
 	traits::{
-		AsSystemOriginSigner, BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf,
-		Dispatchable, Implication, SignedExtension, TransactionExtension, ValidateResult, Zero,
+		BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf, Dispatchable,
+		SignedExtension, TransactionExtension, ValidateResult, Zero,
 	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
@@ -1809,6 +1810,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
@@ -1823,6 +1825,7 @@ where
 		Ok(())
 	}
 
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -1846,6 +1849,7 @@ where
 	/// call: The pallet extrinsic being called
 	/// unused: _info, _len
 	///
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,

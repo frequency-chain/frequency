@@ -110,6 +110,7 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 }
 
 #[test]
+#[allow(deprecated)]
 fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 	let balance_factor = 10;
 
@@ -158,6 +159,7 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_succesful() {
 	let balance_factor = 100_000_000;
 
@@ -210,6 +212,7 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 }
 
 #[test]
+#[allow(deprecated)]
 fn pay_with_capacity_happy_path() {
 	let balance_factor = 10;
 
@@ -229,6 +232,7 @@ fn pay_with_capacity_happy_path() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn pay_with_capacity_errors_with_call_error() {
 	let balance_factor = 10;
 
@@ -251,6 +255,7 @@ fn pay_with_capacity_errors_with_call_error() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn pay_with_capacity_returns_weight_of_child_call() {
 	let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
 	let create_msa_dispatch_info = create_msa_call.get_dispatch_info();
@@ -267,6 +272,7 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tuple_with_fee_and_enum(
 ) {
 	let balance_factor = 100_000_000;
@@ -303,6 +309,7 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 }
 
 #[test]
+#[allow(deprecated)]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_with_fee_and_enum() {
 	let balance_factor = 100_000_000;
 
@@ -825,8 +832,6 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 	let balance_factor = 10;
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
-	let origin = 111111;
-	let extra = ();
 	// TODO: or new_signed?
 	let xt: TestXt<RuntimeCallFor<Test>, ()> = TestXt::new_bare(call.clone());
 	let ext = xt.encode();
@@ -855,8 +860,6 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
 			call: Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {})),
 		});
-	let origin = 111111;
-	let extra = ();
 	// TODO: or new_signed?
 	let xt: TestXt<RuntimeCallFor<Test>, ()> = TestXt::new_bare(call.clone());
 	let ext = xt.encode();

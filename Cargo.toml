@@ -86,7 +86,6 @@ polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", bran
 polkadot-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 
 # cumulus
-# TODO: set all cumulus pallets , default-features = false ?
 cumulus-client-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 cumulus-client-collator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
 cumulus-client-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }
