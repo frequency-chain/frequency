@@ -1,3 +1,4 @@
+use core::{fmt::Debug, marker::PhantomData};
 use parity_scale_codec::Codec;
 use scale_info::StaticTypeInfo;
 use sp_core::hexdisplay::HexDisplay;
@@ -5,7 +6,6 @@ use sp_runtime::{
 	traits::{LookupError, StaticLookup},
 	MultiAddress,
 };
-use sp_std::{fmt::Debug, marker::PhantomData};
 
 /// A lookup implementation returning the `AccountId` from a `MultiAddress`.
 pub struct EthereumCompatibleAccountIdLookup<AccountId, AccountIndex>(

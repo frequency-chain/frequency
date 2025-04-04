@@ -4,7 +4,9 @@ pub use sp_runtime::{
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	DispatchError, MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
-use sp_std::{boxed::Box, vec::Vec};
+
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 use crate::signatures::UnifiedSignature;
 use frame_support::dispatch::DispatchResultWithPostInfo;

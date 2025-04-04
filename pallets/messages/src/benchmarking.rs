@@ -12,6 +12,8 @@ use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, pallet_prelude::DispatchResult};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::traits::One;
+extern crate alloc;
+use alloc::vec;
 
 const SCHEMA_SIZE: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;

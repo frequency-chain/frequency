@@ -4,7 +4,8 @@ use frame_benchmarking::{benchmarks, whitelisted_caller};
 use frame_support::{assert_ok, ensure, BoundedVec};
 use frame_system::RawOrigin;
 use numtoa::NumToA;
-use sp_std::vec;
+extern crate alloc;
+use alloc::vec;
 
 use crate::Pallet as SchemasPallet;
 

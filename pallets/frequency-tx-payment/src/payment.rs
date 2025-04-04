@@ -1,6 +1,6 @@
 use common_primitives::msa::MsaValidator;
+use core::marker::PhantomData;
 use frame_support::traits::tokens::{fungible::Inspect as InspectFungible, Balance};
-use sp_std::marker::PhantomData;
 
 use super::*;
 use crate::Config;

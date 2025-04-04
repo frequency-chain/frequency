@@ -15,7 +15,8 @@ use frame_benchmarking::benchmarks;
 use frame_support::assert_ok;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::{traits::Zero, MultiSignature, RuntimeAppPublic};
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::boxed::Box;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 

@@ -1,4 +1,5 @@
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// Importing all base types
 pub mod base;

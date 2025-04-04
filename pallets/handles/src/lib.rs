@@ -45,6 +45,7 @@ use handles_utils::{
 #[cfg(test)]
 mod tests;
 
+use alloc::vec::Vec;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
 use common_primitives::{
@@ -57,7 +58,6 @@ use numtoa::*;
 pub use pallet::*;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
-use sp_std::{prelude::*, vec::Vec};
 
 pub mod handles_signed_extension;
 

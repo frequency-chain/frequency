@@ -14,6 +14,8 @@ use sp_core::{bounded::BoundedVec, crypto::KeyTypeId};
 use sp_runtime::RuntimeAppPublic;
 use stateful_child_tree::StatefulChildTree;
 use test_common::constants;
+extern crate alloc;
+use alloc::vec;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 

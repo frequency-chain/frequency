@@ -291,8 +291,8 @@ impl PartialEq for MaxPaginatedPageId {
 	}
 }
 
-impl sp_std::fmt::Debug for MaxPaginatedPageId {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxPaginatedPageId {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -313,8 +313,8 @@ impl PartialEq for MaxItemizedPageSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedPageSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxItemizedPageSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -335,8 +335,8 @@ impl PartialEq for MaxPaginatedPageSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MaxPaginatedPageSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxPaginatedPageSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -357,8 +357,8 @@ impl PartialEq for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxItemizedBlobSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -416,7 +416,8 @@ pub fn test_public(n: MessageSourceId) -> AccountId32 {
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
-	use sp_std::sync::Arc;
+	extern crate alloc;
+	use alloc::sync::Arc;
 
 	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);

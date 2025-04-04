@@ -29,10 +29,12 @@ pub mod weights;
 
 mod types;
 
+use core::{convert::TryInto, fmt::Debug};
 use frame_support::{ensure, pallet_prelude::Weight, traits::Get, BoundedVec};
 use sp_runtime::DispatchError;
-use sp_std::{convert::TryInto, fmt::Debug, prelude::*};
 
+extern crate alloc;
+use alloc::vec::Vec;
 use common_primitives::{
 	messages::*,
 	msa::{
@@ -370,7 +372,7 @@ impl<T: Config> Pallet<T> {
 	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
 		let cid_str: &str =
-			sp_std::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
+			core::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
 		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
 		// starts_with handles Unicode multibyte characters safely
 		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);

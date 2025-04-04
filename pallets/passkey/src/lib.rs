@@ -35,7 +35,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
-use sp_std::{vec, vec::Vec};
+extern crate alloc;
+use alloc::{vec, vec::Vec};
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =

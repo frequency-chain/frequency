@@ -7,7 +7,8 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// The minimum base and canonical handle (not including suffix or delimiter) length in characters
 pub const HANDLE_CHARS_MIN: u32 = 3;

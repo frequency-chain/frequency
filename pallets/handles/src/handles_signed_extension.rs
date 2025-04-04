@@ -24,7 +24,7 @@ pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	/// Create new `SignedExtension`.
 	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
+		Self(core::marker::PhantomData)
 	}
 
 	/// Validates the following criteria for the retire_handle() extrinsic:
@@ -61,13 +61,13 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
+impl<T: Config + Send + Sync> core::fmt::Debug for HandlesSignedExtension<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "HandlesSignedExtension<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -92,7 +92,7 @@ where
 	const IDENTIFIER: &'static str = "HandlesSignedExtension";
 
 	/// Additional signed
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 

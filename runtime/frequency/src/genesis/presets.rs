@@ -9,6 +9,8 @@ use crate::genesis::helpers::{
 	default_council_members, default_endowed_accounts, default_invulnerables, default_session_keys,
 	default_technical_committee_members,
 };
+extern crate alloc;
+use alloc::vec::Vec;
 
 #[cfg(any(
 	feature = "frequency-no-relay",
@@ -97,7 +99,7 @@ fn frequency_genesis_config() -> serde_json::Value {
 }
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
-pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<sp_std::vec::Vec<u8>> {
+pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 	let genesis = match id.as_str() {
 		#[cfg(any(
 			feature = "frequency-no-relay",

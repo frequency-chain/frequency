@@ -1,4 +1,5 @@
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// Gets stable weights for a capacity Call
 pub trait GetStableWeight<RuntimeCall, Weight> {

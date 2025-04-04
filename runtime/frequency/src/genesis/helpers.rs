@@ -1,8 +1,8 @@
 use cumulus_primitives_core::ParaId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-#[cfg(not(feature = "std"))]
-use sp_std::alloc::format;
+extern crate alloc;
+use alloc::{format, vec};
 
 use crate::{
 	AccountId, AccountIdConversion, AuraId, Balance, BalancesConfig, CollatorSelectionConfig,
@@ -11,7 +11,6 @@ use crate::{
 };
 
 use sp_core::sr25519;
-use sp_std::vec;
 
 /// Helper function to generate a crypto pair from seed
 // The panic from expect will not occur here because these input values are hardcoded.

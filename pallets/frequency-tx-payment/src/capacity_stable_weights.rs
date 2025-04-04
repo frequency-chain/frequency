@@ -11,7 +11,7 @@
 )]
 
 use frame_support::{traits::Get, weights::{Weight, constants::WEIGHT_REF_TIME_PER_NANOS}};
-use sp_std::marker::PhantomData;
+use core::marker::PhantomData;
 
 /// The base fee for extrinsics is calculated by running benchmarks.
 /// Capacity needs the base fee to remain stable and not change when benchmarks are run.

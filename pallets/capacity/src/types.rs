@@ -10,9 +10,10 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
-
 #[cfg(any(feature = "runtime-benchmarks", test))]
-use sp_std::vec::Vec;
+extern crate alloc;
+#[cfg(any(feature = "runtime-benchmarks", test))]
+use alloc::vec::Vec;
 
 /// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 /// this value should be between 0 and 100

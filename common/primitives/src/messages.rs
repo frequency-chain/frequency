@@ -6,7 +6,8 @@ use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_runtime::traits::One;
-use sp_std::{prelude::*, vec};
+extern crate alloc;
+use alloc::{vec, vec::Vec};
 #[cfg(feature = "std")]
 use utils::*;
 

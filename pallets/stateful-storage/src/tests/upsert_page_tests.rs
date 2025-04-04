@@ -10,18 +10,18 @@ use common_primitives::{
 	stateful_storage::{PageHash, PageId},
 	utils::wrap_binary_data,
 };
+use core::hash::Hasher;
 use frame_support::{assert_err, assert_ok};
 use parity_scale_codec::Encode;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::{sr25519, Get, Pair};
 use sp_runtime::{AccountId32, MultiSignature};
-use sp_std::hash::Hasher;
 use twox_hash::XxHash64;
 
 pub fn hash_payload(data: &[u8]) -> PageHash {
 	let mut hasher = XxHash64::with_seed(0);
-	sp_std::hash::Hash::hash(&data, &mut hasher);
+	core::hash::Hash::hash(&data, &mut hasher);
 	let value_bytes: [u8; 4] =
 		hasher.finish().to_be_bytes()[..4].try_into().expect("incorrect hash size");
 	PageHash::from_be_bytes(value_bytes)

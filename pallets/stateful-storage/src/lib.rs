@@ -35,11 +35,13 @@ mod test_common;
 mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, SchemaBenchmarkHelper};
-use sp_std::prelude::*;
 
 mod stateful_child_tree;
 pub mod types;
 pub mod weights;
+
+extern crate alloc;
+use alloc::vec::Vec;
 
 use crate::{stateful_child_tree::StatefulChildTree, types::*};
 use common_primitives::{
@@ -91,7 +93,7 @@ pub mod pallet {
 
 		/// The maximum size of a single item in an itemized storage model (in bytes)
 		#[pallet::constant]
-		type MaxItemizedBlobSizeBytes: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq;
+		type MaxItemizedBlobSizeBytes: Get<u32> + Clone + core::fmt::Debug + PartialEq;
 
 		/// The maximum number of pages in a Paginated storage model
 		#[pallet::constant]
