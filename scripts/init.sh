@@ -73,6 +73,7 @@ start-paseo-collator-alice)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
@@ -101,6 +102,7 @@ start-paseo-collator-bob)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
@@ -131,6 +133,7 @@ start-frequency-instant)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    # --pool-type=fork-aware \  Fork aware pool is not supported with insatnt sealing
     $offchain_params \
     --tmp
   ;;
@@ -157,6 +160,7 @@ start-frequency-interval)
     -lruntime=debug \
     --sealing=interval \
     --sealing-interval=${interval} \
+    --sealing-create-empty-blocks \   # Fork aware pool is only supported with this feature
     --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \
@@ -165,6 +169,7 @@ start-frequency-interval)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --pool-type=fork-aware \
     $offchain_params \
     --tmp
   ;;
@@ -198,6 +203,7 @@ start-frequency-manual)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --pool-type=fork-aware \
    $offchain_params \
     --tmp
   ;;
@@ -222,6 +228,7 @@ start-frequency-container)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
    $offchain_params \
   ;;
 

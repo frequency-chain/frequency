@@ -90,6 +90,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_balances::Config for Test {
@@ -106,6 +107,7 @@ impl pallet_balances::Config for Test {
 	type RuntimeFreezeReason = ();
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -200,6 +202,7 @@ impl pallet_transaction_payment::Config for Test {
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = ConstU8<5>;
+	type WeightInfo = ();
 }
 
 // so the value can be used by create_capacity_for below, without having to pass it a Config.

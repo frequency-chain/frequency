@@ -7,7 +7,7 @@ import {
   getCurrentPaginatedHash,
   createMsa,
   DOLLARS,
-  getOrCreateAvroChatMessagePaginatedSchema,
+  getOrCreateAvroChatMessagePaginatedSchema, assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -72,16 +72,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await paginated_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -107,11 +98,6 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
         'should have returned an ExtrinsicSuccess event'
       );
       assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
-      assert.notEqual(
         pageUpdateEvent2,
         undefined,
         'should have returned a PalletStatefulStoragepaginatedActionApplied event'
@@ -131,11 +117,6 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
         chainEvents3['system.ExtrinsicSuccess'],
         undefined,
         'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents3['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
       );
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
     });

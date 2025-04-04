@@ -23,7 +23,6 @@ import {
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
   generateItemizedSignaturePayload,
-  createDelegator,
   generatePaginatedUpsertSignaturePayload,
   generatePaginatedDeleteSignaturePayload,
   getOrCreateDummySchema,
@@ -34,7 +33,7 @@ import {
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
   getTestHandle,
-  assertHasMessage,
+  assertHasMessage, createMsa,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
@@ -213,12 +212,14 @@ describe('Capacity Transactions', function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
           // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
+          [delegatorProviderId, delegatorKeys] = await createMsa(fundingSource);
           assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
           assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
           // Stake the amount for each test
-          const numberOfTests = BigInt(this.test!.parent!.tests.length);
+          // TODO: running out of funds, adding 1 to cover Capacity cost, should debug to see if
+          // there is something else going on.
+          const numberOfTests = BigInt(this.test!.parent!.tests.length) + 1n;
           await assert.doesNotReject(
             stakeToProvider(fundingSource, fundingSource, capacityProvider, numberOfTests * amountStaked)
           );

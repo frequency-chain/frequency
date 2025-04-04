@@ -74,11 +74,11 @@ fn populate_messages(
 fn generate_payload(num_items: u8, content_len: Option<u8>) -> Vec<u8> {
 	let mut result_str = String::new();
 	let size = content_len.unwrap_or_else(|| 3);
-	let mut rng = rand::thread_rng();
+	let mut rng = rand::rng();
 
 	for _ in 0..num_items {
 		let payload = serde_json::to_string(&Payload {
-			fromId: rng.gen(),
+			fromId: rng.random(),
 			content: (0..size).map(|_| "X").collect::<String>(),
 		})
 		.unwrap();

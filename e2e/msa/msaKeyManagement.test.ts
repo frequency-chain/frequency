@@ -7,7 +7,7 @@ import {
   Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
-  CENTS,
+  CENTS, DOLLARS,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -33,7 +33,7 @@ describe('MSA Key management', function () {
 
     before(async function () {
       // Setup an MSA with one key and a secondary funded key
-      keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      keys = await createAndFundKeypair(fundingSource, 1n * DOLLARS);
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
