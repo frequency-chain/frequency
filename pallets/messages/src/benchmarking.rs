@@ -17,6 +17,8 @@ const SCHEMA_SIZE: u16 = 50;
 const IPFS_PAYLOAD_LENGTH: u32 = 10;
 const MAX_MESSAGES_IN_BLOCK: u32 = 500;
 const ON_CHAIN_SCHEMA_ID: u16 = 16001;
+// this value should be the same as the one used in mocks tests
+const IPFS_SCHEMA_ID: u16 = 20;
 
 fn onchain_message<T: Config>(schema_id: SchemaId) -> DispatchResult {
 	let message_source_id = DelegatorId(1);
@@ -64,7 +66,6 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 }
 
 benchmarks! {
-	// TODO: this is failing with InvalidPayloadLocation
 	add_onchain_message {
 		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
 		let message_source_id = DelegatorId(2);
@@ -94,7 +95,7 @@ benchmarks! {
 	add_ipfs_message {
 		let caller: T::AccountId = whitelisted_caller();
 		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
-		let schema_id = 1;
+		let schema_id = IPFS_SCHEMA_ID;
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
 		for j in 0 ..=SCHEMA_SIZE {
