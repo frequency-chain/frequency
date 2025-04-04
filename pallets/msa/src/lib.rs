@@ -66,7 +66,8 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
-use sp_std::{prelude::*, vec};
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 
 use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{
@@ -1799,13 +1800,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
+impl<T: Config + Send + Sync> core::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "CheckFreeExtrinsicUse<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -1821,7 +1822,7 @@ where
 	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 

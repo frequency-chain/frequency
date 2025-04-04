@@ -1451,7 +1451,6 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-runtime-interface",
- "sp-std",
 ]
 
 [[package]]
@@ -1481,7 +1480,6 @@ dependencies = [
  "smallvec",
  "sp-core",
  "sp-runtime",
- "sp-std",
  "sp-weights",
 ]
 
@@ -3811,7 +3809,6 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-session",
- "sp-std",
  "sp-transaction-pool",
  "sp-version",
  "staging-parachain-info",
@@ -7413,7 +7410,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -7424,7 +7420,6 @@ dependencies = [
  "parity-scale-codec",
  "sp-api",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -7620,7 +7615,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -7639,7 +7633,6 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
- "sp-std",
  "sp-weights",
  "tokio",
 ]
@@ -7653,7 +7646,6 @@ dependencies = [
  "pallet-transaction-payment",
  "parity-scale-codec",
  "sp-api",
- "sp-std",
 ]
 
 [[package]]
@@ -7699,7 +7691,6 @@ dependencies = [
  "sp-io",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -7716,7 +7707,6 @@ dependencies = [
  "sp-api",
  "sp-blockchain",
  "sp-runtime",
- "sp-std",
  "tokio",
 ]
 
@@ -7726,7 +7716,6 @@ version = "0.0.0"
 dependencies = [
  "common-primitives",
  "sp-api",
- "sp-std",
 ]
 
 [[package]]
@@ -7836,7 +7825,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -7862,7 +7850,6 @@ dependencies = [
  "common-primitives",
  "frame-support",
  "sp-api",
- "sp-std",
 ]
 
 [[package]]
@@ -7925,7 +7912,6 @@ dependencies = [
  "sp-keyring",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
  "sp-weights",
 ]
 
@@ -7946,7 +7932,6 @@ dependencies = [
  "sp-core",
  "sp-offchain",
  "sp-runtime",
- "sp-std",
  "tokio",
 ]
 
@@ -7958,7 +7943,6 @@ dependencies = [
  "frame-support",
  "parity-scale-codec",
  "sp-api",
- "sp-std",
 ]
 
 [[package]]
@@ -8113,7 +8097,6 @@ dependencies = [
  "sp-keyring",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -8245,7 +8228,6 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
- "sp-std",
  "sp-weights",
 ]
 
@@ -8264,7 +8246,6 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
- "sp-std",
  "tokio",
 ]
 
@@ -8276,7 +8257,6 @@ dependencies = [
  "frame-support",
  "sp-api",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -8409,7 +8389,6 @@ dependencies = [
  "sp-io",
  "sp-keystore",
  "sp-runtime",
- "sp-std",
  "twox-hash",
 ]
 
@@ -8428,7 +8407,6 @@ dependencies = [
  "sp-core",
  "sp-rpc",
  "sp-runtime",
- "sp-std",
  "tokio",
 ]
 
@@ -8440,7 +8418,6 @@ dependencies = [
  "frame-support",
  "sp-api",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -8477,7 +8454,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]
@@ -14974,7 +14950,6 @@ dependencies = [
  "serde_json",
  "sp-api",
  "sp-runtime",
- "sp-std",
 ]
 
 [[package]]

@@ -24,7 +24,6 @@ log = { workspace = true, default-features = false }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
 common-runtime = { path = '../../runtime/common', default-features = false }
@@ -46,7 +45,6 @@ std = [
   "frame-system/std",
   "frame-benchmarking/std",
   "sp-runtime/std",
-  "sp-std/std",
   "sp-core/std",
   "common-primitives/std",
   "common-runtime/std",

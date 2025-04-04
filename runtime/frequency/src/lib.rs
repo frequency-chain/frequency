@@ -17,6 +17,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use alloc::borrow::Cow;
 #[allow(unused)] // compiler lies
 use cumulus_pallet_parachain_system::DefaultCoreSelector;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -28,7 +29,6 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
-use sp_std::borrow::Cow;
 
 use pallet_collective::Members;
 
@@ -37,7 +37,6 @@ use pallet_collective::ProposalCount;
 
 use parity_scale_codec::Encode;
 
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -94,7 +93,8 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use sp_std::boxed::Box;
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -377,7 +377,7 @@ pub type Executive = frame_executive::Executive<
 	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
-pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
 
 impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T> {
 	fn on_runtime_upgrade() -> Weight {

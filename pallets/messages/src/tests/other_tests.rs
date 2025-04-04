@@ -9,7 +9,8 @@ use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
 use sp_core::ConstU32;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 #[derive(Serialize)]
 #[allow(non_snake_case)]
@@ -43,11 +44,9 @@ fn populate_messages(
 		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
 		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
 			generate_payload(1, None),
-		PayloadLocation::IPFS => (
-			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
-			IPFS_PAYLOAD_LENGTH,
-		)
-			.encode(),
+		PayloadLocation::IPFS =>
+			(multibase::decode(core::str::from_utf8(cid).unwrap()).unwrap().1, IPFS_PAYLOAD_LENGTH)
+				.encode(),
 	};
 
 	let mut counter = 0;

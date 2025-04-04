@@ -6,7 +6,8 @@ use common_primitives::{
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
 use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
-use sp_std::collections::btree_set::BTreeSet;
+extern crate alloc;
+use alloc::collections::btree_set::BTreeSet;
 
 struct TestCase<T> {
 	handle: &'static str,

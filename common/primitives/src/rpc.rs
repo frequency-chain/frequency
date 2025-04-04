@@ -6,7 +6,9 @@ use serde::{Deserialize, Serialize};
 use frame_system::{EventRecord, Phase};
 use parity_scale_codec::{Codec, Decode, Encode, EncodeLike};
 use scale_info::TypeInfo;
-use sp_std::{fmt::Debug, vec::Vec};
+extern crate alloc;
+use alloc::vec::Vec;
+use core::fmt::Debug;
 
 /// The Struct for the getEvents RPC
 /// This handles the Scale encoding of ONLY the event
