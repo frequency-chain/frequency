@@ -446,7 +446,6 @@ where
 		calls: &Vec<<T as Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		log::warn!("withdraw_capacity_fee");
 		let mut calls_weight_sum = Weight::zero();
 		for call in calls {
 			let call_weight = T::CapacityCalls::get_stable_weight(call)
@@ -455,7 +454,6 @@ where
 		}
 		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
-		log::warn!("withdrawing capacity fee");
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
