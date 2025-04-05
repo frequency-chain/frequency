@@ -504,7 +504,6 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       await assert.rejects(upsert_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
     });
 
-    // fails but not when called individually?
     it('owner can upsertPage', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
@@ -518,7 +517,6 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
         target_hash
       );
-      console.log("about to fund and send");
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
       assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(

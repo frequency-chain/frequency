@@ -191,6 +191,7 @@ pub fn start_frequency_dev_sealing_node(
 				pool: transaction_pool.clone(),
 				command_sink: command_sink.clone(),
 			};
+
 			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		})
 	};

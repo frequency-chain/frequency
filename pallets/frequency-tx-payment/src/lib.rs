@@ -372,6 +372,56 @@ where
 		}
 	}
 
+	fn can_withdraw_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		match call.is_sub_type() {
+			Some(Call::pay_with_capacity { call }) =>
+				self.can_withdraw_capacity_fee(who, &vec![*call.clone()], len),
+
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.can_withdraw_capacity_fee(who, calls, len),
+
+			_ => self.can_withdraw_token_fee(who, call, info, len, self.tip(call)),
+		}
+	}
+
+	fn can_withdraw_capacity_fee(
+		&self,
+		who: &T::AccountId,
+		calls: &Vec<<T as Config>::RuntimeCall>,
+		len: usize,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		let mut calls_weight_sum = Weight::zero();
+		for call in calls {
+			let call_weight = T::CapacityCalls::get_stable_weight(call)
+				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
+		}
+		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
+		T::OnChargeCapacityTransaction::can_withdraw_fee(who, fee.into())?;
+		Ok(fee)
+	}
+	fn can_withdraw_token_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+		tip: BalanceOf<T>,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+		if fee.is_zero() {
+			return Ok(Default::default());
+		}
+		T::OnChargeTransaction::can_withdraw_fee(who, call, info, fee, tip)?;
+		Ok(fee)
+	}
+
 	/// Withdraws fee from either Capacity ledger or Token account.
 	fn withdraw_fee(
 		&self,
@@ -396,16 +446,16 @@ where
 		calls: &Vec<<T as Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+		log::warn!("withdraw_capacity_fee");
 		let mut calls_weight_sum = Weight::zero();
-
 		for call in calls {
 			let call_weight = T::CapacityCalls::get_stable_weight(call)
 				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
-
 		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
+		log::warn!("withdrawing capacity fee");
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
@@ -484,7 +534,7 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
+		let fee = self.can_withdraw_fee(who, call, info, len)?;
 
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info,
@@ -527,12 +577,12 @@ where
 					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
 					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
 					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-						pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn},
-						info,
-						post_info,
-						len,
-						result,
-					)?;
+                        pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
+                        info,
+                        post_info,
+                        len,
+                        result,
+                    )?;
 				},
 				// If it's capacity, do nothing
 				InitialPayment::Capacity => {
