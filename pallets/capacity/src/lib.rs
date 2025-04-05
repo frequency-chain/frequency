@@ -1237,6 +1237,13 @@ impl<T: Config> Nontransferable for Pallet<T> {
 		}
 	}
 
+	fn replenishable_balance(msa_id: MessageSourceId) -> Self::Balance {
+		match CapacityLedger::<T>::get(msa_id) {
+			Some(capacity_details) => capacity_details.total_capacity_issued,
+			None => BalanceOf::<T>::zero(),
+		}
+	}
+
 	/// Spend capacity: reduce remaining capacity by the given amount
 	fn deduct(msa_id: MessageSourceId, amount: Self::Balance) -> Result<(), DispatchError> {
 		let mut capacity_details =

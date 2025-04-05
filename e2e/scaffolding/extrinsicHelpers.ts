@@ -259,7 +259,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     return firstValueFrom(
       this.extrinsic()
         .paymentInfo(getUnifiedAddress(this.keys))
-        .pipe(map((info) => info.partialFee.toBigInt() * 2n))
+        .pipe(map((info) => info.partialFee.toBigInt()))
     );
   }
 

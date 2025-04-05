@@ -88,39 +88,33 @@ describe('Capacity Replenishment Testing: ', function () {
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // run until we can't afford to send another message.
-      const cost = await drainCapacity(call, stakeProviderId);
+      await drainCapacity(call, stakeProviderId);
 
       await assert_capacity_call_fails_with_balance_too_low(call);
     });
   });
 
   describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function () {
-    const providerStakeAmt = 3n * DOLLARS;
-    const userStakeAmt = 100n * CENTS;
-    const userIncrementAmt = 1n * CENTS;
-    const userKeys = createKeys('userKeys');
-    let stakeKeys: KeyringPair;
-    let stakeProviderId: u64;
+    it('provider is still replenished and can send a message', async function () {
+      const providerStakeAmt = 3n * DOLLARS;
+      const userStakeAmt = 100n * CENTS;
+      const userIncrementAmt = 1n * CENTS;
 
-    before(async function () {
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('TinyStake', providerStakeAmt);
       // new user/msa stakes to provider
+      const userKeys = createKeys('userKeys');
       await fundKeypair(fundingSource, userKeys, 5n * DOLLARS);
-      [stakeKeys, stakeProviderId] = await createAndStakeProvider('TinyStake', providerStakeAmt);
       const { eventMap } = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).signAndSend();
       assertEvent(eventMap, 'system.ExtrinsicSuccess');
-    });
 
-    it('provider is still replenished and can send a message', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
-      // Ensure provider got the capacity expected
       const expectedCapacity = (providerStakeAmt + userStakeAmt) / getTokenPerCapacity();
       const totalCapacity = (await getCapacity(stakeProviderId)).totalCapacityIssued.toBigInt();
       assert.equal(expectedCapacity, totalCapacity, `expected ${expectedCapacity} capacity, got ${totalCapacity}`);
 
-      // Provider uses up almost all capacity & can't send another message
       const callCapacityCost = await drainCapacity(call, stakeProviderId);
 
       // ensure provider can't send a message; they are out of capacity
@@ -155,25 +149,16 @@ describe('Capacity Replenishment Testing: ', function () {
 });
 
 async function drainCapacity(call, stakeProviderId: u64): Promise<bigint> {
+  const totalCapacity = (await getCapacity(stakeProviderId)).totalCapacityIssued.toBigInt();
   let nonce = await getNonce(call.keys);
   // Figure out the cost per call in Capacity
   const { eventMap } = await call.payWithCapacity(nonce++);
 
   const callCapacityCost = eventMap['capacity.CapacityWithdrawn'].data.amount.toBigInt();
-  console.log({ callCapacityCost });
-  let remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();
 
   // // Run them out of funds, but don't flake just because it landed near an epoch boundary.
   await ExtrinsicHelper.runToBlock(await getNextEpochBlock());
-  const callsBeforeEmpty = Math.floor(Number(remainingCapacity) / Number(callCapacityCost));
-  let i=0;
-  // TODO: debugging why capacity isn't deducted after the first of these calls.
-  while (remainingCapacity > callCapacityCost && i < callsBeforeEmpty)  {
-    console.log(`remainingCapacity = ${remainingCapacity}, i=${i}`);
-    await call.payWithCapacity(nonce + i);
-    remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();
-    i++;
-  }
-  // await Promise.all(Array.from({ length: callsBeforeEmpty }, (_, k) => call.payWithCapacity(nonce + k)));
+  const callsBeforeEmpty = Math.floor(Number(totalCapacity) / Number(callCapacityCost));
+  await Promise.all(Array.from({ length: callsBeforeEmpty }, (_, k) => call.payWithCapacity(nonce + k)));
   return callCapacityCost;
 }

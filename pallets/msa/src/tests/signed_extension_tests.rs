@@ -12,6 +12,7 @@ use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValid
 // Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
 // for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
 // when attempting to delete `public_key_to_delete`
+#[allow(deprecated)]
 fn assert_validate_key_delete_fails(
 	caller_key: &AccountId32,
 	public_key_to_delete: AccountId32,
@@ -34,6 +35,7 @@ fn assert_validate_key_delete_fails(
 	);
 }
 
+#[allow(deprecated)]
 fn assert_revoke_delegation_by_provider_err(
 	expected_err: InvalidTransaction,
 	provider_account: Public,
@@ -55,6 +57,7 @@ fn assert_revoke_delegation_by_provider_err(
 /// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
+#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_delegator_success() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
@@ -75,6 +78,7 @@ fn signed_extension_revoke_delegation_by_delegator_success() {
 /// Assert that revoking an MSA delegation fails the signed extension CheckFreeExtrinsicUse
 /// validation when no valid delegation exists.
 #[test]
+#[allow(deprecated)]
 fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
@@ -110,6 +114,7 @@ fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_success() {
 	new_test_ext().execute_with(|| {
 		let (delegator_msa_id, provider_account) = create_delegator_msa_and_provider();
@@ -130,6 +135,7 @@ fn signed_extension_revoke_delegation_by_provider_success() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegator_msa() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
@@ -142,6 +148,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegator_msa() 
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 	new_test_ext().execute_with(|| {
 		let (provider_pair, _) = sr25519::Pair::generate();
@@ -155,6 +162,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
@@ -169,6 +177,7 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 /// Assert that a call that is not one of the matches passes the signed extension
 /// CheckFreeExtrinsicUse validation.
 #[test]
+#[allow(deprecated)]
 fn signed_extension_validation_valid_for_other_extrinsics() {
 	let random_call_should_pass: &<Test as frame_system::Config>::RuntimeCall =
 		&RuntimeCall::Msa(MsaCall::create {});
@@ -185,6 +194,7 @@ fn signed_extension_validation_valid_for_other_extrinsics() {
 
 // Assert that check nonce validation does not create a token account for delete_msa_public_key call.
 #[test]
+#[allow(deprecated)]
 fn signed_ext_check_nonce_delete_msa_public_key() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for MSA account
@@ -227,6 +237,7 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 // Assert that check nonce validation does not create a token account for revoke_delegation_by_delegator call.
 #[test]
+#[allow(deprecated)]
 fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, _) = create_provider_msa_and_delegator();
@@ -267,6 +278,7 @@ fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 
 // Assert that check nonce validation does create a token account for a paying call.
 #[test]
+#[allow(deprecated)]
 fn signed_ext_check_nonce_creates_token_account_if_paying() {
 	new_test_ext().execute_with(|| {
 		//  Test that a  "pays" extrinsic creates a token account
@@ -330,6 +342,7 @@ fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_trans
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_validation_delete_msa_public_key_success() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, original_key_pair) = create_account();
@@ -405,6 +418,7 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_on_only_key() {
 	new_test_ext().execute_with(|| {
 		let (_, original_pair) = create_account();
@@ -419,6 +433,7 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_on_only_key
 }
 
 #[test]
+#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_by_non_owner() {
 	new_test_ext().execute_with(|| {
 		let (_, original_pair) = create_account();
