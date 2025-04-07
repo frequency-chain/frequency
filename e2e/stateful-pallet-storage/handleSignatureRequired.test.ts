@@ -91,7 +91,6 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
   });
 
   describe('Itemized With Signature Storage Tests', function () {
-    // passes
     it('provider should be able to call applyItemizedActionWithSignature and apply actions', async function () {
       const { payload, signature } = itemizedActionsSignedPayload;
 
@@ -112,9 +111,16 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
     });
 
-    // fails
     it('delegator (owner) should be able to call applyItemizedActionWithSignature and apply actions', async function () {
-      const { payload, signature } = itemizedActionsSignedPayload;
+    const { payload, signature } = await generateItemizedActionsSignedPayload(
+        generateItemizedActions([
+          { action: 'Add', value: 'Hello, world from Frequency' },
+          { action: 'Add', value: 'Hello, world again from Frequency' },
+        ]),
+        itemizedSchemaId,
+        delegatorKeys,
+        msa_id
+    );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
