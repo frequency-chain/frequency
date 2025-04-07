@@ -507,6 +507,8 @@ Several open questions remain that may influence the final implementation strate
 
 -   Should namespace and protocol ownership be bound to **MSAs** or to **raw public keys**?
 
+-   Many of the aspects of ownership/control/governance overlap with ENS-type functionality; should we implement in isolation, or separate out into a partial or full ENS implmentation?
+
 -   Should delegation resolution allow both **protocol** and **intent** types simultaneously, or require mutual exclusivity? Or, should only one of them be implemented at all?
 
 -   Will we support **extrinsics** that use `IntentId` without referring to a `SchemaId`?
