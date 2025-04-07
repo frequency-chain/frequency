@@ -406,6 +406,7 @@ where
 		T::OnChargeCapacityTransaction::can_withdraw_fee(who, fee.into())?;
 		Ok(fee)
 	}
+	
 	fn can_withdraw_token_fee(
 		&self,
 		who: &T::AccountId,

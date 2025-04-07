@@ -295,9 +295,9 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
         if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
       })
     );
-        } catch (e) {
+  } catch (e) {
     console.log('Error draining accounts: ', e);
-        }
+  }
 }
 
 export async function fundKeypair(
