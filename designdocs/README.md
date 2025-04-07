@@ -22,6 +22,8 @@ To create a new design document, Please see the [Design Doc README](https://gith
   - [PR](https://github.com/frequency-chain/frequency/pull/900)
 - [Graph Sdk](./graph_sdk.md)
   - [PR](https://github.com/frequency-chain/frequency/pull/1159)
+- [Provider Contexts](./provider_contexts.md)
+  - [PR](https://github.com/frequency-chain/frequency/pull/2311)
 
 ## Basic Data Model
 
