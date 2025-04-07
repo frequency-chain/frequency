@@ -2,8 +2,8 @@
 
 ## Context and Scope
 
-In Frequency, a Provider has been representative of both an Application and a Company.
-In this document, the design will shift the representation of a Provider to be able to be a Company with one or more Applications.
+On Frequency, a Provider may either represent an application or a company.
+This document will outline the changes that will allow a Provider to represent a company with one or multiple applications.
 It also enables social wallet providers, custodial and non-custodial, to provide safe application information to their users.
 
 This is an expansion of the [Registered Provider](https://github.com/frequency-chain/frequency/blob/main/designdocs/provider_registration.md) concepts.
@@ -14,11 +14,11 @@ Reference Document: [SIWF Specification](https://projectlibertylabs.github.io/si
 
 #### Concept of an Application Separate from a Provider
 
-While most companies have a single major product, companies already want to take advantage of Frequency's universal data to provide many different applications to serve different needs.
+While many companies have a single major product, some companies want to provide Frequency's universal data to multiple applications that serve different needs.
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
-To have multiple providers requires separate Capacity staking.
-As these applications would be from the same company, it is more reasonable to say that they should share Capacity.
+Multiple providers require separate Capacity staking.
+As these applications would be from the same company, it is reasonable to say that they should share Capacity.
 Instead of building a Capacity sharing system, it is more reasonable to merely be the same Provider and provide a system of application identification.
 
 User permissions are primarily write-based at this time, however it is critical that users understand the delegation and their data is shared at a company level, no matter the chain representation of such.
@@ -31,7 +31,7 @@ This may be desirable if there is a subsidiary company or other complex structur
 #### User Trust in Application Presentation
 
 Users need to know what application they are logging into and trust that the displayed information is not a phishing attack.
-Users have a reasonable expectation that the chain and wallet provides a level of protection against phishing attacks from Providers and Applications.
+Users have a reasonable expectation that the chain and wallet provide a level of protection against phishing attacks from Providers and Applications.
 
 #### Easy Wallet Integration of Data
 
@@ -56,7 +56,7 @@ Applications have two different pieces of default and (potentially) internationa
 
 Limits
 1. Provide a space to internationalize up to 150 localizations (Windows and macOS each have < 150).
-2. Image should be `base64` encoded `png` that is `250x100` (support for future).
+2. Image MUST BE encoded (`png`)[https://www.w3.org/TR/png-3/] that is `250x100` (support for future sizes and light/dark should be considered).
 
 The data structure must support both of these and internationalization.
 
@@ -162,16 +162,16 @@ The Wallet would then:
 1. Verify the SIWF Signed Request.
 2. Lookup the Provider via the `publicKey` in the SIWF Signed Request.
 3. If any, fetch the Application Identifier from Frequency.
-4. Display the information from the ApplicationRegistryEntry (or default Provider one) to the user to help them know who they are authorizing.
-5. User is happy to continue with the login process.
+4. Display the information from the `ApplicationRegistryEntry` (or the Provider Registry Entry `ProviderToRegistryEntry` if there is no application context identifier) to the user to help them know who they are authorizing.
+5. Allow the user to continue the login process.
 
 ### **Provider Dashboard Steps** <a id='dashboard'></a>
 
-Provider Dashboard needs be able to:
+Provider Dashboard needs to be able to:
 
 - Create a provider without any application context other than the default provider context
 - Update the default provider context, logos, and translations
-- Add new Application Contexts with a unique to that provider id, logos, and translations
+- Add new Application Contexts with a identifier (unique to that provider), logos, and translations
 - Remove an existing Application Context
 - Update an Application Contexts with new logos, and translations
 
@@ -185,7 +185,7 @@ Provider Dashboard needs be able to:
 
 ### Benefit: User protection and Application diversity
 
-Users will have a larger trust when they are logging into an application that the application is represented honestly, even with the continuous risk of trusting any new application with user data.
+Users will have a greater confidence when they are logging into an application that the application is represented honestly, even with the continuous risk of trusting any new application with user data.
 
 ### Risk: Initial structure of only one Frequency Council member approving changes in an application
 
