@@ -196,10 +196,11 @@ This process should be re-evaluated as the number of Providers grows.
 ### Risk: Logo Images on Chain
 
 This provides a direct way to place image content on chain, intended to be interpreted as image content.
-While this must still pass through the governance step to be used by others, there is always a risk of harmful images being proposed.
+While this must still pass through the governance step to be used by others via the content the image would still be in the chain history as there is always a risk of problematic images being proposed.
 This risk is mitigated by:
 - A registered provider must be taking the action
 - Larger images require larger token fees to cover the cost
+- IF applied, the suggested hash requirement for the image upload could remove this issue entirely
 
 The mitigation is enough for the benefit of clear branding for users to outweigh this risk.
 
