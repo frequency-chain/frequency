@@ -206,7 +206,6 @@ pub async fn start_parachain_node(
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
-	// TODO:  confirm which metrics registry to use, if any
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let net_config = FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(
 		&parachain_config.network,
