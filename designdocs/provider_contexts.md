@@ -18,7 +18,7 @@ Many companies have a single major product, but some companies have multiple app
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
 Having separate providers would require a single company to have separate Capacity staking for each application.
-As each these applications are still part of the same company, it is reasonable to say that those applications should share Capacity.
+As each these applications are part of the same company, it is reasonable to say that those applications should share Capacity as a single legal entity.
 Instead of building a Capacity sharing system which has different trade-offs, it is reasonable for those applications to use the same Provider and provide a system of application identification that is separate from provider identification for these cases..
 
 User permissions are primarily write-based at this time, however it is critical that users understand the delegation and their data is shared at a company level, no matter the chain representation of such.
