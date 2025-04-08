@@ -14,7 +14,7 @@ Reference Document: [SIWF Specification](https://projectlibertylabs.github.io/si
 
 #### Concept of an Application Separate from a Provider
 
-While many companies have a single major product, some companies want to provide Frequency's universal data to multiple applications that serve different needs.
+Many companies have a single major product, but some companies have multiple applications that serve different needs.
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
 Multiple providers require separate Capacity staking.
