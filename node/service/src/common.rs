@@ -5,7 +5,6 @@ use sc_client_api::Backend;
 use sc_offchain::NetworkProvider;
 use sc_service::{config::RpcEndpoint, TFullBackend, TaskManager};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
-use sp_core::offchain::OffchainStorage;
 use sp_keystore::KeystorePtr;
 use std::{net::SocketAddr, sync::Arc};
 
@@ -36,6 +35,7 @@ pub fn listen_addrs_to_normalized_strings(addr: &Option<Vec<RpcEndpoint>>) -> Op
 	}
 }
 type ParachainBackend = TFullBackend<Block>;
+#[allow(clippy::expect_used)]
 pub fn start_offchain_workers(
 	client: &Arc<ParachainClient>,
 	parachain_config: &sc_service::Configuration,
@@ -48,6 +48,7 @@ pub fn start_offchain_workers(
 	use futures::FutureExt;
 	let rpc_addresses = listen_addrs_to_normalized_strings(&parachain_config.rpc.addr)
 		.expect("config.rpc.addr has invalid input");
+	let rpc_address = rpc_addresses.get(0).expect("no rpc addresses in config").clone();
 	let is_validator = parachain_config.role.is_authority();
 	let offchain_workers = sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 		runtime_api_provider: client.clone(),
@@ -57,10 +58,7 @@ pub fn start_offchain_workers(
 		transaction_pool,
 		network_provider,
 		enable_http_requests: true,
-		custom_extensions: move |_hash| {
-			let rpc_address = rpc_addresses.get(0).expect("no rpc addresses in config");
-			vec![Box::new(OcwCustomExt(rpc_address.clone())) as Box<_>]
-		},
+		custom_extensions: move |_hash| vec![Box::new(OcwCustomExt(rpc_address.clone())) as Box<_>],
 	})
 	.expect("Could not create Offchain Worker");
 

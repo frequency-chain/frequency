@@ -3,12 +3,9 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::{
-	node::{Block, Hash},
-	offchain::OcwCustomExt,
-};
+use common_primitives::node::{Block, Hash};
 use core::marker::PhantomData;
-use futures::{FutureExt, Stream};
+use futures::Stream;
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
@@ -91,7 +88,7 @@ pub fn start_frequency_dev_sealing_node(
 
 	let prometheus_registry = config.prometheus_registry().cloned();
 
-	let role = config.role.clone();
+	let role = config.role;
 
 	let select_chain = maybe_select_chain
 		.expect("In frequency dev mode, `new_partial` will return some `select_chain`; qed");
