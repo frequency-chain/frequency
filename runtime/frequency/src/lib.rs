@@ -17,14 +17,19 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use common_runtime::constants::currency::UNITS;
 #[allow(unused)] // compiler lies
 use cumulus_pallet_parachain_system::DefaultCoreSelector;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
+use frame_support::traits::{EitherOf, MapSuccess};
+use frame_system::EnsureRootWithSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
+	traits::{
+		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup, Replace,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
@@ -931,6 +936,7 @@ impl pallet_democracy::Config for Runtime {
 parameter_types! {
 	pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+	pub const MaxSpending : Balance = 100_000_000 * UNITS;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
@@ -942,14 +948,6 @@ impl pallet_treasury::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
 
-	/// Who approves treasury proposals?
-	/// - Root (sudo or governance)
-	/// - 3/5ths of the Frequency Council
-	// type ApproveOrigin = EitherOfDiverse<
-	// 	EnsureRoot<AccountId>,
-	// 	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-	// >;
-
 	/// Who rejects treasury proposals?
 	/// - Root (sudo or governance)
 	/// - Simple majority of the Frequency Council
@@ -958,23 +956,19 @@ impl pallet_treasury::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 	>;
 
-	/// Spending funds outside of the proposal?
-	/// Nobody
-	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
-
-	/// Rejected proposals lose their bond
-	/// This takes the slashed amount and is often set to the Treasury
-	/// We burn it so there is no incentive to the treasury to reject to enrich itself
-	// type OnSlash = ();
-
-	/// Bond 5% of a treasury proposal
-	// type ProposalBond = ProposalBondPercent;
-
-	/// Minimum bond of 100 Tokens
-	// type ProposalBondMinimum = ProposalBondMinimum;
-
-	/// Max bond of 1_000 Tokens
-	// type ProposalBondMaximum = ProposalBondMaximum;
+	// Legacy config was as following:
+	// 	type ApproveOrigin = EitherOfDiverse<
+	// 		EnsureRoot<AccountId>,
+	// 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	// 	>;
+	/// Spending Origin
+	type SpendOrigin = EitherOf<
+		EnsureRootWithSuccess<AccountId, MaxSpending>,
+		MapSuccess<
+			pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+			Replace<MaxSpending>,
+		>,
+	>;
 
 	/// Pay out on a 4-week basis
 	type SpendPeriod = SpendPeriod;
