@@ -160,7 +160,6 @@ async function drainCapacity(call, stakeProviderId: u64): Promise<bigint> {
   const { eventMap } = await call.payWithCapacity(nonce++);
 
   const callCapacityCost = eventMap['capacity.CapacityWithdrawn'].data.amount.toBigInt();
-  console.log({ callCapacityCost });
   let remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();
 
   // // Run them out of funds, but don't flake just because it landed near an epoch boundary.
