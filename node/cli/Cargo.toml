@@ -16,8 +16,6 @@ hex-literal = { workspace = true }
 log = { workspace = true }
 serde_json = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-# getrandom = { version = "0.2.15", default-features = false, features = ["js"] }
-
 # Frequency Runtime
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { package = "common-runtime", path = "../../runtime/common", default-features = false }

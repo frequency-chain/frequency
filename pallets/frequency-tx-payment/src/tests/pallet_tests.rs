@@ -832,7 +832,7 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 	let balance_factor = 10;
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
-	// TODO: or new_signed?
+	// since we are not checking the signature in FrequencyTxPayment here we can use TestXt::new_bare for simplicity eventhough the Call would be signed one in reality
 	let xt: TestXt<RuntimeCallFor<Test>, ()> = TestXt::new_bare(call.clone());
 	let ext = xt.encode();
 	let len = ext.len() as u32;
@@ -860,7 +860,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
 			call: Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {})),
 		});
-	// TODO: or new_signed?
+	// since we are not checking the signature in FrequencyTxPayment here we can use TestXt::new_bare for simplicity eventhough the Call would be signed one in reality
 	let xt: TestXt<RuntimeCallFor<Test>, ()> = TestXt::new_bare(call.clone());
 	let ext = xt.encode();
 	let len = ext.len() as u32;
