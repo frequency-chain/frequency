@@ -76,14 +76,14 @@ Proposed are the following changes:
         pub localized_logo_250_100_png_bytes: BTreeMap<Vec<u8>, BoundedVec<u8, U>>,
     }
     ```
-3. The `ProviderToRegistryEntry` be updated to use `ProviderToApplicationRegistryEntry`
+3. The `ProviderToRegistryEntry` be updated to use `ApplicationRegistryEntry` so that the Provider has a "default" `ApplicationRegistryEntry`.
     ```rust
     #[pallet::storage]
 	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
 		ProviderId,
-		ProviderToApplicationRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+		ApplicationRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
 		OptionQuery,
 	>;
     ```
