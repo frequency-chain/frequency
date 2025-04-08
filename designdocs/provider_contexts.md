@@ -17,9 +17,10 @@ Reference Document: [SIWF Specification](https://projectlibertylabs.github.io/si
 Many companies have a single major product, but some companies have multiple applications that serve different needs.
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
-Multiple providers require separate Capacity staking.
-As these applications would be from the same company, it is reasonable to say that they should share Capacity.
-Instead of building a Capacity sharing system, it is more reasonable to merely be the same Provider and provide a system of application identification.
+```suggestion
+Having separate providers would require a single company to have separate Capacity staking for each application.
+As each these applications are still part of the same company, it is reasonable to say that those applications should share Capacity.
+Instead of building a Capacity sharing system which has different trade-offs, it is reasonable for those applications to use the same Provider and provide a system of application identification that is separate from provider identification for these cases..
 
 User permissions are primarily write-based at this time, however it is critical that users understand the delegation and their data is shared at a company level, no matter the chain representation of such.
 To align with the data security model of company-to-user in the world today, permissions, and thus Provider-level delegations continue to reflect the reality best.
