@@ -881,7 +881,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		});
 }
 
-pub fn assert_can_withdraw_fee_result(
+pub fn assert_dryrun_withdraw_fee_result(
 	account_id: <Test as frame_system::Config>::AccountId,
 	call: &<Test as Config>::RuntimeCall,
 	expected_err: Option<TransactionValidityError>,
@@ -892,7 +892,7 @@ pub fn assert_can_withdraw_fee_result(
 	let call: &<Test as Config>::RuntimeCall =
 		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity { call: Box::new(call.clone()) });
 
-	let can_withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64).can_withdraw_fee(
+	let dryrun_withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64).dryrun_withdraw_fee(
 		&account_id,
 		call,
 		&dispatch_info,
@@ -900,10 +900,10 @@ pub fn assert_can_withdraw_fee_result(
 	);
 
 	match expected_err {
-		None => assert!(can_withdraw_fee.is_ok()),
+		None => assert!(dryrun_withdraw_fee.is_ok()),
 		Some(err) => {
-			assert!(can_withdraw_fee.is_err());
-			assert_eq!(err, can_withdraw_fee.err().unwrap())
+			assert!(dryrun_withdraw_fee.is_err());
+			assert_eq!(err, dryrun_withdraw_fee.err().unwrap())
 		},
 	}
 }
@@ -925,12 +925,12 @@ fn can_withdraw_fee_allows_configured_capacity_calls() {
 			let forbidden_call: &<Test as Config>::RuntimeCall =
 				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
 
-			assert_can_withdraw_fee_result(account_id, allowed_call, None);
+			assert_dryrun_withdraw_fee_result(account_id, allowed_call, None);
 
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
 			));
-			assert_can_withdraw_fee_result(account_id, forbidden_call, Some(expected_err));
+			assert_dryrun_withdraw_fee_result(account_id, forbidden_call, Some(expected_err));
 		});
 }
 #[test]
@@ -950,7 +950,7 @@ fn can_withdraw_fee_errors_on_capacity_transaction_without_enough_funds() {
 				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
 
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Payment);
-			assert_can_withdraw_fee_result(account_id, call, Some(expected_err));
+			assert_dryrun_withdraw_fee_result(account_id, call, Some(expected_err));
 		});
 }
 #[test]
@@ -977,7 +977,7 @@ fn can_withdraw_fee_errors_for_capacity_txn_when_invalid_msa() {
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
 			));
-			assert_can_withdraw_fee_result(
+			assert_dryrun_withdraw_fee_result(
 				account_id_not_associated_with_msa,
 				call,
 				Some(expected_err),
@@ -1001,7 +1001,7 @@ fn can_withdraw_fee_errors_on_token_txn_witout_enough_funds() {
 
 			let info = DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
-			let error = charge_tx_payment.can_withdraw_fee(&who, call, &info, len).unwrap_err();
+			let error = charge_tx_payment.dryrun_withdraw_fee(&who, call, &info, len).unwrap_err();
 			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
 		});
 }

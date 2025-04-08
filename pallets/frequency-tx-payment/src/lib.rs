@@ -372,7 +372,8 @@ where
 		}
 	}
 
-	fn can_withdraw_fee(
+	// simulates fee calculation and withdrawal without applying any changes
+	fn dryrun_withdraw_fee(
 		&self,
 		who: &T::AccountId,
 		call: &<T as frame_system::Config>::RuntimeCall,
@@ -381,16 +382,16 @@ where
 	) -> Result<BalanceOf<T>, TransactionValidityError> {
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) =>
-				self.can_withdraw_capacity_fee(who, &vec![*call.clone()], len),
+				self.dryrun_withdraw_capacity_fee(who, &vec![*call.clone()], len),
 
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
-				self.can_withdraw_capacity_fee(who, calls, len),
+				self.dryrun_withdraw_capacity_fee(who, calls, len),
 
-			_ => self.can_withdraw_token_fee(who, call, info, len, self.tip(call)),
+			_ => self.dryrun_withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
 
-	fn can_withdraw_capacity_fee(
+	fn dryrun_withdraw_capacity_fee(
 		&self,
 		who: &T::AccountId,
 		calls: &Vec<<T as Config>::RuntimeCall>,
@@ -406,8 +407,8 @@ where
 		T::OnChargeCapacityTransaction::can_withdraw_fee(who, fee.into())?;
 		Ok(fee)
 	}
-	
-	fn can_withdraw_token_fee(
+
+	fn dryrun_withdraw_token_fee(
 		&self,
 		who: &T::AccountId,
 		call: &<T as frame_system::Config>::RuntimeCall,
@@ -533,7 +534,7 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		let fee = self.can_withdraw_fee(who, call, info, len)?;
+		let fee = self.dryrun_withdraw_fee(who, call, info, len)?;
 
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info,
