@@ -1244,9 +1244,8 @@ impl<T: Config> Pallet<T> {
 				let is_new = maybe_delegation_info.is_none();
 				let mut delegation = maybe_delegation_info.take().unwrap_or_default();
 
-				f(&mut delegation, is_new).map(move |result| {
+				f(&mut delegation, is_new).inspect(move |_result| {
 					*maybe_delegation_info = Some(delegation);
-					result
 				})
 			},
 		)
