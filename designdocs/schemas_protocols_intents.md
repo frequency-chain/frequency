@@ -1,7 +1,11 @@
 
-# 📘 Schema Protocols and Intent-Based Delegation in Frequency
+# 📘 Design Discussion: Schema Protocols and Intent-Based Delegation in Frequency
 
-## 1. **Background and Motivation**
+## 0. **Work in Progress** <a id="section_0"></a>
+
+Note: This document is a work in progress; specific implementation details and code examples exhibited herein are for illustrative purposes only. Once the various questions and concerns surfaced by this "pre-design" document have be answered satisfactorily, the document will be updated and expanded to include specific details related to the proposed implementation.
+
+## 1. **Background and Motivation** <a id="section_1"></a>
 
 In the current implementation, schemas are registered with immutable numeric identifiers (`SchemaId`) and describe the layout and storage semantics (e.g., Avro/Parquet formats, on-chain/off-chain storage). These schema IDs are used as references by clients and runtime modules alike, particularly in the delegation system defined by the `msa` pallet.
 
@@ -20,7 +24,7 @@ These limitations have motivated a re-architecture of the schema and delegation 
 -   **Intent-based delegation**
 -   **More expressive APIs and storage models**
 
-## 2. **Design Goals**
+## 2. **Design Goals** <a id="section_2"></a>
 
 This section outlines the key objectives that guide the redesign of Frequency's schema and delegation architecture.
 
@@ -32,7 +36,7 @@ This section outlines the key objectives that guide the redesign of Frequency's 
 -   **Namespace Ownership and Governance**
 -   **On-Chain Efficiency**
 
-## 3. **Schema Protocols and Versioning**
+## 3. **Schema Protocols and Versioning** <a id="section_3"></a>
 
 Protocols are not just organizational tools—they enable meaningful delegation. In the new model, a protocol is a first-class on-chain entity that represents a named and versioned group of schemas. Every schema is assigned to a protocol, and new versions of a protocol simply add new schema IDs to the protocol's version history.
 
@@ -58,7 +62,7 @@ Protocols are not just organizational tools—they enable meaningful delegation.
 -   Minor updates (new schema version) may be published by the namespace owner
 -   Major updates require a new protocol (e.g., change in semantic intent)
 
-## 4. **Namespace Ownership**
+## 4. **Namespace Ownership** <a id="section_4"></a>
 
 In order to provide organizational control, accountability, and publishing boundaries for schemas and intents, the protocol introduces the concept of **namespaces**.
 
@@ -69,7 +73,7 @@ A namespace (e.g., `dsnp`, `bsky`) serves as a root authority under which protoc
 Each namespace is a unique identifier, typically human-readable (e.g., `"dsnp"`), mapped to an on-chain `NamespaceId` (e.g., `NamespaceId = 2`).
 
 -   Every protocol must be published under a namespace: `namespace.protocol`
--   Intents may also be published under a namespace _(open question, discussed below)_
+-   Intents may also be published under a namespace _(open question, discussed [below](#section_6))_
 
 ### 👤 Ownership and Control
 
@@ -98,7 +102,7 @@ Namespaces define logical and administrative isolation between ecosystems. For e
 
 This structure provides a trust boundary that maps to real-world organizational authority.
 
-## 5. **Delegation Semantics**
+## 5. **Delegation Semantics** <a id="section_5"></a>
 
 Delegation is the mechanism by which a user authorizes a provider to act on their behalf. Currently, this is limited to individual `SchemaId`s, but we propose expanding the delegation model to include one or more of the following:
 -   Delegation by `SchemaId` (existing/legacy, for future deprecation)
@@ -135,7 +139,7 @@ pub type Delegations<T> = StorageDoubleMap<
 
 This unified structure supports flexibility while maintaining clear access logic.
 
-## 6. **Intent Registration & Delegation Models**
+## 6. **Intent Registration & Delegation Models** <a id="section_6"></a>
 
 Intents represent abstract actions or operations that a provider may be authorized to perform on behalf of a user. While schemas define how data is structured, intents define what that data _means_ or how it is _used_.
 
@@ -192,7 +196,7 @@ We explore three models for intent registration and delegation:
 
 Since the only expected use case for namespaced intents is to fill the gap where no global intent exists, the cleaner long-term solution is to require governance-approved global-only intents, while using delegation scoping to preserve control.
 
-## 7. **Intent Registry Design**
+## 7. **Intent Registry Design** <a id="section_7"></a>
 
 The intent registry is an on-chain mapping of supported intents, including associated metadata and governance control.
 
@@ -245,7 +249,7 @@ Depending on the model chosen for intents (see Section 6), intent publication wo
 -   Global intents: Intents are only publishable by governance.
 -   Namespaced intents: namespace owners may register intents
 
-## 8. **Authorization Resolution Models**
+## 8. **Authorization Resolution Models** <a id="section_8"></a>
 
 This section outlines how delegation is verified at the time of an extrinsic call or message submission. In the new model, the runtime may evaluate permissions based on either a specific `SchemaId`, or based on a broader context such as `IntentId` or `ProtocolId`.
 
@@ -279,7 +283,7 @@ This multi-path resolution allows greater flexibility, but requires care to avoi
 -   If a schema supports multiple intents, fallback rules and audit logic must be clear.
 -   SDKs should provide helpers for intent resolution and delegation explanation.
 
-## 9. **On-Chain Data Structures**
+## 9. **On-Chain Data Structures** <a id="section_9"></a>
 
 This section outlines the proposed on-chain data structures to support schema protocols, intents, delegations, and namespace ownership in the redesigned Frequency architecture.
 
@@ -371,7 +375,7 @@ The current runtime includes a top-level flag indicating whether any delegation 
 
 This simplification removes complexity and keeps delegation logic self-contained.
 
-## 10. **Governance and Publication Workflows**
+## 10. **Governance and Publication Workflows** <a id="section_10"></a>
 
 The publication of schemas, protocols, namespaces, and intents is tightly linked to governance controls and administrative authority.
 
@@ -414,7 +418,7 @@ While it's difficult to define a strict on-chain method for determining "minor" 
 
 This encourages transparency and long-term stability of protocols while supporting iterative development.
 
-## 11. **API Identifier Handling and Resolution**
+## 11. **API Identifier Handling and Resolution** <a id="section_11"></a>
 
 The choice of identifiers in runtime and SDK APIs has significant implications for both usability and performance. Historically, Frequency APIs used `SchemaId` for delegation and data interpretation. The proposed model must account for protocols and intents, while maintaining runtime efficiency.
 
@@ -467,7 +471,7 @@ Additionally, it is possible that future use cases will arise that make use of i
 -   Whether to expose protocol- or intent-based extrinsics directly is an open question.
 -   SDKs such as the Frequency Gateway may offer string-based input and resolve IDs internally.
 
-## 12. **Migration Strategy**
+## 12. **Migration Strategy** <a id="section_12"></a>
 
 Transitioning from the current schema + delegation system to the new protocol + intent model must be handled carefully to preserve backward compatibility while enabling the new architecture to roll out incrementally.
 
@@ -499,7 +503,7 @@ Once adoption of intent/protocol delegation is widespread:
 
 This strategy ensures a smooth, opt-in path to the new system while preserving all critical functionality during the transition period.
 
-## 13. **Open Questions and Next Steps**
+## 13. **Open Questions and Next Steps** <a id="section_13"></a>
 
 Several open questions remain that may influence the final implementation strategy and runtime behavior. These are left intentionally unresolved to guide future design discussions within the development and governance communities.
 
