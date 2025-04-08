@@ -19,7 +19,6 @@ While each application could be a separate provider, this causes two issues: The
 
 Having separate providers would require a single company to have separate Capacity staking for each application.
 As each these applications are part of the same company, it is reasonable to say that those applications should share Capacity as a single legal entity.
-Instead of building a Capacity sharing system which has different trade-offs, it is reasonable for those applications to use the same Provider and provide a system of application identification that is separate from provider identification for these cases..
 
 User permissions are primarily write-based at this time, however it is critical that users understand the delegation and their data is shared at a company level, no matter the chain representation of such.
 To align with the data security model of company-to-user in the world today, permissions, and thus Provider-level delegations continue to reflect the reality best.
