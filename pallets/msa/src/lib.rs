@@ -1244,10 +1244,11 @@ impl<T: Config> Pallet<T> {
 				let is_new = maybe_delegation_info.is_none();
 				let mut delegation = maybe_delegation_info.take().unwrap_or_default();
 
-				f(&mut delegation, is_new).map(move |result| {
-					*maybe_delegation_info = Some(delegation);
-					result
-				})
+				let result = f(&mut delegation, is_new)?;
+
+				// only set the value if execution of 'f' is successful
+				*maybe_delegation_info = Some(delegation);
+				Ok(result)
 			},
 		)
 	}
