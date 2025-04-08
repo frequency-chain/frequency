@@ -17,7 +17,6 @@ Reference Document: [SIWF Specification](https://projectlibertylabs.github.io/si
 Many companies have a single major product, but some companies have multiple applications that serve different needs.
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
-```suggestion
 Having separate providers would require a single company to have separate Capacity staking for each application.
 As each these applications are still part of the same company, it is reasonable to say that those applications should share Capacity.
 Instead of building a Capacity sharing system which has different trade-offs, it is reasonable for those applications to use the same Provider and provide a system of application identification that is separate from provider identification for these cases..
