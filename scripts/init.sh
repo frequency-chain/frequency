@@ -108,7 +108,9 @@ start-paseo-collator-bob)
 
 start-frequency-instant)
   printf "\nBuilding Frequency without relay. Running with instant sealing ...\n"
-  cargo build --features frequency-no-relay,force-debug
+  # Uncomment/swap below if you want to see debug logs in the Frequency node
+  # cargo build --features frequency-no-relay,force-debug
+  cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;

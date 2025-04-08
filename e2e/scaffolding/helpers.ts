@@ -293,7 +293,7 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
         const info = await ExtrinsicHelper.getAccountInfo(keypair);
         // Only drain keys that can be
         if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-      }),
+      })
     );
   } catch (e) {
     console.log('Error draining accounts: ', e);
@@ -365,7 +365,7 @@ export async function createDelegatorAndDelegation(
   keyType: KeypairType = 'sr25519',
 ): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa + keys.
-  const [delegatorMsaId, delegatorKeys] = await createMsa(source, 2n * DOLLARS, keyType);
+  const [delegatorMsaId, delegatorKeys] = await createMsa(source, undefined, keyType);
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,

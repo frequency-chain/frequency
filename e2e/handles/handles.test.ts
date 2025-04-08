@@ -71,7 +71,7 @@ describe('🤝 Handles', function () {
 
     before(async function () {
       // Create a MSA for the delegator
-      [msa_id, msaOwnerKeys] = await createMsa(fundingSource, 1n * DOLLARS);
+      [msa_id, msaOwnerKeys] = await createMsa(fundingSource);
       assert.notEqual(msaOwnerKeys, undefined, 'setup should populate delegator_key');
       assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
     });

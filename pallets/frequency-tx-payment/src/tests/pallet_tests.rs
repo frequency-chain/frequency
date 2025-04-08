@@ -880,3 +880,128 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 			assert!(fee_res.inclusion_fee.is_some());
 		});
 }
+
+pub fn assert_dryrun_withdraw_fee_result(
+	account_id: <Test as frame_system::Config>::AccountId,
+	call: &<Test as Config>::RuntimeCall,
+	expected_err: Option<TransactionValidityError>,
+) {
+	let dispatch_info =
+		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
+
+	let call: &<Test as Config>::RuntimeCall =
+		&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity { call: Box::new(call.clone()) });
+
+	let dryrun_withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64).dryrun_withdraw_fee(
+		&account_id,
+		call,
+		&dispatch_info,
+		10,
+	);
+
+	match expected_err {
+		None => assert!(dryrun_withdraw_fee.is_ok()),
+		Some(err) => {
+			assert!(dryrun_withdraw_fee.is_err());
+			assert_eq!(err, dryrun_withdraw_fee.err().unwrap())
+		},
+	}
+}
+
+/// can_withdraw_fee, token transactions
+#[test]
+fn can_withdraw_fee_allows_configured_capacity_calls() {
+	let balance_factor = 100_000_000;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let allowed_call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let forbidden_call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_all { dest: 2, keep_alive: false });
+
+			assert_dryrun_withdraw_fee_result(account_id, allowed_call, None);
+
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible as u8,
+			));
+			assert_dryrun_withdraw_fee_result(account_id, forbidden_call, Some(expected_err));
+		});
+}
+#[test]
+fn can_withdraw_fee_errors_on_capacity_transaction_without_enough_funds() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			// An account that has an MSA but has not bet the min balance for key deposit.
+			let account_id = 10u64;
+			let _ = tests::mock::create_msa_account(account_id);
+
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Payment);
+			assert_dryrun_withdraw_fee_result(account_id, call, Some(expected_err));
+		});
+}
+#[test]
+fn can_withdraw_fee_errors_for_capacity_txn_when_invalid_msa() {
+	let balance_factor = 100_000_000;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			// An account that has an MSA but has not bet the min balance for key deposit.
+			let account_id_not_associated_with_msa = 10u64;
+			// This allows it not to fail on the requirement of an existential deposit.
+			assert_ok!(Balances::force_set_balance(
+				RawOrigin::Root.into(),
+				account_id_not_associated_with_msa,
+				1u32.into(),
+			));
+
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
+			));
+			assert_dryrun_withdraw_fee_result(
+				account_id_not_associated_with_msa,
+				call,
+				Some(expected_err),
+			);
+		});
+}
+
+#[test]
+fn can_withdraw_fee_errors_on_token_txn_witout_enough_funds() {
+	let balance_factor = 10;
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(100, 0))
+		.build()
+		.execute_with(|| {
+			let charge_tx_payment = ChargeFrqTransactionPayment::<Test>::from(0u64);
+			let who = 1u64;
+			let call: &<Test as Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let info = DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
+			let len = 10;
+			let error = charge_tx_payment.dryrun_withdraw_fee(&who, call, &info, len).unwrap_err();
+			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
+		});
+}
