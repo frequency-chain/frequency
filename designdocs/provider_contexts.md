@@ -18,10 +18,12 @@ Many companies have a single major product, but some companies have multiple app
 While each application could be a separate provider, this causes two issues: The sharing of capacity and the user permissions.
 
 Having separate providers would require a single company to have separate Capacity staking for each application.
-As each these applications are part of the same company, it is reasonable to say that those applications should share Capacity as a single legal entity.
+As each these applications are part of the same company, those applications should share Capacity as a single legal entity.
 
-User permissions are primarily write-based at this time, however it is critical that users understand the delegation and their data is shared at a company level, no matter the chain representation of such.
-To align with the data security model of company-to-user in the world today, permissions, and thus Provider-level delegations continue to reflect the reality best.
+Separate providers per application would NOT align with the data security model of user-to-company that exists in the world today.
+Provider-level delegations are better than introducing application-level delegations.
+While user permissions are primarily write-based at this time, it is critical that users understand the delegation and their data is shared at a company level.
+
 
 Finally, this structure does not prevent the setup of a 1:1 relationship between Application and Provider.
 If a company wishes, they can create more than one Provider for the purposes of separation.
