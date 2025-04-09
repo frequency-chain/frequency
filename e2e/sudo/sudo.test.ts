@@ -183,8 +183,17 @@ describe('Sudo required', function () {
         });
       });
 
-      // describe('Capacity should not be affected by a hold being slashed', function () {
-      //   it.skip('stake should fail when overlapping tokens are on hold', async function () {
+      /*
+       * This test is skipped.
+       * BACKGROUND:
+       * Under the old Treasury proposal model, anyone could submit a proposal, which would
+       * require the proposer to have a certain amount of tokens locked as a bond.
+       *
+       * Once it is determined what the new model will be for Treasury proposals on Frequency, this section
+       * can be removed, or updated with new tests relevant to the way Treasury proposals will work.
+       */
+      // describe.skip('Capacity should not be affected by a hold being slashed', function () {
+      //   it('stake should fail when overlapping tokens are on hold', async function () {
       //     const accountBalance: bigint = 122n * DOLLARS;
       //     const stakeBalance: bigint = 100n * DOLLARS;
       //     const spendBalance: bigint = 20n * DOLLARS;
@@ -218,9 +227,9 @@ describe('Sudo required', function () {
 
       //     // Slash the provider
       //     // TODO: skipping this test for now because of Treasury proposal changes
-      //     const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
-      //     const { target: slashEvent } = await slashExt.sudoSignAndSend();
-      //     assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
+      //     // const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
+      //     // const { target: slashEvent } = await slashExt.sudoSignAndSend();
+      //     // assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
       //     // Confirm that the tokens were slashed from the stakeKeys account using the query API
       //     stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
@@ -231,7 +240,7 @@ describe('Sudo required', function () {
       //     );
       //   });
 
-      //   it.skip('proposal should fail when overlapping tokens are on hold', async function () {
+      //   it('proposal should fail when overlapping tokens are on hold', async function () {
       //     const accountBalance: bigint = 122n * DOLLARS;
       //     const stakeBalance: bigint = 100n * DOLLARS;
       //     const spendBalance: bigint = 20n * DOLLARS;
