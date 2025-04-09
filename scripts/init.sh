@@ -135,7 +135,7 @@ start-frequency-instant)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    # --pool-type=fork-aware \  Fork aware pool is not supported with insatnt sealing
+    # --pool-type=fork-aware \  Fork aware pool is not supported with instant sealing
     $offchain_params \
     --tmp
   ;;
