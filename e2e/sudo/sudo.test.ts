@@ -183,78 +183,78 @@ describe('Sudo required', function () {
         });
       });
 
-      describe('Capacity should not be affected by a hold being slashed', function () {
-        it.skip('stake should fail when overlapping tokens are on hold', async function () {
-          const accountBalance: bigint = 122n * DOLLARS;
-          const stakeBalance: bigint = 100n * DOLLARS;
-          const spendBalance: bigint = 20n * DOLLARS;
-          const proposalBond: bigint = 100n * DOLLARS;
+      // describe('Capacity should not be affected by a hold being slashed', function () {
+      //   it.skip('stake should fail when overlapping tokens are on hold', async function () {
+      //     const accountBalance: bigint = 122n * DOLLARS;
+      //     const stakeBalance: bigint = 100n * DOLLARS;
+      //     const spendBalance: bigint = 20n * DOLLARS;
+      //     const proposalBond: bigint = 100n * DOLLARS;
 
-          // Setup some keys and a provider for capacity staking
-          const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(
-            fundingSource,
-            stakeKeys,
-            'StakeProvider',
-            accountBalance
-          );
+      //     // Setup some keys and a provider for capacity staking
+      //     const stakeKeys: KeyringPair = createKeys('StakeKeys');
+      //     const stakeProviderId: u64 = await createMsaAndProvider(
+      //       fundingSource,
+      //       stakeKeys,
+      //       'StakeProvider',
+      //       accountBalance
+      //     );
 
-          // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
-          const { target: proposalEvent } = await proposalExt.signAndSend();
-          assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
+      //     // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
+      //     const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
+      //     const { target: proposalEvent } = await proposalExt.signAndSend();
+      //     assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
 
-          // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
-          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
-          assert.equal(
-            stakedAcctInfo.data.reserved,
-            proposalBond,
-            `expected ${proposalBond} reserved balance, got ${stakedAcctInfo.data.reserved}`
-          );
+      //     // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
+      //     const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+      //     assert.equal(
+      //       stakedAcctInfo.data.reserved,
+      //       proposalBond,
+      //       `expected ${proposalBond} reserved balance, got ${stakedAcctInfo.data.reserved}`
+      //     );
 
-          // Create a stake that will result in overlapping tokens being frozen
-          // stake will allow only the balance not on hold to be staked
-          await assert.rejects(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+      //     // Create a stake that will result in overlapping tokens being frozen
+      //     // stake will allow only the balance not on hold to be staked
+      //     await assert.rejects(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
-          // Slash the provider
-          // TODO: skipping this test for now because of Treasury proposal changes
-          // const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
-          // const { target: slashEvent } = await slashExt.sudoSignAndSend();
-          // assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
+      //     // Slash the provider
+      //     // TODO: skipping this test for now because of Treasury proposal changes
+      //     const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
+      //     const { target: slashEvent } = await slashExt.sudoSignAndSend();
+      //     assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
-          // // Confirm that the tokens were slashed from the stakeKeys account using the query API
-          // stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
-          // assert.equal(
-          //   stakedAcctInfo.data.reserved,
-          //   0n,
-          //   `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
-          // );
-        });
+      //     // Confirm that the tokens were slashed from the stakeKeys account using the query API
+      //     stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+      //     assert.equal(
+      //       stakedAcctInfo.data.reserved,
+      //       0n,
+      //       `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
+      //     );
+      //   });
 
-        it.skip('proposal should fail when overlapping tokens are on hold', async function () {
-          const accountBalance: bigint = 122n * DOLLARS;
-          const stakeBalance: bigint = 100n * DOLLARS;
-          const spendBalance: bigint = 20n * DOLLARS;
+      //   it.skip('proposal should fail when overlapping tokens are on hold', async function () {
+      //     const accountBalance: bigint = 122n * DOLLARS;
+      //     const stakeBalance: bigint = 100n * DOLLARS;
+      //     const spendBalance: bigint = 20n * DOLLARS;
 
-          // Setup some keys and a provider for capacity staking
-          const stakeKeys: KeyringPair = createKeys('StakeKeys');
-          const stakeProviderId: u64 = await createMsaAndProvider(
-            fundingSource,
-            stakeKeys,
-            'StakeProvider',
-            accountBalance
-          );
+      //     // Setup some keys and a provider for capacity staking
+      //     const stakeKeys: KeyringPair = createKeys('StakeKeys');
+      //     const stakeProviderId: u64 = await createMsaAndProvider(
+      //       fundingSource,
+      //       stakeKeys,
+      //       'StakeProvider',
+      //       accountBalance
+      //     );
 
-          // Create a stake that will result in overlapping tokens being frozen
-          await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+      //     // Create a stake that will result in overlapping tokens being frozen
+      //     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
-          // TODO: skipping this test for now because of Treasury proposal changes
-          // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          // The proposal should fail because the stakeKeys account has overlapping tokens frozen
-          const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
-          await assert.rejects(proposalExt.signAndSend());
-        });
-      });
+      //     // TODO: skipping this test for now because of Treasury proposal changes
+      //     // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
+      //     // The proposal should fail because the stakeKeys account has overlapping tokens frozen
+      //     const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
+      //     await assert.rejects(proposalExt.signAndSend());
+      //   });
+      // });
     });
   });
 });
