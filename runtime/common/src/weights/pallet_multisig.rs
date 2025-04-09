@@ -98,51 +98,45 @@ impl<T: frame_system::Config> pallet_multisig::WeightInfo for SubstrateWeight<T>
 	/// Storage: `Multisig::Multisigs` (r:1 w:1)
 	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(3346), added: 5821, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 100]`.
-	/// The range of component `z` is `[0, 10000]`.
-	fn approve_as_multi_create(s: u32, z: u32, ) -> Weight {
+	fn approve_as_multi_create(s: u32,) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `193 + s * (2 ±0)`
 		//  Estimated: `7306`
 		// Minimum execution time: 30_805_000 picoseconds.
-		Weight::from_parts(31_482_616, 7306)
+		Weight::from_parts(35_482_616, 7306)
 			// Standard Error: 564
 			.saturating_add(Weight::from_parts(150_448, 0).saturating_mul(s.into()))
 			// Standard Error: 5
-			.saturating_add(Weight::from_parts(45, 0).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Multisig::Multisigs` (r:1 w:1)
 	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(3346), added: 5821, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 100]`.
-	/// The range of component `z` is `[0, 10000]`.
-	fn approve_as_multi_approve(s: u32, z: u32, ) -> Weight {
+	fn approve_as_multi_approve(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `211`
 		//  Estimated: `7306`
-		// Minimum execution time: 16_844_000 picoseconds.
-		Weight::from_parts(16_843_709, 7306)
+		// Minimum execution time: 18_844_000 picoseconds.
+		Weight::from_parts(18_843_709, 7306)
 			// Standard Error: 407
 			.saturating_add(Weight::from_parts(135_455, 0).saturating_mul(s.into()))
 			// Standard Error: 3
-			.saturating_add(Weight::from_parts(47, 0).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `Multisig::Multisigs` (r:1 w:1)
 	/// Proof: `Multisig::Multisigs` (`max_values`: None, `max_size`: Some(3346), added: 5821, mode: `MaxEncodedLen`)
 	/// The range of component `s` is `[2, 100]`.
-	/// The range of component `z` is `[0, 10000]`.
-	fn cancel_as_multi(s: u32, z: u32, ) -> Weight {
+	fn cancel_as_multi(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `383 + s * (1 ±0)`
 		//  Estimated: `7306`
-		// Minimum execution time: 31_907_000 picoseconds.
-		Weight::from_parts(32_737_038, 7306)
+		// Minimum execution time: 35_907_000 picoseconds.
+		Weight::from_parts(35_737_038, 7306)
 			// Standard Error: 1_140
 			.saturating_add(Weight::from_parts(184_114, 0).saturating_mul(s.into()))
 			// Standard Error: 11
-			.saturating_add(Weight::from_parts(116, 0).saturating_mul(z.into()))
 			.saturating_add(T::DbWeight::get().reads(1_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}

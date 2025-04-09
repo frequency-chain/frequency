@@ -231,8 +231,7 @@ then
   ${BENCHMARK} overhead --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi
 
-# TODO: temporary disabling of benchmark tests
-# echo "Running tests..."
-# CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
-# echo ${CMD}
-# ${CMD} || exit_err
+echo "Running tests..."
+CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+echo ${CMD}
+${CMD} || exit_err
