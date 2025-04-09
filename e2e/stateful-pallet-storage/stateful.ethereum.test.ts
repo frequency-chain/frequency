@@ -10,7 +10,8 @@ import {
   generatePaginatedDeleteSignaturePayloadV2,
   generatePaginatedUpsertSignaturePayloadV2,
   getCurrentPaginatedHash,
-  signPayload, assertExtrinsicSucceededAndFeesPaid,
+  signPayload,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';

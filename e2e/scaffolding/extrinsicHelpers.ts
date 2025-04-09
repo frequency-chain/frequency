@@ -1,5 +1,5 @@
 import '@frequency-chain/api-augment';
-import assert from "assert";
+import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -12,13 +12,7 @@ import {
 } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
-import {
-  getBlockNumber,
-  getExistentialDeposit,
-  getFinalizedBlockNumber,
-  log,
-  MultiSignatureType
-} from './helpers';
+import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
 import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
@@ -181,7 +175,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   public api: ApiRx;
 
   constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>, keys: KeyringPair, targetEvent?: IsEvent<C, N>) {
-      this.extrinsic = extrinsic;
+    this.extrinsic = extrinsic;
     this.keys = keys;
     this.event = targetEvent;
     this.api = ExtrinsicHelper.api;
@@ -192,23 +186,24 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
-        const op = this.extrinsic();
-        // Era is 0 for tests due to issues with BirthBlock
-        return await firstValueFrom(
+      const op = this.extrinsic();
+      // Era is 0 for tests due to issues with BirthBlock
+      return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
-                tap((result) => {
-                  // If we learn a transaction has an error status (this does NOT include RPC errors)
-                  // Then throw an error
-                  if (result.isError) {
-                    throw new CallError(
-                      result,
-                      `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`);
-                  }
-                }),
-                filter(({ status }) => status.isInBlock || status.isFinalized),
-                this.parseResult(this.event)
-            )
-        );
+          tap((result) => {
+            // If we learn a transaction has an error status (this does NOT include RPC errors)
+            // Then throw an error
+            if (result.isError) {
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`
+              );
+            }
+          }),
+          filter(({ status }) => status.isInBlock || status.isFinalized),
+          this.parseResult(this.event)
+        )
+      );
     } catch (e) {
       if ((e as any).name === 'RpcError' && inputNonce === 'auto') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
@@ -239,14 +234,15 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .payWithCapacity(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
-            tap((result) => {
-              if (result.isError) {
-                throw new CallError(
-                  result,
-                  `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status is ${result.status}`);
-              }
-            }),
-            // Can comment out filter to help debug hangs
+          tap((result) => {
+            if (result.isError) {
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status is ${result.status}`
+              );
+            }
+          }),
+          // Can comment out filter to help debug hangs
           filter(({ status }) => status.isInBlock || status.isFinalized),
           this.parseResult(this.event)
         )
@@ -537,10 +533,7 @@ export class ExtrinsicHelper {
 
   /** MSA Extrinsics */
   public static createMsa(keys: KeyringPair) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.create(),
-      keys,
-      ExtrinsicHelper.api.events.msa.MsaCreated);
+    return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.create(), keys, ExtrinsicHelper.api.events.msa.MsaCreated);
   }
 
   public static addPublicKeyToMsa(

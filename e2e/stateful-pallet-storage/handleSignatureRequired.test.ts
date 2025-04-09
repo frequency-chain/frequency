@@ -14,7 +14,8 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
-  signPayloadSr25519, assertExtrinsicSucceededAndFeesPaid,
+  signPayloadSr25519,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -79,15 +80,14 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
 
     itemizedActionsSignedPayload = await generateItemizedActionsSignedPayload(
-        generateItemizedActions([
-          { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency' },
-        ]),
-        itemizedSchemaId,
-        delegatorKeys,
-        msa_id
+      generateItemizedActions([
+        { action: 'Add', value: 'Hello, world from Frequency' },
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]),
+      itemizedSchemaId,
+      delegatorKeys,
+      msa_id
     );
-
   });
 
   describe('Itemized With Signature Storage Tests', function () {
@@ -100,7 +100,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         signature,
         payload
       );
-      const { target: pageUpdateEvent1, eventMap: chainEvents } = await itemized_add_result_1.fundAndSend(fundingSource);
+      const { target: pageUpdateEvent1, eventMap: chainEvents } =
+        await itemized_add_result_1.fundAndSend(fundingSource);
 
       assertExtrinsicSucceededAndFeesPaid(chainEvents);
 
@@ -112,7 +113,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     });
 
     it('delegator (owner) should be able to call applyItemizedActionWithSignature and apply actions', async function () {
-    const { payload, signature } = await generateItemizedActionsSignedPayload(
+      const { payload, signature } = await generateItemizedActionsSignedPayload(
         generateItemizedActions([
           { action: 'Add', value: 'Hello, world from Frequency' },
           { action: 'Add', value: 'Hello, world again from Frequency' },
@@ -120,7 +121,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         itemizedSchemaId,
         delegatorKeys,
         msa_id
-    );
+      );
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
@@ -272,7 +273,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assertExtrinsicSucceededAndFeesPaid(chainEvents1)
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -331,7 +332,6 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         signPayloadSr25519(delegatorKeys, upsertPayloadData),
         upsertPayload
       );
-
 
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
       assertExtrinsicSucceededAndFeesPaid(chainEvents1);
@@ -454,7 +454,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         undefined,
         'should have returned an ExtrinsicSuccess event'
       );
-      assertExtrinsicSucceededAndFeesPaid(chainEvents1)
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
 
       // Remove the page
       target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
@@ -562,16 +562,10 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
 
-      const remove_result = ExtrinsicHelper.removePage(
-          delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
+      const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await remove_result.fundAndSend(fundingSource);
       assertExtrinsicSucceededAndFeesPaid(chainEvents1);
-      assert.notEqual(
-        pageUpdateEvent,
-        undefined,
-        'should have returned a PaginatedPageDeleted event'
-      );
+      assert.notEqual(pageUpdateEvent, undefined, 'should have returned a PaginatedPageDeleted event');
     });
   });
-
 });

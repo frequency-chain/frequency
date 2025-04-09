@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import {createAndFundKeypair, EcdsaSignature, getNonce, log, Sr25519Signature} from '../scaffolding/helpers';
+import { createAndFundKeypair, EcdsaSignature, getNonce, log, Sr25519Signature } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';

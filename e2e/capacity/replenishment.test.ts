@@ -55,8 +55,10 @@ describe('Capacity Replenishment Testing: ', function () {
       remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();
       assert(expectedCapacity > remainingCapacity, 'Our remaining capacity is much higher than expected.');
       const capacityPerCall = expectedCapacity - remainingCapacity;
-      assert(remainingCapacity > capacityPerCall,
-          `Not enough capacity! needed: ${capacityPerCall}, remaining: ${remainingCapacity}`);
+      assert(
+        remainingCapacity > capacityPerCall,
+        `Not enough capacity! needed: ${capacityPerCall}, remaining: ${remainingCapacity}`
+      );
 
       // one more txn to deplete capacity more so this current remaining is different from when
       // we submitted the first message.

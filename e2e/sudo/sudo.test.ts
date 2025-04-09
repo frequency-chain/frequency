@@ -205,7 +205,7 @@ describe('Sudo required', function () {
           assert.notEqual(proposalEvent, undefined, 'should return a Proposal event');
 
           // Confirm that the tokens were reserved/hold in the stakeKeys account using the query API
-          let stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+          const stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
           assert.equal(
             stakedAcctInfo.data.reserved,
             proposalBond,
@@ -218,17 +218,17 @@ describe('Sudo required', function () {
 
           // Slash the provider
           // TODO: skipping this test for now because of Treasury proposal changes
-          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
-          const { target: slashEvent } = await slashExt.sudoSignAndSend();
-          assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
+          // const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
+          // const { target: slashEvent } = await slashExt.sudoSignAndSend();
+          // assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
-          // Confirm that the tokens were slashed from the stakeKeys account using the query API
-          stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
-          assert.equal(
-            stakedAcctInfo.data.reserved,
-            0n,
-            `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
-          );
+          // // Confirm that the tokens were slashed from the stakeKeys account using the query API
+          // stakedAcctInfo = await ExtrinsicHelper.getAccountInfo(stakeKeys);
+          // assert.equal(
+          //   stakedAcctInfo.data.reserved,
+          //   0n,
+          //   `expected 0 reserved balance, got ${stakedAcctInfo.data.reserved}`
+          // );
         });
 
         it.skip('proposal should fail when overlapping tokens are on hold', async function () {

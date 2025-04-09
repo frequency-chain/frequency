@@ -7,7 +7,8 @@ import {
   createMsa,
   createProviderKeysAndId,
   getCurrentItemizedHash,
-  getOrCreateAvroChatMessageItemizedSchema, assertExtrinsicSucceededAndFeesPaid,
+  getOrCreateAvroChatMessageItemizedSchema,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -202,11 +203,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         undefined,
         'should have returned an ExtrinsicSuccess event'
       );
-      assert.notEqual(
-        chainEvents2['balances.Withdraw'],
-        undefined,
-        'should have returned a balances.Withdraw event'
-      );
+      assert.notEqual(chainEvents2['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
       assert.notEqual(pageUpdateEvent2, undefined, 'should have returned a event');
     });
 

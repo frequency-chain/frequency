@@ -7,7 +7,8 @@ import {
   getCurrentPaginatedHash,
   createMsa,
   DOLLARS,
-  getOrCreateAvroChatMessagePaginatedSchema, assertExtrinsicSucceededAndFeesPaid,
+  getOrCreateAvroChatMessagePaginatedSchema,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';

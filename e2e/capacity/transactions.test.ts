@@ -33,7 +33,8 @@ import {
   generatePaginatedDeleteSignaturePayloadV2,
   getCapacity,
   getTestHandle,
-  assertHasMessage, createMsa,
+  assertHasMessage,
+  createMsa,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
