@@ -266,9 +266,9 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 	let pay_with_capacity_dispatch_info = pay_with_capacity_call.get_dispatch_info();
 
 	assert!(pay_with_capacity_dispatch_info
-		.total_weight()
+		.call_weight
 		.ref_time()
-		.gt(&create_msa_dispatch_info.total_weight().ref_time()));
+		.gt(&create_msa_dispatch_info.call_weight.ref_time()));
 }
 
 #[test]
@@ -845,7 +845,7 @@ fn compute_capacity_fee_returns_zero_when_call_is_not_capacity_eligible() {
 		.execute_with(|| {
 			let fee = FrequencyTxPayment::compute_capacity_fee_details(
 				call,
-				&dispatch_info.total_weight(),
+				&dispatch_info.call_weight,
 				len,
 			);
 			assert!(fee.inclusion_fee.is_some());
@@ -865,7 +865,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 	let ext = xt.encode();
 	let len = ext.len() as u32;
 	let dispatch_info = call.get_dispatch_info();
-	assert!(!dispatch_info.total_weight().is_zero());
+	assert!(!dispatch_info.call_weight.is_zero());
 
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
@@ -874,7 +874,7 @@ fn compute_capacity_fee_returns_fee_when_call_is_capacity_eligible() {
 		.execute_with(|| {
 			let fee_res = FrequencyTxPayment::compute_capacity_fee_details(
 				call,
-				&dispatch_info.total_weight(),
+				&dispatch_info.call_weight,
 				len,
 			);
 			assert!(fee_res.inclusion_fee.is_some());

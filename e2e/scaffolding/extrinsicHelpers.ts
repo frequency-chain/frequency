@@ -249,7 +249,6 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     );
   }
 
-  // TODO: figure out why paymentInfo is too low to fund txns
   // check transaction cost difference between local+upgrade and testnet
   public getEstimatedTxFee(): Promise<bigint> {
     return firstValueFrom(
