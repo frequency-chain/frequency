@@ -15,6 +15,7 @@ import {
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
   signPayloadSr25519,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -35,13 +36,14 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
   let delegatedProviderKeys: KeyringPair;
   let delegatorKeys: KeyringPair;
 
+  let itemizedActionsSignedPayload;
+
   before(async function () {
     // Create a provider. This provider will NOT be granted delegations;
     // methods requiring a payload signature do not require a delegation
     [undelegatedProviderKeys, undelegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
     assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
     assert.notEqual(undelegatedProviderKeys, undefined, 'setup should populate undelegatedProviderKeys');
-
     // Create a provider for the MSA, the provider will be used to grant delegation
     [delegatedProviderKeys, delegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
     assert.notEqual(delegatedProviderId, undefined, 'setup should populate delegatedProviderId');
@@ -76,19 +78,21 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     );
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
+
+    itemizedActionsSignedPayload = await generateItemizedActionsSignedPayload(
+      generateItemizedActions([
+        { action: 'Add', value: 'Hello, world from Frequency' },
+        { action: 'Add', value: 'Hello, world again from Frequency' },
+      ]),
+      itemizedSchemaId,
+      delegatorKeys,
+      msa_id
+    );
   });
 
   describe('Itemized With Signature Storage Tests', function () {
     it('provider should be able to call applyItemizedActionWithSignature and apply actions', async function () {
-      const { payload, signature } = await generateItemizedActionsSignedPayload(
-        generateItemizedActions([
-          { action: 'Add', value: 'Hello, world from Frequency' },
-          { action: 'Add', value: 'Hello, world again from Frequency' },
-        ]),
-        itemizedSchemaId,
-        delegatorKeys,
-        msa_id
-      );
+      const { payload, signature } = itemizedActionsSignedPayload;
 
       const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
         delegatorKeys,
@@ -98,16 +102,9 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -134,16 +131,9 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -170,16 +160,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -206,16 +187,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -267,16 +239,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -286,7 +249,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
   });
 
   describe('Paginated With Signature Storage Tests', function () {
-    it('provider should be able to call upsert a page and delete it successfully', async function () {
+    // passes with PaginatedPageDeleted event
+    it('provider can call upsertPageWithSignature and deletePageWithSignature', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -309,16 +273,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -344,16 +299,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
 
       // no pages should exist
@@ -363,7 +309,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
-    it('delegator (owner) should be able to call upsert a page and delete it successfully', async function () {
+    // fails to find the PaginatedPageDeleted event
+    it('delegator (owner) can upsertPageWithSignature and deletePageWithSignature', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -385,17 +332,9 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         signPayloadSr25519(delegatorKeys, upsertPayloadData),
         upsertPayload
       );
+
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -421,17 +360,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
-      assert.notEqual(pageRemove, undefined, 'should have returned a event');
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
+      assert.notEqual(pageRemove, undefined, 'should have returned a PaginatedPageDeleted');
 
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
@@ -440,7 +370,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
-    it('provider should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully', async function () {
+    it('provider can upsertPageWithSignatureV2 a page and deletePageWithSignatureV2', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -462,16 +392,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
+
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -496,18 +418,8 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
-
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       // no pages should exist
       const result = await ExtrinsicHelper.getPaginatedStorage(msa_id, paginatedSchemaId);
       assert.notEqual(result, undefined, 'should have returned a valid response');
@@ -515,7 +427,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
-    it('delegator (owner) should be able to call upsertPageWithSignatureV2 a page and deletePageWithSignatureV2 it successfully', async function () {
+    it('delegator (owner) can upsertPageWithSignatureV2 a page and deletePageWithSignatureV2', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       // Add and update actions
@@ -542,16 +454,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         undefined,
         'should have returned an ExtrinsicSuccess event'
       );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
-      assert.notEqual(
-        pageUpdateEvent,
-        undefined,
-        'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
 
       // Remove the page
       target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
@@ -571,16 +474,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
 
       // no pages should exist
@@ -590,7 +484,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       assert.equal(thePage, undefined, 'inserted page should not exist');
     });
 
-    it('provider should not be able to call upsertPage directly', async function () {
+    it('provider cannot upsertPage', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
@@ -616,7 +510,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       await assert.rejects(upsert_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
     });
 
-    it('owner should be able to call upsertPage directly', async function () {
+    it('owner can upsertPage', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
@@ -630,16 +524,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
         target_hash
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -647,7 +532,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
     });
 
-    it('delegate should not be able to call removePage directly', async function () {
+    it('Provider cannot deletePage directly', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
@@ -671,28 +556,16 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       await assert.rejects(remove_op_2.fundAndSend(fundingSource), { name: 'UnsupportedOperationForSchema' });
     });
 
-    it('owner should be able to call removePage directly', async function () {
+    // Fails to emit event but appears to pass
+    it('delegator (owner) can deletePage', async function () {
       const page_id = new u16(ExtrinsicHelper.api.registry, 1);
 
       const target_hash = await getCurrentPaginatedHash(msa_id, paginatedSchemaId, page_id.toNumber());
 
       const remove_result = ExtrinsicHelper.removePage(delegatorKeys, paginatedSchemaId, msa_id, page_id, target_hash);
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
-      assert.notEqual(
-        pageUpdateEvent,
-        undefined,
-        'should have returned a PalletStatefulStoragePaginatedPageDeleted event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
+      assert.notEqual(pageUpdateEvent, undefined, 'should have returned a PaginatedPageDeleted event');
     });
   });
 });

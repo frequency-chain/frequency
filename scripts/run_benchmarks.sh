@@ -16,7 +16,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_scheduler \
   pallet_session \
   pallet_timestamp \
-  pallet_treasury \
+  pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
 )
@@ -30,6 +30,7 @@ ALL_CUSTOM_PALLETS=( \
   capacity \
   frequency-tx-payment \
   passkey \
+  treasury \
 )
 
 declare -a CUSTOM_PALLETS
@@ -183,7 +184,6 @@ function run_benchmark() {
   ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \
-  --chain="frequency-bench" \
   --heap-pages=4096 \
   --wasm-execution=compiled \
   --steps=${2} \
