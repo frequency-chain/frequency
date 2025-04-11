@@ -42,6 +42,7 @@ fn signed_extension_retire_handle_success() {
 
 /// Assert that retiring a handle w/o existing one fails the signed extension HandlesSignedExtension
 #[test]
+#[allow(deprecated)]
 fn signed_extension_retire_handle_failure() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
@@ -62,6 +63,7 @@ fn signed_extension_retire_handle_failure() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn test_early_retirement_should_fail() {
 	new_test_ext().execute_with(|| {
 		let base_handle_str = "test1";

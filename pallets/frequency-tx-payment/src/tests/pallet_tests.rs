@@ -14,6 +14,7 @@ use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
 use pallet_msa::Call as MsaCall;
 
 #[test]
+#[allow(deprecated)]
 fn transaction_payment_validate_is_succesful() {
 	let balance_factor = 10;
 
@@ -39,6 +40,7 @@ fn transaction_payment_validate_is_succesful() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 	let balance_factor = 1;
 
@@ -67,6 +69,7 @@ fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 }
 
 #[test]
+#[allow(deprecated)]
 fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succesful() {
 	let balance_factor = 10;
 

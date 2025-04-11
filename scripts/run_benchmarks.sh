@@ -16,7 +16,6 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_scheduler \
   pallet_session \
   pallet_timestamp \
-  pallet_treasury \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
@@ -31,6 +30,7 @@ ALL_CUSTOM_PALLETS=( \
   capacity \
   frequency-tx-payment \
   passkey \
+  treasury \
 )
 
 declare -a CUSTOM_PALLETS

@@ -35,13 +35,13 @@ pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
-pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 # cumulus
 cumulus-primitives-core = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-time-release = { path = "../../pallets/time-release", default-features = false }
+pallet-treasury = { path = "../../pallets/treasury", default-features = false }
 
 [features]
 default = ["std"]
