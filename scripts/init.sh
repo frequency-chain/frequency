@@ -242,12 +242,13 @@ onboard-frequency-paseo-local)
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
 
    # THE `-r` is important for it to be binary instead of hex
+   # Make sure the docker does NOT use -t as it breaks the binary output
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run --rm -it ${frequency_docker_image} /frequency/target/release/frequency export-genesis-state --chain="frequency-paseo-local")
-      docker run --rm -it ${frequency_docker_image} /frequency/target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
+      genesis=$(docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+      docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
-      ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
+      genesis=$(RUST_LOG=off ./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+      RUST_LOG=off ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     fi
 
   cd scripts/js/onboard
