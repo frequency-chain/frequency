@@ -72,6 +72,7 @@
 //! [`pallet::Config::PayoutPeriod`].
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![allow(clippy::expect_used)]
 
 mod benchmarking;
 #[cfg(test)]
