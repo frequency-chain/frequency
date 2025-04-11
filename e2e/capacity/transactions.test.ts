@@ -24,8 +24,6 @@ import {
   getCurrentPaginatedHash,
   generateItemizedSignaturePayload,
   createDelegator,
-  generatePaginatedUpsertSignaturePayload,
-  generatePaginatedDeleteSignaturePayload,
   getOrCreateDummySchema,
   getOrCreateAvroChatMessageItemizedSchema,
   getOrCreateParquetBroadcastSchema,
@@ -285,50 +283,6 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap2, 'statefulStorage.PaginatedPageDeleted');
         });
 
-        it('successfully pays with Capacity for eligible transaction - applyItemActionsWithSignature', async function () {
-          // Create a schema for Itemized PayloadLocation
-          const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
-
-          // Add and update actions
-          const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
-          const add_action = {
-            Add: payload_1,
-          };
-
-          const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
-          const update_action = {
-            Add: payload_2,
-          };
-
-          const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedSchemaId);
-
-          const add_actions = [add_action, update_action];
-          const payload = await generateItemizedSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: itemizedSchemaId,
-            actions: add_actions,
-          });
-          const itemizedPayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStorageItemizedSignaturePayload',
-            payload
-          );
-          const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, itemizedPayloadData),
-            payload
-          );
-          const { target: pageUpdateEvent1, eventMap } = await itemized_add_result_1.payWithCapacity();
-          assertEvent(eventMap, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assert.notEqual(
-            pageUpdateEvent1,
-            undefined,
-            'should have returned a PalletStatefulStorageItemizedActionApplied event'
-          );
-        });
-
         it('successfully pays with Capacity for eligible transaction - applyItemActionsWithSignatureV2', async function () {
           // Create a schema for Itemized PayloadLocation
           const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
@@ -370,68 +324,6 @@ describe('Capacity Transactions', function () {
             undefined,
             'should have returned a PalletStatefulStorageItemizedActionApplied event'
           );
-        });
-
-        it('successfully pays with Capacity for eligible transaction - upsertPageWithSignature; deletePageWithSignature', async function () {
-          const paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
-
-          const page_id = new u16(ExtrinsicHelper.api.registry, 1);
-
-          // Add and update actions
-          let target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
-          const upsertPayload = await generatePaginatedUpsertSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: paginatedSchemaId,
-            pageId: page_id,
-            payload: new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
-          });
-          const upsertPayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStoragePaginatedUpsertSignaturePayload',
-            upsertPayload
-          );
-          const upsert_result = ExtrinsicHelper.upsertPageWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, upsertPayloadData),
-            upsertPayload
-          );
-          const { target: pageUpdateEvent, eventMap: eventMap1 } = await upsert_result.payWithCapacity();
-          assertEvent(eventMap1, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap1, 'capacity.CapacityWithdrawn');
-          assert.notEqual(
-            pageUpdateEvent,
-            undefined,
-            'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
-          );
-
-          // Remove the page
-          target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
-          const deletePayload = await generatePaginatedDeleteSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: paginatedSchemaId,
-            pageId: page_id,
-          });
-          const deletePayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStoragePaginatedDeleteSignaturePayload',
-            deletePayload
-          );
-          const remove_result = ExtrinsicHelper.deletePageWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, deletePayloadData),
-            deletePayload
-          );
-          const { target: pageRemove, eventMap: eventMap2 } = await remove_result.payWithCapacity();
-          assertEvent(eventMap2, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap2, 'capacity.CapacityWithdrawn');
-          assert.notEqual(pageRemove, undefined, 'should have returned a event');
-
-          // no pages should exist
-          const result = await ExtrinsicHelper.getPaginatedStorage(delegatorProviderId, paginatedSchemaId);
-          assert.notEqual(result, undefined, 'should have returned a valid response');
-          assert.equal(result.length, 0, 'should returned no paginated pages');
         });
 
         it('successfully pays with Capacity for eligible transaction - upsertPageWithSignatureV2; deletePageWithSignatureV2', async function () {

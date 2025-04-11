@@ -47,9 +47,10 @@ pub trait WeightInfo {
 	fn apply_item_actions(n: u32) -> Weight;
 	fn upsert_page(s: u32) -> Weight;
 	fn delete_page() -> Weight;
-	fn apply_item_actions_with_signature(s: u32) -> Weight;
-	fn upsert_page_with_signature(s: u32) -> Weight;
-	fn delete_page_with_signature() -> Weight;
+	fn apply_item_actions_with_signature_v2_add(s: u32) -> Weight;
+	fn apply_item_actions_with_signature_v2_delete(s: u32) -> Weight;
+	fn upsert_page_with_signature_v2(s: u32) -> Weight;
+	fn delete_page_with_signature_v2() -> Weight;
 	// Handles
 	fn claim_handle(b: u32) -> Weight;
 	fn change_handle(b: u32) -> Weight;
@@ -223,54 +224,70 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
-	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
-	/// Storage: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
-	/// Proof Skipped: unknown `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
-	/// The range of component `s` is `[1, 5121]`.
-	fn apply_item_actions_with_signature(s: u32) -> Weight {
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `s` is `[1024, 5120]`.
+	fn apply_item_actions_with_signature_v2_add(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `33377`
-		//  Estimated: `45752`
-		// Minimum execution time: 165_956_000 picoseconds.
-		Weight::from_parts(158_947_612, 45752)
-			// Standard Error: 426
-			.saturating_add(Weight::from_parts(13_664, 0).saturating_mul(s.into()))
+		//  Measured:  `325`
+		//  Estimated: `5770`
+		// Minimum execution time: 129_736_000 picoseconds.
+		Weight::from_parts(116_192_590, 5770)
+			// Standard Error: 327
+			.saturating_add(Weight::from_parts(11_076, 0).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
-	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
-	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
-	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0xbd1557c8db6bd8599a811a7175fbc2fc6400` (r:1 w:1)
+	/// The range of component `n` is `[1, 5]`.
+	fn apply_item_actions_with_signature_v2_delete(_n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `10703`
+		//  Estimated: `16148`
+		// Minimum execution time: 134_013_000 picoseconds.
+		Weight::from_parts(138_118_155, 16148)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
 	/// The range of component `s` is `[1, 1024]`.
-	fn upsert_page_with_signature(s: u32) -> Weight {
+	fn upsert_page_with_signature_v2(s: u32, ) -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `349`
-		//  Estimated: `12724`
-		// Minimum execution time: 85_227_000 picoseconds.
-		Weight::from_parts(87_768_259, 12724)
-			// Standard Error: 543
-			.saturating_add(Weight::from_parts(6_648, 0).saturating_mul(s.into()))
+		//  Measured:  `1412`
+		//  Estimated: `6857`
+		// Minimum execution time: 117_138_000 picoseconds.
+		Weight::from_parts(119_812_203, 6857)
+			// Standard Error: 1_022
+			.saturating_add(Weight::from_parts(11_167, 0).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
-	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
-	/// Storage: Schemas Schemas (r:1 w:0)
-	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)
-	/// Storage: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
-	/// Proof Skipped: unknown `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
-	fn delete_page_with_signature() -> Weight {
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Schemas::SchemaInfos` (r:1 w:0)
+	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
+	/// Storage: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	/// Proof: UNKNOWN KEY `0x0763c98381dc89abe38627fe2f98cb7af1577fbf1d628fdddb4ebfc6e8d95fb1` (r:1 w:1)
+	fn delete_page_with_signature_v2() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1508`
-		//  Estimated: `13883`
-		// Minimum execution time: 88_824_000 picoseconds.
-		Weight::from_parts(90_631_000, 13883)
+		//  Measured:  `1410`
+		//  Estimated: `6855`
+		// Minimum execution time: 115_582_000 picoseconds.
+		Weight::from_parts(117_526_000, 6855)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}

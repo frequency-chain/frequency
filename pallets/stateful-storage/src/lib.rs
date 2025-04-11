@@ -350,135 +350,9 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
-		/// since the signature of delegator is checked there is no need for delegation validation
-		/// This is treated as a transaction so either all actions succeed or none will be executed.
-		///
-		/// # Events
-		/// * [`Event::ItemizedPageUpdated`]
-		/// * [`Event::ItemizedPageDeleted`]
-		///
-		#[pallet::call_index(3)]
-		#[pallet::weight(
-		T::WeightInfo::apply_item_actions_with_signature_v2_delete(payload.actions.len() as u32)
-		.max(T::WeightInfo::apply_item_actions_with_signature_v2_add(Pallet::<T>::sum_add_actions_bytes(&payload.actions)))
-		)]
-		#[allow(deprecated)]
-		#[deprecated(note = "please use `apply_item_actions_with_signature_v2` instead")]
-		pub fn apply_item_actions_with_signature(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: ItemizedSignaturePayload<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-
-			let is_pruning = payload.actions.iter().any(|a| matches!(a, ItemAction::Delete { .. }));
-			Self::check_payload_expiration(
-				frame_system::Pallet::<T>::block_number(),
-				payload.expiration,
-			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
-			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema_for_write(
-				payload.schema_id,
-				PayloadLocation::Itemized,
-				true,
-				is_pruning,
-			)?;
-			Self::update_itemized(
-				payload.msa_id,
-				payload.schema_id,
-				payload.target_hash,
-				payload.actions,
-			)?;
-			Ok(())
-		}
-
-		/// Creates or updates an Paginated storage with new payload that requires signature
-		/// since the signature of delegator is checked there is no need for delegation validation
-		///
-		/// # Events
-		/// * [`Event::PaginatedPageUpdated`]
-		///
-		#[pallet::call_index(4)]
-		#[pallet::weight(T::WeightInfo::upsert_page_with_signature_v2(payload.payload.len() as u32))]
-		#[allow(deprecated)]
-		#[deprecated(note = "please use `upsert_page_with_signature_v2` instead")]
-		pub fn upsert_page_with_signature(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: PaginatedUpsertSignaturePayload<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-			ensure!(
-				payload.page_id <= T::MaxPaginatedPageId::get(),
-				Error::<T>::PageIdExceedsMaxAllowed
-			);
-			Self::check_payload_expiration(
-				frame_system::Pallet::<T>::block_number(),
-				payload.expiration,
-			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
-			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema_for_write(
-				payload.schema_id,
-				PayloadLocation::Paginated,
-				true,
-				false,
-			)?;
-			Self::update_paginated(
-				payload.msa_id,
-				payload.schema_id,
-				payload.page_id,
-				payload.target_hash,
-				PaginatedPage::<T>::from(payload.payload),
-			)?;
-			Ok(())
-		}
-
-		/// Deletes a Paginated storage that requires signature
-		/// since the signature of delegator is checked there is no need for delegation validation
-		///
-		/// # Events
-		/// * [`Event::PaginatedPageDeleted`]
-		///
-		#[pallet::call_index(5)]
-		#[pallet::weight(T::WeightInfo::delete_page_with_signature_v2())]
-		#[allow(deprecated)]
-		#[deprecated(note = "please use `delete_page_with_signature_v2` instead")]
-		pub fn delete_page_with_signature(
-			origin: OriginFor<T>,
-			delegator_key: T::AccountId,
-			proof: MultiSignature,
-			payload: PaginatedDeleteSignaturePayload<T>,
-		) -> DispatchResult {
-			ensure_signed(origin)?;
-			ensure!(
-				payload.page_id <= T::MaxPaginatedPageId::get(),
-				Error::<T>::PageIdExceedsMaxAllowed
-			);
-			Self::check_payload_expiration(
-				frame_system::Pallet::<T>::block_number(),
-				payload.expiration,
-			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
-			Self::check_msa(delegator_key, payload.msa_id)?;
-			Self::check_schema_for_write(
-				payload.schema_id,
-				PayloadLocation::Paginated,
-				true,
-				true,
-			)?;
-			Self::delete_paginated(
-				payload.msa_id,
-				payload.schema_id,
-				payload.page_id,
-				payload.target_hash,
-			)?;
-			Ok(())
-		}
+		// REMOVED apply_item_actions_with_signature() at call index 3
+		// REMOVED upsert_page_with_signature() at call index 4
+		// REMOVED delete_page_with_signature() at call index 5
 
 		/// Applies the Add or Delete Actions on the requested Itemized page that requires signature
 		/// since the signature of delegator is checked there is no need for delegation validation
@@ -794,18 +668,6 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(caller_msa_id)
-	}
-
-	/// Verifies if the key has an Msa and if it matches with expected one
-	///
-	/// # Errors
-	/// * [`Error::InvalidMessageSourceAccount`]
-	///
-	fn check_msa(key: T::AccountId, expected_msa_id: MessageSourceId) -> DispatchResult {
-		let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&key)
-			.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
-		ensure!(state_owner_msa_id == expected_msa_id, Error::<T>::InvalidMessageSourceAccount);
-		Ok(())
 	}
 
 	/// Updates an itemized storage by applying provided actions and deposit events

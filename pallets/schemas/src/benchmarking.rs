@@ -33,57 +33,6 @@ fn generate_schema<T: Config>(
 }
 
 benchmarks! {
-	create_schema {
-		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
-		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location)
-	verify {
-		ensure!(CurrentSchemaIdentifierMaximum::<T>::get() > 0, "Created schema count should be > 0");
-		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
-	}
-
-	create_schema_via_governance {
-		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
-		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Root, sender.clone(), schema_input, model_type, payload_location, BoundedVec::default())
-	verify {
-		ensure!(CurrentSchemaIdentifierMaximum::<T>::get() > 0, "Created schema count should be > 0");
-		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
-	}
-
-	propose_to_create_schema {
-		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
-		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default())
-	verify {
-		assert_eq!(T::ProposalProvider::proposal_count(), 1);
-	}
-
-	create_schema_v2 {
-		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
-		let sender: T::AccountId = whitelisted_caller();
-		let model_type = ModelType::AvroBinary;
-		let payload_location = PayloadLocation::OnChain;
-		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(RawOrigin::Root.into(), T::SchemaModelMaxBytesBoundedVecLimit::get()));
-		let schema_input = generate_schema::<T>(m as usize);
-	}: _(RawOrigin::Signed(sender), schema_input, model_type, payload_location, BoundedVec::default())
-	verify {
-		ensure!(CurrentSchemaIdentifierMaximum::<T>::get() > 0, "Created schema count should be > 0");
-		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
-	}
-
 	create_schema_v3 {
 		let m in (T::MinSchemaModelSizeBytes::get() + 8) .. (T::SchemaModelMaxBytesBoundedVecLimit::get() - 1);
 		let sender: T::AccountId = whitelisted_caller();

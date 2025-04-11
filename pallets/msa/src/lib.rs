@@ -775,39 +775,7 @@ pub mod pallet {
 		}
 
 		// REMOVED grant_schema_permissions() at call index 8
-
-		/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
-		/// been revoked are ignored.
-		///
-		/// # Events
-		/// - [DelegationUpdated](Event::DelegationUpdated)
-		///
-		/// # Errors
-		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
-		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
-		///
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
-		schema_ids.len() as u32
-		))]
-		#[allow(deprecated)]
-		#[deprecated(since = "1.3.0", note = "revoke_schema_permissions() has been deprecated.")]
-		pub fn revoke_schema_permissions(
-			origin: OriginFor<T>,
-			provider_msa_id: MessageSourceId,
-			schema_ids: Vec<SchemaId>,
-		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
-			let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?;
-			let provider_id = ProviderId(provider_msa_id);
-			let delegator_id = DelegatorId(delegator_msa_id);
-
-			Self::revoke_permissions_for_schemas(delegator_id, provider_id, schema_ids)?;
-			Self::deposit_event(Event::DelegationUpdated { provider_id, delegator_id });
-
-			Ok(())
-		}
+		// REMOVED revoke_schema_permissions() at call index 9
 
 		/// Retires a MSA
 		///
@@ -1151,10 +1119,11 @@ impl<T: Config> Pallet<T> {
 			for existing_schema_id in existing_keys {
 				if !schema_ids.contains(&existing_schema_id) {
 					match delegation.schema_permissions.get(&existing_schema_id) {
-						Some(block) =>
+						Some(block) => {
 							if *block == BlockNumberFor::<T>::zero() {
 								revoke_ids.push(*existing_schema_id);
-							},
+							}
+						},
 						None => {},
 					}
 				}
@@ -1340,9 +1309,9 @@ impl<T: Config> Pallet<T> {
 
 			let mut schema_list = Vec::new();
 			for (schema_id, revoked_at) in schema_permissions {
-				if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
-					(revoked_at > provider_info.revoked_at ||
-						revoked_at == BlockNumberFor::<T>::zero())
+				if provider_info.revoked_at > BlockNumberFor::<T>::zero()
+					&& (revoked_at > provider_info.revoked_at
+						|| revoked_at == BlockNumberFor::<T>::zero())
 				{
 					schema_list
 						.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
@@ -1851,12 +1820,15 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
-			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
-			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
+			Some(Call::revoke_delegation_by_provider { delegator, .. }) => {
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator)
+			},
+			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) => {
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id)
+			},
+			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) => {
+				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete)
+			},
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => return Ok(Default::default()),
 		}
