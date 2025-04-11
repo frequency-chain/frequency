@@ -98,22 +98,22 @@ fn frequency_genesis_config() -> serde_json::Value {
 
 /// Provides the JSON representation of predefined genesis config for given `id`.
 pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<sp_std::vec::Vec<u8>> {
-	let genesis = match id.try_into() {
+	let genesis = match id.as_str() {
 		#[cfg(any(
 			feature = "frequency-no-relay",
 			feature = "frequency-local",
 			feature = "frequency-lint-check"
 		))]
-		Ok("development") => development_genesis_config(),
+		"development" => development_genesis_config(),
 		#[cfg(any(
 			feature = "frequency-no-relay",
 			feature = "frequency-local",
 			feature = "frequency-lint-check"
 		))]
-		Ok("frequency-local") => frequency_local_genesis_config(),
+		"frequency-local" => frequency_local_genesis_config(),
 		#[cfg(feature = "frequency-testnet")]
-		Ok("frequency-testnet") => frequency_testnet_genesis_config(),
-		Ok("frequency") => frequency_genesis_config(),
+		"frequency-testnet" => frequency_testnet_genesis_config(),
+		"frequency" => frequency_genesis_config(),
 		_ => return None,
 	};
 	Some(

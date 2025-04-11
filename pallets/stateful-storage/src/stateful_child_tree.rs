@@ -59,6 +59,7 @@ pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 	fn hash(&self) -> Vec<u8>;
 	fn hash_prefix_only(&self) -> Vec<u8>;
 
+	#[allow(dead_code)]
 	fn decode(hash: &[u8]) -> Result<Self, parity_scale_codec::Error> {
 		let mut key_material = H::reverse(hash, Self::Arity::get());
 		<Self as Decode>::decode(&mut key_material)

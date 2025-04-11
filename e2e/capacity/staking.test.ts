@@ -246,9 +246,7 @@ describe('Capacity Staking Tests', function () {
   describe('when staking and targeting an InvalidTarget', function () {
     it('fails to stake', async function () {
       const stakeAmount = 10n * CENTS;
-      const stakeKeys = await createAndFundKeypair(fundingSource, accountBalance, 'StakeKeys');
-
-      const [notProviderMsaId] = await createMsa(fundingSource);
+      const [notProviderMsaId, stakeKeys] = await createMsa(fundingSource, 10n * CENTS);
 
       const failStakeObj = ExtrinsicHelper.stake(stakeKeys, notProviderMsaId, stakeAmount);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'InvalidTarget' });

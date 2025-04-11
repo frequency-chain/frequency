@@ -81,6 +81,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_transaction_payment::Config for Test {
@@ -90,6 +91,7 @@ impl pallet_transaction_payment::Config for Test {
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = ConstU8<5>;
+	type WeightInfo = ();
 }
 
 impl pallet_passkey::Config for Test {
@@ -116,6 +118,7 @@ impl pallet_balances::Config for Test {
 	type RuntimeFreezeReason = ();
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub struct MockPasskeyCallFilter;

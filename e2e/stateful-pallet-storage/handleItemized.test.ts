@@ -8,6 +8,7 @@ import {
   createProviderKeysAndId,
   getCurrentItemizedHash,
   getOrCreateAvroChatMessageItemizedSchema,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -82,16 +83,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -211,11 +203,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         undefined,
         'should have returned an ExtrinsicSuccess event'
       );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assert.notEqual(chainEvents2['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
       assert.notEqual(pageUpdateEvent2, undefined, 'should have returned a event');
     });
 

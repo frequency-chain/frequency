@@ -8,6 +8,7 @@ use frame_support::{
 };
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
@@ -79,6 +80,7 @@ pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	})
 }
 
+#[allow(deprecated)]
 impl<T: Config + Send + Sync> SignedExtension for HandlesSignedExtension<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
@@ -95,6 +97,7 @@ where
 	}
 
 	/// Pre dispatch
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -115,6 +118,7 @@ where
 	/// call: The pallet extrinsic being called
 	/// unused: _info, _len
 	///
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,

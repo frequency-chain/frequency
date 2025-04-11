@@ -309,6 +309,7 @@ export async function fundKeypair(
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
+// create and Fund keys with existential deposit amount or the value provided.
 export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
@@ -347,26 +348,16 @@ export function log(...args: any[]) {
   }
 }
 
-export async function createProviderKeysAndId(source: KeyringPair, amount?: bigint): Promise<[KeyringPair, u64]> {
+export async function createProviderKeysAndId(
+  source: KeyringPair,
+  amount: bigint = 1n * DOLLARS
+): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
   await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
   const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider');
   const { target: providerEvent } = await createProviderOp.fundAndSend(source);
   const providerId = providerEvent?.data.providerId || new u64(ExtrinsicHelper.api.registry, 0);
   return [providerKeys, providerId];
-}
-
-export async function createDelegator(
-  source: KeyringPair,
-  amount?: bigint,
-  keyType: KeypairType = 'sr25519'
-): Promise<[KeyringPair, u64]> {
-  const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
-  const createMsa = ExtrinsicHelper.createMsa(keys);
-  const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
-  const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
-
-  return [keys, delegatorMsaId];
 }
 
 export async function createDelegatorAndDelegation(
@@ -376,8 +367,8 @@ export async function createDelegatorAndDelegation(
   providerKeys: KeyringPair,
   keyType: KeypairType = 'sr25519'
 ): Promise<[KeyringPair, u64]> {
-  // Create a  delegator msa
-  const [keys, delegatorMsaId] = await createDelegator(source, undefined, keyType);
+  // Create a  delegator msa + keys.
+  const [delegatorMsaId, delegatorKeys] = await createMsa(source, undefined, keyType);
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
@@ -386,14 +377,14 @@ export async function createDelegatorAndDelegation(
   const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
   const grantDelegationOp = ExtrinsicHelper.grantDelegation(
-    keys,
+    delegatorKeys,
     providerKeys,
-    signPayload(keys, addProviderData),
+    signPayload(delegatorKeys, addProviderData),
     payload
   );
   await grantDelegationOp.fundAndSend(source);
 
-  return [keys, delegatorMsaId];
+  return [delegatorKeys, delegatorMsaId];
 }
 
 export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
@@ -416,10 +407,15 @@ export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<H
   return result;
 }
 
-// Creates an MSA and a provider for the given keys
-// Returns the MSA Id of the provider
-export async function createMsa(source: KeyringPair, amount?: bigint): Promise<[u64, KeyringPair]> {
-  const keys = await createAndFundKeypair(source, amount);
+// 1. Creates and funds a key pair.
+// 2. Key pair used to directly create its own MSA Id
+// 3. returns MSA ID and the keys.
+export async function createMsa(
+  source: KeyringPair,
+  amount?: bigint,
+  keyType: KeypairType = 'sr25519'
+): Promise<[u64, KeyringPair]> {
+  const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const { target } = await createMsaOp.fundAndSend(source);
   assert.notEqual(target, undefined, 'createMsa: should have returned MsaCreated event');
@@ -711,3 +707,13 @@ export function generateSchemaPartialName(length: number): string {
 }
 
 export const base64UrlToUint8Array = (base64: string): Uint8Array => new Uint8Array(Buffer.from(base64, 'base64url'));
+
+export async function getFreeBalance(source: KeyringPair): Promise<bigint> {
+  const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
+  return BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
+}
+
+export async function assertExtrinsicSucceededAndFeesPaid(chainEvents: any) {
+  assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
+  assert.notEqual(chainEvents['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
+}
