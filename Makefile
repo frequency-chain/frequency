@@ -27,6 +27,20 @@ start-frequency:
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
 
+register-frequency-docker:
+	./scripts/init.sh register-frequency-paseo-local
+
+onboard-frequency-docker:
+	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
+
+run-frequency-docker: start-frequency-docker register-frequency-docker onboard-frequency-docker
+
+start-relay-chain-docker:
+	./scripts/init.sh start-paseo-relay-chain
+
+stop-relay-chain-docker:
+	./scripts/init.sh stop-paseo-relay-chain
+
 start-manual:
 	./scripts/init.sh start-frequency-manual
 
@@ -55,8 +69,14 @@ stop-relay:
 stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
+stop-paseo-relay-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-paseo-relay-chain
+
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
+
+stop-frequency-docker-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-frequency-docker
 
 .PHONY: local-block
 local-block:

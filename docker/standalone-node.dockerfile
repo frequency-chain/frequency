@@ -35,6 +35,9 @@ RUN chmod +x ./frequency/frequency ./frequency/frequency-start.sh
 # 9944 for RPC call
 EXPOSE 9944
 
+HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
+	CMD ["./scripts/healthcheck.sh"]
+
 VOLUME ["/data"]
 
 ENTRYPOINT [ "/frequency/frequency-start.sh" ]
