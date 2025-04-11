@@ -27,7 +27,10 @@ use frame_benchmarking::{
 };
 use frame_support::{
 	ensure,
-	traits::{tokens::ConversionFromAssetBalance, EnsureOrigin, OnInitialize},
+	traits::{
+		tokens::{ConversionFromAssetBalance, PaymentStatus},
+		EnsureOrigin, OnInitialize,
+	},
 };
 use frame_system::RawOrigin;
 use sp_core::crypto::FromEntropy;
@@ -245,69 +248,68 @@ mod benchmarks {
 		Ok(())
 	}
 
-	// #[benchmark]
-	// fn payout() -> Result<(), BenchmarkError> {
-	// 	let origin = T::SpendOrigin::try_successful_origin().map_err(|_| "No origin")?;
-	// 	let (asset_kind, amount, beneficiary, beneficiary_lookup) =
-	// 		create_spend_arguments::<T, _>(SEED);
-	// 	T::BalanceConverter::ensure_successful(asset_kind.clone());
-	// 	Treasury::<T, _>::spend(
-	// 		origin,
-	// 		Box::new(asset_kind.clone()),
-	// 		amount,
-	// 		Box::new(beneficiary_lookup),
-	// 		None,
-	// 	)?;
-	// 	T::Paymaster::ensure_successful(&beneficiary, asset_kind, amount);
-	// 	let caller: T::AccountId = account("caller", 0, SEED);
+	#[benchmark]
+	fn payout() -> Result<(), BenchmarkError> {
+		let origin = T::SpendOrigin::try_successful_origin().map_err(|_| "No origin")?;
+		let (asset_kind, amount, beneficiary, beneficiary_lookup) =
+			create_spend_arguments::<T, _>(SEED);
+		T::BalanceConverter::ensure_successful(asset_kind.clone());
+		Treasury::<T, _>::spend(
+			origin,
+			Box::new(asset_kind.clone()),
+			amount,
+			Box::new(beneficiary_lookup),
+			None,
+		)?;
+		T::Paymaster::ensure_successful(&beneficiary, asset_kind, amount);
+		let caller: T::AccountId = account("caller", 0, SEED);
 
-	// 	#[extrinsic_call]
-	// 	_(RawOrigin::Signed(caller.clone()), 0u32);
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), 0u32);
 
-	// use frame_support::traits::tokens::PaymentStatus;
-	// 	let id = match Spends::<T, I>::get(0).unwrap().status {
-	// 		PaymentState::Attempted { id, .. } => {
-	// 			assert_ne!(T::Paymaster::check_payment(id), PaymentStatus::Failure);
-	// 			id
-	// 		},
-	// 		_ => panic!("No payout attempt made"),
-	// 	};
-	// 	assert_last_event::<T, I>(Event::Paid { index: 0, payment_id: id }.into());
-	// 	assert!(Treasury::<T, _>::payout(RawOrigin::Signed(caller).into(), 0u32).is_err());
-	// 	Ok(())
-	// }
+		let id = match Spends::<T, I>::get(0).unwrap().status {
+			PaymentState::Attempted { id, .. } => {
+				assert_ne!(T::Paymaster::check_payment(id), PaymentStatus::Failure);
+				id
+			},
+			_ => panic!("No payout attempt made"),
+		};
+		assert_last_event::<T, I>(Event::Paid { index: 0, payment_id: id }.into());
+		assert!(Treasury::<T, _>::payout(RawOrigin::Signed(caller).into(), 0u32).is_err());
+		Ok(())
+	}
 
-	// #[benchmark]
-	// fn check_status() -> Result<(), BenchmarkError> {
-	// 	let origin = T::SpendOrigin::try_successful_origin().map_err(|_| "No origin")?;
-	// 	let (asset_kind, amount, beneficiary, beneficiary_lookup) =
-	// 		create_spend_arguments::<T, _>(SEED);
-	// 	T::BalanceConverter::ensure_successful(asset_kind.clone());
-	// 	Treasury::<T, _>::spend(
-	// 		origin,
-	// 		Box::new(asset_kind.clone()),
-	// 		amount,
-	// 		Box::new(beneficiary_lookup),
-	// 		None,
-	// 	)?;
-	// 	T::Paymaster::ensure_successful(&beneficiary, asset_kind, amount);
-	// 	let caller: T::AccountId = account("caller", 0, SEED);
-	// 	Treasury::<T, _>::payout(RawOrigin::Signed(caller.clone()).into(), 0u32)?;
-	// 	match Spends::<T, I>::get(0).unwrap().status {
-	// 		PaymentState::Attempted { id, .. } => {
-	// 			T::Paymaster::ensure_concluded(id);
-	// 		},
-	// 		_ => panic!("No payout attempt made"),
-	// 	};
+	#[benchmark]
+	fn check_status() -> Result<(), BenchmarkError> {
+		let origin = T::SpendOrigin::try_successful_origin().map_err(|_| "No origin")?;
+		let (asset_kind, amount, beneficiary, beneficiary_lookup) =
+			create_spend_arguments::<T, _>(SEED);
+		T::BalanceConverter::ensure_successful(asset_kind.clone());
+		Treasury::<T, _>::spend(
+			origin,
+			Box::new(asset_kind.clone()),
+			amount,
+			Box::new(beneficiary_lookup),
+			None,
+		)?;
+		T::Paymaster::ensure_successful(&beneficiary, asset_kind, amount);
+		let caller: T::AccountId = account("caller", 0, SEED);
+		Treasury::<T, _>::payout(RawOrigin::Signed(caller.clone()).into(), 0u32)?;
+		match Spends::<T, I>::get(0).unwrap().status {
+			PaymentState::Attempted { id, .. } => {
+				T::Paymaster::ensure_concluded(id);
+			},
+			_ => panic!("No payout attempt made"),
+		};
 
-	// 	#[extrinsic_call]
-	// 	_(RawOrigin::Signed(caller.clone()), 0u32);
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), 0u32);
 
-	// 	if let Some(s) = Spends::<T, I>::get(0) {
-	// 		assert!(!matches!(s.status, PaymentState::Attempted { .. }));
-	// 	}
-	// 	Ok(())
-	// }
+		if let Some(s) = Spends::<T, I>::get(0) {
+			assert!(!matches!(s.status, PaymentState::Attempted { .. }));
+		}
+		Ok(())
+	}
 
 	#[benchmark]
 	fn void_spend() -> Result<(), BenchmarkError> {
