@@ -78,26 +78,3 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> 
 	}
 }
 
-
-#[cfg(test)]
-mod tests {
-  use frame_support::{traits::Get, weights::Weight, dispatch::DispatchClass};
-  use crate::constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO};
-  use crate::weights::extrinsic_weights::ExtrinsicBaseWeight;
-
-  struct BlockWeights;
-  impl Get<frame_system::limits::BlockWeights> for BlockWeights {
-  	fn get() -> frame_system::limits::BlockWeights {
-  		frame_system::limits::BlockWeights::builder()
-  			.base_block(Weight::zero())
-  			.for_class(DispatchClass::all(), |weights| {
-  				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
-  			})
-  			.for_class(DispatchClass::non_mandatory(), |weights| {
-  				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
-  			})
-  			.build_or_panic()
-  	}
-  }
-
-}

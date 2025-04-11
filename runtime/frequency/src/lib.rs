@@ -22,14 +22,14 @@ use common_runtime::constants::currency::UNITS;
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
-use frame_support::traits::{EitherOf, MapSuccess};
-use frame_system::EnsureRootWithSuccess;
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{
-		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup, Replace,
-	},
+	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
@@ -946,7 +946,15 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
+
+	/// Who approves treasury proposals?
+	/// - Root (sudo or governance)
+	/// - 3/5ths of the Frequency Council
+	type ApproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
 
 	/// Who rejects treasury proposals?
 	/// - Root (sudo or governance)
@@ -956,19 +964,26 @@ impl pallet_treasury::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 1, 2>,
 	>;
 
-	// Legacy config was as following:
-	// 	type ApproveOrigin = EitherOfDiverse<
-	// 		EnsureRoot<AccountId>,
-	// 		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-	// 	>;
-	/// Spending Origin
-	type SpendOrigin = EitherOf<
-		EnsureRootWithSuccess<AccountId, MaxSpending>,
-		MapSuccess<
-			pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-			Replace<MaxSpending>,
-		>,
-	>;
+	/// Spending funds outside of the proposal?
+	/// Nobody
+	#[cfg(not(feature = "runtime-benchmarks"))]
+	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SpendOrigin = MapSuccess<EnsureSigned<AccountId>, Replace<MaxSpending>>;
+
+	/// Rejected proposals lose their bond
+	/// This takes the slashed amount and is often set to the Treasury
+	/// We burn it so there is no incentive to the treasury to reject to enrich itself
+	type OnSlash = ();
+
+	/// Bond 5% of a treasury proposal
+	type ProposalBond = ProposalBondPercent;
+
+	/// Minimum bond of 100 Tokens
+	type ProposalBondMinimum = ProposalBondMinimum;
+
+	/// Max bond of 1_000 Tokens
+	type ProposalBondMaximum = ProposalBondMaximum;
 
 	/// Pay out on a 4-week basis
 	type SpendPeriod = SpendPeriod;
@@ -996,7 +1011,6 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = PayoutSpendPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-	type BlockNumberProvider = System;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
@@ -1380,7 +1394,6 @@ mod benches {
 		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
-		[pallet_treasury, Treasury]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
@@ -1397,6 +1410,7 @@ mod benches {
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
+		[pallet_treasury, Treasury]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
