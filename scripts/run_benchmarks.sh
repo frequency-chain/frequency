@@ -17,6 +17,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_session \
   pallet_timestamp \
   pallet_treasury \
+  pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
 )

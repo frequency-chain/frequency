@@ -120,6 +120,7 @@ start-frequency-instant)
     rm -rf $parachain_dir
   fi
 
+  # Fork aware pool is not supported with instant sealing
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -135,7 +136,6 @@ start-frequency-instant)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    # --pool-type=fork-aware \  Fork aware pool is not supported with instant sealing
     $offchain_params \
     --tmp
   ;;
@@ -154,6 +154,7 @@ start-frequency-interval)
     rm -rf $parachain_dir
   fi
 
+  # Fork aware pool is only supported with this feature
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -162,7 +163,7 @@ start-frequency-interval)
     -lruntime=debug \
     --sealing=interval \
     --sealing-interval=${interval} \
-    --sealing-create-empty-blocks \   # Fork aware pool is only supported with this feature
+    --sealing-create-empty-blocks \
     --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \

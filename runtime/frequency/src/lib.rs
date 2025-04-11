@@ -18,10 +18,10 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 use common_runtime::constants::currency::UNITS;
-#[allow(unused)] // compiler lies
-use cumulus_pallet_parachain_system::DefaultCoreSelector;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
+use cumulus_pallet_parachain_system::{
+	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
+};
 use frame_support::traits::{EitherOf, MapSuccess};
 use frame_system::EnsureRootWithSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -838,12 +838,12 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
 	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-		frame_system::EnsureRoot<AccountId>,
 	>;
 	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-		frame_system::EnsureRoot<AccountId>,
 	>;
 	type Consideration = ();
 }
@@ -1008,7 +1008,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
-	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_transaction_payment::SubstrateWeight<Runtime>;
 }
 
 use crate::ethereum::EthereumCompatibleAccountIdLookup;
@@ -1388,6 +1388,7 @@ mod benches {
 		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
+		[pallet_transaction_payment, TransactionPayment]
 
 		// Frequency
 		[pallet_msa, Msa]
