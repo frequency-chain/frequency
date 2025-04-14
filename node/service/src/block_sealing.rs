@@ -3,18 +3,15 @@ use cli_opt::SealingMode;
 pub use futures::stream::StreamExt;
 use sc_consensus::block_import::BlockImport;
 
-use common_primitives::{
-	node::{Block, Hash},
-	offchain::OcwCustomExt,
-};
+use common_primitives::node::{Block, Hash};
 use core::marker::PhantomData;
-use futures::{FutureExt, Stream};
+use futures::Stream;
 use sc_client_api::backend::{Backend as ClientBackend, Finalizer};
 use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
 
-use crate::common::convert_address_to_normalized_string;
+use crate::common::start_offchain_workers;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
@@ -45,7 +42,7 @@ pub fn start_frequency_dev_sealing_node(
 		_,
 		_,
 		sc_network::NetworkWorker<Block, Hash>,
-	>::new(&config.network);
+	>::new(&config.network, None); // 2nd param, metrics_registry: Option<Metrics>
 	let sc_service::PartialComponents {
 		client,
 		backend,
@@ -70,7 +67,7 @@ pub fn start_frequency_dev_sealing_node(
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync_params: None,
+			warp_sync_config: None,
 			block_relay: None,
 			metrics,
 		})?;
@@ -78,37 +75,20 @@ pub fn start_frequency_dev_sealing_node(
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_address = convert_address_to_normalized_string(&config.rpc_addr)
-			.expect("rpc-addr is not a valid input!");
-		let offchain_workers =
-			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-				runtime_api_provider: client.clone(),
-				is_validator: config.role.is_authority(),
-				keystore: Some(keystore_container.keystore()),
-				offchain_db: backend.offchain_storage(),
-				transaction_pool: Some(OffchainTransactionPoolFactory::new(
-					transaction_pool.clone(),
-				)),
-				network_provider: Arc::new(network.clone()),
-				enable_http_requests: true,
-				custom_extensions: move |_hash| {
-					let cloned = rpc_address.clone();
-					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
-				},
-			});
-
-		// Spawn a task to handle off-chain notifications.
-		// This task is responsible for processing off-chain events or data for the blockchain.
-		task_manager.spawn_handle().spawn(
-			"offchain-workers-runner",
-			"offchain-work",
-			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
+		start_offchain_workers(
+			&client,
+			&config,
+			Some(keystore_container.keystore()),
+			&backend,
+			Some(OffchainTransactionPoolFactory::new(transaction_pool.clone())),
+			Arc::new(network.clone()),
+			&task_manager,
 		);
 	}
 
 	let prometheus_registry = config.prometheus_registry().cloned();
 
-	let role = config.role.clone();
+	let role = config.role;
 
 	let select_chain = maybe_select_chain
 		.expect("In frequency dev mode, `new_partial` will return some `select_chain`; qed");
@@ -126,7 +106,7 @@ pub fn start_frequency_dev_sealing_node(
 		// Channel for the RPC handler to communicate with the authorship task.
 		let (command_sink, commands_stream) = futures::channel::mpsc::channel(1024);
 
-		let pool = transaction_pool.pool().clone();
+		let pool = transaction_pool.clone();
 
 		// For instant sealing, set up a stream that automatically creates and finalizes
 		// blocks as soon as transactions arrive.
@@ -136,13 +116,11 @@ pub fn start_frequency_dev_sealing_node(
 		let import_stream = match sealing_mode {
 			SealingMode::Manual => futures::stream::empty().boxed(),
 			SealingMode::Instant =>
-				Box::pin(pool.validated_pool().import_notification_stream().map(|_| {
-					EngineCommand::SealNewBlock {
-						create_empty: true,
-						finalize: true,
-						parent_hash: None,
-						sender: None,
-					}
+				Box::pin(pool.import_notification_stream().map(|_| EngineCommand::SealNewBlock {
+					create_empty: true,
+					finalize: true,
+					parent_hash: None,
+					sender: None,
 				})),
 			SealingMode::Interval => {
 				let interval = std::time::Duration::from_secs(sealing_interval.into());
@@ -204,14 +182,12 @@ pub fn start_frequency_dev_sealing_node(
 			false => None,
 		};
 
-		Box::new(move |deny_unsafe, _| {
+		Box::new(move |_| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
-				deny_unsafe,
 				command_sink: command_sink.clone(),
 			};
-
 			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
 		})
 	};

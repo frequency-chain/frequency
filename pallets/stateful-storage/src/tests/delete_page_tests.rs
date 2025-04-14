@@ -202,6 +202,16 @@ fn delete_existing_page_succeeds() {
 			page_hash
 		));
 
+		System::assert_last_event(
+			crate::Event::PaginatedPageDeleted {
+				msa_id,
+				schema_id,
+				page_id,
+				prev_content_hash: page_hash,
+			}
+			.into(),
+		);
+
 		let page: Option<PaginatedPage<Test>> = <StatefulChildTree>::try_read(
 			&msa_id,
 			PALLET_STORAGE_PREFIX,

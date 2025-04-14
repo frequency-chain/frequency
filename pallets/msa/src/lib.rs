@@ -33,7 +33,6 @@
 
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
-	ensure,
 	pallet_prelude::*,
 	traits::IsSubType,
 };
@@ -58,8 +57,13 @@ use frame_system::pallet_prelude::*;
 use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
+#[allow(deprecated)]
+#[allow(unused)]
 use sp_runtime::{
-	traits::{BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable, SignedExtension, Zero},
+	traits::{
+		BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf, Dispatchable,
+		SignedExtension, TransactionExtension, ValidateResult, Zero,
+	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
 use sp_std::{prelude::*, vec};
@@ -1240,10 +1244,11 @@ impl<T: Config> Pallet<T> {
 				let is_new = maybe_delegation_info.is_none();
 				let mut delegation = maybe_delegation_info.take().unwrap_or_default();
 
-				f(&mut delegation, is_new).map(move |result| {
-					*maybe_delegation_info = Some(delegation);
-					result
-				})
+				let result = f(&mut delegation, is_new)?;
+
+				// only set the value if execution of 'f' is successful
+				*maybe_delegation_info = Some(delegation);
+				Ok(result)
 			},
 		)
 	}
@@ -1791,7 +1796,7 @@ pub enum ValidityError {
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Create new `SignedExtension` to check runtime version.
 	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
+		Self(PhantomData)
 	}
 }
 
@@ -1806,6 +1811,7 @@ impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
@@ -1820,6 +1826,7 @@ where
 		Ok(())
 	}
 
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -1843,6 +1850,7 @@ where
 	/// call: The pallet extrinsic being called
 	/// unused: _info, _len
 	///
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,

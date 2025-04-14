@@ -7,6 +7,7 @@ use frame_support::{
 use numtoa::*;
 use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
+#[allow(deprecated)]
 use sp_runtime::traits::SignedExtension;
 
 #[test]
@@ -87,6 +88,7 @@ fn test_handle_early_retirement_fails() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
+		#[allow(deprecated)]
 		let early_retire_result = HandlesSignedExtension::<Test>::new().validate(
 			&alice.public().into(),
 			call_retire_handle,

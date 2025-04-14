@@ -1,7 +1,7 @@
 //  Handles test suite
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createDelegator, getTestHandle } from '../scaffolding/helpers';
+import { createMsa, DOLLARS, getTestHandle } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { MessageSourceId } from '@frequency-chain/api-augment/interfaces';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -20,7 +20,7 @@ describe('🤝 Handles', function () {
 
     before(async function () {
       // Create a MSA for the delegator
-      [msaOwnerKeys, msa_id] = await createDelegator(fundingSource);
+      [msa_id, msaOwnerKeys] = await createMsa(fundingSource);
       assert.notEqual(msaOwnerKeys, undefined, 'setup should populate delegator_key');
       assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
     });
@@ -71,7 +71,7 @@ describe('🤝 Handles', function () {
 
     before(async function () {
       // Create a MSA for the delegator
-      [msaOwnerKeys, msa_id] = await createDelegator(fundingSource);
+      [msa_id, msaOwnerKeys] = await createMsa(fundingSource);
       assert.notEqual(msaOwnerKeys, undefined, 'setup should populate delegator_key');
       assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
     });

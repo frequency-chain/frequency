@@ -160,7 +160,8 @@ benchmarks-pallet_session \
 benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility \
-benchmarks-pallet_proxy
+benchmarks-pallet_proxy \
+benchmarks-pallet_transaction_payment
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -183,7 +184,8 @@ benchmarks-pallet_session-local \
 benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
-benchmarks-pallet_proxy-local
+benchmarks-pallet_proxy-local \
+benchmarks-pallet_transaction_payment-local
 
 .PHONY: benchmarks
 benchmarks:
@@ -235,7 +237,7 @@ check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-paseo-local
+	SKIP_WASM_BUILD= cargo check --features frequency-local
 
 check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
