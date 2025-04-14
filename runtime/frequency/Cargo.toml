@@ -48,7 +48,6 @@ pallet-multisig = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
-pallet-treasury = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 
@@ -62,13 +61,13 @@ sp-genesis-builder = { workspace = true }
 static_assertions = { workspace = true }
 
 sp-offchain = { workspace = true }
-# turn on features = ["serde"]?  see psdk bridges/primitives/runtime/Cargo.toml for 1.14 upgrade, but it was in 1.13 so maybe not
-sp-runtime = { workspace = true }
+sp-runtime = { features = ["serde"], workspace = true }
 sp-session = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 # Ported Pallet from ORML
 pallet-time-release = { path = "../../pallets/time-release", default-features = false }
+pallet-treasury = { path = "../../pallets/treasury", default-features = false }
 # Frequency
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../common", default-features = false }

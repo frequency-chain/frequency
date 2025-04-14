@@ -97,7 +97,7 @@ export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType 
 export async function generateDelegationPayload(
   payloadInputs: AddProviderPayload,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<AddProviderPayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -125,7 +125,7 @@ export async function getExistentialDeposit(): Promise<bigint> {
 export async function generateAddKeyPayload(
   payloadInputs: AddKeyData,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<AddKeyData> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -138,7 +138,7 @@ export async function generateAddKeyPayload(
 export async function generateItemizedSignaturePayload(
   payloadInputs: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<ItemizedSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -159,7 +159,7 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
 export async function generateItemizedActionsPayloadAndSignature(
   payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
   payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2',
-  signingKeys: KeyringPair,
+  signingKeys: KeyringPair
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
   const payload = ExtrinsicHelper.api.registry.createType(payloadType, payloadData);
@@ -172,7 +172,7 @@ export async function generateItemizedActionsSignedPayload(
   actions: any[],
   schemaId: SchemaId,
   signingKeys: KeyringPair,
-  msaId: MessageSourceId,
+  msaId: MessageSourceId
 ) {
   const payloadInput: ItemizedSignaturePayload = {
     msaId,
@@ -184,7 +184,7 @@ export async function generateItemizedActionsSignedPayload(
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
     'PalletStatefulStorageItemizedSignaturePayload',
-    signingKeys,
+    signingKeys
   );
 }
 
@@ -192,7 +192,7 @@ export async function generateItemizedActionsSignedPayloadV2(
   actions: any[],
   schemaId: SchemaId,
   signingKeys: KeyringPair,
-  msaId: MessageSourceId,
+  msaId: MessageSourceId
 ) {
   const payloadInput: ItemizedSignaturePayloadV2 = {
     targetHash: await getCurrentItemizedHash(msaId, schemaId),
@@ -203,14 +203,14 @@ export async function generateItemizedActionsSignedPayloadV2(
   return generateItemizedActionsPayloadAndSignature(
     payloadInput,
     'PalletStatefulStorageItemizedSignaturePayloadV2',
-    signingKeys,
+    signingKeys
   );
 }
 
 export async function generatePaginatedUpsertSignaturePayload(
   payloadInputs: PaginatedUpsertSignaturePayload,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<PaginatedUpsertSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -223,7 +223,7 @@ export async function generatePaginatedUpsertSignaturePayload(
 export async function generatePaginatedUpsertSignaturePayloadV2(
   payloadInputs: PaginatedUpsertSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<PaginatedUpsertSignaturePayloadV2> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -236,7 +236,7 @@ export async function generatePaginatedUpsertSignaturePayloadV2(
 export async function generatePaginatedDeleteSignaturePayload(
   payloadInputs: PaginatedDeleteSignaturePayload,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<PaginatedDeleteSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -249,7 +249,7 @@ export async function generatePaginatedDeleteSignaturePayload(
 export async function generatePaginatedDeleteSignaturePayloadV2(
   payloadInputs: PaginatedDeleteSignaturePayloadV2,
   expirationOffset: number = 100,
-  blockNumber?: number,
+  blockNumber?: number
 ): Promise<PaginatedDeleteSignaturePayloadV2> {
   const { expiration, ...payload } = payloadInputs;
 
@@ -293,7 +293,7 @@ export async function drainKeys(keyPairs: KeyringPair[], dest: KeyringPair) {
         const info = await ExtrinsicHelper.getAccountInfo(keypair);
         // Only drain keys that can be
         if (canDrainAccount(info)) await ExtrinsicHelper.emptyAccount(keypair, dest).signAndSend();
-      }),
+      })
     );
   } catch (e) {
     console.log('Error draining accounts: ', e);
@@ -304,18 +304,17 @@ export async function fundKeypair(
   source: KeyringPair,
   dest: KeyringPair,
   amount: bigint,
-  nonce?: number,
+  nonce?: number
 ): Promise<void> {
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
-// create and Fund keys with existential deposit amount or the value provided.
 export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
   keyName?: string,
   nonce?: number,
-  keyType: KeypairType = 'sr25519',
+  keyType: KeypairType = 'sr25519'
 ): Promise<KeyringPair> {
   const keypair = createKeys(keyName, keyType);
 
@@ -329,7 +328,7 @@ export async function createAndFundKeypairs(
   source: KeyringPair,
   keyNames: string[],
   amountOverExDep: bigint = 100_000_000n,
-  keyType: KeypairType = 'sr25519',
+  keyType: KeypairType = 'sr25519'
 ): Promise<KeyringPair[]> {
   const nonce = await getNonce(source);
   const existentialDeposit = await getExistentialDeposit();
@@ -348,7 +347,10 @@ export function log(...args: any[]) {
   }
 }
 
-export async function createProviderKeysAndId(source: KeyringPair, amount: bigint = 1n * DOLLARS): Promise<[KeyringPair, u64]> {
+export async function createProviderKeysAndId(
+  source: KeyringPair,
+  amount: bigint = 1n * DOLLARS
+): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
   await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
   const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider');
@@ -357,15 +359,28 @@ export async function createProviderKeysAndId(source: KeyringPair, amount: bigin
   return [providerKeys, providerId];
 }
 
+export async function createDelegator(
+  source: KeyringPair,
+  amount?: bigint,
+  keyType: KeypairType = 'sr25519'
+): Promise<[KeyringPair, u64]> {
+  const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
+  const createMsa = ExtrinsicHelper.createMsa(keys);
+  const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
+  const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
+
+  return [keys, delegatorMsaId];
+}
+
 export async function createDelegatorAndDelegation(
   source: KeyringPair,
   schemaId: u16 | u16[],
   providerId: u64,
   providerKeys: KeyringPair,
-  keyType: KeypairType = 'sr25519',
+  keyType: KeypairType = 'sr25519'
 ): Promise<[KeyringPair, u64]> {
   // Create a  delegator msa + keys.
-  const [delegatorMsaId, delegatorKeys] = await createMsa(source, 2n * DOLLARS, keyType);
+  const [delegatorMsaId, delegatorKeys] = await createMsa(source, undefined, keyType);
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
@@ -377,7 +392,7 @@ export async function createDelegatorAndDelegation(
     delegatorKeys,
     providerKeys,
     signPayload(delegatorKeys, addProviderData),
-    payload,
+    payload
   );
   await grantDelegationOp.fundAndSend(source);
 
@@ -407,7 +422,11 @@ export async function getHandleForMsa(msa_id: MessageSourceId): Promise<Option<H
 // 1. Creates and funds a key pair.
 // 2. Key pair used to directly create its own MSA Id
 // 3. returns MSA ID and the keys.
-export async function createMsa(source: KeyringPair, amount?: bigint, keyType: KeypairType = 'sr25519'): Promise<[u64, KeyringPair]> {
+export async function createMsa(
+  source: KeyringPair,
+  amount?: bigint,
+  keyType: KeypairType = 'sr25519'
+): Promise<[u64, KeyringPair]> {
   const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const { target } = await createMsaOp.fundAndSend(source);
@@ -422,7 +441,7 @@ export async function createMsaAndProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerName: string,
-  amount: bigint | undefined = undefined,
+  amount: bigint | undefined = undefined
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
@@ -450,7 +469,7 @@ export async function stakeToProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerId: u64,
-  tokensToStake: bigint,
+  tokensToStake: bigint
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
@@ -464,7 +483,7 @@ export async function stakeToProvider(
     assert.equal(
       stakedCapacity,
       expectedCapacity,
-      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
     );
   } else {
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
@@ -475,7 +494,7 @@ export async function boostProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerId: u64,
-  tokensToStake: bigint,
+  tokensToStake: bigint
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
@@ -488,7 +507,7 @@ export async function boostProvider(
     assert.equal(
       stakedCapacity,
       expectedCapacity,
-      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
     );
   } else {
     return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
@@ -511,7 +530,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
     assert.equal(
       actualEpochLength,
       TEST_EPOCH_LENGTH,
-      `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`,
+      `should have set epoch length to TEST_EPOCH_LENGTH blocks, but it's ${actualEpochLength}`
     );
   } else {
     assert.fail('should return an EpochLengthUpdated event');
@@ -535,7 +554,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
       'AvroBinary',
       'OnChain',
       [],
-      'test.graphChangeSchema',
+      'test.graphChangeSchema'
     );
     const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
     assertExtrinsicSuccess(eventMap);
@@ -558,7 +577,7 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
       'Parquet',
       'IPFS',
       [],
-      'test.parquetBroadcast',
+      'test.parquetBroadcast'
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -580,7 +599,7 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
       'AvroBinary',
       'OnChain',
       [],
-      'test.dummySchema',
+      'test.dummySchema'
     );
     const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
     if (dummySchemaEvent) {
@@ -603,7 +622,7 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
       'AvroBinary',
       'Paginated',
       [],
-      'test.AvroChatMessagePaginated',
+      'test.AvroChatMessagePaginated'
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -626,7 +645,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
       'AvroBinary',
       'Itemized',
       [],
-      'test.AvroChatMessageItemized',
+      'test.AvroChatMessageItemized'
     );
     const { target: event } = await createSchema.fundAndSend(source);
     if (event) {
@@ -671,7 +690,7 @@ export function assertHasMessage(response: BlockPaginationResponseMessage, testF
 export async function assertAddNewKey(
   capacityKeys: KeyringPair,
   addKeyPayload: AddKeyData,
-  newControlKeypair: KeyringPair,
+  newControlKeypair: KeyringPair
 ) {
   const addKeyPayloadCodec: Codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
   const ownerSig: MultiSignatureType = signPayload(capacityKeys, addKeyPayloadCodec);
@@ -707,14 +726,6 @@ export async function getFreeBalance(source: KeyringPair): Promise<bigint> {
 }
 
 export async function assertExtrinsicSucceededAndFeesPaid(chainEvents: any) {
-  assert.notEqual(
-    chainEvents['system.ExtrinsicSuccess'],
-    undefined,
-    'should have returned an ExtrinsicSuccess event',
-  );
-  assert.notEqual(
-    chainEvents['balances.Withdraw'],
-    undefined,
-    'should have returned a balances.Withdraw event',
-  );
+  assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
+  assert.notEqual(chainEvents['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
 }

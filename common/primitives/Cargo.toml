@@ -35,6 +35,7 @@ log = "0.4.22"
 [features]
 default = ['std']
 runtime-benchmarks = []
+serde = []
 std = [
   'parity-scale-codec/std',
   'frame-support/std',

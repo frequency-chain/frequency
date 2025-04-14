@@ -33,13 +33,14 @@ pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
 pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
-pallet-treasury = { workspace = true }
+pallet-transaction-payment = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 # cumulus
 cumulus-primitives-core = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-time-release = { path = "../../pallets/time-release", default-features = false }
+pallet-treasury = { path = "../../pallets/treasury", default-features = false }
 
 [features]
 default = ["std"]
@@ -64,6 +65,7 @@ std = [
   "pallet-proxy/std",
   "pallet-sudo/std",
   "pallet-timestamp/std",
+  "pallet-transaction-payment/std",
   "pallet-scheduler/std",
   "sp-core/std",
   "sp-runtime/std",
@@ -81,6 +83,7 @@ try-runtime = [
   "pallet-multisig/try-runtime",
   "pallet-preimage/try-runtime",
   "pallet-scheduler/try-runtime",
+  "pallet-transaction-payment/try-runtime",
   "pallet-treasury/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-proxy/try-runtime",

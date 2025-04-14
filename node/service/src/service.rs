@@ -206,7 +206,6 @@ pub async fn start_parachain_node(
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
-	// TODO:  confirm which metrics registry to use, if any
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let net_config = FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(
 		&parachain_config.network,
@@ -414,7 +413,7 @@ fn start_consensus(
 	task_manager: &TaskManager,
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
 	transaction_pool: Arc<sc_transaction_pool::TransactionPoolHandle<Block, ParachainClient>>,
-	sync_oracle: Arc<SyncingService<Block>>,
+	_sync_oracle: Arc<SyncingService<Block>>,
 	keystore: KeystorePtr,
 	relay_chain_slot_duration: Duration,
 	para_id: ParaId,

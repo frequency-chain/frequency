@@ -18,11 +18,16 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 use alloc::borrow::Cow;
-#[allow(unused)] // compiler lies
-use cumulus_pallet_parachain_system::DefaultCoreSelector;
+use common_runtime::constants::currency::UNITS;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
+use cumulus_pallet_parachain_system::{
+	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
+};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
@@ -431,7 +436,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 147,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -445,7 +450,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 147,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -833,12 +838,12 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
 	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-		frame_system::EnsureRoot<AccountId>,
 	>;
 	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
-		frame_system::EnsureRoot<AccountId>,
 	>;
 	type Consideration = ();
 }
@@ -931,6 +936,7 @@ impl pallet_democracy::Config for Runtime {
 parameter_types! {
 	pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+	pub const MaxSpending : Balance = 100_000_000 * UNITS;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
@@ -940,15 +946,15 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
 	/// - 3/5ths of the Frequency Council
-	// type ApproveOrigin = EitherOfDiverse<
-	// 	EnsureRoot<AccountId>,
-	// 	pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
-	// >;
+	type ApproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 3, 5>,
+	>;
 
 	/// Who rejects treasury proposals?
 	/// - Root (sudo or governance)
@@ -960,21 +966,24 @@ impl pallet_treasury::Config for Runtime {
 
 	/// Spending funds outside of the proposal?
 	/// Nobody
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SpendOrigin = MapSuccess<EnsureSigned<AccountId>, Replace<MaxSpending>>;
 
 	/// Rejected proposals lose their bond
 	/// This takes the slashed amount and is often set to the Treasury
 	/// We burn it so there is no incentive to the treasury to reject to enrich itself
-	// type OnSlash = ();
+	type OnSlash = ();
 
 	/// Bond 5% of a treasury proposal
-	// type ProposalBond = ProposalBondPercent;
+	type ProposalBond = ProposalBondPercent;
 
 	/// Minimum bond of 100 Tokens
-	// type ProposalBondMinimum = ProposalBondMinimum;
+	type ProposalBondMinimum = ProposalBondMinimum;
 
 	/// Max bond of 1_000 Tokens
-	// type ProposalBondMaximum = ProposalBondMaximum;
+	type ProposalBondMaximum = ProposalBondMaximum;
 
 	/// Pay out on a 4-week basis
 	type SpendPeriod = SpendPeriod;
@@ -1002,7 +1011,6 @@ impl pallet_treasury::Config for Runtime {
 	type PayoutPeriod = PayoutSpendPeriod;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
-	type BlockNumberProvider = System;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_transaction_payment/index.html for
@@ -1014,7 +1022,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
-	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
+	type WeightInfo = weights::pallet_transaction_payment::SubstrateWeight<Runtime>;
 }
 
 use crate::ethereum::EthereumCompatibleAccountIdLookup;
@@ -1386,7 +1394,6 @@ mod benches {
 		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
-		[pallet_treasury, Treasury]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
@@ -1394,6 +1401,7 @@ mod benches {
 		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
+		[pallet_transaction_payment, TransactionPayment]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1402,6 +1410,7 @@ mod benches {
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
+		[pallet_treasury, Treasury]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
@@ -1744,6 +1753,7 @@ sp_api::impl_runtime_apis! {
 			return (list, storage_info)
 		}
 
+		#[allow(deprecated)]
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
