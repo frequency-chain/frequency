@@ -76,7 +76,7 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
     assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
 
-    itemizedActionsSignedPayload = await generateItemizedActionsSignedPayload(
+    itemizedActionsSignedPayload = await generateItemizedActionsSignedPayloadV2(
       generateItemizedActions([
         { action: 'Add', value: 'Hello, world from Frequency' },
         { action: 'Add', value: 'Hello, world again from Frequency' },
