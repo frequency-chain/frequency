@@ -11,6 +11,7 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   getCurrentPaginatedHash,
   signPayload,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -96,16 +97,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -137,16 +129,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -171,16 +154,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
 
       // no pages should exist

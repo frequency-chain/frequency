@@ -2,6 +2,7 @@ use super::mock::*;
 use frame_support::{assert_ok, traits::Hooks};
 
 #[allow(unused)]
+#[allow(deprecated)]
 use sp_runtime::traits::SignedExtension;
 
 use crate::{

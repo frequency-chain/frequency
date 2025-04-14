@@ -71,7 +71,8 @@ fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 benchmarks! {
 	where_clause {  where
 		BalanceOf<T>: From<u64>,
-		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>
+		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		<T as frame_system::Config>::RuntimeOrigin: AsTransactionAuthorizedOrigin,
 	}
 
 	validate {

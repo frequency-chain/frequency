@@ -17,16 +17,23 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use common_runtime::constants::currency::UNITS;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
-
+use cumulus_pallet_parachain_system::{
+	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
+};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use sp_runtime::traits::Replace;
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
+use sp_std::borrow::Cow;
 
 use pallet_collective::Members;
 
@@ -120,6 +127,9 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
+#[allow(deprecated)]
+use sp_runtime::traits::transaction_extension::AsTransactionExtension;
+
 mod ethereum;
 mod genesis;
 
@@ -332,17 +342,20 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 }
 
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
+#[allow(deprecated)]
+pub type TxExtension = (
 	frame_system::CheckNonZeroSender<Runtime>,
 	// merging these types so that we can have more than 12 extensions
 	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 	frame_system::CheckGenesis<Runtime>,
 	frame_system::CheckEra<Runtime>,
-	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+	AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
 	frame_system::CheckWeight<Runtime>,
-	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
-	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
-	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
+	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+	AsTransactionExtension<
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+	>,
 	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
 );
@@ -357,7 +370,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -420,28 +433,28 @@ impl_opaque_keys! {
 #[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 146,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 // IMPORTANT: Remember to update spec_version in above struct too
 #[cfg(not(feature = "frequency"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency-testnet"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency-testnet"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 146,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -544,6 +557,7 @@ impl frame_system::Config for Runtime {
 	type PostInherents = ();
 	/// A callback that executes in *every block* directly after all transactions were applied.
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
 }
 
 impl pallet_msa::Config for Runtime {
@@ -730,6 +744,7 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
+	type DoneSlashHandler = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
@@ -799,6 +814,15 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type Consideration = ();
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -813,6 +837,15 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+	>;
+	type Consideration = ();
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -903,6 +936,7 @@ impl pallet_democracy::Config for Runtime {
 parameter_types! {
 	pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+	pub const MaxSpending : Balance = 100_000_000 * UNITS;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
@@ -912,7 +946,7 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
@@ -932,7 +966,10 @@ impl pallet_treasury::Config for Runtime {
 
 	/// Spending funds outside of the proposal?
 	/// Nobody
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SpendOrigin = MapSuccess<EnsureSigned<AccountId>, Replace<MaxSpending>>;
 
 	/// Rejected proposals lose their bond
 	/// This takes the slashed amount and is often set to the Treasury
@@ -985,6 +1022,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
+	type WeightInfo = weights::pallet_transaction_payment::SubstrateWeight<Runtime>;
 }
 
 use crate::ethereum::EthereumCompatibleAccountIdLookup;
@@ -1085,6 +1123,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
+	type SelectCore = DefaultCoreSelector<Runtime>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -1289,8 +1328,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
 		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
-		} = 1,
+			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
@@ -1356,7 +1394,6 @@ mod benches {
 		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
-		[pallet_treasury, Treasury]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
@@ -1364,6 +1401,7 @@ mod benches {
 		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
+		[pallet_transaction_payment, TransactionPayment]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1372,6 +1410,7 @@ mod benches {
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
+		[pallet_treasury, Treasury]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
@@ -1560,7 +1599,7 @@ sp_api::impl_runtime_apis! {
 			let dispatch_weight = match &uxt.function {
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
-					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).weight
+					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
 				},
 				_ => {
 					Weight::zero()
@@ -1714,6 +1753,7 @@ sp_api::impl_runtime_apis! {
 			return (list, storage_info)
 		}
 
+		#[allow(deprecated)]
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {

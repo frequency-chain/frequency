@@ -49,6 +49,7 @@ std = [
   "frame-benchmarking/std",
   "common-primitives/std",
   "common-runtime/std",
+  "pallet-transaction-payment/std"
 ]
 runtime-benchmarks = [
   "frame-support/runtime-benchmarks",

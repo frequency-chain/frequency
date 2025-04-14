@@ -4,11 +4,10 @@
 // Originally from https://github.com/paritytech/cumulus/blob/master/parachain-template/node/src/service.rs
 
 // std
-use sc_client_api::Backend;
-use std::{sync::Arc, time::Duration};
-
 use cumulus_client_cli::CollatorOptions;
 use frequency_runtime::RuntimeApi;
+use sc_client_api::Backend;
+use std::{ptr::addr_eq, sync::Arc, time::Duration};
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
@@ -40,7 +39,7 @@ use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
-use sc_network::{NetworkBackend, NetworkBlock, NetworkService};
+use sc_network::{config::FullNetworkConfiguration, NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker, TelemetryWorkerHandle};
@@ -67,6 +66,7 @@ type HostFunctions = (
 	common_primitives::offchain::custom::HostFunctions,
 );
 
+use crate::common::start_offchain_workers;
 pub use frequency_runtime;
 
 type ParachainExecutor = WasmExecutor<HostFunctions>;
@@ -92,7 +92,7 @@ pub fn new_partial(
 		ParachainBackend,
 		MaybeFullSelectChain,
 		sc_consensus::DefaultImportQueue<Block>,
-		sc_transaction_pool::FullPool<Block, ParachainClient>,
+		sc_transaction_pool::TransactionPoolHandle<Block, ParachainClient>,
 		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
 	>,
 	sc_service::Error,
@@ -109,15 +109,16 @@ pub fn new_partial(
 		.transpose()?;
 
 	let heap_pages = config
+		.executor
 		.default_heap_pages
 		.map_or(DEFAULT_HEAP_ALLOC_STRATEGY, |h| HeapAllocStrategy::Static { extra_pages: h as _ });
 
 	let executor = ParachainExecutor::builder()
-		.with_execution_method(config.wasm_method)
+		.with_execution_method(config.executor.wasm_method)
 		.with_onchain_heap_alloc_strategy(heap_pages)
 		.with_offchain_heap_alloc_strategy(heap_pages)
-		.with_max_runtime_instances(config.max_runtime_instances)
-		.with_runtime_cache_size(config.runtime_cache_size)
+		.with_max_runtime_instances(config.executor.max_runtime_instances)
+		.with_runtime_cache_size(config.executor.runtime_cache_size)
 		.build();
 
 	let (client, backend, keystore_container, task_manager) =
@@ -136,12 +137,16 @@ pub fn new_partial(
 		telemetry
 	});
 
-	let transaction_pool = sc_transaction_pool::BasicPool::new_full(
-		config.transaction_pool.clone(),
-		config.role.is_authority().into(),
-		config.prometheus_registry(),
-		task_manager.spawn_essential_handle(),
-		client.clone(),
+	// See https://github.com/paritytech/polkadot-sdk/pull/4639 for how to enable the fork-aware pool.
+	let transaction_pool = Arc::from(
+		sc_transaction_pool::Builder::new(
+			task_manager.spawn_essential_handle(),
+			client.clone(),
+			config.role.is_authority().into(),
+		)
+		.with_options(config.transaction_pool.clone())
+		.with_prometheus(config.prometheus_registry())
+		.build(),
 	);
 
 	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
@@ -192,7 +197,7 @@ pub async fn start_parachain_node(
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
-	use crate::common::convert_address_to_normalized_string;
+	use crate::common::listen_addrs_to_normalized_strings;
 	use common_primitives::offchain::OcwCustomExt;
 	use sc_client_db::Backend;
 
@@ -201,11 +206,11 @@ pub async fn start_parachain_node(
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
-	let net_config = sc_network::config::FullNetworkConfiguration::<
-		_,
-		_,
-		sc_network::NetworkWorker<Block, Hash>,
-	>::new(&parachain_config.network);
+	let prometheus_registry = parachain_config.prometheus_registry().cloned();
+	let net_config = FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(
+		&parachain_config.network,
+		prometheus_registry,
+	);
 
 	let client = params.client.clone();
 	let backend = params.backend.clone();
@@ -245,33 +250,15 @@ pub async fn start_parachain_node(
 
 	// Start off-chain workers if enabled
 	if parachain_config.offchain_worker.enabled {
-		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_address = convert_address_to_normalized_string(&parachain_config.rpc_addr)
-			.expect("rpc-addr is not a valid input!");
-		let offchain_workers =
-			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-				runtime_api_provider: client.clone(),
-				is_validator: validator,
-				keystore: Some(params.keystore_container.keystore()),
-				offchain_db: backend.offchain_storage(),
-				transaction_pool: Some(OffchainTransactionPoolFactory::new(
-					transaction_pool.clone(),
-				)),
-				network_provider: Arc::new(network.clone()),
-				enable_http_requests: true,
-				custom_extensions: move |_hash| {
-					let cloned = rpc_address.clone();
-					vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
-				},
-			});
-
-		// Spawn a task to handle off-chain notifications.
-		// This task is responsible for processing off-chain events or data for the blockchain.
-		task_manager.spawn_handle().spawn(
-			"offchain-workers-runner",
-			"offchain-work",
-			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
+		start_offchain_workers(
+			&client,
+			&parachain_config,
+			Some(params.keystore_container.keystore()),
+			&backend,
+			Some(OffchainTransactionPoolFactory::new(transaction_pool.clone())),
+			Arc::new(network.clone()),
+			&task_manager,
 		);
 	}
 
@@ -284,11 +271,10 @@ pub async fn start_parachain_node(
 			false => None,
 		};
 
-		Box::new(move |deny_unsafe, _| {
+		Box::new(move |_| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
-				deny_unsafe,
 				command_sink: None,
 			};
 
@@ -313,10 +299,13 @@ pub async fn start_parachain_node(
 
 	if let Some(hwbench) = hwbench {
 		sc_sysinfo::print_hwbench(&hwbench);
+		let is_rc_authority = false;
 		// Here you can check whether the hardware meets your chains' requirements. Putting a link
 		// in there and swapping out the requirements for your own are probably a good idea. The
 		// requirements for a para-chain are dictated by its relay-chain.
-		if validator && !SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench).is_ok() {
+		if validator &&
+			!SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench, is_rc_authority).is_ok()
+		{
 			log::warn!(
 				"⚠️  The hardware does not meet the minimal requirements for role 'Authority'."
 			);
@@ -423,8 +412,8 @@ fn start_consensus(
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
 	relay_chain_interface: Arc<dyn RelayChainInterface>,
-	transaction_pool: Arc<sc_transaction_pool::FullPool<Block, ParachainClient>>,
-	sync_oracle: Arc<SyncingService<Block>>,
+	transaction_pool: Arc<sc_transaction_pool::TransactionPoolHandle<Block, ParachainClient>>,
+	_sync_oracle: Arc<SyncingService<Block>>,
 	keystore: KeystorePtr,
 	relay_chain_slot_duration: Duration,
 	para_id: ParaId,
@@ -460,7 +449,6 @@ fn start_consensus(
 		code_hash_provider: move |block_hash| {
 			client.code_at(block_hash).ok().map(|c| ValidationCode::from(c).hash())
 		},
-		sync_oracle,
 		keystore,
 		collator_key,
 		para_id,
@@ -472,10 +460,9 @@ fn start_consensus(
 		reinitialize: false,
 	};
 
-	let fut =
-		aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _, _>(
-			params,
-		);
+	let fut = aura::run::<Block, sp_consensus_aura::sr25519::AuthorityPair, _, _, _, _, _, _, _, _>(
+		params,
+	);
 
 	task_manager.spawn_essential_handle().spawn("aura", None, fut);
 

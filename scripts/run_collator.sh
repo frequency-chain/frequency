@@ -50,7 +50,7 @@ bootnode () {
     echo "$bootnode"
 }
 
-args+=( "--" "--wasm-execution=compiled" "--chain=${chain}" "--bootnodes=$(bootnode "$alice" "$alice_rpc_port")" "--bootnodes=$(bootnode "$bob" "$bob_rpc_port")" )
+args+=( "--" "--wasm-execution=compiled" "--pool-type=fork-aware" "--chain=${chain}" "--bootnodes=$(bootnode "$alice" "$alice_rpc_port")" "--bootnodes=$(bootnode "$bob" "$bob_rpc_port")" )
 
 set -x
 "$ctpc" "${args[@]}"

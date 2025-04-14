@@ -1,4 +1,5 @@
 import '@frequency-chain/api-augment';
+import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -193,7 +194,10 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
             if (result.isError) {
-              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`
+              );
             }
           }),
           filter(({ status }) => status.isInBlock || status.isFinalized),
@@ -230,12 +234,22 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .payWithCapacity(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
+          tap((result) => {
+            if (result.isError) {
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status is ${result.status}`
+              );
+            }
+          }),
+          // Can comment out filter to help debug hangs
           filter(({ status }) => status.isInBlock || status.isFinalized),
           this.parseResult(this.event)
         )
     );
   }
 
+  // check transaction cost difference between local+upgrade and testnet
   public getEstimatedTxFee(): Promise<bigint> {
     return firstValueFrom(
       this.extrinsic()
@@ -256,13 +270,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
-      await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
+      await assert.doesNotReject(ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend());
     }
   }
 
   public async fundAndSend(source: KeyringPair) {
     await this.fundOperation(source);
-    log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
+    log('Fund and Send', `${this.extrinsic().method.method} Fund Source: ${getUnifiedAddress(source)}`);
     return this.signAndSend();
   }
 
