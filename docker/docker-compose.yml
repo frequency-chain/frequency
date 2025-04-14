@@ -1,6 +1,6 @@
 # Node Key Alice: `subkey inspect //Alice`
 # Node Key Bob: `subkey inspect //Bob`
-x-polkadot-image: &polkadot-image "parity/polkadot:v1.13.0"
+x-polkadot-image: &polkadot-image "parity/polkadot:stable2412"
 
 services:
   relay_paseo_alice:

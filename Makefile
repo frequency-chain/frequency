@@ -27,13 +27,7 @@ start-frequency:
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
 
-register-frequency-docker:
-	./scripts/init.sh register-frequency-paseo-local
-
-onboard-frequency-docker:
-	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
-
-run-frequency-docker: start-frequency-docker register-frequency-docker onboard-frequency-docker
+run-frequency-docker: start-frequency-docker register onboard-docker
 
 start-relay-chain-docker:
 	./scripts/init.sh start-paseo-relay-chain
@@ -94,6 +88,10 @@ register:
 .PHONY: onboard
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
+
+.PHONY: onboard-docker
+onboard-docker:
+	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
 
 .PHONY: offboard
 offboard:
@@ -332,7 +330,7 @@ try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
-POLKADOT_VERSION=$(shell grep -o 'release-polkadot-v[0-9.]*' Cargo.toml | sed 's/release-polkadot-v//' | head -n 1)
+POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'branch[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/branch *= *"\(.*\)"/\1/' | head -n 1)
 
 .PHONY: version
 version:
@@ -348,14 +346,14 @@ ifeq (,$(POLKADOT_VERSION))
 	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
 	@exit 1
 endif
-	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
+	@echo "Setting the crate versions to "$(v)+polkadot_$(POLKADOT_VERSION)
 ifeq ($(UNAME), Linux)
 	$(eval $@_SED := -i -e)
 endif
 ifeq ($(UNAME), Darwin)
 	$(eval $@_SED := -i '')
 endif
-	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g';
+	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot_$(POLKADOT_VERSION)\"/g';
 	@echo "Doing cargo check for just examples seems to be the easiest way to update version in Cargo.lock"
 	cargo check --examples --quiet
 	@echo "All done. Don't forget to double check that the automated replacement worked."
