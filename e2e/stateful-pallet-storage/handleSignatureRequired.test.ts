@@ -131,16 +131,9 @@ describe('📗 Stateful Pallet Storage Signature Required', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
+
       assert.notEqual(
         pageUpdateEvent1,
         undefined,

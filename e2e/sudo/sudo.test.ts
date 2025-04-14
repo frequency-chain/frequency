@@ -184,7 +184,7 @@ describe('Sudo required', function () {
       });
 
       describe('Capacity should not be affected by a hold being slashed', function () {
-        it.skip('stake should fail when overlapping tokens are on hold', async function () {
+        it('stake should fail when overlapping tokens are on hold', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -217,7 +217,6 @@ describe('Sudo required', function () {
           await assert.rejects(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Slash the provider
-          // TODO: skipping this test for now because of Treasury proposal changes
           const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
           const { target: slashEvent } = await slashExt.sudoSignAndSend();
           assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
@@ -231,7 +230,7 @@ describe('Sudo required', function () {
           );
         });
 
-        it.skip('proposal should fail when overlapping tokens are on hold', async function () {
+        it('proposal should fail when overlapping tokens are on hold', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -248,7 +247,6 @@ describe('Sudo required', function () {
           // Create a stake that will result in overlapping tokens being frozen
           await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
-          // TODO: skipping this test for now because of Treasury proposal changes
           // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
           // The proposal should fail because the stakeKeys account has overlapping tokens frozen
           const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);

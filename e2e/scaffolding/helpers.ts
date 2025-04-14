@@ -309,6 +309,7 @@ export async function fundKeypair(
   await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
 }
 
+// create and Fund keys with existential deposit amount or the value provided.
 export async function createAndFundKeypair(
   source: KeyringPair,
   amount?: bigint,
@@ -357,19 +358,6 @@ export async function createProviderKeysAndId(
   const { target: providerEvent } = await createProviderOp.fundAndSend(source);
   const providerId = providerEvent?.data.providerId || new u64(ExtrinsicHelper.api.registry, 0);
   return [providerKeys, providerId];
-}
-
-export async function createDelegator(
-  source: KeyringPair,
-  amount?: bigint,
-  keyType: KeypairType = 'sr25519'
-): Promise<[KeyringPair, u64]> {
-  const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
-  const createMsa = ExtrinsicHelper.createMsa(keys);
-  const { target: msaCreatedEvent } = await createMsa.fundAndSend(source);
-  const delegatorMsaId = msaCreatedEvent?.data.msaId || new u64(ExtrinsicHelper.api.registry, 0);
-
-  return [keys, delegatorMsaId];
 }
 
 export async function createDelegatorAndDelegation(
