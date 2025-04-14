@@ -328,14 +328,14 @@ ifeq (,$(POLKADOT_VERSION))
 	@echo "Error: Having trouble finding the Polkadot version. Sorry about that.\nCheck my POLKADOT_VERSION variable command."
 	@exit 1
 endif
-	@echo "Setting the crate versions to "$(v)+polkadot_$(POLKADOT_VERSION)
+	@echo "Setting the crate versions to "$(v)+polkadot$(POLKADOT_VERSION)
 ifeq ($(UNAME), Linux)
 	$(eval $@_SED := -i -e)
 endif
 ifeq ($(UNAME), Darwin)
 	$(eval $@_SED := -i '')
 endif
-	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot_$(POLKADOT_VERSION)\"/g';
+	find . -type f -name "Cargo.toml" -print0 | xargs -0 sed $($@_SED) 's/^version = \"0\.0\.0\"/version = \"$(v)+polkadot$(POLKADOT_VERSION)\"/g';
 	@echo "Doing cargo check for just examples seems to be the easiest way to update version in Cargo.lock"
 	cargo check --examples --quiet
 	@echo "All done. Don't forget to double check that the automated replacement worked."
