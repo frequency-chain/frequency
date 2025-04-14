@@ -24,7 +24,8 @@ use std::fmt::Formatter;
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
 pub const INVALID_SCHEMA_ID: SchemaId = 65534;
-pub const IPFS_SCHEMA_ID: SchemaId = 50;
+// this value should be the same as the one used in benchmarking
+pub const IPFS_SCHEMA_ID: SchemaId = 20;
 
 pub const IPFS_PAYLOAD_LENGTH: u32 = 1200;
 
@@ -71,6 +72,7 @@ impl system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;

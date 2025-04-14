@@ -73,6 +73,7 @@ start-paseo-collator-alice)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
@@ -101,12 +102,15 @@ start-paseo-collator-bob)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
 start-frequency-instant)
   printf "\nBuilding Frequency without relay. Running with instant sealing ...\n"
-  cargo build --features frequency-no-relay,force-debug
+  # Uncomment/swap below if you want to see debug logs in the Frequency node
+  # cargo build --features frequency-no-relay,force-debug
+  cargo build --features frequency-no-relay
 
   parachain_dir=$base_dir/parachain/${para_id}
   mkdir -p $parachain_dir;
@@ -116,6 +120,7 @@ start-frequency-instant)
     rm -rf $parachain_dir
   fi
 
+  # Fork aware pool is not supported with instant sealing
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -149,6 +154,7 @@ start-frequency-interval)
     rm -rf $parachain_dir
   fi
 
+  # Fork aware pool is only supported with this feature
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -157,6 +163,7 @@ start-frequency-interval)
     -lruntime=debug \
     --sealing=interval \
     --sealing-interval=${interval} \
+    --sealing-create-empty-blocks \
     --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \
@@ -165,6 +172,7 @@ start-frequency-interval)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --pool-type=fork-aware \
     $offchain_params \
     --tmp
   ;;
@@ -198,6 +206,7 @@ start-frequency-manual)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --pool-type=fork-aware \
    $offchain_params \
     --tmp
   ;;
@@ -222,6 +231,7 @@ start-frequency-container)
     --rpc-cors all \
     --rpc-methods=Unsafe \
     --trie-cache-size 0 \
+    --pool-type=fork-aware \
    $offchain_params \
   ;;
 

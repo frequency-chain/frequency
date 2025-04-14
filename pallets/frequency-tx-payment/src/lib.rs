@@ -23,8 +23,12 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, Zero},
+	traits::{
+		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, TransactionExtension,
+		Zero,
+	},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };
@@ -73,7 +77,7 @@ pub enum InitialPayment<T: Config> {
 	/// No initial fee was paid.
 	#[default]
 	Free,
-	/// The initial fee was payed in the native currency.
+	/// The initial fee was paid in the native currency.
 	Token(LiquidityInfoOf<T>),
 	/// The initial fee was paid in an asset.
 	Capacity,
@@ -190,7 +194,7 @@ pub mod pallet {
 		#[pallet::weight({
 		let dispatch_info = call.get_dispatch_info();
 		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
-		let total = capacity_overhead.saturating_add(dispatch_info.weight);
+		let total = capacity_overhead.saturating_add(dispatch_info.call_weight);
 		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
 		})]
 		pub fn pay_with_capacity(
@@ -208,7 +212,7 @@ pub mod pallet {
 		#[pallet::weight({
 		let dispatch_infos = calls.iter().map(|call| call.get_dispatch_info()).collect::<Vec<_>>();
 		let dispatch_weight = dispatch_infos.iter()
-				.map(|di| di.weight)
+				.map(|di| di.call_weight)
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
 
 		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
@@ -368,6 +372,58 @@ where
 		}
 	}
 
+	// simulates fee calculation and withdrawal without applying any changes
+	fn dryrun_withdraw_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		match call.is_sub_type() {
+			Some(Call::pay_with_capacity { call }) =>
+				self.dryrun_withdraw_capacity_fee(who, &vec![*call.clone()], len),
+
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.dryrun_withdraw_capacity_fee(who, calls, len),
+
+			_ => self.dryrun_withdraw_token_fee(who, call, info, len, self.tip(call)),
+		}
+	}
+
+	fn dryrun_withdraw_capacity_fee(
+		&self,
+		who: &T::AccountId,
+		calls: &Vec<<T as Config>::RuntimeCall>,
+		len: usize,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		let mut calls_weight_sum = Weight::zero();
+		for call in calls {
+			let call_weight = T::CapacityCalls::get_stable_weight(call)
+				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
+		}
+		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
+		T::OnChargeCapacityTransaction::can_withdraw_fee(who, fee.into())?;
+		Ok(fee)
+	}
+
+	fn dryrun_withdraw_token_fee(
+		&self,
+		who: &T::AccountId,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		len: usize,
+		tip: BalanceOf<T>,
+	) -> Result<BalanceOf<T>, TransactionValidityError> {
+		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+		if fee.is_zero() {
+			return Ok(Default::default());
+		}
+		T::OnChargeTransaction::can_withdraw_fee(who, call, info, fee, tip)?;
+		Ok(fee)
+	}
+
 	/// Withdraws fee from either Capacity ledger or Token account.
 	fn withdraw_fee(
 		&self,
@@ -393,13 +449,11 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let mut calls_weight_sum = Weight::zero();
-
 		for call in calls {
 			let call_weight = T::CapacityCalls::get_stable_weight(call)
 				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
-
 		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
@@ -418,7 +472,7 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 		if fee.is_zero() {
-			return Ok((fee, InitialPayment::Free))
+			return Ok((fee, InitialPayment::Free));
 		}
 
 		<OnChargeTransactionOf<T> as OnChargeTransaction<T>>::withdraw_fee(
@@ -440,6 +494,7 @@ impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
 where
 	<T as frame_system::Config>::RuntimeCall:
@@ -456,6 +511,7 @@ where
 	type AccountId = T::AccountId;
 	type Call = <T as frame_system::Config>::RuntimeCall;
 	type AdditionalSigned = ();
+	#[allow(deprecated)]
 	type Pre = (
 		// tip
 		BalanceOf<T>,
@@ -470,6 +526,7 @@ where
 	}
 
 	/// Frequently called by the transaction queue to validate all extrinsics:
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,
@@ -477,7 +534,7 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> TransactionValidity {
-		let (fee, _) = self.withdraw_fee(who, call, info, len)?;
+		let fee = self.dryrun_withdraw_fee(who, call, info, len)?;
 
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info,
@@ -490,6 +547,7 @@ where
 	}
 
 	/// Do any pre-flight stuff for a signed transaction.
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -503,6 +561,7 @@ where
 	}
 
 	/// Do any post-flight stuff for an extrinsic.
+	#[allow(deprecated)]
 	fn post_dispatch(
 		maybe_pre: Option<Self::Pre>,
 		info: &DispatchInfoOf<Self::Call>,
@@ -512,18 +571,24 @@ where
 	) -> Result<(), TransactionValidityError> {
 		if let Some((tip, who, initial_payment)) = maybe_pre {
 			match initial_payment {
+				// If this is a Token transaction, passthrough
 				InitialPayment::Token(already_withdrawn) => {
-					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch(
-						Some((tip, who, already_withdrawn)),
-						info,
-						post_info,
-						len,
-						result,
-					)?;
+					// post_dispatch_details eliminated the Option from the first param.
+					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
+					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
+					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+                        pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
+                        info,
+                        post_info,
+                        len,
+                        result,
+                    )?;
 				},
+				// If it's capacity, do nothing
 				InitialPayment::Capacity => {
 					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
 				},
+				// If it's a free txn, do nothing
 				InitialPayment::Free => {
 					// `actual_fee` should be zero here for any signed extrinsic. It would be
 					// non-zero here in case of unsigned extrinsics as they don't pay fees but
