@@ -700,15 +700,15 @@ pub mod pallet {
 			);
 			// AppendOnly is only valid for Itemized payload location
 			ensure!(
-				!settings.contains(&SchemaSetting::AppendOnly)
-					|| payload_location == PayloadLocation::Itemized,
+				!settings.contains(&SchemaSetting::AppendOnly) ||
+					payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
 			// SignatureRequired is only valid for Itemized and Paginated payload locations
 			ensure!(
-				!settings.contains(&SchemaSetting::SignatureRequired)
-					|| payload_location == PayloadLocation::Itemized
-					|| payload_location == PayloadLocation::Paginated,
+				!settings.contains(&SchemaSetting::SignatureRequired) ||
+					payload_location == PayloadLocation::Itemized ||
+					payload_location == PayloadLocation::Paginated,
 				Error::<T>::InvalidSetting
 			);
 			let schema_name = match optional_schema_name {

@@ -306,10 +306,9 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 				count,
 				match include_header {
 					true => &self.data[offset..(offset + item_total_length)],
-					false => {
+					false =>
 						&self.data
-							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)]
-					},
+							[(offset + ItemHeader::max_encoded_len())..(offset + item_total_length)],
 				},
 			);
 			offset += item_total_length;
