@@ -4,7 +4,8 @@ use frame_support::BoundedVec;
 #[allow(unused_imports)]
 use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use sp_core::ConstU32;
-use sp_std::collections::btree_set::BTreeSet;
+extern crate alloc;
+use alloc::collections::btree_set::BTreeSet;
 
 #[test]
 fn child_tree_write_read() {

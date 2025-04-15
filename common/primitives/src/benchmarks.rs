@@ -1,5 +1,6 @@
 use frame_support::dispatch::DispatchResult;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 use crate::{
 	msa::{DelegatorId, MessageSourceId, ProviderId},

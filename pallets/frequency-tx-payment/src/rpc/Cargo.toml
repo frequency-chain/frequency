@@ -20,7 +20,6 @@ common-helpers = { default-features = false, path = "../../../../common/helpers"
 # Substrate crates
 sp-core = { workspace = true }
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-rpc = { workspace = true }

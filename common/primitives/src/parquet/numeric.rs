@@ -1,5 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sp_std::prelude::*;
 
 /// Parquet numeric types: <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]

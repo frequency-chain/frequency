@@ -39,7 +39,8 @@ use frame_support::{
 	traits::{BuildGenesisConfig, Get},
 };
 use sp_runtime::{traits::Dispatchable, BoundedVec, DispatchError};
-use sp_std::{boxed::Box, vec::Vec};
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 #[cfg(test)]
 mod tests;
@@ -239,7 +240,7 @@ pub mod pallet {
 		pub _config: PhantomData<T>,
 	}
 
-	impl<T: Config> sp_std::default::Default for GenesisConfig<T> {
+	impl<T: Config> core::default::Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
 				initial_schema_identifier_max: 16_000,

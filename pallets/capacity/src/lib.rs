@@ -27,7 +27,7 @@
 	missing_docs
 )]
 
-use sp_std::ops::Mul;
+use core::ops::Mul;
 
 use frame_support::{
 	ensure,
@@ -153,7 +153,7 @@ pub mod pallet {
 			+ AtLeast32BitUnsigned
 			+ Default
 			+ Copy
-			+ sp_std::hash::Hash
+			+ core::hash::Hash
 			+ MaxEncodedLen
 			+ TypeInfo;
 

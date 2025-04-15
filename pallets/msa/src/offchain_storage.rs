@@ -10,7 +10,8 @@ use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
 use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
-use alloc::string::String;
+use alloc::{collections::btree_map::BTreeMap, string::String, vec, vec::Vec};
+use core::fmt::Debug;
 use sp_io::offchain_index;
 use sp_runtime::{
 	offchain::{
@@ -21,7 +22,6 @@ use sp_runtime::{
 	traits::One,
 	Saturating,
 };
-use sp_std::{collections::btree_map::BTreeMap, fmt::Debug, vec, vec::Vec};
 
 /// Block event storage prefix
 const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
@@ -398,7 +398,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 		common_primitives::offchain::custom::get_val()
 			.unwrap_or(RPC_FINALIZED_BLOCK_REQUEST_URL.into())
 	};
-	let url = sp_std::str::from_utf8(&rpc_address)
+	let url = core::str::from_utf8(&rpc_address)
 		.map_err(|_| sp_runtime::offchain::http::Error::Unknown)?;
 	// We want to keep the offchain worker execution time reasonable, so we set a hard-coded
 	// deadline to 2s to complete the external call.
@@ -429,7 +429,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	let body = response.body().collect::<Vec<u8>>();
 
 	// Create a str slice from the body.
-	let body_str = sp_std::str::from_utf8(&body).map_err(|_| {
+	let body_str = core::str::from_utf8(&body).map_err(|_| {
 		log::warn!("No UTF8 body");
 		sp_runtime::offchain::http::Error::Unknown
 	})?;

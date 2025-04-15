@@ -7,7 +7,8 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, Zero},
 	DispatchError, MultiSignature, RuntimeDebug,
 };
-use sp_std::prelude::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 pub use crate::schema::SchemaId;
 

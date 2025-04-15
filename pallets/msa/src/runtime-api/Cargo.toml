@@ -13,7 +13,6 @@ edition = "2021"
 parity-scale-codec = { workspace = true, features = ["derive"] }
 # Substrate
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 frame-support = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
@@ -23,7 +22,6 @@ default = ["std"]
 std = [
   "parity-scale-codec/std",
   "sp-api/std",
-  "sp-std/std",
   "frame-support/std",
   'common-primitives/std',
 ]

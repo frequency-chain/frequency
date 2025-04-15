@@ -17,6 +17,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{
@@ -33,7 +34,6 @@ use sp_runtime::{
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
-use sp_std::borrow::Cow;
 
 use pallet_collective::Members;
 
@@ -42,7 +42,6 @@ use pallet_collective::ProposalCount;
 
 use parity_scale_codec::Encode;
 
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -99,7 +98,8 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use sp_std::boxed::Box;
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -382,7 +382,7 @@ pub type Executive = frame_executive::Executive<
 	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
-pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
 
 impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T> {
 	fn on_runtime_upgrade() -> Weight {
@@ -436,7 +436,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 146,
+	spec_version: 147,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -450,7 +450,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 146,
+	spec_version: 147,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

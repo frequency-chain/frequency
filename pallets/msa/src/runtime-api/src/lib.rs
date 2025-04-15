@@ -19,7 +19,8 @@
 
 use common_primitives::{msa::*, node::BlockNumber};
 use parity_scale_codec::Codec;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

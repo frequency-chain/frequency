@@ -39,7 +39,8 @@ use sp_runtime::{
 	traits::{BlockNumberProvider, CheckedAdd, StaticLookup, Zero},
 	ArithmeticError,
 };
-use sp_std::{boxed::Box, vec::Vec};
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 #[cfg(test)]
 mod mock;
@@ -238,7 +239,7 @@ pub mod module {
 	pub struct GenesisConfig<T: Config> {
 		/// Phantom data.
 		#[serde(skip)]
-		pub _config: sp_std::marker::PhantomData<T>,
+		pub _config: core::marker::PhantomData<T>,
 		/// A list of schedules to include.
 		pub schedules: Vec<ScheduledItem<T>>,
 	}
