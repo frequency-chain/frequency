@@ -26,7 +26,6 @@ ENV CARGO_HOME="/root/.cargo"
 RUN rustup toolchain install $NIGHTLY_VERSION
 RUN rustup target add x86_64-unknown-linux-gnu --toolchain $NIGHTLY_VERSION
 RUN rustup target add wasm32-unknown-unknown --toolchain $NIGHTLY_VERSION
-RUN rustup target add wasm32-unknown-unknown --toolchain $NIGHTLY_VERSION
 RUN rustup component add rust-src --toolchain $NIGHTLY_VERSION
 
 RUN git config --system --add safe.directory /__w/frequency/frequency
