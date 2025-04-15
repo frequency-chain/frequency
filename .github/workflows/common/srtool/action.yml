@@ -198,13 +198,10 @@ runs:
     - id: build
       name: Build ${{ env.PACKAGE }} using ${{ env.SRTOOL_IMAGE }}
       shell: bash
-      env:
-        # https://github.com/paritytech/polkadot-sdk/pull/2217
-        WASM_BUILD_STD: "0"
       run: |
         echo ::group::Srtool build of chain ${{ inputs.chain }}
         CMD="docker run -i --rm  -e CARGO_NET_RETRY=10 -e PACKAGE=${{ env.PACKAGE }} -e RUNTIME_DIR=${{ env.RUNTIME_DIR }} -e BUILD_OPTS -e
-        PARACHAIN_PALLET_ID -e AUTHORIZE_UPGRADE_PREFIX -e PROFILE -e WASM_BUILD_STD -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE
+        PARACHAIN_PALLET_ID -e AUTHORIZE_UPGRADE_PREFIX -e PROFILE -v ${{ env.WORKDIR }}:/build ${{ env.SRTOOL_IMAGE
         }} build --app --json -cM"
 
         echo ::debug::build::docker_run $CMD
