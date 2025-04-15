@@ -1,20 +1,27 @@
 # Node Key Alice: `subkey inspect //Alice`
 # Node Key Bob: `subkey inspect //Bob`
-version: "3"
+x-polkadot-image: &polkadot-image "parity/polkadot:stable2412"
+
 services:
   relay_paseo_alice:
     container_name: alice
-    image: "parity/polkadot:v1.13.0"
+    image: *polkadot-image
     platform: linux/x86_64
     hostname: relay_alice
     ports:
       - "30335:30335" # p2p port
       - "9946:9944" # ws and rpc port
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/9944 && echo -e \"GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     volumes:
       - type: bind
         source: ../resources/paseo-local.json
         target: /chainspec.json
         read_only: true
+      - alice_polkadot:/polkadot
     command: >
       --chain=/chainspec.json
       --node-key=e5be9a5092b81bca64be81d212e7f2f9eba183bb7a90954f7b76361f6edb5c0a
@@ -32,17 +39,23 @@ services:
 
   relay_paseo_bob:
     container_name: bob
-    image: "parity/polkadot:v1.13.0"
+    image: *polkadot-image
     platform: linux/x86_64
     hostname: relay_bob
     ports:
       - "30336:30336" # p2p port
       - "9947:9944" # ws and rpc port
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/localhost/9944 && echo -e \"GET /health HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && grep -q 200 <&3'"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
     volumes:
       - type: bind
         source: ../resources/paseo-local.json
         target: /chainspec.json
         read_only: true
+      - bob_polkadot:/polkadot
     command: >
       --chain=/chainspec.json
       --node-key=398f0c28f98885e046333d4a41c19cee4c37368a9832c6502f6cfd182e2aef89
@@ -58,21 +71,6 @@ services:
       --log="main,info"
     restart: unless-stopped
 
-  collator_frequency:
-    container_name: frequency
-    image: frequencychain/collator-node-local:latest
-    # Replace image with build if you want to build locally instead of pulling
-    # build:
-    #   context: ..
-    #   dockerfile: docker/collator-node-local.dockerfile
-    environment:
-      - HOST_ALICE=relay_alice
-      - HOST_BOB=relay_bob
-      - ALICE_RPC_PORT=9944
-      - BOB_RPC_PORT=9944
-    ports:
-      - "30333:30333" # p2p port
-      - "9944:9944" # ws and rpc port
-    depends_on:
-      - relay_paseo_alice
-      - relay_paseo_bob
+volumes:
+  alice_polkadot:
+  bob_polkadot:

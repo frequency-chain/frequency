@@ -12,10 +12,12 @@ para_id="${PARA_ID:-2000}"
 base_dir=/tmp/frequency
 # Option to use the Docker image to export state & wasm
 docker_onboard="${DOCKER_ONBOARD:-false}"
-frequency_docker_image_tag="${PARA_DOCKER_IMAGE_TAG:-frequency-latest}"
+frequency_docker_image="${PARA_DOCKER_IMAGE:-frequencychain/parachain:latest}"
 chain="${RELAY_CHAIN_SPEC:-./resources/paseo-local.json}"
 # offchain options
 offchain_params="--offchain-worker=never"
+# option to prune Docker volumes when shutting down
+prune=${PRUNE:-}
 
 if [ "$2" == "with-offchain" ]; then
   offchain_params="--offchain-worker=always --enable-offchain-indexing=true"
@@ -27,25 +29,25 @@ case $cmd in
 start-paseo-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
   cd docker
-  docker-compose up -d relay_paseo_alice relay_paseo_bob
+  docker compose up -d relay_paseo_alice relay_paseo_bob
   ;;
 
 stop-paseo-relay-chain)
   echo "Stopping paseo chain..."
   cd docker
-  docker-compose down
+  docker compose down ${prune}
   ;;
 
 start-frequency-docker)
-  echo "Starting frequency container with Alice..."
+  echo "Starting published Frequency container with Alice..."
   cd docker
-  docker-compose up --build collator_frequency
+  docker compose -f docker-compose.yml -f docker-compose-collator.yml up -d collator_frequency
   ;;
 
 stop-frequency-docker)
-  echo "Stopping frequency container with Alice..."
+  echo "Stopping published Frequency container with Alice..."
   cd docker
-  docker-compose down
+  docker compose -f docker-compose.yml -f docker-compose-collator.yml down ${prune}
   ;;
 
 start-paseo-collator-alice)
@@ -65,14 +67,12 @@ start-paseo-collator-alice)
   ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --alice \
     --base-path=$parachain_dir_alice/data \
-    --wasm-execution=compiled \
     --force-authoring \
     --port $((30333)) \
     --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --trie-cache-size 0 \
     --pool-type=fork-aware \
     $offchain_params \
   ;;
@@ -94,14 +94,12 @@ start-paseo-collator-bob)
   ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --bob \
     --base-path=$parachain_dir_bob/data \
-    --wasm-execution=compiled \
     --force-authoring \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --trie-cache-size 0 \
     --pool-type=fork-aware \
     $offchain_params \
   ;;
@@ -128,7 +126,6 @@ start-frequency-instant)
     -ltxpool=debug \
     -lruntime=debug \
     --sealing=instant \
-    --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
@@ -198,7 +195,6 @@ start-frequency-manual)
     --dev \
     -lruntime=debug \
     --sealing=manual \
-    --wasm-execution=compiled \
     --no-telemetry \
     --no-prometheus \
     --port $((30333)) \
@@ -213,24 +209,24 @@ start-frequency-manual)
 
 start-frequency-container)
 
+  base_dir=/data
   parachain_dir=$base_dir/parachain/${para_id}
-  mkdir -p $parachain_dir;
   frequency_default_port=$((30333))
   frequency_default_rpc_port=$((9944))
   frequency_port="${Frequency_PORT:-$frequency_default_port}"
   frequency_rpc_port="${Frequency_RPC_PORT:-$frequency_default_rpc_port}"
 
   ./scripts/run_collator.sh \
-    --chain="frequency-paseo-local" --alice \
+    --chain="frequency-paseo-local" \
+    --alice \
+    --unsafe-force-node-key-generation \
     --base-path=$parachain_dir/data \
-    --wasm-execution=compiled \
     --force-authoring \
     --port "${frequency_port}" \
     --rpc-port "${frequency_rpc_port}" \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --trie-cache-size 0 \
     --pool-type=fork-aware \
    $offchain_params \
   ;;
@@ -250,12 +246,13 @@ onboard-frequency-paseo-local)
    wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
 
    # THE `-r` is important for it to be binary instead of hex
+   # Make sure the docker does NOT use -t as it breaks the binary output
     if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-state --chain="frequency-paseo-local")
-      docker run -it {REPO_NAME}/frequency:${frequency_docker_image_tag} export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
+      genesis=$(docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+      docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     else
-      genesis=$(./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
-      ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
+      genesis=$(RUST_LOG=off ./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+      RUST_LOG=off ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
     fi
 
   cd scripts/js/onboard
