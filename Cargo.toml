@@ -172,7 +172,7 @@ sp-debug-derive = { git = "https://github.com/paritytech/polkadot-sdk", branch =
 nonstandard-style = "deny"
 
 [workspace.lints.clippy]
-# These should all be removed (changed to deny via correctness) in the next PR
+# These should all be removed and lints fixed/ignored in the next PR
 collapsible_else_if = "allow"
 collapsible_if = "allow"
 single_component_path_imports = "allow"
@@ -208,6 +208,7 @@ while_let_on_iterator = "allow"
 match_like_matches_macro = "allow"
 nonminimal_bool = "allow"
 non_minimal_cfg = "allow"
+# We just deny everything so that we can then build up from there
 correctness = { level = "deny", priority = -1 }
 style = { level = "deny", priority = -1 }
 complexity = { level = "deny", priority = -1 }

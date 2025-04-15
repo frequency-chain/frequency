@@ -183,7 +183,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Up Cargo Deny
         run: |
-          cargo install --force --locked cargo-deny@0.18.2
+          cargo install --force --locked cargo-deny@0.17.0
           cargo generate-lockfile
       - name: Run Cargo Deny
         run: cargo deny check --hide-inclusion-graph -c deny.toml
