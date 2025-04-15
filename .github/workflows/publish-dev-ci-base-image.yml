@@ -11,6 +11,12 @@ on:
     paths-ignore:
       - "README.md"
       - "LICENSE"
+  pull_request:
+    branches:
+      - ci/ci-base-image
+    paths-ignore:
+      - "README.md"
+      - "LICENSE"
 env:
   RUST_VERSION: 1.84.1
   IMAGE_VERSION: 1.4.0
@@ -42,6 +48,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
+        if: github.event_name == 'push'
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
@@ -59,7 +66,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          push: true
+          push: ${{ github.event_name == 'push' }}
           file: ci-base-image.dockerfile
           tags: |
             ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}:latest
