@@ -6,7 +6,7 @@ use frame_support::{
 	dispatch::DispatchInfo, ensure, pallet_prelude::ValidTransaction, traits::IsSubType,
 	unsigned::UnknownTransaction,
 };
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 #[allow(deprecated)]
 use sp_runtime::{
@@ -17,7 +17,7 @@ use sp_runtime::{
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
 /// purpose of this is to ensure that the retire_handle extrinsic cannot be
 /// repeatedly called to flood the network.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 

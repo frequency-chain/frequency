@@ -656,6 +656,7 @@ pub type MaxSignatories = ConstU32<100>;
 // See https://paritytech.github.io/substrate/master/pallet_multisig/pallet/trait.Config.html for
 // the descriptions of these configs.
 impl pallet_multisig::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
@@ -755,6 +756,7 @@ parameter_types! {
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;

@@ -1,5 +1,5 @@
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec};
-use parity_scale_codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -28,6 +28,8 @@ impl Encode for DelegatorId {
 		self.0.encode()
 	}
 }
+
+impl DecodeWithMemTracking for DelegatorId {}
 
 impl Decode for DelegatorId {
 	fn decode<I: parity_scale_codec::Input>(
@@ -158,6 +160,8 @@ impl Encode for ProviderId {
 		self.0.encode()
 	}
 }
+
+impl DecodeWithMemTracking for ProviderId {}
 
 impl Decode for ProviderId {
 	fn decode<I: parity_scale_codec::Input>(

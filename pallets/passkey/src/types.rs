@@ -4,6 +4,7 @@ use frame_support::{
 	BoundedVec, RuntimeDebugNoBound,
 };
 use p256::{ecdsa::signature::Verifier, EncodedPoint};
+use parity_scale_codec::DecodeWithMemTracking;
 use sp_io::hashing::sha2_256;
 use sp_runtime::MultiSignature;
 #[allow(unused)]
@@ -23,16 +24,16 @@ pub type PasskeyAuthenticatorData = BoundedVec<u8, ConstU32<128>>;
 pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<256>>;
 /// PassKey Public Key type in compressed encoded point format
 /// the first byte is the tag indicating compressed format
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 pub struct PasskeyPublicKey(pub [u8; 33]);
 /// PassKey Signature type
 #[derive(
-	Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone, Default,
+	Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone, Default,
 )]
 pub struct PasskeySignature(pub BoundedVec<u8, ConstU32<96>>);
 
 /// Passkey Payload
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyPayload<T: Config> {
 	/// passkey public key
@@ -44,7 +45,7 @@ pub struct PasskeyPayload<T: Config> {
 }
 
 /// Passkey Payload V2
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyPayloadV2<T: Config> {
 	/// passkey public key
@@ -58,7 +59,7 @@ pub struct PasskeyPayloadV2<T: Config> {
 }
 
 /// A verifiable Pass key contains all the required information to verify a passkey signature
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 pub struct VerifiablePasskeySignature {
 	/// passkey signature of `passkey_call`
 	pub signature: PasskeySignature,
@@ -69,7 +70,7 @@ pub struct VerifiablePasskeySignature {
 }
 
 /// Inner Passkey call
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyCall<T: Config> {
 	/// account id which is the origin of this call
@@ -83,7 +84,7 @@ pub struct PasskeyCall<T: Config> {
 }
 
 /// Inner Passkey call V2
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyCallV2<T: Config> {
 	/// account id which is the origin of this call

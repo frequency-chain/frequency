@@ -76,5 +76,12 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> 
 			// Standard Error: 1_919
 			.saturating_add(Weight::from_parts(3_014_103, 0).saturating_mul(c.into()))
 	}
-}
 
+	fn dispatch_as_fallible() -> Weight {
+			todo!()
+		}
+
+	fn if_else() -> Weight {
+			todo!()
+		}
+}

@@ -17,7 +17,7 @@ use scale_info::TypeInfo;
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
 /// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
-#[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, Encode, PartialEq, Eq)]
+#[derive(TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 #[scale_info(skip_type_params(T))]
 pub struct AddKeyData<T: Config> {
 	/// Message Source Account identifier
@@ -29,7 +29,7 @@ pub struct AddKeyData<T: Config> {
 }
 
 /// Structure that is signed for granting permissions to a Provider
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
+#[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 pub struct AddProvider {
 	/// The provider being granted permissions
 	pub authorized_msa_id: MessageSourceId,

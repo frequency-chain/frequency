@@ -109,6 +109,7 @@ impl EnsureOrigin<RuntimeOrigin> for EnsureTimeReleaseOrigin {
 }
 
 impl pallet_scheduler::Config for Test {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
@@ -245,6 +246,7 @@ impl ExtBuilder {
 				(CHARLIE, CHARLIE_BALANCE),
 				(DAVE, DAVE_BALANCE),
 			],
+			dev_accounts: ..Default::default(),
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

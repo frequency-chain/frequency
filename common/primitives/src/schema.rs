@@ -2,7 +2,7 @@ use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
 use enumflags2::{bitflags, BitFlags};
-use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
@@ -22,6 +22,7 @@ pub type SchemaVersion = u8;
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	Debug,
 	TypeInfo,
@@ -43,6 +44,7 @@ pub enum ModelType {
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	Debug,
 	TypeInfo,
@@ -73,6 +75,7 @@ pub enum PayloadLocation {
 	Eq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	MaxEncodedLen,
 	TypeInfo,
 	Serialize,

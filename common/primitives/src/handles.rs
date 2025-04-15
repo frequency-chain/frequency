@@ -2,7 +2,7 @@ use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
 use frame_support::BoundedVec;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -42,7 +42,7 @@ pub type SuffixRangeType = u16;
 pub type SequenceIndex = u16;
 
 /// Claim handle payload
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
+#[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 pub struct ClaimHandlePayload<BlockNumber> {
 	/// The desired base handle
 	pub base_handle: Vec<u8>,
