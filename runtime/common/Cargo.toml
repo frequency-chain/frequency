@@ -89,3 +89,6 @@ try-runtime = [
   "pallet-proxy/try-runtime",
   "pallet-time-release/try-runtime",
 ]
+
+[lints]
+workspace = true

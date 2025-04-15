@@ -108,11 +108,14 @@ specs-paseo-local:
 format:
 	cargo +nightly-2025-04-03 fmt
 
-.PHONY: lint lint-audit lint-fix
+.PHONY: lint lint-audit lint-fix lint-clippy
 lint:
 	cargo +nightly-2025-04-03 fmt --check
-	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check
+	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
+
+lint-clippy:
+	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 
 lint-audit:
 	cargo deny check -c deny.toml

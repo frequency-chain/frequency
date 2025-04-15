@@ -19,3 +19,6 @@ twox-hash = { workspace = true, features = ["digest_0_10"] }
 [features]
 default = ["std"]
 std = []
+
+[lints]
+workspace = true

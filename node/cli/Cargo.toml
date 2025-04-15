@@ -99,3 +99,6 @@ frequency-lint-check = [
   "frequency-testnet",
   "frequency-service/frequency-lint-check",
 ]
+
+[lints]
+workspace = true

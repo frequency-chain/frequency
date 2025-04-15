@@ -70,3 +70,6 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 ]
 test = []
+
+[lints]
+workspace = true

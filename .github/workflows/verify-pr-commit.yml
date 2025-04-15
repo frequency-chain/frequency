@@ -221,9 +221,11 @@ jobs:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Lint
+        # Fail on warnings
         run: |
           SKIP_WASM_BUILD=1 cargo clippy \
-            --features runtime-benchmarks,frequency-lint-check
+            --features runtime-benchmarks,frequency-lint-check \
+            -- -Dwarnings
 
   verify-rust-developer-docs:
     needs: changes
@@ -269,7 +271,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
-    runs-on: ubicloud-standard-8
+    runs-on: ubicloud-standard-16
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo

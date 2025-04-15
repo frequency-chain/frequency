@@ -26,3 +26,6 @@ std = [
   'common-primitives/std',
 ]
 test = []
+
+[lints]
+workspace = true
