@@ -11,6 +11,8 @@ LABEL version="${IMAGE_VERSION}"
 LABEL org.opencontainers.image.description "Frequency CI Base Image"
 ARG RUST_VERSION
 LABEL rust.version="${RUST_VERSION}"
+ARG NIGHTLY_VERSION
+LABEL rust.nightly-version="${NIGHTLY_VERSION}"
 
 WORKDIR /ci
 RUN apt-get update && \

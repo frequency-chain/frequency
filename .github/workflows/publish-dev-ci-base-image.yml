@@ -67,3 +67,4 @@ jobs:
           build-args: |
             IMAGE_VERSION=${{env.IMAGE_VERSION}}
             RUST_VERSION=${{env.RUST_VERSION}}
+            NIGHTLY_VERSION=${{env.NIGHTLY_VERSION}}
