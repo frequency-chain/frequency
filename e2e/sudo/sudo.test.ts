@@ -24,11 +24,13 @@ import { stakeToProvider } from '../scaffolding/helpers';
 describe('Sudo required', function () {
   let sudoKey: KeyringPair;
   let fundingSource: KeyringPair;
+  let schemaName: string;
 
   before(function () {
     if (isTestnet()) this.skip();
     sudoKey = getSudo().keys;
     fundingSource = getFundingSource(import.meta.url);
+    schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
   });
 
   describe('schema#setMaxSchemaModelBytes', function () {
@@ -56,7 +58,6 @@ describe('Sudo required', function () {
   describe('schema-pallet ', function () {
     it('should create schema with name using createSchemaWithSettingsGovV2', async function () {
       if (isTestnet()) this.skip();
-      const schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
       const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
@@ -82,12 +83,13 @@ describe('Sudo required', function () {
     it('should fail to create non itemized schema with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const ex = ExtrinsicHelper.createSchemaWithSettingsGov(
+      const ex = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
         'Paginated',
-        'AppendOnly'
+        'AppendOnly',
+        schemaName
       );
       await assert.rejects(ex.sudoSignAndSend(), {
         name: 'InvalidSetting',
@@ -97,12 +99,13 @@ describe('Sudo required', function () {
     it('should not fail to create itemized schema with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(
+      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
         'Itemized',
-        'AppendOnly'
+        'AppendOnly',
+        schemaName
       );
       const { target: event } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
@@ -130,12 +133,13 @@ describe('Sudo required', function () {
         assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
         // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(
+        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
           sudoKey,
           AVRO_CHAT_MESSAGE,
           'AvroBinary',
           'Itemized',
-          'AppendOnly'
+          'AppendOnly',
+          schemaName
         );
         const { target: event } = await createSchema.sudoSignAndSend();
         itemizedSchemaId = event!.data.schemaId;

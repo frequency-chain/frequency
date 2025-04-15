@@ -399,34 +399,6 @@ export class ExtrinsicHelper {
   }
 
   /** Schema Extrinsics */
-  public static createSchema(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated'
-  ) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
-  /** Schema v2 Extrinsics */
-  public static createSchemaV2(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
-    grant: ('AppendOnly' | 'SignatureRequired')[]
-  ) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
   public static async getOrCreateSchemaV3(
     keys: KeyringPair,
     model: any,
@@ -473,28 +445,6 @@ export class ExtrinsicHelper {
           payloadLocation,
           grant,
           schemaNme
-        ),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
-  /** Generic Schema Extrinsics */
-  public static createSchemaWithSettingsGov(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
-    grant: 'AppendOnly' | 'SignatureRequired'
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernance(
-          getUnifiedPublicKey(keys),
-          JSON.stringify(model),
-          modelType,
-          payloadLocation,
-          [grant]
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
@@ -608,14 +558,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static revokeSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.revokeSchemaPermissions(providerMsaId, schemaIds),
-      delegatorKeys,
-      ExtrinsicHelper.api.events.msa.DelegationUpdated
-    );
-  }
-
   public static revokeDelegationByDelegator(keys: KeyringPair, providerMsaId: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.revokeDelegationByDelegator(providerMsaId),
@@ -679,24 +621,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static applyItemActionsWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: ItemizedSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated
-    );
-  }
-
   public static applyItemActionsWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
@@ -715,24 +639,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static deletePageWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: PaginatedDeleteSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
-    );
-  }
-
   public static deletePageWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
@@ -748,24 +654,6 @@ export class ExtrinsicHelper {
         ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
-    );
-  }
-
-  public static upsertPageWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: PaginatedUpsertSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated
     );
   }
 
