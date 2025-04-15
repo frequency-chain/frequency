@@ -1,7 +1,7 @@
 # NOTE: If you make changes in this file, be sure to update IMAGE_VERSION in merge-pr.yml
 # ci-base-image is published IF and ONLY IF changes are detected in this dockerfile.
 
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM ubuntu:24.04
 ENV DEBIAN_FRONTEND=noninteractive
 LABEL maintainer="Frequency"
 LABEL description="Frequency CI Base Image"

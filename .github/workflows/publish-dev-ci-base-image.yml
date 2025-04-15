@@ -21,7 +21,7 @@ jobs:
     env:
       IMAGE_NAME: ci-base-image
       BRANCH_NAME: ${{github.ref_name}}
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     permissions:
       contents: read
