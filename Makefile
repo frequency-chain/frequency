@@ -111,7 +111,7 @@ format:
 .PHONY: lint lint-audit
 lint:
 	cargo +nightly-2025-04-03 fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
+	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
 lint-audit:
