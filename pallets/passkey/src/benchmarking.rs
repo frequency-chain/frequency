@@ -11,7 +11,7 @@ use crate::{
 	types::*,
 };
 use common_primitives::utils::wrap_binary_data;
-use frame_benchmarking::benchmarks;
+use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::{traits::Zero, MultiSignature, RuntimeAppPublic};
@@ -69,28 +69,37 @@ fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 	payload
 }
 
-benchmarks! {
-	where_clause {  where
+#[benchmarks(
+	where
 		BalanceOf<T>: From<u64>,
 		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 		<T as frame_system::Config>::RuntimeOrigin: AsTransactionAuthorizedOrigin,
-	}
+)]
+mod benchmarks {
+	use super::*;
 
-	validate {
+	#[benchmark]
+	fn validate() -> Result<(), BenchmarkError> {
 		let payload = generate_payload::<T>();
-	}: {
-		assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload }));
+		#[block]
+		{
+			assert_ok!(Passkey::validate_unsigned(
+				TransactionSource::InBlock,
+				&Call::proxy_v2 { payload }
+			));
+		}
+		Ok(())
 	}
 
-	pre_dispatch {
+	#[benchmark]
+	fn pre_dispatch() -> Result<(), BenchmarkError> {
 		let payload = generate_payload::<T>();
-	}: {
-		assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
+		#[block]
+		{
+			assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
+		}
+		Ok(())
 	}
 
-	impl_benchmark_test_suite!(
-		Passkey,
-		crate::mock::new_test_ext_keystore(),
-		crate::mock::Test
-	);
+	impl_benchmark_test_suite!(Passkey, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }

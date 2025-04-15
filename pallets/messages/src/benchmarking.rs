@@ -8,7 +8,7 @@ use common_primitives::{
 	msa::{DelegatorId, ProviderId},
 	schema::*,
 };
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::v2::*;
 use frame_support::{assert_ok, pallet_prelude::DispatchResult};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::traits::One;
@@ -67,53 +67,86 @@ fn create_schema<T: Config>(location: PayloadLocation) -> DispatchResult {
 	)
 }
 
-benchmarks! {
-	add_onchain_message {
-		let n in 0 .. T::MessagesMaxPayloadSizeBytes::get() - 1;
+#[benchmarks]
+mod benchmarks {
+	use super::*;
+
+	#[benchmark]
+	fn add_onchain_message(
+		n: Linear<0, { T::MessagesMaxPayloadSizeBytes::get() - 1 }>,
+	) -> Result<(), BenchmarkError> {
 		let message_source_id = DelegatorId(2);
 		let caller: T::AccountId = whitelisted_caller();
 		let schema_id = ON_CHAIN_SCHEMA_ID;
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
-		for j in 0 ..=SCHEMA_SIZE {
+		for _ in 0..=SCHEMA_SIZE {
 			assert_ok!(create_schema::<T>(PayloadLocation::OnChain));
 		}
 
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(ProviderId(1), message_source_id.into(), [schema_id].to_vec()));
+		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
+			ProviderId(1),
+			message_source_id.into(),
+			[schema_id].to_vec()
+		));
 
 		let payload = vec![1; n as usize];
-		for j in 1 .. MAX_MESSAGES_IN_BLOCK {
+		for _ in 1..MAX_MESSAGES_IN_BLOCK {
 			assert_ok!(onchain_message::<T>(schema_id));
 		}
-	}: _ (RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload)
-	verify {
-		assert_eq!(MessagesPallet::<T>::get_messages_by_schema_and_block(
-				schema_id, PayloadLocation::OnChain, BlockNumberFor::<T>::one()).len(),
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller), Some(message_source_id.into()), schema_id, payload);
+
+		assert_eq!(
+			MessagesPallet::<T>::get_messages_by_schema_and_block(
+				schema_id,
+				PayloadLocation::OnChain,
+				BlockNumberFor::<T>::one()
+			)
+			.len(),
 			MAX_MESSAGES_IN_BLOCK as usize
 		);
+
+		Ok(())
 	}
 
-	add_ipfs_message {
+	#[benchmark]
+	fn add_ipfs_message() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = whitelisted_caller();
-		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq".as_bytes().to_vec();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let schema_id = IPFS_SCHEMA_ID;
 
 		// schema ids start from 1, and we need to add that many to make sure our desired id exists
-		for j in 0 ..=SCHEMA_SIZE {
+		for _ in 0..=SCHEMA_SIZE {
 			assert_ok!(create_schema::<T>(PayloadLocation::IPFS));
 		}
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
-		for j in 1 .. MAX_MESSAGES_IN_BLOCK {
+		for _ in 1..MAX_MESSAGES_IN_BLOCK {
 			assert_ok!(ipfs_message::<T>(schema_id));
 		}
-	}: _ (RawOrigin::Signed(caller), schema_id, cid, IPFS_PAYLOAD_LENGTH)
-	verify {
-		assert_eq!(MessagesPallet::<T>::get_messages_by_schema_and_block(
-			schema_id, PayloadLocation::IPFS, BlockNumberFor::<T>::one()).len(),
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller), schema_id, cid, IPFS_PAYLOAD_LENGTH);
+
+		assert_eq!(
+			MessagesPallet::<T>::get_messages_by_schema_and_block(
+				schema_id,
+				PayloadLocation::IPFS,
+				BlockNumberFor::<T>::one()
+			)
+			.len(),
 			MAX_MESSAGES_IN_BLOCK as usize
 		);
+		Ok(())
 	}
 
-	impl_benchmark_test_suite!(MessagesPallet, crate::tests::mock::new_test_ext(), crate::tests::mock::Test);
+	impl_benchmark_test_suite!(
+		MessagesPallet,
+		crate::tests::mock::new_test_ext(),
+		crate::tests::mock::Test
+	);
 }

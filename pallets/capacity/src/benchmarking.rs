@@ -2,11 +2,13 @@ use super::*;
 use crate::Pallet as Capacity;
 
 use crate::StakingType::*;
-use frame_benchmarking::{account, benchmarks, whitelist_account};
+use frame_benchmarking::{
+	v1::{account, whitelist_account, BenchmarkError},
+	v2::*,
+};
 use frame_support::{assert_ok, BoundedVec};
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use parity_scale_codec::alloc::vec::Vec;
-
 const SEED: u32 = 0;
 const REWARD_POOL_TOTAL: u32 = 2_000_000;
 
@@ -118,73 +120,94 @@ fn unclaimed_rewards_total<T: Config>(caller: &T::AccountId) -> BalanceOf<T> {
 		.into()
 }
 
-benchmarks! {
-	stake {
+#[benchmarks]
+mod benchmarks {
+	use super::*;
+
+	#[benchmark]
+	fn stake() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 105u32);
 		let amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(amount);
 		let target = 1;
-		let staking_type = MaximumCapacity;
 
 		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
-	verify {
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), target, amount);
+
 		assert!(StakingAccountLedger::<T>::contains_key(&caller));
 		assert!(StakingTargetLedger::<T>::contains_key(&caller, target));
 		assert!(CapacityLedger::<T>::contains_key(target));
-		assert_last_event::<T>(Event::<T>::Staked {account: caller, amount, target, capacity}.into());
+		assert_last_event::<T>(
+			Event::<T>::Staked { account: caller, amount, target, capacity }.into(),
+		);
+		Ok(())
 	}
 
-	withdraw_unstaked {
+	#[benchmark]
+	fn withdraw_unstaked() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get());
 
 		CurrentEpoch::<T>::set(T::EpochNumber::from(5u32));
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()));
 
-	}: _ (RawOrigin::Signed(caller.clone()))
-	verify {
 		let total = T::MaxUnlockingChunks::get();
-		assert_last_event::<T>(Event::<T>::StakeWithdrawn {account: caller, amount: total.into() }.into());
+		assert_last_event::<T>(
+			Event::<T>::StakeWithdrawn { account: caller, amount: total.into() }.into(),
+		);
+		Ok(())
 	}
 
-	start_new_epoch_if_needed {
+	#[benchmark]
+	fn start_new_epoch_if_needed() -> Result<(), BenchmarkError> {
 		let current_block: BlockNumberFor<T> = 100_000u32.into();
 		let current_epoch: T::EpochNumber = 10_000u32.into();
 		set_up_epoch::<T>(current_block, current_epoch);
-	}:  {
-		Capacity::<T>::start_new_epoch_if_needed(current_block)
-	} verify {
+
+		#[block]
+		{
+			Capacity::<T>::start_new_epoch_if_needed(current_block);
+		}
+
 		assert_eq!(current_epoch.saturating_add(1u32.into()), CurrentEpoch::<T>::get());
 		assert_eq!(current_block, CurrentEpochInfo::<T>::get().epoch_start);
+		Ok(())
 	}
 
-	start_new_reward_era_if_needed {
+	#[benchmark]
+	fn start_new_reward_era_if_needed() -> Result<(), BenchmarkError> {
 		let current_block: BlockNumberFor<T> = 1_209_600u32.into();
 		let history_limit: u32 = <T as Config>::ProviderBoostHistoryLimit::get();
-		let total_reward_pool: BalanceOf<T> = <T as Config>::RewardPoolPerEra::get();
-		let unclaimed_balance: BalanceOf<T> = 5_000u32.into();
-		let total_staked_token: BalanceOf<T> = 5_000u32.into();
-		let started_at: BlockNumberFor<T> = current_block.saturating_sub(<T as Config>::EraLength::get().into());
+		let started_at: BlockNumberFor<T> =
+			current_block.saturating_sub(<T as Config>::EraLength::get().into());
 
 		let current_era: RewardEra = (history_limit + 1u32).into();
-		CurrentEraInfo::<T>::set(RewardEraInfo{ era_index: current_era, started_at });
+		CurrentEraInfo::<T>::set(RewardEraInfo { era_index: current_era, started_at });
 		fill_reward_pool_chunks::<T>(current_era);
-	}: {
-		Capacity::<T>::start_new_reward_era_if_needed(current_block);
-	} verify {
+
+		#[block]
+		{
+			Capacity::<T>::start_new_reward_era_if_needed(current_block);
+		}
+
 		let new_era_info = CurrentEraInfo::<T>::get();
 		assert_eq!(current_era.saturating_add(1u32.into()), new_era_info.era_index);
 		assert_eq!(current_block, new_era_info.started_at);
+		Ok(())
 	}
-	unstake {
+
+	#[benchmark]
+	fn unstake() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
-		let staking_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(20u32.into());
+		let staking_amount: BalanceOf<T> =
+			T::MinimumStakingAmount::get().saturating_add(20u32.into());
 		let unstaking_amount = 9u32;
 		let capacity_amount: BalanceOf<T> = Capacity::<T>::capacity_generated(staking_amount);
 		let target = 1;
-		let block_number = 4u32;
 
 		// Adds a boost history entry for this era only so unstake succeeds and there is an update
 		// to provider boost history.
@@ -196,31 +219,48 @@ benchmarks! {
 		setup_provider_stake::<T>(&caller, &target, staking_amount, true);
 
 		fill_unlock_chunks::<T>(&caller, T::MaxUnlockingChunks::get() - 1);
-	}: _ (RawOrigin::Signed(caller.clone()), target, unstaking_amount.into())
-	verify {
-		assert_last_event::<T>(Event::<T>::UnStaked {
-			account: caller.clone(),
-			target,
-			amount: unstaking_amount.into(),
-			capacity: Capacity::<T>::calculate_capacity_reduction(unstaking_amount.into(), staking_amount,capacity_amount)
-		}.into());
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), target, unstaking_amount.into());
+
+		assert_last_event::<T>(
+			Event::<T>::UnStaked {
+				account: caller.clone(),
+				target,
+				amount: unstaking_amount.into(),
+				capacity: Capacity::<T>::calculate_capacity_reduction(
+					unstaking_amount.into(),
+					staking_amount,
+					capacity_amount,
+				),
+			}
+			.into(),
+		);
+		Ok(())
 	}
 
-	set_epoch_length {
+	#[benchmark]
+	fn set_epoch_length() -> Result<(), BenchmarkError> {
 		let epoch_length: BlockNumberFor<T> = 9u32.into();
-	}: _ (RawOrigin::Root, epoch_length)
-	verify {
+
+		#[extrinsic_call]
+		_(RawOrigin::Root, epoch_length);
+
 		assert_eq!(EpochLength::<T>::get(), 9u32.into());
-		assert_last_event::<T>(Event::<T>::EpochLengthUpdated {blocks: epoch_length}.into());
+		assert_last_event::<T>(Event::<T>::EpochLengthUpdated { blocks: epoch_length }.into());
+		Ok(())
 	}
 
-	change_staking_target {
+	#[benchmark]
+	fn change_staking_target() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let from_msa = 33;
 		let to_msa = 34;
 		// amount in addition to minimum
-		let from_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(31u32.into());
-		let to_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
+		let from_msa_amount: BalanceOf<T> =
+			T::MinimumStakingAmount::get().saturating_add(31u32.into());
+		let to_msa_amount: BalanceOf<T> =
+			T::MinimumStakingAmount::get().saturating_add(1u32.into());
 
 		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(from_msa, "frommsa");
@@ -229,48 +269,72 @@ benchmarks! {
 		setup_provider_stake::<T>(&caller, &to_msa, to_msa_amount, false);
 		let restake_amount: BalanceOf<T> = from_msa_amount.saturating_sub(10u32.into());
 
-	}: _ (RawOrigin::Signed(caller.clone(), ), from_msa, to_msa, restake_amount)
-	verify {
-		assert_last_event::<T>(Event::<T>::StakingTargetChanged {
-			account: caller,
-			from_msa,
-			to_msa,
-			amount: restake_amount.into()
-		}.into());
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), from_msa, to_msa, restake_amount);
+
+		assert_last_event::<T>(
+			Event::<T>::StakingTargetChanged {
+				account: caller,
+				from_msa,
+				to_msa,
+				amount: restake_amount.into(),
+			}
+			.into(),
+		);
+		Ok(())
 	}
 
-	provider_boost {
+	#[benchmark]
+	fn provider_boost() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("boostaccount", SEED, 260u32);
 		let boost_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
-		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
+		let capacity: BalanceOf<T> =
+			Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
 		let target = 1;
 
 		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
-	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)
-	verify {
-		assert_last_event::<T>(Event::<T>::ProviderBoosted {account: caller, amount: boost_amount, target, capacity}.into());
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), target, boost_amount);
+
+		assert_last_event::<T>(
+			Event::<T>::ProviderBoosted { account: caller, amount: boost_amount, target, capacity }
+				.into(),
+		);
+		Ok(())
 	}
 
 	// TODO: vary the boost_history to get better weight estimates.
-	claim_staking_rewards {
+	#[benchmark]
+	fn claim_staking_rewards() -> Result<(), BenchmarkError> {
 		let caller: T::AccountId = create_funded_account::<T>("account", SEED, 5u32);
 		let from_msa = 33;
 		let boost_amount: BalanceOf<T> = T::MinimumStakingAmount::get();
 		setup_provider_stake::<T>(&caller, &from_msa, boost_amount, false);
 		frame_system::Pallet::<T>::set_block_number(1002u32.into());
 		let current_era: RewardEra = 100;
-		set_era_and_reward_pool_at_block::<T>(current_era, 1001u32.into(), REWARD_POOL_TOTAL.into());
+		set_era_and_reward_pool_at_block::<T>(
+			current_era,
+			1001u32.into(),
+			REWARD_POOL_TOTAL.into(),
+		);
 		fill_reward_pool_chunks::<T>(current_era);
 		fill_boost_history::<T>(&caller, 100u32.into(), current_era);
 		let unclaimed_rewards = unclaimed_rewards_total::<T>(&caller);
-	}: _ (RawOrigin::Signed(caller.clone()))
-	verify {
-		assert_last_event::<T>(Event::<T>::ProviderBoostRewardClaimed {account: caller.clone(), reward_amount: unclaimed_rewards}.into());
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()));
+
+		assert_last_event::<T>(
+			Event::<T>::ProviderBoostRewardClaimed {
+				account: caller.clone(),
+				reward_amount: unclaimed_rewards,
+			}
+			.into(),
+		);
+		Ok(())
 	}
 
-	impl_benchmark_test_suite!(Capacity,
-		tests::mock::new_test_ext(),
-		tests::mock::Test);
+	impl_benchmark_test_suite!(Capacity, tests::mock::new_test_ext(), tests::mock::Test);
 }

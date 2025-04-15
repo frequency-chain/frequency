@@ -5,11 +5,7 @@ use crate::{
 	types::*,
 	Config, Error, Event as StatefulEvent,
 };
-use common_primitives::{
-	msa::{MessageSourceId, SchemaId},
-	stateful_storage::{PageHash, PageId},
-	utils::wrap_binary_data,
-};
+use common_primitives::{stateful_storage::PageHash, utils::wrap_binary_data};
 use frame_support::{assert_err, assert_ok, assert_storage_noop};
 use parity_scale_codec::Encode;
 #[allow(unused_imports)]
