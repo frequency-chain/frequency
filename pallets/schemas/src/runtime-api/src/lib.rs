@@ -18,7 +18,8 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::schema::*;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 sp_api::decl_runtime_apis! {
 

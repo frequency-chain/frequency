@@ -5,7 +5,8 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::vec::Vec;
 #[cfg(feature = "std")]
 use utils::*;
 

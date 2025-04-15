@@ -1,6 +1,7 @@
 use common_primitives::{signatures::UnifiedSignature, utils::wrap_binary_data};
 use sp_runtime::{traits::Verify, AccountId32, MultiSignature};
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 pub fn check_signature(signature: &MultiSignature, signer: AccountId32, payload: Vec<u8>) -> bool {
 	let unified_signature: UnifiedSignature = signature.clone().into();

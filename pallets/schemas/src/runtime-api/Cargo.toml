@@ -13,11 +13,10 @@ edition = "2021"
 # Substrate
 sp-runtime = { workspace = true }
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 frame-support = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 
 [features]
 default = ["std"]
-std = ["sp-api/std", "frame-support/std", "common-primitives/std", "sp-std/std"]
+std = ["sp-api/std", "frame-support/std", "common-primitives/std"]

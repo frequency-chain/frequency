@@ -21,7 +21,8 @@ use sp_runtime::{
 	traits::{BlakeTwo256, ConvertInto, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, MultiSignature,
 };
-use sp_std::sync::Arc;
+extern crate alloc;
+use alloc::sync::Arc;
 
 pub use pallet_msa::Call as MsaCall;
 

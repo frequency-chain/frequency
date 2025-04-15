@@ -22,7 +22,6 @@ sp-api = { workspace = true }
 sp-rpc = { workspace = true }
 sp-runtime = { workspace = true }
 sp-blockchain = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
@@ -31,7 +30,6 @@ sc-client-api = { workspace = true }
 [features]
 default = ["std"]
 std = [
-  "sp-std/std",
   "sp-api/std",
   "sp-core/std",
   "sp-runtime/std",

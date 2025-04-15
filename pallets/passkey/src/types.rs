@@ -6,9 +6,9 @@ use frame_support::{
 use p256::{ecdsa::signature::Verifier, EncodedPoint};
 use sp_io::hashing::sha2_256;
 use sp_runtime::MultiSignature;
+extern crate alloc;
 #[allow(unused)]
-use sp_std::boxed::Box;
-use sp_std::vec::Vec;
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
 
 /// This is the placeholder value that should be replaced by calculated challenge for
 /// evaluation of a Passkey signature.
