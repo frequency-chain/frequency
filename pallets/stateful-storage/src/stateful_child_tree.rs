@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 
 use common_primitives::msa::MessageSourceId;
+use core::fmt::Debug;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
 	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
@@ -8,7 +9,8 @@ use frame_support::{
 use parity_scale_codec::{Decode, Encode};
 use sp_core::{ConstU8, Get};
 use sp_io::hashing::twox_64;
-use sp_std::{fmt::Debug, prelude::*};
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 /// Hasher to use to hash keys to insert to storage.
 pub trait MultipartKeyStorageHasher: StorageHasher {

@@ -10,13 +10,14 @@ use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
-use sp_std::{
+extern crate alloc;
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::{
 	cmp::*,
-	collections::btree_map::BTreeMap,
 	fmt::Debug,
 	hash::{Hash, Hasher},
-	prelude::*,
 };
+
 use twox_hash::XxHash64;
 
 /// Migration page size
@@ -56,7 +57,7 @@ pub trait ItemizedOperations<T: Config> {
 #[derive(Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
 #[scale_info(skip_type_params(DataSize))]
 #[codec(mel_bound(DataSize: MaxEncodedLen))]
-pub enum ItemAction<DataSize: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq> {
+pub enum ItemAction<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
 	/// Adding new Item into page
 	Add {
 		/// The data to add

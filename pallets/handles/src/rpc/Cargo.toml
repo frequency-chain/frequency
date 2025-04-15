@@ -18,7 +18,6 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
 frame-support = { workspace = true }
@@ -30,7 +29,6 @@ sc-client-api = { workspace = true }
 [features]
 default = ["std"]
 std = [
-  'sp-std/std',
   'sp-api/std',
   'sp-runtime/std',
   "frame-support/std",

@@ -22,8 +22,8 @@ use pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi;
 use sp_api::{ApiError, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{traits::Block as BlockT, DispatchError};
-use sp_std::vec::Vec;
-use std::sync::Arc;
+extern crate alloc;
+use alloc::{sync::Arc, vec::Vec};
 
 #[cfg(test)]
 mod tests;

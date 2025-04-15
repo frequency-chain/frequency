@@ -292,14 +292,14 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MessagesMaxPayloadSizeBytes {
+impl core::fmt::Debug for MessagesMaxPayloadSizeBytes {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "MessagesMaxPayloadSizeBytes<{:?}>", Self::get())
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -368,14 +368,14 @@ impl PartialEq for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
+impl core::fmt::Debug for MaxItemizedBlobSizeBytes {
 	#[cfg(feature = "std")]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }

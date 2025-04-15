@@ -4,15 +4,14 @@ use common_primitives::schema::{
 	ModelType, PayloadLocation, SchemaId, SchemaSetting, SchemaSettings, SchemaVersion,
 	SchemaVersionResponse,
 };
+use core::fmt::Debug;
 use frame_support::{ensure, pallet_prelude::ConstU32, traits::StorageVersion, BoundedVec};
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_runtime::DispatchError;
-use sp_std::fmt::Debug;
 extern crate alloc;
-use alloc::string::String;
+use alloc::{string::String, vec, vec::Vec};
 use frame_support::traits::Len;
-use sp_std::{vec, vec::*};
 
 /// Current storage version of the schemas pallet.
 pub const SCHEMA_STORAGE_VERSION: StorageVersion = StorageVersion::new(4);

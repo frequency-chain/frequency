@@ -32,8 +32,8 @@ use sp_runtime::{
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	FixedPointOperand, Saturating,
 };
-use sp_std::prelude::*;
-
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	node::UtilityProvider,
@@ -107,9 +107,9 @@ impl<T: Config> InitialPayment<T> {
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for InitialPayment<T> {
+impl<T: Config> core::fmt::Debug for InitialPayment<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		match *self {
 			InitialPayment::Free => write!(f, "Nothing"),
 			InitialPayment::Capacity => write!(f, "Token"),
@@ -118,7 +118,7 @@ impl<T: Config> sp_std::fmt::Debug for InitialPayment<T> {
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -483,13 +483,13 @@ where
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for ChargeFrqTransactionPayment<T> {
+impl<T: Config> core::fmt::Debug for ChargeFrqTransactionPayment<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "ChargeFrqTransactionPayment<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }

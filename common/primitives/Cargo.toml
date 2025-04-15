@@ -26,7 +26,6 @@ sp-api = { workspace = true }
 sp-io = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 numtoa = { workspace = true }
 sp-externalities = { workspace = true }
 sp-runtime-interface = { workspace = true }
@@ -48,7 +47,6 @@ std = [
   'sp-io/std',
   'sp-core/std',
   'sp-runtime/std',
-  'sp-std/std',
   'sp-externalities/std',
   'sp-runtime-interface/std',
   'libsecp256k1/std',
