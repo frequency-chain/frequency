@@ -18,11 +18,8 @@ import {
   AddProviderPayload,
   EventMap,
   ExtrinsicHelper,
-  ItemizedSignaturePayload,
   ItemizedSignaturePayloadV2,
-  PaginatedDeleteSignaturePayload,
   PaginatedDeleteSignaturePayloadV2,
-  PaginatedUpsertSignaturePayload,
   PaginatedUpsertSignaturePayloadV2,
 } from './extrinsicHelpers';
 import {
@@ -136,10 +133,10 @@ export async function generateAddKeyPayload(
 }
 
 export async function generateItemizedSignaturePayload(
-  payloadInputs: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
+  payloadInputs: ItemizedSignaturePayloadV2,
   expirationOffset: number = 100,
   blockNumber?: number
-): Promise<ItemizedSignaturePayload> {
+): Promise<ItemizedSignaturePayloadV2> {
   const { expiration, ...payload } = payloadInputs;
 
   return {
@@ -157,8 +154,8 @@ export function generateItemizedActions(items: { action: 'Add' | 'Update'; value
 }
 
 export async function generateItemizedActionsPayloadAndSignature(
-  payloadInput: ItemizedSignaturePayload | ItemizedSignaturePayloadV2,
-  payloadType: 'PalletStatefulStorageItemizedSignaturePayload' | 'PalletStatefulStorageItemizedSignaturePayloadV2',
+  payloadInput: ItemizedSignaturePayloadV2,
+  payloadType: 'PalletStatefulStorageItemizedSignaturePayloadV2',
   signingKeys: KeyringPair
 ) {
   const payloadData = await generateItemizedSignaturePayload(payloadInput);
@@ -166,26 +163,6 @@ export async function generateItemizedActionsPayloadAndSignature(
   const signature = signPayload(signingKeys, payload);
 
   return { payload: payloadData, signature };
-}
-
-export async function generateItemizedActionsSignedPayload(
-  actions: any[],
-  schemaId: SchemaId,
-  signingKeys: KeyringPair,
-  msaId: MessageSourceId
-) {
-  const payloadInput: ItemizedSignaturePayload = {
-    msaId,
-    targetHash: await getCurrentItemizedHash(msaId, schemaId),
-    schemaId,
-    actions,
-  };
-
-  return generateItemizedActionsPayloadAndSignature(
-    payloadInput,
-    'PalletStatefulStorageItemizedSignaturePayload',
-    signingKeys
-  );
 }
 
 export async function generateItemizedActionsSignedPayloadV2(
@@ -207,37 +184,11 @@ export async function generateItemizedActionsSignedPayloadV2(
   );
 }
 
-export async function generatePaginatedUpsertSignaturePayload(
-  payloadInputs: PaginatedUpsertSignaturePayload,
-  expirationOffset: number = 100,
-  blockNumber?: number
-): Promise<PaginatedUpsertSignaturePayload> {
-  const { expiration, ...payload } = payloadInputs;
-
-  return {
-    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
-    ...payload,
-  };
-}
-
 export async function generatePaginatedUpsertSignaturePayloadV2(
   payloadInputs: PaginatedUpsertSignaturePayloadV2,
   expirationOffset: number = 100,
   blockNumber?: number
 ): Promise<PaginatedUpsertSignaturePayloadV2> {
-  const { expiration, ...payload } = payloadInputs;
-
-  return {
-    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
-    ...payload,
-  };
-}
-
-export async function generatePaginatedDeleteSignaturePayload(
-  payloadInputs: PaginatedDeleteSignaturePayload,
-  expirationOffset: number = 100,
-  blockNumber?: number
-): Promise<PaginatedDeleteSignaturePayload> {
   const { expiration, ...payload } = payloadInputs;
 
   return {
