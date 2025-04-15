@@ -88,11 +88,11 @@ specs-paseo-local:
 
 .PHONY: format
 format:
-	cargo +nightly-2024-08-01 fmt
+	cargo +nightly-2025-04-03 fmt
 
 .PHONY: lint lint-audit
 lint:
-	cargo +nightly-2024-08-01 fmt --check
+	cargo +nightly-2025-04-03 fmt --check
 	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 

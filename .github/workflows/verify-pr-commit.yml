@@ -201,16 +201,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nightly Toolchain
         run: |
-          rustup toolchain install nightly-2024-08-01
+          rustup toolchain install nightly-2025-04-03
       - name: Install Rust Target
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2024-08-01
+          rustup target add wasm32-unknown-unknown --toolchain nightly-2025-04-03
       - name: Install Rust Source Component
         run: |
-          rustup component add rust-src --toolchain nightly-2024-08-01
+          rustup component add rust-src --toolchain nightly-2025-04-03
       - name: Verify Rust Code Formatting
         run: |
-          cargo +nightly-2024-08-01 fmt --check
+          cargo +nightly-2025-04-03 fmt --check
 
   lint-rust-code:
     needs: changes
