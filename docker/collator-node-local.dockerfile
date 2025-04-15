@@ -12,8 +12,6 @@ RUN apt-get update && \
 		gnupg-agent ca-certificates tini file && \
 	rm -rf /var/lib/apt/lists/*
 
-# For local testing only
-# COPY target/release/frequency.amd64 ./target/release/frequency
 COPY target/release/frequency ./target/release/
 RUN chmod +x target/release/frequency
 
@@ -46,5 +44,3 @@ EXPOSE 9944 30333 9615
 
 ENTRYPOINT ["/usr/bin/tini", "--"]
 CMD ["/bin/bash", "./scripts/init.sh", "start-frequency-container"]
-
-
