@@ -257,18 +257,22 @@ This option runs two collator nodes as local host processes and two relay chain 
 
 ### All in Docker Container
 
-:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/frequency-chain/frequency/issues/779
+This option runs one collator node and two relay chain validator nodes, each in its own docker container.
 
 Start:
 
 ```sh
-make start-frequency-docker
+make run-frequency-docker
 ```
 
 Stop:
 
 ```sh
 make stop-frequency-docker
+```
+or:
+```sh
+make stop-frequency-docker-prune # to remove associated Docked volumes
 ```
 
 | **Node**             | **Ports**                       | **Explorer URL**                                                                          |
