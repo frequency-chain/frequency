@@ -27,6 +27,14 @@ start-frequency:
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
 
+run-frequency-docker: start-frequency-docker register onboard-docker
+
+start-relay-chain-docker:
+	./scripts/init.sh start-paseo-relay-chain
+
+stop-relay-chain-docker:
+	./scripts/init.sh stop-paseo-relay-chain
+
 start-manual:
 	./scripts/init.sh start-frequency-manual
 
@@ -55,8 +63,14 @@ stop-relay:
 stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
+stop-paseo-relay-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-paseo-relay-chain
+
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
+
+stop-frequency-docker-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-frequency-docker
 
 .PHONY: local-block
 local-block:
@@ -74,6 +88,10 @@ register:
 .PHONY: onboard
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
+
+.PHONY: onboard-docker
+onboard-docker:
+	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
 
 .PHONY: offboard
 offboard:
@@ -312,7 +330,7 @@ try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
-POLKADOT_VERSION=$(shell grep -o 'release-polkadot-v[0-9.]*' Cargo.toml | sed 's/release-polkadot-v//' | head -n 1)
+POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'branch[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/branch *= *"\(.*\)"/\1/' | head -n 1)
 
 .PHONY: version
 version:
