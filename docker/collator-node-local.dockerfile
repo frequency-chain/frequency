@@ -4,6 +4,9 @@ FROM --platform=linux/amd64 ubuntu:24.04
 LABEL maintainer="Frequency"
 LABEL description="Frequency collator node for local relay chain"
 
+# Some Ubuntu images have an ubuntu user
+RUN userdel -r ubuntu
+
 WORKDIR /frequency
 
 RUN apt-get update && \

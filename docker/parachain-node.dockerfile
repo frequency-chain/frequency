@@ -10,6 +10,9 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 # This is the 2nd stage: a very small image where we copy the Frequency binary
 FROM --platform=linux/amd64 ubuntu:24.04
 
+# Some Ubuntu images have an ubuntu user
+RUN userdel -r ubuntu
+
 # We want jq and curl in the final image, but we don't need the support files
 RUN apt-get update && \
 	apt-get install -y jq curl && \
