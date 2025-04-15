@@ -9,14 +9,17 @@ runs:
   steps:
     - name: Install grcov
       shell: bash
-      run: cargo install --locked grcov --version 0.8.20
+      run: cargo install --locked grcov --version 0.9.0
+    - name: Add llvm-tools
+      shell: bash
+      run: rustup component add llvm-tools-preview
     - name: Build
       shell: bash # Limited to 10 threads max
       run: cargo build -j 10 --features frequency-lint-check
       env:
         RUSTC_BOOTSTRAP: 1
         CARGO_INCREMENTAL: "0"
-        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTFLAGS: "-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
     - name: Test
       shell: bash # Limited to 10 threads max
@@ -24,7 +27,7 @@ runs:
       env:
         RUSTC_BOOTSTRAP: 1
         CARGO_INCREMENTAL: "0"
-        RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
+        RUSTFLAGS: "-Cinstrument-coverage -Ccodegen-units=1 -Copt-level=0 -Clink-dead-code -Coverflow-checks=off -Zpanic_abort_tests -Cpanic=abort"
         RUSTDOCFLAGS: "-Cpanic=abort"
     # There are a lot of things ignored here to make it all work
     # See the grcov docs for more information
@@ -53,7 +56,7 @@ runs:
           --ignore "*cargo*" \
           -o ./target/debug/lcov.info
     - name: Upload to codecov.io
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         token: ${{inputs.code-cov-token}}
         files: ./target/debug/lcov.info
