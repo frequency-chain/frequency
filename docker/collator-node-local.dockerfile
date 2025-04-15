@@ -1,6 +1,6 @@
 # Docker image for running collator node node locally against the local relay chain.
 # Requires to run from repository root and to copy the binary in the build folder.
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:24.04
 LABEL maintainer="Frequency"
 LABEL description="Frequency collator node for local relay chain"
 

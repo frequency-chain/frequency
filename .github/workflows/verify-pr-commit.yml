@@ -16,7 +16,7 @@ env:
 jobs:
   changes:
     name: Determine Changed Files
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       rust: ${{steps.filter.outputs.rust}}
       build-binary: ${{steps.filter.outputs.build-binary}}
@@ -55,7 +55,7 @@ jobs:
 
   clear-metadata-labels:
     name: Clear Metadata Labels
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
@@ -77,7 +77,7 @@ jobs:
   build-binaries-dummy:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
@@ -176,7 +176,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo
@@ -192,7 +192,7 @@ jobs:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container:
       image: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
@@ -292,7 +292,7 @@ jobs:
       matrix:
         # Should match `verify-build-runtimes`
         network: [dev, paseo, mainnet]
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
@@ -396,7 +396,7 @@ jobs:
   verify-js-api-augment:
     needs: build-binaries
     name: Verify JS API Augment
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo
@@ -455,7 +455,7 @@ jobs:
 
   verify-js-schemas:
     name: Verify JS Schemas
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo
@@ -494,7 +494,7 @@ jobs:
   verify-node-docker-images:
     needs: build-binaries
     name: Verify Node Docker Images
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -547,7 +547,7 @@ jobs:
   execute-binary-checks:
     needs: build-binaries
     name: Execute Binary Checks
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -578,7 +578,7 @@ jobs:
   check-metadata-and-spec-version:
     needs: build-binaries
     name: Check Metadata and Spec Version
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
@@ -661,7 +661,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -737,7 +737,7 @@ jobs:
   verify-genesis-state:
     needs: build-binaries
     name: Verify Genesis State
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Set Env Vars
         run: |
