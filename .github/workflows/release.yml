@@ -27,7 +27,6 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "1.76.0" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
@@ -742,6 +741,9 @@ jobs:
       - name: Get Polkadot Version
         id: polkadot-version
         run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
+      - name: Get Rust Version
+        id: rust-version
+        run: echo "version=$(rustc --version | cut -f 2 -d " ")" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
         uses: actions/download-artifact@v4
@@ -782,7 +784,7 @@ jobs:
           RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
           IS_FULL_RELEASE: ${{steps.is-full-release.outputs.is-full-release}}
         run: |
-          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.rust-version.outputs.version}}' \
             "${CHANGELOG}" \
             "${RUNTIME_INFO_MAINNET}" \
             "${RUNTIME_INFO_PASEO}" \
