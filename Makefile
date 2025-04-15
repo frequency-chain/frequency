@@ -108,7 +108,7 @@ specs-paseo-local:
 format:
 	cargo +nightly-2025-04-03 fmt
 
-.PHONY: lint lint-audit
+.PHONY: lint lint-audit lint-fix
 lint:
 	cargo +nightly-2025-04-03 fmt --check
 	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check
@@ -116,6 +116,10 @@ lint:
 
 lint-audit:
 	cargo deny check -c deny.toml
+
+lint-fix:
+	cargo +nightly-2025-04-03 fmt
+	SKIP_WASM_BUILD=1 cargo clippy --fix --features runtime-benchmarks,frequency-lint-check
 
 .PHONY: format-lint
 format-lint: format lint
