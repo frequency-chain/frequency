@@ -25,3 +25,6 @@ std = [
   'common-primitives/std',
   'sp-runtime/std',
 ]
+
+[lints]
+workspace = true

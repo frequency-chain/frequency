@@ -27,12 +27,11 @@ env:
   RELEASE_BRANCH_NAME: release-${{github.event.inputs.release-version || github.ref_name}}
   LATEST_FULL_RELEASE_TAG: _LATEST-FULL-RELEASE
   TEST_RUN: ${{startsWith(github.event.inputs.release-version || github.ref_name, 'v0.0.1')}}
-  RUST_TOOLCHAIN: "1.76.0" # Match to /rust-toolchain.toml
 
 jobs:
   validate-release-version:
     name: Validate Release Version
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Validate
         if: env.NEW_RELEASE_TAG_FROM_UI != ''
@@ -50,7 +49,7 @@ jobs:
   create-release-branch:
     needs: validate-release-version
     name: Create Release Branch
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -114,7 +113,7 @@ jobs:
   version-code:
     needs: run-all-benchmarks
     name: Version Code
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -169,7 +168,7 @@ jobs:
             build-profile: release
             release-file-name-prefix: frequency
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     env:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
@@ -311,7 +310,7 @@ jobs:
           profile: ${{matrix.build-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
-          tag: "1.81.0"
+          tag: "1.84.1"
           runtime_dir: ${{ matrix.runtime-dir }}
       - name: Rename WASM file
         run: |
@@ -338,7 +337,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -370,8 +369,8 @@ jobs:
       BIN_DIR: target/release
       RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
-    runs-on: ubuntu-22.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Set Env Vars
         run: |
@@ -422,8 +421,8 @@ jobs:
 
   build-js-schemas:
     name: Build JS Schemas
-    runs-on: ubuntu-22.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -455,14 +454,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        os: [ubuntu-22.04]
+        os: [ubuntu-24.04]
         network: [mainnet]
         include:
           - network: mainnet
             spec: frequency
             build-profile: release
             release-file-name-prefix: frequency
-          - os: ubuntu-22.04
+          - os: ubuntu-24.04
             arch: amd64
     runs-on: ${{matrix.os}}
     steps:
@@ -510,7 +509,7 @@ jobs:
   compare-metadata:
     needs: build-binaries
     name: Compare Metadata
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     env:
       BIN_DIR: target/release
       BIN_FILENAME: frequency-local.amd64
@@ -652,7 +651,7 @@ jobs:
         build-js-schemas,
       ]
     name: Wait for All Builds to Finish
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     outputs:
       runtime_filename_dev: ${{needs.build-runtimes.outputs.runtime_filename_dev}}
       runtime_filename_mainnet: ${{needs.build-runtimes.outputs.runtime_filename_mainnet}}
@@ -664,8 +663,8 @@ jobs:
   release-artifacts:
     needs: wait-for-all-builds
     name: Release Built Artifacts
-    runs-on: ubuntu-22.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.3.1
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     permissions:
       contents: write
     steps:
@@ -742,6 +741,9 @@ jobs:
       - name: Get Polkadot Version
         id: polkadot-version
         run: echo "version=$(make version-polkadot)" >> $GITHUB_OUTPUT
+      - name: Get Rust Version
+        id: rust-version
+        run: echo "version=$(rustc --version | cut -f 2 -d " ")" >> $GITHUB_OUTPUT
       - name: Download Artifacts
         id: download
         uses: actions/download-artifact@v4
@@ -782,7 +784,7 @@ jobs:
           RUNTIME_INFO_MAINNET: ${{steps.get-runtimes-info.outputs.runtime_info_mainnet}}
           IS_FULL_RELEASE: ${{steps.is-full-release.outputs.is-full-release}}
         run: |
-          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' \
+          ./build-release-notes.sh '${{steps.polkadot-version.outputs.version}}' '${{steps.rust-version.outputs.version}}' \
             "${CHANGELOG}" \
             "${RUNTIME_INFO_MAINNET}" \
             "${RUNTIME_INFO_PASEO}" \
@@ -860,7 +862,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Set Env Vars
         run: |
@@ -951,7 +953,7 @@ jobs:
             release-file-name-prefix: frequency-dev
     env:
       DOCKER_HUB_PROFILE: frequencychain
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Set Env Vars
         run: |
@@ -1028,7 +1030,7 @@ jobs:
   release-rust-developer-docs:
     needs: wait-for-all-builds
     name: Release Rust Developer Docs
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     permissions:
       contents: read
       pages: write
@@ -1045,7 +1047,7 @@ jobs:
   release-js-api-augment:
     needs: wait-for-all-builds
     name: Release JS API Augment
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -1091,7 +1093,7 @@ jobs:
   release-js-schemas:
     needs: wait-for-all-builds
     name: Release JS Schemas
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4

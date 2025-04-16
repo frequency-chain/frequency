@@ -36,3 +36,6 @@ std = [
   'common-primitives/std',
   'common-helpers/std',
 ]
+
+[lints]
+workspace = true

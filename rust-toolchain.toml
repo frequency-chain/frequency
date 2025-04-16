@@ -1,5 +1,7 @@
 [toolchain]
-channel = "1.81"
+# If you update this, ALSO update the ci-base-image on branch `ci/ci-base-image`
+# and update the CI base image version everywhere
+channel = "1.84"
 components = [ "clippy", "rust-docs", "rustfmt","rustc-dev", "rustc", "rust-src"]
 targets = [ "wasm32-unknown-unknown" ]
 profile = "minimal"

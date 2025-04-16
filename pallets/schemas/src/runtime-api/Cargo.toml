@@ -20,3 +20,6 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 [features]
 default = ["std"]
 std = ["sp-api/std", "frame-support/std", "common-primitives/std"]
+
+[lints]
+workspace = true

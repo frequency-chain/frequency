@@ -265,3 +265,6 @@ parameterized-consensus-hook = []
 force-debug=[
 	"sp-debug-derive/force-debug",
 ]
+
+[lints]
+workspace = true
