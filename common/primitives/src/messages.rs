@@ -187,7 +187,7 @@ mod tests {
 			"{\"provider_msa_id\":1,\"index\":1,\"block_number\":1,\"msa_id\":1}";
 
 		let deserialized_result: MessageResponse =
-			serde_json::from_str(&serialized_msg_without_payload).unwrap();
+			serde_json::from_str(serialized_msg_without_payload).unwrap();
 		assert_eq!(deserialized_result, expected_msg);
 	}
 
@@ -257,9 +257,9 @@ mod tests {
 			&request,
 		);
 		// NOT FULL
-		assert_eq!(false, is_full);
+		assert!(!is_full);
 		// NOTHING MORE
-		assert_eq!(false, resp.has_next);
+		assert!(!resp.has_next);
 		// None
 		assert_eq!(None, resp.next_block);
 		assert_eq!(None, resp.next_index);
@@ -294,8 +294,8 @@ mod tests {
 			list_size,
 			&request,
 		);
-		assert_eq!(true, is_full);
-		assert_eq!(true, resp.has_next);
+		assert!(is_full);
+		assert!(resp.has_next);
 		// SAME block
 		assert_eq!(Some(1), resp.next_block);
 		// NEXT index
@@ -331,8 +331,8 @@ mod tests {
 			list_size,
 			&request,
 		);
-		assert_eq!(true, is_full);
-		assert_eq!(true, resp.has_next);
+		assert!(is_full);
+		assert!(resp.has_next);
 		// NEXT block
 		assert_eq!(Some(current_block + 1), resp.next_block);
 		// ZERO index

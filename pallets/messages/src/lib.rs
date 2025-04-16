@@ -350,7 +350,7 @@ impl<T: Config> Pallet<T> {
 		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
 
 		match schema_payload_location {
-			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
+			PayloadLocation::Itemized | PayloadLocation::Paginated => Vec::new(),
 			_ => {
 				let mut messages: Vec<_> = <MessagesV2<T>>::iter_prefix((block_number, schema_id))
 					.map(|(index, msg)| {
@@ -358,7 +358,7 @@ impl<T: Config> Pallet<T> {
 					})
 					.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
-				return messages
+				messages
 			},
 		}
 	}

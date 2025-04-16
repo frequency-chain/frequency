@@ -37,7 +37,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		info!("Parachain id: {:?}", id);
 		info!("Is collating: {}", if config.role.is_authority() { "yes" } else { "no" });
 
-		return frequency_service::service::start_parachain_node(
+		frequency_service::service::start_parachain_node(
 			config,
 			polkadot_config,
 			collator_options,

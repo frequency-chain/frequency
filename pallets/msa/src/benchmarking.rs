@@ -38,7 +38,7 @@ fn create_payload_and_signature<T: Config>(
 
 	let signature = delegator_account.sign(&encode_add_provider_data).unwrap();
 	let acc = T::AccountId::decode(&mut &delegator_account.encode()[..]).unwrap();
-	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc.into())
+	(add_provider_payload, MultiSignature::Sr25519(signature.into()), acc)
 }
 
 fn add_key_payload_and_signature<T: Config>(
@@ -46,17 +46,14 @@ fn add_key_payload_and_signature<T: Config>(
 ) -> (AddKeyData<T>, MultiSignature, T::AccountId) {
 	let new_keys = SignerId::generate_pair(None);
 	let public_key = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
-	let add_key_payload = AddKeyData::<T> {
-		msa_id: msa_id.into(),
-		expiration: 10u32.into(),
-		new_public_key: public_key.into(),
-	};
+	let add_key_payload =
+		AddKeyData::<T> { msa_id, expiration: 10u32.into(), new_public_key: public_key };
 
 	let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 
 	let signature = new_keys.sign(&encoded_add_key_payload).unwrap();
 	let acc = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
-	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc.into())
+	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc)
 }
 
 fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageSourceId) {
@@ -75,7 +72,7 @@ fn generate_fake_signature(i: u8) -> MultiSignature {
 
 fn prep_signature_registry<T: Config>() {
 	// Add it with an 0 block expiration
-	let signatures: Vec<MultiSignature> = (1..=50u8).map(|x| generate_fake_signature(x)).collect();
+	let signatures: Vec<MultiSignature> = (1..=50u8).map(generate_fake_signature).collect();
 	let signature_expires_at: BlockNumberFor<T> = 0u32.into();
 	let len = signatures.len();
 	for (i, sig) in signatures.iter().enumerate() {
@@ -116,7 +113,7 @@ benchmarks! {
 
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
-		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64.into());
+		let (payload, signature, key) = create_payload_and_signature::<T>(schemas, 1u64);
 	}: _ (RawOrigin::Signed(caller), key.clone(), signature, payload)
 	verify {
 		assert!(PublicKeyToMsaId::<T>::get(key).is_some());
@@ -124,10 +121,10 @@ benchmarks! {
 
 	revoke_delegation_by_provider {
 		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, _) = Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
 	}: _ (RawOrigin::Signed(provider_public_key), delegator_msa_id)
@@ -190,7 +187,7 @@ benchmarks! {
 		let schemas: Vec<SchemaId> = (0 .. s as u16).collect();
 		T::SchemaValidator::set_schema_count(schemas.len().try_into().unwrap());
 
-		let (provider_msa_id, _ ) = Msa::<T>::create_account(provider_caller.clone().into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, _ ) = Msa::<T>::create_account(provider_caller.clone(), EMPTY_FUNCTION).unwrap();
 		assert_ok!(Msa::<T>::create_provider(RawOrigin::Signed(provider_caller.clone()).into(), Vec::from("Foo")));
 
 		let (payload, signature, delegator_key) = create_payload_and_signature::<T>(schemas, provider_msa_id);
@@ -203,10 +200,10 @@ benchmarks! {
 
 	revoke_delegation_by_delegator {
 		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider) = Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
 
 		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
+		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
 
 		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), vec![]));
 	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id)
@@ -220,7 +217,7 @@ benchmarks! {
 
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
 	}: _ (RawOrigin::Signed(provider_public_key), provider_name)
 	verify {
 		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
@@ -231,7 +228,7 @@ benchmarks! {
 
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
 
 	}:	_ (RawOrigin::Root, provider_public_key, provider_name)
 	verify {
@@ -243,7 +240,7 @@ benchmarks! {
 
 		let provider_name = (1 .. s as u8).collect::<Vec<_>>();
 		let account = create_account::<T>("account", 0);
-		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account.into(), EMPTY_FUNCTION).unwrap();
+		let (provider_msa_id, provider_public_key) = Msa::<T>::create_account(account, EMPTY_FUNCTION).unwrap();
 
 	}:	_ (RawOrigin::Signed(provider_public_key), provider_name)
 	verify {

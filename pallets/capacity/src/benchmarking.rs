@@ -28,7 +28,7 @@ pub fn create_funded_account<T: Config>(
 	whitelist_account!(user);
 	let balance = T::Currency::minimum_balance() * balance_factor.into();
 	T::Currency::set_balance(&user, balance);
-	assert_eq!(T::Currency::balance(&user), balance.into());
+	assert_eq!(T::Currency::balance(&user), balance);
 	user
 }
 
@@ -101,10 +101,10 @@ fn fill_boost_history<T: Config>(
 	amount: BalanceOf<T>,
 	current_era: RewardEra,
 ) {
-	let max_history: RewardEra = <T as Config>::ProviderBoostHistoryLimit::get().into();
+	let max_history: RewardEra = <T as Config>::ProviderBoostHistoryLimit::get();
 	let starting_era = current_era - max_history - 1u32;
 	for i in starting_era..current_era {
-		assert_ok!(Capacity::<T>::upsert_boost_history(caller.into(), i, amount, true));
+		assert_ok!(Capacity::<T>::upsert_boost_history(caller, i, amount, true));
 	}
 }
 
@@ -115,7 +115,6 @@ fn unclaimed_rewards_total<T: Config>(caller: &T::AccountId) -> BalanceOf<T> {
 	rewards
 		.iter()
 		.fold(zero_balance, |acc, reward_info| acc.saturating_add(reward_info.earned_amount))
-		.into()
 }
 
 benchmarks! {
@@ -126,7 +125,7 @@ benchmarks! {
 		let target = 1;
 		let staking_type = MaximumCapacity;
 
-		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
+		set_era_and_reward_pool_at_block::<T>(1u32, 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, amount)
@@ -168,14 +167,14 @@ benchmarks! {
 		let total_staked_token: BalanceOf<T> = 5_000u32.into();
 		let started_at: BlockNumberFor<T> = current_block.saturating_sub(<T as Config>::EraLength::get().into());
 
-		let current_era: RewardEra = (history_limit + 1u32).into();
+		let current_era: RewardEra = history_limit + 1u32;
 		CurrentEraInfo::<T>::set(RewardEraInfo{ era_index: current_era, started_at });
 		fill_reward_pool_chunks::<T>(current_era);
 	}: {
 		Capacity::<T>::start_new_reward_era_if_needed(current_block);
 	} verify {
 		let new_era_info = CurrentEraInfo::<T>::get();
-		assert_eq!(current_era.saturating_add(1u32.into()), new_era_info.era_index);
+		assert_eq!(current_era.saturating_add(1u32), new_era_info.era_index);
 		assert_eq!(current_block, new_era_info.started_at);
 	}
 	unstake {
@@ -189,9 +188,9 @@ benchmarks! {
 		// Adds a boost history entry for this era only so unstake succeeds and there is an update
 		// to provider boost history.
 		let mut pbh: ProviderBoostHistory<T> = ProviderBoostHistory::new();
-		pbh.add_era_balance(&1u32.into(), &staking_amount);
+		pbh.add_era_balance(&1u32, &staking_amount);
 		ProviderBoostHistories::<T>::set(caller.clone(), Some(pbh));
-		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
+		set_era_and_reward_pool_at_block::<T>(1u32, 1u32.into(), 1_000u32.into());
 
 		setup_provider_stake::<T>(&caller, &target, staking_amount, true);
 
@@ -222,7 +221,7 @@ benchmarks! {
 		let from_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(31u32.into());
 		let to_msa_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
 
-		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
+		set_era_and_reward_pool_at_block::<T>(1u32, 1u32.into(), 1_000u32.into());
 		register_provider::<T>(from_msa, "frommsa");
 		register_provider::<T>(to_msa, "tomsa");
 		setup_provider_stake::<T>(&caller, &from_msa, from_msa_amount, false);
@@ -235,7 +234,7 @@ benchmarks! {
 			account: caller,
 			from_msa,
 			to_msa,
-			amount: restake_amount.into()
+			amount: restake_amount
 		}.into());
 	}
 
@@ -245,7 +244,7 @@ benchmarks! {
 		let capacity: BalanceOf<T> = Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
 		let target = 1;
 
-		set_era_and_reward_pool_at_block::<T>(1u32.into(), 1u32.into(), 1_000u32.into());
+		set_era_and_reward_pool_at_block::<T>(1u32, 1u32.into(), 1_000u32.into());
 		register_provider::<T>(target, "Foo");
 
 	}: _ (RawOrigin::Signed(caller.clone()), target, boost_amount)

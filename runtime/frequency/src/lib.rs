@@ -1056,10 +1056,10 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::FrequencyTxPayment(FrequencyPaymentCall::pay_with_capacity {
 				call,
 				..
-			}) => return Some(vec![call]),
+			}) => Some(vec![call]),
 			RuntimeCall::FrequencyTxPayment(
 				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
-			) => return Some(calls.iter().collect()),
+			) => Some(calls.iter().collect()),
 			_ => Some(vec![outer_call]),
 		}
 	}
@@ -1632,7 +1632,7 @@ sp_api::impl_runtime_apis! {
 
 	impl system_runtime_api::AdditionalRuntimeApi<Block> for Runtime {
 		fn get_events() -> Vec<RpcEvent> {
-			System::read_events_no_consensus().into_iter().map(|e| (*e).into()).collect()
+			System::read_events_no_consensus().map(|e| (*e).into()).collect()
 		}
 	}
 
@@ -1655,10 +1655,7 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, None) {
-				Ok(x) => x,
-				Err(_) => vec![],
-			}
+			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
 		}
 	}
 
@@ -1696,8 +1693,8 @@ sp_api::impl_runtime_apis! {
 	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
 			match Capacity::list_unclaimed_rewards(&who) {
-				Ok(rewards) => return rewards.into_inner(),
-				Err(_) => return Vec::new(),
+				Ok(rewards) => rewards.into_inner(),
+				Err(_) => Vec::new(),
 			}
 
 		}
@@ -1742,7 +1739,7 @@ sp_api::impl_runtime_apis! {
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
 		#[allow(deprecated, non_local_definitions)]

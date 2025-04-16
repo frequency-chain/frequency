@@ -153,7 +153,7 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		10_000u64.into()
+		10_000u64
 	}
 
 	// use the pallet version of the era calculation.

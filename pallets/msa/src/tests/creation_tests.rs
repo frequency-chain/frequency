@@ -48,11 +48,11 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 
 		// assert
 		let delegator_msa =
-			PublicKeyToMsaId::<Test>::get(&AccountId32::new(delegator_account.0)).unwrap();
+			PublicKeyToMsaId::<Test>::get(AccountId32::new(delegator_account.0)).unwrap();
 
 		let provider_info =
 			DelegatorAndProviderToDelegation::<Test>::get(DelegatorId(2), ProviderId(1));
-		assert_eq!(provider_info.is_some(), true);
+		assert!(provider_info.is_some());
 
 		let events_occured = System::events();
 		let created_event = &events_occured.as_slice()[1];
@@ -240,7 +240,7 @@ fn it_create_has_weight() {
 		let dispatch_info = call.get_dispatch_info();
 
 		assert!(
-			dispatch_info.call_weight.ref_time() > Weight::from_parts(10_000 as u64, 0).ref_time()
+			dispatch_info.call_weight.ref_time() > Weight::from_parts(10_000_u64, 0).ref_time()
 		);
 	});
 }

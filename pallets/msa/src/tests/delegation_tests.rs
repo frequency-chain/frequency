@@ -385,7 +385,7 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 
 		// 3. create delegator MSA and provider to provider
 		let (signature, add_provider_payload) =
-			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id.clone());
+			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 
 		// 3.5 create the user's MSA + add provider as provider
 		assert_ok!(Msa::create_sponsored_account_with_delegation(

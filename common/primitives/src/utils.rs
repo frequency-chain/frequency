@@ -68,13 +68,11 @@ pub mod as_hex_option {
 	}
 
 	/// Deserializes a hexadecimal string into a `Vec<u8>`
-	pub fn deserialize<'de, D: Deserializer<'de>>(
-		deserializer: D,
-	) -> Result<Option<Vec<u8>>, D::Error>
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
 	where
 		D: Deserializer<'de>,
 	{
-		impl_serde::serialize::deserialize(deserializer).map(|r| Some(r))
+		impl_serde::serialize::deserialize(deserializer).map(Some)
 	}
 }
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
@@ -84,7 +82,7 @@ pub mod as_string {
 	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 	/// Serializes a `Vec<u8>` into a UTF-8 string
-	pub fn serialize<S: Serializer>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> {
+	pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
 		std::str::from_utf8(bytes)
 			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
 			.serialize(serializer)
@@ -129,8 +127,8 @@ pub mod as_string_option {
 	}
 }
 
-const PREFIX: &'static str = "<Bytes>";
-const POSTFIX: &'static str = "</Bytes>";
+const PREFIX: &str = "<Bytes>";
+const POSTFIX: &str = "</Bytes>";
 
 /// Wraps `PREFIX` and `POSTFIX` around a `Vec<u8>`
 /// Returns `PREFIX` ++ `data` ++ `POSTFIX`

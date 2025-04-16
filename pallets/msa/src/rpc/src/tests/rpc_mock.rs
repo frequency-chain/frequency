@@ -11,7 +11,7 @@ pub struct TestRuntimeApi {}
 impl ProvideRuntimeApi<Block> for TestApi {
 	type Api = TestRuntimeApi;
 
-	fn runtime_api<'a>(&'a self) -> ApiRef<'a, Self::Api> {
+	fn runtime_api(&self) -> ApiRef<'_, Self::Api> {
 		TestRuntimeApi {}.into()
 	}
 }

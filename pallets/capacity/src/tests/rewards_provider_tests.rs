@@ -216,7 +216,7 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		assert_eq!(rewards.get(0).unwrap().reward_era, 1u32);
 
 		for era in 1u32..=max_history {
-			let expires_at_era = era.saturating_add(max_history.into());
+			let expires_at_era = era.saturating_add(max_history);
 			let expires_at_block = Capacity::block_at_end_of_era(expires_at_era);
 			let expected_info: UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>> =
 				UnclaimedRewardInfo {

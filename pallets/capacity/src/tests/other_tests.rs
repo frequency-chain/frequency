@@ -47,7 +47,7 @@ fn start_new_epoch_works() {
 			},
 		];
 		for tc in test_cases {
-			CurrentEpoch::<Test>::set(tc.starting_epoch.clone());
+			CurrentEpoch::<Test>::set(tc.starting_epoch);
 			CurrentEpochInfo::<Test>::set(EpochInfo { epoch_start: tc.epoch_start_block });
 			Capacity::start_new_epoch_if_needed(tc.at_block);
 			assert_eq!(
@@ -90,7 +90,7 @@ fn set_target_details_is_successful() {
 		let staker = 100;
 		let target: MessageSourceId = 1;
 
-		assert_eq!(StakingTargetLedger::<Test>::get(&staker, target), None);
+		assert_eq!(StakingTargetLedger::<Test>::get(staker, target), None);
 
 		let mut target_details = StakingTargetDetails::<BalanceOf<Test>>::default();
 		target_details.amount = 10;
@@ -98,7 +98,7 @@ fn set_target_details_is_successful() {
 
 		Capacity::set_target_details_for(&staker, target, target_details);
 
-		let stored_target_details = StakingTargetLedger::<Test>::get(&staker, target).unwrap();
+		let stored_target_details = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 
 		assert_eq!(stored_target_details.amount, 10);
 		assert_eq!(stored_target_details.capacity, 10);

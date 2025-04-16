@@ -20,7 +20,7 @@ fn withdraw_unstaked_happy_path() {
 		// set new unlock chunks using tuples of (value, thaw_at in number of Epochs)
 		let new_unlocks: Vec<(u32, u32)> = vec![(1u32, 2u32), (2u32, 3u32), (3u32, 4u32)];
 		let unlocking = unlock_chunks_from_vec::<Test>(&new_unlocks);
-		UnstakeUnlocks::<Test>::set(&staker, Some(unlocking));
+		UnstakeUnlocks::<Test>::set(staker, Some(unlocking));
 
 		// We want to advance to epoch 3 to unlock the first two sets.
 		run_to_block(31);
@@ -98,7 +98,7 @@ fn withdraw_unstaked_cleans_up_storage_and_removes_all_locks_if_no_stake_left() 
 			0u64
 		);
 
-		assert!(UnstakeUnlocks::<Test>::get(&staker).is_none());
+		assert!(UnstakeUnlocks::<Test>::get(staker).is_none());
 	});
 }
 

@@ -448,7 +448,7 @@ pub mod pallet {
 			if pot != deactivated {
 				T::Currency::reactivate(deactivated);
 				T::Currency::deactivate(pot);
-				Deactivated::<T, I>::put(&pot);
+				Deactivated::<T, I>::put(pot);
 				Self::deposit_event(Event::<T, I>::UpdatedInactive {
 					reactivated: deactivated,
 					deactivated: pot,
@@ -549,7 +549,7 @@ pub mod pallet {
 			T::RejectOrigin::ensure_origin(origin)?;
 
 			let proposal =
-				<Proposals<T, I>>::take(&proposal_id).ok_or(Error::<T, I>::InvalidIndex)?;
+				<Proposals<T, I>>::take(proposal_id).ok_or(Error::<T, I>::InvalidIndex)?;
 			let value = proposal.bond;
 			let imbalance = T::Currency::slash_reserved(&proposal.proposer, value).0;
 			T::OnSlash::on_unbalanced(imbalance);
@@ -1061,7 +1061,7 @@ impl<T: Config<I>, I: 'static> Pallet<T, I> {
 
 		Proposals::<T, I>::iter_keys().try_for_each(|proposal_index| -> DispatchResult {
 			ensure!(
-				current_proposal_count as u32 > proposal_index,
+				current_proposal_count > proposal_index,
 				"`ProposalCount` should by strictly greater than any ProposalIndex used as a key for `Proposals`."
 			);
 			Ok(())
@@ -1120,7 +1120,7 @@ impl<T: Config<I>, I: 'static> OnUnbalanced<NegativeImbalanceOf<T, I>> for Palle
 		let numeric_amount = amount.peek();
 
 		// Must resolve into existing but better to be safe.
-		let _ = T::Currency::resolve_creating(&Self::account_id(), amount);
+		T::Currency::resolve_creating(&Self::account_id(), amount);
 
 		Self::deposit_event(Event::Deposit { value: numeric_amount });
 	}

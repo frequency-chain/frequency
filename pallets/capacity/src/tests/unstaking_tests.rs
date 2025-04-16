@@ -271,8 +271,8 @@ fn unstaking_everything_reaps_staking_account() {
 		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// it should reap the staking account right away
-		assert!(StakingAccountLedger::<Test>::get(&staker).is_none());
-		assert!(StakingAccountLedger::<Test>::get(&booster).is_none());
+		assert!(StakingAccountLedger::<Test>::get(staker).is_none());
+		assert!(StakingAccountLedger::<Test>::get(booster).is_none());
 	})
 }
 
@@ -385,7 +385,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 
 		pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 2);
-		let entry = pbh.get_entry_for_era(&4u32.into()).unwrap();
+		let entry = pbh.get_entry_for_era(&4u32).unwrap();
 		assert_eq!(entry, &600u64);
 	})
 }
@@ -434,16 +434,16 @@ fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
 
 	for i in 0u32..5u32 {
-		staking_history.add_era_balance(&i.into(), &10u64);
+		staking_history.add_era_balance(&i, &10u64);
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&0u32), 10u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&4u32), 50u64);
 
-	staking_history.subtract_era_balance(&4u32.into(), &50u64);
+	staking_history.subtract_era_balance(&4u32, &50u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&5u32), 0u64);
 
 	for i in 10u32..=13u32 {
-		staking_history.add_era_balance(&i.into(), &5u64);
+		staking_history.add_era_balance(&i, &5u64);
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 5u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 20u64);

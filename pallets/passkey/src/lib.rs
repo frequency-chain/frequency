@@ -194,7 +194,7 @@ pub mod module {
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
-			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(call)?;
 
 			let frame_system_validity =
 				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
@@ -224,7 +224,7 @@ pub mod module {
 		/// Checking and executing a list of operations pre_dispatch
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
-			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(call)?;
 			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
@@ -556,7 +556,7 @@ where
 		let (result, _, _) = check_weight.validate(
 			who,
 			&runtime_call,
-			&info,
+			info,
 			len,
 			(),
 			&implication,

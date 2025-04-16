@@ -26,7 +26,7 @@ fn assert_validate_key_delete_fails(
 
 	assert_eq!(
 		CheckFreeExtrinsicUse::<Test>::new().validate(
-			&caller_key,
+			caller_key,
 			call_delete_msa_public_key,
 			&DispatchInfo::default(),
 			0_usize,
@@ -231,7 +231,7 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 		};
 
 		// Assert that the call did not create a token account
-		assert_eq!(created_token_account, false);
+		assert!(!created_token_account);
 	})
 }
 
@@ -272,7 +272,7 @@ fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 		};
 
 		// Assert that the call did not create a token account
-		assert_eq!(created_token_account, false);
+		assert!(!created_token_account);
 	})
 }
 
@@ -309,7 +309,7 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 			},
 		};
 		// Assert that the call created a token account
-		assert_eq!(created_token_account, true);
+		assert!(created_token_account);
 	})
 }
 

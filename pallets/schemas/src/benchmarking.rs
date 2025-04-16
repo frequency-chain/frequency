@@ -96,7 +96,7 @@ benchmarks! {
 	propose_to_create_schema_name {
 		let sender: T::AccountId = whitelisted_caller();
 		let schema_id = 1;
-		let model = generate_schema::<T>(100 as usize);
+		let model = generate_schema::<T>(100_usize);
 		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();
@@ -110,7 +110,7 @@ benchmarks! {
 
 	create_schema_name_via_governance {
 		let schema_id = 1;
-		let model = generate_schema::<T>(100 as usize);
+		let model = generate_schema::<T>(100_usize);
 		let namespace  = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor  = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name:Vec<u8>= namespace.into_iter().chain(vec![b'.'].into_iter()).chain(descriptor.into_iter()).collect();

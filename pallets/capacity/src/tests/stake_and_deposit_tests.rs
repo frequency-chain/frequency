@@ -398,13 +398,13 @@ fn increase_stake_and_issue_capacity_is_successful() {
 
 		assert_eq!(staking_account.active, amount);
 
-		let capacity_details = CapacityLedger::<Test>::get(&target).unwrap();
+		let capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 
 		assert_eq!(capacity_details.remaining_capacity, 55);
 		assert_eq!(capacity_details.total_capacity_issued, 55);
 		assert_eq!(capacity_details.last_replenished_epoch, 0);
 
-		let target_details = StakingTargetLedger::<Test>::get(&staker, &target).unwrap();
+		let target_details = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 
 		assert_eq!(target_details.amount, amount);
 		assert_eq!(target_details.capacity, 55);

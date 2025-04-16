@@ -438,7 +438,7 @@ pub fn error_exceeding_max_schema_under_minimum_schema_grants() {
 		let provider = ProviderId(1);
 		let delegator = DelegatorId(2);
 		assert_noop!(
-			Msa::add_provider(provider, delegator, (1..32 as u16).collect::<Vec<_>>()),
+			Msa::add_provider(provider, delegator, (1..32_u16).collect::<Vec<_>>()),
 			Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation
 		);
 	})

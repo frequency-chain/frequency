@@ -116,7 +116,7 @@ impl pallet_handles::Config for Test {
 
 // Build genesis storage according to the mock runtime.
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap().into();
+	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);
 	ext.execute_with(|| System::set_block_number(1));
 	ext
@@ -183,7 +183,7 @@ pub fn create_full_handle_for_index(
 	suffix_sequence_index: SequenceIndex,
 ) -> Vec<u8> {
 	// Convert base handle into a canonical base
-	let canonical_handle_str = convert_to_canonical(&base_handle_str);
+	let canonical_handle_str = convert_to_canonical(base_handle_str);
 
 	// Generate suffix from index into the suffix sequence
 	let suffix = Handles::generate_suffix_for_canonical_handle(

@@ -417,7 +417,7 @@ pub mod module {
 			let to = T::Lookup::lookup(dest.clone())?;
 
 			ensure!(
-				!ScheduleReservedAmounts::<T>::contains_key(&id),
+				!ScheduleReservedAmounts::<T>::contains_key(id),
 				Error::<T>::DuplicateScheduleName
 			);
 
@@ -547,7 +547,7 @@ impl<T: Config> Pallet<T> {
 	fn prune_and_get_frozen_balance(who: &T::AccountId) -> BalanceOf<T> {
 		let now = T::BlockNumberProvider::current_block_number();
 
-		let schedules = Self::prune_schedules_for(&who, now);
+		let schedules = Self::prune_schedules_for(who, now);
 
 		let total = schedules
 			.iter()
@@ -605,7 +605,7 @@ impl<T: Config> Pallet<T> {
 
 		ensure!(T::Currency::balance(who) >= total_amount, Error::<T>::InsufficientBalanceToFreeze,);
 
-		Self::update_freeze(&who, total_amount)?;
+		Self::update_freeze(who, total_amount)?;
 		Self::set_schedules_for(who, bounded_schedules);
 
 		Ok(())
@@ -657,11 +657,11 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn hold_balance_for(who: &T::AccountId) -> BalanceOf<T> {
-		T::Currency::balance_on_hold(&HoldReason::TimeReleaseScheduledVesting.into(), &who)
+		T::Currency::balance_on_hold(&HoldReason::TimeReleaseScheduledVesting.into(), who)
 	}
 
 	fn ensure_sufficient_hold_balance(from: &T::AccountId, amount: BalanceOf<T>) -> DispatchResult {
-		ensure!(Self::hold_balance_for(&from) >= amount, Error::<T>::InsufficientBalanceToFreeze);
+		ensure!(Self::hold_balance_for(from) >= amount, Error::<T>::InsufficientBalanceToFreeze);
 
 		Ok(())
 	}
@@ -741,7 +741,7 @@ impl<T: Config> Pallet<T> {
 		amount: BalanceOf<T>,
 	) -> DispatchResult {
 		if to == from {
-			ensure!(T::Currency::balance(&from) >= amount, Error::<T>::InsufficientBalanceToFreeze,);
+			ensure!(T::Currency::balance(from) >= amount, Error::<T>::InsufficientBalanceToFreeze,);
 		}
 
 		Ok(())

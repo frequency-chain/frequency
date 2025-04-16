@@ -49,7 +49,7 @@ fn main() {
 			continue
 		}
 
-		while let Some(homoglyph) = original_line_characters.next() {
+		for homoglyph in original_line_characters {
 			// Skip if the homoglyph is not in the allowed range
 			if allowed_char(homoglyph) {
 				let line = format!(

@@ -259,8 +259,7 @@ impl<T: Config> Pallet<T> {
 		let len_fee = Self::length_to_fee(len);
 		let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
 
-		let fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
-		fee
+		base_fee.saturating_add(weight_fee).saturating_add(len_fee)
 	}
 
 	/// Compute the capacity fee details for a transaction.
@@ -281,7 +280,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut calls_weight_sum = Weight::zero();
 		for inner_call in calls {
-			let call_weight = T::CapacityCalls::get_stable_weight(&inner_call).unwrap_or_default();
+			let call_weight = T::CapacityCalls::get_stable_weight(inner_call).unwrap_or_default();
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
 

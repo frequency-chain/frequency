@@ -144,7 +144,7 @@ impl SchemaName {
 
 	/// get the combined name namespace.descriptor
 	pub fn get_combined_name(&self) -> Vec<u8> {
-		vec![
+		[
 			self.namespace.clone().into_inner(),
 			vec![SEPARATOR_CHAR as u8],
 			self.descriptor.clone().into_inner(),

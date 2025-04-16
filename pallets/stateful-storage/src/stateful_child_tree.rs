@@ -111,11 +111,7 @@ impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart> MultipartKey<H> 
 
 	fn hash_prefix_only(&self) -> Vec<u8> {
 		let encoded_1 = self.0.encode();
-		<H as StorageHasher>::hash(&encoded_1)
-			.as_ref()
-			.iter()
-			.cloned()
-			.collect::<Vec<_>>()
+		<H as StorageHasher>::hash(&encoded_1).as_ref().to_vec()
 	}
 }
 
