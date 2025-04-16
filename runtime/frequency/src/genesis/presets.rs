@@ -94,7 +94,7 @@ fn frequency_genesis_config() -> serde_json::Value {
 			system.remove("code");
 		}
 
-		return output["genesis"]["runtime"].clone()
+		return output["genesis"]["runtime"].clone();
 	}
 }
 

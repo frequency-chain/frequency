@@ -210,8 +210,6 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
@@ -242,8 +240,6 @@ impl BaseCallFilter {
 
 			// Block `create_provider` and `create_schema` calls from utility batch
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
@@ -1047,13 +1043,9 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
 			_ => None,
 		}
