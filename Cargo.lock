@@ -1638,6 +1638,7 @@ name = "common-runtime"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
+ "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",

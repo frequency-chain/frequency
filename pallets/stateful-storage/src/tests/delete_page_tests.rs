@@ -6,8 +6,7 @@ use crate::{
 	Config, Error, Event as StatefulEvent,
 };
 use common_primitives::{
-	msa::{MessageSourceId, SchemaId},
-	stateful_storage::{PageHash, PageId},
+	stateful_storage::PageHash,
 	utils::wrap_binary_data,
 };
 use frame_support::{assert_err, assert_ok, assert_storage_noop};

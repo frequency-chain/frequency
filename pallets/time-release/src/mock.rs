@@ -246,7 +246,7 @@ impl ExtBuilder {
 				(CHARLIE, CHARLIE_BALANCE),
 				(DAVE, DAVE_BALANCE),
 			],
-			dev_accounts: ..Default::default(),
+			..Default::default()
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
