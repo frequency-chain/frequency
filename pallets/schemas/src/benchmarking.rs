@@ -277,7 +277,7 @@ mod benchmarks {
 	#[benchmark]
 	fn propose_to_create_schema_name() -> Result<(), BenchmarkError> {
 		let sender: T::AccountId = whitelisted_caller();
-		let model = generate_schema::<T>(100 as usize);
+		let model = generate_schema::<T>(100_usize);
 		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace
@@ -308,7 +308,7 @@ mod benchmarks {
 
 	#[benchmark]
 	fn create_schema_name_via_governance() -> Result<(), BenchmarkError> {
-		let model = generate_schema::<T>(100 as usize);
+		let model = generate_schema::<T>(100_usize);
 		let namespace = vec![b'a'; NAMESPACE_MIN as usize];
 		let descriptor = vec![b'b'; DESCRIPTOR_MAX as usize];
 		let name: Vec<u8> = namespace

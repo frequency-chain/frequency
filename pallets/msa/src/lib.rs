@@ -54,7 +54,6 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use frame_system::pallet_prelude::*;
-use log;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 #[allow(deprecated)]
@@ -1010,7 +1009,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::InvalidSchemaId`]
 	/// * [`Error::ExceedsMaxSchemaGrantsPerDelegation`]
 	///
-	pub fn ensure_all_schema_ids_are_valid(schema_ids: &Vec<SchemaId>) -> DispatchResult {
+	pub fn ensure_all_schema_ids_are_valid(schema_ids: &[SchemaId]) -> DispatchResult {
 		ensure!(
 			schema_ids.len() <= T::MaxSchemaGrantsPerDelegation::get() as usize,
 			Error::<T>::ExceedsMaxSchemaGrantsPerDelegation
@@ -1119,21 +1118,19 @@ impl<T: Config> Pallet<T> {
 			let mut update_ids: Vec<SchemaId> = Vec::new();
 			let mut insert_ids: Vec<SchemaId> = Vec::new();
 
-			let existing_keys = delegation.schema_permissions.keys().into_iter();
+			let existing_keys = delegation.schema_permissions.keys();
 
 			for existing_schema_id in existing_keys {
-				if !schema_ids.contains(&existing_schema_id) {
-					match delegation.schema_permissions.get(&existing_schema_id) {
-						Some(block) =>
-							if *block == BlockNumberFor::<T>::zero() {
-								revoke_ids.push(*existing_schema_id);
-							},
-						None => {},
+				if !schema_ids.contains(existing_schema_id) {
+					if let Some(block) = delegation.schema_permissions.get(existing_schema_id) {
+						if *block == BlockNumberFor::<T>::zero() {
+							revoke_ids.push(*existing_schema_id);
+						}
 					}
 				}
 			}
 			for schema_id in &schema_ids {
-				if !delegation.schema_permissions.contains_key(&schema_id) {
+				if !delegation.schema_permissions.contains_key(schema_id) {
 					insert_ids.push(*schema_id);
 				} else {
 					update_ids.push(*schema_id);
@@ -1276,7 +1273,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Retrieves the MSA Id for a given `AccountId`
 	pub fn get_owner_of(key: &T::AccountId) -> Option<MessageSourceId> {
-		PublicKeyToMsaId::<T>::get(&key)
+		PublicKeyToMsaId::<T>::get(key)
 	}
 
 	/// Retrieve MSA Id associated with `key` or return `NoKeyExists`
@@ -1650,13 +1647,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError::InvalidMsaKey`]
 	/// Arguments:
 	/// * `signing_public_key`: the account id calling for revoking the key, and which
-	/// 	owns the msa also associated with `key`
+	///     owns the msa also associated with `key`
 	/// * `public_key_to_delete`: the account id to revoke as an access key for account_id's msa
 	///
 	/// # Errors
 	/// * [`ValidityError::InvalidSelfRemoval`] - if `signing_public_key` and `public_key_to_delete` are the same.
 	/// * [`ValidityError::InvalidMsaKey`] - if  `account_id` does not have an MSA or if
-	/// 'public_key_to_delete' does not have an MSA.
+	///     'public_key_to_delete' does not have an MSA.
 	/// * [`ValidityError::NotKeyOwner`] - if the `signing_public_key` and `public_key_to_delete` do not belong to the same MSA ID.
 	pub fn validate_key_delete(
 		signing_public_key: &T::AccountId,
@@ -1670,11 +1667,11 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		);
 
 		let maybe_owner_msa_id: MessageSourceId =
-			Pallet::<T>::ensure_valid_msa_key(&signing_public_key)
+			Pallet::<T>::ensure_valid_msa_key(signing_public_key)
 				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		let msa_id_for_key_to_delete: MessageSourceId =
-			Pallet::<T>::ensure_valid_msa_key(&public_key_to_delete)
+			Pallet::<T>::ensure_valid_msa_key(public_key_to_delete)
 				.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		ensure!(
@@ -1682,9 +1679,9 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX)
+		ValidTransaction::with_tag_prefix(TAG_PREFIX)
 			.and_provides(signing_public_key)
-			.build();
+			.build()
 	}
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider,
@@ -1703,8 +1700,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
 		let msa_id = Pallet::<T>::ensure_valid_msa_key(account_id)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?
-			.into();
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		ensure!(
 			!Pallet::<T>::is_registered_provider(msa_id),
@@ -1738,7 +1734,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build();
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
 	}
 }
 
@@ -1812,6 +1808,7 @@ where
 	/// * revoke_delegation_by_delegator
 	/// * delete_msa_public_key
 	/// * retire_msa
+	///
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
 	/// Arguments:
@@ -1835,7 +1832,7 @@ where
 			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
 				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
-			_ => return Ok(Default::default()),
+			_ => Ok(Default::default()),
 		}
 	}
 }

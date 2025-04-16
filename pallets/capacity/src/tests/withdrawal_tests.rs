@@ -30,7 +30,7 @@ fn impl_withdraw_is_successful() {
 		capacity_details.remaining_capacity = 5u32.into();
 		capacity_details.total_tokens_staked = 10u32.into();
 		capacity_details.total_capacity_issued = 10u32.into();
-		capacity_details.last_replenished_epoch = 1u32.into();
+		capacity_details.last_replenished_epoch = 1u32;
 
 		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
 	});
@@ -72,7 +72,7 @@ fn impl_withdraw_errors_insufficient_balance() {
 		capacity_details.remaining_capacity = 10u32.into();
 		capacity_details.total_tokens_staked = 10u32.into();
 		capacity_details.total_capacity_issued = 10u32.into();
-		capacity_details.last_replenished_epoch = 1u32.into();
+		capacity_details.last_replenished_epoch = 1u32;
 
 		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
 	});

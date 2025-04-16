@@ -168,3 +168,17 @@ pub const ALLOWED_UNICODE_CHARACTER_RANGES: [RangeInclusive<u16>; 54] = [
 //     0xF900..=0xFAFF, // CJK Compatibility Ideographs
 //     0xFB50..=0xFDFF, // Arabic Presentation Forms-A
 // ];
+
+// You can comment out the current one and uncomment the original, specific one
+// for all the languages supported.
+#[test]
+#[ignore = "use only to regenerate compacted ALLOWED_UNICODE_CHARACTER_RANGES"]
+fn test_build_allowed_char_ranges() {
+	let res = build_allowed_char_ranges();
+	assert_eq!(res.len(), 54usize);
+	for range in res {
+		let start = range.start();
+		let end = range.end();
+		println!("{start:#4X}..={end:#4X},")
+	}
+}

@@ -254,7 +254,7 @@ impl Into<UnifiedSignature> for MultiSignature {
 }
 
 fn check_secp256k1_signature(signature: &[u8; 65], msg: &[u8; 32], signer: &AccountId32) -> bool {
-	match sp_io::crypto::secp256k1_ecdsa_recover(signature, &msg) {
+	match sp_io::crypto::secp256k1_ecdsa_recover(signature, msg) {
 		Ok(pubkey) => {
 			let mut hashed = sp_io::hashing::keccak_256(pubkey.as_ref());
 			hashed[..12].fill(0);
@@ -284,13 +284,13 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 	};
 
 	// signature of ethereum prefixed message eip-191
-	let message_prefixed = eth_message_hash(&msg.get());
-	if verify_signature(&signature.as_ref(), &message_prefixed, signer) {
+	let message_prefixed = eth_message_hash(msg.get());
+	if verify_signature(signature.as_ref(), &message_prefixed, signer) {
 		return true
 	}
 
 	// signature of raw payload, compatible with polkadotJs signatures
-	let hashed = sp_io::hashing::keccak_256(&msg.get());
+	let hashed = sp_io::hashing::keccak_256(msg.get());
 	verify_signature(signature.as_ref(), &hashed, signer)
 }
 
@@ -306,10 +306,10 @@ mod tests {
 		let msg = &b"test-message"[..];
 		let (pair, _) = ecdsa::Pair::generate();
 
-		let signature = pair.sign(&msg);
+		let signature = pair.sign(msg);
 		let unified_sig = UnifiedSignature::from(signature);
 		let unified_signer = UnifiedSigner::from(pair.public());
-		assert_eq!(unified_sig.verify(msg, &unified_signer.into_account()), false);
+		assert!(!unified_sig.verify(msg, &unified_signer.into_account()));
 	}
 
 	#[test]
@@ -365,6 +365,6 @@ mod tests {
 				.expect("invalid size"),
 		);
 		let unified_signer = UnifiedSigner::from(public_key);
-		assert_eq!(unified_signature.verify(&payload[..], &unified_signer.into_account()), false);
+		assert!(!unified_signature.verify(&payload[..], &unified_signer.into_account()));
 	}
 }

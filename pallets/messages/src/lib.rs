@@ -350,7 +350,7 @@ impl<T: Config> Pallet<T> {
 		let block_number_value: u32 = block_number.try_into().unwrap_or_default();
 
 		match schema_payload_location {
-			PayloadLocation::Itemized | PayloadLocation::Paginated => return Vec::new(),
+			PayloadLocation::Itemized | PayloadLocation::Paginated => Vec::new(),
 			_ => {
 				let mut messages: Vec<_> = <MessagesV2<T>>::iter_prefix((block_number, schema_id))
 					.map(|(index, msg)| {
@@ -358,7 +358,7 @@ impl<T: Config> Pallet<T> {
 					})
 					.collect();
 				messages.sort_by(|a, b| a.index.cmp(&b.index));
-				return messages
+				messages
 			},
 		}
 	}
@@ -369,10 +369,9 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
-	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+	pub fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
-		let cid_str: &str =
-			core::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
+		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
 		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
 		// starts_with handles Unicode multibyte characters safely
 		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);

@@ -5,8 +5,7 @@ use alloc::vec::Vec;
 
 pub fn check_signature(signature: &MultiSignature, signer: AccountId32, payload: Vec<u8>) -> bool {
 	let unified_signature: UnifiedSignature = signature.clone().into();
-	let verify_signature =
-		|payload: &[u8]| unified_signature.verify(payload, &signer.clone().into());
+	let verify_signature = |payload: &[u8]| unified_signature.verify(payload, &signer.clone());
 
 	if verify_signature(&payload) {
 		return true;
@@ -87,6 +86,6 @@ mod tests {
 			signer.sign_prehashed(&keccak_256(&encode_add_provider_data)).into();
 		let unified_signer = UnifiedSigner::from(signer.public());
 
-		assert_eq!(check_signature(&signature, unified_signer.into_account(), payload), false);
+		assert!(!check_signature(&signature, unified_signer.into_account(), payload));
 	}
 }

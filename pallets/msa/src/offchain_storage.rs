@@ -64,7 +64,7 @@ pub const HTTP_REQUEST_DEADLINE_MS: u64 = 2000;
 
 /// LOCAL RPC URL and port
 /// warning: this should be updated if rpc port is set to anything different from 9944
-pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &'static str = "http://localhost:9944";
+pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &str = "http://localhost:9944";
 /// request body for getting last finalized block from rpc
 pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] =
 	b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
@@ -173,11 +173,9 @@ fn apply_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
 		// since this is the last processed block number we already processed it and starting from the next one
 		start_block_number += BlockNumberFor::<T>::one();
 		while start_block_number <= block_number {
-			if reverse_map_msa_keys::<T>(start_block_number) {
-				if guard.extend_lock().is_err() {
-					log::warn!("last processed block lock is expired in block {:?}", block_number);
-					break;
-				}
+			if reverse_map_msa_keys::<T>(start_block_number) && guard.extend_lock().is_err() {
+				log::warn!("last processed block lock is expired in block {:?}", block_number);
+				break;
 			}
 			last_processed_block_storage.set(&start_block_number);
 			start_block_number += BlockNumberFor::<T>::one();
@@ -359,8 +357,7 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 	let msa_storage_name = get_msa_account_storage_key_name(msa_id);
 	let msa_storage = StorageValueRef::persistent(&msa_storage_name);
 
-	let mut msa_keys =
-		msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or(Vec::default());
+	let mut msa_keys = msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or_default();
 
 	for event in events {
 		match &event {
@@ -407,7 +404,7 @@ fn fetch_finalized_block_hash<T: Config>() -> Result<T::Hash, sp_runtime::offcha
 	let deadline =
 		sp_io::offchain::timestamp().add(Duration::from_millis(HTTP_REQUEST_DEADLINE_MS));
 	let body = vec![RPC_FINALIZED_BLOCK_REQUEST_BODY];
-	let request = sp_runtime::offchain::http::Request::post(&url, body);
+	let request = sp_runtime::offchain::http::Request::post(url, body);
 	let pending = request
 		.add_header("Content-Type", "application/json")
 		.deadline(deadline)

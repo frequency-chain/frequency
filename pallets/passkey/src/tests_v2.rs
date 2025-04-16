@@ -35,8 +35,8 @@ impl TestPasskeyPayloadBuilder {
 			key_pair,
 			passkey_public_key: PasskeyPublicKey([0u8; 33]),
 			payload_to_sign: vec![],
-			nonce: 0u32.into(),
-			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }).into(),
+			nonce: 0u32,
+			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }),
 			invalid_passkey_signature: false,
 		}
 	}
@@ -75,7 +75,7 @@ impl TestPasskeyPayloadBuilder {
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
 			self.key_pair.public().into(),
-			amount.into()
+			amount
 		));
 		self
 	}
@@ -571,7 +571,7 @@ fn passkey_example_should_work() {
 		};
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
-			account_id.into(),
+			account_id,
 			10000000000
 		));
 

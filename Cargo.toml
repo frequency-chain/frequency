@@ -191,6 +191,7 @@ get_first = "allow"
 len_zero = "allow"
 large_enum_variant = "allow"
 empty_line_after_outer_attr = "allow"
+enum_variant_names = "allow"
 
 [profile.release]
 panic = "unwind"

@@ -83,7 +83,7 @@ pub fn replaying_create_sponsored_account_with_delegation_fails() {
 		let (signature, add_provider_payload) = user_creates_and_delegates_to_provider(
 			delegator_keypair.clone(),
 			provider_keypair,
-			99u32.into(),
+			99u32,
 		);
 		run_to_block(25);
 
@@ -141,8 +141,7 @@ fn replaying_grant_delegation_fails() {
 		let delegator_key = delegator_keypair.public();
 
 		// add_provider_payload in this case has delegator's msa_id as authorized_msa_id
-		let (add_provider_payload, encode_add_provider_data) =
-			create_add_provider_payload(99u32.into());
+		let (add_provider_payload, encode_add_provider_data) = create_add_provider_payload(99u32);
 
 		// DELEGATOR signs to add the provider
 		let signature: MultiSignature = delegator_keypair.sign(&encode_add_provider_data).into();
@@ -242,7 +241,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_02() {
 		let (signature, add_provider_payload) = user_creates_and_delegates_to_provider(
 			delegator_keypair.clone(),
 			provider_keypair,
-			99u32.into(),
+			99u32,
 		);
 		run_to_block(2);
 
@@ -281,7 +280,7 @@ fn replaying_create_sponsored_account_with_delegation_fails_03() {
 			user_creates_and_delegates_to_provider(
 				delegator_keypair.clone(),
 				provider_keypair,
-				99u32.into(),
+				99u32,
 			);
 
 		run_to_block(5);

@@ -14,9 +14,9 @@ pub mod weights;
 /// Usage:
 /// ```Rust
 /// parameter_types! {
-/// 	// Note that the env variable version parameter cannot be const.
-/// 	pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
-/// 	pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+///     // Note that the env variable version parameter cannot be const.
+///     pub LaunchPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
+///     pub const VotingPeriod: BlockNumber = prod_or_testnet_or_local!(7 * DAYS, 28 * DAYS, 1 * MINUTES);
 /// }
 /// ```
 #[macro_export]

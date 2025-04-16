@@ -66,7 +66,7 @@ where
 {
 	fn get_events(&self, at: <Block as BlockT>::Hash) -> RpcResult<Vec<RpcEvent>> {
 		let api = self.client.runtime_api();
-		return map_rpc_result(api.get_events(at))
+		map_rpc_result(api.get_events(at))
 	}
 
 	fn get_missing_nonce_values(&self, account: AccountId) -> RpcResult<Vec<Nonce>> {

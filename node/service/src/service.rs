@@ -304,7 +304,7 @@ pub async fn start_parachain_node(
 		// in there and swapping out the requirements for your own are probably a good idea. The
 		// requirements for a para-chain are dictated by its relay-chain.
 		if validator &&
-			!SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench, is_rc_authority).is_ok()
+			SUBSTRATE_REFERENCE_HARDWARE.check_hardware(&hwbench, is_rc_authority).is_err()
 		{
 			log::warn!(
 				"⚠️  The hardware does not meet the minimal requirements for role 'Authority'."

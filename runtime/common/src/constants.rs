@@ -363,8 +363,9 @@ impl Eq for MaxItemizedBlobSizeBytes {
 }
 
 impl PartialEq for MaxItemizedBlobSizeBytes {
-	fn eq(&self, other: &Self) -> bool {
-		self == other
+	fn eq(&self, _other: &Self) -> bool {
+		// This is a constant. It is always equal to itself
+		true
 	}
 }
 

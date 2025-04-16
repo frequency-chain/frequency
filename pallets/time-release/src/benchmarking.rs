@@ -18,7 +18,7 @@ pub type Schedule<T> = ReleaseSchedule<BlockNumberFor<T>, BalanceOf<T>>;
 const SEED: u32 = 0;
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let actual_deposit = T::Currency::set_balance(&who, balance.saturated_into());
+	let actual_deposit = T::Currency::set_balance(who, balance.saturated_into());
 	assert_eq!(balance, actual_deposit);
 }
 
@@ -102,7 +102,7 @@ mod benchmarks {
 
 		// set hold balance of sender
 		let total = schedule.total_amount().unwrap();
-		set_balance::<T>(&from, (total * 2u32.into() * DOLLARS.into()).into());
+		set_balance::<T>(&from, total * 2u32.into() * DOLLARS.into());
 		let _ = T::Currency::hold(
 			&HoldReason::TimeReleaseScheduledVesting.into(),
 			&from,
