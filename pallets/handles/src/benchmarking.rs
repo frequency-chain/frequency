@@ -4,7 +4,7 @@
 use super::*;
 use crate::Pallet as Handles;
 use common_primitives::utils::wrap_binary_data;
-use frame_benchmarking::{benchmarks, whitelisted_caller};
+use frame_benchmarking::{v2::*, whitelisted_caller};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
 use sp_core::crypto::KeyTypeId;
@@ -55,56 +55,87 @@ fn create_signed_claims_payload<T: Config>(
 	(handle_claims_payload, MultiSignature::Sr25519(signature.into()), acc.into(), msa_id)
 }
 
-benchmarks! {
+#[benchmarks]
+mod benchmarks {
+	use super::*;
 
-	claim_handle {
+	#[benchmark]
+	fn claim_handle(
+		b: Linear<HANDLE_BYTES_MIN, { HANDLE_BYTES_MAX - 2 }>,
+	) -> Result<(), BenchmarkError> {
 		// claim a handle
-		let b in HANDLE_BYTES_MIN .. HANDLE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
-		let (payload, proof, key, delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public, b);
+		let (payload, proof, key, delegator_msa_id) =
+			create_signed_claims_payload::<T>(delegator_account_public, b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
 
-	}: _(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload)
-	verify {
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload);
+
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_some());
+		Ok(())
 	}
 
-	change_handle {
+	#[benchmark]
+	fn change_handle(
+		b: Linear<HANDLE_BYTES_MIN, { HANDLE_BYTES_MAX - 2 }>,
+	) -> Result<(), BenchmarkError> {
 		// claim a handle to be changed
-		let b in HANDLE_BYTES_MIN .. HANDLE_BYTES_MAX-2;
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
-		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
+		let (payload, proof, key, delegator_msa_id) =
+			create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
-		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof.clone(), payload.clone()));
+		assert_ok!(Handles::<T>::claim_handle(
+			RawOrigin::Signed(caller.clone()).into(),
+			key.clone(),
+			proof.clone(),
+			payload.clone()
+		));
 
-	}: _(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload)
-	verify {
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload);
+
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_some());
+		Ok(())
 	}
 
-	retire_handle {
+	#[benchmark]
+	fn retire_handle() -> Result<(), BenchmarkError> {
 		// claim a handle to be retired
 		let caller: T::AccountId = whitelisted_caller();
 		let delegator_account_public = SignerId::generate_pair(None);
-		let (payload, proof, key,delegator_msa_id) = create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
+		let (payload, proof, key, delegator_msa_id) =
+			create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
-		assert_ok!(Handles::<T>::claim_handle(RawOrigin::Signed(caller.clone()).into(), key.clone(), proof, payload));
+		assert_ok!(Handles::<T>::claim_handle(
+			RawOrigin::Signed(caller.clone()).into(),
+			key.clone(),
+			proof,
+			payload
+		));
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_some());
 
 		frame_system::Pallet::<T>::set_block_number(500u32.into());
+
 		// retire the handle
-	}: _(RawOrigin::Signed(key.clone()))
-	verify {
+		#[extrinsic_call]
+		_(RawOrigin::Signed(key.clone()));
+
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
 		assert!(stored_handle.is_none());
+		Ok(())
 	}
-	impl_benchmark_test_suite!(Handles, crate::tests::mock::new_test_ext_keystore(), crate::tests::mock::Test,);
+	impl_benchmark_test_suite!(
+		Handles,
+		crate::tests::mock::new_test_ext_keystore(),
+		crate::tests::mock::Test,
+	);
 }
