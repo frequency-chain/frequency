@@ -21,7 +21,7 @@ use smallvec::smallvec;
 /// Yet, it can be used for any other sort of change to weight-fee. Some examples being:
 ///   - Setting it to `0` will essentially disable the weight fee.
 ///   - Setting it to `1` will cause the literal `#[weight = x]` values to be charged.
-
+///
 /// Warning: Changing this function will also change the static capacity weights.
 pub struct WeightToFee;
 impl WeightToFeePolynomial for WeightToFee {

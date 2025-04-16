@@ -16,6 +16,7 @@ fn assert_last_event<T: Config>(generic_event: <T as Config>::RuntimeEvent) {
 
 #[allow(clippy::expect_used)]
 pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static str) {
+	#[allow(clippy::useless_conversion)]
 	let name = Vec::from(name).try_into().expect("error");
 	assert_ok!(T::BenchmarkHelper::create(target_id, name));
 }

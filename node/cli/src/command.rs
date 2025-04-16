@@ -47,6 +47,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 
 impl PartialEq for ChainIdentity {
 	fn eq(&self, other: &Self) -> bool {
+		#[allow(clippy::match_like_matches_macro)]
 		match (self, other) {
 			(ChainIdentity::Frequency, ChainIdentity::Frequency) => true,
 			(ChainIdentity::FrequencyPaseo, ChainIdentity::FrequencyPaseo) => true,
@@ -72,11 +73,13 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-no-relay")]
 		"dev" | "frequency-no-relay" => Ok(Box::new(chain_spec::frequency_dev::development_config())),
 		#[cfg(feature = "frequency-local")]
-		"frequency-paseo-local" =>
-			Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
+		"frequency-paseo-local" => {
+			Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config()))
+		},
 		#[cfg(feature = "frequency-testnet")]
-		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
-			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
+		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" => {
+			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec()))
+		},
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -334,7 +337,7 @@ pub fn run() -> Result<()> {
 			let runner = cli.create_runner(cmd)?;
 
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) =>
+				BenchmarkCmd::Pallet(cmd) => {
 					if cfg!(feature = "runtime-benchmarks") {
 						runner.sync_run(|config| {
 							cmd.run_with_spec::<HashingFor<Block>, ReclaimHostFunctions>(Some(
@@ -345,19 +348,21 @@ pub fn run() -> Result<()> {
 						Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."
 							.into())
-					},
+					}
+				},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
-				BenchmarkCmd::Storage(_) =>
+				BenchmarkCmd::Storage(_) => {
 					return Err(sc_cli::Error::Input(
 						"Compile with --features=runtime-benchmarks \
 						to enable storage benchmarks."
 							.into(),
 					)
-					.into()),
+					.into())
+				},
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;
@@ -383,8 +388,9 @@ pub fn run() -> Result<()> {
 				BenchmarkCmd::Machine(cmd) => runner.sync_run(|config| {
 					cmd.run(&config, frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE.clone())
 				}),
-				BenchmarkCmd::Extrinsic(_cmd) =>
-					Err("Benchmarking command not implemented.".into()),
+				BenchmarkCmd::Extrinsic(_cmd) => {
+					Err("Benchmarking command not implemented.".into())
+				},
 			}
 		},
 

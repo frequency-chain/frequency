@@ -98,7 +98,7 @@ where
 			} else {
 				InvalidTransaction::Future
 			}
-			.into())
+			.into());
 		}
 
 		// Is this an existing account?
@@ -129,7 +129,7 @@ where
 		// check index
 		let account = frame_system::Account::<T>::get(who);
 		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into()
+			return InvalidTransaction::Stale.into();
 		}
 
 		let provides = vec![Encode::encode(&(who, self.0))];
@@ -143,7 +143,7 @@ where
 			priority: 0,
 			requires,
 			provides,
-			longevity: TransactionLongevity::max_value(),
+			longevity: TransactionLongevity::MAX,
 			propagate: true,
 		})
 	}

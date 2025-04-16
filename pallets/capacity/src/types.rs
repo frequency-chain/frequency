@@ -243,7 +243,7 @@ pub fn unlock_chunks_reap_thawed<T: Config>(
 /// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
 /// returns true on success, false on failure (?)
 /// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
-pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChunkList<T> {
+pub fn unlock_chunks_from_vec<T: Config>(chunks: &[(u32, u32)]) -> UnlockChunkList<T> {
 	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
 		.iter()
 		.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })

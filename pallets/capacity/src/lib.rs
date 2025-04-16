@@ -933,8 +933,8 @@ impl<T: Config> Pallet<T> {
 
 	fn start_new_epoch_if_needed(current_block: BlockNumberFor<T>) -> Weight {
 		// Should we start a new epoch?
-		if current_block.saturating_sub(CurrentEpochInfo::<T>::get().epoch_start) >=
-			EpochLength::<T>::get()
+		if current_block.saturating_sub(CurrentEpochInfo::<T>::get().epoch_start)
+			>= EpochLength::<T>::get()
 		{
 			let current_epoch = CurrentEpoch::<T>::get();
 			CurrentEpoch::<T>::set(current_epoch.saturating_add(1u32.into()));
@@ -1154,10 +1154,12 @@ impl<T: Config> Pallet<T> {
 	/// - Arrange the chunks such that we overwrite a complete chunk only when it is not needed
 	/// - The cycle is thus era modulo (history limit + chunk length)
 	/// - `[0,1,2],[3,4,5],[6,7,8],[]`
+	///
 	/// Note Chunks stored = (History Length / Chunk size) + 1
 	/// - The second step is which chunk to add to:
 	/// - Divide the cycle by the chunk length and take the floor
 	/// - Floor(5 / 3) = 1
+	///
 	/// Chunk Index = Floor((era % (History Length + chunk size)) / chunk size)
 	pub(crate) fn get_chunk_index_for_era(era: RewardEra) -> u32 {
 		let history_limit: u32 = T::ProviderBoostHistoryLimit::get();

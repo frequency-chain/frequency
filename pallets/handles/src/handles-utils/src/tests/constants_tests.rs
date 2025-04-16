@@ -1,5 +1,3 @@
-#[path = "../../constants.rs"]
-mod constants;
 use constants::*;
 
 // You can comment out the current one and uncomment the original, specific one

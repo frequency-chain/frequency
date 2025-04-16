@@ -369,10 +369,9 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
 	/// * [`Error::InvalidCid`] - Unable to parse provided CID
 	///
-	pub fn validate_cid(in_cid: &Vec<u8>) -> Result<Vec<u8>, DispatchError> {
+	pub fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
 		// Decode SCALE encoded CID into string slice
-		let cid_str: &str =
-			core::str::from_utf8(&in_cid[..]).map_err(|_| Error::<T>::InvalidCid)?;
+		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
 		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
 		// starts_with handles Unicode multibyte characters safely
 		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);

@@ -701,15 +701,15 @@ pub mod pallet {
 			);
 			// AppendOnly is only valid for Itemized payload location
 			ensure!(
-				!settings.contains(&SchemaSetting::AppendOnly) ||
-					payload_location == PayloadLocation::Itemized,
+				!settings.contains(&SchemaSetting::AppendOnly)
+					|| payload_location == PayloadLocation::Itemized,
 				Error::<T>::InvalidSetting
 			);
 			// SignatureRequired is only valid for Itemized and Paginated payload locations
 			ensure!(
-				!settings.contains(&SchemaSetting::SignatureRequired) ||
-					payload_location == PayloadLocation::Itemized ||
-					payload_location == PayloadLocation::Paginated,
+				!settings.contains(&SchemaSetting::SignatureRequired)
+					|| payload_location == PayloadLocation::Itemized
+					|| payload_location == PayloadLocation::Paginated,
 				Error::<T>::InvalidSetting
 			);
 			let schema_name = match optional_schema_name {
@@ -785,7 +785,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 }
 
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
-	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool {
 		let latest_issue_schema_id = CurrentSchemaIdentifierMaximum::<T>::get();
 		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
 	}

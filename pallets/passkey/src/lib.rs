@@ -16,7 +16,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-// allowing deprecated until moving to Extrinisc V5 structure
+// allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
 use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
@@ -36,7 +36,7 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 extern crate alloc;
-use alloc::{vec, vec::Vec};
+use alloc::vec;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
@@ -252,10 +252,14 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				Ok((payload.clone().into(), true)),
+			{
+				Ok((payload.clone().into(), true))
+			},
 			Call::proxy_v2 { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				Ok((payload.clone(), false)),
+			{
+				Ok((payload.clone(), false))
+			},
 			_ => Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -316,7 +320,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		let signature = self.payload.account_ownership_proof.clone();
 		let signer = &self.payload.passkey_call.account_id;
 
-		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
+		Self::check_account_signature(signer, signed_data.inner().as_ref(), &signature)
 			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
 
 		// checking the passkey signature to ensure access to the passkey
@@ -330,8 +334,9 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		p256_signature
 			.try_verify(&p256_signed_data, &p256_signer)
 			.map_err(|e| match e {
-				PasskeyVerificationError::InvalidProof =>
-					TransactionValidityError::Invalid(InvalidTransaction::BadSigner),
+				PasskeyVerificationError::InvalidProof => {
+					TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
+				},
 				_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
 			})?;
 
@@ -355,12 +360,12 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	/// * `Err(InvalidAccountSignature)` if the signature is invalid
 	fn check_account_signature(
 		signer: &T::AccountId,
-		signed_data: &Vec<u8>,
+		signed_data: &[u8],
 		signature: &MultiSignature,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-		if !check_signature(signature, key, signed_data.clone()) {
+		if !check_signature(signature, key, signed_data.to_owned()) {
 			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
 
