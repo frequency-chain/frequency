@@ -3,5 +3,5 @@
 # and update the CI base image version everywhere
 channel = "1.84"
 components = [ "clippy", "rust-docs", "rustfmt","rustc-dev", "rustc", "rust-src"]
-targets = [ "wasm32-unknown-unknown" ]
+targets = [ "wasm32v1-none" ]
 profile = "minimal"
