@@ -1,4 +1,4 @@
-use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use sp_core::RuntimeDebug;
 
 // Proxy Pallet Config
@@ -12,6 +12,7 @@ use sp_core::RuntimeDebug;
 	PartialOrd,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	RuntimeDebug,
 	MaxEncodedLen,
 	scale_info::TypeInfo,

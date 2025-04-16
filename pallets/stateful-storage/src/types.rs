@@ -53,7 +53,9 @@ pub trait ItemizedOperations<T: Config> {
 	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
 }
 /// Defines the actions that can be applied to an Itemized storage
-#[derive(Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
+#[derive(
+	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
+)]
 #[scale_info(skip_type_params(DataSize))]
 #[codec(mel_bound(DataSize: MaxEncodedLen))]
 pub enum ItemAction<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
@@ -93,7 +95,16 @@ pub enum PageError {
 // REMOVED ItemizedSignaturePayload
 
 /// Payload containing all necessary fields to verify Itemized related signatures
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct ItemizedSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
@@ -117,7 +128,16 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 // REMOVED PaginatedSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
@@ -142,7 +162,16 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 // REMOVED PaginatedDeleteSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to delete a Paginated storage
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage

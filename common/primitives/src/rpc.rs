@@ -31,7 +31,16 @@ pub struct RpcEvent {
 
 impl<RuntimeEvent, Hash> From<EventRecord<RuntimeEvent, Hash>> for RpcEvent
 where
-	RuntimeEvent: DecodeWithMemTracking + Codec + Sync + Send + TypeInfo + Debug + Eq + Clone + EncodeLike + 'static,
+	RuntimeEvent: DecodeWithMemTracking
+		+ Codec
+		+ Sync
+		+ Send
+		+ TypeInfo
+		+ Debug
+		+ Eq
+		+ Clone
+		+ EncodeLike
+		+ 'static,
 {
 	fn from(event: EventRecord<RuntimeEvent, Hash>) -> Self {
 		let phase = match event.phase {
