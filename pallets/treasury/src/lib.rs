@@ -14,7 +14,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//! This is copied from https://github.com/paritytech/polkadot-sdk/tree/release-polkadot-v1.13.0
+//! This is copied from [![github]](https://github.com/paritytech/polkadot-sdk/tree/release-polkadot-v1.13.0)
 //! Git Hash d5160c1d567cc73c7df6c816d41e21aa3adb188d
 //! > Made with *Substrate*, for *Polkadot*.
 //!
