@@ -1,6 +1,6 @@
 [package]
 name = "pallet-msa-runtime-api"
-version = "0.0.0"
+version = "1.16.0-rc2+polkadotstable2412"
 description = "A package that adds Runtime Api for Msa pallet"
 authors = ["Frequency"]
 license = "Apache-2.0"
