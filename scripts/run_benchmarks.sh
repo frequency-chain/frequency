@@ -185,7 +185,6 @@ function run_benchmark() {
   --pallet=${1} \
   --extrinsic "*" \
   --heap-pages=4096 \
-  --wasm-execution=compiled \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
@@ -229,7 +228,7 @@ if [[ -n "${OVERHEAD}" ]]
 then
   echo "Running extrinsic and block overhead benchmark"
   echo " "
-  ${BENCHMARK} overhead --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
+  ${BENCHMARK} overhead --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi
 
 echo "Running tests..."
