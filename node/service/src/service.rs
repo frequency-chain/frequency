@@ -294,7 +294,7 @@ pub async fn start_parachain_node(
 		sync_service: sync_service.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
-		telemetry: telemetry.as_mut(),
+		telemetry: Some(telemetry.as_mut()),
 	})?;
 
 	if let Some(hwbench) = hwbench {

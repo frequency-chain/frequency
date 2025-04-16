@@ -666,7 +666,7 @@ impl pallet_multisig::Config for Runtime {
 }
 
 impl cumulus_pallet_weight_reclaim::Config for Runtime {
-	type WeightInfo = ();
+	type WeightInfo = weights::cumulus_pallet_weight_reclaim::SubstrateWeight<Runtime>;
 }
 
 /// Need this declaration method for use + type safety in benchmarks

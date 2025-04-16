@@ -37,6 +37,7 @@ pallet-transaction-payment = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 # cumulus
+cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
 pallet-collator-selection = { workspace = true }
 pallet-time-release = { path = "../../pallets/time-release", default-features = false }
