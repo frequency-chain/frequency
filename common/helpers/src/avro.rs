@@ -110,9 +110,8 @@ pub fn populate_schema_and_serialize(
 ) -> Result<Vec<u8>, AvroError> {
 	let writer = get_schema_data_writer(schema);
 	match Record::new(writer.schema()) {
-		None => {
-			Err(AvroError::InvalidSchema("Could not create record from this schema".to_string()))
-		},
+		None =>
+			Err(AvroError::InvalidSchema("Could not create record from this schema".to_string())),
 		Some(mut record_list) => {
 			for (field_name, field_value) in records.iter() {
 				record_list.put(field_name, field_value.clone());
@@ -162,11 +161,10 @@ pub fn get_schema_data_map<'a>(
 	let mut result_record = HashMap::<String, SchemaValue>::new();
 
 	match from_data_datum {
-		SchemaValue::Record(record) => {
+		SchemaValue::Record(record) =>
 			for (field_name, field_value) in record.iter() {
 				result_record.insert(field_name.clone(), field_value.clone());
-			}
-		},
+			},
 		_ => return Err(AvroError::InvalidRecords()),
 	}
 

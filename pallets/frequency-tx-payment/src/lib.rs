@@ -357,8 +357,8 @@ where
 	/// Return the tip as being chosen by the transaction sender.
 	pub fn tip(&self, call: &<T as frame_system::Config>::RuntimeCall) -> BalanceOf<T> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { .. })
-			| Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
+			Some(Call::pay_with_capacity { .. }) |
+			Some(Call::pay_with_capacity_batch_all { .. }) => Zero::zero(),
 			_ => self.0,
 		}
 	}
@@ -372,13 +372,11 @@ where
 		len: usize,
 	) -> Result<BalanceOf<T>, TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => {
-				self.dryrun_withdraw_capacity_fee(who, &vec![*call.clone()], len)
-			},
+			Some(Call::pay_with_capacity { call }) =>
+				self.dryrun_withdraw_capacity_fee(who, &vec![*call.clone()], len),
 
-			Some(Call::pay_with_capacity_batch_all { calls }) => {
-				self.dryrun_withdraw_capacity_fee(who, calls, len)
-			},
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.dryrun_withdraw_capacity_fee(who, calls, len),
 
 			_ => self.dryrun_withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
@@ -426,12 +424,10 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) => {
-				self.withdraw_capacity_fee(who, &vec![*call.clone()], len)
-			},
-			Some(Call::pay_with_capacity_batch_all { calls }) => {
-				self.withdraw_capacity_fee(who, calls, len)
-			},
+			Some(Call::pay_with_capacity { call }) =>
+				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
+			Some(Call::pay_with_capacity_batch_all { calls }) =>
+				self.withdraw_capacity_fee(who, calls, len),
 			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}

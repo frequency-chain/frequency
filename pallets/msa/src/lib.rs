@@ -1311,9 +1311,9 @@ impl<T: Config> Pallet<T> {
 
 			let mut schema_list = Vec::new();
 			for (schema_id, revoked_at) in schema_permissions {
-				if provider_info.revoked_at > BlockNumberFor::<T>::zero()
-					&& (revoked_at > provider_info.revoked_at
-						|| revoked_at == BlockNumberFor::<T>::zero())
+				if provider_info.revoked_at > BlockNumberFor::<T>::zero() &&
+					(revoked_at > provider_info.revoked_at ||
+						revoked_at == BlockNumberFor::<T>::zero())
 				{
 					schema_list
 						.push(SchemaGrant { schema_id, revoked_at: provider_info.revoked_at });
@@ -1825,15 +1825,12 @@ where
 		_len: usize,
 	) -> TransactionValidity {
 		match call.is_sub_type() {
-			Some(Call::revoke_delegation_by_provider { delegator, .. }) => {
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator)
-			},
-			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) => {
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id)
-			},
-			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) => {
-				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete)
-			},
+			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
+			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
+			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
+				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
 			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
 			_ => Ok(Default::default()),
 		}
