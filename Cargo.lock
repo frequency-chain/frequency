@@ -2358,6 +2358,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-weight-reclaim"
+version = "0.2.0"
+source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#5f2e7ab879375ada43c31fd7f84a6ea72201199e"
+dependencies = [
+ "cumulus-primitives-storage-weight-reclaim",
+ "derive-where",
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-trie",
+]
+
+[[package]]
 name = "cumulus-primitives-aura"
 version = "0.17.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#5f2e7ab879375ada43c31fd7f84a6ea72201199e"
@@ -3842,8 +3861,8 @@ dependencies = [
  "cumulus-client-cli",
  "cumulus-client-parachain-inherent",
  "cumulus-client-service",
+ "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-core",
- "cumulus-primitives-storage-weight-reclaim",
  "derive_more 0.99.19",
  "frame-benchmarking",
  "frame-benchmarking-cli",
@@ -3893,9 +3912,9 @@ dependencies = [
  "cumulus-pallet-aura-ext",
  "cumulus-pallet-parachain-system",
  "cumulus-pallet-session-benchmarking",
+ "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-storage-weight-reclaim",
  "cumulus-primitives-timestamp",
  "frame-benchmarking",
  "frame-executive",

@@ -139,7 +139,7 @@ pub fn create_benchmark_extrinsic(
 		#[allow(deprecated)]
 		AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
 		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
-		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
+		cumulus_pallet_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
 	);
 
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(

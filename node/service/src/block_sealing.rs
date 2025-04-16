@@ -58,7 +58,7 @@ pub fn start_frequency_dev_sealing_node(
 	);
 
 	// Build the network components required for the blockchain.
-	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+	let (network, system_rpc_tx, tx_handler_controller, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			net_config,
@@ -206,8 +206,6 @@ pub fn start_frequency_dev_sealing_node(
 		tx_handler_controller,
 		telemetry: telemetry.as_mut(),
 	})?;
-
-	network_starter.start_network();
 
 	Ok(task_manager)
 }

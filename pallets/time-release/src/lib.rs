@@ -99,7 +99,17 @@ pub mod module {
 	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	/// Custom origin to be used when scheduling a transfer
-	#[derive(PartialEq, Eq, Clone, MaxEncodedLen, Encode, Decode, TypeInfo, RuntimeDebug)]
+	#[derive(
+		PartialEq,
+		Eq,
+		Clone,
+		MaxEncodedLen,
+		Encode,
+		Decode,
+		DecodeWithMemTracking,
+		TypeInfo,
+		RuntimeDebug,
+	)]
 	#[pallet::origin]
 	pub enum Origin<T: Config> {
 		/// A scheduled release triggered by the TimeRelease pallet.
