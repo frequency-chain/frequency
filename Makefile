@@ -1,4 +1,5 @@
 UNAME := $(shell uname)
+NIGHTLY = +nightly-2025-04-03
 
 .PHONY: all
 all: build
@@ -106,11 +107,11 @@ specs-paseo-local:
 
 .PHONY: format
 format:
-	cargo +nightly-2025-04-03 fmt
+	cargo $(NIGHTLY) fmt
 
 .PHONY: lint lint-audit lint-fix lint-clippy
 lint:
-	cargo +nightly-2025-04-03 fmt --check
+	cargo $(NIGHTLY) fmt --check
 	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -121,7 +122,7 @@ lint-audit:
 	cargo deny check -c deny.toml
 
 lint-fix:
-	cargo +nightly-2025-04-03 fmt
+	cargo $(NIGHTLY) fmt
 	SKIP_WASM_BUILD=1 cargo clippy --fix --features runtime-benchmarks,frequency-lint-check
 
 .PHONY: format-lint
