@@ -1745,7 +1745,7 @@ sp_api::impl_runtime_apis! {
 			return (list, storage_info)
 		}
 
-		#[allow(deprecated)]
+		#[allow(deprecated, non_local_definitions)]
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {

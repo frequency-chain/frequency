@@ -52,3 +52,6 @@ std = [
   'libsecp256k1/std',
 ]
 test = []
+
+[lints]
+workspace = true

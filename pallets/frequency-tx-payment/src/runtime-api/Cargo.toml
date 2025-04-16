@@ -27,3 +27,6 @@ std = [
   "common-primitives/std",
   "pallet-transaction-payment/std",
 ]
+
+[lints]
+workspace = true
