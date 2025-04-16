@@ -24,7 +24,6 @@ frame-support = { workspace = true, default-features = false }
 frame-system = { workspace = true, default-features = false }
 pallet-balances = { workspace = true, default-features = false }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 sp-core = { workspace = true, optional = true }
 
 # Frequency related dependencies
@@ -49,7 +48,6 @@ std = [
 	"sp-core?/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 	"common-primitives/std",
 	"common-runtime/std",
 ]
@@ -72,3 +70,6 @@ try-runtime = [
 	"sp-runtime/try-runtime",
 ]
 test = []
+
+[lints]
+workspace = true

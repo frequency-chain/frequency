@@ -19,7 +19,6 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-core = { workspace = true }
@@ -42,3 +41,6 @@ std = [
   'common-primitives/std',
   "common-helpers/std",
 ]
+
+[lints]
+workspace = true

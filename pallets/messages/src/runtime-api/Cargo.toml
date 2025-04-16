@@ -12,7 +12,6 @@ edition = "2021"
 [dependencies]
 # Substrate
 sp-api= { workspace = true }
-sp-std= { workspace = true }
 frame-support = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
@@ -20,3 +19,6 @@ common-primitives = { default-features = false, path = "../../../../common/primi
 [features]
 default = ["std"]
 std = ["frame-support/std", "sp-api/std", "common-primitives/std"]
+
+[lints]
+workspace = true

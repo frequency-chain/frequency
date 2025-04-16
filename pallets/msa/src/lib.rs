@@ -66,7 +66,8 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
-use sp_std::{prelude::*, vec};
+extern crate alloc;
+use alloc::{boxed::Box, vec, vec::Vec};
 
 use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{
@@ -779,39 +780,7 @@ pub mod pallet {
 		}
 
 		// REMOVED grant_schema_permissions() at call index 8
-
-		/// Revokes a list of schema permissions to a provider. Attempting to revoke a Schemas that have already
-		/// been revoked are ignored.
-		///
-		/// # Events
-		/// - [DelegationUpdated](Event::DelegationUpdated)
-		///
-		/// # Errors
-		/// - [`NoKeyExists`](Error::NoKeyExists) - If there is not MSA for `origin`.
-		/// - [`DelegationNotFound`](Error::DelegationNotFound) - If there is not delegation relationship between Origin and Delegator or Origin and Delegator are the same.
-		/// - [`SchemaNotGranted`](Error::SchemaNotGranted) - If attempting to revoke a schema that has not previously been granted.
-		///
-		#[pallet::call_index(9)]
-		#[pallet::weight(T::WeightInfo::revoke_schema_permissions(
-		schema_ids.len() as u32
-		))]
-		#[allow(deprecated)]
-		#[deprecated(since = "1.3.0", note = "revoke_schema_permissions() has been deprecated.")]
-		pub fn revoke_schema_permissions(
-			origin: OriginFor<T>,
-			provider_msa_id: MessageSourceId,
-			schema_ids: Vec<SchemaId>,
-		) -> DispatchResult {
-			let delegator_key = ensure_signed(origin)?;
-			let delegator_msa_id = Self::ensure_valid_msa_key(&delegator_key)?;
-			let provider_id = ProviderId(provider_msa_id);
-			let delegator_id = DelegatorId(delegator_msa_id);
-
-			Self::revoke_permissions_for_schemas(delegator_id, provider_id, schema_ids)?;
-			Self::deposit_event(Event::DelegationUpdated { provider_id, delegator_id });
-
-			Ok(())
-		}
+		// REMOVED revoke_schema_permissions() at call index 9
 
 		/// Retires a MSA
 		///
@@ -1800,13 +1769,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for CheckFreeExtrinsicUse<T> {
+impl<T: Config + Send + Sync> core::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "CheckFreeExtrinsicUse<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -1822,7 +1791,7 @@ where
 	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 

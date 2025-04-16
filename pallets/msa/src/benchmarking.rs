@@ -250,24 +250,6 @@ benchmarks! {
 		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
 	}
 
-	revoke_schema_permissions {
-		let s in 0 .. T::MaxSchemaGrantsPerDelegation::get();
-
-		let provider_account = create_account::<T>("account", 0);
-		let (provider_msa_id, _) = Msa::<T>::create_account(provider_account.into(), EMPTY_FUNCTION).unwrap();
-
-		let delegator_account = create_account::<T>("account", 1);
-		let (delegator_msa_id, delegator_public_key) = Msa::<T>::create_account(delegator_account.into(), EMPTY_FUNCTION).unwrap();
-
-		let schema_ids: Vec<SchemaId> = (1..s as u16).collect::<Vec<_>>();
-		T::SchemaValidator::set_schema_count(schema_ids.len().try_into().unwrap());
-
-		assert_ok!(Msa::<T>::add_provider(ProviderId(provider_msa_id), DelegatorId(delegator_msa_id), schema_ids.clone()));
-	}: _ (RawOrigin::Signed(delegator_public_key), provider_msa_id, schema_ids.clone())
-	verify {
-		assert_eq!(frame_system::Pallet::<T>::events().len(), 1);
-	}
-
 	impl_benchmark_test_suite!(Msa,
 		crate::tests::mock::new_test_ext_keystore(),
 		crate::tests::mock::Test);

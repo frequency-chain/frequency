@@ -2,7 +2,7 @@
 # locally as a standalone node. Requires to run from repository root and to copy
 # the binary in the build folder.
 # This is the build stage for Polkadot. Here we create the binary in a temporary image.
-FROM --platform=linux/amd64 ubuntu:22.04 AS base
+FROM --platform=linux/amd64 ubuntu:24.04 AS base
 
 LABEL maintainer="Frequency"
 LABEL description="Frequency standalone node"
@@ -10,7 +10,10 @@ LABEL description="Frequency standalone node"
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # This is the 2nd stage: a very small image where we copy the Frequency binary
-FROM --platform=linux/amd64 ubuntu:22.04
+FROM --platform=linux/amd64 ubuntu:24.04
+
+# Some Ubuntu images have an ubuntu user
+RUN userdel -r ubuntu
 
 # We want jq and curl in the final image, but we don't need the support files
 RUN apt-get update && \

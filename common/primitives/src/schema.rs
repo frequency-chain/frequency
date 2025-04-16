@@ -1,12 +1,13 @@
+extern crate alloc;
 use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
+use alloc::{vec, vec::Vec};
 use enumflags2::{bitflags, BitFlags};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use utils::*;
 

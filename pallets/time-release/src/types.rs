@@ -3,10 +3,9 @@
 
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, HasCompact, MaxEncodedLen};
 use sp_runtime::{traits::AtLeast32Bit, DispatchError, RuntimeDebug};
-use sp_std::{
-	boxed::Box,
-	cmp::{Eq, PartialEq},
-};
+extern crate alloc;
+use alloc::boxed::Box;
+use core::cmp::{Eq, PartialEq};
 
 use scale_info::TypeInfo;
 

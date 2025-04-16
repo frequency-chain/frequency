@@ -1,7 +1,6 @@
 //! Types for the Stateful Storage Pallet
 use crate::Config;
 use common_primitives::{
-	msa::MessageSourceId,
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId, PageNonce},
 };
@@ -10,13 +9,14 @@ use frame_system::pallet_prelude::*;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
-use sp_std::{
+extern crate alloc;
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::{
 	cmp::*,
-	collections::btree_map::BTreeMap,
 	fmt::Debug,
 	hash::{Hash, Hasher},
-	prelude::*,
 };
+
 use twox_hash::XxHash64;
 
 /// Migration page size
@@ -56,7 +56,7 @@ pub trait ItemizedOperations<T: Config> {
 #[derive(Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
 #[scale_info(skip_type_params(DataSize))]
 #[codec(mel_bound(DataSize: MaxEncodedLen))]
-pub enum ItemAction<DataSize: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq> {
+pub enum ItemAction<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
 	/// Adding new Item into page
 	Add {
 		/// The data to add
@@ -90,32 +90,7 @@ pub enum PageError {
 	PageSizeOverflow,
 }
 
-/// Warning: This struct is `deprecated`. please use `ItemizedSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify Itemized related signatures
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct ItemizedSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
-
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-
-	/// Actions to apply to storage from possible: [`ItemAction`]
-	pub actions: BoundedVec<
-		ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
-		<T as Config>::MaxItemizedActionsCount,
-	>,
-}
+// REMOVED ItemizedSignaturePayload
 
 /// Payload containing all necessary fields to verify Itemized related signatures
 #[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
@@ -139,33 +114,7 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 	>,
 }
 
-/// Warning: This struct is `deprecated`. please use `PaginatedUpsertSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct PaginatedUpsertSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
-
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
-
-	/// Page id of this storage
-	#[codec(compact)]
-	pub page_id: PageId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-
-	/// payload to update the page with
-	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
-}
+// REMOVED PaginatedSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
 #[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
@@ -190,30 +139,7 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
 }
 
-/// Warning: This struct is `deprecated`. please use `PaginatedDeleteSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify signatures to delete a Paginated storage
-#[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct PaginatedDeleteSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
-
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
-
-	/// Page id of this storage
-	#[codec(compact)]
-	pub page_id: PageId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-}
+// REMOVED PaginatedDeleteSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to delete a Paginated storage
 #[derive(Encode, Decode, DecodeWithMemTracking, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
@@ -266,7 +192,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// Retrieve the hash of the page
 	pub fn get_hash(&self) -> PageHash {
 		if self.is_empty() {
-			return PageHash::default()
+			return PageHash::default();
 		}
 		let mut hasher = XxHash64::with_seed(0);
 		self.hash(&mut hasher);

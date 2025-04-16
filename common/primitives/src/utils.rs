@@ -1,4 +1,5 @@
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1
 pub const MAINNET_GENESIS_HASH: &[u8] = &[

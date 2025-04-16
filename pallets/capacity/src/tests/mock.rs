@@ -9,6 +9,7 @@ use common_primitives::{
 	schema::{SchemaId, SchemaValidator},
 };
 use common_runtime::weights;
+use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
@@ -22,7 +23,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
-use sp_std::ops::Mul;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 

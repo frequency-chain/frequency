@@ -7,7 +7,8 @@ use frame_benchmarking::{account, benchmarks, whitelist_account, whitelisted_cal
 use frame_support::traits::fungible::InspectHold;
 use frame_system::{pallet_prelude::BlockNumberFor, RawOrigin};
 use sp_runtime::{traits::TrailingZeroInput, SaturatedConversion};
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::vec;
 
 pub const DOLLARS: u32 = 10u32.saturating_pow(8u32);
 

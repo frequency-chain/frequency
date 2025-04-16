@@ -33,7 +33,6 @@
 // 	};
 // }
 // pub(crate) use impl_incrementable;
-
 #[macro_export]
 #[doc(hidden)]
 macro_rules! impl_codec_bitflags {
@@ -52,7 +51,7 @@ macro_rules! impl_codec_bitflags {
 		impl Decode for $wrapper {
 			fn decode<I: parity_scale_codec::Input>(
 				input: &mut I,
-			) -> sp_std::result::Result<Self, parity_scale_codec::Error> {
+			) -> core::result::Result<Self, parity_scale_codec::Error> {
 				let field = <$size>::decode(input)?;
 				Ok(Self(BitFlags::from_bits(field as $size).map_err(|_| "invalid value")?))
 			}

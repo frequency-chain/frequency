@@ -17,7 +17,8 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::rpc::RpcEvent;
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

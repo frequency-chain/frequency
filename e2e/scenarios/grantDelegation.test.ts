@@ -254,41 +254,6 @@ describe('Delegation Scenario Tests', function () {
     });
   });
 
-  describe('revoke schema permissions', function () {
-    it('should fail to revoke schema permissions from non-MSA (NoKeyExists)', async function () {
-      const nonMsaKeys = await createAndFundKeypair(fundingSource, 5_000_000n);
-      const op = ExtrinsicHelper.revokeSchemaPermissions(nonMsaKeys, providerId, [schemaId]);
-      await assert.rejects(op.fundAndSend(fundingSource), { name: 'NoKeyExists' });
-    });
-
-    it('should fail to revoke schema permissions from a provider for which no delegation exists (DelegationNotFound)', async function () {
-      const op = ExtrinsicHelper.revokeSchemaPermissions(keys, otherProviderId, [schemaId]);
-      await assert.rejects(op.fundAndSend(fundingSource), { name: 'DelegationNotFound' });
-    });
-
-    it('should fail to revoke schema permission which was never granted (SchemaNotGranted)', async function () {
-      const sid = await getOrCreateDummySchema(keys);
-
-      const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [sid]);
-      await assert.rejects(op.fundAndSend(fundingSource), { name: 'SchemaNotGranted' });
-    });
-
-    it('should successfully revoke granted schema', async function () {
-      const op = ExtrinsicHelper.revokeSchemaPermissions(keys, providerId, [schemaId2]);
-      await assert.doesNotReject(op.fundAndSend(fundingSource));
-      const grants = await ExtrinsicHelper.apiPromise.rpc.msa.grantedSchemaIdsByMsaId(msaId, providerId);
-      const grantedSchemaIds = grants
-        .unwrap()
-        .filter((grant) => grant.revoked_at.toBigInt() === 0n)
-        .map((grant) => grant.schema_id.toNumber());
-      assert.deepEqual(
-        grantedSchemaIds,
-        [schemaId.toNumber()],
-        'granted schema permissions should include only non-revoked schema permission'
-      );
-    });
-  });
-
   describe('revoke delegations', function () {
     it('should fail to revoke a delegation if no MSA exists (InvalidMsaKey)', async function () {
       const nonMsaKeys = await createAndFundKeypair(fundingSource);

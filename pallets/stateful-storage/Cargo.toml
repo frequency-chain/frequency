@@ -24,7 +24,6 @@ frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../../runtime/common", default-features = false }
@@ -47,7 +46,6 @@ runtime-benchmarks = [
 std = [
   'parity-scale-codec/std',
   'scale-info/std',
-  'sp-std/std',
   'sp-core/std',
   'sp-io/std',
   'sp-runtime/std',
@@ -59,3 +57,6 @@ std = [
 ]
 try-runtime = ['frame-support/try-runtime']
 test = []
+
+[lints]
+workspace = true
