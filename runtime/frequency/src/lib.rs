@@ -23,7 +23,6 @@ use common_runtime::constants::currency::UNITS;
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
-use cumulus_pallet_weight_reclaim;
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -349,7 +348,6 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
 		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		frame_system::CheckWeight<Runtime>,
 		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
 		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
 		AsTransactionExtension<
@@ -665,6 +663,10 @@ impl pallet_multisig::Config for Runtime {
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
+}
+
+impl cumulus_pallet_weight_reclaim::Config for Runtime {
+	type WeightInfo = ();
 }
 
 /// Need this declaration method for use + type safety in benchmarks
