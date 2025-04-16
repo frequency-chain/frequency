@@ -94,8 +94,8 @@ polkadot-runtime-common = { workspace = true }
 cumulus-pallet-aura-ext = { workspace = true }
 cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-session-benchmarking = { workspace = true }
+cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
-cumulus-primitives-storage-weight-reclaim = { workspace = true }
 cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
@@ -108,10 +108,10 @@ std = [
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-parachain-system/std",
+  "cumulus-pallet-weight-reclaim/std",
   "cumulus-primitives-aura/std",
   "cumulus-primitives-core/std",
   "cumulus-primitives-timestamp/std",
-  "cumulus-primitives-storage-weight-reclaim/std",
   "frame-executive/std",
   "frame-support/std",
   "frame-system-rpc-runtime-api/std",

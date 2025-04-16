@@ -23,6 +23,7 @@ use common_runtime::constants::currency::UNITS;
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
+use cumulus_pallet_weight_reclaim;
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
@@ -337,24 +338,28 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
-/// The SignedExtension to the basic transaction logic.
+/// The TransactionExtension to the basic transaction logic.
 #[allow(deprecated)]
-pub type TxExtension = (
-	frame_system::CheckNonZeroSender<Runtime>,
-	// merging these types so that we can have more than 12 extensions
-	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-	frame_system::CheckWeight<Runtime>,
-	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-	AsTransactionExtension<
-		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-	>,
-	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
-	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
-);
+pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
+	Runtime,
+	(
+		frame_system::CheckNonZeroSender<Runtime>,
+		// merging these types so that we can have more than 12 extensions
+		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
+		frame_system::CheckGenesis<Runtime>,
+		frame_system::CheckEra<Runtime>,
+		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
+		frame_system::CheckWeight<Runtime>,
+		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
+		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+		AsTransactionExtension<
+			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		>,
+		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
+		frame_system::CheckWeight<Runtime>,
+	),
+>;
+
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
 
