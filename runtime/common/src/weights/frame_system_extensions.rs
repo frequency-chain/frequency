@@ -44,7 +44,7 @@
 #![allow(unused_imports)]
 #![allow(missing_docs)]
 
-use frame_support::{traits::Get, weights::Weight};
+use frame_support::{traits::Get, weights::{constants::RocksDbWeight, Weight}};
 use core::marker::PhantomData;
 
 /// Weight functions for `frame_system_extensions`.
@@ -54,83 +54,80 @@ impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<
 	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
 	fn check_genesis() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `54`
+		//  Measured:  `30`
 		//  Estimated: `3509`
-		// Minimum execution time: 3_637_000 picoseconds.
-		Weight::from_parts(6_382_000, 0)
-			.saturating_add(Weight::from_parts(0, 3509))
-			.saturating_add(T::DbWeight::get().reads(1))
+		// Minimum execution time: 3_388_000 picoseconds.
+		Weight::from_parts(3_577_000, 3509)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `System::BlockHash` (r:1 w:0)
 	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
 	fn check_mortality_mortal_transaction() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `92`
+		//  Measured:  `68`
 		//  Estimated: `3509`
-		// Minimum execution time: 5_841_000 picoseconds.
-		Weight::from_parts(8_776_000, 0)
-			.saturating_add(Weight::from_parts(0, 3509))
-			.saturating_add(T::DbWeight::get().reads(1))
+		// Minimum execution time: 6_442_000 picoseconds.
+		Weight::from_parts(6_703_000, 3509)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	/// Storage: `System::BlockHash` (r:1 w:0)
 	/// Proof: `System::BlockHash` (`max_values`: None, `max_size`: Some(44), added: 2519, mode: `MaxEncodedLen`)
 	fn check_mortality_immortal_transaction() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `92`
+		//  Measured:  `68`
 		//  Estimated: `3509`
-		// Minimum execution time: 5_841_000 picoseconds.
-		Weight::from_parts(8_776_000, 0)
-			.saturating_add(Weight::from_parts(0, 3509))
-			.saturating_add(T::DbWeight::get().reads(1))
+		// Minimum execution time: 6_357_000 picoseconds.
+		Weight::from_parts(6_605_000, 3509)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
 	}
 	fn check_non_zero_sender() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 561_000 picoseconds.
-		Weight::from_parts(2_705_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
+		// Minimum execution time: 457_000 picoseconds.
+		Weight::from_parts(570_000, 0)
 	}
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn check_nonce() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_316_000 picoseconds.
-		Weight::from_parts(5_771_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
+		//  Measured:  `101`
+		//  Estimated: `3593`
+		// Minimum execution time: 6_936_000 picoseconds.
+		Weight::from_parts(7_261_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	fn check_spec_version() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 511_000 picoseconds.
-		Weight::from_parts(2_575_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
+		// Minimum execution time: 336_000 picoseconds.
+		Weight::from_parts(430_000, 0)
 	}
 	fn check_tx_version() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 501_000 picoseconds.
-		Weight::from_parts(2_595_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
+		// Minimum execution time: 348_000 picoseconds.
+		Weight::from_parts(455_000, 0)
+	}
+	fn check_weight() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 2_887_000 picoseconds.
+		Weight::from_parts(3_006_000, 0)
 	}
 	/// Storage: `System::AllExtrinsicsLen` (r:1 w:1)
 	/// Proof: `System::AllExtrinsicsLen` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
-	/// Storage: `System::BlockWeight` (r:1 w:1)
-	/// Proof: `System::BlockWeight` (`max_values`: Some(1), `max_size`: Some(48), added: 543, mode: `MaxEncodedLen`)
-	fn check_weight() -> Weight {
+	fn weight_reclaim() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `24`
-		//  Estimated: `1533`
-		// Minimum execution time: 3_687_000 picoseconds.
-		Weight::from_parts(6_192_000, 0)
-			.saturating_add(Weight::from_parts(0, 1533))
-			.saturating_add(T::DbWeight::get().reads(2))
-			.saturating_add(T::DbWeight::get().writes(2))
+		//  Estimated: `1489`
+		// Minimum execution time: 4_375_000 picoseconds.
+		Weight::from_parts(4_747_000, 1489)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
-
-	fn weight_reclaim() -> Weight {
-			todo!()
-		}
 }
