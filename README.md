@@ -312,7 +312,7 @@ make start-frequency-with-offchain
 - Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 
   \_Note, if you get errors complaining about the wasm build, then you may need to install
-  the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
+  the wasm target for rust. You can do this with `rustup target add wasm32v1-none`
 
 - Alternatively, run `make format-lint` to run both at the same time.
 - Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
