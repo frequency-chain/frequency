@@ -18,9 +18,62 @@ use sp_runtime::{
 	traits::{Lazy, Verify},
 	MultiSignature,
 };
+extern crate alloc;
+use alloc::boxed::Box;
 
 /// Ethereum message prefix eip-191
 const ETHEREUM_MESSAGE_PREFIX: &[u8; 26] = b"\x19Ethereum Signed Message:\n";
+
+/// A trait that allows mapping of raw bytes to AccountIds
+pub trait AccountAddressMapper<AccountId> {
+	/// mapping to the desired address
+	fn to_account_id(public_key_or_address: &[u8]) -> AccountId;
+
+	/// mapping to bytes of a public key or an address
+	fn to_bytes(public_key_or_address: &[u8]) -> Box<[u8]>;
+}
+
+/// converting raw address bytes to 32 bytes Ethereum compatible addresses
+pub struct EthereumAddressMapper;
+
+impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
+	fn to_account_id(public_key_or_address: &[u8]) -> AccountId32 {
+		let hashed = Self::to_bytes(public_key_or_address);
+		let v: [u8; 32] = hashed.into_vec().try_into().unwrap_or_default();
+		v.into()
+	}
+
+	fn to_bytes(public_key_or_address: &[u8]) -> Box<[u8]> {
+		let mut hashed = [0u8; 32];
+		match public_key_or_address.len() {
+			20 => {
+				hashed[..20].copy_from_slice(&public_key_or_address);
+			},
+			32 => {
+				hashed[..].copy_from_slice(&public_key_or_address);
+				return Box::new(hashed)
+			},
+			64 => {
+				let hashed_full = sp_io::hashing::keccak_256(&public_key_or_address);
+				// Copy bytes 12..32 (20 bytes) from hashed_full to the beginning of hashed
+				hashed[..20].copy_from_slice(&hashed_full[12..]);
+			},
+			65 => {
+				let hashed_full = sp_io::hashing::keccak_256(&public_key_or_address[1..]);
+				// Copy bytes 12..32 (20 bytes) from hashed_full to the beginning of hashed
+				hashed[..20].copy_from_slice(&hashed_full[12..]);
+			},
+			_ => {
+				log::error!("Invalid public key size provided for {:?}", public_key_or_address);
+				return Box::new([0u8; 32])
+			},
+		};
+
+		// Fill the rest (12 bytes) with 0xEE
+		hashed[20..].fill(0xEE);
+		Box::new(hashed)
+	}
+}
 
 /// Signature verify that can work with any known signature types.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -155,11 +208,9 @@ impl traits::IdentifyAccount for UnifiedSigner {
 				);
 				match decompressed_result {
 					Ok(public_key) => {
-						// calculating ethereum address prefixed with zeros
+						// calculating ethereum address compatible with `pallet-revive`
 						let decompressed = public_key.serialize();
-						let mut hashed = sp_io::hashing::keccak_256(&decompressed[1..65]);
-						hashed[..12].fill(0);
-						hashed.into()
+						EthereumAddressMapper::to_account_id(&decompressed)
 					},
 					Err(_) => {
 						log::error!("Invalid compressed public key provided");
@@ -246,8 +297,8 @@ impl Into<UnifiedSignature> for MultiSignature {
 fn check_secp256k1_signature(signature: &[u8; 65], msg: &[u8; 32], signer: &AccountId32) -> bool {
 	match sp_io::crypto::secp256k1_ecdsa_recover(signature, &msg) {
 		Ok(pubkey) => {
-			let mut hashed = sp_io::hashing::keccak_256(pubkey.as_ref());
-			hashed[..12].fill(0);
+			let account_id = EthereumAddressMapper::to_account_id(&pubkey);
+			let hashed = account_id.as_slice();
 			log::debug!(target:"ETHEREUM", "eth hashed={:?} signer={:?}",
 				HexDisplay::from(&hashed),HexDisplay::from(<dyn AsRef<[u8; 32]>>::as_ref(signer)),
 			);
