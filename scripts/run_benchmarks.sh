@@ -7,6 +7,7 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
+  frame_system \
   cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
@@ -44,10 +45,9 @@ function exit_err() { echo "❌ 💔" ; exit 1; }
 
 function usage() {
   cat << EOI
-  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v]
-         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [<pallet1> [... <palletN>]]
+  Usage: $( basename ${1} ) [-d <dir>] [-s] [-t <profile>] [-v] [<pallet1> [... <palletN>]]
 
-         -d <dir>     Sets top-level repository directory to <dir>.
+        -d <dir>      Sets top-level repository directory to <dir>.
                       Default: parent directory of script
 
         -h            Display this message and exit.
@@ -180,16 +180,25 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
+
+  EXTRINSICS="*"
+  TEMPLATE=${5}
+  if [[ "${1}"  == "frame_system" ]]
+  then
+    EXTRINSICS="remark,remark_with_event,set_heap_pages,set_storage,kill_storage,kill_prefix,authorize_upgrade"
+    TEMPLATE=${PROJECT}/.maintain/frame-system-weight-template.hbs
+  fi
+
   set -x
   set -e
   ${BENCHMARK} pallet \
   --pallet=${1} \
-  --extrinsic "*" \
+  --extrinsic ${EXTRINSICS} \
   --heap-pages=4096 \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${5} \
+  --template=${TEMPLATE} \
   --additional-trie-layers=${6} \
   --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
   --genesis-builder=runtime
