@@ -156,6 +156,7 @@ benchmarks-stateful-storage \
 benchmarks-handles \
 benchmarks-time-release \
 benchmarks-passkey \
+benchmarks-cumulus_pallet_weight_reclaim \
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -179,6 +180,7 @@ benchmarks-stateful-storage-local \
 benchmarks-handles-local \
 benchmarks-passkey-local \
 benchmarks-time-release-local \
+benchmarks-cumulus_pallet_weight_reclaim-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \

@@ -54,6 +54,7 @@ std = [
   "frame-support/std",
   "frame-system/std",
   "cumulus-primitives-core/std",
+  "cumulus-pallet-weight-reclaim/std",
   "pallet-democracy/std",
   "pallet-collator-selection/std",
   "pallet-collective/std",
@@ -78,6 +79,7 @@ std = [
 try-runtime = [
   "frame-support/try-runtime",
   "frame-system/try-runtime",
+  "cumulus-pallet-weight-reclaim/try-runtime",
   "pallet-collator-selection/try-runtime",
   "pallet-collective/try-runtime",
   "pallet-democracy/try-runtime",

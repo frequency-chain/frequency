@@ -7,6 +7,7 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
+  cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -189,7 +190,9 @@ function run_benchmark() {
   --repeat=${3} \
   --output=${4} \
   --template=${5} \
-  --additional-trie-layers=${6}
+  --additional-trie-layers=${6} \
+  --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
+  --genesis-builder=runtime
   if [ -z "${VERBOSE}" ]
   then
     set +x

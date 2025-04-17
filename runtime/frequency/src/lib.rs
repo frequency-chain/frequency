@@ -1371,6 +1371,9 @@ construct_runtime!(
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
 		Proxy: pallet_proxy = 43,
 
+		// Substrate weights
+		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,
+
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
 		Messages: pallet_messages::{Pallet, Call, Storage, Event<T>} = 61,
@@ -1392,6 +1395,7 @@ mod benches {
 	define_benchmarks!(
 		// Substrate
 		[frame_system, SystemBench::<Runtime>]
+		[cumulus_pallet_weight_reclaim, WeightReclaim]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
