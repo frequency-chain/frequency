@@ -181,7 +181,7 @@ ${OVERHEAD}"
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
 
-  EXTRINSICS="*"
+  EXTRINSICS='"*"'
   TEMPLATE=${5}
   if [[ "${1}"  == "frame_system" ]]
   then
