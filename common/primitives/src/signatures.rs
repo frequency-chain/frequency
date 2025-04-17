@@ -302,7 +302,7 @@ fn check_secp256k1_signature(signature: &[u8; 65], msg: &[u8; 32], signer: &Acco
 			log::debug!(target:"ETHEREUM", "eth hashed={:?} signer={:?}",
 				HexDisplay::from(&hashed),HexDisplay::from(<dyn AsRef<[u8; 32]>>::as_ref(signer)),
 			);
-			&hashed == <dyn AsRef<[u8; 32]>>::as_ref(signer)
+			hashed == <dyn AsRef<[u8; 32]>>::as_ref(signer)
 		},
 		_ => false,
 	}
