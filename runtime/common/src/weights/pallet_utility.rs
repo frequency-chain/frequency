@@ -78,10 +78,22 @@ impl<T: frame_system::Config> pallet_utility::WeightInfo for SubstrateWeight<T> 
 	}
 
 	fn dispatch_as_fallible() -> Weight {
-			todo!()
-		}
-
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_417_000 picoseconds.
+		Weight::from_parts(5_705_000, 0)
+	}
+	/// Storage: `SafeMode::EnteredUntil` (r:1 w:0)
+	/// Proof: `SafeMode::EnteredUntil` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
+	/// Storage: `TxPause::PausedCalls` (r:2 w:0)
+	/// Proof: `TxPause::PausedCalls` (`max_values`: None, `max_size`: Some(532), added: 3007, mode: `MaxEncodedLen`)
 	fn if_else() -> Weight {
-			todo!()
-		}
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `7004`
+		// Minimum execution time: 11_273_000 picoseconds.
+		Weight::from_parts(11_571_000, 7004)
+			.saturating_add(T::DbWeight::get().reads(3_u64))
+	}	
 }
