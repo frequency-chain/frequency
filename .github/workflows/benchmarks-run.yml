@@ -90,7 +90,6 @@ jobs:
 
       - name: Update Weights
         run: |
-          rustup show
           pallets_str="${{github.event.inputs.pallets}}"
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
