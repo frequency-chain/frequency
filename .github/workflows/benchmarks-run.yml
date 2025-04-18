@@ -102,11 +102,11 @@ jobs:
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
             echo "Running benchmarks for all pallets..."
-            ./scripts/run_benchmarks.sh -s
+            ./scripts/run_benchmarks.sh -s -n
           else
             IFS=',' read -r -a pallets <<< "$pallets_str"
             echo "Running benchmarks for pallets: ${pallets[*]}..."
-            ./scripts/run_benchmarks.sh -s "${pallets[@]}"
+            ./scripts/run_benchmarks.sh -s -n "${pallets[@]}"
             echo "Finished benchmarks for pallets: ${pallets[*]}."
           fi
 
@@ -121,3 +121,19 @@ jobs:
         with:
           commit_message: "Update weights"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
+
+  test:
+    if: github.repository == 'frequency-chain/frequency'
+    name: Post Benchmark Tests
+    runs-on: ubicloud-standard-16
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    permissions:
+      contents: read
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.inputs.branch}}
+
+      - name: Run Tests
+        run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace --release

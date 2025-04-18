@@ -38,6 +38,7 @@ ALL_CUSTOM_PALLETS=( \
 declare -a CUSTOM_PALLETS
 declare -a EXTERNAL_PALLETS
 skip_build=false
+skip_tests=false
 build_only=false
 OVERHEAD=
 VERBOSE=
@@ -55,6 +56,8 @@ function usage() {
         -h            Display this message and exit.
 
         -s            Skip the build step; use existing binary for the current profile
+
+        -n            Skip the test step
 
         -b            Build only; exit after building the binary
 
@@ -97,7 +100,7 @@ function is_custom_pallet() {
   return 1
 }
 
-while getopts 'd:hp:st:vb' flag; do
+while getopts 'd:hp:snt:vb' flag; do
   case "${flag}" in
     d)
       # Set project directory
@@ -111,6 +114,10 @@ while getopts 'd:hp:st:vb' flag; do
       # Skip build.
       skip_build=true
       ;;
+    n)
+        # Skip tests.
+        skip_tests=true
+        ;;
     b)
       # Build only
       build_only=true
@@ -255,7 +262,10 @@ then
   ${BENCHMARK} overhead --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi
 
-echo "Running tests..."
-CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
-echo ${CMD}
-${CMD} || exit_err
+if [[ ${skip_tests} == false ]]
+then
+    echo "Running tests..."
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+    echo ${CMD}
+    ${CMD} || exit_err
+fi
