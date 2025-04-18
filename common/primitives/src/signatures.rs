@@ -350,7 +350,12 @@ mod tests {
 	use crate::signatures::{UnifiedSignature, UnifiedSigner};
 	use impl_serde::serialize::from_hex;
 	use sp_core::{ecdsa, Pair};
-	use sp_runtime::traits::{IdentifyAccount, Verify};
+	use sp_runtime::{
+		traits::{IdentifyAccount, Verify},
+		AccountId32,
+	};
+
+	use super::{AccountAddressMapper, EthereumAddressMapper};
 
 	#[test]
 	fn polkadot_ecdsa_should_not_work_due_to_using_wrong_hash() {
@@ -417,5 +422,91 @@ mod tests {
 		);
 		let unified_signer = UnifiedSigner::from(public_key);
 		assert_eq!(unified_signature.verify(&payload[..], &unified_signer.into_account()), false);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_work_as_expected_for_eth_20_bytes_addresses() {
+		// arrange
+		let eth = from_hex("0x1111111111111111111111111111111111111111").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&eth);
+		let bytes = EthereumAddressMapper::to_bytes(&eth);
+
+		// assert
+		let expected_address =
+			from_hex("0x1111111111111111111111111111111111111111eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_same_value_for_32_byte_addresses() {
+		// arrange
+		let eth = from_hex("0x1111111111111111111111111111111111111111111111111111111111111111")
+			.expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&eth);
+		let bytes = EthereumAddressMapper::to_bytes(&eth);
+
+		// assert
+		assert_eq!(account_id, AccountId32::new(eth.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), eth);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_ethereum_address_with_suffixes_for_64_byte_public_keys(
+	) {
+		// arrange
+		let public_key= from_hex("0x15b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a80a32fe2c78d7d8780ef1b2095810f12001fa2fcedcd1ffb0aa2ee2c7").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes(&public_key);
+
+		// assert
+		let expected_address =
+			from_hex("0x917B536617B0A42B2ABE85AC88788825F29F0B29eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_ethereum_address_with_suffixes_for_65_byte_public_keys(
+	) {
+		// arrange
+		let public_key= from_hex("0x0415b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a80a32fe2c78d7d8780ef1b2095810f12001fa2fcedcd1ffb0aa2ee2c7").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes(&public_key);
+
+		// assert
+		let expected_address =
+			from_hex("0x917B536617B0A42B2ABE85AC88788825F29F0B29eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_default_zero_values_for_any_invalid_length() {
+		// arrange
+		let public_key = from_hex(
+			"0x010415b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a801",
+		)
+		.expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes(&public_key);
+
+		// assert
+		let expected_address = vec![0u8; 32]; // zero default values
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
 	}
 }
