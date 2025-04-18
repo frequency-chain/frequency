@@ -553,7 +553,7 @@ fn pre_dispatch_with_exceeding_weight_should_fail() {
 fn passkey_example_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let account_id = AccountId32::new(from_hex("0x000000000000000000000000cf613044ccd8c1c60f561b99bd1fd2daef89625f").unwrap().try_into().unwrap());
+		let account_id = AccountId32::new(from_hex("0xcf613044ccd8c1c60f561b99bd1fd2daef89625feeeeeeeeeeeeeeeeeeeeeeee").unwrap().try_into().unwrap());
 		let pass_key_public_key = PasskeyPublicKey(from_hex("0x029bd263885e5eeaea31fa3b2e78ab1106d2cb1995045777fca3b38913a755d250").unwrap().try_into().unwrap());
 		let payload = PasskeyPayloadV2 {
 			passkey_public_key: pass_key_public_key,

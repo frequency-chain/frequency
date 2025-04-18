@@ -1,3 +1,4 @@
+use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
 use core::{fmt::Debug, marker::PhantomData};
 use parity_scale_codec::Codec;
 use scale_info::StaticTypeInfo;
@@ -25,8 +26,8 @@ where
 			MultiAddress::Id(i) => Ok(i),
 			MultiAddress::Address20(acc20) => {
 				log::debug!(target: "ETHEREUM", "lookup 0x{:?}", HexDisplay::from(&acc20));
-				let mut buffer = [0u8; 32];
-				buffer[12..].copy_from_slice(&acc20);
+				let account_id_bytes = EthereumAddressMapper::to_account_id(&acc20);
+				let buffer: [u8; 32] = account_id_bytes.into();
 				let decoded = Self::Target::decode(&mut &buffer[..]).map_err(|_| LookupError)?;
 				Ok(decoded)
 			},
@@ -58,7 +59,7 @@ mod tests {
 
 		let converted = lookup.unwrap();
 		let expected = AccountId32::new(
-			from_hex("0x00000000000000000000000019a701d23f0ee1748b5d5f883cb833943096c6c4")
+			from_hex("0x19a701d23f0ee1748b5d5f883cb833943096c6c4eeeeeeeeeeeeeeeeeeeeeeee")
 				.expect("should convert")
 				.try_into()
 				.expect("invalid size"),
