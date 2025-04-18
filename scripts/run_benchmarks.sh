@@ -97,7 +97,7 @@ function is_custom_pallet() {
   return 1
 }
 
-while getopts 'd:h:p:st:vb' flag; do
+while getopts 'd:hp:st:vb' flag; do
   case "${flag}" in
     d)
       # Set project directory
