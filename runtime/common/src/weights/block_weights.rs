@@ -15,9 +15,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 46.1.0
-//! DATE: 2025-04-09 (Y/M/D)
-//! HOSTNAME: `ip-10-173-10-88`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 47.0.0
+//! DATE: 2025-04-18 (Y/M/D)
+//! HOSTNAME: `ip-10-173-11-202`, CPU: `Intel(R) Xeon(R) Platinum 8488C`
 //!
 //! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency`
 //! WARMUPS: `10`, REPEAT: `100`
@@ -28,7 +28,6 @@
 //   ./scripts/../target/release/frequency
 //   benchmark
 //   overhead
-//   --wasm-execution=compiled
 //   --weight-path=runtime/common/src/weights
 //   --chain=dev
 //   --warmup=10
@@ -43,17 +42,17 @@ parameter_types! {
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 353_702, 383_120
-	///   Average:  361_346
-	///   Median:   358_046
-	///   Std-Dev:  7905.51
+	///   Min, Max: 265_548, 389_827
+	///   Average:  281_535
+	///   Median:   272_383
+	///   Std-Dev:  23418.94
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 382_503
-	///   95th: 378_936
-	///   75th: 363_297
+	///   99th: 381_629
+	///   95th: 329_285
+	///   75th: 282_841
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(361_346), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(281_535), 0);
 }
 
 #[cfg(test)]
