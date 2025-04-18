@@ -70,8 +70,18 @@ jobs:
       - name: Make Binary Executable
         run: chmod +x target/release/frequency
 
+      - name: Install Required Packages
+        run: |
+          sudo apt-get update
+          sudo apt install -y protobuf-compiler libclang-dev clang cmake
+      - name: Install Rust Toolchain
+        # Match installation steps to CI base docker image
+        run: |
+          curl https://sh.rustup.rs -sSf | HOME=`pwd` bash -s -- -y
+          echo "PATH=`pwd`/.cargo/bin:$PATH" >> $GITHUB_ENV
       - name: Update Weights
         run: |
+          rustup show
           pallets_str="${{github.event.inputs.pallets}}"
           echo "Pallets: $pallets_str"
           if [ -z "${pallets_str}" -o $pallets_str = 'all' ]; then
