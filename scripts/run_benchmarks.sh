@@ -7,6 +7,8 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
+  frame_system_extensions \
+  cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -43,10 +45,9 @@ function exit_err() { echo "❌ 💔" ; exit 1; }
 
 function usage() {
   cat << EOI
-  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v]
-         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [<pallet1> [... <palletN>]]
+  Usage: $( basename ${1} ) [-d <dir>] [-s] [-t <profile>] [-v] [<pallet1> [... <palletN>]]
 
-         -d <dir>     Sets top-level repository directory to <dir>.
+        -d <dir>      Sets top-level repository directory to <dir>.
                       Default: parent directory of script
 
         -h            Display this message and exit.
@@ -179,18 +180,26 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
+
+  TEMPLATE=${5}
+  if [[ ${1} == "frame_system_extensions" ]]
+  then
+    TEMPLATE=${PROJECT}/.maintain/frame-system-extensions-weight-template.hbs
+  fi
+
   set -x
   set -e
   ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \
   --heap-pages=4096 \
-  --wasm-execution=compiled \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${5} \
-  --additional-trie-layers=${6}
+  --template=${TEMPLATE} \
+  --additional-trie-layers=${6} \
+  --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
+  --genesis-builder=runtime
   if [ -z "${VERBOSE}" ]
   then
     set +x
@@ -229,7 +238,7 @@ if [[ -n "${OVERHEAD}" ]]
 then
   echo "Running extrinsic and block overhead benchmark"
   echo " "
-  ${BENCHMARK} overhead --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
+  ${BENCHMARK} overhead --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi
 
 echo "Running tests..."

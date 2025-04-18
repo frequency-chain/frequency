@@ -333,8 +333,8 @@ pub mod pallet {
 		#[pallet::call_index(5)]
 		#[pallet::weight(
 			match schema_name {
-				Some(_) => T::WeightInfo::propose_to_create_schema_v2(model.len() as u32),
-				None => T::WeightInfo::propose_to_create_schema(model.len() as u32)
+				Some(_) => T::WeightInfo::propose_to_create_schema_v2_with_name(model.len() as u32),
+				None => T::WeightInfo::propose_to_create_schema_v2_without_name(model.len() as u32)
 			}
 		)]
 		pub fn propose_to_create_schema_v2(
@@ -384,8 +384,8 @@ pub mod pallet {
 		#[pallet::call_index(6)]
 		#[pallet::weight(
 			match schema_name {
-				Some(_) => T::WeightInfo::create_schema_via_governance_v2(model.len() as u32+ settings.len() as u32),
-				None => T::WeightInfo::create_schema_via_governance(model.len() as u32+ settings.len() as u32)
+				Some(_) => T::WeightInfo::create_schema_via_governance_v2_with_name(model.len() as u32+ settings.len() as u32),
+				None => T::WeightInfo::create_schema_via_governance_v2_without_name(model.len() as u32+ settings.len() as u32)
 			}
 		)]
 		pub fn create_schema_via_governance_v2(
@@ -443,8 +443,8 @@ pub mod pallet {
 		#[pallet::call_index(7)]
 		#[pallet::weight(
 			match schema_name {
-				Some(_) => T::WeightInfo::create_schema_v3(model.len() as u32 + settings.len() as u32),
-				None => T::WeightInfo::create_schema_v2(model.len() as u32 + settings.len() as u32)
+				Some(_) => T::WeightInfo::create_schema_v3_with_name(model.len() as u32 + settings.len() as u32),
+				None => T::WeightInfo::create_schema_v3_without_name(model.len() as u32 + settings.len() as u32)
 			}
 		)]
 		pub fn create_schema_v3(

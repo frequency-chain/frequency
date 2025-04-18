@@ -1589,7 +1589,7 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
 /// purpose of this is to ensure that the revoke_delegation_by_delegator extrinsic cannot be
 /// repeatedly called and flood the network.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckFreeExtrinsicUse<T: Config + Send + Sync>(PhantomData<T>);
 

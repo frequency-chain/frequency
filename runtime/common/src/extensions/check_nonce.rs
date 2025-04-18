@@ -17,7 +17,7 @@
 // limitations under the License.
 
 use frame_system::Config;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},
@@ -42,7 +42,7 @@ use alloc::vec;
 /// This extension affects `requires` and `provides` tags of validity, but DOES NOT
 /// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
 /// some kind of priority upon validating transactions.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 

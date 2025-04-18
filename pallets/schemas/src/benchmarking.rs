@@ -37,7 +37,7 @@ mod benchmarks {
 	use super::*;
 
 	#[benchmark]
-	fn create_schema_v3(
+	fn create_schema_v3_with_name(
 		m: Linear<
 			{ T::MinSchemaModelSizeBytes::get() + 8 },
 			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
@@ -61,13 +61,47 @@ mod benchmarks {
 		let schema_input = generate_schema::<T>(m as usize);
 
 		#[extrinsic_call]
-		_(
+		create_schema_v3(
 			RawOrigin::Signed(sender),
 			schema_input,
 			model_type,
 			payload_location,
 			BoundedVec::default(),
 			Some(bounded_name),
+		);
+
+		ensure!(
+			CurrentSchemaIdentifierMaximum::<T>::get() > 0,
+			"Created schema count should be > 0"
+		);
+		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn create_schema_v3_without_name(
+		m: Linear<
+			{ T::MinSchemaModelSizeBytes::get() + 8 },
+			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
+		>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
+			RawOrigin::Root.into(),
+			T::SchemaModelMaxBytesBoundedVecLimit::get()
+		));
+		let schema_input = generate_schema::<T>(m as usize);
+
+		#[extrinsic_call]
+		create_schema_v3(
+			RawOrigin::Signed(sender),
+			schema_input,
+			model_type,
+			payload_location,
+			BoundedVec::default(),
+			None,
 		);
 
 		ensure!(
@@ -95,7 +129,7 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn create_schema_via_governance_v2(
+	fn create_schema_via_governance_v2_with_name(
 		m: Linear<
 			{ T::MinSchemaModelSizeBytes::get() + 8 },
 			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
@@ -119,7 +153,7 @@ mod benchmarks {
 		let schema_input = generate_schema::<T>(m as usize);
 
 		#[extrinsic_call]
-		_(
+		create_schema_via_governance_v2(
 			RawOrigin::Root,
 			sender.clone(),
 			schema_input,
@@ -138,7 +172,42 @@ mod benchmarks {
 	}
 
 	#[benchmark]
-	fn propose_to_create_schema_v2(
+	fn create_schema_via_governance_v2_without_name(
+		m: Linear<
+			{ T::MinSchemaModelSizeBytes::get() + 8 },
+			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
+		>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
+			RawOrigin::Root.into(),
+			T::SchemaModelMaxBytesBoundedVecLimit::get()
+		));
+		let schema_input = generate_schema::<T>(m as usize);
+
+		#[extrinsic_call]
+		create_schema_via_governance_v2(
+			RawOrigin::Root,
+			sender.clone(),
+			schema_input,
+			model_type,
+			payload_location,
+			BoundedVec::default(),
+			None,
+		);
+
+		ensure!(
+			CurrentSchemaIdentifierMaximum::<T>::get() > 0,
+			"Created schema count should be > 0"
+		);
+		ensure!(SchemaInfos::<T>::get(1).is_some(), "Created schema should exist");
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_create_schema_v2_with_name(
 		m: Linear<
 			{ T::MinSchemaModelSizeBytes::get() + 8 },
 			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
@@ -162,13 +231,43 @@ mod benchmarks {
 		let schema_input = generate_schema::<T>(m as usize);
 
 		#[extrinsic_call]
-		_(
+		propose_to_create_schema_v2(
 			RawOrigin::Signed(sender),
 			schema_input,
 			model_type,
 			payload_location,
 			BoundedVec::default(),
 			Some(bounded_name),
+		);
+
+		assert_eq!(T::ProposalProvider::proposal_count(), 1);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn propose_to_create_schema_v2_without_name(
+		m: Linear<
+			{ T::MinSchemaModelSizeBytes::get() + 8 },
+			{ T::SchemaModelMaxBytesBoundedVecLimit::get() - 1 },
+		>,
+	) -> Result<(), BenchmarkError> {
+		let sender: T::AccountId = whitelisted_caller();
+		let model_type = ModelType::AvroBinary;
+		let payload_location = PayloadLocation::OnChain;
+		assert_ok!(SchemasPallet::<T>::set_max_schema_model_bytes(
+			RawOrigin::Root.into(),
+			T::SchemaModelMaxBytesBoundedVecLimit::get()
+		));
+		let schema_input = generate_schema::<T>(m as usize);
+
+		#[extrinsic_call]
+		propose_to_create_schema_v2(
+			RawOrigin::Signed(sender),
+			schema_input,
+			model_type,
+			payload_location,
+			BoundedVec::default(),
+			None,
 		);
 
 		assert_eq!(T::ProposalProvider::proposal_count(), 1);

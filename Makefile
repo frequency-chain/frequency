@@ -1,4 +1,5 @@
 UNAME := $(shell uname)
+NIGHTLY = +nightly-2025-04-03
 
 .PHONY: all
 all: build
@@ -106,11 +107,11 @@ specs-paseo-local:
 
 .PHONY: format
 format:
-	cargo +nightly-2025-04-03 fmt
+	cargo $(NIGHTLY) fmt
 
 .PHONY: lint lint-audit lint-fix lint-clippy
 lint:
-	cargo +nightly-2025-04-03 fmt --check
+	cargo $(NIGHTLY) fmt --check
 	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
 
@@ -121,7 +122,7 @@ lint-audit:
 	cargo deny check -c deny.toml
 
 lint-fix:
-	cargo +nightly-2025-04-03 fmt
+	cargo $(NIGHTLY) fmt
 	SKIP_WASM_BUILD=1 cargo clippy --fix --features runtime-benchmarks,frequency-lint-check
 
 .PHONY: format-lint
@@ -155,6 +156,8 @@ benchmarks-stateful-storage \
 benchmarks-handles \
 benchmarks-time-release \
 benchmarks-passkey \
+benchmarks-cumulus_pallet_weight_reclaim \
+benchmarks-frame_system_extensions \
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -178,6 +181,8 @@ benchmarks-stateful-storage-local \
 benchmarks-handles-local \
 benchmarks-passkey-local \
 benchmarks-time-release-local \
+benchmarks-cumulus_pallet_weight_reclaim-local \
+benchmarks-frame_system_extensions-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \

@@ -12,6 +12,7 @@ env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
+  NIGHTLY_TOOLCHAIN: nightly-2025-04-03
 
 jobs:
   changes:
@@ -200,16 +201,16 @@ jobs:
         uses: actions/checkout@v4
       - name: Install Nightly Toolchain
         run: |
-          rustup toolchain install nightly-2025-04-03
+          rustup toolchain install ${{env.NIGHTLY_TOOLCHAIN}}
       - name: Install Rust Target
         run: |
-          rustup target add wasm32-unknown-unknown --toolchain nightly-2025-04-03
+          rustup target add wasm32v1-none --toolchain ${{env.NIGHTLY_TOOLCHAIN}}
       - name: Install Rust Source Component
         run: |
-          rustup component add rust-src --toolchain nightly-2025-04-03
+          rustup component add rust-src --toolchain ${{env.NIGHTLY_TOOLCHAIN}}
       - name: Verify Rust Code Formatting
         run: |
-          cargo +nightly-2025-04-03 fmt --check
+          cargo +${{env.NIGHTLY_TOOLCHAIN}} fmt --check
 
   lint-rust-code:
     needs: changes

@@ -337,24 +337,27 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
-/// The SignedExtension to the basic transaction logic.
+/// The TransactionExtension to the basic transaction logic.
 #[allow(deprecated)]
-pub type TxExtension = (
-	frame_system::CheckNonZeroSender<Runtime>,
-	// merging these types so that we can have more than 12 extensions
-	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-	frame_system::CheckWeight<Runtime>,
-	AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-	AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-	AsTransactionExtension<
-		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-	>,
-	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
-	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
-);
+pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
+	Runtime,
+	(
+		frame_system::CheckNonZeroSender<Runtime>,
+		// merging these types so that we can have more than 12 extensions
+		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
+		frame_system::CheckGenesis<Runtime>,
+		frame_system::CheckEra<Runtime>,
+		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
+		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
+		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+		AsTransactionExtension<
+			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		>,
+		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
+		frame_system::CheckWeight<Runtime>,
+	),
+>;
+
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
 
@@ -432,7 +435,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 148,
+	spec_version: 149,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -446,7 +449,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 148,
+	spec_version: 149,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -652,6 +655,7 @@ pub type MaxSignatories = ConstU32<100>;
 // See https://paritytech.github.io/substrate/master/pallet_multisig/pallet/trait.Config.html for
 // the descriptions of these configs.
 impl pallet_multisig::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
@@ -659,6 +663,10 @@ impl pallet_multisig::Config for Runtime {
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
+}
+
+impl cumulus_pallet_weight_reclaim::Config for Runtime {
+	type WeightInfo = weights::cumulus_pallet_weight_reclaim::SubstrateWeight<Runtime>;
 }
 
 /// Need this declaration method for use + type safety in benchmarks
@@ -751,6 +759,7 @@ parameter_types! {
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
@@ -1143,6 +1152,7 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
+	type DisablingStrategy = ();
 	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
@@ -1218,6 +1228,7 @@ impl pallet_proxy::Config for Runtime {
 	type AnnouncementDepositBase = AnnouncementDepositBase;
 	type AnnouncementDepositFactor = AnnouncementDepositFactor;
 	type WeightInfo = weights::pallet_proxy::SubstrateWeight<Runtime>;
+	type BlockNumberProvider = System;
 }
 
 // End Proxy Pallet Config
@@ -1347,7 +1358,7 @@ construct_runtime!(
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
+		Session: pallet_session::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
 
@@ -1359,6 +1370,9 @@ construct_runtime!(
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
 		Proxy: pallet_proxy = 43,
+
+		// Substrate weights
+		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
@@ -1381,6 +1395,8 @@ mod benches {
 	define_benchmarks!(
 		// Substrate
 		[frame_system, SystemBench::<Runtime>]
+		[frame_system_extensions, SystemExtensionsBench::<Runtime>]
+		[cumulus_pallet_weight_reclaim, WeightReclaim]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
@@ -1733,9 +1749,10 @@ sp_api::impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{Benchmarking, BenchmarkList};
+			use frame_benchmarking::{BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
@@ -1749,10 +1766,12 @@ sp_api::impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkBatch};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
+
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
