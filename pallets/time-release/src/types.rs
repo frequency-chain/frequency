@@ -1,7 +1,7 @@
 //! Types for the TimeRelease Pallet
 #![cfg_attr(not(feature = "std"), no_std)]
 
-use parity_scale_codec::{Decode, Encode, HasCompact, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, HasCompact, MaxEncodedLen};
 use sp_runtime::{traits::AtLeast32Bit, DispatchError, RuntimeDebug};
 extern crate alloc;
 use alloc::boxed::Box;
@@ -16,7 +16,17 @@ pub type ScheduleName = [u8; 32];
 ///
 /// Benefits would be granted gradually, `per_period` amount every `period`
 /// of blocks after `start`.
-#[derive(Clone, Encode, Decode, PartialEq, Eq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
+#[derive(
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	PartialEq,
+	Eq,
+	RuntimeDebug,
+	MaxEncodedLen,
+	TypeInfo,
+)]
 pub struct ReleaseSchedule<BlockNumber, Balance: MaxEncodedLen + HasCompact> {
 	/// Vesting starting block
 	pub start: BlockNumber,

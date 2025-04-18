@@ -5,7 +5,7 @@ use frame_support::{
 	__private::{codec, RuntimeDebug},
 	pallet_prelude::{Decode, Encode, MaxEncodedLen, TypeInfo},
 };
-use parity_scale_codec::alloc::string::ToString;
+use parity_scale_codec::{alloc::string::ToString, DecodeWithMemTracking};
 use sp_core::{
 	crypto,
 	crypto::{AccountId32, FromEntropy},
@@ -77,7 +77,17 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 
 /// Signature verify that can work with any known signature types.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, MaxEncodedLen, RuntimeDebug, TypeInfo)]
+#[derive(
+	Eq,
+	PartialEq,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	RuntimeDebug,
+	TypeInfo,
+)]
 pub enum UnifiedSignature {
 	/// An Ed25519 signature.
 	Ed25519(ed25519::Signature),

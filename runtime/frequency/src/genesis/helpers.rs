@@ -64,7 +64,7 @@ pub fn build_genesis(
 ) -> serde_json::Value {
 	let genesis = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
-		balances: BalancesConfig { balances: endowed_accounts },
+		balances: BalancesConfig { balances: endowed_accounts, ..Default::default() },
 		parachain_info: ParachainInfoConfig { parachain_id: id, ..Default::default() },
 		collator_selection: CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),

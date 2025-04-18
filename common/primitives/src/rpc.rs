@@ -4,7 +4,7 @@ use crate::utils::as_hex;
 use serde::{Deserialize, Serialize};
 
 use frame_system::{EventRecord, Phase};
-use parity_scale_codec::{Codec, Decode, Encode, EncodeLike};
+use parity_scale_codec::{Codec, Decode, DecodeWithMemTracking, Encode, EncodeLike};
 use scale_info::TypeInfo;
 extern crate alloc;
 use alloc::vec::Vec;
@@ -31,7 +31,16 @@ pub struct RpcEvent {
 
 impl<RuntimeEvent, Hash> From<EventRecord<RuntimeEvent, Hash>> for RpcEvent
 where
-	RuntimeEvent: Codec + Sync + Send + TypeInfo + Debug + Eq + Clone + EncodeLike + 'static,
+	RuntimeEvent: DecodeWithMemTracking
+		+ Codec
+		+ Sync
+		+ Send
+		+ TypeInfo
+		+ Debug
+		+ Eq
+		+ Clone
+		+ EncodeLike
+		+ 'static,
 {
 	fn from(event: EventRecord<RuntimeEvent, Hash>) -> Self {
 		let phase = match event.phase {
@@ -53,13 +62,13 @@ where
 mod tests {
 	use super::*;
 
-	#[derive(Debug, TypeInfo, Clone, Encode, Decode, Eq, PartialEq)]
+	#[derive(Debug, TypeInfo, Clone, Encode, Decode, DecodeWithMemTracking, Eq, PartialEq)]
 	enum FakeRuntime {
 		#[codec(index = 60)]
 		FakePallet(FakePalletEvents),
 	}
 
-	#[derive(Debug, TypeInfo, Clone, Encode, Decode, Eq, PartialEq)]
+	#[derive(Debug, TypeInfo, Clone, Encode, Decode, DecodeWithMemTracking, Eq, PartialEq)]
 	enum FakePalletEvents {
 		#[codec(index = 7)]
 		FakeEvent { msa_id: u64 },
