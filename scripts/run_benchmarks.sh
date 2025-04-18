@@ -38,6 +38,7 @@ ALL_CUSTOM_PALLETS=( \
 declare -a CUSTOM_PALLETS
 declare -a EXTERNAL_PALLETS
 skip_build=false
+build_only=false
 OVERHEAD=
 VERBOSE=
 
@@ -45,7 +46,8 @@ function exit_err() { echo "❌ 💔" ; exit 1; }
 
 function usage() {
   cat << EOI
-  Usage: $( basename ${1} ) [-d <dir>] [-s] [-t <profile>] [-v] [<pallet1> [... <palletN>]]
+  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v] [-b]
+         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [-b] [<pallet1> [... <palletN>]]
 
         -d <dir>      Sets top-level repository directory to <dir>.
                       Default: parent directory of script
@@ -53,6 +55,8 @@ function usage() {
         -h            Display this message and exit.
 
         -s            Skip the build step; use existing binary for the current profile
+
+        -b            Build only; exit after building the binary
 
         -t <profile>  Use '--profile=<profile>' in the build step & for locating the
                       resulting binary. Valid targets are: dev,release,bench-dev
@@ -93,7 +97,7 @@ function is_custom_pallet() {
   return 1
 }
 
-while getopts 'dh:p:st:v' flag; do
+while getopts 'd:h:p:st:vb' flag; do
   case "${flag}" in
     d)
       # Set project directory
@@ -106,6 +110,10 @@ while getopts 'dh:p:st:v' flag; do
     s)
       # Skip build.
       skip_build=true
+      ;;
+    b)
+      # Build only
+      build_only=true
       ;;
     t)
       # Set target profile
@@ -172,11 +180,12 @@ fi
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
-echo "Running benchmarks for the following pallets:\
-${EXTERNAL_PALLETS[@]} \
-${CUSTOM_PALLETS[@]} \
-${OVERHEAD}"
-
+if [[ ${build_only} == false ]]; then
+  echo "Running benchmarks for the following pallets:\
+  ${EXTERNAL_PALLETS[@]} \
+  ${CUSTOM_PALLETS[@]} \
+  ${OVERHEAD}"
+fi
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
@@ -211,6 +220,11 @@ then
   CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
   echo ${CMD}
   ${CMD} || exit_err
+
+  if [[ ${build_only} == true ]]; then
+    echo "Build complete. Exiting as requested."
+    exit 0
+  fi
 fi
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
