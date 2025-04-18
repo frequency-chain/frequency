@@ -41,6 +41,13 @@ jobs:
           path: target/release/frequency
           retention-days: 3
 
+      - name: Upload WASM Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-artifacts
+          path: target/release/wbuild
+          retention-days: 3
+
   run-benchmarks:
     if: github.repository == 'frequency-chain/frequency'
     name: Run Benchmarks
@@ -61,11 +68,20 @@ jobs:
         with:
           ref: ${{github.event.inputs.branch}}
 
+      - name: Create Target Directory
+        run: mkdir -p target/release
+
       - name: Download Benchmark Binary
         uses: actions/download-artifact@v4
         with:
           name: benchmark-binary
           path: target/release
+
+      - name: Download WASM Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-artifacts
+          path: target/release/wbuild
 
       - name: Make Binary Executable
         run: chmod +x target/release/frequency
