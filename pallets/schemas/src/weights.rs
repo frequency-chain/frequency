@@ -33,14 +33,13 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for `pallet_schemas`.
 pub trait WeightInfo {
-	fn create_schema(m: u32, ) -> Weight;
-	fn create_schema_via_governance(m: u32, ) -> Weight;
-	fn propose_to_create_schema(m: u32, ) -> Weight;
-	fn create_schema_v2(m: u32, ) -> Weight;
-	fn create_schema_v3(m: u32, ) -> Weight;
+	fn create_schema_v3_with_name(m: u32, ) -> Weight;
+	fn create_schema_v3_without_name(m: u32, ) -> Weight;
 	fn set_max_schema_model_bytes() -> Weight;
-	fn create_schema_via_governance_v2(m: u32, ) -> Weight;
-	fn propose_to_create_schema_v2(m: u32, ) -> Weight;
+	fn create_schema_via_governance_v2_with_name(m: u32, ) -> Weight;
+	fn create_schema_via_governance_v2_without_name(m: u32, ) -> Weight;
+	fn propose_to_create_schema_v2_with_name(m: u32, ) -> Weight;
+	fn propose_to_create_schema_v2_without_name(m: u32, ) -> Weight;
 	fn propose_to_create_schema_name() -> Weight;
 	fn create_schema_name_via_governance() -> Weight;
 }
@@ -57,27 +56,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema(m: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `136`
-		//  Estimated: `1984`
-		// Minimum execution time: 11_836_000 picoseconds.
-		Weight::from_parts(12_010_000, 1984)
-			// Standard Error: 48
-			.saturating_add(Weight::from_parts(34_625, 0).saturating_mul(m.into()))
-			.saturating_add(T::DbWeight::get().reads(2_u64))
-			.saturating_add(T::DbWeight::get().writes(3_u64))
-	}
-	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
-	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
-	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
-	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
-	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_via_governance(m: u32, ) -> Weight {
+	fn create_schema_via_governance_v2_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `1984`
@@ -99,7 +78,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Council::Voting` (r:0 w:1)
 	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn propose_to_create_schema(m: u32, ) -> Weight {
+	fn propose_to_create_schema_v2_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `230`
 		//  Estimated: `4190`
@@ -119,7 +98,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_v2(m: u32, ) -> Weight {
+	fn create_schema_v3_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `1984`
@@ -141,7 +120,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_v3(m: u32, ) -> Weight {
+	fn create_schema_v3_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `4562`
@@ -173,7 +152,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_via_governance_v2(m: u32, ) -> Weight {
+	fn create_schema_via_governance_v2_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `4562`
@@ -195,7 +174,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `Council::Voting` (r:0 w:1)
 	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn propose_to_create_schema_v2(m: u32, ) -> Weight {
+	fn propose_to_create_schema_v2_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `230`
 		//  Estimated: `4190`
@@ -253,27 +232,7 @@ impl WeightInfo for () {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema(m: u32, ) -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `136`
-		//  Estimated: `1984`
-		// Minimum execution time: 11_836_000 picoseconds.
-		Weight::from_parts(12_010_000, 1984)
-			// Standard Error: 48
-			.saturating_add(Weight::from_parts(34_625, 0).saturating_mul(m.into()))
-			.saturating_add(RocksDbWeight::get().reads(2_u64))
-			.saturating_add(RocksDbWeight::get().writes(3_u64))
-	}
-	/// Storage: `Schemas::GovernanceSchemaModelMaxBytes` (r:1 w:0)
-	/// Proof: `Schemas::GovernanceSchemaModelMaxBytes` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::CurrentSchemaIdentifierMaximum` (r:1 w:1)
-	/// Proof: `Schemas::CurrentSchemaIdentifierMaximum` (`max_values`: Some(1), `max_size`: Some(2), added: 497, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaInfos` (r:0 w:1)
-	/// Proof: `Schemas::SchemaInfos` (`max_values`: None, `max_size`: Some(15), added: 2490, mode: `MaxEncodedLen`)
-	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
-	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
-	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_via_governance(m: u32, ) -> Weight {
+	fn create_schema_via_governance_v2_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `1984`
@@ -295,7 +254,7 @@ impl WeightInfo for () {
 	/// Storage: `Council::Voting` (r:0 w:1)
 	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn propose_to_create_schema(m: u32, ) -> Weight {
+	fn propose_to_create_schema_v2_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `230`
 		//  Estimated: `4190`
@@ -315,7 +274,7 @@ impl WeightInfo for () {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_v2(m: u32, ) -> Weight {
+	fn create_schema_v3_without_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `1984`
@@ -337,7 +296,7 @@ impl WeightInfo for () {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_v3(m: u32, ) -> Weight {
+	fn create_schema_v3_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `4562`
@@ -369,7 +328,7 @@ impl WeightInfo for () {
 	/// Storage: `Schemas::SchemaPayloads` (r:0 w:1)
 	/// Proof: `Schemas::SchemaPayloads` (`max_values`: None, `max_size`: Some(65514), added: 67989, mode: `MaxEncodedLen`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn create_schema_via_governance_v2(m: u32, ) -> Weight {
+	fn create_schema_via_governance_v2_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `136`
 		//  Estimated: `4562`
@@ -391,7 +350,7 @@ impl WeightInfo for () {
 	/// Storage: `Council::Voting` (r:0 w:1)
 	/// Proof: `Council::Voting` (`max_values`: None, `max_size`: None, mode: `Measured`)
 	/// The range of component `m` is `[16, 65499]`.
-	fn propose_to_create_schema_v2(m: u32, ) -> Weight {
+	fn propose_to_create_schema_v2_with_name(m: u32, ) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `230`
 		//  Estimated: `4190`
@@ -462,7 +421,7 @@ mod tests {
   }
 
 	#[test]
-	fn test_create_schema() {
+	fn test_create_schema_via_governance_v2_with_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -474,19 +433,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_create_schema_via_governance() {
-		assert!(
-			BlockWeights::get()
-				.per_class
-				.get(frame_support::dispatch::DispatchClass::Normal)
-				.max_extrinsic
-				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
-				.proof_size()
-				> 1984
-		);
-	}
-	#[test]
-	fn test_propose_to_create_schema() {
+	fn test_propose_to_create_schema_v2_without_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -498,7 +445,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_create_schema_v2() {
+	fn test_create_schema_v3_without_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -510,7 +457,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_create_schema_v3() {
+	fn test_create_schema_v3_with_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -522,7 +469,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_create_schema_via_governance_v2() {
+	fn test_create_schema_via_governance_v2_without_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -534,7 +481,7 @@ mod tests {
 		);
 	}
 	#[test]
-	fn test_propose_to_create_schema_v2() {
+	fn test_propose_to_create_schema_v2_with_name() {
 		assert!(
 			BlockWeights::get()
 				.per_class
@@ -555,18 +502,6 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 4393
-		);
-	}
-	#[test]
-	fn test_create_schema_name_via_governance() {
-		assert!(
-			BlockWeights::get()
-				.per_class
-				.get(frame_support::dispatch::DispatchClass::Normal)
-				.max_extrinsic
-				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
-				.proof_size()
-				> 4562
 		);
 	}
 }
