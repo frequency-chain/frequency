@@ -1395,6 +1395,7 @@ mod benches {
 	define_benchmarks!(
 		// Substrate
 		[frame_system, SystemBench::<Runtime>]
+		[frame_system_extensions, SystemExtensionsBench::<Runtime>]
 		[cumulus_pallet_weight_reclaim, WeightReclaim]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
@@ -1751,6 +1752,7 @@ sp_api::impl_runtime_apis! {
 			use frame_benchmarking::{BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
@@ -1768,6 +1770,8 @@ sp_api::impl_runtime_apis! {
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
+
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}

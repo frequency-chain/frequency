@@ -7,6 +7,7 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
+  frame_system_extensions \
   cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
@@ -179,6 +180,13 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
+
+  TEMPLATE=${5}
+  if [[ ${1} == "frame_system_extensions" ]]
+  then
+    TEMPLATE=${PROJECT}/.maintain/frame-system-extensions-weight-template.hbs
+  fi
+
   set -x
   set -e
   ${BENCHMARK} pallet \
