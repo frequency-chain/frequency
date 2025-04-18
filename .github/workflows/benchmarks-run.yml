@@ -127,6 +127,7 @@ jobs:
   test:
     if: github.repository == 'frequency-chain/frequency'
     name: Post Benchmark Tests
+    needs: run-benchmarks
     runs-on: ubicloud-standard-16
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
     permissions:
