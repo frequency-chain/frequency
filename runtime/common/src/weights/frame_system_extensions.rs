@@ -27,7 +27,7 @@
 //! WASM-EXECUTION: `Compiled`, CHAIN: `None`, DB CACHE: `1024`
 
 // Executed Command:
-// ./scripts/../target/bench-dev/frequency
+// scripts/../target/bench-dev/frequency
 // benchmark
 // pallet
 // --pallet=frame_system_extensions
@@ -36,10 +36,10 @@
 // --heap-pages=4096
 // --steps=50
 // --repeat=20
-// --output=./scripts/../runtime/common/src/weights
-// --template=./scripts/../.maintain/frame-system-extensions-weight-template.hbs
+// --output=scripts/../runtime/common/src/weights
+// --template=scripts/../.maintain/frame-system-extensions-weight-template.hbs
 // --additional-trie-layers=3
-// --runtime=./scripts/../target/bench-dev/wbuild/frequency-runtime/frequency_runtime.wasm
+// --runtime=scripts/../target/bench-dev/wbuild/frequency-runtime/frequency_runtime.wasm
 // --genesis-builder=runtime
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -66,7 +66,7 @@ impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<
 		//  Measured:  `68`
 		//  Estimated: `0`
 		// Minimum execution time: 5_000_000 picoseconds.
-		Weight::from_parts(6_000_000, 0)
+		Weight::from_parts(5_000_000, 0)
 	}
 	fn check_mortality_immortal_transaction() -> Weight {
 		// Proof Size summary in bytes:
@@ -105,13 +105,13 @@ impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 0_000 picoseconds.
-		Weight::from_parts(0, 0)
+		Weight::from_parts(1_000_000, 0)
 	}
 	fn check_weight() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 3_000_000 picoseconds.
+		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(4_000_000, 0)
 	}
 	fn weight_reclaim() -> Weight {

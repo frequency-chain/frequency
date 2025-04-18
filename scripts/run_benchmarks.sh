@@ -196,7 +196,7 @@ function run_benchmark() {
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${5} \
+  --template=${TEMPLATE} \
   --additional-trie-layers=${6} \
   --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
   --genesis-builder=runtime
