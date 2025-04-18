@@ -20,7 +20,6 @@
 pub mod block_weights;
 pub mod cumulus_pallet_weight_reclaim;
 pub mod extrinsic_weights;
-pub mod frame_system;
 pub mod frame_system_extensions;
 pub mod pallet_balances;
 pub mod pallet_collator_selection;

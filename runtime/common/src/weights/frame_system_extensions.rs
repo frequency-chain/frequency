@@ -44,7 +44,7 @@
 #![allow(unused_imports)]
 #![allow(missing_docs)]
 
-use frame_support::{traits::Get, weights::{constants::RocksDbWeight, Weight}};
+use frame_support::{traits::Get, weights::Weight};
 use core::marker::PhantomData;
 
 /// Weight functions for `frame_system_extensions`.
@@ -127,7 +127,7 @@ impl<T: frame_system::Config> frame_system::ExtensionsWeightInfo for WeightInfo<
 		//  Estimated: `1489`
 		// Minimum execution time: 4_375_000 picoseconds.
 		Weight::from_parts(4_747_000, 1489)
-			.saturating_add(RocksDbWeight::get().reads(1_u64))
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }

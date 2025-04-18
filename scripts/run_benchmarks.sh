@@ -7,7 +7,6 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
-  frame_system \
   cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
@@ -180,25 +179,16 @@ ${OVERHEAD}"
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
-
-  EXTRINSICS='"*"'
-  TEMPLATE=${5}
-  if [[ "${1}"  == "frame_system" ]]
-  then
-    EXTRINSICS="remark,remark_with_event,set_heap_pages,set_storage,kill_storage,kill_prefix,authorize_upgrade"
-    TEMPLATE=${PROJECT}/.maintain/frame-system-weight-template.hbs
-  fi
-
   set -x
   set -e
   ${BENCHMARK} pallet \
   --pallet=${1} \
-  --extrinsic ${EXTRINSICS} \
+  --extrinsic "*" \
   --heap-pages=4096 \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${TEMPLATE} \
+  --template=${5} \
   --additional-trie-layers=${6} \
   --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
   --genesis-builder=runtime
