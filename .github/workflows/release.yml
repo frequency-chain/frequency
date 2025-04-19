@@ -116,46 +116,35 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
-        with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
 
       - name: Create Target Directory
         run: mkdir -p target/release
 
       - name: Download Benchmark Binary
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: actions/download-artifact@v4
         with:
           name: benchmark-binary
           path: target/release
 
       - name: Download WASM Build Artifacts
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: actions/download-artifact@v4
         with:
           name: wasm-artifacts
           path: target/release/wbuild
 
       - name: Make Binary Executable
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         run: chmod +x target/release/frequency
 
       - name: Update Weights for All Pallets
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
           echo "Running benchmarks for all pallets..."
           ./scripts/run_benchmarks.sh -s -n
 
       - name: Print Updated Weights
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
           git status -s
           git diff
       - name: Commit Updated Weights
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
@@ -171,13 +160,16 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+
       - name: Full Release?
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
+
       - name: Current Commit
         run: git log -n 1
+
       - name: Run Tests
         if: steps.is-full-release.outputs.is-full-release == 'true'
         run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace --release
