@@ -71,47 +71,111 @@ jobs:
           git checkout -b ${{env.RELEASE_BRANCH_NAME}}
           git push origin ${{env.RELEASE_BRANCH_NAME}} -u
 
-  run-all-benchmarks:
+  run-all-benchmarks-build:
     needs: create-release-branch
+    name: Run All Benchmarks - Build
+    runs-on: ubicloud-standard-16
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    permissions:
+      contents: read
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.inputs.branch}}
+
+      - name: Build Binary for Benchmarks
+        run: |
+          echo "Running benchmark binary builder..."
+          ./scripts/run_benchmarks.sh -b
+
+      - name: Upload Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-binary
+          path: target/release/frequency
+          retention-days: 3
+
+      - name: Upload WASM Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-artifacts
+          path: target/release/wbuild
+          retention-days: 3
+
+  run-all-benchmarks-bench:
+    needs: run-all-benchmarks-build
     name: Run All Benchmarks
     runs-on: [self-hosted, Linux, X64, benchmark]
+    permissions:
+      contents: write
+      statuses: write
+      pull-requests: write
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
-      - name: Full Release?
-        id: is-full-release
-        uses: ./.github/workflows/common/is-full-release
+
+      - name: Create Target Directory
+        run: mkdir -p target/release
+
+      - name: Download Benchmark Binary
+        uses: actions/download-artifact@v4
         with:
-          version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Install Required Packages
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        run: |
-          sudo apt-get update
-          sudo apt install -y protobuf-compiler libclang-dev clang cmake
-      - name: Install Rust Toolchain
-        if: steps.is-full-release.outputs.is-full-release == 'true'
-        # Match installation steps to CI base docker image
-        run: |
-          curl https://sh.rustup.rs -sSf | HOME=`pwd` bash -s -- -y
-          echo "PATH=`pwd`/.cargo/bin:$PATH" >> $GITHUB_ENV
+          name: benchmark-binary
+          path: target/release
+
+      - name: Download WASM Build Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-artifacts
+          path: target/release/wbuild
+
+      - name: Make Binary Executable
+        run: chmod +x target/release/frequency
+
       - name: Update Weights for All Pallets
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         run: |
-          rustup show
-          make benchmarks
+          echo "Running benchmarks for all pallets..."
+          ./scripts/run_benchmarks.sh -s -n
+
+      - name: Print Updated Weights
+        run: |
           git status -s
           git diff
       - name: Commit Updated Weights
-        if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842
         with:
           commit_message: "Update weights for release ${{env.NEW_RELEASE_TAG}}"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
 
+  run-all-benchmarks-test:
+    needs: run-all-benchmarks-bench
+    name: Run All Benchmarks - Test
+    runs-on: ubicloud-standard-16
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
+
+      - name: Current Commit
+        run: git log -n 1
+
+      - name: Run Tests
+        if: steps.is-full-release.outputs.is-full-release == 'true'
+        run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace --release
+
   version-code:
-    needs: run-all-benchmarks
+    needs: run-all-benchmarks-test
     name: Version Code
     runs-on: ubuntu-24.04
     steps:
