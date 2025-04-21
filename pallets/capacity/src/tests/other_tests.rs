@@ -203,7 +203,7 @@ fn impl_balance_is_successful() {
 			1u32,
 		);
 
-		assert_eq!(Capacity::balance(target_msa_id), BalanceOf::<Test>::from(10u32));
+		assert_eq!(Capacity::balance(target_msa_id), 10u64);
 	});
 }
 

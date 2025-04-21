@@ -7,8 +7,8 @@ use frame_support::{assert_noop, assert_ok};
 fn impl_withdraw_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(10u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 10u64;
+		let total_available_amount = 10u64;
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
 			remaining_amount,
@@ -16,20 +16,20 @@ fn impl_withdraw_is_successful() {
 			1u32,
 		);
 
-		assert_ok!(Capacity::deduct(target_msa_id, 5u32.into()));
+		assert_ok!(Capacity::deduct(target_msa_id, 5u64));
 		let events = capacity_events();
 
 		assert_eq!(
 			events.last().unwrap(),
-			&Event::CapacityWithdrawn { msa_id: target_msa_id, amount: 5u32.into() }
+			&Event::CapacityWithdrawn { msa_id: target_msa_id, amount: 5u64 }
 		);
 
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-		capacity_details.remaining_capacity = 5u32.into();
-		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_capacity_issued = 10u32.into();
+		capacity_details.remaining_capacity = 5u64;
+		capacity_details.total_tokens_staked = 10u64;
+		capacity_details.total_capacity_issued = 10u64;
 		capacity_details.last_replenished_epoch = 1u32;
 
 		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);
@@ -40,7 +40,7 @@ fn impl_withdraw_is_successful() {
 fn impl_withdraw_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let amount = BalanceOf::<Test>::from(10u32);
+		let amount = 10u64;
 		assert_noop!(
 			Capacity::deduct(target_msa_id, amount),
 			Error::<Test>::TargetCapacityNotFound
@@ -52,8 +52,8 @@ fn impl_withdraw_errors_target_capacity_not_found() {
 fn impl_withdraw_errors_insufficient_balance() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(10u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 10u64;
+		let total_available_amount = 10u64;
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
 			remaining_amount,
@@ -69,9 +69,9 @@ fn impl_withdraw_errors_insufficient_balance() {
 		let mut capacity_details =
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber>::default();
 
-		capacity_details.remaining_capacity = 10u32.into();
-		capacity_details.total_tokens_staked = 10u32.into();
-		capacity_details.total_capacity_issued = 10u32.into();
+		capacity_details.remaining_capacity = 10u64;
+		capacity_details.total_tokens_staked = 10u64;
+		capacity_details.total_capacity_issued = 10u64;
 		capacity_details.last_replenished_epoch = 1u32;
 
 		assert_eq!(CapacityLedger::<Test>::get(target_msa_id).unwrap(), capacity_details);

@@ -8,8 +8,8 @@ use crate::{BalanceOf, CapacityDetails, CapacityLedger, Config, CurrentEpoch, Er
 fn impl_replenish_all_for_account_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(3u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 3u64;
+		let total_available_amount = 10u64;
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
 			remaining_amount,
@@ -48,8 +48,8 @@ fn impl_replenish_all_for_account_errors_target_capacity_not_found() {
 fn impl_can_replenish_is_false_when_last_replenished_at_is_greater_or_equal_current_epoch() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(3u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 3u64;
+		let total_available_amount = 10u64;
 		let last_replenished_at = 1u32;
 
 		let _ = create_capacity_account_and_fund(
@@ -73,8 +73,8 @@ fn impl_can_replenish_is_false_when_last_replenished_at_is_greater_or_equal_curr
 fn impl_can_replenish_is_true_when_last_replenished_at_is_less_than_current_epoch() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(3u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 3u64;
+		let total_available_amount = 10u64;
 		let last_replenished_at = 2u32;
 
 		let _ = create_capacity_account_and_fund(

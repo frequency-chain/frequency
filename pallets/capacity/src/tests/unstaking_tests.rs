@@ -44,10 +44,7 @@ fn unstake_happy_path() {
 		assert_eq!(unlocking, expected_unlocking_chunks);
 
 		assert_eq!(
-			StakingDetails::<Test> {
-				active: BalanceOf::<Test>::from(60u64),
-				staking_type: StakingType::MaximumCapacity,
-			},
+			StakingDetails::<Test> { active: 60u64, staking_type: StakingType::MaximumCapacity },
 			staking_account_details,
 		);
 
@@ -57,10 +54,7 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<BalanceOf<Test>> {
-				amount: BalanceOf::<Test>::from(60u32),
-				capacity: BalanceOf::<Test>::from(6u32),
-			}
+			StakingTargetDetails::<BalanceOf<Test>> { amount: 60u32, capacity: 6u32 }
 		);
 
 		// Assert that the capacity detail values for the target are decremented properly after unstaking
@@ -69,10 +63,10 @@ fn unstake_happy_path() {
 		assert_eq!(
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining_capacity: BalanceOf::<Test>::from(6u64),
-				total_tokens_staked: BalanceOf::<Test>::from(60u64),
-				total_capacity_issued: BalanceOf::<Test>::from(6u64),
-				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
+				remaining_capacity: 6u64,
+				total_tokens_staked: 60u64,
+				total_capacity_issued: 6u64,
+				last_replenished_epoch: 0u32,
 			}
 		);
 
@@ -83,7 +77,7 @@ fn unstake_happy_path() {
 				account: token_account,
 				target,
 				amount: unstaking_amount,
-				capacity: BalanceOf::<Test>::from(4u64)
+				capacity: 4u64
 			}
 		);
 	});
