@@ -36,7 +36,7 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 extern crate alloc;
-use alloc::vec;
+use alloc::{borrow::ToOwned, vec};
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
