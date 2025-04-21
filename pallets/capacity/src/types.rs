@@ -243,9 +243,9 @@ pub fn unlock_chunks_reap_thawed<T: Config>(
 /// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
 /// returns true on success, false on failure (?)
 /// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
-pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChunkList<T> {
+pub fn unlock_chunks_from_vec<T: Config>(chunks: &[(u32, u32)]) -> UnlockChunkList<T> {
 	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
-		.into_iter()
+		.iter()
 		.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
 		.collect();
 	// CAUTION
@@ -371,7 +371,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 		reward_era: &RewardEra,
 		add_amount: &BalanceOf<T>,
 	) -> Option<usize> {
-		if let Some(entry) = self.0.get_mut(&reward_era) {
+		if let Some(entry) = self.0.get_mut(reward_era) {
 			// update
 			*entry = entry.saturating_add(*add_amount);
 		} else {
@@ -438,9 +438,9 @@ impl<T: Config> ProviderBoostHistory<T> {
 	/// if 'reward_era' is the current era and there has been a boost or unstake.
 	pub(crate) fn get_amount_staked_for_era(&self, reward_era: &RewardEra) -> BalanceOf<T> {
 		// this gives an ordered-by-key Iterator
-		let mut bmap_iter = self.0.iter();
+		let bmap_iter = self.0.iter();
 		let mut eligible_amount: BalanceOf<T> = Zero::zero();
-		while let Some((era, balance)) = bmap_iter.next() {
+		for (era, balance) in bmap_iter {
 			if era.eq(reward_era) {
 				return *balance;
 			}

@@ -41,8 +41,8 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
 		// Validation: The delegator must already have a MSA id
-		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-			.map_err(|e| map_dispatch_error(e))?;
+		let delegator_msa_id =
+			T::MsaInfoProvider::ensure_valid_msa_key(delegator_key).map_err(map_dispatch_error)?;
 		// Validation: The MSA must already have a handle associated with it
 		let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 			.map_err(|_| UnknownTransaction::CannotLookup)?;
@@ -57,7 +57,7 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 			))
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build();
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
 }
 
@@ -111,6 +111,7 @@ where
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
 	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
 	/// * retire_handle
+	///
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
 	/// Arguments:

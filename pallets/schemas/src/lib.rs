@@ -647,12 +647,12 @@ pub mod pallet {
 			model_type: &ModelType,
 			model: &BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>,
 		) -> DispatchResult {
-			match model_type {
-				&ModelType::Parquet => {
+			match *model_type {
+				ModelType::Parquet => {
 					serde_json::from_slice::<ParquetModel>(model)
 						.map_err(|_| Error::<T>::InvalidSchema)?;
 				},
-				&ModelType::AvroBinary => serde::validate_json_model(model.clone().into_inner())
+				ModelType::AvroBinary => serde::validate_json_model(model.clone().into_inner())
 					.map_err(|_| Error::<T>::InvalidSchema)?,
 			};
 			Ok(())
@@ -785,7 +785,7 @@ impl<T: Config> SchemaBenchmarkHelper for Pallet<T> {
 }
 
 impl<T: Config> SchemaValidator<SchemaId> for Pallet<T> {
-	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool {
 		let latest_issue_schema_id = CurrentSchemaIdentifierMaximum::<T>::get();
 		schema_ids.iter().all(|id| id <= &latest_issue_schema_id)
 	}

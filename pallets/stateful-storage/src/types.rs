@@ -284,10 +284,10 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 			match action {
 				ItemAction::Delete { index } => {
 					ensure!(
-						parsed.items.contains_key(&index),
+						parsed.items.contains_key(index),
 						PageError::InvalidAction("item index is invalid")
 					);
-					parsed.items.remove(&index);
+					parsed.items.remove(index);
 				},
 				ItemAction::Add { data } => {
 					let header = ItemHeader {

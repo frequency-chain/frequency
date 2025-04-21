@@ -378,7 +378,7 @@ fn add_public_key_to_msa_registers_two_signatures() {
 			PayloadSignatureRegistryPointer::<Test>::get().unwrap(),
 			SignatureRegistryPointer {
 				newest: new_key_signature,
-				newest_expires_at: 10u32.into(),
+				newest_expires_at: 10u32,
 				oldest: owner_signature,
 				count: 2,
 			}
@@ -423,7 +423,7 @@ fn it_deletes_msa_key_successfully() {
 
 		assert_ok!(Msa::delete_msa_public_key(test_origin_signed(1), test_public(2)));
 
-		let info = PublicKeyToMsaId::<Test>::get(&test_public(2));
+		let info = PublicKeyToMsaId::<Test>::get(test_public(2));
 
 		assert_eq!(info, None);
 
@@ -450,7 +450,7 @@ pub fn test_delete_key() {
 	new_test_ext().execute_with(|| {
 		assert_ok!(Msa::add_key(1, &test_public(1), EMPTY_FUNCTION));
 
-		let info = PublicKeyToMsaId::<Test>::get(&test_public(1));
+		let info = PublicKeyToMsaId::<Test>::get(test_public(1));
 
 		assert_eq!(info, Some(1 as MessageSourceId));
 

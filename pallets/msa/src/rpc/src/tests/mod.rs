@@ -47,6 +47,7 @@ sp_api::mock_impl_runtime_apis! {
 
 		/// Get the list of all delegations and grants
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
+			#[allow(clippy::match_like_matches_macro)]
 			match delegator {
 				DELEGATE_A => vec![DelegationResponse{ provider_id: ProviderId(1), permissions: vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())]}],
 				DELEGATE_B => vec![
@@ -71,7 +72,7 @@ async fn check_delegations_can_success_with_multiple() {
 		Some(SCHEMA_FOR_A_AND_B),
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let arr = result.unwrap();
 	assert_eq!(vec![(DELEGATE_A, true), (DELEGATE_B, true)], arr);
 }
@@ -88,7 +89,7 @@ async fn check_delegations_with_good_and_bad_responses() {
 		Some(SCHEMA_FOR_A),
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let arr = result.unwrap();
 	assert_eq!(vec![(DELEGATE_A, true), (DELEGATE_B, false)], arr);
 }
@@ -105,7 +106,7 @@ async fn check_delegations_with_bad_delegate_msa() {
 		Some(SCHEMA_FOR_A_AND_B),
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let arr = result.unwrap();
 	assert_eq!(vec![(DelegatorId(NOT_EXIST_MSA), false)], arr);
 }
@@ -122,7 +123,7 @@ async fn check_delegations_with_bad_provider() {
 		Some(SCHEMA_FOR_A_AND_B),
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let arr = result.unwrap();
 	assert_eq!(vec![(DELEGATE_A, false), (DELEGATE_B, false)], arr);
 }
@@ -139,7 +140,7 @@ async fn check_delegations_returns_fail_if_after_block() {
 		Some(SCHEMA_FOR_A_AND_B),
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let arr = result.unwrap();
 	assert_eq!(vec![(DELEGATE_A, false), (DELEGATE_B, false)], arr);
 }
@@ -151,7 +152,7 @@ async fn get_granted_schemas_by_msa_id_with_success() {
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, PROVIDER_WITH_DELEGATE_A);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(vec![SchemaGrant::new(SCHEMA_FOR_A, BlockNumber::zero())], response);
 }
@@ -163,7 +164,7 @@ async fn get_all_granted_delegations_by_msa_id_with_success() {
 
 	let result = api.get_all_granted_delegations_by_msa_id(DELEGATE_B);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(
 		vec![
@@ -190,7 +191,7 @@ async fn get_granted_schemas_by_msa_id_with_none() {
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A_AND_B);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(
 		vec![
@@ -208,7 +209,7 @@ async fn get_granted_schemas_by_msa_id_with_no_delegation() {
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_B, PROVIDER_WITH_DELEGATE_A);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert!(response.is_none());
 }
@@ -220,7 +221,7 @@ async fn get_granted_schemas_by_msa_id_with_bad_provider_id() {
 
 	let result = api.get_granted_schemas_by_msa_id(DELEGATE_A, ProviderId(NOT_EXIST_MSA));
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert!(response.is_none());
 }
@@ -232,7 +233,7 @@ async fn get_keys_by_msa_id_with_disabled_offchain_should_fail() {
 
 	let result = api.get_keys_by_msa_id(NOT_EXIST_MSA);
 
-	assert_eq!(true, result.clone().is_err());
+	assert!(result.clone().is_err());
 	assert_eq!("OffchainIndexingNotEnabled", result.unwrap_err().message());
 }
 
@@ -246,7 +247,7 @@ async fn get_keys_by_msa_id_with_empty_value_should_work() {
 
 	let result = api.get_keys_by_msa_id(NOT_EXIST_MSA);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(None, response);
 }
@@ -267,8 +268,8 @@ async fn get_keys_by_msa_id_with_value_should_work() {
 
 	let result = api.get_keys_by_msa_id(msa_id);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
-	assert_eq!(true, response.is_some());
+	assert!(response.is_some());
 	assert_eq!(KeyInfoResponse { msa_id, msa_keys: accounts }, response.unwrap());
 }

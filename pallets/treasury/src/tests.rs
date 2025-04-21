@@ -17,8 +17,6 @@
 
 //! Treasury pallet tests.
 
-#![cfg(test)]
-
 use core::{cell::RefCell, marker::PhantomData};
 use sp_runtime::{
 	traits::{BadOrigin, Dispatchable, IdentityLookup},
@@ -85,9 +83,9 @@ impl pallet_utility::Config for Test {
 }
 
 thread_local! {
-	pub static PAID: RefCell<BTreeMap<(u128, u32), u64>> = RefCell::new(BTreeMap::new());
-	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = RefCell::new(BTreeMap::new());
-	pub static LAST_ID: RefCell<u64> = RefCell::new(0u64);
+	pub static PAID: RefCell<BTreeMap<(u128, u32), u64>> = const { RefCell::new(BTreeMap::new()) };
+	pub static STATUS: RefCell<BTreeMap<u64, PaymentStatus>> = const { RefCell::new(BTreeMap::new()) };
+	pub static LAST_ID: RefCell<u64> = const { RefCell::new(0u64) };
 }
 
 /// paid balance for a given account and asset ids
@@ -148,7 +146,7 @@ impl frame_support::traits::EnsureOrigin<RuntimeOrigin> for TestSpendOrigin {
 	type Success = u64;
 	fn try_origin(o: RuntimeOrigin) -> Result<Self::Success, RuntimeOrigin> {
 		Result::<frame_system::RawOrigin<_>, RuntimeOrigin>::from(o).and_then(|o| match o {
-			frame_system::RawOrigin::Root => Ok(u64::max_value()),
+			frame_system::RawOrigin::Root => Ok(u64::MAX),
 			frame_system::RawOrigin::Signed(10) => Ok(5),
 			frame_system::RawOrigin::Signed(11) => Ok(10),
 			frame_system::RawOrigin::Signed(12) => Ok(20),
@@ -166,7 +164,7 @@ pub struct MulBy<N>(PhantomData<N>);
 impl<N: Get<u64>> ConversionFromAssetBalance<u64, u32, u64> for MulBy<N> {
 	type Error = ();
 	fn from_asset_balance(balance: u64, _asset_id: u32) -> Result<u64, Self::Error> {
-		return balance.checked_mul(N::get()).ok_or(())
+		balance.checked_mul(N::get()).ok_or(())
 	}
 	#[cfg(feature = "runtime-benchmarks")]
 	fn ensure_successful(_: u32) {}
@@ -512,7 +510,7 @@ fn treasury_account_doesnt_get_deleted() {
 	ExtBuilder::default().build().execute_with(|| {
 		Balances::make_free_balance_be(&Treasury::account_id(), 101);
 		assert_eq!(Treasury::pot(), 100);
-		let treasury_balance = Balances::free_balance(&Treasury::account_id());
+		let treasury_balance = Balances::free_balance(Treasury::account_id());
 
 		assert_ok!({
 			#[allow(deprecated)]

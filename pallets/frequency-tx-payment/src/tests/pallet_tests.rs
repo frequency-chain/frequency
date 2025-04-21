@@ -304,10 +304,11 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 			let res = charge_tx_payment.withdraw_fee(&who, call, &info, len);
 			assert_ok!(&res);
 			assert_eq!(res.unwrap().0, 105_455_000 + 21);
-			assert_eq!(
-				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
-				true
-			);
+			assert!(charge_tx_payment
+				.withdraw_fee(&who, call, &info, len)
+				.unwrap()
+				.1
+				.is_capacity());
 		});
 }
 
@@ -341,10 +342,11 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_wi
 				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().0,
 				(105_455_000 + 21u64)
 			);
-			assert_eq!(
-				charge_tx_payment.withdraw_fee(&who, call, &info, len).unwrap().1.is_capacity(),
-				true
-			);
+			assert!(charge_tx_payment
+				.withdraw_fee(&who, call, &info, len)
+				.unwrap()
+				.1
+				.is_capacity());
 		});
 }
 

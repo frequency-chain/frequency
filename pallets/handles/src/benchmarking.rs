@@ -1,4 +1,3 @@
-#![cfg(feature = "runtime-benchmarks")]
 #![allow(clippy::unwrap_used)]
 
 use super::*;
@@ -52,7 +51,7 @@ fn create_signed_claims_payload<T: Config>(
 	let msa_id = MessageSourceId::decode(&mut &delegator_account_public.encode()[..]).unwrap();
 
 	let signature = delegator_account_public.sign(&encode_handle_claims_data).unwrap();
-	(handle_claims_payload, MultiSignature::Sr25519(signature.into()), acc.into(), msa_id)
+	(handle_claims_payload, MultiSignature::Sr25519(signature.into()), acc, msa_id)
 }
 
 #[benchmarks]
@@ -68,13 +67,13 @@ mod benchmarks {
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key, delegator_msa_id) =
 			create_signed_claims_payload::<T>(delegator_account_public, b);
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, key.clone()));
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload);
 
-		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
+		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
 		assert!(stored_handle.is_some());
 		Ok(())
 	}
@@ -88,8 +87,8 @@ mod benchmarks {
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key, delegator_msa_id) =
 			create_signed_claims_payload::<T>(delegator_account_public.clone(), b);
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, key.clone()));
 		assert_ok!(Handles::<T>::claim_handle(
 			RawOrigin::Signed(caller.clone()).into(),
 			key.clone(),
@@ -100,7 +99,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(RawOrigin::Signed(caller.clone()), key.clone(), proof, payload);
 
-		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
+		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
 		assert!(stored_handle.is_some());
 		Ok(())
 	}
@@ -112,15 +111,15 @@ mod benchmarks {
 		let delegator_account_public = SignerId::generate_pair(None);
 		let (payload, proof, key, delegator_msa_id) =
 			create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id.into(), key.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, key.clone()));
 		assert_ok!(Handles::<T>::claim_handle(
 			RawOrigin::Signed(caller.clone()).into(),
 			key.clone(),
 			proof,
 			payload
 		));
-		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
+		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
 		assert!(stored_handle.is_some());
 
 		frame_system::Pallet::<T>::set_block_number(500u32.into());
@@ -129,7 +128,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(RawOrigin::Signed(key.clone()));
 
-		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id.into());
+		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
 		assert!(stored_handle.is_none());
 		Ok(())
 	}

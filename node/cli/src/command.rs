@@ -47,6 +47,7 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 
 impl PartialEq for ChainIdentity {
 	fn eq(&self, other: &Self) -> bool {
+		#[allow(clippy::match_like_matches_macro)]
 		match (self, other) {
 			(ChainIdentity::Frequency, ChainIdentity::Frequency) => true,
 			(ChainIdentity::FrequencyPaseo, ChainIdentity::FrequencyPaseo) => true,
@@ -66,18 +67,17 @@ impl<T: sc_service::ChainSpec + 'static> IdentifyChain for T {
 fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 	match id {
 		#[cfg(feature = "runtime-benchmarks")]
-		"frequency-bench" => return Ok(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
+		"frequency-bench" => Ok(Box::new(chain_spec::frequency::benchmark_mainnet_config())),
 		#[cfg(feature = "frequency")]
-		"frequency" => return Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
+		"frequency" => Ok(Box::new(chain_spec::frequency::load_frequency_spec())),
 		#[cfg(feature = "frequency-no-relay")]
-		"dev" | "frequency-no-relay" =>
-			return Ok(Box::new(chain_spec::frequency_dev::development_config())),
+		"dev" | "frequency-no-relay" => Ok(Box::new(chain_spec::frequency_dev::development_config())),
 		#[cfg(feature = "frequency-local")]
 		"frequency-paseo-local" =>
-			return Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
+			Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
-			return Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
+			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -122,9 +122,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			if ChainIdentity::Frequency == spec.identify() {
 				#[cfg(feature = "frequency")]
 				{
-					return Ok(Box::new(chain_spec::frequency::ChainSpec::from_json_file(
-						path_buf,
-					)?));
+					Ok(Box::new(chain_spec::frequency::ChainSpec::from_json_file(path_buf)?))
 				}
 				#[cfg(not(feature = "frequency"))]
 				return Err("Frequency runtime is not available.".into());
@@ -240,13 +238,12 @@ impl SubstrateCli for RelayChainCli {
 		match id {
 			// TODO: Remove once on a Polkadot-SDK with Paseo-Local
 			#[cfg(feature = "frequency-local")]
-			"paseo-local" => return Ok(Box::new(chain_spec::frequency_paseo::load_paseo_local_spec())),
+			"paseo-local" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_local_spec())),
 			// TODO: Remove once on a Polkadot-SDK with Paseo
 			#[cfg(feature = "frequency-testnet")]
-			"paseo" => return Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
-			_ =>
-				return polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
-					.load_spec(id),
+			"paseo" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
+			_ => polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
+				.load_spec(id),
 		}
 	}
 }
@@ -346,9 +343,9 @@ pub fn run() -> Result<()> {
 							))
 						})
 					} else {
-						return Err("Benchmarking wasn't enabled when building the node. \
+						Err("Benchmarking wasn't enabled when building the node. \
 									You can enable it with `--features runtime-benchmarks`."
-							.into());
+							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
 					let partials = new_partial(&config, false)?;

@@ -27,7 +27,10 @@ pub type ScheduleName = [u8; 32];
 	MaxEncodedLen,
 	TypeInfo,
 )]
-pub struct ReleaseSchedule<BlockNumber, Balance: MaxEncodedLen + HasCompact> {
+pub struct ReleaseSchedule<BlockNumber, Balance>
+where
+	Balance: MaxEncodedLen + HasCompact,
+{
 	/// Vesting starting block
 	pub start: BlockNumber,
 	/// Number of blocks between vest

@@ -2,27 +2,20 @@ use super::mock::*;
 use crate::*;
 #[test]
 fn staking_account_details_withdraw_reduces_active_staking_balance() {
-	let mut staking_account_details = StakingDetails::<Test> {
-		active: BalanceOf::<Test>::from(15u64),
-		staking_type: StakingType::MaximumCapacity,
-	};
+	let mut staking_account_details =
+		StakingDetails::<Test> { active: 15u64, staking_type: StakingType::MaximumCapacity };
 	assert_eq!(Ok(3u64), staking_account_details.withdraw(3));
 
 	assert_eq!(
 		staking_account_details,
-		StakingDetails::<Test> {
-			active: BalanceOf::<Test>::from(12u64),
-			staking_type: StakingType::MaximumCapacity,
-		}
+		StakingDetails::<Test> { active: 12u64, staking_type: StakingType::MaximumCapacity }
 	)
 }
 
 #[test]
 fn staking_account_details_withdraw_goes_to_zero_when_result_below_minimum() {
-	let mut staking_account_details = StakingDetails::<Test> {
-		active: BalanceOf::<Test>::from(10u64),
-		staking_type: StakingType::MaximumCapacity,
-	};
+	let mut staking_account_details =
+		StakingDetails::<Test> { active: 10u64, staking_type: StakingType::MaximumCapacity };
 	assert_eq!(Ok(10u64), staking_account_details.withdraw(6));
 	assert_eq!(0u64, staking_account_details.active);
 
@@ -42,10 +35,7 @@ fn impl_staking_account_details_increase_by() {
 
 	assert_eq!(
 		staking_account,
-		StakingDetails::<Test> {
-			active: BalanceOf::<Test>::from(10u64),
-			staking_type: StakingType::MaximumCapacity,
-		}
+		StakingDetails::<Test> { active: 10u64, staking_type: StakingType::MaximumCapacity }
 	)
 }
 

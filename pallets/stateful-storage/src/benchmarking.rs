@@ -101,7 +101,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
@@ -117,7 +117,7 @@ mod benchmarks {
 		{
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(
 				RawOrigin::Signed(caller).into(),
-				delegator_msa_id.into(),
+				delegator_msa_id,
 				schema_id,
 				NONEXISTENT_PAGE_HASH,
 				actions
@@ -146,7 +146,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
@@ -167,7 +167,7 @@ mod benchmarks {
 			.get_hash();
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(
 				RawOrigin::Signed(caller.clone()).into(),
-				delegator_msa_id.into(),
+				delegator_msa_id,
 				schema_id,
 				content_hash,
 				actions
@@ -188,7 +188,7 @@ mod benchmarks {
 		{
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(
 				RawOrigin::Signed(caller).into(),
-				delegator_msa_id.into(),
+				delegator_msa_id,
 				schema_id,
 				content_hash,
 				actions
@@ -216,7 +216,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
@@ -244,7 +244,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(
 			RawOrigin::Signed(caller),
-			delegator_msa_id.into(),
+			delegator_msa_id,
 			schema_id,
 			page_id,
 			content_hash,
@@ -268,7 +268,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id.into(), caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(provider_msa_id, caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			provider_msa_id.into(),
 			delegator_msa_id.into(),
@@ -294,7 +294,7 @@ mod benchmarks {
 		.get_hash();
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), delegator_msa_id.into(), schema_id, page_id, content_hash);
+		_(RawOrigin::Signed(caller), delegator_msa_id, schema_id, page_id, content_hash);
 
 		let page_result = get_paginated_page::<T>(delegator_msa_id, schema_id, page_id);
 		assert!(page_result.is_none());
@@ -323,11 +323,8 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(
-			delegator_msa_id.into(),
-			delegator_account.clone()
-		));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			msa_id.into(),
 			delegator_msa_id.into(),
@@ -351,7 +348,7 @@ mod benchmarks {
 		{
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions_with_signature_v2(
 				RawOrigin::Signed(caller).into(),
-				delegator_account.into(),
+				delegator_account,
 				MultiSignature::Sr25519(signature.into()),
 				payload
 			));
@@ -386,11 +383,8 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Itemized));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id.into(), caller.clone()));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(
-			delegator_msa_id.into(),
-			delegator_account.clone()
-		));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			msa_id.into(),
 			delegator_msa_id.into(),
@@ -411,7 +405,7 @@ mod benchmarks {
 			.get_hash();
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions(
 				RawOrigin::Signed(caller.clone()).into(),
-				delegator_msa_id.into(),
+				delegator_msa_id,
 				schema_id,
 				content_hash,
 				actions
@@ -440,7 +434,7 @@ mod benchmarks {
 		{
 			assert_ok!(StatefulStoragePallet::<T>::apply_item_actions_with_signature_v2(
 				RawOrigin::Signed(caller).into(),
-				delegator_account.into(),
+				delegator_account,
 				MultiSignature::Sr25519(signature.into()),
 				payload
 			));
@@ -473,10 +467,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(
-			delegator_msa_id.into(),
-			delegator_account.clone()
-		));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
 		let key = (schema_id, page_id);
 		StatefulChildTree::<T::KeyHasher>::write(
@@ -509,7 +500,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(
 			RawOrigin::Signed(caller),
-			delegator_account.into(),
+			delegator_account,
 			MultiSignature::Sr25519(signature.into()),
 			payload,
 		);
@@ -537,10 +528,7 @@ mod benchmarks {
 
 		T::SchemaBenchmarkHelper::set_schema_count(schema_id - 1);
 		assert_ok!(create_schema::<T>(PayloadLocation::Paginated));
-		assert_ok!(T::MsaBenchmarkHelper::add_key(
-			delegator_msa_id.into(),
-			delegator_account.clone()
-		));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, delegator_account.clone()));
 
 		let key = (schema_id, page_id);
 		StatefulChildTree::<T::KeyHasher>::write(
@@ -572,7 +560,7 @@ mod benchmarks {
 		#[extrinsic_call]
 		_(
 			RawOrigin::Signed(caller),
-			delegator_account.into(),
+			delegator_account,
 			MultiSignature::Sr25519(signature.into()),
 			payload,
 		);

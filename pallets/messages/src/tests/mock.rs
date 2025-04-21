@@ -223,13 +223,11 @@ impl SchemaProvider<u16> for SchemaHandler {
 	}
 
 	fn get_schema_info_by_id(schema_id: u16) -> Option<SchemaInfoResponse> {
-		Self::get_schema_by_id(schema_id).and_then(|schema| {
-			Some(SchemaInfoResponse {
-				schema_id: schema.schema_id,
-				settings: schema.settings,
-				model_type: schema.model_type,
-				payload_location: schema.payload_location,
-			})
+		Self::get_schema_by_id(schema_id).map(|schema| SchemaInfoResponse {
+			schema_id: schema.schema_id,
+			settings: schema.settings,
+			model_type: schema.model_type,
+			payload_location: schema.payload_location,
 		})
 	}
 }

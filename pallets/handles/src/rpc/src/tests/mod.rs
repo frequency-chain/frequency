@@ -54,8 +54,8 @@ async fn get_handle_with_non_existent_msa_id_should_return_none() {
 		1233, // Non-existing MSA Id
 	);
 
-	assert_eq!(true, result.is_ok());
-	assert_eq!(true, result.unwrap().is_none());
+	assert!(result.is_ok());
+	assert!(result.unwrap().is_none());
 }
 
 #[tokio::test]
@@ -67,7 +67,7 @@ async fn get_handle_with_success() {
 		VALID_MSA_ID, // MSA Id
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(b"base_handle".to_vec(), response.base_handle);
 	assert_eq!(b"canonical_base".to_vec(), response.canonical_base);
@@ -80,7 +80,7 @@ async fn get_next_suffixes_with_success() {
 	let api = HandlesHandler::new(client);
 	let result = api.get_next_suffixes("base_handle".to_string(), Some(3));
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(3, response.suffixes.len());
 }
@@ -91,6 +91,6 @@ async fn get_msa_for_handle_with_success() {
 	let api = HandlesHandler::new(client);
 	let result = api.get_msa_for_handle("base_handle".to_string());
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	assert_eq!(Some(VALID_MSA_ID), result.unwrap());
 }

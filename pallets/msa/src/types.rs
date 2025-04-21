@@ -49,10 +49,7 @@ impl AddProvider {
 		schema_ids: Option<Vec<SchemaId>>,
 		expiration: BlockNumber,
 	) -> Self {
-		let schema_ids = match schema_ids {
-			Some(schemas) => schemas,
-			None => Vec::default(),
-		};
+		let schema_ids = schema_ids.unwrap_or_default();
 
 		Self { authorized_msa_id, schema_ids, expiration }
 	}
