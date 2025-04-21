@@ -98,7 +98,7 @@ impl Convert<u64, AccountId> for TestAccountId {
 }
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
 		true
 	}
 
@@ -153,7 +153,7 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		10_000u64.into()
+		10_000u64
 	}
 
 	// use the pallet version of the era calculation.

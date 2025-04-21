@@ -427,10 +427,10 @@ fn schedule_transfer_success() {
 
 		let schedule = ReleaseSchedule {
 			// relay block number
-			start: 25u32.into(),
-			period: 5u32.into(),
+			start: 25u32,
+			period: 5u32,
 			period_count: 2u32,
-			per_period: 10u32.into(),
+			per_period: 10u64,
 		};
 
 		let schedule_frequency_blocknumber =
@@ -474,12 +474,8 @@ fn schedule_transfer_success() {
 #[test]
 fn multiple_schedule_transfer_with_same_schedule_name_fails() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 
 		let when = BlockNumberFor::<Test>::from(4u32);
 
@@ -500,12 +496,8 @@ fn multiple_schedule_transfer_with_same_schedule_name_fails() {
 
 		// Adding another schedule increases the hold
 
-		let schedule_2 = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule_2 =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 
 		let when = BlockNumberFor::<Test>::from(4u32);
 
@@ -525,12 +517,8 @@ fn multiple_schedule_transfer_with_same_schedule_name_fails() {
 #[test]
 fn multiple_schedule_transfer_success() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 
 		let when = BlockNumberFor::<Test>::from(4u32);
 
@@ -551,12 +539,8 @@ fn multiple_schedule_transfer_success() {
 
 		// Adding another schedule increases the hold
 
-		let schedule_2 = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule_2 =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 
 		let when = BlockNumberFor::<Test>::from(4u32);
 
@@ -580,12 +564,8 @@ fn multiple_schedule_transfer_success() {
 #[test]
 fn schedule_transfer_fails_if_invalid_block_number() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let invalid_block_number = 0u32;
 		assert_noop!(
 			TimeRelease::schedule_named_transfer(
@@ -603,12 +583,8 @@ fn schedule_transfer_fails_if_invalid_block_number() {
 #[test]
 fn schedule_transfer_fails_if_bad_origin() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_noop!(
 			TimeRelease::schedule_named_transfer(
@@ -626,12 +602,8 @@ fn schedule_transfer_fails_if_bad_origin() {
 #[test]
 fn execute_scheduled_named_transfer_success() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_ok!(TimeRelease::schedule_named_transfer(
 			RuntimeOrigin::signed(ALICE),
@@ -661,12 +633,8 @@ fn cancel_schedule_named_transfer_success() {
 	ExtBuilder::build().execute_with(|| {
 		run_to_block(2u32);
 
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_ok!(TimeRelease::schedule_named_transfer(
 			RuntimeOrigin::signed(ALICE),
@@ -704,12 +672,8 @@ fn cancel_schedule_transfer_bad_origin_fails() {
 	ExtBuilder::build().execute_with(|| {
 		run_to_block(2u32);
 
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_ok!(TimeRelease::schedule_named_transfer(
 			RuntimeOrigin::signed(ALICE),
@@ -732,12 +696,8 @@ fn cancel_schedule_transfer_bad_origin_fails() {
 #[test]
 fn execute_scheduled_named_transfer_fails_if_insufficient_hold_balance() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_ok!(TimeRelease::schedule_named_transfer(
 			RuntimeOrigin::signed(ALICE),
@@ -747,12 +707,8 @@ fn execute_scheduled_named_transfer_fails_if_insufficient_hold_balance() {
 			when
 		));
 
-		let bad_schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 1000u32.into(),
-		};
+		let bad_schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 1000u64 };
 
 		assert_noop!(
 			TimeRelease::execute_scheduled_named_transfer(
@@ -769,12 +725,8 @@ fn execute_scheduled_named_transfer_fails_if_insufficient_hold_balance() {
 #[test]
 fn execute_scheduled_named_transfer_fails_if_bad_origin() {
 	ExtBuilder::build().execute_with(|| {
-		let schedule = ReleaseSchedule {
-			start: 6u32.into(),
-			period: 10u32.into(),
-			period_count: 2u32,
-			per_period: 10u32.into(),
-		};
+		let schedule =
+			ReleaseSchedule { start: 6u32, period: 10u32, period_count: 2u32, per_period: 10u64 };
 		let when = BlockNumberFor::<Test>::from(4u32);
 		assert_ok!(TimeRelease::schedule_named_transfer(
 			RuntimeOrigin::signed(ALICE),
@@ -938,8 +890,7 @@ fn alice_time_releases_schedule() {
 			24_996
 		);
 
-		let time_release_transfer_data: Vec<(DateTime<Utc>, _)> =
-			time_release_transfers_data::<Test>();
+		let time_release_transfer_data: Vec<(DateTime<Utc>, _)> = time_release_transfers_data();
 
 		// quarters 1 - 5
 		let july_1_2023_to_july_1_2024_data = &time_release_transfer_data[0..4];
@@ -979,12 +930,12 @@ fn alice_time_releases_schedule() {
 		];
 
 		for month in july_2024_sept_2024.iter() {
-			// Bob trys again at the end of the first period. Bob is now
+			// Bob tries again at the end of the first period. Bob is now
 			// happy because he has thawed 4_166 tokens every month and can spend them.
 			// The total amount is reduced by the amount released per period.
-			MockBlockNumberProvider::set(date_to_approximate_block_number(month.clone()).into());
+			MockBlockNumberProvider::set(date_to_approximate_block_number(*month));
 			assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
-			total_frozen -= 4_166 as u64;
+			total_frozen -= 4_166_u64;
 			assert_eq!(
 				<Test as Config>::Currency::balance_frozen(
 					&FreezeReason::TimeReleaseVesting.into(),
@@ -997,9 +948,7 @@ fn alice_time_releases_schedule() {
 		// quarter-6:  time-release transfer AND monthly claim
 		// Note that when submitting a transfer it also makes a claim and releases transfers.
 		let oct_2024_quarterly_data = &time_release_transfer_data[5];
-		MockBlockNumberProvider::set(
-			date_to_approximate_block_number(oct_2024_quarterly_data.0).into(),
-		);
+		MockBlockNumberProvider::set(date_to_approximate_block_number(oct_2024_quarterly_data.0));
 
 		let transfer_1 = oct_2024_quarterly_data.1.get(0).unwrap();
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, transfer_1.clone(),));
@@ -1023,7 +972,7 @@ fn alice_time_releases_schedule() {
 		// quarter-7-12:  time-release transfer AND monthly claim
 		let jan_2025_to_april_2026_quarterly_data = &time_release_transfer_data[6..];
 		for quarter in jan_2025_to_april_2026_quarterly_data.iter() {
-			MockBlockNumberProvider::set(date_to_approximate_block_number(quarter.0).into());
+			MockBlockNumberProvider::set(date_to_approximate_block_number(quarter.0));
 
 			let transfer_1 = quarter.1.get(0).unwrap();
 			assert_ok!(TimeRelease::transfer(
@@ -1040,10 +989,9 @@ fn alice_time_releases_schedule() {
 			));
 		}
 
-		MockBlockNumberProvider::set(
-			date_to_approximate_block_number(Utc.with_ymd_and_hms(2026, 6, 1, 0, 0, 6).unwrap())
-				.into(),
-		);
+		MockBlockNumberProvider::set(date_to_approximate_block_number(
+			Utc.with_ymd_and_hms(2026, 6, 1, 0, 0, 6).unwrap(),
+		));
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		assert_eq!(
 			<Test as Config>::Currency::balance_frozen(
@@ -1060,7 +1008,7 @@ fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
 }
 
 fn set_balance<T: Config>(who: &T::AccountId, balance: BalanceOf<T>) {
-	let actual_deposit = T::Currency::mint_into(&who, balance.saturated_into());
+	let actual_deposit = T::Currency::mint_into(who, balance.saturated_into());
 	assert_eq!(balance, actual_deposit.unwrap());
 }
 
@@ -1079,7 +1027,7 @@ fn build_time_release_schedule<T: Config>(
 		start: start_block_number.into(),
 		period: (number_of_blocks_in_days as u32).into(),
 		period_count,
-		per_period: per_period.into(),
+		per_period,
 	}
 }
 
@@ -1097,8 +1045,8 @@ fn date_to_approximate_block_number(input_date: DateTime<Utc>) -> u32 {
 	block_number as u32
 }
 
-// Bob also receives additional transfers quarterl transfers for
-// (6,250 tokens trasfer quarterly for 12 quarters for a total of 75,000 totals vested)
+// Bob also receives additional transfers quarterly transfers for
+// (6,250 tokens transfer quarterly for 12 quarters for a total of 75,000 totals vested)
 // Quarter 1: July 2023
 // Quarter 2: Oct 2023
 // Quarter 3: Jan 2024
@@ -1111,10 +1059,9 @@ fn date_to_approximate_block_number(input_date: DateTime<Utc>) -> u32 {
 // Quarter 10: Oct 2025
 // Quarter 11: Jan 2026
 // Quarter 12: April 2026
-// Time-Relese schedules:
+// Time-Release schedules:
 // Monthly thaws 1 / 24 of 100K starting July 1, 2024
-fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSchedule<u32, u64>>)>
-{
+fn time_release_transfers_data() -> Vec<(DateTime<Utc>, Vec<ReleaseSchedule<u32, u64>>)> {
 	let total_award: u64 = 100_000;
 	vec![
 		(
@@ -1126,7 +1073,7 @@ fn time_release_transfers_data<T: Config>() -> Vec<(DateTime<Utc>, Vec<ReleaseSc
 					Utc.with_ymd_and_hms(2025, 1, 1, 0, 0, 0).unwrap(),
 					Duration::seconds(6),
 					1u32,
-					(total_award * 1 / 24).into(), // Max amount available for release: 100k / 24 ~ 4_166
+					total_award * 1 / 24, // Max amount available for release: 100k / 24 ~ 4_166
 				),
 				// 8/24
 				build_time_release_schedule::<Test>(

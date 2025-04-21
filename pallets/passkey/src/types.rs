@@ -297,7 +297,7 @@ impl VerifiablePasskeySignature {
 			return Err(PasskeyVerificationError::InvalidAuthenticatorData);
 		}
 		passkey_signature_payload
-			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
+			.extend_from_slice(&sha2_256(original_client_data_json.as_bytes()));
 
 		// finally verify the passkey signature against the payload
 		verifying_key

@@ -45,13 +45,14 @@ frame_support::construct_runtime!(
 		}
 );
 
+#[allow(dead_code)]
 pub struct BlockWeights;
 impl Get<frame_system::limits::BlockWeights> for BlockWeights {
 	fn get() -> frame_system::limits::BlockWeights {
 		frame_system::limits::BlockWeights::builder()
 			.base_block(Weight::zero())
 			.for_class(DispatchClass::all(), |weights| {
-				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
+				weights.base_extrinsic = ExtrinsicBaseWeight::get();
 			})
 			.for_class(DispatchClass::non_mandatory(), |weights| {
 				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -122,7 +123,7 @@ impl Convert<u64, AccountId> for TestAccountId {
 
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
 		true
 	}
 
@@ -256,7 +257,7 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 	}
 
 	fn get_inner_calls(_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		return Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})]);
+		Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
 	}
 }
 
@@ -364,7 +365,7 @@ impl ExtBuilder {
 			});
 		});
 
-		t.into()
+		t
 	}
 }
 

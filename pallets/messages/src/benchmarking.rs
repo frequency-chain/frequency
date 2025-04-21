@@ -1,4 +1,3 @@
-#![cfg(feature = "runtime-benchmarks")]
 #![allow(clippy::expect_used)]
 
 use super::*;
@@ -87,7 +86,7 @@ mod benchmarks {
 		assert_ok!(T::MsaBenchmarkHelper::add_key(ProviderId(1).into(), caller.clone()));
 		assert_ok!(T::MsaBenchmarkHelper::set_delegation_relationship(
 			ProviderId(1),
-			message_source_id.into(),
+			message_source_id,
 			[schema_id].to_vec()
 		));
 

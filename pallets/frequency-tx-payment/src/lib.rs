@@ -86,24 +86,15 @@ pub enum InitialPayment<T: Config> {
 #[cfg(feature = "std")]
 impl<T: Config> InitialPayment<T> {
 	pub fn is_free(&self) -> bool {
-		match *self {
-			InitialPayment::Free => true,
-			_ => false,
-		}
+		matches!(*self, InitialPayment::Free)
 	}
 
 	pub fn is_capacity(&self) -> bool {
-		match *self {
-			InitialPayment::Capacity => true,
-			_ => false,
-		}
+		matches!(*self, InitialPayment::Capacity)
 	}
 
 	pub fn is_token(&self) -> bool {
-		match *self {
-			InitialPayment::Token(_) => true,
-			_ => false,
-		}
+		matches!(*self, InitialPayment::Token(_))
 	}
 }
 
@@ -235,14 +226,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	// The weight calculation is a temporary adjustment because overhead benchmarks do not account
-	// for capacity calls.  We count reads and writes for a pay_with_capacity call,
-	// then subtract one of each for regular transactions since overhead benchmarks account for these.
-	//   Storage: Msa PublicKeyToMsaId (r:1)
-	//   Storage: Capacity CapacityLedger(r:1, w:2)
-	//   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
-	//   Storage: System Account(r:1)
-	//   Total (r: 4-1=3, w: 2-1=1)
+	/// The weight calculation is a temporary adjustment because overhead benchmarks do not account
+	/// for capacity calls.  We count reads and writes for a pay_with_capacity call,
+	/// then subtract one of each for regular transactions since overhead benchmarks account for these.
+	///   Storage: Msa PublicKeyToMsaId (r:1)
+	///   Storage: Capacity CapacityLedger(r:1, w:2)
+	///   Storage: Capacity CurrentEpoch(r:1) ? maybe cached in on_initialize
+	///   Storage: System Account(r:1)
+	///   Total (r: 4-1=3, w: 2-1=1)
 	pub fn get_capacity_overhead_weight() -> Weight {
 		T::DbWeight::get().reads(2).saturating_add(T::DbWeight::get().writes(1))
 	}
@@ -252,6 +243,7 @@ impl<T: Config> Pallet<T> {
 	/// - the weight fee, which is proportional to the weight of the transaction.
 	/// - the length fee, which is proportional to the length of the transaction;
 	/// - the base fee, which accounts for the overhead of an extrinsic.
+	///
 	/// NOTE: Changing CAPACITY_EXTRINSIC_BASE_WEIGHT will also change static capacity weights.
 	pub fn compute_capacity_fee(len: u32, extrinsic_weight: Weight) -> BalanceOf<T> {
 		let weight_fee = Self::weight_to_fee(extrinsic_weight);
@@ -259,8 +251,7 @@ impl<T: Config> Pallet<T> {
 		let len_fee = Self::length_to_fee(len);
 		let base_fee = Self::weight_to_fee(CAPACITY_EXTRINSIC_BASE_WEIGHT);
 
-		let fee = base_fee.saturating_add(weight_fee).saturating_add(len_fee);
-		fee
+		base_fee.saturating_add(weight_fee).saturating_add(len_fee)
 	}
 
 	/// Compute the capacity fee details for a transaction.
@@ -281,7 +272,7 @@ impl<T: Config> Pallet<T> {
 
 		let mut calls_weight_sum = Weight::zero();
 		for inner_call in calls {
-			let call_weight = T::CapacityCalls::get_stable_weight(&inner_call).unwrap_or_default();
+			let call_weight = T::CapacityCalls::get_stable_weight(inner_call).unwrap_or_default();
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
 

@@ -20,7 +20,7 @@ pub mod frequency;
 ))]
 pub mod frequency_paseo;
 
-#[cfg(any(feature = "frequency-no-relay"))]
+#[cfg(feature = "frequency-no-relay")]
 pub mod frequency_dev;
 
 #[allow(clippy::expect_used)]

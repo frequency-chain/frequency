@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	BalanceOf, CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason,
-	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason, StakingAccountLedger,
+	StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
 };
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
@@ -376,7 +376,7 @@ fn ensure_can_stake_is_successful() {
 		let staking_details = StakingDetails::<Test>::default();
 		assert_ok!(
 			Capacity::ensure_can_stake(&account, target, amount, MaximumCapacity),
-			(staking_details, BalanceOf::<Test>::from(10u64))
+			(staking_details, 10u64)
 		);
 	});
 }
@@ -398,13 +398,13 @@ fn increase_stake_and_issue_capacity_is_successful() {
 
 		assert_eq!(staking_account.active, amount);
 
-		let capacity_details = CapacityLedger::<Test>::get(&target).unwrap();
+		let capacity_details = CapacityLedger::<Test>::get(target).unwrap();
 
 		assert_eq!(capacity_details.remaining_capacity, 55);
 		assert_eq!(capacity_details.total_capacity_issued, 55);
 		assert_eq!(capacity_details.last_replenished_epoch, 0);
 
-		let target_details = StakingTargetLedger::<Test>::get(&staker, &target).unwrap();
+		let target_details = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 
 		assert_eq!(target_details.amount, amount);
 		assert_eq!(target_details.capacity, 55);
@@ -434,16 +434,16 @@ fn stake_when_there_are_unlocks_sets_lock_correctly() {
 fn impl_deposit_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = BalanceOf::<Test>::from(5u32);
-		let total_available_amount = BalanceOf::<Test>::from(10u32);
+		let remaining_amount = 5u64;
+		let total_available_amount = 10u64;
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
 			remaining_amount,
 			total_available_amount,
 			1u32,
 		);
-		let amount = BalanceOf::<Test>::from(5u32);
-		let capacity = BalanceOf::<Test>::from(1u32);
+		let amount = 5u64;
+		let capacity = 1u64;
 		assert_ok!(Capacity::deposit(target_msa_id, amount, capacity));
 	});
 }
@@ -452,8 +452,8 @@ fn impl_deposit_is_successful() {
 fn impl_deposit_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let amount = BalanceOf::<Test>::from(10u32);
-		let capacity = BalanceOf::<Test>::from(5u32);
+		let amount = 10u64;
+		let capacity = 5u64;
 
 		assert_noop!(
 			Capacity::deposit(target_msa_id, amount, capacity),

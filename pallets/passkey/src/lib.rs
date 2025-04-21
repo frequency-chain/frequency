@@ -16,7 +16,7 @@
 	rustdoc::invalid_codeblock_attributes,
 	missing_docs
 )]
-// allowing deprecated until moving to Extrinisc V5 structure
+// allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
 use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
@@ -36,7 +36,7 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 extern crate alloc;
-use alloc::{vec, vec::Vec};
+use alloc::{borrow::ToOwned, vec};
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
@@ -194,7 +194,7 @@ pub mod module {
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn validate_unsigned(_source: TransactionSource, call: &Self::Call) -> TransactionValidity {
 			let valid_tx = ValidTransaction::default();
-			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(call)?;
 
 			let frame_system_validity =
 				FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
@@ -224,7 +224,7 @@ pub mod module {
 		/// Checking and executing a list of operations pre_dispatch
 		/// The majority of these checks are the same as `SignedExtra` list in defined in runtime
 		fn pre_dispatch(call: &Self::Call) -> Result<(), TransactionValidityError> {
-			let (payload, is_legacy_call) = Self::filter_valid_calls(&call)?;
+			let (payload, is_legacy_call) = Self::filter_valid_calls(call)?;
 			FrameSystemChecks(payload.passkey_call.account_id.clone(), call.clone())
 				.pre_dispatch()?;
 			PasskeyNonceCheck::new(payload.passkey_call.clone()).pre_dispatch()?;
@@ -316,7 +316,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		let signature = self.payload.account_ownership_proof.clone();
 		let signer = &self.payload.passkey_call.account_id;
 
-		Self::check_account_signature(signer, &signed_data.inner().to_vec(), &signature)
+		Self::check_account_signature(signer, signed_data.inner().as_ref(), &signature)
 			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
 
 		// checking the passkey signature to ensure access to the passkey
@@ -355,12 +355,12 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	/// * `Err(InvalidAccountSignature)` if the signature is invalid
 	fn check_account_signature(
 		signer: &T::AccountId,
-		signed_data: &Vec<u8>,
+		signed_data: &[u8],
 		signature: &MultiSignature,
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-		if !check_signature(signature, key, signed_data.clone()) {
+		if !check_signature(signature, key, signed_data.to_owned()) {
 			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
 
@@ -556,7 +556,7 @@ where
 		let (result, _, _) = check_weight.validate(
 			who,
 			&runtime_call,
-			&info,
+			info,
 			len,
 			(),
 			&implication,
