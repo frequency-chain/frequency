@@ -1,6 +1,5 @@
 // These run ONCE per entire test run
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-import workerpool from 'workerpool';
 import { globSync } from 'glob';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { getFundingSource, getRootFundingSource, getSudo } from './funding';
@@ -37,7 +36,7 @@ async function fundAccountAmount(dest: KeyringPair): Promise<{ dest: KeyringPair
 
 function fundSourceTransfer(root: KeyringPair, dest: KeyringPair, amount: bigint, nonce: number) {
   try {
-    // Only transfer the ammount needed
+    // Only transfer the amount needed
     return ExtrinsicHelper.transferFunds(root, dest, amount).signAndSend(nonce);
   } catch (e) {
     console.error('Unable to fund soruce', { dest });
@@ -65,7 +64,6 @@ async function devSudoActions() {
 }
 
 export async function mochaGlobalSetup(context) {
-  console.log('Global Setup Start', 'Reported CPU Count: ', workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize(providerUrl);
   await fundAccountsToDefault(getAllTestFiles().map(getFundingSource));
