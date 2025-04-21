@@ -123,7 +123,7 @@ impl Convert<u64, AccountId> for TestAccountId {
 
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
 		true
 	}
 
@@ -249,8 +249,9 @@ pub struct TestCapacityCalls;
 impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
 		match call {
-			RuntimeCall::Balances(BalancesCall::transfer_allow_death { .. }) =>
-				Some(Weight::from_parts(11, 0)),
+			RuntimeCall::Balances(BalancesCall::transfer_allow_death { .. }) => {
+				Some(Weight::from_parts(11, 0))
+			},
 			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
 			_ => None,
 		}
