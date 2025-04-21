@@ -54,7 +54,7 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<BalanceOf<Test>> { amount: 60u32, capacity: 6u32 }
+			StakingTargetDetails::<BalanceOf<Test>> { amount: 60u64, capacity: 6u64 }
 		);
 
 		// Assert that the capacity detail values for the target are decremented properly after unstaking

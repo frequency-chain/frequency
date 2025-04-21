@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	BalanceOf, CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason,
-	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason, StakingAccountLedger,
+	StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
 };
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
@@ -434,16 +434,16 @@ fn stake_when_there_are_unlocks_sets_lock_correctly() {
 fn impl_deposit_is_successful() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let remaining_amount = 5u32;
-		let total_available_amount = 10u32;
+		let remaining_amount = 5u64;
+		let total_available_amount = 10u64;
 		let _ = create_capacity_account_and_fund(
 			target_msa_id,
 			remaining_amount,
 			total_available_amount,
 			1u32,
 		);
-		let amount = 5u32;
-		let capacity = 1u32;
+		let amount = 5u64;
+		let capacity = 1u64;
 		assert_ok!(Capacity::deposit(target_msa_id, amount, capacity));
 	});
 }
@@ -452,8 +452,8 @@ fn impl_deposit_is_successful() {
 fn impl_deposit_errors_target_capacity_not_found() {
 	new_test_ext().execute_with(|| {
 		let target_msa_id = 1;
-		let amount = 10u32;
-		let capacity = 5u32;
+		let amount = 10u64;
+		let capacity = 5u64;
 
 		assert_noop!(
 			Capacity::deposit(target_msa_id, amount, capacity),
