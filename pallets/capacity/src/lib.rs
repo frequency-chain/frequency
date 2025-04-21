@@ -894,6 +894,8 @@ impl<T: Config> Pallet<T> {
 			Perbill::from_rational(amount, staking_target_details.amount)
 				.mul_ceil(staking_target_details.capacity)
 		} else {
+			// this call will return an amount > than requested if the resulting StakingTargetDetails balance
+			// is below the minimum. This ensures we withdraw the same amounts as for staking_target_details.
 			Self::calculate_capacity_reduction(
 				amount,
 				capacity_details.total_tokens_staked,
