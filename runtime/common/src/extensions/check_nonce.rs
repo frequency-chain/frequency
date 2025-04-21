@@ -24,6 +24,7 @@ use frame_support::{
 	sp_runtime,
 };
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
 	transaction_validity::{
@@ -63,6 +64,7 @@ impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config> SignedExtension for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,

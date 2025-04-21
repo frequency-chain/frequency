@@ -70,6 +70,7 @@ type HostFunctions = (
 	common_primitives::offchain::custom::HostFunctions,
 );
 
+use crate::common::start_offchain_workers;
 pub use frequency_runtime;
 
 type ParachainExecutor = WasmExecutor<HostFunctions>;
@@ -233,7 +234,6 @@ pub async fn start_parachain_node(
 	let params = new_partial(&parachain_config, false)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
-	// TODO:  confirm which metrics registry to use, if any
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
 	let net_config = FullNetworkConfiguration::<_, _, sc_network::NetworkWorker<Block, Hash>>::new(
 		&parachain_config.network,
@@ -278,44 +278,16 @@ pub async fn start_parachain_node(
 
 	// Start off-chain workers if enabled
 	if parachain_config.offchain_worker.enabled {
-		use futures::FutureExt;
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		// TODO: rpc.addr is a list of addresses. iterate over each or ?
-		let listen_addrs: Vec<Vec<u8>> =
-			match listen_addrs_to_normalized_strings(&parachain_config.rpc.addr) {
-				None =>
-					return Err(sc_service::Error::Other(
-						"Invalid listen addresses provided".to_string(),
-					)),
-				Some(addrs) => addrs,
-			};
-		listen_addrs.into_iter().for_each(|rpc_address| {
-			let offchain_workers =
-				sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-					runtime_api_provider: client.clone(),
-					is_validator: validator,
-					keystore: Some(params.keystore_container.keystore()),
-					offchain_db: backend.offchain_storage(),
-					transaction_pool: Some(OffchainTransactionPoolFactory::new(
-						transaction_pool.clone(),
-					)),
-					network_provider: Arc::new(network.clone()),
-					enable_http_requests: true,
-					custom_extensions: move |_hash| {
-						let cloned = rpc_address.clone();
-						vec![Box::new(OcwCustomExt(cloned)) as Box<_>]
-					},
-				})
-				.expect("Could not create Offchain Worker");
-
-			// Spawn a task to handle off-chain notifications.
-			// This task is responsible for processing off-chain events or data for the blockchain.
-			task_manager.spawn_handle().spawn(
-				"offchain-workers-runner",
-				"offchain-work",
-				offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
-			);
-		});
+		start_offchain_workers(
+			&client,
+			&parachain_config,
+			Some(params.keystore_container.keystore()),
+			&backend,
+			Some(OffchainTransactionPoolFactory::new(transaction_pool.clone())),
+			Arc::new(network.clone()),
+			&task_manager,
+		);
 	}
 
 	let rpc_builder = {

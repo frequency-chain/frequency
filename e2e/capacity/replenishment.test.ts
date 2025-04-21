@@ -39,7 +39,7 @@ describe('Capacity Replenishment Testing: ', function () {
   describe('Capacity is replenished', function () {
     it('after new epoch', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
-      const totalStaked = 5n * DOLLARS;
+      const totalStaked = 3n * DOLLARS;
       const expectedCapacity = totalStaked / getTokenPerCapacity();
       const [stakeKeys, stakeProviderId] = await createAndStakeProvider('ReplFirst', totalStaked);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
@@ -83,44 +83,38 @@ describe('Capacity Replenishment Testing: ', function () {
   describe('Capacity is not replenished', function () {
     it('if out of capacity and last_replenished_at is <= current epoch', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
-      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('NoSend', 300n * CENTS);
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('NoSend', 150n * CENTS);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
       // run until we can't afford to send another message.
-      const cost = await drainCapacity(call, stakeProviderId);
+      await drainCapacity(call, stakeProviderId);
 
       await assert_capacity_call_fails_with_balance_too_low(call);
     });
   });
 
   describe("Regression test: when user attempts to stake tiny amounts before provider's first message of an epoch,", function () {
-    const providerStakeAmt = 3n * DOLLARS;
-    const userStakeAmt = 300n * CENTS;
-    const userIncrementAmt = 1n * CENTS;
-    const userKeys = createKeys('userKeys');
-    let stakeKeys: KeyringPair;
-    let stakeProviderId: u64;
+    it('provider is still replenished and can send a message', async function () {
+      const providerStakeAmt = 3n * DOLLARS;
+      const userStakeAmt = 100n * CENTS;
+      const userIncrementAmt = 1n * CENTS;
 
-    before(async function () {
+      const [stakeKeys, stakeProviderId] = await createAndStakeProvider('TinyStake', providerStakeAmt);
       // new user/msa stakes to provider
-      await fundKeypair(fundingSource, userKeys, 6n * DOLLARS);
-      [stakeKeys, stakeProviderId] = await createAndStakeProvider('TinyStake', providerStakeAmt);
+      const userKeys = createKeys('userKeys');
+      await fundKeypair(fundingSource, userKeys, 5n * DOLLARS);
       const { eventMap } = await ExtrinsicHelper.stake(userKeys, stakeProviderId, userStakeAmt).signAndSend();
       assertEvent(eventMap, 'system.ExtrinsicSuccess');
-    });
 
-    it('provider is still replenished and can send a message', async function () {
       const schemaId = await getOrCreateGraphChangeSchema(fundingSource);
       const payload = JSON.stringify({ changeType: 1, fromId: 1, objectId: 2 });
       const call = ExtrinsicHelper.addOnChainMessage(stakeKeys, schemaId, payload);
 
-      // Ensure provider got the capacity expected
       const expectedCapacity = (providerStakeAmt + userStakeAmt) / getTokenPerCapacity();
       const totalCapacity = (await getCapacity(stakeProviderId)).totalCapacityIssued.toBigInt();
       assert.equal(expectedCapacity, totalCapacity, `expected ${expectedCapacity} capacity, got ${totalCapacity}`);
 
-      // Provider uses up almost all capacity & can't send another message
       const callCapacityCost = await drainCapacity(call, stakeProviderId);
 
       // ensure provider can't send a message; they are out of capacity

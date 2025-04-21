@@ -177,16 +177,11 @@ export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
 export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableResult, C extends Codec[] = Codec[]> {
   private event?: IsEvent<C, N>;
   public readonly extrinsic: () => SubmittableExtrinsic<'rxjs', T>;
-  public readonly extrinsicFoo: SubmittableExtrinsic<"promise", T> | undefined;
-  keys: KeyringPair;
+  private keys: KeyringPair;
   public api: ApiRx;
 
-  constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>,
-              keys: KeyringPair,
-              targetEvent?: IsEvent<C, N>,
-              promiseExtrinsic?: SubmittableExtrinsic<'promise', T>) {
+  constructor(extrinsic: () => SubmittableExtrinsic<'rxjs', T>, keys: KeyringPair, targetEvent?: IsEvent<C, N>) {
       this.extrinsic = extrinsic;
-      if (promiseExtrinsic) this.extrinsicFoo = promiseExtrinsic;
     this.keys = keys;
     this.event = targetEvent;
     this.api = ExtrinsicHelper.api;
@@ -197,57 +192,11 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
-      if (this.extrinsicFoo) {
-        let res;
-        const unsub = await this.extrinsicFoo.signAndSend(
-            this.keys,
-            ({ status, events, dispatchError }) => {
-              if (status.isInBlock || status.isFinalized) {
-                events
-                    // find/filter for failed events
-                    .filter( ({ event }) =>
-                        ExtrinsicHelper.api.events.system.ExtrinsicFailed.is(event)
-                    )
-                    // we know that data for system.ExtrinsicFailed is
-                    // (DispatchError, DispatchInfo)
-                    .forEach(({ event: { data: [error, info] } }) => {
-                      if (error.isModule) {
-                        // for module errors, we have the section indexed, lookup
-                        const decoded = ExtrinsicHelper.api.registry.findMetaError(error.asModule);
-                        const { docs, method, section } = decoded;
-
-                        console.log(`${section}.${method}: ${docs.join(' ')}`);
-                      } else {
-                        // Other, CannotLookup, BadOrigin, no extra info
-                        throw(error.toString());
-                      }
-                    });
-              }
-              // status would still be set, but in the case of error we can shortcut
-              // to just check it (so an error would indicate InBlock or Finalized)
-              if (dispatchError) {
-                if (dispatchError.isModule) {
-                  // for module errors, we have the section indexed, lookup
-                  const decoded = ExtrinsicHelper.api.registry.findMetaError(dispatchError.asModule);
-                  const { docs, name, section } = decoded;
-
-                  console.log(`${section}.${name}: ${docs.join(' ')}`);
-                } else {
-                  // Other, CannotLookup, BadOrigin, no extra info
-                  console.log(dispatchError.toString());
-                }
-              }
-              res = events;
-            });
-        unsub();
-        return res;
-      } else {
         const op = this.extrinsic();
         // Era is 0 for tests due to issues with BirthBlock
         return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
                 tap((result) => {
-                  console.log(result.status.toHuman());
                   // If we learn a transaction has an error status (this does NOT include RPC errors)
                   // Then throw an error
                   if (result.isError) {
@@ -260,7 +209,6 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
                 this.parseResult(this.event)
             )
         );
-      }
     } catch (e) {
       if ((e as any).name === 'RpcError' && inputNonce === 'auto') {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
@@ -305,11 +253,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     );
   }
 
+  // TODO: figure out why paymentInfo is too low to fund txns
+  // check transaction cost difference between local+upgrade and testnet
   public getEstimatedTxFee(): Promise<bigint> {
     return firstValueFrom(
       this.extrinsic()
         .paymentInfo(getUnifiedAddress(this.keys))
-        .pipe(map((info) => info.partialFee.toBigInt() * 2n))
+        .pipe(map((info) => info.partialFee.toBigInt()))
     );
   }
 

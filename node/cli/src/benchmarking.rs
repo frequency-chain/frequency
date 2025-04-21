@@ -16,6 +16,7 @@ use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 use pallet_balances::Call as BalancesCall;
 use pallet_msa;
 use sp_inherents::InherentDataProvider;
+#[allow(deprecated)]
 use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 use sp_timestamp;
 use std::{sync::Arc, time::Duration};
@@ -128,10 +129,14 @@ pub fn create_benchmark_extrinsic(
 			period,
 			best_block.saturated_into(),
 		)),
+		#[allow(deprecated)]
 		AsTransactionExtension::from(common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce)),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
+		#[allow(deprecated)]
 		AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
+		#[allow(deprecated)]
 		AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
+		#[allow(deprecated)]
 		AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
 		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),

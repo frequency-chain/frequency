@@ -14,7 +14,7 @@ use sc_consensus_manual_seal::{
 	finalize_block, EngineCommand, FinalizeBlockParams, ManualSealParams, MANUAL_SEAL_ENGINE_ID,
 };
 
-use crate::common::listen_addrs_to_normalized_strings;
+use crate::common::start_offchain_workers;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
@@ -78,37 +78,14 @@ pub fn start_frequency_dev_sealing_node(
 	// Start off-chain workers if enabled
 	if config.offchain_worker.enabled {
 		log::info!("OFFCHAIN WORKER is Enabled!");
-		let rpc_addresses = listen_addrs_to_normalized_strings(&config.rpc.addr)
-			.expect("rpc-addr is not a valid input!");
-		let offchain_workers =
-			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
-				runtime_api_provider: client.clone(),
-				is_validator: config.role.is_authority(),
-				keystore: Some(keystore_container.keystore()),
-				offchain_db: backend.offchain_storage(),
-				transaction_pool: Some(OffchainTransactionPoolFactory::new(
-					transaction_pool.clone(),
-				)),
-				network_provider: Arc::new(network.clone()),
-				enable_http_requests: true,
-				custom_extensions: move |_hash| {
-					rpc_addresses
-						.iter()
-						.map(|a| {
-							let addr_cloned = a.clone();
-							Box::new(OcwCustomExt(addr_cloned)) as Box<_>
-						})
-						.collect()
-				},
-			})
-			.expect("offchain worker initialization failure");
-
-		// Spawn a task to handle off-chain notifications.
-		// This task is responsible for processing off-chain events or data for the blockchain.
-		task_manager.spawn_handle().spawn(
-			"offchain-workers-runner",
-			"offchain-work",
-			offchain_workers.run(client.clone(), task_manager.spawn_handle()).boxed(),
+		start_offchain_workers(
+			&client,
+			&config,
+			Some(keystore_container.keystore()),
+			&backend,
+			Some(OffchainTransactionPoolFactory::new(transaction_pool.clone())),
+			Arc::new(network.clone()),
+			&task_manager,
 		);
 	}
 
