@@ -26,9 +26,9 @@ where
 			MultiAddress::Id(i) => Ok(i),
 			MultiAddress::Address20(acc20) => {
 				log::debug!(target: "ETHEREUM", "lookup 0x{:?}", HexDisplay::from(&acc20));
-				let account_id_bytes = EthereumAddressMapper::to_account_id(&acc20);
-				let buffer: [u8; 32] = account_id_bytes.into();
-				let decoded = Self::Target::decode(&mut &buffer[..]).map_err(|_| LookupError)?;
+				let account_id_bytes = EthereumAddressMapper::to_bytes32(&acc20);
+				let decoded =
+					Self::Target::decode(&mut &account_id_bytes[..]).map_err(|_| LookupError)?;
 				Ok(decoded)
 			},
 			_ => Err(LookupError),
