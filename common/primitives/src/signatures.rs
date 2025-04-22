@@ -47,14 +47,14 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 		let mut hashed = [0u8; 32];
 		match public_key_or_address.len() {
 			20 => {
-				hashed[..20].copy_from_slice(&public_key_or_address);
+				hashed[..20].copy_from_slice(public_key_or_address);
 			},
 			32 => {
-				hashed[..].copy_from_slice(&public_key_or_address);
+				hashed[..].copy_from_slice(public_key_or_address);
 				return Box::new(hashed)
 			},
 			64 => {
-				let hashed_full = sp_io::hashing::keccak_256(&public_key_or_address);
+				let hashed_full = sp_io::hashing::keccak_256(public_key_or_address);
 				// Copy bytes 12..32 (20 bytes) from hashed_full to the beginning of hashed
 				hashed[..20].copy_from_slice(&hashed_full[12..]);
 			},

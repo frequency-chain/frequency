@@ -12,8 +12,6 @@ use frame_system::{EnsureRoot, RawOrigin};
 use sp_core::H256;
 use sp_runtime::{traits::IdentityLookup, BuildStorage, Perbill};
 
-use pallet_preimage;
-use pallet_scheduler;
 
 use crate as pallet_time_release;
 

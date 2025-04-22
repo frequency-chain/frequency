@@ -26,7 +26,7 @@ fn time_release_from_chain_spec_works() {
 
 		// Check that the release schedules built at genesis are correct
 		assert_eq!(
-			ReleaseSchedules::<Test>::get(&CHARLIE),
+			ReleaseSchedules::<Test>::get(CHARLIE),
 			vec![
 				ReleaseSchedule { start: 2u32, period: 3u32, period_count: 1u32, per_period: 5u64 },
 				ReleaseSchedule {
@@ -69,7 +69,7 @@ fn transfer_works() {
 		let schedule =
 			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 1u32, per_period: 100u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule.clone()));
-		assert_eq!(ReleaseSchedules::<Test>::get(&BOB), vec![schedule.clone()]);
+		assert_eq!(ReleaseSchedules::<Test>::get(BOB), vec![schedule.clone()]);
 		System::assert_last_event(RuntimeEvent::TimeRelease(crate::Event::ReleaseScheduleAdded {
 			from: ALICE,
 			to: BOB,
@@ -104,7 +104,7 @@ fn self_releasing() {
 
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), ALICE, schedule.clone()));
 
-		assert_eq!(ReleaseSchedules::<Test>::get(&ALICE), vec![schedule.clone()]);
+		assert_eq!(ReleaseSchedules::<Test>::get(ALICE), vec![schedule.clone()]);
 		System::assert_last_event(RuntimeEvent::TimeRelease(crate::Event::ReleaseScheduleAdded {
 			from: ALICE,
 			to: ALICE,
@@ -262,7 +262,7 @@ fn claim_for_works() {
 			),
 			20u64
 		);
-		assert!(ReleaseSchedules::<Test>::contains_key(&BOB));
+		assert!(ReleaseSchedules::<Test>::contains_key(BOB));
 
 		MockBlockNumberProvider::set(21);
 
@@ -276,7 +276,7 @@ fn claim_for_works() {
 			),
 			0
 		);
-		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 	});
 }
 
@@ -359,19 +359,19 @@ fn multiple_release_schedule_claim_works() {
 			ReleaseSchedule { start: 0u32, period: 10u32, period_count: 3u32, per_period: 10u64 };
 		assert_ok!(TimeRelease::transfer(RuntimeOrigin::signed(ALICE), BOB, schedule2.clone()));
 
-		assert_eq!(ReleaseSchedules::<Test>::get(&BOB), vec![schedule, schedule2.clone()]);
+		assert_eq!(ReleaseSchedules::<Test>::get(BOB), vec![schedule, schedule2.clone()]);
 
 		MockBlockNumberProvider::set(21);
 
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 
-		assert_eq!(ReleaseSchedules::<Test>::get(&BOB), vec![schedule2]);
+		assert_eq!(ReleaseSchedules::<Test>::get(BOB), vec![schedule2]);
 
 		MockBlockNumberProvider::set(31);
 
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 
-		assert!(!ReleaseSchedules::<Test>::contains_key(&BOB));
+		assert!(!ReleaseSchedules::<Test>::contains_key(BOB));
 
 		assert_eq!(
 			<Test as Config>::Currency::balance_frozen(
@@ -910,7 +910,7 @@ fn alice_time_releases_schedule() {
 		// However, Bob notices he still can't spend it. That is because he has not
 		// gone through 1 period =(.
 		MockBlockNumberProvider::set(
-			date_to_approximate_block_number(june_2024_release_start).into(),
+			date_to_approximate_block_number(june_2024_release_start),
 		);
 		// Doing a claim does not do anything
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
