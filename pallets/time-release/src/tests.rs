@@ -909,9 +909,7 @@ fn alice_time_releases_schedule() {
 		// Bob thinks he can claim tokens because time-release transfer has started.
 		// However, Bob notices he still can't spend it. That is because he has not
 		// gone through 1 period =(.
-		MockBlockNumberProvider::set(
-			date_to_approximate_block_number(june_2024_release_start),
-		);
+		MockBlockNumberProvider::set(date_to_approximate_block_number(june_2024_release_start));
 		// Doing a claim does not do anything
 		assert_ok!(TimeRelease::claim(RuntimeOrigin::signed(BOB)));
 		// Since the first issuance the total amount frozen increases by the new transfers: 24_996;

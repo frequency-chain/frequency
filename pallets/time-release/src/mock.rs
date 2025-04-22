@@ -12,7 +12,6 @@ use frame_system::{EnsureRoot, RawOrigin};
 use sp_core::H256;
 use sp_runtime::{traits::IdentityLookup, BuildStorage, Perbill};
 
-
 use crate as pallet_time_release;
 
 pub type AccountId = u128;
