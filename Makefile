@@ -239,7 +239,7 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check check-no-relay check-local check-testnet check-mainnet
+.PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -255,11 +255,14 @@ check-testnet:
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features frequency
 
+check-bridging:
+	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
+
 .PHONY: js
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release
+.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging
 build:
 	cargo build --features frequency-no-relay
 
@@ -283,6 +286,9 @@ build-testnet-release:
 
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
+
+build-bridging:
+	cargo build --features frequency-no-relay,frequency-bridging
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
