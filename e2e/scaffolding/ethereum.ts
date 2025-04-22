@@ -25,15 +25,16 @@ export function getUnifiedAddress(pair: KeyringPair): string {
 }
 
 /**
- * Returns ethereum style public key with prefixed zeros example: 0x00000000000000000000000019a701d23f0ee1748b5d5f883cb833943096c6c4
+ * Returns ethereum style public key with suffixed 0xee example: 0x19a701d23f0ee1748b5d5f883cb833943096c6c4eeeeeeeeeeeeeeeeeeeeeeee
  * @param pair
  */
 export function getUnifiedPublicKey(pair: KeyringPair): Uint8Array {
   if ('ethereum' === pair.type) {
-    const publicKeyBytes = hexToU8a(ethereumEncode(pair.publicKey));
+    const ethAddressBytes = hexToU8a(ethereumEncode(pair.publicKey));
+    const suffix = new Uint8Array(12).fill(0xee);
     const result = new Uint8Array(32);
-    result.fill(0, 0, 12);
-    result.set(publicKeyBytes, 12);
+    result.set(ethAddressBytes, 0);
+    result.set(suffix, 20);
     return result;
   }
   if (pair.type === 'ecdsa') {
@@ -95,9 +96,10 @@ export function getKeyringPairFromSecp256k1PrivateKey(secretKey: Uint8Array): Ke
  */
 function getSS58AccountFromEthereumAccount(accountId20Hex: string): string {
   const addressBytes = hexToU8a(accountId20Hex);
+  const suffix = new Uint8Array(12).fill(0xee);
   const result = new Uint8Array(32);
-  result.fill(0, 0, 12);
-  result.set(addressBytes, 12);
+  result.set(addressBytes, 0);
+  result.set(suffix, 20);
   return encodeAddress(result);
 }
 

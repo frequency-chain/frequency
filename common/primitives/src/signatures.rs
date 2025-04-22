@@ -18,9 +18,68 @@ use sp_runtime::{
 	traits::{Lazy, Verify},
 	MultiSignature,
 };
+extern crate alloc;
 
 /// Ethereum message prefix eip-191
 const ETHEREUM_MESSAGE_PREFIX: &[u8; 26] = b"\x19Ethereum Signed Message:\n";
+
+/// A trait that allows mapping of raw bytes to AccountIds
+pub trait AccountAddressMapper<AccountId> {
+	/// mapping to the desired address
+	fn to_account_id(public_key_or_address: &[u8]) -> AccountId;
+
+	/// mapping to bytes of a public key or an address
+	fn to_bytes32(public_key_or_address: &[u8]) -> [u8; 32];
+}
+
+/// converting raw address bytes to 32 bytes Ethereum compatible addresses
+pub struct EthereumAddressMapper;
+
+impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
+	fn to_account_id(public_key_or_address: &[u8]) -> AccountId32 {
+		Self::to_bytes32(public_key_or_address).into()
+	}
+
+	/// In this function we are trying to convert different types of valid identifiers to valid
+	/// Substrate supported 32 bytes AccountIds
+	/// ref: <https://github.com/paritytech/polkadot-sdk/blob/79b28b3185d01f2e43e098b1f57372ed9df64adf/substrate/frame/revive/src/address.rs#L84-L90>
+	/// This function have 4 types of valid inputs
+	/// 1. 20 byte ETH address which gets appended with 12 bytes of 0xEE
+	/// 2. 32 byte address is returned unchanged
+	/// 3. 64 bytes Secp256k1 public key is converted to ETH address based on <https://asecuritysite.com/encryption/ethadd> and appended 12 bytes of 0xEE
+	/// 4. 65 bytes Secp256k1 public key is also converted to ETH address after skipping first byte and appended 12 bytes of 0xEE
+	///    Anything else is invalid and would return default (all zeros) 32 bytes.
+	fn to_bytes32(public_key_or_address: &[u8]) -> [u8; 32] {
+		let mut hashed = [0u8; 32];
+		match public_key_or_address.len() {
+			20 => {
+				hashed[..20].copy_from_slice(public_key_or_address);
+			},
+			32 => {
+				hashed[..].copy_from_slice(public_key_or_address);
+				return hashed;
+			},
+			64 => {
+				let hashed_full = sp_io::hashing::keccak_256(public_key_or_address);
+				// Copy bytes 12..32 (20 bytes) from hashed_full to the beginning of hashed
+				hashed[..20].copy_from_slice(&hashed_full[12..]);
+			},
+			65 => {
+				let hashed_full = sp_io::hashing::keccak_256(&public_key_or_address[1..]);
+				// Copy bytes 12..32 (20 bytes) from hashed_full to the beginning of hashed
+				hashed[..20].copy_from_slice(&hashed_full[12..]);
+			},
+			_ => {
+				log::error!("Invalid public key size provided for {:?}", public_key_or_address);
+				return [0u8; 32];
+			},
+		};
+
+		// Fill the rest (12 bytes) with 0xEE
+		hashed[20..].fill(0xEE);
+		hashed
+	}
+}
 
 /// Signature verify that can work with any known signature types.
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -165,11 +224,9 @@ impl traits::IdentifyAccount for UnifiedSigner {
 				);
 				match decompressed_result {
 					Ok(public_key) => {
-						// calculating ethereum address prefixed with zeros
+						// calculating ethereum address compatible with `pallet-revive`
 						let decompressed = public_key.serialize();
-						let mut hashed = sp_io::hashing::keccak_256(&decompressed[1..65]);
-						hashed[..12].fill(0);
-						hashed.into()
+						EthereumAddressMapper::to_account_id(&decompressed)
 					},
 					Err(_) => {
 						log::error!("Invalid compressed public key provided");
@@ -256,8 +313,7 @@ impl Into<UnifiedSignature> for MultiSignature {
 fn check_secp256k1_signature(signature: &[u8; 65], msg: &[u8; 32], signer: &AccountId32) -> bool {
 	match sp_io::crypto::secp256k1_ecdsa_recover(signature, msg) {
 		Ok(pubkey) => {
-			let mut hashed = sp_io::hashing::keccak_256(pubkey.as_ref());
-			hashed[..12].fill(0);
+			let hashed = EthereumAddressMapper::to_bytes32(&pubkey);
 			log::debug!(target:"ETHEREUM", "eth hashed={:?} signer={:?}",
 				HexDisplay::from(&hashed),HexDisplay::from(<dyn AsRef<[u8; 32]>>::as_ref(signer)),
 			);
@@ -299,7 +355,12 @@ mod tests {
 	use crate::signatures::{UnifiedSignature, UnifiedSigner};
 	use impl_serde::serialize::from_hex;
 	use sp_core::{ecdsa, Pair};
-	use sp_runtime::traits::{IdentifyAccount, Verify};
+	use sp_runtime::{
+		traits::{IdentifyAccount, Verify},
+		AccountId32,
+	};
+
+	use super::{AccountAddressMapper, EthereumAddressMapper};
 
 	#[test]
 	fn polkadot_ecdsa_should_not_work_due_to_using_wrong_hash() {
@@ -366,5 +427,93 @@ mod tests {
 		);
 		let unified_signer = UnifiedSigner::from(public_key);
 		assert!(!unified_signature.verify(&payload[..], &unified_signer.into_account()));
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_work_as_expected_for_eth_20_bytes_addresses() {
+		// arrange
+		let eth = from_hex("0x1111111111111111111111111111111111111111").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&eth);
+		let bytes = EthereumAddressMapper::to_bytes32(&eth);
+
+		// assert
+		let expected_address =
+			from_hex("0x1111111111111111111111111111111111111111eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_same_value_for_32_byte_addresses() {
+		// arrange
+		let eth = from_hex("0x1111111111111111111111111111111111111111111111111111111111111111")
+			.expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&eth);
+		let bytes = EthereumAddressMapper::to_bytes32(&eth);
+
+		// assert
+		assert_eq!(account_id, AccountId32::new(eth.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), eth);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_ethereum_address_with_suffixes_for_64_byte_public_keys(
+	) {
+		// arrange
+		let public_key= from_hex("0x15b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a80a32fe2c78d7d8780ef1b2095810f12001fa2fcedcd1ffb0aa2ee2c7").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes32(&public_key);
+
+		// assert
+		// 0x917B536617B0A42B2ABE85AC88788825F29F0B29 is eth address associated with above public_key
+		let expected_address =
+			from_hex("0x917B536617B0A42B2ABE85AC88788825F29F0B29eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_ethereum_address_with_suffixes_for_65_byte_public_keys(
+	) {
+		// arrange
+		let public_key= from_hex("0x0415b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a80a32fe2c78d7d8780ef1b2095810f12001fa2fcedcd1ffb0aa2ee2c7").expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes32(&public_key);
+
+		// assert
+		// 0x917B536617B0A42B2ABE85AC88788825F29F0B29 is eth address associated with above public_key
+		let expected_address =
+			from_hex("0x917B536617B0A42B2ABE85AC88788825F29F0B29eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_should_return_the_default_zero_values_for_any_invalid_length() {
+		// arrange
+		let public_key = from_hex(
+			"0x010415b5e4aeac2086ee96ab2292ee2720da0b2d3c43b5c699ccdbfd38387e2f71dc167075a801",
+		)
+		.expect("should work");
+
+		// act
+		let account_id = EthereumAddressMapper::to_account_id(&public_key);
+		let bytes = EthereumAddressMapper::to_bytes32(&public_key);
+
+		// assert
+		let expected_address = vec![0u8; 32]; // zero default values
+		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
+		assert_eq!(bytes.to_vec(), expected_address);
 	}
 }
