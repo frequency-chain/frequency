@@ -281,10 +281,6 @@ impl Clone for MaxPaginatedPageId {
 	}
 }
 
-impl Eq for MaxPaginatedPageId {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxPaginatedPageId {
 	fn eq(&self, _other: &Self) -> bool {
 		true
@@ -301,10 +297,6 @@ impl Clone for MaxItemizedPageSizeBytes {
 	fn clone(&self) -> Self {
 		MaxItemizedPageSizeBytes {}
 	}
-}
-
-impl Eq for MaxItemizedPageSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
 impl PartialEq for MaxItemizedPageSizeBytes {
@@ -325,10 +317,6 @@ impl Clone for MaxPaginatedPageSizeBytes {
 	}
 }
 
-impl Eq for MaxPaginatedPageSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxPaginatedPageSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
@@ -345,10 +333,6 @@ impl Clone for MaxItemizedBlobSizeBytes {
 	fn clone(&self) -> Self {
 		MaxItemizedBlobSizeBytes {}
 	}
-}
-
-impl Eq for MaxItemizedBlobSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
 }
 
 impl PartialEq for MaxItemizedBlobSizeBytes {

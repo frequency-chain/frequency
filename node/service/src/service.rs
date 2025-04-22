@@ -32,6 +32,7 @@ use cumulus_primitives_core::{
 	ParaId,
 };
 use cumulus_relay_chain_interface::{OverseerHandle, RelayChainError, RelayChainInterface};
+use sc_service::TransactionPoolOptions;
 
 // Substrate Imports
 use frame_benchmarking_cli::SUBSTRATE_REFERENCE_HARDWARE;
@@ -86,6 +87,7 @@ type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, P
 pub fn new_partial(
 	config: &Configuration,
 	instant_sealing: bool,
+	override_pool_config: Option<TransactionPoolOptions>,
 ) -> Result<
 	PartialComponents<
 		ParachainClient,
@@ -137,6 +139,8 @@ pub fn new_partial(
 		telemetry
 	});
 
+	let transaction_pool_option = override_pool_config.unwrap_or(config.transaction_pool.clone());
+
 	// See https://github.com/paritytech/polkadot-sdk/pull/4639 for how to enable the fork-aware pool.
 	let transaction_pool = Arc::from(
 		sc_transaction_pool::Builder::new(
@@ -144,7 +148,7 @@ pub fn new_partial(
 			client.clone(),
 			config.role.is_authority().into(),
 		)
-		.with_options(config.transaction_pool.clone())
+		.with_options(transaction_pool_option)
 		.with_prometheus(config.prometheus_registry())
 		.build(),
 	);
@@ -196,6 +200,7 @@ pub async fn start_parachain_node(
 	collator_options: CollatorOptions,
 	para_id: ParaId,
 	hwbench: Option<sc_sysinfo::HwBench>,
+	override_pool_config: Option<TransactionPoolOptions>,
 ) -> sc_service::error::Result<(TaskManager, Arc<ParachainClient>)> {
 	use crate::common::listen_addrs_to_normalized_strings;
 	use common_primitives::offchain::OcwCustomExt;
@@ -203,7 +208,7 @@ pub async fn start_parachain_node(
 
 	let parachain_config = prepare_node_config(parachain_config);
 
-	let params = new_partial(&parachain_config, false)?;
+	let params = new_partial(&parachain_config, false, override_pool_config)?;
 	let (block_import, mut telemetry, telemetry_worker_handle) = params.other;
 
 	let prometheus_registry = parachain_config.prometheus_registry().cloned();
