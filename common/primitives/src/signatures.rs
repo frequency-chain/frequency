@@ -42,13 +42,13 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 
 	/// In this function we are trying to convert different types of valid identifiers to valid
 	/// Substrate supported 32 bytes AccountIds
-	/// ref: https://github.com/paritytech/polkadot-sdk/blob/79b28b3185d01f2e43e098b1f57372ed9df64adf/substrate/frame/revive/src/address.rs#L84-L90
+	/// ref: <https://github.com/paritytech/polkadot-sdk/blob/79b28b3185d01f2e43e098b1f57372ed9df64adf/substrate/frame/revive/src/address.rs#L84-L90>
 	/// This function have 4 types of valid inputs
 	/// 1. 20 byte ETH address which gets appended with 12 bytes of 0xEE
 	/// 2. 32 byte address is returned unchanged
-	/// 3. 64 bytes Secp256k1 public key is converted to ETH address based on https://asecuritysite.com/encryption/ethadd and appended 12 bytes of 0xEE
+	/// 3. 64 bytes Secp256k1 public key is converted to ETH address based on <https://asecuritysite.com/encryption/ethadd> and appended 12 bytes of 0xEE
 	/// 4. 65 bytes Secp256k1 public key is also converted to ETH address after skipping first byte and appended 12 bytes of 0xEE
-	/// Anything else is invalid and would return default (all zeros) 32 bytes.
+	///    Anything else is invalid and would return default (all zeros) 32 bytes.
 	fn to_bytes32(public_key_or_address: &[u8]) -> [u8; 32] {
 		let mut hashed = [0u8; 32];
 		match public_key_or_address.len() {
