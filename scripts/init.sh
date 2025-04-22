@@ -73,7 +73,6 @@ start-paseo-collator-alice)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
@@ -100,7 +99,6 @@ start-paseo-collator-bob)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --pool-type=fork-aware \
     $offchain_params \
   ;;
 
@@ -118,7 +116,6 @@ start-frequency-instant)
     rm -rf $parachain_dir
   fi
 
-  # Fork aware pool is not supported with instant sealing
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -151,7 +148,6 @@ start-frequency-interval)
     rm -rf $parachain_dir
   fi
 
-  # Fork aware pool is only supported with this feature
   ./target/debug/frequency \
     --dev \
     --state-pruning archive \
@@ -169,7 +165,6 @@ start-frequency-interval)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --pool-type=fork-aware \
     $offchain_params \
     --tmp
   ;;
@@ -202,7 +197,6 @@ start-frequency-manual)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --pool-type=fork-aware \
    $offchain_params \
     --tmp
   ;;
@@ -227,7 +221,6 @@ start-frequency-container)
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
-    --pool-type=fork-aware \
    $offchain_params \
   ;;
 

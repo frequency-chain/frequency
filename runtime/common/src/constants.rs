@@ -358,10 +358,6 @@ impl Clone for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl Eq for MaxItemizedBlobSizeBytes {
-	fn assert_receiver_is_total_eq(&self) {}
-}
-
 impl PartialEq for MaxItemizedBlobSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		// This is a constant. It is always equal to itself
