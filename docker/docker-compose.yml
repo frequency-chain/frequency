@@ -32,7 +32,6 @@ services:
       --rpc-external
       --rpc-cors=all
       --rpc-methods=Unsafe
-      --pool-type=fork-aware
       --alice
       -ltxpool=trace
     restart: unless-stopped
@@ -66,7 +65,6 @@ services:
       --rpc-external
       --rpc-cors=all
       --rpc-methods=Unsafe
-      --pool-type=fork-aware
       --bob
       --log="main,info"
     restart: unless-stopped

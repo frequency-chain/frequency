@@ -14,6 +14,7 @@ use sc_consensus_manual_seal::{
 use crate::common::start_offchain_workers;
 use sc_network::NetworkBackend;
 use sc_service::{Configuration, TaskManager};
+use sc_transaction_pool::TransactionPoolOptions;
 use sc_transaction_pool_api::{OffchainTransactionPoolFactory, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -30,6 +31,7 @@ pub fn start_frequency_dev_sealing_node(
 	sealing_mode: SealingMode,
 	sealing_interval: u16,
 	sealing_create_empty_blocks: bool,
+	override_pool_config: Option<TransactionPoolOptions>,
 ) -> Result<TaskManager, sc_service::error::Error> {
 	let extra: String = if sealing_mode == SealingMode::Interval {
 		format!(" ({}s interval)", sealing_interval)
@@ -52,7 +54,7 @@ pub fn start_frequency_dev_sealing_node(
 		select_chain: maybe_select_chain,
 		transaction_pool,
 		other: (_block_import, mut telemetry, _),
-	} = new_partial(&config, true)?;
+	} = new_partial(&config, true, override_pool_config)?;
 	let metrics = sc_network::NetworkWorker::<Block, Hash>::register_notification_metrics(
 		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
 	);
