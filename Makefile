@@ -240,6 +240,15 @@ docker-prune:
 	./scripts/prune_all.sh
 
 .PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
+# Add a target to run all checks
+check-all:
+	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
+	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
+	SKIP_WASM_BUILD= cargo check --features frequency-local
+	SKIP_WASM_BUILD= cargo check --features frequency-testnet
+	SKIP_WASM_BUILD= cargo check --features frequency
+	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
+
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
