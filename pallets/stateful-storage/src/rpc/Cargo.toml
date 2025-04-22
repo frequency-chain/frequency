@@ -1,6 +1,6 @@
 [package]
 name = "pallet-stateful-storage-rpc"
-version = "0.0.0"
+version = "1.16.0+polkadotstable2503"
 description = "RPC package for stateful storage"
 authors = ["Frequency"]
 license = "Apache-2.0"
