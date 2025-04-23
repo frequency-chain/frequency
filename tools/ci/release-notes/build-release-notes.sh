@@ -7,7 +7,7 @@ changelog=$3
 runtime_mainnet_info=$4
 runtime_paseo_info=$5
 is_full_release=$6
-metadata_change_summary_file=$6
+metadata_change_summary_file=$7
 
 # Extract the contents of the Summary section from the metadata change summary file, but remove trailing whitespace/blank lines
 metadata_change_summary=`sed -n '/SUMMARY/,/^------/p' "$metadata_change_summary_file" | sed '1d;$d' | sed -e :a -e '/^[[:space:]]*$/{$d;N;ba' -e '}'`
