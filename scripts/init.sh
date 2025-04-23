@@ -212,6 +212,7 @@ start-frequency-container)
 
   ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" \
+    --state-pruning archive \
     --alice \
     --unsafe-force-node-key-generation \
     --base-path=$parachain_dir/data \
