@@ -268,7 +268,7 @@ on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 # `RUNTIME_METADATA_HASH` environment variable set for the `CheckMetadataHash`
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
-frequency-lint-check = []
+frequency-lint-check = ["frequency-bridging"]
 test = []
 parameterized-consensus-hook = []
 force-debug=[
