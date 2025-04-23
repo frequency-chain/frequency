@@ -61,6 +61,7 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 	runtime.clone()
 }
 
+#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 #[allow(clippy::unwrap_used)]
 fn frequency_genesis_config() -> serde_json::Value {
 	#[cfg(not(feature = "runtime-benchmarks"))]
@@ -115,6 +116,7 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 		"frequency-local" => frequency_local_genesis_config(),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" => frequency_testnet_genesis_config(),
+		#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 		"frequency" => frequency_genesis_config(),
 		_ => return None,
 	};
