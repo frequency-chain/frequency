@@ -18,6 +18,7 @@
 //! - Runtime interfaces for end users beyond just State Queries
 
 use common_primitives::{msa::*, node::BlockNumber};
+use frame_support::pallet_prelude::ConstU32;
 use parity_scale_codec::Codec;
 extern crate alloc;
 use alloc::vec::Vec;
@@ -45,5 +46,8 @@ sp_api::decl_runtime_apis! {
 		/// Get the list of all delegated providers with schema permission grants (if any) that exist in any delegation between the delegator and provider
 		/// The returned list contains both schema id and the block number at which permission was revoked (0 if currently not revoked)
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>>;
+
+		/// Get the Ethereum address of the given MSA
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> frame_support::BoundedVec<u8, ConstU32<42>>;
 	}
 }

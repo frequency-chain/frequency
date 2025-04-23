@@ -19,8 +19,8 @@ use crate::{
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationResponse, DelegatorId, ProviderId, ProviderRegistryEntry,
-		SchemaGrant, SchemaGrantValidator,
+		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
+		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
@@ -678,4 +678,26 @@ fn try_mutate_delegation_success() {
 
 		assert!(DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).is_some());
 	});
+}
+
+#[test]
+fn msa_id_to_eth_address_binary() {
+	let msa_id: MessageSourceId = 1234u64;
+	let expected = "0x00000000000004d247656E657261746564000000";
+	let eth_address = Msa::msa_id_to_eth_address(msa_id);
+	let eth_checksummed = Msa::eth_address_to_checksummed_string(&eth_address);
+	let generated = core::str::from_utf8(&eth_checksummed).unwrap();
+	assert_eq!(generated, expected);
+}
+
+#[test]
+fn eth_address_to_msa_id() {
+	let msa_id: MessageSourceId = 1234u64;
+	let eth_address: [u8; 20] = [
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xD2, 0x47, 0x65, 0x6E, 0x65, 0x72, 0x61, 0x74,
+		0x65, 0x64, 0x00, 0x00, 0x00,
+	];
+	let generated_msa_id = Msa::eth_address_to_msa_id(&eth_address);
+	assert_eq!(generated_msa_id.is_some(), true);
+	assert_eq!(generated_msa_id.unwrap(), msa_id);
 }

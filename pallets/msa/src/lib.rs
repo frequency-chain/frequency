@@ -56,6 +56,7 @@ use common_primitives::{
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
+use sp_io::hashing::keccak_256;
 #[allow(deprecated)]
 #[allow(unused)]
 use sp_runtime::{
@@ -89,6 +90,9 @@ mod tests;
 pub mod types;
 
 pub mod weights;
+
+const GENERATED_ADDRESS_TAG: &[u8] = b"Generated";
+
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -1326,6 +1330,78 @@ impl<T: Config> Pallet<T> {
 		}
 
 		Ok(result)
+	}
+
+	/// Converts an MSA ID into a synthetic Ethereum address (raw 20-byte format) as follows:
+	/// [0..8]:   u64 (big endian)
+	/// [8..17]:  b"Generated"
+	/// [17..20]: all zeroes
+	pub fn msa_id_to_eth_address(id: MessageSourceId) -> [u8; 20] {
+		let mut address = [0u8; 20];
+
+		address[..8].copy_from_slice(&id.to_be_bytes());
+		address[8..(8 + GENERATED_ADDRESS_TAG.len())].copy_from_slice(GENERATED_ADDRESS_TAG);
+
+		address
+	}
+
+	/// Strictly decodes a synthetic Ethereum address back into an MSA ID,
+	/// only if the format matches exactly:
+	/// [0..8]:   u64 (big endian)
+	/// [8..17]:  b"Generated"
+	/// [17..20]: all zeroes
+	pub fn eth_address_to_msa_id(address: &[u8; 20]) -> Option<MessageSourceId> {
+		// Check tag
+		if &address[8..17] != GENERATED_ADDRESS_TAG {
+			return None;
+		}
+
+		// Check trailing zeros
+		if address[17..].iter().any(|&b| b != 0) {
+			return None;
+		}
+
+		// Extract and return u64
+		let mut id_bytes = [0u8; 8];
+		id_bytes.copy_from_slice(&address[..8]);
+		Some(u64::from_be_bytes(id_bytes))
+	}
+
+	/// Converts a 20-byte synthetic Ethereum address into a checksummed string format,
+	/// using ERC-55 checksum rules.
+	/// Formats a 20-byte address into an EIP-55 checksummed `0x...` string.
+	pub fn eth_address_to_checksummed_string(addr: &[u8; 20]) -> BoundedVec<u8, ConstU32<42>> {
+		const HEXCHARS: &[u8; 16] = b"0123456789abcdef";
+
+		// Step 1: Lowercase hex encoding of the address
+		let mut hex = [0u8; 40];
+		for (i, byte) in addr.iter().enumerate() {
+			hex[2 * i] = HEXCHARS[(byte >> 4) as usize];
+			hex[2 * i + 1] = HEXCHARS[(byte & 0x0F) as usize];
+		}
+
+		// Step 2: keccak256 of the lowercase hex string
+		let hash = keccak_256(&hex);
+
+		// Step 3: Apply checksum casing based on hash bits
+		let mut output = [0u8; 42];
+		output[0] = b'0';
+		output[1] = b'x';
+
+		for i in 0..40 {
+			let c = hex[i];
+			let hash_byte = hash[i / 2];
+			let nibble = if i % 2 == 0 { (hash_byte >> 4) & 0x0F } else { hash_byte & 0x0F };
+
+			// For letters a–f (ASCII 97–102), uppercase if nibble >= 8
+			output[2 + i] = if (b'a'..=b'f').contains(&c) && nibble >= 8 {
+				c - 32 // to ASCII uppercase
+			} else {
+				c
+			};
+		}
+
+		BoundedVec::truncate_from(output.to_vec())
 	}
 
 	/// Adds a signature to the `PayloadSignatureRegistryList`
