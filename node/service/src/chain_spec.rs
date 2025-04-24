@@ -13,12 +13,11 @@ pub type DummyChainSpec = sc_service::GenericChainSpec<Extensions>;
 #[cfg(feature = "frequency")]
 pub mod frequency;
 
-#[cfg(any(
-	feature = "frequency-testnet",
-	feature = "frequency-local",
-	feature = "frequency-no-relay"
-))]
+#[cfg(feature = "frequency-testnet")]
 pub mod frequency_paseo;
+
+#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
+pub mod frequency_paseo_local;
 
 #[cfg(feature = "frequency-no-relay")]
 pub mod frequency_dev;
