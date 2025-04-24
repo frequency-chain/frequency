@@ -134,6 +134,38 @@ start-frequency-instant)
     --tmp
   ;;
 
+start-frequency-instant-bridging)
+  printf "\nBuilding Frequency without relay and with Bridging. Running with instant sealing ...\n"
+  # Uncomment/swap below if you want to see debug logs in the Frequency node
+  # cargo build --features frequency-no-relay,force-debug
+  cargo build --features frequency-no-relay,frequency-bridging
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  ./target/debug/frequency \
+    --dev \
+    --state-pruning archive \
+    -lbasic-authorship=debug \
+    -ltxpool=debug \
+    -lruntime=debug \
+    --sealing=instant \
+    --no-telemetry \
+    --no-prometheus \
+    --port $((30333)) \
+    --rpc-port $((9944)) \
+    --rpc-external \
+    --rpc-cors all \
+    --rpc-methods=Unsafe \
+    $offchain_params \
+    --tmp
+  ;;
+
 start-frequency-interval)
   defaultInterval=6
   interval=${3-$defaultInterval}

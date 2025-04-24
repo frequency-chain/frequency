@@ -109,6 +109,7 @@ sp-debug-derive = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
+  "assets-common/std",
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-parachain-system/std",
@@ -121,6 +122,7 @@ std = [
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
   "log/std",
+  "pallet-assets/std",
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-balances/std",
@@ -255,7 +257,11 @@ frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
-frequency-bridging = [ "common-runtime/frequency-bridging", "pallet-assets"]
+frequency-bridging = [ 
+  "common-runtime/frequency-bridging",
+  "pallet-assets",
+  "assets-common",
+]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
