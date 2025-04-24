@@ -65,15 +65,18 @@ start-paseo-collator-alice)
 
   "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_alice/data
 
-  ./scripts/run_collator.sh \
+  NODE_PARACHAIN_RPC_PORT=9943 ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --alice \
     --base-path=$parachain_dir_alice/data \
     --force-authoring \
+    --discover-local \
     --port $((30333)) \
     --rpc-port $((9944)) \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --no-prometheus \
+    --no-hardware-benchmarks \
     $offchain_params \
   ;;
 
@@ -91,15 +94,18 @@ start-paseo-collator-bob)
 
   "${Frequency_BINARY_PATH:-./target/release/frequency}" key generate-node-key --base-path=$parachain_dir_bob/data
 
-  ./scripts/run_collator.sh \
+  NODE_PARACHAIN_RPC_PORT=9944 ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --bob \
     --base-path=$parachain_dir_bob/data \
+    --discover-local \
     --force-authoring \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
     --rpc-cors all \
     --rpc-methods=Unsafe \
+    --no-prometheus \
+    --no-hardware-benchmarks \
     $offchain_params \
   ;;
 
@@ -236,22 +242,40 @@ register-frequency-paseo-local)
 onboard-frequency-paseo-local)
   echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
 
-   onboard_dir="$base_dir/onboard"
-   mkdir -p $onboard_dir
-   wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
+  onboard_dir="$base_dir/onboard"
+  mkdir -p $onboard_dir
+  wasm_location="$onboard_dir/${parachain}-${para_id}.wasm"
 
-   # THE `-r` is important for it to be binary instead of hex
-   # Make sure the docker does NOT use -t as it breaks the binary output
-    if [ "$docker_onboard" == "true" ]; then
-      genesis=$(docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-state --chain="frequency-paseo-local")
-      docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
-    else
-      genesis=$(RUST_LOG=off ./target/release/frequency export-genesis-state --chain="frequency-paseo-local")
-      RUST_LOG=off ./target/release/frequency export-genesis-wasm --chain="frequency-paseo-local" -r > $wasm_location
-    fi
+  # THE `-r` is important for it to be binary instead of hex
+  # Make sure the docker does NOT use -t as it breaks the binary output
+  if [ "$docker_onboard" == "true" ]; then
+    genesis=$(docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-state --chain="frequency-paseo-local")
+    docker run --rm -e RUST_LOG=off -i ${frequency_docker_image} /frequency/target/release/frequency export-genesis-wasm --raw --chain="frequency-paseo-local" > $wasm_location
+  else
+    genesis=$(RUST_LOG=off ./target/release/frequency export-genesis-state --chain=frequency-paseo-local)
+        RUST_LOG=off ./target/release/frequency export-genesis-wasm --raw --chain=frequency-paseo-local > $wasm_location
+  fi
 
   cd scripts/js/onboard
-  npm i && npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}" "${wasm_location}"
+  echo "WASM File md5: $(md5 "${wasm_location}")"
+  wasm_hex=$(echo -n "0x"`xxd -ps -c 0 "${wasm_location}"`)
+  echo "WASM Hex md5: $(echo -n "${wasm_hex}" | md5)"
+  npm i && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
+  ;;
+
+# Useful in combination with make specs-frequency-paseo-local-*
+onboard-res-local)
+  echo "Onboarding parachain with runtime '$parachain' and id '$para_id'..."
+  echo "Assuming that the files in res/genesis/local are correct..."
+
+  wasm_location="../../../res/genesis/local/frequency-paseo-local-2000.compressed.wasm"
+  genesis=$(cat res/genesis/local/frequency-paseo-local-2000-genesis-state)
+
+  cd scripts/js/onboard
+  echo "WASM File md5: $(md5 "${wasm_location}")"
+  wasm_hex=$(echo -n "0x"`xxd -ps -c 0 "${wasm_location}"`)
+  echo "WASM Hex md5: $(echo -n "${wasm_hex}" | md5)"
+  npm i && echo -n "${wasm_hex}" | npm run onboard "ws://0.0.0.0:9946" "//Alice" ${para_id} "${genesis}"
   ;;
 
 offboard-frequency-paseo-local)

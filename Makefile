@@ -90,6 +90,10 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
+.PHONY: onboard-res-local
+onboard-debug:
+	./scripts/init.sh onboard-res-local
+
 .PHONY: onboard-docker
 onboard-docker:
 	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
