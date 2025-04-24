@@ -224,6 +224,8 @@ This option runs two collator nodes as local host processes and two relay chain 
    make start-paseo-relay
    ```
 
+   ALERT: You likely need to manually set the scheduling lookahead. `sudo(configuration.setSchedulingLookahead(3))` and wait for it to apply.
+
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
    previously registered on a running relay chain and no new registration is required,
    then you can skip the above step._
