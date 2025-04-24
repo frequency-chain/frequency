@@ -435,7 +435,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 152,
+	spec_version: 153,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -449,7 +449,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 152,
+	spec_version: 153,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1674,8 +1674,10 @@ sp_api::impl_runtime_apis! {
 			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
 		}
 
-		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> BoundedVec<u8, ConstU32<42>> {
-			Msa::eth_address_to_checksummed_string(&Msa::msa_id_to_eth_address(msa_id))
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> [u8; 42] {
+			let addr = Msa::eth_address_to_checksummed_string(&Msa::msa_id_to_eth_address(msa_id));
+			log::debug!("Ethereum address for MSA {}: [{}, {}, {}, {}]", msa_id, addr[0], addr[1], addr[2], addr[3]);
+			addr
 		}
 	}
 

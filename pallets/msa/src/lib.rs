@@ -1370,11 +1370,11 @@ impl<T: Config> Pallet<T> {
 	/// Converts a 20-byte synthetic Ethereum address into a checksummed string format,
 	/// using ERC-55 checksum rules.
 	/// Formats a 20-byte address into an EIP-55 checksummed `0x...` string.
-	pub fn eth_address_to_checksummed_string(addr: &[u8; 20]) -> BoundedVec<u8, ConstU32<42>> {
+	pub fn eth_address_to_checksummed_string(addr: &[u8; 20]) -> [u8; 42] {
 		const HEXCHARS: &[u8; 16] = b"0123456789abcdef";
 
 		// Step 1: Lowercase hex encoding of the address
-		let mut hex = [0u8; 40];
+		let mut hex: [u8; 40] = [0u8; 40];
 		for (i, byte) in addr.iter().enumerate() {
 			hex[2 * i] = HEXCHARS[(byte >> 4) as usize];
 			hex[2 * i + 1] = HEXCHARS[(byte & 0x0F) as usize];
@@ -1401,7 +1401,7 @@ impl<T: Config> Pallet<T> {
 			};
 		}
 
-		BoundedVec::truncate_from(output.to_vec())
+		output
 	}
 
 	/// Adds a signature to the `PayloadSignatureRegistryList`
