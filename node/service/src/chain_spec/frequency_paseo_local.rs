@@ -12,8 +12,6 @@ pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 // Generic chain spec, in case when we don't have the native runtime.
 pub type RelayChainSpec = sc_service::GenericChainSpec<RelayChainExtensions>;
 
-// TODO: Remove once on a Polkadot-SDK with Paseo-Local
-#[allow(clippy::unwrap_used)]
 /// Generates the Paseo-Local Relay chain spec from the json
 pub fn load_paseo_local_spec() -> RelayChainSpec {
 	RelayChainSpec::from_json_bytes(&include_bytes!("../../../../resources/paseo-local.json")[..])
@@ -34,6 +32,7 @@ pub fn local_paseo_testnet_config() -> ChainSpec {
 		},
 	)
 	.with_name("Frequency Local Testnet")
+	.with_id("frequency-local")
 	.with_protocol_id("frequency-paseo-local")
 	.with_properties(properties)
 	.with_chain_type(ChainType::Local)
