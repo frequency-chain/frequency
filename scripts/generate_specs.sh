@@ -3,7 +3,7 @@
 set -e
 
 parachain_id=$1
-build_step=$2
+chain=$2
 profile=$3
 if [[ $parachain_id == "" ]]; then
   echo "Chain Name or Parachain ID argument not provided"
@@ -15,23 +15,32 @@ if [ ! -x "$BUILT_TARGET" ]; then
     echo "FATAL: $BUILT_TARGET does not exist, or not executable, rebuild binary to continue"
     exit 1
 fi
-case $build_step in
-  paseo-2000)
-    mkdir -p ./res/genesis/local
-    echo "Building Spec for frequency testnet paseo localnet paraid=2000"
-    $PWD/target/$profile/frequency build-spec --disable-default-bootnode --chain=frequency-paseo-local > ./res/genesis/local/frequency-spec-paseo.json
-    sed -i.bu "s/\"parachainId\": 2000/\"parachainId\": $parachain_id/g" ./res/genesis/local/frequency-spec-paseo.json
-    sed -i.bu "s/\"para_id\": 2000/\"para_id\": $parachain_id/g" ./res/genesis/local/frequency-spec-paseo.json
-    $PWD/target/$profile/frequency build-spec --raw --disable-default-bootnode --chain ./res/genesis/local/frequency-spec-paseo.json > ./res/genesis/local/paseo-local-frequency-2000-raw.json
-    rm ./res/genesis/local/frequency-spec-paseo.json.bu
 
-    echo "Exporting state and wasm for frequency testnet paseo localnet paraid=2000"
-    $PWD/target/$profile/frequency export-genesis-state --chain ./res/genesis/local/paseo-local-frequency-2000-raw.json > ./res/genesis/local/frequency-paseo-genesis-state
-    $PWD/target/$profile/frequency export-genesis-wasm --chain ./res/genesis/local/paseo-local-frequency-2000-raw.json > ./res/genesis/local/frequency-paseo-genesis-wasm
-    ;;
-  *)
-    echo "Unknown build step: $build_step"
-    exit 1
-    ;;
+spec_file="./res/genesis/local/${chain}-${parachain_id}.json"
+uncompressed_wasm="./res/genesis/local/${chain}-${parachain_id}.wasm"
+compressed_wasm="./res/genesis/local/${chain}-${parachain_id}.compressed.wasm"
+genesis_state="./res/genesis/local/${chain}-${parachain_id}-genesis-state"
+hex_wasm_file="./res/genesis/local/${chain}-${parachain_id}-wasm-hex"
 
-esac
+mkdir -p ./res/genesis/local
+echo "Building Spec for ${chain} paraid=${parachain_id}"
+./target/$profile/frequency build-spec --disable-default-bootnode --chain="${chain}" > "${spec_file}"
+
+cp ./target/$profile/wbuild/frequency-runtime/frequency_runtime.wasm "${uncompressed_wasm}"
+
+subwasm compress "${uncompressed_wasm}" "${compressed_wasm}"
+
+# Update the spec with the compressed WASM
+hex_compressed_wasm=`xxd -ps -c 0 "${compressed_wasm}"`
+echo -n "0x${hex_compressed_wasm}" > "${hex_wasm_file}"
+
+jq --rawfile code "${hex_wasm_file}" '.genesis.runtimeGenesis.code = $code' "${spec_file}" > "${spec_file}.tmp" && mv "${spec_file}.tmp" "${spec_file}"
+
+echo "Exporting state and wasm for ${chain} paraid=${parachain_id}"
+./target/$profile/frequency export-genesis-state --chain="${spec_file}" > "${genesis_state}"
+
+echo "Spec File: ${spec_file}"
+echo "Uncompressed wasm: ${uncompressed_wasm}"
+echo "Compressed wasm: ${compressed_wasm}"
+echo "Genesis State: ${genesis_state}"
+echo "Compressed wasm Hex: ${hex_wasm_file}"

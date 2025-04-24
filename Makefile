@@ -98,12 +98,13 @@ onboard-docker:
 offboard:
 	./scripts/init.sh offboard-frequency-paseo-local
 
-.PHONY: specs-testnet-2000 specs-paseo-local
-specs-testnet-2000:
-	./scripts/generate_specs.sh 2000 paseo-2000 release
+.PHONY: specs-frequency-paseo-local-debug specs-frequency-paseo-local-release
 
-specs-paseo-local:
-	./scripts/generate_relay_specs.sh
+specs-frequency-paseo-local-debug:
+	./scripts/generate_specs.sh 2000 frequency-paseo-local debug
+
+specs-frequency-paseo-local-release:
+	./scripts/generate_specs.sh 2000 frequency-paseo-local release
 
 .PHONY: format
 format:
