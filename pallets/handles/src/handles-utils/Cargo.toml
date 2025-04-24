@@ -6,7 +6,7 @@ build = "build.rs"
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = "handles-utils"
-version = "0.0.0"
+version = "1.16.1+polkadotstable2503"
 publish = false
 repository = "https://github.com/frequency-chain/frequency/"
 
