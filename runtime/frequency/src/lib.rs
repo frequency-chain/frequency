@@ -500,7 +500,7 @@ parameter_types! {
 		.build_or_panic();
 }
 
-// ---------- Assets pallet parameters ----------
+// ---------- Foreign Assets pallet parameters ----------
 #[cfg(feature = "frequency-bridging")]
 parameter_types! {
 	pub const AssetDeposit: Balance = 0;
@@ -1339,7 +1339,7 @@ impl pallet_handles::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 }
 
-// ---------- Assets pallet configuration ----------
+// ---------- Foreign Assets pallet configuration ----------
 #[cfg(feature = "frequency-bridging")]
 // use xcm_config::{ForeignAssetsAssetId, RelayLocation, XcmOriginToTransactDispatchOrigin};
 impl pallet_assets::Config for Runtime {
@@ -1457,7 +1457,7 @@ construct_runtime!(
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 		#[cfg(feature = "frequency-bridging")]
-		Assets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
+		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
 	}
 );
 
@@ -1497,7 +1497,7 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
-		[pallet_assets, Assets]
+		[pallet_assets, ForeignAssets]
 	);
 }
 
