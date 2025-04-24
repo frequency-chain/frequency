@@ -53,7 +53,6 @@ pallet-proxy = { workspace = true }
 
 # Bridging
 pallet-assets = { workspace = true, optional = true }
-assets-common = { workspace = true, optional = true }
 
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
@@ -109,7 +108,6 @@ sp-debug-derive = { workspace = true, optional = true }
 [features]
 default = ["std"]
 std = [
-  "assets-common/std",
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",
   "cumulus-pallet-parachain-system/std",
@@ -257,11 +255,7 @@ frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
-frequency-bridging = [ 
-  "common-runtime/frequency-bridging",
-  "pallet-assets",
-  "assets-common",
-]
+frequency-bridging = ["common-runtime/frequency-bridging"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
@@ -274,7 +268,7 @@ on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 # `RUNTIME_METADATA_HASH` environment variable set for the `CheckMetadataHash`
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
-frequency-lint-check = ["frequency-bridging"]
+frequency-lint-check = ["frequency-bridging", "pallet-assets"]
 test = []
 parameterized-consensus-hook = []
 force-debug=[

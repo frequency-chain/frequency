@@ -442,7 +442,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 152,
+	spec_version: 154,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -456,7 +456,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 152,
+	spec_version: 154,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1359,7 +1359,6 @@ impl pallet_assets::Config for Runtime {
 	type ForceOrigin = EnsureRoot<AccountId>;
 
 	type AssetDeposit = ForeignAssetsAssetDeposit;
-	// type AssetAccountDeposit = AssetAccountDeposit;
 	type MetadataDepositBase = ForeignAssetsMetadataDepositBase;
 	type MetadataDepositPerByte = ForeignAssetsMetadataDepositPerByte;
 	type ApprovalDeposit = ForeignAssetsApprovalDeposit;

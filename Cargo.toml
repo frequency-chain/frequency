@@ -80,7 +80,6 @@ pallet-proxy = { git = "https://github.com/paritytech/polkadot-sdk", branch = "s
 
 # Bridging Pallets
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
-assets-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 
 # polkadot
 polkadot-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }

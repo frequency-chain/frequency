@@ -631,28 +631,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9b34d609dfbaf33d6889b2b7106d3ca345eacad44200913df5ba02bfd31d2ba9"
 
 [[package]]
-name = "assets-common"
-version = "0.21.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "impl-trait-for-tuples",
- "pallet-asset-conversion",
- "pallet-assets",
- "pallet-xcm",
- "parachains-common",
- "parity-scale-codec",
- "scale-info",
- "sp-api",
- "sp-runtime",
- "staging-xcm",
- "staging-xcm-builder",
- "staging-xcm-executor",
- "tracing",
-]
-
-[[package]]
 name = "async-channel"
 version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2476,23 +2454,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cumulus-primitives-utility"
-version = "0.20.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
-dependencies = [
- "cumulus-primitives-core",
- "frame-support",
- "log",
- "pallet-asset-conversion",
- "parity-scale-codec",
- "polkadot-runtime-common",
- "sp-runtime",
- "staging-xcm",
- "staging-xcm-builder",
- "staging-xcm-executor",
-]
-
-[[package]]
 name = "cumulus-relay-chain-inprocess-interface"
 version = "0.23.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
@@ -3947,7 +3908,6 @@ dependencies = [
 name = "frequency-runtime"
 version = "0.0.0"
 dependencies = [
- "assets-common",
  "common-primitives",
  "common-runtime",
  "cumulus-pallet-aura-ext",
@@ -7198,23 +7158,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-asset-tx-payment"
-version = "40.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
-dependencies = [
- "frame-benchmarking",
- "frame-support",
- "frame-system",
- "pallet-transaction-payment",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-core",
- "sp-io",
- "sp-runtime",
-]
-
-[[package]]
 name = "pallet-assets"
 version = "42.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
@@ -8696,35 +8639,6 @@ dependencies = [
  "sp-runtime",
  "staging-xcm",
  "staging-xcm-builder",
- "staging-xcm-executor",
-]
-
-[[package]]
-name = "parachains-common"
-version = "21.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#b7c7686ec66c9fe6dcfcd89d79f7e3607cd2e193"
-dependencies = [
- "cumulus-primitives-core",
- "cumulus-primitives-utility",
- "frame-support",
- "frame-system",
- "log",
- "pallet-asset-tx-payment",
- "pallet-assets",
- "pallet-authorship",
- "pallet-balances",
- "pallet-collator-selection",
- "pallet-message-queue",
- "pallet-xcm",
- "parity-scale-codec",
- "polkadot-primitives",
- "scale-info",
- "sp-consensus-aura",
- "sp-core",
- "sp-io",
- "sp-runtime",
- "staging-parachain-info",
- "staging-xcm",
  "staging-xcm-executor",
 ]
 
