@@ -30,6 +30,7 @@ start-paseo-relay-chain)
   echo "Starting local relay chain with Alice and Bob..."
   cd docker
   docker compose up -d relay_paseo_alice relay_paseo_bob
+  echo "ALERT: You likely need to manually set the scheduling lookahead. sudo(configuration.setSchedulingLookahead(3)) and wait for it to apply."
   ;;
 
 stop-paseo-relay-chain)
