@@ -8,7 +8,7 @@ Full changelog: https://github.com/frequency-chain/frequency/compare/{{env.PREVI
 
 ## Versions
 - Rust Toolchain: `{{env.RUST_TOOLCHAIN}}`
-- Polkadot-SDK: `v{{env.POLKADOT_VERSION}}`
+- Polkadot-SDK: `{{env.POLKADOT_VERSION}}`
 
 {% if env.IS_FULL_RELEASE == 'true' %}
 ## Deployed

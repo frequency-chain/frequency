@@ -74,7 +74,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		"dev" | "frequency-no-relay" => Ok(Box::new(chain_spec::frequency_dev::development_config())),
 		#[cfg(feature = "frequency-local")]
 		"frequency-paseo-local" =>
-			Ok(Box::new(chain_spec::frequency_paseo::local_paseo_testnet_config())),
+			Ok(Box::new(chain_spec::frequency_paseo_local::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
@@ -98,7 +98,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					#[cfg(feature = "frequency-local")]
 					{
 						return Ok(Box::new(
-							chain_spec::frequency_paseo::local_paseo_testnet_config(),
+							chain_spec::frequency_paseo_local::local_paseo_testnet_config(),
 						));
 					}
 					#[cfg(not(feature = "frequency-local"))]
@@ -138,18 +138,18 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			} else if ChainIdentity::FrequencyLocal == spec.identify() {
 				#[cfg(feature = "frequency-local")]
 				{
-					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
-						path_buf,
-					)?));
+					return Ok(Box::new(
+						chain_spec::frequency_paseo_local::ChainSpec::from_json_file(path_buf)?,
+					));
 				}
 				#[cfg(not(feature = "frequency-local"))]
 				return Err("Frequency Local runtime is not available.".into());
 			} else if ChainIdentity::FrequencyDev == spec.identify() {
 				#[cfg(feature = "frequency-no-relay")]
 				{
-					return Ok(Box::new(chain_spec::frequency_paseo::ChainSpec::from_json_file(
-						path_buf,
-					)?));
+					return Ok(Box::new(
+						chain_spec::frequency_paseo_local::ChainSpec::from_json_file(path_buf)?,
+					));
 				}
 				#[cfg(not(feature = "frequency-no-relay"))]
 				return Err("Frequency Dev (no relay) runtime is not available.".into());
@@ -238,7 +238,7 @@ impl SubstrateCli for RelayChainCli {
 		match id {
 			// TODO: Remove once on a Polkadot-SDK with Paseo-Local
 			#[cfg(feature = "frequency-local")]
-			"paseo-local" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_local_spec())),
+			"paseo-local" => Ok(Box::new(chain_spec::frequency_paseo_local::load_paseo_local_spec())),
 			// TODO: Remove once on a Polkadot-SDK with Paseo
 			#[cfg(feature = "frequency-testnet")]
 			"paseo" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
