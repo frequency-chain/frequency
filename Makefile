@@ -8,9 +8,12 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
+.PHONY: start start-bridging start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
+
+start-bridging:
+	./scripts/init.sh start-frequency-instant-bridging
 
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
