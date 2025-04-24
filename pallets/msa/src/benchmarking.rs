@@ -353,6 +353,18 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn reindex_offchain() -> Result<(), BenchmarkError> {
+		let key = create_account::<T>("account", 0);
+		let caller = whitelisted_caller();
+		let msa_id = 1u64;
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller), msa_id, Some(key));
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),

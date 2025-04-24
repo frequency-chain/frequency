@@ -5,13 +5,14 @@ use common_primitives::offchain::{
 	self as offchain_common, get_msa_account_lock_name, get_msa_account_storage_key_name,
 	LockStatus, MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS,
 };
-use frame_support::RuntimeDebugNoBound;
+use frame_support::{RuntimeDebugNoBound, Twox128};
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
 use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
 use alloc::{collections::btree_map::BTreeMap, string::String, vec, vec::Vec};
 use core::fmt::Debug;
+use frame_support::StorageHasher;
 use sp_io::offchain_index;
 use sp_runtime::{
 	offchain::{
@@ -25,12 +26,14 @@ use sp_runtime::{
 
 /// Block event storage prefix
 const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
-
-/// Offchain index for MSA events count
-const BLOCK_EVENT_COUNT_KEY: &[u8] = b"frequency::block_event::msa::count::";
-
+/// Block event storage prefix for fork aware events
+const BLOCK_EVENT_FORK_AWARE_KEY: &[u8] = b"frequency::block_event_fork::msa::";
+/// number of buckets to map the events keys for fork aware storage
+const MAX_FORK_AWARE_BUCKET: u32 = 1000;
+/// max number of events to checks from storage
+const MAX_NUMBER_OF_STORAGE_CHECKS: u16 = 1000;
 /// Lock expiration timeout in in milli-seconds for initial data import msa pallet
-const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 3000;
+const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 6000;
 
 /// Lock expiration block for initial data import msa pallet
 const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 40;
@@ -47,7 +50,7 @@ const LAST_PROCESSED_BLOCK_LOCK_NAME: &[u8; 35] = b"Msa::ofw::last-processed-blo
 /// lst processed block storage name
 pub const LAST_PROCESSED_BLOCK_STORAGE_NAME: &[u8; 30] = b"Msa::ofw::last-processed-block";
 
-/// Lock expiration timeout in in milli-seconds for last processed block
+/// Lock expiration timeout in milliseconds for last processed block
 const LAST_PROCESSED_BLOCK_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 5000;
 
 /// Lock expiration for last processed block
@@ -83,24 +86,21 @@ pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {
 	};
 }
 /// stores the event into offchain DB using offchain indexing
-pub fn offchain_index_event<T: Config>(event: &Event<T>, msa_id: MessageSourceId) {
+pub fn offchain_index_event<T: Config>(event: Option<&Event<T>>, msa_id: MessageSourceId) {
 	if let Some(event) = IndexedEvent::map(event, msa_id) {
 		let block_number: u32 =
 			<frame_system::Pallet<T>>::block_number().try_into().unwrap_or_default();
 		let current_event_count: u16 = <OffchainIndexEventCount<T>>::get().saturating_add(1);
 		<OffchainIndexEventCount<T>>::put(current_event_count);
-		let event_key = [
-			BLOCK_EVENT_KEY,
-			block_number.encode().as_slice(),
-			current_event_count.encode().as_slice(),
-		]
-		.concat();
+		let event_key = get_indexed_event_key(block_number, current_event_count);
 		// set the event in offchain storage
-		set_offchain_index(&event_key, event);
+		set_offchain_index(&event_key, event.clone());
 
-		let count_key = [BLOCK_EVENT_COUNT_KEY, block_number.encode().as_slice()].concat();
-		// Set the latest count of event in current block
-		set_offchain_index(&count_key, current_event_count);
+		// to ensure we can handle the issues due to forking and overriding stored events we double
+		// index an event, and we choose to use or discard it on offchain worker side
+		let fork_aware_key = get_fork_aware_event_key(block_number, get_bucket_number(&event));
+
+		set_offchain_index(&fork_aware_key, event);
 	}
 }
 
@@ -231,18 +231,23 @@ enum IndexedEvent<T: Config> {
 		/// The key no longer approved for the associated MSA
 		key: T::AccountId,
 	},
+	ReIndex {
+		/// The MSA for the Event
+		msa_id: MessageSourceId,
+	},
 }
 
 impl<T: Config> IndexedEvent<T> {
 	/// maps a pallet event to indexed event type
-	pub fn map(event: &Event<T>, event_msa_id: MessageSourceId) -> Option<Self> {
+	pub fn map(event: Option<&Event<T>>, event_msa_id: MessageSourceId) -> Option<Self> {
 		match event {
-			Event::MsaCreated { msa_id, key } =>
+			Some(Event::MsaCreated { msa_id, key }) =>
 				Some(Self::IndexedMsaCreated { msa_id: *msa_id, key: key.clone() }),
-			Event::PublicKeyAdded { msa_id, key } =>
+			Some(Event::PublicKeyAdded { msa_id, key }) =>
 				Some(Self::IndexedPublicKeyAdded { msa_id: *msa_id, key: key.clone() }),
-			Event::PublicKeyDeleted { key } =>
+			Some(Event::PublicKeyDeleted { key }) =>
 				Some(Self::IndexedPublicKeyDeleted { msa_id: event_msa_id, key: key.clone() }),
+			None => Some(Self::ReIndex { msa_id: event_msa_id }),
 			_ => None,
 		}
 	}
@@ -264,69 +269,67 @@ fn init_last_processed_block<T: Config>(current_block_number: BlockNumberFor<T>)
 	last_processed_block_storage.set(&target_block);
 }
 
-fn read_offchain_events<T: Config>(block_number: BlockNumberFor<T>) -> Vec<IndexedEvent<T>> {
+fn read_offchain_events<T: Config>(
+	block_number: BlockNumberFor<T>,
+) -> Vec<(IndexedEvent<T>, Vec<u8>)> {
 	let current_block: u32 = block_number.try_into().unwrap_or_default();
-	let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-	let optional_event_count = get_offchain_index::<u16>(&count_key);
 	let mut events = vec![];
-	let event_count = optional_event_count.unwrap_or_default();
 
-	for i in 1..=event_count {
-		let key =
-			[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
-		let optional_decoded_event = get_offchain_index::<IndexedEvent<T>>(&key);
-		if let Some(decoded_event) = optional_decoded_event {
-			events.push(decoded_event);
-		} else {
-			log::warn!(
-				"Indexed event does not exist for block {:?} and number {}",
-				current_block,
-				i
-			);
+	for i in 1..=MAX_NUMBER_OF_STORAGE_CHECKS {
+		let key = get_indexed_event_key(current_block, i);
+		match get_offchain_index::<IndexedEvent<T>>(&key) {
+			Some(decoded_event) => {
+				events.push((decoded_event, key));
+			},
+			None => {
+				// no more events for this block
+				break;
+			},
+		}
+	}
+
+	for i in 1u16..=MAX_FORK_AWARE_BUCKET.try_into().unwrap_or_default() {
+		let key = get_fork_aware_event_key(current_block, i);
+		if let Some(decoded_event) = get_offchain_index::<IndexedEvent<T>>(&key) {
+			events.push((decoded_event, key));
 		}
 	}
 	events
 }
 
 /// cleans the events from offchain storage
-fn clean_offchain_events<T: Config>(block_number: BlockNumberFor<T>) {
-	let current_block: u32 = block_number.try_into().unwrap_or_default();
-	let count_key = [BLOCK_EVENT_COUNT_KEY, current_block.encode().as_slice()].concat();
-	let optional_event_count = get_offchain_index::<u16>(&count_key);
-	let event_count = optional_event_count.unwrap_or_default();
-	for i in 1..=event_count {
-		let key =
-			[BLOCK_EVENT_KEY, block_number.encode().as_slice(), i.encode().as_slice()].concat();
-
-		offchain_index::clear(&key);
+fn clean_offchain_events(storage_keys: &Vec<Vec<u8>>) {
+	for key in storage_keys {
+		offchain_index::clear(key);
 	}
-	offchain_index::clear(&count_key);
 }
 
 /// offchain worker callback for indexing msa keys
 /// return true if there are events and false if not
 fn reverse_map_msa_keys<T: Config>(block_number: BlockNumberFor<T>) -> bool {
 	// read the events indexed for the current block
-	let events_to_process: Vec<IndexedEvent<T>> = read_offchain_events(block_number);
+	let events_to_process: Vec<(IndexedEvent<T>, Vec<u8>)> = read_offchain_events(block_number);
 	let events_exists = !events_to_process.is_empty();
 	if events_exists {
-		log::info!("found {} indexed events for block {:?}", events_to_process.len(), block_number);
+		log::info!(
+			"found {} double indexed events for block {:?}",
+			events_to_process.len(),
+			block_number
+		);
 	}
 
 	// collect a replay of all events by MSA id
 	let mut events_by_msa_id: BTreeMap<MessageSourceId, Vec<IndexedEvent<T>>> = BTreeMap::new();
 
 	// collect relevant events
-	for event in events_to_process {
+	for (event, _) in events_to_process.iter() {
 		match event {
 			IndexedEvent::IndexedPublicKeyAdded { msa_id, .. } |
-			IndexedEvent::IndexedMsaCreated { msa_id, .. } => {
-				let events = events_by_msa_id.entry(msa_id).or_default();
-				events.push(event);
-			},
-			IndexedEvent::IndexedPublicKeyDeleted { msa_id, .. } => {
-				let events = events_by_msa_id.entry(msa_id).or_default();
-				events.push(event);
+			IndexedEvent::IndexedMsaCreated { msa_id, .. } |
+			IndexedEvent::IndexedPublicKeyDeleted { msa_id, .. } |
+			IndexedEvent::ReIndex { msa_id } => {
+				let events = events_by_msa_id.entry(*msa_id).or_default();
+				events.push(event.clone());
 			},
 		}
 	}
@@ -339,7 +342,8 @@ fn reverse_map_msa_keys<T: Config>(block_number: BlockNumberFor<T>) -> bool {
 	}
 
 	if events_exists {
-		clean_offchain_events::<T>(block_number);
+		let storage_keys = events_to_process.iter().map(|(_, key)| key.clone()).collect();
+		clean_offchain_events(&storage_keys);
 	}
 
 	events_exists
@@ -353,30 +357,65 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 		&msa_lock_name,
 		Duration::from_millis(MSA_ACCOUNT_LOCK_TIMEOUT_EXPIRATION_MS),
 	);
-	let _ = msa_lock.lock();
+	let _lock = msa_lock.lock();
 	let msa_storage_name = get_msa_account_storage_key_name(msa_id);
-	let msa_storage = StorageValueRef::persistent(&msa_storage_name);
+	let mut msa_storage = StorageValueRef::persistent(&msa_storage_name);
 
 	let mut msa_keys = msa_storage.get::<Vec<T::AccountId>>().unwrap_or(None).unwrap_or_default();
+	let mut old_msa_keys = msa_keys.clone();
+	let mut changed = false;
 
 	for event in events {
 		match &event {
 			IndexedEvent::IndexedPublicKeyAdded { key, .. } |
-			IndexedEvent::IndexedMsaCreated { key, .. } =>
-				if !msa_keys.contains(key) {
-					msa_keys.push(key.clone());
-				} else {
-					log::warn!("{:?} already added!", key);
-				},
-			IndexedEvent::IndexedPublicKeyDeleted { key, .. } =>
-				if msa_keys.contains(key) {
+			IndexedEvent::IndexedMsaCreated { key, .. } => {
+				if let Some(on_chain_msa_id) = PublicKeyToMsaId::<T>::get(key) {
+					if on_chain_msa_id != msa_id {
+						log::warn!(
+							"{:?} forked onchain-MsaId={:?}, forked-MsaId=={:?}",
+							key,
+							on_chain_msa_id,
+							msa_id
+						);
+					} else if !msa_keys.contains(key) {
+						msa_keys.push(key.clone());
+						changed = true;
+					}
+				}
+			},
+			IndexedEvent::IndexedPublicKeyDeleted { key, .. } => {
+				if PublicKeyToMsaId::<T>::get(key).is_none() && msa_keys.contains(key) {
 					msa_keys.retain(|k| k != key);
-				} else {
-					log::warn!("{:?} already removed!", key);
-				},
+					old_msa_keys.retain(|k| k != key);
+					changed = true;
+				}
+			},
+			IndexedEvent::ReIndex { .. } => {
+				// nothing to do since we take care of removing extra keys for all
+			},
 		}
 	}
-	msa_storage.set(&msa_keys);
+
+	// check old keys to ensure they are valid
+	for old_key in &old_msa_keys {
+		match PublicKeyToMsaId::<T>::get(old_key) {
+			Some(on_chain_msa_id) if on_chain_msa_id == msa_id => {
+				// everything is as expected. Do nothing
+			},
+			_ => {
+				msa_keys.retain(|k| k != old_key);
+				changed = true;
+			},
+		}
+	}
+
+	if changed {
+		if msa_keys.len() > 0 {
+			msa_storage.set(&msa_keys);
+		} else {
+			msa_storage.clear();
+		}
+	}
 }
 /// Response type of rpc to get finalized block
 #[derive(Serialize, Deserialize, Encode, Decode, Default, Debug)]
@@ -486,4 +525,25 @@ fn get_finalized_block_number<T: Config>(
 		},
 	}
 	finalized_block_number
+}
+
+/// converts an event to a number between [1, `MAX_FORK_AWARE_BUCKET`]
+fn get_bucket_number<T: Config>(event: &IndexedEvent<T>) -> u16 {
+	let hashed = Twox128::hash(&event.encode());
+	// Directly combine the first 4 bytes into a u32 using shifts and bitwise OR
+	let num = (hashed[0] as u32) << 24 |
+		(hashed[1] as u32) << 16 |
+		(hashed[2] as u32) << 8 |
+		(hashed[3] as u32);
+
+	((num % MAX_FORK_AWARE_BUCKET) + 1u32) as u16
+}
+
+fn get_fork_aware_event_key(block_number: u32, event_index: u16) -> Vec<u8> {
+	[BLOCK_EVENT_FORK_AWARE_KEY, block_number.encode().as_slice(), event_index.encode().as_slice()]
+		.concat()
+}
+
+fn get_indexed_event_key(block_number: u32, event_index: u16) -> Vec<u8> {
+	[BLOCK_EVENT_KEY, block_number.encode().as_slice(), event_index.encode().as_slice()].concat()
 }
