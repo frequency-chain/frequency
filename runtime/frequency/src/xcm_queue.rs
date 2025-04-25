@@ -1,4 +1,7 @@
-#![cfg(feature = "frequency-bridging")]
+// TODO: Do we need to add 'frequency-bridging' feature here?
+// #![cfg(feature = "frequency-bridging")]
+// Added this cfg to make sure it matches the cfg in lib.rs where this file is included
+#![cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 // use crate::{MessageQueue, ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent};
 // use crate::{ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, AccountId, RuntimeOrigin, Runtime};
 use crate::{

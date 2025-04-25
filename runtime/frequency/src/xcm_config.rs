@@ -90,6 +90,9 @@ pub type LocationToAccountId = (
 /////// Transactors ///////
 // pub type ForeignAssetsAdapter = FungiblesAdapter<
 // 	// Use this fungibles implementation:
+// 	// TODO: Where is the correct implementation for Fungibles?
+// 	// I see several cases of 'type Fungibles = Assets;' in polkadot-sdk.
+// 	// No references to ForeignAssetsAdapter.
 // 	Fungibles,
 // 	// Use this currency when it is a fungible asset matching the given location or name:
 // 	MatchedConvertedConcreteId<Location, u128, IsParentsOnly<ConstU8<1>>, xcm_executor::traits::JustTry,  xcm_executor::traits::JustTry>,
@@ -144,7 +147,7 @@ pub type Barrier = TrailingSetTopicAsId<
 pub struct AssetFrom<T>(core::marker::PhantomData<T>);
 
 impl<T: Get<Location>> ContainsPair<Asset, Location> for AssetFrom<T> {
-	fn contains(asset: &Asset, location: &Location) -> bool {
+	fn contains(_asset: &Asset, location: &Location) -> bool {
 		let prefix = T::get();
 		location == &prefix
 	}

@@ -8,14 +8,14 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start start-bridging start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
+.PHONY: start start-bridging start-bridging-westend start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
 
 start-bridging:
 	./scripts/init.sh start-frequency-instant-bridging
 
-start-westend-bridging:
+start-bridging-westend:
 	./scripts/init.sh start-frequency-westend-bridging
 
 start-paseo-relay:
