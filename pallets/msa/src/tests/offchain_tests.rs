@@ -1,16 +1,16 @@
 use frame_support::{assert_ok, pallet_prelude::Hooks, traits::OriginTrait};
 
+use crate::{
+	get_bucket_number, tests::mock::*, Config, DispatchResult, FinalizedBlockResponse,
+	IndexedEvent, Pallet, LAST_PROCESSED_BLOCK_STORAGE_NAME, MSA_INITIAL_INDEXED_STORAGE_NAME,
+	RPC_FINALIZED_BLOCK_REQUEST_BODY, RPC_FINALIZED_BLOCK_REQUEST_URL,
+};
 use frame_system::pallet_prelude::BlockNumberFor;
 use parity_scale_codec::{Decode, Encode};
 
-use crate::{
-	tests::mock::*, Config, DispatchResult, FinalizedBlockResponse, Pallet,
-	LAST_PROCESSED_BLOCK_STORAGE_NAME, MSA_INITIAL_INDEXED_STORAGE_NAME,
-	RPC_FINALIZED_BLOCK_REQUEST_BODY, RPC_FINALIZED_BLOCK_REQUEST_URL,
-};
-
 use common_primitives::{
 	msa::MessageSourceId,
+	node::AccountId,
 	offchain::{get_index_value, get_msa_account_storage_key_name},
 };
 use pretty_assertions::assert_eq;
@@ -136,4 +136,46 @@ pub fn offchain_worker_should_populate_accounts_with_offchain_indexed_events() {
 			get_index_value::<BlockNumberFor<Test>>(&LAST_PROCESSED_BLOCK_STORAGE_NAME[..]);
 		assert_eq!(last_processed_block, Ok(Some(block_number)));
 	});
+}
+
+#[test]
+fn get_bucket_number_should_return_sudo_random_value() {
+	new_test_ext().execute_with(|| {
+		let event1: IndexedEvent<Test> = IndexedEvent::IndexedMsaCreated {
+			msa_id: 100,
+			key: AccountId::new([
+				1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1u8, 2, 3, 4, 5,
+				6, 7, 8, 9, 10, 1, 2,
+			]),
+		};
+		let event2: IndexedEvent<Test> = IndexedEvent::IndexedMsaCreated {
+			msa_id: 101,
+			key: AccountId::new([
+				1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1u8, 2, 3, 4, 5, 6, 7, 8, 9, 10, 1u8, 2, 3, 4, 5,
+				6, 7, 8, 9, 10, 1, 2,
+			]),
+		};
+
+		let bucket_1 = get_bucket_number(&event1);
+		let bucket_2 = get_bucket_number(&event2);
+
+		assert_ne!(bucket_1, bucket_2);
+		assert!(1 <= bucket_1 && bucket_1 <= 1000);
+		assert!(1 <= bucket_2 && bucket_2 <= 1000);
+	});
+}
+
+#[test]
+fn reindex_offchain_should_always_succeed() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_ok!(Msa::reindex_offchain(
+			test_origin_signed(1),
+			new_msa_id,
+			Some(key_pair.public().into()),
+		));
+
+		assert_ok!(Msa::reindex_offchain(test_origin_signed(1), 10u64, None,));
+	})
 }

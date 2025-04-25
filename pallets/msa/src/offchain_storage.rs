@@ -207,7 +207,7 @@ where
 
 /// Offchain indexed compatible Event type
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebugNoBound)]
-enum IndexedEvent<T: Config> {
+pub enum IndexedEvent<T: Config> {
 	/// A new Message Service Account was created with a new MessageSourceId
 	IndexedMsaCreated {
 		/// The MSA for the Event
@@ -231,6 +231,7 @@ enum IndexedEvent<T: Config> {
 		/// The key no longer approved for the associated MSA
 		key: T::AccountId,
 	},
+	/// Checks all existing keys and removes the wrong indexed ones
 	ReIndex {
 		/// The MSA for the Event
 		msa_id: MessageSourceId,
@@ -528,7 +529,7 @@ fn get_finalized_block_number<T: Config>(
 }
 
 /// converts an event to a number between [1, `MAX_FORK_AWARE_BUCKET`]
-fn get_bucket_number<T: Config>(event: &IndexedEvent<T>) -> u16 {
+pub fn get_bucket_number<T: Config>(event: &IndexedEvent<T>) -> u16 {
 	let hashed = Twox128::hash(&event.encode());
 	// Directly combine the first 4 bytes into a u32 using shifts and bitwise OR
 	let num = (hashed[0] as u32) << 24 |
