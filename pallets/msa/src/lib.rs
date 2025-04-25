@@ -878,25 +878,32 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// Fixes the offchain index of a Msa id by verifying the existing keys and adding the optional new key if it's a valid one
+		/// A generic endpoint to replay any offchain related event to fix any potential issues
 		#[pallet::call_index(13)]
 		#[pallet::weight(T::WeightInfo::reindex_offchain())]
 		pub fn reindex_offchain(
 			origin: OriginFor<T>,
-			msa_id: MessageSourceId,
-			index_key: Option<T::AccountId>,
+			event: OffchainReplayEvent<T>,
 		) -> DispatchResult {
 			let _ = ensure_signed(origin)?;
-			// don't need to check existence of msa_id since it would get checked on offchain side
-			match index_key {
-				Some(key) => {
-					let event = Event::PublicKeyAdded { msa_id, key };
-					offchain_index_event::<T>(Some(&event), msa_id);
-				},
-				None => {
-					offchain_index_event::<T>(None, msa_id);
+			match event {
+				OffchainReplayEvent::MsaPallet(MsaOffchainReplayEvent::KeyReIndex {
+					msa_id,
+					index_key,
+				}) => {
+					// don't need to check existence of msa_id since it would get checked on offchain side
+					match index_key {
+						Some(key) => {
+							let event = Event::PublicKeyAdded { msa_id, key };
+							offchain_index_event::<T>(Some(&event), msa_id);
+						},
+						None => {
+							offchain_index_event::<T>(None, msa_id);
+						},
+					}
 				},
 			}
+
 			Ok(())
 		}
 	}

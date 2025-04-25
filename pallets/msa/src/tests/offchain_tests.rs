@@ -2,7 +2,8 @@ use frame_support::{assert_ok, pallet_prelude::Hooks, traits::OriginTrait};
 
 use crate::{
 	get_bucket_number, tests::mock::*, Config, DispatchResult, FinalizedBlockResponse,
-	IndexedEvent, Pallet, LAST_PROCESSED_BLOCK_STORAGE_NAME, MSA_INITIAL_INDEXED_STORAGE_NAME,
+	IndexedEvent, MsaOffchainReplayEvent, OffchainReplayEvent, Pallet,
+	LAST_PROCESSED_BLOCK_STORAGE_NAME, MSA_INITIAL_INDEXED_STORAGE_NAME,
 	RPC_FINALIZED_BLOCK_REQUEST_BODY, RPC_FINALIZED_BLOCK_REQUEST_URL,
 };
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -224,10 +225,18 @@ fn reindex_offchain_should_always_succeed() {
 
 		assert_ok!(Msa::reindex_offchain(
 			test_origin_signed(1),
-			new_msa_id,
-			Some(key_pair.public().into()),
+			OffchainReplayEvent::MsaPallet(MsaOffchainReplayEvent::KeyReIndex {
+				msa_id: new_msa_id,
+				index_key: Some(key_pair.public().into()),
+			}),
 		));
 
-		assert_ok!(Msa::reindex_offchain(test_origin_signed(1), 10u64, None,));
+		assert_ok!(Msa::reindex_offchain(
+			test_origin_signed(1),
+			OffchainReplayEvent::MsaPallet(MsaOffchainReplayEvent::KeyReIndex {
+				msa_id: new_msa_id,
+				index_key: Some(key_pair.public().into()),
+			}),
+		));
 	})
 }

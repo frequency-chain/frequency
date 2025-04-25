@@ -12,7 +12,10 @@ use sp_core::serde::{Deserialize, Serialize};
 extern crate alloc;
 use alloc::{collections::btree_map::BTreeMap, string::String, vec, vec::Vec};
 use core::fmt::Debug;
-use frame_support::StorageHasher;
+use frame_support::{
+	pallet_prelude::{DecodeWithMemTracking, TypeInfo},
+	StorageHasher,
+};
 use sp_io::offchain_index;
 use sp_runtime::{
 	offchain::{
@@ -71,6 +74,30 @@ pub const RPC_FINALIZED_BLOCK_REQUEST_URL: &str = "http://localhost:9944";
 /// request body for getting last finalized block from rpc
 pub const RPC_FINALIZED_BLOCK_REQUEST_BODY: &[u8; 78] =
 	b"{\"id\": 10, \"jsonrpc\": \"2.0\", \"method\": \"chain_getFinalizedHead\", \"params\": []}";
+
+/// The overarching Offchain replay type that can allow replay of different events across different pallets
+#[derive(
+	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
+#[scale_info(skip_type_params(T))]
+pub enum OffchainReplayEvent<T: Config> {
+	/// Msa pallet related replay event
+	MsaPallet(MsaOffchainReplayEvent<T>),
+}
+/// The Offchain replay type for Msa Pallet that can allow replay of different events
+#[derive(
+	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
+#[scale_info(skip_type_params(T))]
+pub enum MsaOffchainReplayEvent<T: Config> {
+	/// Key re-indexing event
+	KeyReIndex {
+		/// Message Source Id that we like to reindex
+		msa_id: MessageSourceId,
+		/// optional key to index
+		index_key: Option<T::AccountId>,
+	},
+}
 
 /// offchain worker main execution function
 pub fn do_offchain_worker<T: Config>(block_number: BlockNumberFor<T>) {

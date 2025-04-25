@@ -358,9 +358,13 @@ mod benchmarks {
 		let key = create_account::<T>("account", 0);
 		let caller = whitelisted_caller();
 		let msa_id = 1u64;
+		let event = OffchainReplayEvent::MsaPallet(MsaOffchainReplayEvent::KeyReIndex {
+			msa_id,
+			index_key: Some(key),
+		});
 
 		#[extrinsic_call]
-		_(RawOrigin::Signed(caller), msa_id, Some(key));
+		_(RawOrigin::Signed(caller), event);
 
 		Ok(())
 	}
