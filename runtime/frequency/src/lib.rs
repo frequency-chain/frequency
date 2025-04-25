@@ -17,6 +17,11 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+mod xcm_config;
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+mod xcm_queue;
+// use xcm_config;
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -102,7 +107,7 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-pub use sp_runtime::{MultiAddress, Perbill, Permill};
+pub use sp_runtime::Perbill;
 
 #[cfg(any(feature = "std", test))]
 pub use sp_runtime::BuildStorage;
@@ -1455,6 +1460,11 @@ construct_runtime!(
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 		#[cfg(feature = "frequency-bridging")]
 		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
+
+		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
 	}
 );
 
