@@ -509,7 +509,6 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 0;
 	pub const ApprovalDeposit: Balance = 0;
 	pub const AssetsStringLimit: u32 = 50;
-	// pub const RemoveItemsLimit: u32 = 1000;
 }
 #[cfg(feature = "frequency-bridging")]
 parameter_types! {
@@ -1341,7 +1340,6 @@ impl pallet_handles::Config for Runtime {
 
 // ---------- Foreign Assets pallet configuration ----------
 #[cfg(feature = "frequency-bridging")]
-// use xcm_config::{ForeignAssetsAssetId, RelayLocation, XcmOriginToTransactDispatchOrigin};
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
@@ -1362,7 +1360,7 @@ impl pallet_assets::Config for Runtime {
 	type MetadataDepositBase = ForeignAssetsMetadataDepositBase;
 	type MetadataDepositPerByte = ForeignAssetsMetadataDepositPerByte;
 	type ApprovalDeposit = ForeignAssetsApprovalDeposit;
-	type StringLimit = AssetsStringLimit;
+	type StringLimit = ForeignAssetsAssetsStringLimit;
 
 	type Freezer = ();
 	type Extra = ();

@@ -36,11 +36,6 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
-
-# Bridging
-# pallet-assets = { workspace = true, optional = true }
-# assets-common = { workspace = true , optional = true }
-
 # cumulus
 cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
