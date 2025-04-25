@@ -102,6 +102,17 @@ pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
 sp-debug-derive = { workspace = true, optional = true }
 
+# xcm
+cumulus-pallet-xcmp-queue = {  workspace = true }
+pallet-message-queue = { workspace = true }
+parachains-common = { workspace = true }
+staging-xcm-builder = { workspace = true }
+staging-xcm = { workspace = true }
+cumulus-pallet-xcm = { workspace = true }
+pallet-xcm = { workspace = true }
+xcm-executor = { workspace = true }
+cumulus-primitives-utility = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -174,6 +185,13 @@ std = [
   "system-runtime-api/std",
   "substrate-wasm-builder",
   "frame-metadata-hash-extension/std",
+  "cumulus-pallet-xcmp-queue/std",
+  "pallet-message-queue/std",
+  "parachains-common/std",
+  "staging-xcm-builder/std",
+  "cumulus-pallet-xcm/std",
+  "pallet-xcm/std",
+  "xcm-executor/std"
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",
@@ -208,6 +226,12 @@ runtime-benchmarks = [
   "polkadot-runtime-common/runtime-benchmarks",
   "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
+  "pallet-message-queue/runtime-benchmarks",
+  "parachains-common/runtime-benchmarks",
+  "staging-xcm-builder/runtime-benchmarks",
+  "pallet-xcm/runtime-benchmarks",
+  "cumulus-pallet-xcmp-queue/runtime-benchmarks",
+  "xcm-executor/runtime-benchmarks"
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
@@ -244,6 +268,8 @@ try-runtime = [
   "parachain-info/try-runtime",
   "common-runtime/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-xcm/try-runtime",
+  "cumulus-pallet-xcmp-queue/try-runtime"
 ]
 frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
