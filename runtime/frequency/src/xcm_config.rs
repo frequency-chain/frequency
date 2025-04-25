@@ -1,4 +1,3 @@
-#![cfg(feature = "frequency-bridging")]
 
 use crate::{
 	AccountId, AllPalletsWithSystem, Balances, CumulusXcm, ParachainInfo, ParachainSystem,

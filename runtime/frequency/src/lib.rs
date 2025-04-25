@@ -17,10 +17,9 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+#[cfg(feature = "frequency-bridging")]
 mod xcm_config;
-// TODO:  Do we need to add 'frequency-bridging' to the cfg?
-// #[cfg(feature = "frequency-bridging")]
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(feature = "frequency-bridging")]
 mod xcm_queue;
 
 use alloc::borrow::Cow;
@@ -1405,9 +1404,7 @@ construct_runtime!(
 	pub enum Runtime {
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
-		// TODO: Do we need to add 'frequency-bridging' feature to this?
-		// #[cfg(feature = "frequency-bridging")]
-		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
@@ -1706,7 +1703,6 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 
-	// TODO: Do we need to add 'frequency-bridging' to the feature list?
 	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 	impl cumulus_primitives_core::CollectCollationInfo<Block> for Runtime {
 		fn collect_collation_info(header: &<Block as BlockT>::Header) -> cumulus_primitives_core::CollationInfo {
