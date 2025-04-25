@@ -17,9 +17,9 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+mod xcm_config;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 mod xcm_queue;
-mod xcm_config;
 // use xcm_config;
 
 use alloc::borrow::Cow;
@@ -1388,14 +1388,13 @@ construct_runtime!(
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
-		
+
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
 	}
 );
-
 
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
