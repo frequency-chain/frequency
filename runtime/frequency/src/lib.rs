@@ -1391,7 +1391,8 @@ construct_runtime!(
 		
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>} = 73
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
 	}
 );
 

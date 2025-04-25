@@ -1,4 +1,4 @@
-use crate::{RuntimeCall, AccountId, RuntimeOrigin, ParachainSystem, Runtime, RuntimeEvent, ParachainInfo, Balances, AllPalletsWithSystem, XcmpQueue, PolkadotXcm};
+use crate::{RuntimeCall, AccountId, RuntimeOrigin, ParachainSystem, Runtime, RuntimeEvent, ParachainInfo, Balances, AllPalletsWithSystem, XcmpQueue, PolkadotXcm, CumulusXcm};
 
 use staging_xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
@@ -255,4 +255,9 @@ impl pallet_xcm::Config for Runtime {
 	type RemoteLockConsumerIdentifier = ();
 	// Aliasing is disabled: xcm_executor::Config::Aliasers is set to `Nothing`.
 	type AuthorizedAliasConsideration = Disabled;
+}
+
+impl cumulus_pallet_xcm::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
 }
