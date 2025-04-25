@@ -178,7 +178,6 @@ std = [
   "system-runtime-api/std",
   "substrate-wasm-builder",
   "frame-metadata-hash-extension/std",
-  "pallet-assets/std",
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",
@@ -189,6 +188,7 @@ runtime-benchmarks = [
   "frame-system-benchmarking",
   "frame-system-benchmarking/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
   "pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",
@@ -213,7 +213,6 @@ runtime-benchmarks = [
   "polkadot-runtime-common/runtime-benchmarks",
   "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
-  "pallet-assets/runtime-benchmarks",
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
@@ -222,6 +221,7 @@ try-runtime = [
   "frame-executive/try-runtime",
   "frame-system/try-runtime",
   "frame-try-runtime",
+  "pallet-assets/try-runtime",
   "pallet-aura/try-runtime",
   "pallet-authorship/try-runtime",
   "pallet-balances/try-runtime",
