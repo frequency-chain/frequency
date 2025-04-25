@@ -1,3 +1,5 @@
+#![cfg(feature = "frequency-bridging")]
+
 use crate::{
 	AccountId, AllPalletsWithSystem, Balances, CumulusXcm, ParachainInfo, ParachainSystem,
 	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
@@ -75,7 +77,7 @@ impl Contains<Location> for ParentOrParentsExecutivePlurality {
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
 /// Conversions between Multilocation to an accountid
-/// Parachain origin is converted to corresponding souverin account
+/// Parachain origin is converted to corresponding sovereign account
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the parent `AccountId`.
 	ParentIsPreset<AccountId>,

@@ -1461,9 +1461,13 @@ construct_runtime!(
 		#[cfg(feature = "frequency-bridging")]
 		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
 
+		#[cfg(feature = "frequency-bridging")]
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
+		#[cfg(feature = "frequency-bridging")]
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
+		#[cfg(feature = "frequency-bridging")]
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
+		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
 	}
 );

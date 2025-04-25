@@ -15,6 +15,9 @@ start:
 start-bridging:
 	./scripts/init.sh start-frequency-instant-bridging
 
+start-westend-bridging:
+	./scripts/init.sh start-frequency-westend-bridging
+
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
 
@@ -93,7 +96,7 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
-.PHONY: onboard-res-local
+.PHONY: onboard-debug
 onboard-debug:
 	./scripts/init.sh onboard-res-local
 
@@ -270,6 +273,8 @@ check-mainnet:
 check-bridging:
 	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+
 
 .PHONY: js
 js:
@@ -302,6 +307,9 @@ build-mainnet-release:
 
 build-bridging:
 	cargo build --features frequency-no-relay,frequency-bridging
+
+build-westend-bridging:
+	cargo build --features frequency-local,frequency-bridging
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:

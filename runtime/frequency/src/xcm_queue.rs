@@ -1,3 +1,4 @@
+#![cfg(feature = "frequency-bridging")]
 // use crate::{MessageQueue, ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent};
 // use crate::{ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, AccountId, RuntimeOrigin, Runtime};
 use crate::{
