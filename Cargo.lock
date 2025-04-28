@@ -4253,6 +4253,7 @@ dependencies = [
  "hex",
  "hex-literal",
  "log",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship 40.0.0 (git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6)",
  "pallet-balances 41.1.0",
