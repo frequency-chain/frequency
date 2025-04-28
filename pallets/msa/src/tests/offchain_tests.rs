@@ -192,7 +192,7 @@ pub fn offchain_worker_should_populate_accounts_with_offchain_indexed_events() {
 }
 
 #[test]
-fn get_bucket_number_should_return_sudo_random_value() {
+fn get_bucket_number_should_return_pseudo_random_value() {
 	new_test_ext().execute_with(|| {
 		let event1: IndexedEvent<Test> = IndexedEvent::IndexedMsaCreated {
 			msa_id: 100,
@@ -235,7 +235,7 @@ fn reindex_offchain_should_always_succeed() {
 			test_origin_signed(1),
 			OffchainReplayEvent::MsaPallet(MsaOffchainReplayEvent::KeyReIndex {
 				msa_id: new_msa_id,
-				index_key: Some(key_pair.public().into()),
+				index_key: None,
 			}),
 		));
 	})
