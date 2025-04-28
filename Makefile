@@ -280,7 +280,10 @@ check-bridging:
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging
+.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-all
+
+build-all: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging-mainnet build-bridging-westend
+
 build:
 	cargo build --features frequency-no-relay
 
@@ -305,10 +308,10 @@ build-testnet-release:
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
 
-build-bridging:
-	cargo build --features frequency-no-relay,frequency-bridging
+build-bridging-mainnet:
+	cargo build --features frequency,frequency-bridging
 
-build-westend-bridging:
+build-bridging-westend:
 	cargo build --features frequency-local,frequency-bridging
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local

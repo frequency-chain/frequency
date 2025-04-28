@@ -24,7 +24,7 @@ mod xcm_queue;
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
@@ -579,7 +579,7 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	#[cfg(feature = "frequency-no-relay")]
 	type OnSetCode = ();
@@ -1149,7 +1149,7 @@ const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
@@ -1511,7 +1511,7 @@ mod benches {
 	);
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,
