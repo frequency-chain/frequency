@@ -1,9 +1,11 @@
 // use crate::{MessageQueue, ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent};
 // use crate::{ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, AccountId, RuntimeOrigin, Runtime};
 use crate::{
-	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeCall,
-	RuntimeEvent, RuntimeOrigin, XcmpQueue,
+	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent,
+	RuntimeOrigin, XcmpQueue,
 };
+// TODO: To fix lint these were removed. Determine if the following imports are necessary:
+//       RuntimeCall
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, TransformOrigin},
@@ -24,6 +26,7 @@ use staging_xcm_builder::{
 };
 
 // use xcm_config;
+#[cfg(not(feature = "runtime-benchmarks"))]
 use crate::xcm_config;
 
 use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
@@ -34,6 +37,7 @@ use staging_xcm::latest::prelude::*;
 
 use pallet_xcm::XcmPassthrough;
 
+#[cfg(not(feature = "runtime-benchmarks"))]
 use xcm_executor;
 
 parameter_types! {

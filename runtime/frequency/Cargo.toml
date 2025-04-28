@@ -51,6 +51,9 @@ pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
 
+# Bridging
+pallet-assets = { workspace = true, optional = true }
+
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
@@ -128,6 +131,7 @@ std = [
   "frame-system-rpc-runtime-api/std",
   "frame-system/std",
   "log/std",
+  "pallet-assets/std",
   "pallet-aura/std",
   "pallet-authorship/std",
   "pallet-balances/std",
@@ -202,6 +206,7 @@ runtime-benchmarks = [
   "frame-system-benchmarking",
   "frame-system-benchmarking/runtime-benchmarks",
   "frame-system/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
   "pallet-balances/runtime-benchmarks",
   "pallet-capacity/runtime-benchmarks",
   "pallet-collator-selection/runtime-benchmarks",
@@ -240,6 +245,7 @@ try-runtime = [
   "frame-executive/try-runtime",
   "frame-system/try-runtime",
   "frame-try-runtime",
+  "pallet-assets/try-runtime",
   "pallet-aura/try-runtime",
   "pallet-authorship/try-runtime",
   "pallet-balances/try-runtime",
@@ -275,6 +281,7 @@ frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
+frequency-bridging = ["common-runtime/frequency-bridging"]
 # Following features are used in generating lean wasms
 no-metadata-docs = ["frame-support/no-metadata-docs"]
 on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
@@ -287,7 +294,7 @@ on-chain-release-build = ["metadata-hash", "sp-api/disable-logging"]
 # `RUNTIME_METADATA_HASH` environment variable set for the `CheckMetadataHash`
 # extension.
 metadata-hash = ["substrate-wasm-builder/metadata-hash"]
-frequency-lint-check = []
+frequency-lint-check = ["frequency-bridging", "pallet-assets"]
 test = []
 parameterized-consensus-hook = []
 force-debug=[

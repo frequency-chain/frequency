@@ -17,14 +17,18 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+#[cfg(feature = "frequency-bridging")]
 mod xcm_config;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(feature = "frequency-bridging")]
 mod xcm_queue;
-// use xcm_config;
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
 };
@@ -195,7 +199,7 @@ impl UtilityProvider<RuntimeOrigin, RuntimeCall> for CapacityBatchProvider {
 	}
 }
 
-/// Basefilter to only allow calls to specified transactions to be executed
+/// Base filter to only allow calls to specified transactions to be executed
 pub struct BaseCallFilter;
 
 impl Contains<RuntimeCall> for BaseCallFilter {
@@ -372,6 +376,13 @@ pub type BlockId = generic::BlockId<Block>;
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
+// ---------- Foreign Assets Types (enabled with `frequency-bridging`) ----------
+#[cfg(feature = "frequency-bridging")]
+pub type AssetId = u32;
+
+#[cfg(feature = "frequency-bridging")]
+pub type AssetBalance = Balance;
+
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
@@ -498,6 +509,32 @@ parameter_types! {
 		.build_or_panic();
 }
 
+// ---------- Foreign Assets pallet parameters ----------
+#[cfg(feature = "frequency-bridging")]
+parameter_types! {
+	pub const AssetDeposit: Balance = 0;
+	pub const AssetAccountDeposit: Balance = 0;
+	pub const MetadataDepositBase: Balance = 0;
+	pub const MetadataDepositPerByte: Balance = 0;
+	pub const ApprovalDeposit: Balance = 0;
+	pub const AssetsStringLimit: u32 = 50;
+}
+#[cfg(feature = "frequency-bridging")]
+parameter_types! {
+	// we just reuse the same deposits
+	pub const ForeignAssetsAssetDeposit: Balance = AssetDeposit::get();
+	pub const ForeignAssetsAssetAccountDeposit: Balance = AssetAccountDeposit::get();
+	pub const ForeignAssetsApprovalDeposit: Balance = ApprovalDeposit::get();
+	pub const ForeignAssetsAssetsStringLimit: u32 = AssetsStringLimit::get();
+	pub const ForeignAssetsMetadataDepositBase: Balance = MetadataDepositBase::get();
+	pub const ForeignAssetsMetadataDepositPerByte: Balance = MetadataDepositPerByte::get();
+}
+
+// Define a placeholder AccountId - replace with the actual desired creator account
+parameter_types! {
+	pub const AssetCreatorAccount: AccountId = AccountId::new([0u8; 32]); // TODO: Replace with actual AccountId
+}
+
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
@@ -546,7 +583,11 @@ impl frame_system::Config for Runtime {
 	/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	type SS58Prefix = Ss58Prefix;
 	/// The action to take on a Runtime Upgrade
-	#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+	#[cfg(any(
+		not(feature = "frequency-no-relay"),
+		feature = "frequency-lint-check",
+		feature = "frequency-bridging"
+	))]
 	type OnSetCode = cumulus_pallet_parachain_system::ParachainSetCode<Self>;
 	#[cfg(feature = "frequency-no-relay")]
 	type OnSetCode = ();
@@ -577,7 +618,7 @@ impl pallet_msa::Config for Runtime {
 	type MaxProviderNameSize = MsaMaxProviderNameSize;
 	// The type that provides schema related info
 	type SchemaValidator = Schemas;
-	// The type that provides `Handle` related info for a given `MesssageSourceAccount`
+	// The type that provides `Handle` related info for a given `MessageSourceAccount`
 	type HandleProvider = Handles;
 	// The number of blocks per virtual bucket
 	type MortalityWindowSize = MSAMortalityWindowSize;
@@ -632,7 +673,7 @@ impl pallet_capacity::Config for Runtime {
 impl pallet_schemas::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_schemas::weights::SubstrateWeight<Runtime>;
-	// The mininum size (in bytes) for a schema model
+	// The minimum size (in bytes) for a schema model
 	type MinSchemaModelSizeBytes = SchemasMinModelSizeBytes;
 	// The maximum number of schemas that can be registered
 	type MaxSchemaRegistrations = SchemasMaxRegistrations;
@@ -1116,7 +1157,11 @@ const RELAY_CHAIN_SLOT_DURATION_MILLIS: u32 = 6_000;
 
 // See https://paritytech.github.io/substrate/master/pallet_parachain_system/index.html for
 // the descriptions of these configs.
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
@@ -1310,6 +1355,43 @@ impl pallet_handles::Config for Runtime {
 	type MsaBenchmarkHelper = Msa;
 }
 
+// ---------- Foreign Assets pallet configuration ----------
+#[cfg(feature = "frequency-bridging")]
+impl pallet_assets::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type Balance = Balance;
+	type AssetId = AssetId;
+	type AssetIdParameter = AssetId;
+	type Currency = Balances;
+
+	// This is to allow any other remote location to create foreign assets. Used in tests, not
+	// recommended on real chains.
+	// type CreateOrigin =
+	// 	ForeignCreators<Everything, LocationToAccountId, AccountId, xcm::latest::Location>;
+	// Use EnsureSignedBy to specify a single account allowed to create assets.
+	// The Success type of EnsureSignedBy is AccountId, matching the trait bound.
+	type CreateOrigin = EnsureSigned<AccountId>;
+	type ForceOrigin = EnsureRoot<AccountId>;
+
+	type AssetDeposit = ForeignAssetsAssetDeposit;
+	type MetadataDepositBase = ForeignAssetsMetadataDepositBase;
+	type MetadataDepositPerByte = ForeignAssetsMetadataDepositPerByte;
+	type ApprovalDeposit = ForeignAssetsApprovalDeposit;
+	type StringLimit = ForeignAssetsAssetsStringLimit;
+
+	type Freezer = ();
+	type Extra = ();
+	type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+	type CallbackHandle = ();
+	type AssetAccountDeposit = ForeignAssetsAssetAccountDeposit;
+	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
+
+	#[cfg(feature = "runtime-benchmarks")]
+	// type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
+	type BenchmarkHelper = ();
+	type Holder = ();
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_sudo/index.html for
 // the descriptions of these configs.
 #[cfg(any(not(feature = "frequency"), feature = "frequency-lint-check"))]
@@ -1334,9 +1416,8 @@ construct_runtime!(
 	pub enum Runtime {
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
-		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
+		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
@@ -1370,7 +1451,7 @@ construct_runtime!(
 		// Signatures
 		Multisig: pallet_multisig::{Pallet, Call, Storage, Event<T>} = 30,
 
-		// FRQC Update
+		// FRQCY Update
 		TimeRelease: pallet_time_release::{Pallet, Call, Storage, Event<T>, Config<T>, Origin<T>, FreezeReason, HoldReason} = 40,
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
@@ -1388,10 +1469,16 @@ construct_runtime!(
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
+		#[cfg(feature = "frequency-bridging")]
+		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
 
+		#[cfg(feature = "frequency-bridging")]
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
+		#[cfg(feature = "frequency-bridging")]
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
+		#[cfg(feature = "frequency-bridging")]
 		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
+		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
 	}
 );
@@ -1432,10 +1519,15 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
+		[pallet_assets, ForeignAssets]
 	);
 }
 
-#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+#[cfg(any(
+	not(feature = "frequency-no-relay"),
+	feature = "frequency-lint-check",
+	feature = "frequency-bridging"
+))]
 cumulus_pallet_parachain_system::register_validate_block! {
 	Runtime = Runtime,
 	BlockExecutor = cumulus_pallet_aura_ext::BlockExecutor::<Runtime, Executive>,

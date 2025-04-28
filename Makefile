@@ -8,9 +8,15 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
+.PHONY: start start-bridging start-bridging-westend start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
+
+start-bridging:
+	./scripts/init.sh start-frequency-instant-bridging
+
+start-bridging-westend:
+	./scripts/init.sh start-frequency-westend-bridging
 
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
@@ -90,8 +96,8 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
-.PHONY: onboard-res-local
-onboard-res-local:
+.PHONY: onboard-debug
+onboard-debug:
 	./scripts/init.sh onboard-res-local
 
 .PHONY: onboard-docker
@@ -244,7 +250,11 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check check-no-relay check-local check-testnet check-mainnet
+.PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
+# Add a target to run all checks to check that all existing features work with the addition of 'frequency-bridging'
+# which is an add-on feature and not mutually exclusive with the other features.
+check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging
+
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -260,11 +270,20 @@ check-testnet:
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features frequency
 
+check-bridging:
+	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-testnet,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+
+
 .PHONY: js
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release
+.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-all
+
+build-all: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release build-bridging-mainnet build-bridging-westend
+
 build:
 	cargo build --features frequency-no-relay
 
@@ -288,6 +307,12 @@ build-testnet-release:
 
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
+
+build-bridging-mainnet:
+	cargo build --features frequency,frequency-bridging
+
+build-bridging-westend:
+	cargo build --features frequency-local,frequency-bridging
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
