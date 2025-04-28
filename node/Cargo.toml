@@ -23,6 +23,7 @@ frequency-service = { path = "service" }
 
 [features]
 std = []
+frequency-bridging = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]

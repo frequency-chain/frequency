@@ -16,6 +16,7 @@
     // Set the features to use for cargo commands
     "rust-analyzer.cargo.features": [
         "runtime-benchmarks",
+        "frequency-bridging",
         "frequency-lint-check"
     ],
     "lldb.launch.preRunCommands": [

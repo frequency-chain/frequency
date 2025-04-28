@@ -66,6 +66,7 @@ cumulus-pallet-weight-reclaim = { workspace = true }
 substrate-build-script-utils = { workspace = true }
 
 [features]
+frequency-bridging = []
 std = ["sp-io/std", "sp-api/std", "frame-support/std", "sp-runtime/std", "sp-core/std"]
 cli = [
   "frequency-service",

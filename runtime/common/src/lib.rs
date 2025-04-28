@@ -22,7 +22,7 @@ pub mod weights;
 #[macro_export]
 macro_rules! prod_or_testnet_or_local {
 	($prod:expr, $test:expr, $local:expr) => {
-		if cfg!(any(feature = "frequency-local", feature = "frequency-no-relay")) {
+		if cfg!(any(feature = "frequency-local", feature = "frequency-no-relay", feature = "frequency-bridging")) {
 			$local
 		} else if cfg!(feature = "frequency-testnet") {
 			$test
