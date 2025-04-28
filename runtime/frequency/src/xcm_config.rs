@@ -1,3 +1,4 @@
+
 use crate::{
 	AccountId, AllPalletsWithSystem, Balances, CumulusXcm, ParachainInfo, ParachainSystem,
 	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
@@ -75,7 +76,7 @@ impl Contains<Location> for ParentOrParentsExecutivePlurality {
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
 /// `Transact` in order to determine the dispatch Origin.
 /// Conversions between Multilocation to an accountid
-/// Parachain origin is converted to corresponding souverin account
+/// Parachain origin is converted to corresponding sovereign account
 pub type LocationToAccountId = (
 	// The parent (Relay-chain) origin converts to the parent `AccountId`.
 	ParentIsPreset<AccountId>,
@@ -88,6 +89,9 @@ pub type LocationToAccountId = (
 /////// Transactors ///////
 // pub type ForeignAssetsAdapter = FungiblesAdapter<
 // 	// Use this fungibles implementation:
+// 	// TODO: Where is the correct implementation for Fungibles?
+// 	// I see several cases of 'type Fungibles = Assets;' in polkadot-sdk.
+// 	// No references to ForeignAssetsAdapter.
 // 	Fungibles,
 // 	// Use this currency when it is a fungible asset matching the given location or name:
 // 	MatchedConvertedConcreteId<Location, u128, IsParentsOnly<ConstU8<1>>, xcm_executor::traits::JustTry,  xcm_executor::traits::JustTry>,
@@ -142,7 +146,7 @@ pub type Barrier = TrailingSetTopicAsId<
 pub struct AssetFrom<T>(core::marker::PhantomData<T>);
 
 impl<T: Get<Location>> ContainsPair<Asset, Location> for AssetFrom<T> {
-	fn contains(asset: &Asset, location: &Location) -> bool {
+	fn contains(_asset: &Asset, location: &Location) -> bool {
 		let prefix = T::get();
 		location == &prefix
 	}
