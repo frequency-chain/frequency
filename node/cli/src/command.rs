@@ -159,6 +159,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency-local"))]
 				return Err("Frequency Local runtime is not available.".into());
+			} else if ChainIdentity::FrequencyWestendLocal == spec.identify() {
+				#[cfg(feature = "frequency-bridging")]
+				{
+					return Ok(Box::new(
+						chain_spec::frequency_westend_local::ChainSpec::from_json_file(path_buf)?,
+					));
+				}
+				#[cfg(not(feature = "frequency-bridging"))]
+				return Err("Frequency Westend Local runtime is not available.".into());
 			} else if ChainIdentity::FrequencyDev == spec.identify() {
 				#[cfg(feature = "frequency-no-relay")]
 				{
@@ -169,6 +178,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				#[cfg(not(feature = "frequency-no-relay"))]
 				return Err("Frequency Dev (no relay) runtime is not available.".into());
 			} else {
+				log::error!("Unknown chain spec: {:?}", spec.id());
 				return Err("Unknown chain spec.".into());
 			}
 		},
