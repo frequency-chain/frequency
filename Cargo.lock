@@ -4005,6 +4005,7 @@ dependencies = [
  "hex",
  "hex-literal",
  "log",
+ "pallet-assets",
  "pallet-aura",
  "pallet-authorship",
  "pallet-balances",

@@ -50,6 +50,7 @@ frequency-testnet = []
 frequency-local = []
 frequency-no-relay = []
 runtime-benchmarks = ["pallet-collective/runtime-benchmarks"]
+frequency-bridging = []
 std = [
   "frame-support/std",
   "frame-system/std",
