@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 log = { workspace = true }
 parity-scale-codec = { workspace = true, features = ["derive"] }
+pallet-revive = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -35,7 +36,6 @@ common-runtime = { path = "../../runtime/common", default-features = false }
 pallet-schemas = { path = "../schemas", default-features = false }
 pallet-handles = { path = "../handles", default-features = false }
 pallet-collective = { workspace = true }
-pallet-revive = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }
 pretty_assertions = { workspace = true }

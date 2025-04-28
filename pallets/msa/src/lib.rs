@@ -37,7 +37,7 @@ use frame_support::{
 	traits::IsSubType,
 };
 use parity_scale_codec::{Decode, Encode};
-use pallet_revive;
+use pallet_revive::{evm::H160, create2};
 
 use common_runtime::signature::check_signature;
 
@@ -1337,28 +1337,31 @@ impl<T: Config> Pallet<T> {
 	/// [0..8]:   u64 (big endian)
 	/// [8..17]:  b"Generated"
 	/// [17..20]: all zeroes
-	pub fn msa_id_to_eth_address(id: MessageSourceId) -> pallet_revive::H160 {
-		let code = vec![0u8; 20];
-		let input_value = id.to_be_bytes();
-		let salt = GENERATED_ADDRESS_TAG;
-		let deployer_address = [0xeu8; 20];
+	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
+		let code = [0u8; 20];
+		let mut input_value = [0u8; 32];
+		input_value.copy_from_slice(&id.to_be_bytes());
+		let mut salt = [0u8; 32];
+		salt.copy_from_slice(GENERATED_ADDRESS_TAG);
+		let deployer_address = H160([0xeu8; 20]);
 
-		pallet_revive::create2(deployer_address, code.as_slice(), input_value, salt)
+		create2(&deployer_address, code.as_slice(), &input_value, &salt)
 	}
 
-	pub fn validate_eth_address_for_msa(address: pallet_revive::H160, msa_id: MessageSourceId) -> bool {
+	/// Returns a boolean indicating whether the given Ethereum address was generated from the given MSA ID.
+	pub fn validate_eth_address_for_msa(address: H160, msa_id: MessageSourceId) -> bool {
 		true
 	}
 
 	/// Converts a 20-byte synthetic Ethereum address into a checksummed string format,
 	/// using ERC-55 checksum rules.
 	/// Formats a 20-byte address into an EIP-55 checksummed `0x...` string.
-	pub fn eth_address_to_checksummed_string(addr: &pallet_revive::H160) -> [u8; 42] {
+	pub fn eth_address_to_checksummed_string(addr: &H160) -> [u8; 42] {
 		const HEXCHARS: &[u8; 16] = b"0123456789abcdef";
 
 		// Step 1: Lowercase hex encoding of the address
 		let mut hex: [u8; 40] = [0u8; 40];
-		for (i, byte) in addr.iter().enumerate() {
+		for (i, byte) in addr.0.iter().enumerate() {
 			hex[2 * i] = HEXCHARS[(byte >> 4) as usize];
 			hex[2 * i + 1] = HEXCHARS[(byte & 0x0F) as usize];
 		}
