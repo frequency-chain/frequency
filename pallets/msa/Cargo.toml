@@ -35,6 +35,7 @@ common-runtime = { path = "../../runtime/common", default-features = false }
 pallet-schemas = { path = "../schemas", default-features = false }
 pallet-handles = { path = "../handles", default-features = false }
 pallet-collective = { workspace = true }
+pallet-revive = { workspace = true }
 sp-keystore = { workspace = true }
 sp-keyring = { workspace = true }
 pretty_assertions = { workspace = true }
@@ -48,6 +49,7 @@ runtime-benchmarks = [
   "common-primitives/runtime-benchmarks",
   "pallet-handles/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
+  "pallet-revive/runtime-benchmarks",
 ]
 std = [
   "parity-scale-codec/std",
@@ -62,6 +64,7 @@ std = [
   "common-primitives/std",
   "common-runtime/std",
   "pallet-collective/std",
+  "pallet-revive/std",
   "log/std",
   "sp-io/std",
 ]

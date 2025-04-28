@@ -37,6 +37,7 @@ use frame_support::{
 	traits::IsSubType,
 };
 use parity_scale_codec::{Decode, Encode};
+use pallet_revive;
 
 use common_runtime::signature::check_signature;
 
@@ -1336,41 +1337,23 @@ impl<T: Config> Pallet<T> {
 	/// [0..8]:   u64 (big endian)
 	/// [8..17]:  b"Generated"
 	/// [17..20]: all zeroes
-	pub fn msa_id_to_eth_address(id: MessageSourceId) -> [u8; 20] {
-		let mut address = [0u8; 20];
+	pub fn msa_id_to_eth_address(id: MessageSourceId) -> pallet_revive::H160 {
+		let code = vec![0u8; 20];
+		let input_value = id.to_be_bytes();
+		let salt = GENERATED_ADDRESS_TAG;
+		let deployer_address = [0xeu8; 20];
 
-		address[..8].copy_from_slice(&id.to_be_bytes());
-		address[8..(8 + GENERATED_ADDRESS_TAG.len())].copy_from_slice(GENERATED_ADDRESS_TAG);
-
-		address
+		pallet_revive::create2(deployer_address, code.as_slice(), input_value, salt)
 	}
 
-	/// Strictly decodes a synthetic Ethereum address back into an MSA ID,
-	/// only if the format matches exactly:
-	/// [0..8]:   u64 (big endian)
-	/// [8..17]:  b"Generated"
-	/// [17..20]: all zeroes
-	pub fn eth_address_to_msa_id(address: &[u8; 20]) -> Option<MessageSourceId> {
-		// Check tag
-		if &address[8..17] != GENERATED_ADDRESS_TAG {
-			return None;
-		}
-
-		// Check trailing zeros
-		if address[17..].iter().any(|&b| b != 0) {
-			return None;
-		}
-
-		// Extract and return u64
-		let mut id_bytes = [0u8; 8];
-		id_bytes.copy_from_slice(&address[..8]);
-		Some(u64::from_be_bytes(id_bytes))
+	pub fn validate_eth_address_for_msa(address: pallet_revive::H160, msa_id: MessageSourceId) -> bool {
+		true
 	}
 
 	/// Converts a 20-byte synthetic Ethereum address into a checksummed string format,
 	/// using ERC-55 checksum rules.
 	/// Formats a 20-byte address into an EIP-55 checksummed `0x...` string.
-	pub fn eth_address_to_checksummed_string(addr: &[u8; 20]) -> [u8; 42] {
+	pub fn eth_address_to_checksummed_string(addr: &pallet_revive::H160) -> [u8; 42] {
 		const HEXCHARS: &[u8; 16] = b"0123456789abcdef";
 
 		// Step 1: Lowercase hex encoding of the address
