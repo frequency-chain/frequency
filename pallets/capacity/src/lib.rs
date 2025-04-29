@@ -32,8 +32,7 @@ use core::ops::Mul;
 use frame_support::{
 	ensure,
 	traits::{
-		fungible::Inspect,
-		tokens::fungible::{InspectFreeze, Mutate, MutateFreeze},
+		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::Weight,
