@@ -114,6 +114,8 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 			feature = "frequency-lint-check"
 		))]
 		"frequency-local" => frequency_local_genesis_config(),
+		#[cfg(all(feature = "frequency-local", feature = "frequency-bridging"))]
+		"frequency-westend-local" => frequency_local_genesis_config(),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" => frequency_testnet_genesis_config(),
 		#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
