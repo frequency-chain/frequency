@@ -18,6 +18,7 @@ use sc_cli::{
 use sc_service::config::{BasePath, PrometheusConfig};
 use sp_runtime::traits::HashingFor;
 
+#[derive(Debug)]
 enum ChainIdentity {
 	Frequency,
 	FrequencyPaseo,
@@ -56,6 +57,7 @@ impl PartialEq for ChainIdentity {
 			(ChainIdentity::FrequencyPaseo, ChainIdentity::FrequencyPaseo) => true,
 			(ChainIdentity::FrequencyLocal, ChainIdentity::FrequencyLocal) => true,
 			(ChainIdentity::FrequencyDev, ChainIdentity::FrequencyDev) => true,
+			(ChainIdentity::FrequencyWestendLocal, ChainIdentity::FrequencyWestendLocal) => true,
 			_ => false,
 		}
 	}
@@ -160,7 +162,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				#[cfg(not(feature = "frequency-local"))]
 				return Err("Frequency Local runtime is not available.".into());
 			} else if ChainIdentity::FrequencyWestendLocal == spec.identify() {
-				#[cfg(feature = "frequency-bridging")]
+				// #[cfg(feature = "frequency-bridging")]
 				{
 					return Ok(Box::new(
 						chain_spec::frequency_westend_local::ChainSpec::from_json_file(path_buf)?,
