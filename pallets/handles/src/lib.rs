@@ -592,6 +592,8 @@ pub mod pallet {
 
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
+			let base_handle_trimmed = trim_and_collapse_whitespace(base_handle_str);
+
 			// Convert base handle into a canonical base
 			let (_canonical_handle_str, canonical_base) =
 				Self::get_canonical_string_vec_from_base_handle(base_handle_str);
@@ -603,7 +605,7 @@ pub mod pallet {
 			let suffixes_available = suffix_index < T::HandleSuffixMax::get();
 
 			CheckHandleResponse {
-				base_handle,
+				base_handle: base_handle_trimmed.into(),
 				suffix_index,
 				suffixes_available,
 				valid,
