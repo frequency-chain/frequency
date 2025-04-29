@@ -180,7 +180,6 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				#[cfg(not(feature = "frequency-no-relay"))]
 				return Err("Frequency Dev (no relay) runtime is not available.".into());
 			} else {
-				log::error!("Unknown chain spec: {:?}", spec.id());
 				return Err("Unknown chain spec.".into());
 			}
 		},
