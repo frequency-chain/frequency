@@ -438,6 +438,18 @@ fn test_check_handle() {
 			}
 		);
 
+		let good_whitespace_handle: String = String::from("  hel   lo  ");
+		assert_eq!(
+			Handles::check_handle(good_whitespace_handle.as_bytes().to_vec()),
+			CheckHandleResponse {
+				base_handle: "hel lo".as_bytes().to_vec(),
+				suffix_index: 0,
+				suffixes_available: true,
+				valid: true,
+				canonical_base: String::from("he110").as_bytes().to_vec(),
+			}
+		);
+
 		let too_long_handle: String = "*".repeat((HANDLE_BYTES_MAX + 1) as usize);
 		assert_eq!(
 			Handles::check_handle(too_long_handle.as_bytes().to_vec()),
