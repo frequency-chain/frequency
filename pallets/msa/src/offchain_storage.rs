@@ -258,7 +258,7 @@ pub enum IndexedEvent<T: Config> {
 		/// The key no longer approved for the associated MSA
 		key: T::AccountId,
 	},
-	/// Validates all existing keys and removes the wrong indexed ones
+	/// The offchain MSA->PubKey index has been marked invalid for the indicated MessageSourceId.
 	MsaIndexInvalidated {
 		/// The MSA for the Event
 		msa_id: MessageSourceId,
