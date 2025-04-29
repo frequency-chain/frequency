@@ -1416,7 +1416,7 @@ construct_runtime!(
 	pub enum Runtime {
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
-		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check", feature = "frequency-bridging"))]
+		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
@@ -1655,6 +1655,7 @@ sp_api::impl_runtime_apis! {
 				sp_genesis_builder::PresetId::from("development"),
 				sp_genesis_builder::PresetId::from("frequency-local"),
 				sp_genesis_builder::PresetId::from("frequency"),
+				sp_genesis_builder::PresetId::from("frequency-westend-local"),
 			]);
 
 

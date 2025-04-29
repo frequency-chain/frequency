@@ -116,6 +116,7 @@ sc-client-api = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 [features]
+frequency-bridging = ["frequency-runtime"]
 default = ["std"]
 std = ["sp-api/std", "sp-core/std"]
 runtime-benchmarks = [
