@@ -221,7 +221,7 @@ describe('Sudo required', function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Slash the provider
-          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data?.proposalIndex);
+          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data['proposalIndex']);
           const { target: slashEvent } = await slashExt.sudoSignAndSend();
           assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 

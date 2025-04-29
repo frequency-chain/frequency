@@ -20,7 +20,8 @@ import {
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
-  PaginatedUpsertSignaturePayloadV2, ReleaseSchedule,
+  PaginatedUpsertSignaturePayloadV2,
+  ReleaseSchedule,
 } from './extrinsicHelpers';
 import {
   BlockPaginationResponseMessage,
@@ -671,14 +672,13 @@ export async function getSpendableBalance(source: KeyringPair): Promise<bigint> 
   const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
   const frozenLessReserved = accountInfo.data.frozen.toBigInt() - accountInfo.data.reserved.toBigInt();
   const maxVsED = frozenLessReserved > ed ? frozenLessReserved : ed;
-  return (accountInfo.data.free.toBigInt() - maxVsED);
+  return accountInfo.data.free.toBigInt() - maxVsED;
 }
 
 export async function assertExtrinsicSucceededAndFeesPaid(chainEvents: any) {
   assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
   assert.notEqual(chainEvents['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
 }
-
 
 export function getBlocksInMonthPeriod(blockTime: number, periodInMonths: number) {
   const secondsPerMonth = 2592000; // Assuming 30 days in a month

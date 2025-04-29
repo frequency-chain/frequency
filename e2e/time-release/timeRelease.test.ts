@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getBlockNumber, calculateReleaseSchedule,  } from '../scaffolding/helpers';
+import { createAndFundKeypair, getBlockNumber, calculateReleaseSchedule } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper, ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';

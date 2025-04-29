@@ -13,7 +13,9 @@ import {
   DOLLARS,
   createAndFundKeypair,
   getCapacity,
-  createMsa, calculateReleaseSchedule, getSpendableBalance,
+  createMsa,
+  calculateReleaseSchedule,
+  getSpendableBalance,
 } from '../scaffolding/helpers';
 import { isDev } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
@@ -295,7 +297,7 @@ describe('Capacity Staking Tests', function () {
     });
   });
 
-  describe('staking when there are other freezes on the balance', function() {
+  describe('staking when there are other freezes on the balance', function () {
     let vesterKeys: KeyringPair;
     let providerKeys: KeyringPair;
     let providerId: u64;
@@ -315,10 +317,10 @@ describe('Capacity Staking Tests', function () {
       await assertSpendable(vesterKeys, 49n * BigInt(CENTS)); // less ED
       await assertFrozen(vesterKeys, 0n);
       providerKeys = await createAndFundKeypair(fundingSource, 10n * CENTS);
-      providerId = await createMsaAndProvider(fundingSource, providerKeys, "Provider Whale", 10n * DOLLARS);
+      providerId = await createMsaAndProvider(fundingSource, providerKeys, 'Provider Whale', 10n * DOLLARS);
     });
 
-    it("succeeds when there is a time-release freeze", async function() {
+    it('succeeds when there is a time-release freeze', async function () {
       const vestingAmount = 100n * DOLLARS;
       const schedule: ReleaseSchedule = calculateReleaseSchedule(vestingAmount);
 
@@ -332,7 +334,6 @@ describe('Capacity Staking Tests', function () {
       const spendable = await getSpendableBalance(vesterKeys);
       // after txn fees
       assert(spendable > 47n * CENTS, `Expected spendable > 47 CENTS, got ${spendable}`);
-
     });
   });
 });
