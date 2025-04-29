@@ -174,7 +174,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				#[cfg(feature = "frequency-no-relay")]
 				{
 					return Ok(Box::new(
-						chain_spec::ChainSpec::from_json_file(path_buf)?,
+						chain_spec::frequency_paseo_local::ChainSpec::from_json_file(path_buf)?,
 					));
 				}
 				#[cfg(not(feature = "frequency-no-relay"))]
