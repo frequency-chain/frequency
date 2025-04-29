@@ -20,7 +20,7 @@ import {
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
-  PaginatedUpsertSignaturePayloadV2,
+  PaginatedUpsertSignaturePayloadV2, ReleaseSchedule,
 } from './extrinsicHelpers';
 import {
   BlockPaginationResponseMessage,
@@ -36,6 +36,7 @@ import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaTyp
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
 import { getUnifiedAddress } from './ethereum';
 import { KeypairType } from '@polkadot/util-crypto/types';
+import { BigInt } from '@polkadot/x-bigint';
 
 export interface Account {
   uri: string;
@@ -664,7 +665,41 @@ export async function getFreeBalance(source: KeyringPair): Promise<bigint> {
   return BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
 }
 
+// spendable = free - max(frozen - on_hold, ED)
+export async function getSpendableBalance(source: KeyringPair): Promise<bigint> {
+  const ed = await getExistentialDeposit();
+  const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
+  const frozenLessReserved = accountInfo.data.frozen.toBigInt() - accountInfo.data.reserved.toBigInt();
+  const maxVsED = frozenLessReserved > ed ? frozenLessReserved : ed;
+  return (accountInfo.data.free.toBigInt() - maxVsED);
+}
+
 export async function assertExtrinsicSucceededAndFeesPaid(chainEvents: any) {
   assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
   assert.notEqual(chainEvents['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
+}
+
+
+export function getBlocksInMonthPeriod(blockTime: number, periodInMonths: number) {
+  const secondsPerMonth = 2592000; // Assuming 30 days in a month
+
+  // Calculate the number of blocks in the given period
+  const blocksInPeriod = Math.floor((periodInMonths * secondsPerMonth) / blockTime);
+
+  return blocksInPeriod;
+}
+
+export function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedule {
+  const start = 0;
+  const period = getBlocksInMonthPeriod(6, 4);
+  const periodCount = 4;
+
+  const perPeriod = BigInt(amount) / BigInt(periodCount);
+
+  return {
+    start,
+    period,
+    periodCount,
+    perPeriod,
+  };
 }

@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { u64 } from '@polkadot/types';
 import assert from 'assert';
-import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
 import {
   createKeys,
   createMsaAndProvider,
@@ -13,10 +13,11 @@ import {
   DOLLARS,
   createAndFundKeypair,
   getCapacity,
-  createMsa,
+  createMsa, calculateReleaseSchedule, getSpendableBalance,
 } from '../scaffolding/helpers';
 import { isDev } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
+import { BigInt } from '@polkadot/x-bigint';
 
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
@@ -291,6 +292,47 @@ describe('Capacity Staking Tests', function () {
 
       const failStakeObj = ExtrinsicHelper.stake(stakingKeys, providerId, stakingAmount);
       await assert.rejects(failStakeObj.signAndSend(), { name: 'BalanceTooLowtoStake' });
+    });
+  });
+
+  describe('staking when there are other freezes on the balance', function() {
+    let vesterKeys: KeyringPair;
+    let providerKeys: KeyringPair;
+    let providerId: u64;
+
+    async function assertSpendable(keys: KeyringPair, amount: bigint) {
+      const spendable = await getSpendableBalance(keys);
+      assert.equal(spendable, amount, `Expected spendable ${amount}, got ${spendable}`);
+    }
+
+    async function assertFrozen(keys: KeyringPair, amount: bigint) {
+      const accountInfo = await ExtrinsicHelper.getAccountInfo(keys);
+      assert.equal(accountInfo.data.frozen, amount, `Expected frozen ${amount}, got ${accountInfo.data.frozen}`);
+    }
+
+    before(async function () {
+      vesterKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
+      await assertSpendable(vesterKeys, 49n * BigInt(CENTS)); // less ED
+      await assertFrozen(vesterKeys, 0n);
+      providerKeys = await createAndFundKeypair(fundingSource, 10n * CENTS);
+      providerId = await createMsaAndProvider(fundingSource, providerKeys, "Provider Whale", 10n * DOLLARS);
+    });
+
+    it("succeeds when there is a time-release freeze", async function() {
+      const vestingAmount = 100n * DOLLARS;
+      const schedule: ReleaseSchedule = calculateReleaseSchedule(vestingAmount);
+
+      const vestedTransferTx = ExtrinsicHelper.timeReleaseTransfer(fundingSource, vesterKeys, schedule);
+
+      await assert.doesNotReject(vestedTransferTx.signAndSend());
+      await assertFrozen(vesterKeys, 100n * DOLLARS);
+
+      await assert.doesNotReject(ExtrinsicHelper.stake(vesterKeys, providerId, 80n * DOLLARS).signAndSend());
+
+      const spendable = await getSpendableBalance(vesterKeys);
+      // after txn fees
+      assert(spendable > 47n * CENTS, `Expected spendable > 47 CENTS, got ${spendable}`);
+
     });
   });
 });

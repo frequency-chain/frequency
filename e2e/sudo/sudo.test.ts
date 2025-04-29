@@ -187,8 +187,8 @@ describe('Sudo required', function () {
         });
       });
 
-      describe('Capacity should not be affected by a hold being slashed', function () {
-        it('stake should fail when overlapping tokens are on hold', async function () {
+      describe('Capacity staking is affected by a hold being slashed', function () {
+        it('stake succeeds when overlapping tokens are on hold due to a proposal', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -218,10 +218,10 @@ describe('Sudo required', function () {
 
           // Create a stake that will result in overlapping tokens being frozen
           // stake will allow only the balance not on hold to be staked
-          await assert.rejects(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+          await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Slash the provider
-          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
+          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data?.proposalIndex);
           const { target: slashEvent } = await slashExt.sudoSignAndSend();
           assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
@@ -234,7 +234,7 @@ describe('Sudo required', function () {
           );
         });
 
-        it('proposal should fail when overlapping tokens are on hold', async function () {
+        it('proposal fails when there is Capacity staking', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -252,7 +252,8 @@ describe('Sudo required', function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          // The proposal should fail because the stakeKeys account has overlapping tokens frozen
+          // The proposal should fail because the stakeKeys account doesn't have enough
+          // transferable to cover the deposit.
           const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
           await assert.rejects(proposalExt.signAndSend());
         });

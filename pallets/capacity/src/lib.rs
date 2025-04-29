@@ -33,10 +33,7 @@ use frame_support::{
 	ensure,
 	traits::{
 		fungible::Inspect,
-		tokens::{
-			fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
-			Fortitude, Preservation,
-		},
+		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::Weight,
@@ -828,9 +825,12 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
-		let account_balance =
-			T::Currency::reducible_balance(staker, Preservation::Preserve, Fortitude::Polite);
-		let stakable_amount = account_balance.saturating_sub(T::MinimumTokenBalance::get());
+		let freezable_balance = T::Currency::balance_freezable(staker);
+		let current_staking_balance =
+			StakingAccountLedger::<T>::get(staker).unwrap_or_default().active;
+		let stakable_amount = freezable_balance
+			.saturating_sub(current_staking_balance)
+			.saturating_sub(T::MinimumTokenBalance::get());
 		if stakable_amount >= proposed_amount {
 			proposed_amount
 		} else {
