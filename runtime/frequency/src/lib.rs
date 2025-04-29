@@ -19,6 +19,8 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[cfg(feature = "frequency-bridging")]
 mod xcm_config;
+use xcm_config::ForeignAssetsAssetId;
+
 #[cfg(feature = "frequency-bridging")]
 mod xcm_queue;
 
@@ -375,10 +377,6 @@ pub type BlockId = generic::BlockId<Block>;
 
 /// Block type as expected by this runtime.
 pub type Block = generic::Block<Header, UncheckedExtrinsic>;
-
-// ---------- Foreign Assets Types (enabled with `frequency-bridging`) ----------
-#[cfg(feature = "frequency-bridging")]
-pub type AssetId = u32;
 
 #[cfg(feature = "frequency-bridging")]
 pub type AssetBalance = Balance;
@@ -1360,8 +1358,8 @@ impl pallet_handles::Config for Runtime {
 impl pallet_assets::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type Balance = Balance;
-	type AssetId = AssetId;
-	type AssetIdParameter = AssetId;
+	type AssetId = ForeignAssetsAssetId;
+	type AssetIdParameter = ForeignAssetsAssetId;
 	type Currency = Balances;
 
 	// This is to allow any other remote location to create foreign assets. Used in tests, not
