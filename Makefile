@@ -312,7 +312,7 @@ build-bridging-mainnet:
 	cargo build --features frequency,frequency-bridging
 
 build-bridging-westend:
-	cargo build --features frequency-local,frequency-bridging
+	cargo build --features frequency-local,frequency-bridging --release
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
