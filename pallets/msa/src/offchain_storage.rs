@@ -259,7 +259,7 @@ pub enum IndexedEvent<T: Config> {
 		key: T::AccountId,
 	},
 	/// Validates all existing keys and removes the wrong indexed ones
-	IndexedRevalidate {
+	MsaIndexInvalidated {
 		/// The MSA for the Event
 		msa_id: MessageSourceId,
 	},
@@ -275,7 +275,7 @@ impl<T: Config> IndexedEvent<T> {
 				Some(Self::IndexedPublicKeyAdded { msa_id: *msa_id, key: key.clone() }),
 			Some(Event::PublicKeyDeleted { key }) =>
 				Some(Self::IndexedPublicKeyDeleted { msa_id: event_msa_id, key: key.clone() }),
-			None => Some(Self::IndexedRevalidate { msa_id: event_msa_id }),
+			None => Some(Self::MsaIndexInvalidated { msa_id: event_msa_id }),
 			_ => None,
 		}
 	}
@@ -355,7 +355,7 @@ fn reverse_map_msa_keys<T: Config>(block_number: BlockNumberFor<T>) -> bool {
 			IndexedEvent::IndexedPublicKeyAdded { msa_id, .. } |
 			IndexedEvent::IndexedMsaCreated { msa_id, .. } |
 			IndexedEvent::IndexedPublicKeyDeleted { msa_id, .. } |
-			IndexedEvent::IndexedRevalidate { msa_id } => {
+			IndexedEvent::MsaIndexInvalidated { msa_id } => {
 				let events = events_by_msa_id.entry(*msa_id).or_default();
 				events.push(event.clone());
 			},
@@ -418,7 +418,7 @@ fn process_offchain_events<T: Config>(msa_id: MessageSourceId, events: Vec<Index
 					changed = true;
 				}
 			},
-			IndexedEvent::IndexedRevalidate { .. } => {
+			IndexedEvent::MsaIndexInvalidated { .. } => {
 				// nothing to do since we take care of removing extra keys for all events anyway
 			},
 		}
