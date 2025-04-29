@@ -39,6 +39,8 @@ use pallet_xcm::XcmPassthrough;
 
 use polkadot_runtime_common::impls::ToAuthor;
 
+pub type ForeignAssetsAssetId = Location;
+
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	// XCM instruction weight cost

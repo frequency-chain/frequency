@@ -1,8 +1,8 @@
 // use crate::{MessageQueue, ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent};
 // use crate::{ParachainSystem, RuntimeBlockWeights, RuntimeCall, RuntimeEvent, AccountId, RuntimeOrigin, Runtime};
 use crate::{
-	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent,
-	RuntimeOrigin, XcmpQueue,
+	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeCall,
+	RuntimeEvent, RuntimeOrigin, XcmpQueue,
 };
 // TODO: To fix lint these were removed. Determine if the following imports are necessary:
 //       RuntimeCall
