@@ -4,8 +4,7 @@ use crate::{
 	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeCall,
 	RuntimeEvent, RuntimeOrigin, XcmpQueue,
 };
-// TODO: To fix lint these were removed. Determine if the following imports are necessary:
-//       RuntimeCall
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, TransformOrigin},
