@@ -1,31 +1,26 @@
 use crate::{
-	AccountId, AllPalletsWithSystem, Balances, ParachainInfo, ParachainSystem, PolkadotXcm,
-	Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, ForeignAssets, ParachainInfo, ParachainSystem,
+	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
 };
-// TODO: To fix lint these were removed. Determine if the following imports are necessary:
-//       CulumusXcm
 
 use staging_xcm_builder::{
 	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
 	DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin,
-	FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter, IsConcrete, NativeAsset,
-	ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
+	FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete,
+	IsParentsOnly, MatchedConvertedConcreteId, NativeAsset, NoChecking, ParentIsPreset,
+	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
 	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
 	TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
-// TODO: To fix lint these were removed. Determine if the following imports are necessary:
-//       FungiblesAdapter, IsParentsOnly, MatchedConvertedConcreteId, NoChecking
 
 use polkadot_parachain_primitives::primitives::Sibling;
 
 use frame_support::{
 	pallet_prelude::Get,
 	parameter_types,
-	traits::{ConstU32, Contains, ContainsPair, Disabled, Everything, Nothing},
+	traits::{ConstU32, ConstU8, Contains, ContainsPair, Disabled, Everything, Nothing},
 	weights::Weight,
 };
-// TODO: To fix lint these were removed. Determine if the following imports are necessary:
-//       ConstU8
 
 pub use common_runtime::fee::WeightToFee;
 
@@ -40,6 +35,10 @@ use pallet_xcm::XcmPassthrough;
 use polkadot_runtime_common::impls::ToAuthor;
 
 pub type ForeignAssetsAssetId = Location;
+
+parameter_types! {
+	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
+}
 
 parameter_types! {
 	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
@@ -92,24 +91,26 @@ pub type LocationToAccountId = (
 	AccountId32Aliases<RelayNetwork, AccountId>,
 );
 
-/////// Transactors ///////
-// pub type ForeignAssetsAdapter = FungiblesAdapter<
-// 	// Use this fungibles implementation:
-// 	// TODO: Where is the correct implementation for Fungibles?
-// 	// I see several cases of 'type Fungibles = Assets;' in polkadot-sdk.
-// 	// No references to ForeignAssetsAdapter.
-// 	Fungibles,
-// 	// Use this currency when it is a fungible asset matching the given location or name:
-// 	MatchedConvertedConcreteId<Location, u128, IsParentsOnly<ConstU8<1>>, xcm_executor::traits::JustTry,  xcm_executor::traits::JustTry>,
-// 	// Convert an XCM Location into a local account id:
-// 	LocationToAccountId,
-// 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
-// 	AccountId,
-// 	// We do not allow teleportation of foreign assets. We only allow the reserve-based
-// 	// transfer of USDT, USDC and DOT.
-// 	NoChecking,
-// 	CheckingAccount
-// >;
+///// Transactors ///////
+pub type ForeignAssetsAdapter = FungiblesAdapter<
+	ForeignAssets,
+	// Use this currency when it is a fungible asset matching the given location or name:
+	MatchedConvertedConcreteId<
+		Location,
+		u128,
+		IsParentsOnly<ConstU8<1>>,
+		xcm_executor::traits::JustTry,
+		xcm_executor::traits::JustTry,
+	>,
+	// Convert an XCM Location into a local account id:
+	LocationToAccountId,
+	// Our chain's account ID type (we can't get away without mentioning it explicitly):
+	AccountId,
+	// We do not allow teleportation of foreign assets. We only allow the reserve-based
+	// transfer of USDT, USDC and DOT.
+	NoChecking,
+	CheckingAccount,
+>;
 
 /// Means for transacting assets on this chain.
 /// How xcm deals with assets on this chain
@@ -126,9 +127,7 @@ pub type LocalAssetTransactor = FungibleAdapter<
 	(),
 >;
 
-pub type AssetTransactors = (LocalAssetTransactor,);
-// pub type AssetTransactors = (LocalAssetTransactor, ForeignAssetsAdapter);
-/////////////////////
+pub type AssetTransactors = (LocalAssetTransactor, ForeignAssetsAdapter);
 
 pub type Barrier = TrailingSetTopicAsId<
 	DenyThenTry<
