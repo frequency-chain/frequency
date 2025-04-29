@@ -107,6 +107,7 @@ allow = [
   "OpenSSL",
   "Zlib",
   "Unicode-3.0",
+  "CDLA-Permissive-2.0"
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -122,7 +123,7 @@ exceptions = [
 ]
 
 [[licenses.clarify]]
-name = "ring"
+name = "ring"Ø
 expression = "MIT AND ISC AND OpenSSL"
 license-files = [{ path = "LICENSE", hash = 0xbd0eed23 }]
 

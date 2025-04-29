@@ -33,7 +33,7 @@ use frame_support::{
 	ensure,
 	traits::{
 		fungible::Inspect,
-		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
+		tokens::fungible::{InspectFreeze, Mutate, MutateFreeze},
 		Get, Hooks,
 	},
 	weights::Weight,
