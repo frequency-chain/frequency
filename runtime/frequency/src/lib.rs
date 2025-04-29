@@ -1658,6 +1658,7 @@ sp_api::impl_runtime_apis! {
 				sp_genesis_builder::PresetId::from("frequency-westend-local"),
 			]);
 
+
 			#[cfg(feature = "frequency-testnet")]
 			presets.push(sp_genesis_builder::PresetId::from("frequency-testnet"));
 
