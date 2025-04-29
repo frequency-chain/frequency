@@ -37,7 +37,6 @@ use frame_support::{
 	traits::IsSubType,
 };
 use parity_scale_codec::{Decode, Encode};
-use pallet_revive::{evm::H160, create2};
 
 use common_runtime::signature::check_signature;
 
@@ -49,7 +48,7 @@ use common_primitives::{
 	msa::{
 		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
 		ProviderLookup, ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
-		SignatureRegistryPointer,
+		SignatureRegistryPointer, H160,
 	},
 	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
@@ -1333,23 +1332,40 @@ impl<T: Config> Pallet<T> {
 		Ok(result)
 	}
 
+	/// Determine the address of a contract using the CREATE2 semantics.
+	/// Cloned from pallet-revive; when pallet-revive is added as a dependency, this can be removed.
+	/// https://docs.rs/pallet-revive/0.5.0/src/pallet_revive/address.rs.html#212-224
+	fn create2(deployer: &H160, code: &[u8], input_data: &[u8], salt: &[u8; 32]) -> H160 {
+		let init_code_hash = {
+			let init_code: Vec<u8> = code.iter().chain(input_data).cloned().collect();
+			keccak_256(init_code.as_ref())
+		};
+		let mut bytes = [0; 85];
+		bytes[0] = 0xff;
+		bytes[1..21].copy_from_slice(deployer.as_bytes());
+		bytes[21..53].copy_from_slice(salt);
+		bytes[53..85].copy_from_slice(&init_code_hash);
+		let hash = keccak_256(&bytes);
+		H160::from_slice(&hash[12..])
+	}
+
 	/// Converts an MSA ID into a synthetic Ethereum address (raw 20-byte format) as follows:
 	/// [0..8]:   u64 (big endian)
 	/// [8..17]:  b"Generated"
 	/// [17..20]: all zeroes
 	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
-		let code = [0u8; 20];
+		let code: [u8; 20] = [0u8; 20];
 		let mut input_value = [0u8; 32];
-		input_value.copy_from_slice(&id.to_be_bytes());
+		input_value[24..32].copy_from_slice(&id.to_be_bytes());
 		let mut salt = [0u8; 32];
-		salt.copy_from_slice(GENERATED_ADDRESS_TAG);
+		salt[0..9].copy_from_slice(GENERATED_ADDRESS_TAG);
 		let deployer_address = H160([0xeu8; 20]);
 
-		create2(&deployer_address, code.as_slice(), &input_value, &salt)
+		Self::create2(&deployer_address, code.as_slice(), &input_value, &salt)
 	}
 
 	/// Returns a boolean indicating whether the given Ethereum address was generated from the given MSA ID.
-	pub fn validate_eth_address_for_msa(address: H160, msa_id: MessageSourceId) -> bool {
+	pub fn validate_eth_address_for_msa(_address: H160, _msa_id: MessageSourceId) -> bool {
 		true
 	}
 

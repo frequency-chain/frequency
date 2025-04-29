@@ -15,6 +15,11 @@ pub use crate::schema::SchemaId;
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
 
+/// Ethereum address type alias
+//  TODO: If/when pallet-revive is added as a dependency, this should be replaced with
+//  `pallet_revive::H160
+pub use sp_core::H160;
+
 /// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
 /// Encodes and Decodes as just a `u64`

@@ -20,7 +20,7 @@ use crate::{
 use common_primitives::{
 	msa::{
 		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
-		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
+		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
@@ -681,46 +681,85 @@ fn try_mutate_delegation_success() {
 }
 
 #[test]
-fn msa_id_to_eth_address_binary() {
-	let msa_id: MessageSourceId = 1234u64;
-	let expected = "0x00000000000004d247656E657261746564000000";
-	let eth_address = Msa::msa_id_to_eth_address(msa_id);
-	let eth_checksummed = Msa::eth_address_to_checksummed_string(&eth_address);
-	let generated = core::str::from_utf8(&eth_checksummed).unwrap();
-	assert_eq!(generated, expected);
+fn create2() {
+	let code: [u8; 20] = [0u8; 20];
+	let mut input_value = [0u8; 32];
+	let mut salt = [0u8; 32];
+	salt[0..9].copy_from_slice(b"Generated");
+	let deployer_address = H160([0xeu8; 20]);
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = [
+		H160([
+			0x31, 0x5a, 0x79, 0xbd, 0x2d, 0x2f, 0x70, 0xb5, 0x6e, 0xae, 0xbf, 0x3a, 0xbf, 0xc1,
+			0xc5, 0x0c, 0x5c, 0x73, 0xe0, 0x2c,
+		]),
+		H160([
+			0xef, 0x0d, 0x46, 0x8f, 0xd9, 0xa0, 0x39, 0xbc, 0xc1, 0xf3, 0xdb, 0x94, 0x1b, 0x65,
+			0xd1, 0x5f, 0xb2, 0x34, 0x9f, 0xcb,
+		]),
+	];
+
+	for i in 0..msa_ids.len() {
+		let input_vaalue = [0u8; 32];
+		input_value[24..32].copy_from_slice(&msa_ids[i].to_be_bytes());
+
+		let create2_addr = Msa::create2(&deployer_address, &code, &input_value, &salt);
+		log::debug!(
+			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
+			msa_ids[i],
+			create2_addr
+		);
+		assert_eq!(create2_addr, expected[i]);
+	}
 }
 
 #[test]
-fn eth_address_to_msa_id() {
-	let msa_id: MessageSourceId = 1234u64;
-	let eth_address: [u8; 20] = [
-		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, 0xD2, 0x47, 0x65, 0x6E, 0x65, 0x72, 0x61, 0x74,
-		0x65, 0x64, 0x00, 0x00, 0x00,
+fn msa_id_to_eth_address_binary() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = [
+		H160([
+			0x31, 0x5a, 0x79, 0xbd, 0x2d, 0x2f, 0x70, 0xb5, 0x6e, 0xae, 0xbf, 0x3a, 0xbf, 0xc1,
+			0xc5, 0x0c, 0x5c, 0x73, 0xe0, 0x2c,
+		]),
+		H160([
+			0xef, 0x0d, 0x46, 0x8f, 0xd9, 0xa0, 0x39, 0xbc, 0xc1, 0xf3, 0xdb, 0x94, 0x1b, 0x65,
+			0xd1, 0x5f, 0xb2, 0x34, 0x9f, 0xcb,
+		]),
 	];
-	let generated_msa_id = Msa::eth_address_to_msa_id(&eth_address);
-	assert_eq!(generated_msa_id.is_some(), true);
-	assert_eq!(generated_msa_id.unwrap(), msa_id);
+
+	for i in 0..msa_ids.len() {
+		let eth_address = Msa::msa_id_to_eth_address(msa_ids[i]);
+		log::debug!(
+			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
+			msa_ids[i],
+			eth_address
+		);
+		assert_eq!(eth_address, expected[i]);
+	}
 }
+
+#[test]
+fn validate_eth_address_for_msa() {}
 
 #[test]
 fn eth_address_to_checksummed_string() {
-	let eth_addresses: [[u8; 20]; 4] = [
-		[
+	let eth_addresses: [H160; 4] = [
+		H160([
 			0x5a, 0xaE, 0xb6, 0x05, 0x3F, 0x3E, 0x94, 0xc9, 0xb9, 0xa0, 0x9f, 0x33, 0x66, 0x94,
 			0x35, 0xe7, 0xef, 0x1b, 0xea, 0xed,
-		],
-		[
+		]),
+		H160([
 			0xfb, 0x69, 0x16, 0x09, 0x5c, 0xa1, 0xdf, 0x60, 0xbb, 0x79, 0xce, 0x92, 0xce, 0x3e,
 			0xa7, 0x4c, 0x37, 0xc5, 0xd3, 0x59,
-		],
-		[
+		]),
+		H160([
 			0xdb, 0xf0, 0x3b, 0x40, 0x7c, 0x01, 0xe7, 0xcd, 0x3c, 0xbe, 0xa9, 0x95, 0x09, 0xd9,
 			0x3f, 0x8d, 0xdd, 0xc8, 0xc6, 0xfb,
-		],
-		[
+		]),
+		H160([
 			0xd1, 0x22, 0x0a, 0x0c, 0xf4, 0x7c, 0x7b, 0x9b, 0xe7, 0xa2, 0xe6, 0xba, 0x89, 0xf4,
 			0x29, 0x76, 0x2e, 0x7b, 0x9a, 0xdb,
-		],
+		]),
 	];
 
 	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md

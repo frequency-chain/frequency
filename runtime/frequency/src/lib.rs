@@ -90,7 +90,7 @@ use frame_support::{
 		OnRuntimeUpgrade,
 	},
 	weights::{ConstantMultiplier, Weight},
-	BoundedVec, Twox128,
+	Twox128,
 };
 
 use frame_system::{
@@ -435,7 +435,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 154,
+	spec_version: 155,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -449,7 +449,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 154,
+	spec_version: 155,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1233,19 +1233,6 @@ impl pallet_proxy::Config for Runtime {
 
 // End Proxy Pallet Config
 
-impl pallet_revive::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = pallet_revive::weights::SubstrateWeight<Runtime>;
-	type Currency = Balances;
-	type MaxReviveSchedules = MaxReleaseSchedules;
-	type SchedulerProvider = SchedulerProvider;
-	type RuntimeCall = RuntimeCall;
-	type ConvertIntoAccountId32 = ConvertInto;
-	type ReviveOrigin = EnsureRoot<AccountId>;
-	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = ();
-}
-
 impl pallet_messages::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_messages::weights::SubstrateWeight<Runtime>;
@@ -1383,8 +1370,6 @@ construct_runtime!(
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
 		Proxy: pallet_proxy = 43,
-		// Revive pallet provides Ethereum smart contract and RPC compatibility
-		Revive: pallet_revive::{Pallet, Config<T>} = 44,
 
 		// Substrate weights
 		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,

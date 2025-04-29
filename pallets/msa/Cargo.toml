@@ -15,7 +15,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 log = { workspace = true }
 parity-scale-codec = { workspace = true, features = ["derive"] }
-pallet-revive = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
@@ -49,7 +48,6 @@ runtime-benchmarks = [
   "common-primitives/runtime-benchmarks",
   "pallet-handles/runtime-benchmarks",
   "pallet-collective/runtime-benchmarks",
-  "pallet-revive/runtime-benchmarks",
 ]
 std = [
   "parity-scale-codec/std",
@@ -64,7 +62,6 @@ std = [
   "common-primitives/std",
   "common-runtime/std",
   "pallet-collective/std",
-  "pallet-revive/std",
   "log/std",
   "sp-io/std",
 ]
