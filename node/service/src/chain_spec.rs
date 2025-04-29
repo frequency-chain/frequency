@@ -19,7 +19,7 @@ pub mod frequency_paseo;
 #[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
 pub mod frequency_paseo_local;
 
-#[cfg(any(feature = "frequency-bridging"))]
+#[cfg(feature = "frequency-bridging")]
 pub mod frequency_westend_local;
 
 #[cfg(feature = "frequency-no-relay")]
