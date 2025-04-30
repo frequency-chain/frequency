@@ -24,6 +24,10 @@ use xcm_config::ForeignAssetsAssetId;
 #[cfg(feature = "frequency-bridging")]
 mod xcm_queue;
 
+#[cfg(feature = "frequency-bridging")]
+pub mod xcm_commons;
+use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 #[cfg(any(
@@ -1164,11 +1168,37 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnSystemEvent = ();
 	type SelfParaId = parachain_info::Pallet<Runtime>;
+
+	#[cfg(feature = "frequency-bridging")]
+	type DmpQueue = frame_support::traits::EnqueueWithOrigin<MessageQueue, RelayOrigin>;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type DmpQueue = frame_support::traits::EnqueueWithOrigin<(), sp_core::ConstU8<0>>;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type ReservedDmpWeight = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type ReservedDmpWeight = ReservedDmpWeight;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type OutboundXcmpMessageSource = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type OutboundXcmpMessageSource = XcmpQueue;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type XcmpMessageHandler = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type XcmpMessageHandler = XcmpQueue;
+
+	#[cfg(not(feature = "frequency-bridging"))]
 	type ReservedXcmpWeight = ();
+
+	#[cfg(feature = "frequency-bridging")]
+	type ReservedXcmpWeight = ReservedXcmpWeight;
+
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
@@ -1467,17 +1497,21 @@ construct_runtime!(
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
-		#[cfg(feature = "frequency-bridging")]
-		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 68,
 
 		#[cfg(feature = "frequency-bridging")]
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
+
 		#[cfg(feature = "frequency-bridging")]
-		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 73,
+		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
+
 		#[cfg(feature = "frequency-bridging")]
-		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 74
+		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 74,
+
+		#[cfg(feature = "frequency-bridging")]
+		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 76,
 	}
 );
 
