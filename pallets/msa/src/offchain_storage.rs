@@ -29,17 +29,17 @@ use sp_runtime::{
 
 /// Block event storage prefix
 const BLOCK_EVENT_KEY: &[u8] = b"frequency::block_event::msa::";
-/// Block event storage prefix for fork aware events
+/// Block event storage prefix for fork-aware events
 const BLOCK_EVENT_FORK_AWARE_KEY: &[u8] = b"frequency::block_event_fork::msa::";
-/// number of buckets to map the events keys for fork aware storage
+/// number of buckets to map the events for fork-aware storage
 const MAX_FORK_AWARE_BUCKET: u32 = 1000;
-/// max number of events to checks from storage
+/// max number of events to check from storage
 const MAX_NUMBER_OF_STORAGE_CHECKS: u16 = 1000;
 /// Lock expiration timeout in in milli-seconds for initial data import msa pallet
 const MSA_INITIAL_LOCK_TIMEOUT_EXPIRATION_MS: u64 = 6000;
 
 /// Lock expiration block for initial data import msa pallet
-const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 40;
+const MSA_INITIAL_LOCK_BLOCK_EXPIRATION_BLOCKS: u32 = 120;
 
 /// Lock name for initial data index for msa pallet
 const MSA_INITIAL_LOCK_NAME: &[u8; 28] = b"Msa::ofw::initial-index-lock";
