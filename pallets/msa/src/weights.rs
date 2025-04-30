@@ -44,6 +44,7 @@ pub trait WeightInfo {
 	fn create_provider() -> Weight;
 	fn create_provider_via_governance() -> Weight;
 	fn propose_to_be_provider() -> Weight;
+	fn reindex_offchain() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -230,6 +231,13 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
+	fn reindex_offchain() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
+	}
 }
 
 // For backwards compatibility and tests.
@@ -414,6 +422,13 @@ impl WeightInfo for () {
 		Weight::from_parts(22_510_000, 4107)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	fn reindex_offchain() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 4_000_000 picoseconds.
+		Weight::from_parts(8_000_000, 0)
 	}
 }
 
