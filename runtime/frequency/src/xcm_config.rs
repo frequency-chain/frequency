@@ -4,16 +4,14 @@ use crate::{
 };
 
 use staging_xcm_builder::{
-	AccountId32Aliases, AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom,
-	DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin,
-	FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete,
-	IsParentsOnly, MatchedConvertedConcreteId, NativeAsset, NoChecking, ParentIsPreset,
-	RelayChainAsNative, SiblingParachainAsNative, SiblingParachainConvertsVia,
-	SignedAccountId32AsNative, SignedToAccountId32, SovereignSignedViaLocation, TakeWeightCredit,
+	AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
+	FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete, IsParentsOnly,
+	MatchedConvertedConcreteId, NativeAsset, NoChecking, SignedToAccountId32, TakeWeightCredit,
 	TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
 
-use polkadot_parachain_primitives::primitives::Sibling;
+use crate::xcm_commons::{LocationToAccountId, RelayNetwork, XcmOriginToTransactDispatchOrigin};
 
 use frame_support::{
 	pallet_prelude::Get,
@@ -29,8 +27,6 @@ use staging_xcm::latest::prelude::*;
 use frame_system::EnsureRoot;
 
 use xcm_executor::XcmExecutor;
-
-use pallet_xcm::XcmPassthrough;
 
 use polkadot_runtime_common::impls::ToAuthor;
 
@@ -50,9 +46,6 @@ parameter_types! {
 
 parameter_types! {
 	pub const RelayLocation: Location = Location::parent();
-	// Update the Relay Network
-	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
-	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
 	// For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
 	// and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
 	pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
@@ -77,20 +70,7 @@ impl Contains<Location> for ParentOrParentsExecutivePlurality {
 	}
 }
 
-/// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
-/// when determining ownership of accounts for asset transacting and when attempting to use XCM
-/// `Transact` in order to determine the dispatch Origin.
-/// Conversions between Multilocation to an accountid
-/// Parachain origin is converted to corresponding sovereign account
-pub type LocationToAccountId = (
-	// The parent (Relay-chain) origin converts to the parent `AccountId`.
-	ParentIsPreset<AccountId>,
-	// Sibling parachain origins convert to AccountId via the `ParaId::into`.
-	SiblingParachainConvertsVia<Sibling, AccountId>,
-	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
-	AccountId32Aliases<RelayNetwork, AccountId>,
-);
-
+/// Type for specifying how a `Location` can be converted into an `AccountId`.
 ///// Transactors ///////
 pub type ForeignAssetsAdapter = FungiblesAdapter<
 	ForeignAssets,
@@ -156,27 +136,6 @@ impl<T: Get<Location>> ContainsPair<Asset, Location> for AssetFrom<T> {
 		location == &prefix
 	}
 }
-
-/// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
-/// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
-/// biases the kind of local `Origin` it will become.
-pub type XcmOriginToTransactDispatchOrigin = (
-	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
-	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
-	// foreign chains who want to have a local sovereign account on this chain which they control.
-	SovereignSignedViaLocation<LocationToAccountId, RuntimeOrigin>,
-	// Native converter for Relay-chain (Parent) location; will convert to a `Relay` origin when
-	// recognized.
-	RelayChainAsNative<RelayChainOrigin, RuntimeOrigin>,
-	// Native converter for sibling Parachains; will convert to a `SiblingPara` origin when
-	// recognized.
-	SiblingParachainAsNative<cumulus_pallet_xcm::Origin, RuntimeOrigin>,
-	// Native signed account converter; this just converts an `AccountId32` origin into a normal
-	// `RuntimeOrigin::Signed` origin of the same 32-byte value.
-	SignedAccountId32AsNative<RelayNetwork, RuntimeOrigin>,
-	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
-	XcmPassthrough<RuntimeOrigin>,
-);
 
 pub struct XcmConfig;
 impl xcm_executor::Config for XcmConfig {
