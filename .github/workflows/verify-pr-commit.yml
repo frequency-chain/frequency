@@ -507,10 +507,18 @@ jobs:
           name: artifacts-binary-mainnet-pr-${{github.run_id}}
           path: ./binaries-amd64
 
+      # For PR verification, create a mock arm64 binary by copying the amd64 one
+      # This is just to test the Docker build process, not the actual binary execution
+      - name: Create Mock arm64 Binary For Dockerfile Testing
+        run: |
+          mkdir -p ./mock-arm64-bin
+          cp ./binaries-amd64/frequency.mainnet.frequency.pr ./mock-arm64-bin/frequency.mainnet.frequency.pr.arm64
+
       # Prepare directory structure for multi-platform docker build
       - name: Prepare Docker Build Context
         run: |
           mkdir -p ./docker-build/linux/amd64/
+          mkdir -p ./docker-build/linux/arm64/
           mkdir -p ./docker-build/scripts/
 
           # Copy scripts needed for the Docker image
@@ -525,11 +533,14 @@ jobs:
 
           # Move binaries to the right place
           mv ./binaries-amd64/frequency.mainnet.frequency.pr ./docker-build/linux/amd64/frequency
+          mv ./mock-arm64-bin/frequency.mainnet.frequency.pr.arm64 ./docker-build/linux/arm64/frequency
 
           chmod +x ./docker-build/linux/amd64/frequency
+          chmod +x ./docker-build/linux/arm64/frequency
 
           echo "Binary structure prepared:"
           ls -la ./docker-build/linux/amd64/
+          ls -la ./docker-build/linux/arm64/
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -539,12 +550,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      # Check that all three multi-architecture images can be built
       - name: Build standalone node image
         uses: docker/build-push-action@v6
         with:
           context: ./docker-build
           push: false
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/standalone-node.dockerfile
 
       - name: Build collator image for local relay chain
@@ -552,7 +564,7 @@ jobs:
         with:
           context: ./docker-build
           push: false
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/collator-node-local.dockerfile
 
       - name: Build parachain node image
@@ -560,8 +572,26 @@ jobs:
         with:
           context: ./docker-build
           push: false
-          platforms: linux/amd64
+          platforms: linux/amd64,linux/arm64
           file: ./docker/parachain-node.dockerfile
+          tags: local-verification-parachain:test
+
+      - name: Double check Parachian Node Image
+        run: |
+          echo "Verifying image architecture support..."
+
+          # List all images to confirm it was created
+          docker image ls | grep local-verification-parachain
+
+          # Inspect the image manifest
+          docker buildx imagetools inspect local-verification-parachain:test
+
+          # Verify specific platforms are present
+          docker buildx imagetools inspect local-verification-parachain:test | grep -q "linux/amd64" || \
+            (echo "ERROR: linux/amd64 architecture missing!" && exit 1)
+
+          docker buildx imagetools inspect local-verification-parachain:test | grep -q "linux/arm64" || \
+            (echo "ERROR: linux/arm64 architecture missing!" && exit 1)
 
   execute-binary-checks:
     needs: build-binaries
