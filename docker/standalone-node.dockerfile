@@ -26,17 +26,20 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
 	chown -R frequency:frequency /data && \
 	ln -s /data /frequency/.local/share/frequency
 
-USER frequency
-
-COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # For local testing only
 # COPY --chown=frequency target/x86_64-unknown-linux-gnu/debug/frequency ./frequency/frequency
 # Copy the appropriate binary based on the target platform
+COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY linux/${TARGETARCH}/frequency /frequency/frequency
 COPY scripts/frequency-start.sh /frequency/frequency-start.sh
 COPY scripts/healthcheck.sh /frequency/scripts/healthcheck.sh
 
-RUN chmod +x /frequency/frequency /frequency/frequency-start.sh
+# Set correct permissions and ownership BEFORE switching user
+RUN chmod +x /frequency/frequency /frequency/frequency-start.sh /frequency/scripts/healthcheck.sh && \
+	chown -R frequency:frequency /frequency
+
+# Switch to non-root user after setting permissions
+USER frequency
 
 # 9944 for RPC call
 EXPOSE 9944
