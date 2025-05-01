@@ -1378,14 +1378,14 @@ impl<T: Config> Pallet<T> {
 		let addr_hex = hex::encode(addr_bytes);
 		let hash = keccak_256(addr_hex.as_bytes());
 
-		let mut result = [0u8; 42];
-		result[..2].copy_from_slice(b"0x");
+		let mut result = alloc::string::String::with_capacity(42);
+		result.push_str("0x");
 
 		for (i, c) in addr_hex.chars().enumerate() {
 			let hash_byte = hash[i / 2];
 			let bit = if i % 2 == 0 { (hash_byte >> 4) & 0xf } else { hash_byte & 0xf };
 
-			result[i + 2] = if c.is_ascii_hexdigit() && c.is_ascii_alphabetic() {
+			result.push(if c.is_ascii_hexdigit() && c.is_ascii_alphabetic() {
 				if bit >= 8 {
 					c.to_ascii_uppercase()
 				} else {
@@ -1393,10 +1393,10 @@ impl<T: Config> Pallet<T> {
 				}
 			} else {
 				c
-			} as u8;
+			});
 		}
 
-		alloc::string::String::from_utf8(result.to_vec()).unwrap_or_default()
+		result
 	}
 
 	/// Adds a signature to the `PayloadSignatureRegistryList`

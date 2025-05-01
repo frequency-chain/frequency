@@ -16,8 +16,6 @@ pub use crate::schema::SchemaId;
 pub type MessageSourceId = u64;
 
 /// Ethereum address type alias
-//  TODO: If/when pallet-revive is added as a dependency, this should be replaced with
-//  `pallet_revive::H160
 pub use sp_core::H160;
 
 /// Response type for getting Ethereum address as a 20-byte array and checksummed hex string
