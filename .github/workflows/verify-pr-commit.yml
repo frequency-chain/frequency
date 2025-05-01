@@ -112,26 +112,36 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
+        network: [dev, local, testnet, mainnet]
         include:
           - network: dev
             git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
+            arch: [amd64]
           - network: local
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
+            arch: [amd64]
           - network: local
             git_branch: main
             spec: frequency-local
             branch_alias: main
+            arch: [amd64]
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
+            arch: [amd64]
           - network: mainnet
             spec: frequency
             branch_alias: pr
-    runs-on: ubicloud-standard-16
+            arch: [amd64, arm64]
+          - arch: amd64
+            runner: ubicloud-standard-16
+          - arch: arm64
+            runner: ubicloud-standard-16-arm
+    runs-on: ${{matrix.runner}}
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
     env:
       NETWORK: mainnet
@@ -143,7 +153,7 @@ jobs:
       - name: Set Env Vars
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
-          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
+          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.arch}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -151,7 +161,7 @@ jobs:
       #   with:
       #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
-      - name: Compile Binary
+      - name: Compile Binary for ${{matrix.network}} on ${{matrix.arch}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
@@ -169,7 +179,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${{matrix.branch_alias}}-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
@@ -404,7 +414,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -421,7 +431,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-local-pr-${{github.run_id}}
+          pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
       - name: Extract and List Downloaded Binaries
         run: |
@@ -504,15 +514,16 @@ jobs:
         id: download-amd64-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-binary-mainnet-pr-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
-      # For PR verification, create a mock arm64 binary by copying the amd64 one
-      # This is just to test the Docker build process, not the actual binary execution
-      - name: Create Mock arm64 Binary For Dockerfile Testing
-        run: |
-          mkdir -p ./mock-arm64-bin
-          cp ./binaries-amd64/frequency.mainnet.frequency.pr ./mock-arm64-bin/frequency.mainnet.frequency.pr.arm64
+      # For PR verification, just use the mainnet arm64 build
+      - name: Download arm64 Binary
+        id: download-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
+          path: ./binaries-arm64
 
       # Prepare directory structure for multi-platform docker build
       - name: Prepare Docker Build Context
@@ -532,8 +543,8 @@ jobs:
           cp -r resources/* ./docker-build/resources/ || (echo "ERROR: resources directory not found" && false)
 
           # Move binaries to the right place
-          mv ./binaries-amd64/frequency.mainnet.frequency.pr ./docker-build/linux/amd64/frequency
-          mv ./mock-arm64-bin/frequency.mainnet.frequency.pr.arm64 ./docker-build/linux/arm64/frequency
+          mv ./binaries-amd64/frequency.mainnet.frequency.pr.amd64 ./docker-build/linux/amd64/frequency
+          mv ./binaries-arm64/frequency.mainnet.frequency.pr.arm64 ./docker-build/linux/arm64/frequency
 
           chmod +x ./docker-build/linux/amd64/frequency
           chmod +x ./docker-build/linux/arm64/frequency
@@ -595,8 +606,17 @@ jobs:
 
   execute-binary-checks:
     needs: build-binaries
-    name: Execute Binary Checks
-    runs-on: ubuntu-24.04
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubicloud-standard-4
+          - arch: arm64
+            runner: ubicloud-standard-4-arm
+    runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -607,7 +627,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-mainnet-pr-${{github.run_id}}
+          pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
       - name: List Downloaded Binaries
         run: |
@@ -618,11 +638,11 @@ jobs:
       - name: Set Binary Permissions
         working-directory: ${{env.BIN_DIR}}
         run: |
-          chmod 755 ${{env.TEST_BIN_FILENAME}}
+          chmod 755 ${{env.TEST_BIN_FILENAME}}.${{matrix.arch}}
       - name: Output Binary Version
         working-directory: ${{env.BIN_DIR}}
         run: |
-          file ./${{env.TEST_BIN_FILENAME}} && ./${{env.TEST_BIN_FILENAME}} --version
+          file ./${{env.TEST_BIN_FILENAME}}.${{matrix.arch}} && ./${{env.TEST_BIN_FILENAME}} --version
 
   check-metadata-and-spec-version:
     needs: build-binaries
@@ -637,8 +657,8 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local.amd64.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
@@ -718,13 +738,13 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.dev.frequency-no-relay.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.dev.amd64.frequency-no-relay.pr" >> $GITHUB_ENV
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-dev-pr-${{github.run_id}}
+          pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
           path: ${{env.BIN_DIR}}
       - name: List Downloaded Binaries
         run: |
@@ -792,8 +812,8 @@ jobs:
         run: |
           echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000805f6ddb6879aa31316a38c149e52ffe4e9f2a193e966ddcf3b6a2cb5846e96903170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_TESTNET=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
-          echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_TESTNET=frequency.testnet.amd64.frequency-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_MAINNET=frequency.mainnet.amd64.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
