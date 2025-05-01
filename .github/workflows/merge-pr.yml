@@ -7,6 +7,10 @@ on:
   push:
     branches:
       - main
+# Set default permissions as restrictive
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   publish-js-api-augment-rc:
