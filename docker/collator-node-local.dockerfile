@@ -4,6 +4,9 @@ FROM ubuntu:24.04
 LABEL maintainer="Frequency"
 LABEL description="Frequency collator node for local relay chain"
 
+# From QEMU
+ARG TARGETARCH
+
 # Some Ubuntu images have an ubuntu user
 RUN userdel -r ubuntu || true
 

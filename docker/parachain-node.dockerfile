@@ -9,6 +9,9 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 # This is the 2nd stage: a very small image where we copy the Frequency binary
 FROM ubuntu:24.04
 
+# From QEMU
+ARG TARGETARCH
+
 # Some Ubuntu images have an ubuntu user - don't error if it doesn't exist
 RUN userdel -r ubuntu || true
 
