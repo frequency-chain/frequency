@@ -132,7 +132,7 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" => frequency_testnet_genesis_config(),
 		#[cfg(feature = "frequency-westend")]
-		"frequency-testnet" => frequency_westend_genesis_config(),
+		"frequency-westend" => frequency_westend_genesis_config(),
 		#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 		"frequency" => frequency_genesis_config(),
 		_ => return None,

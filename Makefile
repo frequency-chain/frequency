@@ -118,7 +118,7 @@ specs-frequency-paseo-local-release:
 	./scripts/generate_specs.sh 2000 frequency-paseo-local release
 
 specs-frequency-westend-local-release:
-	./scripts/generate_specs.sh 2313 frequency-westend-local release
+	./scripts/generate_specs.sh 2000 frequency-westend-local release
 
 specs-frequency-westend-release:
 	./scripts/generate_specs.sh 2313 frequency-westend release

@@ -28,6 +28,7 @@ mod xcm_queue;
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_commons;
+#[cfg(feature = "frequency-bridging")]
 use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
 
 use alloc::borrow::Cow;
@@ -1417,8 +1418,7 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 
 	#[cfg(feature = "runtime-benchmarks")]
-	// type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
-	type BenchmarkHelper = ();
+	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
 	type Holder = ();
 }
 

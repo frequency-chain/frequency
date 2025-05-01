@@ -86,7 +86,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 			Ok(Box::new(chain_spec::frequency_paseo_local::local_paseo_testnet_config())),
 		#[cfg(feature = "frequency-bridging")]
 		"frequency-westend-local" =>
-			Ok(Box::new(chain_spec::frequency_westend_local::local_westend_testnet_config())),
+			Ok(Box::new(chain_spec::frequency_westend_local::westend_local_config())),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
@@ -122,7 +122,7 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					#[cfg(feature = "frequency-bridging")]
 					{
 						return Ok(Box::new(
-							chain_spec::frequency_westend_local::local_westend_testnet_config(),
+							chain_spec::frequency_westend_local::westend_local_config(),
 						));
 					}
 					#[cfg(not(feature = "frequency-bridging"))]
@@ -293,8 +293,6 @@ impl SubstrateCli for RelayChainCli {
 			// TODO: Remove once on a Polkadot-SDK with Paseo
 			#[cfg(feature = "frequency-testnet")]
 			"paseo" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
-			#[cfg(feature = "frequency-westend")]
-			"westend" => Ok(Box::new(chain_spec::frequency_westend::load_westend_spec())),
 			_ => polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
 				.load_spec(id),
 		}

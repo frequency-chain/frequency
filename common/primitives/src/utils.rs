@@ -15,8 +15,8 @@ pub const TESTNET_ON_PASEO_GENESIS_HASH: &[u8] = &[
 
 /// Frequency Testnet on Westend Genesis Hash 0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e
 pub const TESTNET_ON_WESTEND_GENESIS_HASH: &[u8] = &[
-	225, 67, 242, 56, 3, 172, 80, 232, 246, 248, 230, 38, 149, 209, 206, 158, 78, 29, 104, 170,
-	54, 193, 205, 44, 253, 21, 52, 2, 19, 243, 66, 62,
+	225, 67, 242, 56, 3, 172, 80, 232, 246, 248, 230, 38, 149, 209, 206, 158, 78, 29, 104, 170, 54,
+	193, 205, 44, 253, 21, 52, 2, 19, 243, 66, 62,
 ];
 
 /// An enum that shows the detected chain type

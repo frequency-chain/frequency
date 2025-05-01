@@ -33,28 +33,48 @@ compile_error!("\"Only one main feature can be enabled except for benchmark/lint
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-no-relay",
-	any(feature = "frequency", feature = "frequency-local", feature = "frequency-testnet", feature = "frequency-westend")
+	any(
+		feature = "frequency",
+		feature = "frequency-local",
+		feature = "frequency-testnet",
+		feature = "frequency-westend"
+	)
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-local",
-	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-testnet", feature = "frequency-westend")
+	any(
+		feature = "frequency",
+		feature = "frequency-no-relay",
+		feature = "frequency-testnet",
+		feature = "frequency-westend"
+	)
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-testnet",
-	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-local", feature = "frequency-westend")
+	any(
+		feature = "frequency",
+		feature = "frequency-no-relay",
+		feature = "frequency-local",
+		feature = "frequency-westend"
+	)
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 
 #[cfg(all(
 	not(feature = "frequency-lint-check"),
 	feature = "frequency-westend",
-	any(feature = "frequency", feature = "frequency-no-relay", feature = "frequency-local", feature = "frequency-testnet")
+	any(
+		feature = "frequency",
+		feature = "frequency-no-relay",
+		feature = "frequency-local",
+		feature = "frequency-testnet"
+	)
 ))]
 compile_error!("\"Only one main feature can be enabled except for benchmark/lint/check with \"frequency-lint-check\"");
 

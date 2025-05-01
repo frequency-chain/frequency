@@ -32,24 +32,6 @@ use polkadot_runtime_common::impls::ToAuthor;
 
 pub type ForeignAssetsAssetId = Location;
 
-#[cfg(feature = "frequency-testnet")]
-use hex_literal::hex;
-#[cfg(feature = "frequency-westend")]
-use staging_xcm::opaque::latest::WESTEND_GENESIS_HASH;
-
-#[cfg(feature = "frequency-testnet")]
-pub const PASEO_GENESIS_HASH: [u8; 32] = 
-	hex!["203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0"];
-
-#[cfg(feature = "frequency-testnet")]
-const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::ByGenesis(PASEO_GENESIS_HASH));
-#[cfg(feature = "frequency-westend")]
-const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::ByGenesis(WESTEND_GENESIS_HASH));
-#[cfg(feature = "frequency")]
-const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::Polkadot);
-#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay", feature = "frequency-lint-check"))]
-const RELAY_NETWORK_ID: Option<NetworkId> = None;
-
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
@@ -241,4 +223,14 @@ impl pallet_xcm::Config for Runtime {
 impl cumulus_pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type XcmExecutor = XcmExecutor<XcmConfig>;
+}
+
+/// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
+#[cfg(feature = "frequency-bridging")]
+pub struct XcmBenchmarkHelper;
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_assets::BenchmarkHelper<ForeignAssetsAssetId> for XcmBenchmarkHelper {
+	fn create_asset_id_parameter(id: u32) -> ForeignAssetsAssetId {
+		Location::new(1, [Parachain(id)])
+	}
 }
