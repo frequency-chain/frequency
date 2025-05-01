@@ -8,6 +8,10 @@ on:
     branches:
       - main
       - "*-development" # Feature Branches should suffix with -development
+# Set default permissions as restrictive
+permissions:
+  contents: read
+  packages: read
 env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed
