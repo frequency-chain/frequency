@@ -29,7 +29,7 @@ pub fn load_frequency_westend_spec() -> ChainSpec {
 	.with_id("frequency-westend")
 	.with_protocol_id("frequency-westend")
 	.with_properties(properties)
-	.with_chain_type(ChainType::Local)
+	.with_chain_type(ChainType::Live)
 	.with_genesis_config_preset_name("frequency-westend")
 	.build()
 }
