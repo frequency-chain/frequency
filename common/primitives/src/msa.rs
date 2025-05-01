@@ -20,6 +20,16 @@ pub type MessageSourceId = u64;
 //  `pallet_revive::H160
 pub use sp_core::H160;
 
+/// Response type for getting Ethereum address as a 20-byte array and checksummed hex string
+#[derive(TypeInfo, Encode, Decode)]
+pub struct AccountId20Response {
+	/// Ethereum address as a 20-byte array
+	pub account_id: H160,
+
+	/// Ethereum address as a checksummed 42-byte hex string (including 0x prefix)
+	pub account_id_checksummed: alloc::string::String,
+}
+
 /// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
 /// Encodes and Decodes as just a `u64`

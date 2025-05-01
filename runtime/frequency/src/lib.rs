@@ -53,8 +53,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		SchemaGrant, SchemaGrantValidator,
+		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
+		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -1674,10 +1674,14 @@ sp_api::impl_runtime_apis! {
 			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
 		}
 
-		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> [u8; 42] {
-			let addr = Msa::eth_address_to_checksummed_string(&Msa::msa_id_to_eth_address(msa_id));
-			log::debug!("Ethereum address for MSA {}: [{}, {}, {}, {}]", msa_id, addr[0], addr[1], addr[2], addr[3]);
-			addr
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
+			let account_id = Msa::msa_id_to_eth_address(msa_id);
+			let account_id_checksummed = Msa::eth_address_to_checksummed_string(&account_id);
+			AccountId20Response { account_id, account_id_checksummed }
+		}
+
+		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+			Msa::validate_eth_address_for_msa(address, msa_id)
 		}
 	}
 

@@ -1365,45 +1365,38 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Returns a boolean indicating whether the given Ethereum address was generated from the given MSA ID.
-	pub fn validate_eth_address_for_msa(_address: H160, _msa_id: MessageSourceId) -> bool {
-		true
+	pub fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+		let generated_address = Self::msa_id_to_eth_address(msa_id);
+		*address == generated_address
 	}
 
 	/// Converts a 20-byte synthetic Ethereum address into a checksummed string format,
 	/// using ERC-55 checksum rules.
 	/// Formats a 20-byte address into an EIP-55 checksummed `0x...` string.
-	pub fn eth_address_to_checksummed_string(addr: &H160) -> [u8; 42] {
-		const HEXCHARS: &[u8; 16] = b"0123456789abcdef";
+	pub fn eth_address_to_checksummed_string(address: &H160) -> alloc::string::String {
+		let addr_bytes = address.0;
+		let addr_hex = hex::encode(addr_bytes);
+		let hash = keccak_256(addr_hex.as_bytes());
 
-		// Step 1: Lowercase hex encoding of the address
-		let mut hex: [u8; 40] = [0u8; 40];
-		for (i, byte) in addr.0.iter().enumerate() {
-			hex[2 * i] = HEXCHARS[(byte >> 4) as usize];
-			hex[2 * i + 1] = HEXCHARS[(byte & 0x0F) as usize];
-		}
+		let mut result = [0u8; 42];
+		result[..2].copy_from_slice(b"0x");
 
-		// Step 2: keccak256 of the lowercase hex string
-		let hash = keccak_256(&hex);
-
-		// Step 3: Apply checksum casing based on hash bits
-		let mut output = [0u8; 42];
-		output[0] = b'0';
-		output[1] = b'x';
-
-		for i in 0..40 {
-			let c = hex[i];
+		for (i, c) in addr_hex.chars().enumerate() {
 			let hash_byte = hash[i / 2];
-			let nibble = if i % 2 == 0 { (hash_byte >> 4) & 0x0F } else { hash_byte & 0x0F };
+			let bit = if i % 2 == 0 { (hash_byte >> 4) & 0xf } else { hash_byte & 0xf };
 
-			// For letters a–f (ASCII 97–102), uppercase if nibble >= 8
-			output[2 + i] = if (b'a'..=b'f').contains(&c) && nibble >= 8 {
-				c - 32 // to ASCII uppercase
+			result[i + 2] = if c.is_ascii_hexdigit() && c.is_ascii_alphabetic() {
+				if bit >= 8 {
+					c.to_ascii_uppercase()
+				} else {
+					c
+				}
 			} else {
 				c
-			};
+			} as u8;
 		}
 
-		output
+		alloc::string::String::from_utf8(result.to_vec()).unwrap_or_default()
 	}
 
 	/// Adds a signature to the `PayloadSignatureRegistryList`

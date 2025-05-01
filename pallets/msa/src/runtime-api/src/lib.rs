@@ -29,7 +29,7 @@ sp_api::decl_runtime_apis! {
 	/// Runtime Version for MSAs
 	/// - MUST be incremented if anything changes
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(2)]
+	#[api_version(3)]
 
 	/// Runtime API definition for [MSA](../pallet_msa/index.html)
 	pub trait MsaRuntimeApi<AccountId> where
@@ -47,6 +47,9 @@ sp_api::decl_runtime_apis! {
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>>;
 
 		/// Get the Ethereum address of the given MSA as a 42-byte hex string (including 0x prefix)
-		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> [u8; 42];
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response;
+
+		/// Validate if the given Ethereum address is associated with the given MSA
+		fn validate_eth_address_for_msa(eth_address: &H160, msa_id: MessageSourceId) -> bool;
 	}
 }

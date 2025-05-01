@@ -683,7 +683,6 @@ fn try_mutate_delegation_success() {
 #[test]
 fn create2() {
 	let code: [u8; 20] = [0u8; 20];
-	let mut input_value = [0u8; 32];
 	let mut salt = [0u8; 32];
 	salt[0..9].copy_from_slice(b"Generated");
 	let deployer_address = H160([0xeu8; 20]);
@@ -700,15 +699,10 @@ fn create2() {
 	];
 
 	for i in 0..msa_ids.len() {
-		let input_vaalue = [0u8; 32];
+		let mut input_value = [0u8; 32];
 		input_value[24..32].copy_from_slice(&msa_ids[i].to_be_bytes());
 
 		let create2_addr = Msa::create2(&deployer_address, &code, &input_value, &salt);
-		log::debug!(
-			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
-			msa_ids[i],
-			create2_addr
-		);
 		assert_eq!(create2_addr, expected[i]);
 	}
 }
@@ -729,21 +723,47 @@ fn msa_id_to_eth_address_binary() {
 
 	for i in 0..msa_ids.len() {
 		let eth_address = Msa::msa_id_to_eth_address(msa_ids[i]);
-		log::debug!(
-			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
-			msa_ids[i],
-			eth_address
-		);
 		assert_eq!(eth_address, expected[i]);
 	}
 }
 
 #[test]
-fn validate_eth_address_for_msa() {}
+fn validate_eth_address_for_msa_good() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = msa_ids.map(|msa_id| Msa::msa_id_to_eth_address(msa_id));
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		assert_eq!(status, true);
+	}
+}
+
+#[test]
+fn validate_eth_address_for_msa_bad() {
+	let msa_ids = [1234u64, 4321u64];
+	let expected: [H160; 2] = msa_ids
+		.map(|msa_id| Msa::msa_id_to_eth_address(msa_id))
+		.iter()
+		.rev()
+		.cloned()
+		.collect::<Vec<_>>()
+		.try_into()
+		.unwrap();
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		log::debug!(
+			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
+			msa_ids[i],
+			expected[i]
+		);
+		assert_eq!(status, false);
+	}
+}
 
 #[test]
 fn eth_address_to_checksummed_string() {
-	let eth_addresses: [H160; 4] = [
+	let eth_addresses: [H160; 5] = [
 		H160([
 			0x5a, 0xaE, 0xb6, 0x05, 0x3F, 0x3E, 0x94, 0xc9, 0xb9, 0xa0, 0x9f, 0x33, 0x66, 0x94,
 			0x35, 0xe7, 0xef, 0x1b, 0xea, 0xed,
@@ -760,21 +780,27 @@ fn eth_address_to_checksummed_string() {
 			0xd1, 0x22, 0x0a, 0x0c, 0xf4, 0x7c, 0x7b, 0x9b, 0xe7, 0xa2, 0xe6, 0xba, 0x89, 0xf4,
 			0x29, 0x76, 0x2e, 0x7b, 0x9a, 0xdb,
 		]),
+		H160([
+			0x31, 0x5A, 0x79, 0xBd, 0x2D, 0x2f, 0x70, 0xb5, 0x6E, 0xAE, 0xbf, 0x3a, 0xbf, 0xc1,
+			0xc5, 0x0C, 0x5c, 0x73, 0xE0, 0x2C,
+		]),
 	];
 
 	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md
-	let eth_results: [&str; 4] = [
-		"0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed",
-		"0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359",
-		"0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB",
-		"0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb",
+	let eth_results: [alloc::string::String; 5] = [
+		"0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed".to_string(),
+		"0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359".to_string(),
+		"0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB".to_string(),
+		"0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb".to_string(),
+		"0x315A79Bd2D2f70b56EAEbf3abfc1c50C5c73E02C".to_string(),
 	];
 
 	for i in 0..eth_addresses.len() {
-		let eth_address = eth_addresses[i];
-		let expected_result = eth_results[i];
-		let generated_result = Msa::eth_address_to_checksummed_string(&eth_address);
-		let generated_str = core::str::from_utf8(&generated_result).unwrap();
-		assert_eq!(generated_str, expected_result);
+		let generated_result = Msa::eth_address_to_checksummed_string(&eth_addresses[i]);
+		println!(
+			"eth_address_to_checksummed_string: eth_address: {:?}, result: {:?}",
+			eth_addresses[i], generated_result
+		);
+		assert_eq!(generated_result, eth_results[i]);
 	}
 }
