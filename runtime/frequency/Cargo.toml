@@ -279,6 +279,7 @@ try-runtime = [
 ]
 frequency = ["common-runtime/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet"]
+frequency-westend = ["common-runtime/frequency-westend"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
 frequency-bridging = ["common-runtime/frequency-bridging"]

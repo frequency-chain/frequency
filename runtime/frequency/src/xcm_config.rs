@@ -36,6 +36,24 @@ use polkadot_runtime_common::impls::ToAuthor;
 
 pub type ForeignAssetsAssetId = Location;
 
+#[cfg(feature = "frequency-testnet")]
+use hex_literal::hex;
+#[cfg(feature = "frequency-westend")]
+use staging_xcm::opaque::latest::WESTEND_GENESIS_HASH;
+
+#[cfg(feature = "frequency-testnet")]
+pub const PASEO_GENESIS_HASH: [u8; 32] = 
+	hex!["203c6838fc78ea3660a2f298a58d859519c72a5efdc0f194abd6f0d5ce1838e0"];
+
+#[cfg(feature = "frequency-testnet")]
+const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::ByGenesis(PASEO_GENESIS_HASH));
+#[cfg(feature = "frequency-westend")]
+const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::ByGenesis(WESTEND_GENESIS_HASH));
+#[cfg(feature = "frequency")]
+const RELAY_NETWORK_ID: Option<NetworkId> = Some(NetworkId::Polkadot);
+#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay", feature = "frequency-lint-check"))]
+const RELAY_NETWORK_ID: Option<NetworkId> = None;
+
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 }
@@ -50,11 +68,8 @@ parameter_types! {
 
 parameter_types! {
 	pub const RelayLocation: Location = Location::parent();
-	// Update the Relay Network
-	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::Polkadot);
+	pub const RelayNetwork: Option<NetworkId> = RELAY_NETWORK_ID;
 	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-	// For the real deployment, it is recommended to set `RelayNetwork` according to the relay chain
-	// and prepend `UniversalLocation` with `GlobalConsensus(RelayNetwork::get())`.
 	pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
 	pub HereLocation: Location = Location::here();
 }

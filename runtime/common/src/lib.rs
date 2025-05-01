@@ -30,6 +30,8 @@ macro_rules! prod_or_testnet_or_local {
 			$local
 		} else if cfg!(feature = "frequency-testnet") {
 			$test
+		} else if cfg!(feature = "frequency-westend") {
+			$test
 		} else {
 			$prod
 		}

@@ -27,6 +27,13 @@ fn main() {
 		.build()
 }
 
+#[cfg(all(feature = "std", feature = "metadata-hash", feature = "frequency-westend"))]
+fn main() {
+	substrate_wasm_builder::WasmBuilder::init_with_defaults()
+		.enable_metadata_hash(FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS)
+		.build()
+}
+
 #[cfg(all(
 	feature = "std",
 	feature = "metadata-hash",

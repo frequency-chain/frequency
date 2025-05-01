@@ -25,6 +25,7 @@ enum ChainIdentity {
 	FrequencyLocal,
 	FrequencyDev,
 	FrequencyWestendLocal,
+	FrequencyWestend,
 }
 
 trait IdentifyChain {
@@ -43,6 +44,8 @@ impl IdentifyChain for dyn sc_service::ChainSpec {
 			ChainIdentity::FrequencyDev
 		} else if self.id() == "frequency-westend-local" {
 			ChainIdentity::FrequencyWestendLocal
+		} else if self.id() == "frequency-westend" {
+			ChainIdentity::FrequencyWestend
 		} else {
 			panic!("Unknown chain identity")
 		}
@@ -58,6 +61,7 @@ impl PartialEq for ChainIdentity {
 			(ChainIdentity::FrequencyLocal, ChainIdentity::FrequencyLocal) => true,
 			(ChainIdentity::FrequencyDev, ChainIdentity::FrequencyDev) => true,
 			(ChainIdentity::FrequencyWestendLocal, ChainIdentity::FrequencyWestendLocal) => true,
+			(ChainIdentity::FrequencyWestend, ChainIdentity::FrequencyWestend) => true,
 			_ => false,
 		}
 	}
@@ -86,6 +90,9 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" | "frequency-paseo" | "paseo" | "testnet" =>
 			Ok(Box::new(chain_spec::frequency_paseo::load_frequency_paseo_spec())),
+		#[cfg(feature = "frequency-westend")]
+		"frequency-westend" | "westend" =>
+			Ok(Box::new(chain_spec::frequency_westend::load_frequency_westend_spec())),
 		path => {
 			if path.is_empty() {
 				if cfg!(feature = "frequency") {
@@ -129,6 +136,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 					}
 					#[cfg(not(feature = "frequency-testnet"))]
 					return Err("Frequency Paseo runtime is not available.".into());
+				} else if cfg!(feature = "frequency-westend") {
+					#[cfg(feature = "frequency-westend")]
+					{
+						return Ok(Box::new(
+							chain_spec::frequency_westend::load_frequency_westend_spec(),
+						));
+					}
+					#[cfg(not(feature = "frequency-westend"))]
+					return Err("Frequency Westend runtime is not available.".into());
 				} else {
 					return Err("No chain spec is available.".into());
 				}
@@ -179,6 +195,15 @@ fn load_spec(id: &str) -> std::result::Result<Box<dyn ChainSpec>, String> {
 				}
 				#[cfg(not(feature = "frequency-no-relay"))]
 				return Err("Frequency Dev (no relay) runtime is not available.".into());
+			} else if ChainIdentity::FrequencyWestend == spec.identify() {
+				#[cfg(feature = "frequency-westend")]
+				{
+					return Ok(Box::new(chain_spec::frequency_westend::ChainSpec::from_json_file(
+						path_buf,
+					)?));
+				}
+				#[cfg(not(feature = "frequency-westend"))]
+				return Err("Frequency Westend runtime is not available.".into());
 			} else {
 				return Err("Unknown chain spec.".into());
 			}
@@ -268,6 +293,8 @@ impl SubstrateCli for RelayChainCli {
 			// TODO: Remove once on a Polkadot-SDK with Paseo
 			#[cfg(feature = "frequency-testnet")]
 			"paseo" => Ok(Box::new(chain_spec::frequency_paseo::load_paseo_spec())),
+			#[cfg(feature = "frequency-westend")]
+			"westend" => Ok(Box::new(chain_spec::frequency_westend::load_westend_spec())),
 			_ => polkadot_cli::Cli::from_iter([RelayChainCli::executable_name()].iter())
 				.load_spec(id),
 		}
