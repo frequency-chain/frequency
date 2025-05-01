@@ -1,13 +1,13 @@
 # Docker image for running Frequency parachain node container (with collating)
 # locally as a standalone node. Multi-architecture support for amd64 and arm64
-FROM --platform=$TARGETPLATFORM ubuntu:24.04 AS base
+FROM ubuntu:24.04 AS base
 LABEL maintainer="Frequency"
 LABEL description="Frequency standalone node"
 
 RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificates
 
 # This is the 2nd stage: a very small image where we copy the Frequency binary
-FROM --platform=$TARGETPLATFORM ubuntu:24.04
+FROM ubuntu:24.04
 
 # Some Ubuntu images have an ubuntu user
 RUN userdel -r ubuntu || true

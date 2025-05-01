@@ -1,6 +1,6 @@
 # Docker image for running collator node node locally against the local relay chain.
 # Multi-architecture support for amd64 and arm64
-FROM --platform=$TARGETPLATFORM ubuntu:24.04
+FROM ubuntu:24.04
 LABEL maintainer="Frequency"
 LABEL description="Frequency collator node for local relay chain"
 
