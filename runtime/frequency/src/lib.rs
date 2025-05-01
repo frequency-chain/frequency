@@ -19,6 +19,8 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[cfg(feature = "frequency-bridging")]
 mod xcm_config;
+// use pallet_assets::BenchmarkHelper;
+#[cfg(feature = "frequency-bridging")]
 use xcm_config::ForeignAssetsAssetId;
 
 #[cfg(feature = "frequency-bridging")]
@@ -1659,6 +1661,9 @@ sp_api::impl_runtime_apis! {
 
 			#[cfg(feature = "frequency-testnet")]
 			presets.push(sp_genesis_builder::PresetId::from("frequency-testnet"));
+
+			#[cfg(feature = "frequency-westend")]
+			presets.push(sp_genesis_builder::PresetId::from("frequency-westend"));
 
 			#[cfg(feature = "frequency")]
 			presets.push(sp_genesis_builder::PresetId::from("frequency"));
