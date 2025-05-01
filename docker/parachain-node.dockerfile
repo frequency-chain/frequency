@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y ca-certificates && update-ca-certificat
 # This is the 2nd stage: a very small image where we copy the Frequency binary
 FROM --platform=$TARGETPLATFORM ubuntu:24.04
 
-# Some Ubuntu images have an ubuntu user
+# Some Ubuntu images have an ubuntu user - don't error if it doesn't exist
 RUN userdel -r ubuntu || true
 
 # We want jq and curl in the final image, but we don't need the support files
@@ -23,12 +23,16 @@ RUN useradd -m -u 1000 -U -s /bin/sh -d /frequency frequency && \
 	chown -R frequency:frequency /chain-data && \
 	ln -s /chain-data /frequency/.local/share/frequency
 
-USER frequency
-
-COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 # Copy the appropriate binary based on the target platform
+COPY --from=base /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 COPY linux/${TARGETARCH}/frequency /frequency/frequency
 COPY scripts/healthcheck.sh /frequency/scripts/healthcheck.sh
+
+# Set correct permissions and ownership
+RUN chmod +x /frequency/frequency /frequency/scripts/healthcheck.sh && \
+	chown -R frequency:frequency /frequency
+
+USER frequency
 
 # Frequency Chain Ports
 # 9944 for Websocket and Rpc
@@ -46,6 +50,3 @@ HEALTHCHECK --interval=300s --timeout=75s --start-period=30s --retries=3 \
 VOLUME ["/chain-data"]
 
 ENTRYPOINT ["/frequency/frequency"]
-
-# Params which can be overriden from CLI
-# CMD ["", "", ...]
