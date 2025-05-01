@@ -1087,13 +1087,13 @@ jobs:
           mkdir -p ./docker-build/resources/
 
           # Copy scripts needed for the Docker image
-          cp scripts/healthcheck.sh ./docker-build/scripts/ || echo "Warning: healthcheck.sh not found"
-          cp scripts/frequency-start.sh ./docker-build/scripts/ || echo "Warning: frequency-start.sh not found"
-          cp scripts/init.sh ./docker-build/scripts/ || echo "Warning: init.sh not found"
-          cp scripts/run_collator.sh ./docker-build/scripts/ || echo "Warning: run_collator.sh not found"
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || (echo "ERROR: healthcheck.sh not found" && false)
+          cp docker/frequency-start.sh ./docker-build/scripts/ || (echo "ERROR: frequency-start.sh not found" && false)
+          cp scripts/init.sh ./docker-build/scripts/ || (echo "ERROR: init.sh not found" && false)
+          cp scripts/run_collator.sh ./docker-build/scripts/ || (echo "ERROR: run_collator.sh not found" && false)
 
           # Copy resources if needed
-          cp -r resources/* ./docker-build/resources/ || echo "Warning: resources directory not found"
+          cp -r resources/* ./docker-build/resources/ || (echo "ERROR: resources directory not found" && false)
 
           # Move binaries to the right place
           mv ./binaries-amd64/${{matrix.release-file-name-prefix}}.amd64 ./docker-build/linux/amd64/frequency
