@@ -499,51 +499,69 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
-      - name: Set Env Vars
-        run: |
-          echo "BUILT_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
-          echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
-      - name: Download Binaries
-        id: download-binaries
+
+      - name: Download amd64 Binaries
+        id: download-amd64-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
-          merge-multiple: true
-      - name: List Downloaded Binaries
+          name: artifacts-binary-mainnet-pr-${{github.run_id}}
+          path: ./binaries-amd64
+
+      # Prepare directory structure for multi-platform docker build
+      - name: Prepare Docker Build Context
         run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Rename Binary
-        working-directory: ${{env.BIN_DIR}}
-        run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.DOCKER_BIN_FILENAME}}
-      - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          chmod 755 ${{env.DOCKER_BIN_FILENAME}}
+          mkdir -p ./docker-build/linux/amd64/
+          mkdir -p ./docker-build/scripts/
+
+          # Copy scripts needed for the Docker image
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || echo "Warning: healthcheck.sh not found"
+          cp scripts/frequency-start.sh ./docker-build/scripts/ || echo "Warning: frequency-start.sh not found"
+          cp scripts/init.sh ./docker-build/scripts/ || echo "Warning: init.sh not found"
+          cp scripts/run_collator.sh ./docker-build/scripts/ || echo "Warning: run_collator.sh not found"
+
+          # Copy resources if needed
+          mkdir -p ./docker-build/resources/
+          cp -r resources/* ./docker-build/resources/ || echo "Warning: resources directory not found"
+
+          # Move binaries to the right place
+          mv ./binaries-amd64/frequency.mainnet.frequency.pr ./docker-build/linux/amd64/frequency
+
+          chmod +x ./docker-build/linux/amd64/frequency
+
+          echo "Binary structure prepared:"
+          ls -la ./docker-build/linux/amd64/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
           platforms: "amd64"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build collator standalone
-        env:
-          IMAGE_NAME: standalone-node
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-      - name: Build collator image for local relay chain
-        env:
-          IMAGE_NAME: collator-node-local
+
+      - name: Build standalone node image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./docker-build
           push: false
-          file: docker/${{env.IMAGE_NAME}}.dockerfile
+          platforms: linux/amd64
+          file: ./docker/standalone-node.dockerfile
+
+      - name: Build collator image for local relay chain
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-build
+          push: false
+          platforms: linux/amd64
+          file: ./docker/collator-node-local.dockerfile
+
+      - name: Build parachain node image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-build
+          push: false
+          platforms: linux/amd64
+          file: ./docker/parachain-node.dockerfile
 
   execute-binary-checks:
     needs: build-binaries
