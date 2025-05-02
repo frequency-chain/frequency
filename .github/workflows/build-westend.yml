@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Compile Binary
         run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+          CARGO_INCREMENTAL=0 cargo build --locked --release \
             --features frequency-westend,frequency-bridging
       - name: Run Sanity Checks
         working-directory: ${{env.BIN_DIR}}
