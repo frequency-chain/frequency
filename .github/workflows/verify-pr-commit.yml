@@ -168,14 +168,14 @@ jobs:
             spec: frequency-testnet
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-32
+            runner: ubicloud-standard-30
             # Release
           - network: mainnet
             build-profile: release
             spec: frequency
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-32
+            runner: ubicloud-standard-30
 
           # arm64 build only for mainnet
           - network: mainnet
