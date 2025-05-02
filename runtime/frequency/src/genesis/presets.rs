@@ -11,6 +11,7 @@ use crate::genesis::helpers::{
 };
 extern crate alloc;
 use alloc::vec::Vec;
+use crate::genesis::westend;
 
 #[cfg(any(
 	feature = "frequency-no-relay",
@@ -21,6 +22,7 @@ fn development_genesis_config() -> serde_json::Value {
 	super::helpers::build_genesis(
 		default_invulnerables(),
 		crate::EXISTENTIAL_DEPOSIT * 16,
+		Some(get_account_id_from_seed::<sp_core::sr25519::Public>("Alice")),
 		default_endowed_accounts(),
 		default_session_keys(),
 		default_council_members(),
@@ -39,6 +41,7 @@ fn frequency_local_genesis_config() -> serde_json::Value {
 	super::helpers::build_genesis(
 		default_invulnerables(),
 		crate::EXISTENTIAL_DEPOSIT * 16,
+		Some(get_account_id_from_seed::<sp_core::sr25519::Public>("Alice")),
 		default_endowed_accounts(),
 		default_session_keys(),
 		default_council_members(),
@@ -61,18 +64,34 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 	runtime.clone()
 }
 
-#[cfg(feature = "frequency-westend")]
-#[allow(clippy::unwrap_used)]
-fn frequency_westend_genesis_config() -> serde_json::Value {
-	let output: serde_json::Value = serde_json::from_slice(
-		include_bytes!("../../../../resources/frequency-westend.json").as_slice(),
-	)
-	.map_err(|e| format!("Invalid JSON blob {:?}", e))
-	.unwrap();
+// #[cfg(feature = "frequency-westend")]
+// #[allow(clippy::unwrap_used)]
+// fn frequency_westend_genesis_config() -> serde_json::Value {
+// 	let output: serde_json::Value = serde_json::from_slice(
+// 		include_bytes!("../../../../resources/frequency-westend.json").as_slice(),
+// 	)
+// 	.map_err(|e| format!("Invalid JSON blob {:?}", e))
+// 	.unwrap();
 
-	let runtime = &output["genesis"]["runtime"];
-	runtime.clone()
-}
+// 	let runtime = &output["genesis"]["runtime"];
+// 	runtime.clone()
+// }
+
+// #[cfg(feature = "frequency-westend")]
+// #[allow(clippy::unwrap_used)]
+// fn frequency_westend_genesis_config() -> serde_json::Value {
+// 	super::helpers::build_genesis(
+// 		invulnerables,
+
+// 		crate::EXISTENTIAL_DEPOSIT * 16,
+// 		Some(get_account_id_from_seed::<sp_core::sr25519::Public>("")),
+// 		default_session_keys(),
+// 		default_council_members(),
+// 		default_technical_committee_members(),
+// 		super::helpers::load_genesis_schemas(),
+// 		2000.into(),
+// 	)
+// }
 
 #[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 #[allow(clippy::unwrap_used)]
@@ -132,7 +151,7 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" => frequency_testnet_genesis_config(),
 		#[cfg(feature = "frequency-westend")]
-		"frequency-westend" => frequency_westend_genesis_config(),
+		"frequency-westend" => westend::frequency_westend_genesis_config(),
 		#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 		"frequency" => frequency_genesis_config(),
 		_ => return None,

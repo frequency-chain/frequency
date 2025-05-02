@@ -55,6 +55,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 pub fn build_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	candidacy_bond: Balance,
+	sudo_key: Option<AccountId>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	session_keys: Vec<(AccountId, AccountId, SessionKeys)>,
 	council_members: Vec<AccountId>,

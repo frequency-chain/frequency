@@ -31,5 +31,7 @@ pub fn load_frequency_westend_spec() -> ChainSpec {
 	.with_properties(properties)
 	.with_chain_type(ChainType::Live)
 	.with_genesis_config_preset_name("frequency-westend")
+	.with_telemetry_endpoints(
+		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).ok())
 	.build()
 }
