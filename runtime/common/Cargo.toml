@@ -47,6 +47,7 @@ pallet-treasury = { path = "../../pallets/treasury", default-features = false }
 default = ["std"]
 frequency = []
 frequency-testnet = []
+frequency-westend = []
 frequency-local = []
 frequency-no-relay = []
 runtime-benchmarks = ["pallet-collective/runtime-benchmarks"]

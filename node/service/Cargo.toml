@@ -127,11 +127,13 @@ frequency = ["frequency-runtime"]
 frequency-no-relay = ["frequency-runtime"]
 frequency-local = ["frequency-runtime"]
 frequency-testnet = ["frequency-runtime"]
+frequency-westend = ["frequency-runtime"]
 frequency-lint-check = [
   "frequency",
   "frequency-no-relay",
   "frequency-local",
   "frequency-testnet",
+  "frequency-westend",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]
 

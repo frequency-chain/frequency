@@ -61,6 +61,19 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 	runtime.clone()
 }
 
+#[cfg(feature = "frequency-westend")]
+#[allow(clippy::unwrap_used)]
+fn frequency_westend_genesis_config() -> serde_json::Value {
+	let output: serde_json::Value = serde_json::from_slice(
+		include_bytes!("../../../../resources/frequency-westend.json").as_slice(),
+	)
+	.map_err(|e| format!("Invalid JSON blob {:?}", e))
+	.unwrap();
+
+	let runtime = &output["genesis"]["runtime"];
+	runtime.clone()
+}
+
 #[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 #[allow(clippy::unwrap_used)]
 fn frequency_genesis_config() -> serde_json::Value {
@@ -118,6 +131,8 @@ pub fn get_preset(id: &sp_genesis_builder::PresetId) -> Option<Vec<u8>> {
 		"frequency-westend-local" => frequency_local_genesis_config(),
 		#[cfg(feature = "frequency-testnet")]
 		"frequency-testnet" => frequency_testnet_genesis_config(),
+		#[cfg(feature = "frequency-westend")]
+		"frequency-westend" => frequency_westend_genesis_config(),
 		#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
 		"frequency" => frequency_genesis_config(),
 		_ => return None,
