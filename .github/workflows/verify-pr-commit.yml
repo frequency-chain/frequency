@@ -428,7 +428,7 @@ jobs:
           file ${{ steps.srtool_build.outputs.wasm }}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.21.3 --force
           subwasm --version
       - name: Test WASM file
         run: |
