@@ -214,22 +214,19 @@ jobs:
       matrix:
         network: [dev, local, testnet, mainnet]
         arch: [amd64, arm64]
+        build-profile: [release]
         include:
           - network: dev
             spec: frequency-no-relay
-            build-profile: release
             release-file-name-prefix: frequency-dev
           - network: local
             spec: frequency-local
-            build-profile: release
             release-file-name-prefix: frequency-local
           - network: testnet
             spec: frequency-testnet
-            build-profile: release
             release-file-name-prefix: frequency-testnet
           - network: mainnet
             spec: frequency
-            build-profile: release
             release-file-name-prefix: frequency
           - arch: amd64
             runner: ubicloud-standard-16

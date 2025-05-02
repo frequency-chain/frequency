@@ -112,38 +112,46 @@ jobs:
   build-binaries:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
-    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
+    name: Build ${{matrix.network}} Binary for ${{matrix.arch}} on ${{matrix.branch_alias}} Branch
     strategy:
       fail-fast: true
       matrix:
-        network: [dev, local, testnet, mainnet]
         include:
+          # amd64 builds for all networks
           - network: dev
             git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
-            arch: [amd64]
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: local
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
-            arch: [amd64]
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: local
             git_branch: main
             spec: frequency-local
             branch_alias: main
-            arch: [amd64]
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
-            arch: [amd64]
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: mainnet
             spec: frequency
             branch_alias: pr
-            arch: [amd64, arm64]
-          - arch: amd64
+            arch: amd64
             runner: ubicloud-standard-16
-          - arch: arm64
+
+          # arm64 build only for mainnet
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
+            arch: arm64
             runner: ubicloud-standard-16-arm
     runs-on: ${{matrix.runner}}
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
@@ -518,7 +526,7 @@ jobs:
         id: download-amd64-binaries
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
+          name: artifacts-binary-mainnet-amd64-${{github.run_id}}
           path: ./binaries-amd64
 
       # For PR verification, just use the mainnet arm64 build
@@ -526,7 +534,7 @@ jobs:
         id: download-arm64
         uses: actions/download-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
+          name: artifacts-binary-mainnet-arm64-${{github.run_id}}
           path: ./binaries-arm64
 
       # Prepare directory structure for multi-platform docker build
