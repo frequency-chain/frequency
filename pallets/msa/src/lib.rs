@@ -1388,11 +1388,15 @@ impl<T: Config> Pallet<T> {
 			feature = "frequency-lint-check",
 			feature = "runtime-benchmarks"
 		)) {
-			hex::decode(
-				"391116a649bc9bb87cde5ccda6a70e352b665e96d7308f04ff932677de96d39c",
-			).unwrap().try_into().unwrap()
+			hex::decode("391116a649bc9bb87cde5ccda6a70e352b665e96d7308f04ff932677de96d39c")
+				.unwrap()
+				.try_into()
+				.unwrap()
 		} else {
-			frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero()).as_ref().try_into().unwrap()
+			frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero())
+				.as_ref()
+				.try_into()
+				.unwrap()
 		};
 		let code = &genesis_hash;
 		let mut input_value = [0u8; 32];

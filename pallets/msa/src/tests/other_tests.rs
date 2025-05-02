@@ -711,8 +711,18 @@ fn create2() {
 fn msa_id_to_eth_address_binary() {
 	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
 	let expected = [
-		H160(hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7").unwrap().try_into().unwrap()),
-		H160(hex::decode("c9715e78040c94f9c4613fe846f5f4ac034a0af2").unwrap().try_into().unwrap()),
+		H160(
+			hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("c9715e78040c94f9c4613fe846f5f4ac034a0af2")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
 	];
 
 	for i in 0..msa_ids.len() {
@@ -753,11 +763,36 @@ fn validate_eth_address_for_msa_bad() {
 #[test]
 fn eth_address_to_checksummed_string() {
 	let eth_addresses: [H160; 5] = [
-		H160(hex::decode("5aaeb6053f3e94c9b9a09f33669435e7ef1beaed").unwrap().try_into().unwrap()),
-		H160(hex::decode("fb6916095ca1df60bb79ce92ce3ea74c37c5d359").unwrap().try_into().unwrap()),
-		H160(hex::decode("dbf03b407c01e7cd3cbea99509d93f8dddc8c6fb").unwrap().try_into().unwrap()),
-		H160(hex::decode("d1220a0cf47c7b9be7a2e6ba89f429762e7b9adb").unwrap().try_into().unwrap()),
-		H160(hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7").unwrap().try_into().unwrap()),
+		H160(
+			hex::decode("5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("fb6916095ca1df60bb79ce92ce3ea74c37c5d359")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("dbf03b407c01e7cd3cbea99509d93f8dddc8c6fb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("d1220a0cf47c7b9be7a2e6ba89f429762e7b9adb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
 	];
 
 	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md
