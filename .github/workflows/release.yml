@@ -312,28 +312,20 @@ jobs:
         # Remember, runtimes are separate for each relay chain
         # We do not release frequency-*-local runtimes however
         network: [dev, paseo, mainnet]
+        build-profile: [release]
+        package: [frequency-runtime]
+        runtime-dir: [runtime/frequency]
+        built-wasm-file-name-prefix: [frequency_runtime]
         include:
           - network: dev
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-dev_runtime
             features: frequency-no-relay
             wasm-core-version: frequency-testnet
           - network: paseo
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-paseo_runtime
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
@@ -1031,14 +1023,13 @@ jobs:
       fail-fast: true
       matrix:
         node: [collator-node-local, standalone-node]
+        build-profile: [release]
         include:
           - node: collator-node-local
             network: local
-            build-profile: release
             release-file-name-prefix: frequency-local
           - node: standalone-node
             network: dev
-            build-profile: release
             release-file-name-prefix: frequency-dev
     env:
       DOCKER_HUB_PROFILE: frequencychain

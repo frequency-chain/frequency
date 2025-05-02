@@ -83,29 +83,47 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-24.04
-    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
+    name: Build ${{matrix.network}} Binary for ${{matrix.arch}} on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
         # Match this to the real build-binaries job
         include:
+          # amd64 builds for all networks
           - network: dev
             git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: local
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: local
             git_branch: main
             spec: frequency-local
             branch_alias: main
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: mainnet
             spec: frequency
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
+
+          # arm64 build only for mainnet
+          - network: mainnet
+            spec: frequency
+            branch_alias: pr
+            arch: arm64
+            runner: ubicloud-standard-16-arm
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
