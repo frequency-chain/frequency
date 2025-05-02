@@ -81,7 +81,7 @@ pub fn build_genesis(
 		parachain_system: Default::default(),
 		sudo: crate::SudoConfig {
 			// Assign network admin rights.
-			key: Some(get_account_id_from_seed::<sp_core::sr25519::Public>("Alice")),
+			key: sudo_key,
 		},
 		schemas: crate::pallet_schemas::GenesisConfig {
 			initial_schemas: schemas,
