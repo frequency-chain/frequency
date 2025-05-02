@@ -1,6 +1,12 @@
 extern crate alloc;
 use alloc::vec::Vec;
 
+/// encode to eip-712
+pub trait EIP712Encode {
+	/// encode the type
+	fn encode_eip_712(&self) -> [u8; 32];
+}
+
 /// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1
 pub const MAINNET_GENESIS_HASH: &[u8] = &[
 	74u8, 88, 123, 241, 122, 64, 78, 53, 114, 116, 122, 221, 122, 171, 123, 190, 86, 232, 5, 165,

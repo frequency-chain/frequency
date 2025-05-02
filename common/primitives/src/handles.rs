@@ -8,7 +8,10 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 extern crate alloc;
+use crate::utils::EIP712Encode;
 use alloc::vec::Vec;
+use scale_info::prelude::format;
+use sp_core::bytes::from_hex;
 
 /// The minimum base and canonical handle (not including suffix or delimiter) length in characters
 pub const HANDLE_CHARS_MIN: u32 = 3;
@@ -55,6 +58,20 @@ impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 	/// Create a new ClaimHandlePayload
 	pub fn new(base_handle: Vec<u8>, expiration: BlockNumber) -> Self {
 		ClaimHandlePayload { base_handle, expiration }
+	}
+}
+
+impl EIP712Encode for ClaimHandlePayload<u64> {
+	fn encode_eip_712(&self) -> [u8; 32] {
+		let handle_type_hash =
+			from_hex("0x4afae8095462377dc2c982219ff9adf392a625301e726c464bdb2be7ecbcb623").unwrap();
+		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064
+		let coded_handle = sp_io::hashing::keccak_256(self.base_handle.as_ref());
+		let exp = format!("0x{:064x}", self.expiration);
+		let coded_expiration = from_hex(&exp).unwrap();
+		sp_io::hashing::keccak_256(
+			&[handle_type_hash.as_slice(), &coded_handle, &coded_expiration].concat(),
+		)
 	}
 }
 

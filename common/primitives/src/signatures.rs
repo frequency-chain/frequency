@@ -7,6 +7,7 @@ use frame_support::{
 };
 use parity_scale_codec::{alloc::string::ToString, DecodeWithMemTracking};
 use sp_core::{
+	bytes::from_hex,
 	crypto,
 	crypto::{AccountId32, FromEntropy},
 	ecdsa, ed25519,
@@ -330,6 +331,15 @@ fn eth_message_hash(message: &[u8]) -> [u8; 32] {
 	sp_io::hashing::keccak_256(concatenated.as_slice())
 }
 
+fn eth_eip712(message: &[u8]) -> [u8; 32] {
+	let prefix = from_hex("0x1901").unwrap();
+	let domain =
+		from_hex("0x8d95594185f4f2b6272976bb28848c643dff3308f3472a3c409526955cca05ab").unwrap();
+	let concatenated = [prefix.as_slice(), domain.as_slice(), message].concat();
+	log::debug!(target:"ETHEREUM", "prefixed {:?}",concatenated);
+	sp_io::hashing::keccak_256(concatenated.as_slice())
+}
+
 fn check_ethereum_signature<L: Lazy<[u8]>>(
 	signature: &ecdsa::Signature,
 	mut msg: L,
@@ -342,6 +352,12 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 	// signature of ethereum prefixed message eip-191
 	let message_prefixed = eth_message_hash(msg.get());
 	if verify_signature(signature.as_ref(), &message_prefixed, signer) {
+		return true
+	}
+
+	// signature of ethereum prefixed message eip-172
+	let eip712_hashed = eth_eip712(msg.get());
+	if verify_signature(signature.as_ref(), &eip712_hashed, signer) {
 		return true
 	}
 
@@ -359,6 +375,8 @@ mod tests {
 		traits::{IdentifyAccount, Verify},
 		AccountId32,
 	};
+	use crate::handles::ClaimHandlePayload;
+	use crate::utils::EIP712Encode;
 
 	use super::{AccountAddressMapper, EthereumAddressMapper};
 
@@ -409,6 +427,33 @@ mod tests {
 		);
 		let unified_signer = UnifiedSigner::from(public_key);
 		assert!(unified_signature.verify(&payload[..], &unified_signer.into_account()));
+	}
+
+	#[test]
+	fn ethereum_eip712_signatures_should_work() {
+		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02 testing
+		// 0x0000000000000000000000000000000000000000000000000000000000000064 100
+		// let encoded_payload = from_hex("0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064").expect("Should convert");
+		let payload = ClaimHandlePayload {
+			base_handle: b"testing".to_vec(),
+			expiration: 100u64,
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		let signature_raw = from_hex("0x146a9f0deea81fff681ab62e19485b727d99f02c95f3f98aaf738c2ef3c9bcee16b925421e71d35cdca412f4d5cddd2d3f34845bd47de0c4fa6d5291f0e770e21c").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
 	}
 
 	#[test]
