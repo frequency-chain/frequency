@@ -68,11 +68,13 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
-use common_primitives::msa::DelegationResponse;
+use common_primitives::msa::{DelegationResponse, MsaKeyProvider};
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
+use common_primitives::node::AccountId;
 pub use pallet::*;
+
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
@@ -1582,6 +1584,12 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 	}
 }
 
+impl<T: Config> MsaKeyProvider<AccountId, MessageSourceId> for Pallet<T> {
+	fn key_may_be_eligible_for_free_transaction(old_key: AccountId, msa_id: MessageSourceId) -> bool {
+		true
+	}
+}
+
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
 /// purpose of this is to ensure that the revoke_delegation_by_delegator extrinsic cannot be
@@ -1836,3 +1844,4 @@ where
 		}
 	}
 }
+

@@ -10,3 +10,12 @@ pub trait GetStableWeight<RuntimeCall, Weight> {
 	/// e.g. in case of `pay_with_capacity` and `pay_with_capacity_batch_all`
 	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>>;
 }
+
+/// TODO: docs
+pub trait GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> {
+	/// TODO: docs
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)>;
+}
+
+
+

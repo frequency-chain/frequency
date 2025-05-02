@@ -337,6 +337,31 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)> {
+		match call {
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) => {
+				let accountId: AccountId = AccountId::from([2;32]);
+				let msa_id: MessageSourceId = 2u32.into();
+				Some((accountId, msa_id))
+			},
+
+
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+					add_key_payload,
+				 	new_key_owner_proof,
+					msa_owner_public_key,
+				 	msa_owner_proof }) => {
+				Some((add_key_payload.clone().new_public_key, add_key_payload.msa_id))
+			},
+			_ => None,
+		}
+	}
+}
+
 /// The TransactionExtension to the basic transaction logic.
 #[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
@@ -1034,7 +1059,7 @@ use crate::ethereum::EthereumCompatibleAccountIdLookup;
 use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
-use pallet_msa::Call as MsaCall;
+use pallet_msa::{AddKeyData, Call as MsaCall};
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
 pub struct CapacityEligibleCalls;
@@ -1083,6 +1108,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet
