@@ -1404,7 +1404,7 @@ impl<T: Config> Pallet<T> {
 		let salt = &genesis_hash;
 		let deployer_address = H160([0xeu8; 20]);
 
-		Self::create2(&deployer_address, code.as_slice(), &input_value, &salt)
+		Self::create2(&deployer_address, code.as_slice(), &input_value, salt)
 	}
 
 	/// Returns a boolean indicating whether the given Ethereum address was generated from the given MSA ID.
