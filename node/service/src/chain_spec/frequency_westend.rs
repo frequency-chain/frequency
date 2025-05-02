@@ -25,7 +25,7 @@ pub fn load_frequency_westend_spec() -> ChainSpec {
 			para_id: 2313,
 		},
 	)
-	.with_name("Frequency Westend Testnet")
+	.with_name("Frequency Westend")
 	.with_id("frequency-westend")
 	.with_protocol_id("frequency-westend")
 	.with_properties(properties)
