@@ -257,10 +257,10 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check check-no-relay check-local check-testnet check-westend check-mainnet check-bridging
+.PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
 # Add a target to run all checks to check that all existing features work with the addition of 'frequency-bridging'
 # which is an add-on feature and not mutually exclusive with the other features.
-check-all: check check-no-relay check-local check-testnet check-westend check-mainnet check-bridging
+check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging
 
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
@@ -273,9 +273,6 @@ check-local:
 
 check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
-
-check-westend:
-	SKIP_WASM_BUILD= cargo check --features frequency-westend
 
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features frequency
