@@ -7,14 +7,16 @@ import {
   Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
-  CENTS,
+  CENTS, fundKeypair, DOLLARS, getBlockNumber, assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { getFreeBalance, setFreeKeyAddExpirationBLock } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
-import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getFundingSource, getRootFundingSource, getSudo } from '../scaffolding/funding';
+import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { BigInt } from '@polkadot/x-bigint';
 
 const maxU64 = 18_446_744_073_709_551_615n;
 const fundingSource = getFundingSource(import.meta.url);
@@ -32,7 +34,7 @@ describe('MSA Key management', function () {
     let addKeyData: Codec;
 
     before(async function () {
-      // Setup an MSA with one key and a secondary funded key
+      // Set up an MSA with one key and a secondary funded key
       keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
@@ -132,9 +134,10 @@ describe('MSA Key management', function () {
       newSig = signPayloadSr25519(secondaryKey, addKeyData);
       const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-      const { target: publicKeyEvents } = await addPublicKeyOp.fundAndSend(fundingSource);
+      const { target: publicKeyEvents, eventMap: chainEvents } = await addPublicKeyOp.fundAndSend(fundingSource);
 
       assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
 
       await assert.rejects(
         addPublicKeyOp.fundAndSend(fundingSource),
@@ -164,11 +167,38 @@ describe('MSA Key management', function () {
       ownerSig = signPayloadSr25519(secondaryKey, addKeyData);
       newSig = signPayloadSr25519(thirdKey, addKeyData);
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
-      const { target: event } = await op.fundAndSend(fundingSource);
+      const { target: event} = await op.fundAndSend(fundingSource);
       assert.notEqual(event, undefined, 'should have added public key');
 
       // Cleanup
       await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
+    });
+
+    it('adds a new public key for free if there is just one and its before the expiration block', async function() {
+      const currentBlock = await getBlockNumber();
+      setFreeKeyAddExpirationBLock(getSudo().keys, currentBlock + 30);
+      // set a completely new msa id up so it doesn't conflict with anything else.
+      const some_key = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      const { target } = await ExtrinsicHelper.createMsa(some_key).signAndSend();
+      const someMsaId = target!.data.msaId;
+
+      const second_key = createKeys();
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        newPublicKey: getUnifiedPublicKey(second_key),
+        msaId: someMsaId,
+      });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(some_key, addKeyData);
+      newSig = signPayloadSr25519(second_key, addKeyData);
+      const op = ExtrinsicHelper.addPublicKeyToMsa(some_key, ownerSig, newSig, newPayload);
+      const { target: event, eventMap: chainEvents } = await op.fundAndSend(fundingSource);
+      assert.notEqual(event, undefined, 'should have added public key');
+      assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
+      assert.equal(chainEvents['balances.Withdraw'], undefined, 'should not have withdrawn a balance');
+
+      await setFreeKeyAddExpirationBLock(getSudo().keys, 0 );
+
     });
   });
 
