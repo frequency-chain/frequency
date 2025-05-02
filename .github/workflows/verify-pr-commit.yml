@@ -350,27 +350,20 @@ jobs:
         # Also should match `verify-build-runtimes-dummy`
         network: [dev, paseo, mainnet]
         build-profile: [debug]
+        runtime-dir: [runtime/frequency]
+        package: [frequency-runtime]
+        built-wasm-file-name-prefix: [frequency_runtime]
         include:
           - network: dev
             chain: dev
-
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             features: frequency-no-relay
             wasm-core-version: frequency-testnet
           - network: paseo
             chain: frequency-paseo
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
             chain: frequency
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
     runs-on: ubicloud-standard-8
