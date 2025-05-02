@@ -711,14 +711,8 @@ fn create2() {
 fn msa_id_to_eth_address_binary() {
 	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
 	let expected = [
-		H160([
-			0x31, 0x5a, 0x79, 0xbd, 0x2d, 0x2f, 0x70, 0xb5, 0x6e, 0xae, 0xbf, 0x3a, 0xbf, 0xc1,
-			0xc5, 0x0c, 0x5c, 0x73, 0xe0, 0x2c,
-		]),
-		H160([
-			0xef, 0x0d, 0x46, 0x8f, 0xd9, 0xa0, 0x39, 0xbc, 0xc1, 0xf3, 0xdb, 0x94, 0x1b, 0x65,
-			0xd1, 0x5f, 0xb2, 0x34, 0x9f, 0xcb,
-		]),
+		H160(hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7").unwrap().try_into().unwrap()),
+		H160(hex::decode("c9715e78040c94f9c4613fe846f5f4ac034a0af2").unwrap().try_into().unwrap()),
 	];
 
 	for i in 0..msa_ids.len() {
@@ -752,11 +746,6 @@ fn validate_eth_address_for_msa_bad() {
 
 	for i in 0..msa_ids.len() {
 		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
-		log::debug!(
-			"msa_id_to_eth_address: msa_id: {:?}, eth_address: {:?}",
-			msa_ids[i],
-			expected[i]
-		);
 		assert_eq!(status, false);
 	}
 }
@@ -764,26 +753,11 @@ fn validate_eth_address_for_msa_bad() {
 #[test]
 fn eth_address_to_checksummed_string() {
 	let eth_addresses: [H160; 5] = [
-		H160([
-			0x5a, 0xaE, 0xb6, 0x05, 0x3F, 0x3E, 0x94, 0xc9, 0xb9, 0xa0, 0x9f, 0x33, 0x66, 0x94,
-			0x35, 0xe7, 0xef, 0x1b, 0xea, 0xed,
-		]),
-		H160([
-			0xfb, 0x69, 0x16, 0x09, 0x5c, 0xa1, 0xdf, 0x60, 0xbb, 0x79, 0xce, 0x92, 0xce, 0x3e,
-			0xa7, 0x4c, 0x37, 0xc5, 0xd3, 0x59,
-		]),
-		H160([
-			0xdb, 0xf0, 0x3b, 0x40, 0x7c, 0x01, 0xe7, 0xcd, 0x3c, 0xbe, 0xa9, 0x95, 0x09, 0xd9,
-			0x3f, 0x8d, 0xdd, 0xc8, 0xc6, 0xfb,
-		]),
-		H160([
-			0xd1, 0x22, 0x0a, 0x0c, 0xf4, 0x7c, 0x7b, 0x9b, 0xe7, 0xa2, 0xe6, 0xba, 0x89, 0xf4,
-			0x29, 0x76, 0x2e, 0x7b, 0x9a, 0xdb,
-		]),
-		H160([
-			0x31, 0x5A, 0x79, 0xBd, 0x2D, 0x2f, 0x70, 0xb5, 0x6E, 0xAE, 0xbf, 0x3a, 0xbf, 0xc1,
-			0xc5, 0x0C, 0x5c, 0x73, 0xE0, 0x2C,
-		]),
+		H160(hex::decode("5aaeb6053f3e94c9b9a09f33669435e7ef1beaed").unwrap().try_into().unwrap()),
+		H160(hex::decode("fb6916095ca1df60bb79ce92ce3ea74c37c5d359").unwrap().try_into().unwrap()),
+		H160(hex::decode("dbf03b407c01e7cd3cbea99509d93f8dddc8c6fb").unwrap().try_into().unwrap()),
+		H160(hex::decode("d1220a0cf47c7b9be7a2e6ba89f429762e7b9adb").unwrap().try_into().unwrap()),
+		H160(hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7").unwrap().try_into().unwrap()),
 	];
 
 	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md
@@ -792,15 +766,11 @@ fn eth_address_to_checksummed_string() {
 		"0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359".to_string(),
 		"0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB".to_string(),
 		"0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb".to_string(),
-		"0x315A79Bd2D2f70b56EAEbf3abfc1c50C5c73E02C".to_string(),
+		"0xF5b82ff246a2F4226749bd78B1bDaE28Cfffb9f7".to_string(),
 	];
 
 	for i in 0..eth_addresses.len() {
 		let generated_result = Msa::eth_address_to_checksummed_string(&eth_addresses[i]);
-		println!(
-			"eth_address_to_checksummed_string: eth_address: {:?}, result: {:?}",
-			eth_addresses[i], generated_result
-		);
 		assert_eq!(generated_result, eth_results[i]);
 	}
 }

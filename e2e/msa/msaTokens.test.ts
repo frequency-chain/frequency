@@ -2,9 +2,17 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { HexString } from '@polkadot/util/types';
+import { isDev, isTestnet } from '../scaffolding/env';
 
 const msaId = 1234; // Example MSA ID for testing
-const checksummedEthAddress = '0x315A79Bd2D2f70b56EAEbf3abfc1c50C5c73E02C'; // Example checksummed Ethereum address
+let checksummedEthAddress: HexString;
+
+if (isTestnet()) {
+  checksummedEthAddress = '0x05500A07f5fD359e9E785c74E21d5b180e63B63b'; // Example checksummed Ethereum address for MSA ID 1234 on Paseo testnet
+} else {
+  checksummedEthAddress = '0xF5b82ff246a2F4226749bd78B1bDaE28Cfffb9f7'; // Example checksummed Ethereum address for MSA ID 1234 on a development chain
+}
 
 describe('MSAs Holding Tokens', function () {
   describe('getEthereumAddressForMsaId', function () {

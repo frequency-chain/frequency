@@ -91,8 +91,6 @@ pub mod types;
 
 pub mod weights;
 
-const GENERATED_ADDRESS_TAG: &[u8] = b"Generated";
-
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
@@ -1383,11 +1381,23 @@ impl<T: Config> Pallet<T> {
 	/// [8..17]:  b"Generated"
 	/// [17..20]: all zeroes
 	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
-		let code: [u8; 20] = [0u8; 20];
+		// Use a canned value for all but mainnet/testnet builds
+		let genesis_hash: [u8; 32] = if cfg!(any(
+			feature = "frequency-local",
+			feature = "frequency-no-relay",
+			feature = "frequency-lint-check",
+			feature = "runtime-benchmarks"
+		)) {
+			hex::decode(
+				"391116a649bc9bb87cde5ccda6a70e352b665e96d7308f04ff932677de96d39c",
+			).unwrap().try_into().unwrap()
+		} else {
+			frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero()).as_ref().try_into().unwrap()
+		};
+		let code = &genesis_hash;
 		let mut input_value = [0u8; 32];
 		input_value[24..32].copy_from_slice(&id.to_be_bytes());
-		let mut salt = [0u8; 32];
-		salt[0..9].copy_from_slice(GENERATED_ADDRESS_TAG);
+		let salt = &genesis_hash;
 		let deployer_address = H160([0xeu8; 20]);
 
 		Self::create2(&deployer_address, code.as_slice(), &input_value, &salt)
