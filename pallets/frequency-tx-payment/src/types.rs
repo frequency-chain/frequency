@@ -16,6 +16,3 @@ pub trait GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> {
 	/// TODO: docs
 	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)>;
 }
-
-
-

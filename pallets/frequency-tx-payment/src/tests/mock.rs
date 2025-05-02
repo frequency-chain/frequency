@@ -242,9 +242,9 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<2>;
 }
 
-use pallet_balances::Call as BalancesCall;
-use common_primitives::msa::MsaKeyProvider;
 use crate::types::GetAddKeyData;
+use common_primitives::msa::MsaKeyProvider;
+use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
 
@@ -279,15 +279,25 @@ impl pallet_utility::Config for Test {
 }
 
 pub struct MockMsaKeyProvider;
-impl MsaKeyProvider<AccountId,MessageSourceId> for MockMsaKeyProvider {
-	fn key_may_be_eligible_for_free_transaction(_old_key: AccountId, msa_id: MessageSourceId) -> bool {
-		if msa_id < 3 { true }
-		else { false }
+impl MsaKeyProvider<AccountId, MessageSourceId> for MockMsaKeyProvider {
+	fn key_may_be_eligible_for_free_transaction(
+		_old_key: AccountId,
+		msa_id: MessageSourceId,
+	) -> bool {
+		if msa_id < 3 {
+			true
+		} else {
+			false
+		}
 	}
 }
 pub struct MockMsaCallFilter;
-impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, AccountId, MessageSourceId> for MockMsaCallFilter {
-	fn get_add_key_data(_call: &<Test as frame_system::Config>::RuntimeCall) -> Option<(AccountId, MessageSourceId)> {
+impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, AccountId, MessageSourceId>
+	for MockMsaCallFilter
+{
+	fn get_add_key_data(
+		_call: &<Test as frame_system::Config>::RuntimeCall,
+	) -> Option<(AccountId, MessageSourceId)> {
 		let fake_account_id = AccountId::from([2u8; 32]);
 		Some((fake_account_id, 2u64.into()))
 	}

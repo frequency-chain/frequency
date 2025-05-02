@@ -68,11 +68,13 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
-use common_primitives::msa::{DelegationResponse, MsaKeyProvider};
 pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
 };
-use common_primitives::node::AccountId;
+use common_primitives::{
+	msa::{DelegationResponse, MsaKeyProvider},
+	node::AccountId,
+};
 pub use pallet::*;
 
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
@@ -1585,7 +1587,10 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 }
 
 impl<T: Config> MsaKeyProvider<AccountId, MessageSourceId> for Pallet<T> {
-	fn key_may_be_eligible_for_free_transaction(old_key: AccountId, msa_id: MessageSourceId) -> bool {
+	fn key_may_be_eligible_for_free_transaction(
+		old_key: AccountId,
+		msa_id: MessageSourceId,
+	) -> bool {
 		true
 	}
 }
@@ -1844,4 +1849,3 @@ where
 		}
 	}
 }
-

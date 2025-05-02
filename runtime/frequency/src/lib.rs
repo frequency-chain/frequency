@@ -344,19 +344,17 @@ impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
 		match call {
 			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) => {
-				let accountId: AccountId = AccountId::from([2;32]);
+				let accountId: AccountId = AccountId::from([2; 32]);
 				let msa_id: MessageSourceId = 2u32.into();
 				Some((accountId, msa_id))
 			},
 
-
 			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
-					add_key_payload,
-				 	new_key_owner_proof,
-					msa_owner_public_key,
-				 	msa_owner_proof }) => {
-				Some((add_key_payload.clone().new_public_key, add_key_payload.msa_id))
-			},
+				add_key_payload,
+				new_key_owner_proof,
+				msa_owner_public_key,
+				msa_owner_proof,
+			}) => Some((add_key_payload.clone().new_public_key, add_key_payload.msa_id)),
 			_ => None,
 		}
 	}
