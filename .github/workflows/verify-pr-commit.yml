@@ -208,6 +208,7 @@ jobs:
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
           CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked \
+            ${{ matrix.build-profile == 'release' && '--release' || '' }} \
             --features ${{matrix.spec}}
       - name: Run Sanity Checks
         if: steps.cache-binary.outputs.cache-hit != 'true'
