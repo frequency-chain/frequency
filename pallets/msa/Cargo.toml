@@ -42,9 +42,8 @@ parking_lot = { workspace = true }
 
 [features]
 default = ["std"]
-frequency-lint-check = []
-frequency-local = []
-frequency-no-relay = []
+frequency = []
+frequency-testnet = []
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",

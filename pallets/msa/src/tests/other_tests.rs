@@ -712,13 +712,13 @@ fn msa_id_to_eth_address_binary() {
 	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
 	let expected = [
 		H160(
-			hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7")
+			hex::decode("ca08f40ae1f1e311bc8516c9a43771828f0f14c2")
 				.unwrap()
 				.try_into()
 				.unwrap(),
 		),
 		H160(
-			hex::decode("c9715e78040c94f9c4613fe846f5f4ac034a0af2")
+			hex::decode("0570495ff368a0a846b0a9d4e737da426bf9118d")
 				.unwrap()
 				.try_into()
 				.unwrap(),

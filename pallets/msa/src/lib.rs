@@ -1383,20 +1383,15 @@ impl<T: Config> Pallet<T> {
 	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
 		// Use a canned value for all but mainnet/testnet builds
 		let genesis_hash: [u8; 32] = if cfg!(any(
-			feature = "frequency-local",
-			feature = "frequency-no-relay",
-			feature = "frequency-lint-check",
-			feature = "runtime-benchmarks"
+			feature = "frequency",
+			feature = "frequency-testnet"
 		)) {
-			hex::decode("391116a649bc9bb87cde5ccda6a70e352b665e96d7308f04ff932677de96d39c")
-				.unwrap()
-				.try_into()
-				.unwrap()
-		} else {
 			frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero())
 				.as_ref()
 				.try_into()
 				.unwrap()
+		} else {
+			keccak_256(b"frequency-development")
 		};
 		let code = &genesis_hash;
 		let mut input_value = [0u8; 32];
