@@ -6,7 +6,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_system::EnsureSigned;
+use frame_system::{EnsureRoot, EnsureSigned};
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
@@ -169,6 +169,7 @@ impl pallet_msa::Config for Test {
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
+	type FreeKeyAddExpirationOrigin = EnsureRoot<u64>;
 }
 
 // Needs parameter_types! for the impls below
@@ -242,6 +243,8 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<2>;
 }
 
+use crate::types::GetAddKeyData;
+use common_primitives::msa::MsaKeyProvider;
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
@@ -276,6 +279,28 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
+pub struct MockMsaCallFilter {
+	msa_id: MessageSourceId
+}
+impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSourceId>
+	for MockMsaCallFilter
+{
+	// Always returns same account ID and msa.
+	fn get_add_key_data(
+		call: &<Test as frame_system::Config>::RuntimeCall,
+	) -> Option<(u64, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa {
+								 add_key_payload,
+								 new_key_owner_proof: _,
+								 msa_owner_public_key,
+								 msa_owner_proof: _,
+							 }) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
+			_ => None,
+		}
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -285,6 +310,8 @@ impl Config for Test {
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type BatchProvider = CapacityBatchProvider;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MockMsaCallFilter;
 }
 
 pub struct ExtBuilder {

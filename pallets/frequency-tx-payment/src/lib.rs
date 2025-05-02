@@ -17,7 +17,7 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
-	DefaultNoBound,
+	DefaultNoBound, Hashable,
 };
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
@@ -36,6 +36,7 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
+	msa::MsaKeyProvider,
 	node::UtilityProvider,
 };
 pub use pallet::*;
@@ -83,6 +84,19 @@ pub enum InitialPayment<T: Config> {
 	Capacity,
 }
 
+impl<T: Config> PartialEq for InitialPayment<T> {
+	fn eq(&self, other: &Self) -> bool {
+		match self {
+			Self::Free => matches!(other, Self::Free),
+			Self::Token(_liquidity_info) => matches!(other, Self::Token(_liquidity_info)),
+			Self::Capacity => matches!(other, Self::Capacity),
+		}
+	}
+	fn ne(&self, other: &Self) -> bool {
+		!self.eq(other)
+	}
+}
+
 #[cfg(feature = "std")]
 impl<T: Config> InitialPayment<T> {
 	pub fn is_free(&self) -> bool {
@@ -126,6 +140,10 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use crate::types::GetAddKeyData;
+	use common_primitives::{
+		msa::{MessageSourceId, MsaKeyProvider},
+	};
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -162,6 +180,14 @@ pub mod pallet {
 		type MaximumCapacityBatchLength: Get<u8>;
 
 		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
+
+		// should this be AccountId instead of frame_system::Config::AccountId?
+		type MsaKeyProvider: MsaKeyProvider<AccountId = Self::AccountId>;
+		type MsaCallFilter: GetAddKeyData<
+			<Self as frame_system::Config>::RuntimeCall,
+			Self::AccountId,
+			MessageSourceId,
+		>;
 	}
 
 	#[pallet::event]
@@ -423,12 +449,24 @@ where
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
+		use crate::types::GetAddKeyData;
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) =>
 				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
-			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
+			// has to be a token call, not a batch call or a capacity call
+			_ => {
+				if let Some((owner_account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
+					if T::MsaKeyProvider::key_eligible_for_free_addition(owner_account_id.clone(), msa_id) {
+						let tip = self.tip(call);
+						let fee =
+							pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+						return Ok((fee, InitialPayment::Free));
+					}
+				}
+				self.withdraw_token_fee(who, call, info, len, self.tip(call))
+			},
 		}
 	}
 
@@ -445,9 +483,9 @@ where
 				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
-		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
+		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
-		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
+		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, capacity_fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
 	}

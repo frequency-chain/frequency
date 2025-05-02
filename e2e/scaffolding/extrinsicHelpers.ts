@@ -15,7 +15,7 @@ import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
-import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
+import { BlockNumber, DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
   HandleResponse,
@@ -589,6 +589,14 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static setFreeKeyAddExpiration(keys: KeyringPair, expires_at: number) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.setFreeKeyAddExpiration(expires_at),
+      keys,
+      ExtrinsicHelper.api.events.msa.FreeKeyAddExpirationBlockUpdated
+    );
+  }
+
   /** Messages Extrinsics */
   public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number) {
     return new Extrinsic(
@@ -785,6 +793,7 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.capacity.EpochLengthUpdated
     );
   }
+
   public static stake(keys: KeyringPair, target: any, amount: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.capacity.stake(target, amount),

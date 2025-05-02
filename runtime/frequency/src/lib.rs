@@ -93,10 +93,7 @@ use frame_support::{
 	Twox128,
 };
 
-use frame_system::{
-	limits::{BlockLength, BlockWeights},
-	EnsureRoot, EnsureSigned,
-};
+use frame_system::{limits::{BlockLength, BlockWeights}, Account, EnsureRoot, EnsureSigned};
 
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -333,6 +330,29 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 
 			RuntimeCall::Balances(_) | RuntimeCall::Capacity(_) => true,
 			_ => false,
+		}
+	}
+}
+
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)> {
+		match call {
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) => {
+				let account_id: AccountId = AccountId::from([2; 32]);
+				let msa_id: MessageSourceId = 2u32.into();
+				Some((account_id, msa_id))
+			},
+
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
+			_ => None,
 		}
 	}
 }
@@ -587,6 +607,12 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+		// Who is allowed to set the FreeKeyAddExpiration block.
+	type FreeKeyAddExpirationOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
+	>;
+
 }
 
 parameter_types! {
@@ -1034,7 +1060,7 @@ use crate::ethereum::EthereumCompatibleAccountIdLookup;
 use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
-use pallet_msa::Call as MsaCall;
+use pallet_msa::{Call as MsaCall};
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
 pub struct CapacityEligibleCalls;
@@ -1083,6 +1109,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet

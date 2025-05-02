@@ -6,12 +6,15 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo,
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
-use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError};
+use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_capacity::CapacityLedger;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
-use pallet_msa::Call as MsaCall;
+use pallet_msa::{AddKeyData, Call as MsaCall, EMPTY_FUNCTION, Pallet as MsaPallet};
+use sp_core::{sr25519, Pair, H256};
+use sp_core::crypto::AccountId32;
+use common_primitives::msa::MessageSourceId;
 
 #[test]
 #[allow(deprecated)]
@@ -1009,4 +1012,97 @@ fn can_withdraw_fee_errors_on_token_txn_witout_enough_funds() {
 			let error = charge_tx_payment.dryrun_withdraw_fee(&who, call, &info, len).unwrap_err();
 			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
 		});
+}
+
+pub fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
+}
+
+#[test]
+fn add_public_key_to_msa_free_if_before_expiration_block() {
+	let balance_factor = 100_000_000;
+
+	// uses funded account already with MSA Id
+	let msa_id = 2u64;
+	let account_id = 2u64;
+	let new_account_id = 3u64;
+	let proof1: MultiSignature = generate_test_signature();
+	let proof2: MultiSignature = generate_test_signature();
+	let payload: AddKeyData<Test> =
+		AddKeyData { msa_id, expiration: 99u32, new_public_key: new_account_id };
+	let dispatch_info =
+		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			// set expiration to later
+			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
+			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				msa_owner_public_key: account_id,
+				msa_owner_proof: proof1,
+				new_key_owner_proof: proof2,
+				add_key_payload: payload.into(),
+			});
+			
+			//
+			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&account_id, call, &dispatch_info, 10)
+				.unwrap();
+			assert_eq!(withdraw_fee.1, InitialPayment::<Test>::Free);
+			
+			// Set block 5 to make same account ineligible, past expiration block
+			System::set_block_number(6);
+			let withdraw_fee_after_free_block = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&account_id, call, &dispatch_info, 10)
+				.unwrap();
+			assert_ne!(withdraw_fee_after_free_block.1, InitialPayment::<Test>::Free);
+
+		})
+}
+
+#[test]
+fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
+	let balance_factor = 100_000_000;
+	
+	let msa_id = 99u64;
+	let account_id = 2u64; 
+	let new_account_id = 3u64;
+	let proof1: MultiSignature = generate_test_signature();
+	let proof2: MultiSignature = generate_test_signature();
+	let payload: AddKeyData<Test> =
+		AddKeyData { msa_id, expiration: 99u32, new_public_key: new_account_id };
+	let dispatch_info =
+		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
+
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			// set expiration to later
+			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
+			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				msa_owner_public_key: account_id,
+				msa_owner_proof: proof1,
+				new_key_owner_proof: proof2,
+				add_key_payload: payload.into(),
+			});
+			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&account_id, call, &dispatch_info, 10)
+				.unwrap();
+			assert_ne!(withdraw_fee.1, InitialPayment::<Test>::Free);
+		})
+}
+
+
+pub fn create_account(with_id: u64) -> MessageSourceId {
+	let result_key = Msa::create_account(with_id, EMPTY_FUNCTION);
+	assert_ok!(&result_key);
+	let (msa_id, _) = result_key.unwrap();
+	msa_id
 }

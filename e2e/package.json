@@ -48,5 +48,8 @@
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.32.1"
+  },
+  "optionalDependencies": {
+    "@esbuild/linux-x64":"0.24.0"
   }
 }

@@ -45,6 +45,7 @@ pub trait WeightInfo {
 	fn create_provider_via_governance() -> Weight;
 	fn propose_to_be_provider() -> Weight;
 	fn reindex_offchain() -> Weight;
+	fn set_free_key_add_expiration() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -238,6 +239,10 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(8_000_000, 0)
 	}
+	fn set_free_key_add_expiration() -> Weight {
+		Weight::from_parts(5_000_000, 1000)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -430,6 +435,10 @@ impl WeightInfo for () {
 		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(8_000_000, 0)
 	}
+	fn set_free_key_add_expiration() -> Weight {
+		Weight::from_parts(5_000_000, 1000)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+	}
 }
 
 
@@ -577,6 +586,18 @@ mod tests {
 	}
 	#[test]
 	fn test_propose_to_be_provider() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4107
+		);
+	}
+	#[test]
+	fn test_set_free_key_add_expiration() {
 		assert!(
 			BlockWeights::get()
 				.per_class

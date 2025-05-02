@@ -10,3 +10,10 @@ pub trait GetStableWeight<RuntimeCall, Weight> {
 	/// e.g. in case of `pay_with_capacity` and `pay_with_capacity_batch_all`
 	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>>;
 }
+
+/// Filters calls that match Msa::add_public_key_to_msa
+pub trait GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> {
+	/// If the fall matches Msa::add_public_key_to_msa, return the owner account id and msa id
+	/// from the call parameters
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)>;
+}
