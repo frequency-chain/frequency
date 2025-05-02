@@ -7,11 +7,12 @@ use scale_info::prelude::format;
 ))]
 use crate::genesis::helpers::{
 	default_council_members, default_endowed_accounts, default_invulnerables, default_session_keys,
-	default_technical_committee_members,
+	default_technical_committee_members, get_account_id_from_seed,
 };
 extern crate alloc;
-use alloc::vec::Vec;
+#[cfg(feature = "frequency-westend")]
 use crate::genesis::westend;
+use alloc::vec::Vec;
 
 #[cfg(any(
 	feature = "frequency-no-relay",
@@ -64,6 +65,7 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 	runtime.clone()
 }
 
+// TODO: Uncomment when the westend chain spec is to be used.
 // #[cfg(feature = "frequency-westend")]
 // #[allow(clippy::unwrap_used)]
 // fn frequency_westend_genesis_config() -> serde_json::Value {
@@ -75,22 +77,6 @@ fn frequency_testnet_genesis_config() -> serde_json::Value {
 
 // 	let runtime = &output["genesis"]["runtime"];
 // 	runtime.clone()
-// }
-
-// #[cfg(feature = "frequency-westend")]
-// #[allow(clippy::unwrap_used)]
-// fn frequency_westend_genesis_config() -> serde_json::Value {
-// 	super::helpers::build_genesis(
-// 		invulnerables,
-
-// 		crate::EXISTENTIAL_DEPOSIT * 16,
-// 		Some(get_account_id_from_seed::<sp_core::sr25519::Public>("")),
-// 		default_session_keys(),
-// 		default_council_members(),
-// 		default_technical_committee_members(),
-// 		super::helpers::load_genesis_schemas(),
-// 		2000.into(),
-// 	)
 // }
 
 #[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]

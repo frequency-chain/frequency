@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
