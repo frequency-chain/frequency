@@ -191,7 +191,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{matrix.branch_alias}}-${{github.run_id}}
           path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
