@@ -174,7 +174,7 @@ start-frequency-instant-bridging)
   ;;
 
 # TODO: This is a work in progress.
-start-frequency-westend-bridging)
+start-bridging-westend-local)
   printf "\nBuilding Frequency for westend-local with Bridging. Running with local relay ...\n"
   cargo build --features frequency-local,frequency-bridging
 
@@ -201,6 +201,32 @@ start-frequency-westend-bridging)
     --rpc-methods=Unsafe \
     $offchain_params \
     --tmp
+  ;;
+
+# TODO: This needs correct launch parameters for Westend testnet
+start-bridging-westend)
+  printf "\nBuilding Frequency for westend-testnet with Bridging. Running with Westend Testnet Relay ...\n"
+  cargo build --release --features frequency-westend,frequency-bridging
+
+  parachain_dir=$base_dir/parachain/${para_id}
+  mkdir -p $parachain_dir;
+
+  if [ "$2" == "purge" ]; then
+    echo "purging parachain..."
+    rm -rf $parachain_dir
+  fi
+
+  # Placeholder - Needs correct arguments for testnet connection
+  echo "TODO: Add correct launch command for Westend testnet connection"
+  # Example structure (likely needs run_collator.sh):
+  # "${Frequency_BINARY_PATH:-./target/release/frequency}" \
+  #   --collator \
+  #   --chain="frequency-westend-testnet" \
+  #   --base-path=$parachain_dir/data \
+  #   --port $((30333)) \
+  #   --rpc-port $((9944)) \
+  #   -- \
+  #   --chain westend
   ;;
 
 start-frequency-interval)

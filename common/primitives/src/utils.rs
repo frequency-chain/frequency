@@ -13,6 +13,12 @@ pub const TESTNET_ON_PASEO_GENESIS_HASH: &[u8] = &[
 	253, 192, 241, 148, 171, 214, 240, 213, 206, 24, 56, 224,
 ];
 
+/// Frequency Testnet on Westend Genesis Hash 0xe143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e
+pub const TESTNET_ON_WESTEND_GENESIS_HASH: &[u8] = &[
+	225, 67, 242, 56, 3, 172, 80, 232, 246, 248, 230, 38, 149, 209, 206, 158, 78, 29, 104, 170, 54,
+	193, 205, 44, 253, 21, 52, 2, 19, 243, 66, 62,
+];
+
 /// An enum that shows the detected chain type
 #[derive(Debug, Clone, PartialEq)]
 pub enum DetectedChainType {
@@ -22,6 +28,8 @@ pub enum DetectedChainType {
 	FrequencyMainNet,
 	/// Frequency Paseo Testnet
 	FrequencyPaseoTestNet,
+	/// Frequency Westend Testnet
+	FrequencyWestendTestNet,
 }
 
 /// Finds the chain type by genesis hash
@@ -29,6 +37,7 @@ pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType 
 	match genesis_hash {
 		MAINNET_GENESIS_HASH => DetectedChainType::FrequencyMainNet,
 		TESTNET_ON_PASEO_GENESIS_HASH => DetectedChainType::FrequencyPaseoTestNet,
+		TESTNET_ON_WESTEND_GENESIS_HASH => DetectedChainType::FrequencyWestendTestNet,
 		_ => DetectedChainType::Unknown,
 	}
 }
@@ -296,5 +305,18 @@ mod tests {
 
 		// assert
 		assert_eq!(detected, DetectedChainType::FrequencyPaseoTestNet);
+	}
+
+	#[test]
+	fn get_chain_type_by_genesis_hash_with_westend_genesis_should_get_westend() {
+		// arrange
+		let known_genesis =
+			from_hex("e143f23803ac50e8f6f8e62695d1ce9e4e1d68aa36c1cd2cfd15340213f3423e").unwrap();
+
+		// act
+		let detected = get_chain_type_by_genesis_hash(&known_genesis);
+
+		// assert
+		assert_eq!(detected, DetectedChainType::FrequencyWestendTestNet);
 	}
 }

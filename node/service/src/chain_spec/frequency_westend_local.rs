@@ -13,7 +13,7 @@ pub type ChainSpec = sc_service::GenericChainSpec<Extensions>;
 pub type RelayChainSpec = sc_service::GenericChainSpec<RelayChainExtensions>;
 
 /// Generates the chain spec for a local testnet
-pub fn local_westend_testnet_config() -> ChainSpec {
+pub fn westend_local_config() -> ChainSpec {
 	// Give your base currency a unit name and decimal places
 	let properties =
 		get_properties(FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS as u32, Ss58Prefix::get().into());
