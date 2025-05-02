@@ -360,16 +360,13 @@ jobs:
       matrix:
         # Remember, runtimes are separate for each relay chain
         # Also should match `verify-build-runtimes-dummy`
+        # Only doing paseo-testnet and mainnet
         network: [paseo, mainnet]
         build-profile: [release]
         runtime-dir: [runtime/frequency]
         package: [frequency-runtime]
         built-wasm-file-name-prefix: [frequency_runtime]
         include:
-          - network: dev
-            chain: dev
-            features: frequency-no-relay
-            wasm-core-version: frequency-testnet
           - network: paseo
             chain: frequency-paseo
             features: frequency-testnet
