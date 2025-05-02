@@ -3,6 +3,7 @@ use common_runtime::constants::{FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS};
 use frequency_runtime::Ss58Prefix;
 use polkadot_service::chain_spec::Extensions as RelayChainExtensions;
 use sc_service::ChainType;
+use sc_telemetry::TelemetryEndpoints;
 
 use super::{get_properties, Extensions};
 
@@ -31,5 +32,8 @@ pub fn load_frequency_westend_spec() -> ChainSpec {
 	.with_properties(properties)
 	.with_chain_type(ChainType::Live)
 	.with_genesis_config_preset_name("frequency-westend")
+	.with_telemetry_endpoints(
+		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).unwrap(),
+	)
 	.build()
 }
