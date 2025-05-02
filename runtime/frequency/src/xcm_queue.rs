@@ -1,7 +1,9 @@
 use crate::{
-	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeCall,
-	RuntimeEvent, XcmpQueue,
+	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent, XcmpQueue,
 };
+
+#[cfg(not(feature = "runtime-benchmarks"))]
+use crate::RuntimeCall;
 
 use frame_support::{
 	parameter_types,

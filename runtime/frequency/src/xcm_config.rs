@@ -226,7 +226,7 @@ impl cumulus_pallet_xcm::Config for Runtime {
 }
 
 /// Simple conversion of `u32` into an `AssetId` for use in benchmarking.
-#[cfg(feature = "frequency-bridging")]
+#[cfg(feature = "runtime-benchmarks")]
 pub struct XcmBenchmarkHelper;
 #[cfg(feature = "runtime-benchmarks")]
 impl pallet_assets::BenchmarkHelper<ForeignAssetsAssetId> for XcmBenchmarkHelper {
