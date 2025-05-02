@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=https://json.schemastore.org/github-workflow.json
+name: Build Westend
+concurrency:
+  group: ${{github.workflow}}-${{github.ref}}
+  cancel-in-progress: true
+on:
+  push:
+
+env:
+  NIGHTLY_TOOLCHAIN: nightly-2025-04-03
+
+jobs:
+  build-binaries:
+    name: Build Branch
+    runs-on: ubicloud-standard-16
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
+    env:
+      BIN_DIR: target/release
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+      - name: Compile Binary
+        run: |
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+            --features frequency-westend,frequency-bridging
+      - name: Run Sanity Checks
+        working-directory: ${{env.BIN_DIR}}
+        run: |
+          file frequency && \
+            ./frequency --version
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-binary-westend-${{github.run_id}}
+          path: ${{env.BIN_DIR}}/frequency
+          if-no-files-found: error
