@@ -1093,7 +1093,9 @@ jobs:
           cp -r resources/* ./docker-build/resources/ || (echo "ERROR: resources directory not found" && false)
 
           # Move binaries to the right place
+          ls -la ./binaries-amd64/
           mv ./binaries-amd64/${{matrix.release-file-name-prefix}}.amd64 ./docker-build/linux/amd64/frequency
+          ls -la ./binaries-arm64/
           mv ./binaries-arm64/${{matrix.release-file-name-prefix}}.arm64 ./docker-build/linux/arm64/frequency
 
           chmod +x ./docker-build/linux/amd64/frequency
