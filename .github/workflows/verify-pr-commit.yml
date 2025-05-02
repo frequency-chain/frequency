@@ -408,7 +408,7 @@ jobs:
         env:
           BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
         with:
-          profile: dev
+          profile: ${{matrix.build-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
           runtime_dir: ${{ matrix.runtime-dir }}
