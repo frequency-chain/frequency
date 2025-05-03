@@ -18,13 +18,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_config;
+pub mod xcm_config;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
 use xcm_config::ForeignAssetsAssetId;
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_queue;
+pub mod xcm_queue;
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_commons;
@@ -783,6 +783,10 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
+parameter_types! {
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
+}
+
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = BalancesMaxLocks;
 	/// The type for recording an account's balance.
@@ -790,7 +794,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -1504,7 +1508,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
 		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,

@@ -11,7 +11,9 @@ use staging_xcm_builder::{
 	TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
 
-use crate::xcm_commons::{LocationToAccountId, RelayNetwork, XcmOriginToTransactDispatchOrigin};
+pub use crate::xcm_commons::{
+	LocationToAccountId, RelayNetwork, XcmOriginToTransactDispatchOrigin,
+};
 
 use frame_support::{
 	pallet_prelude::Get,
