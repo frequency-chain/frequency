@@ -2,7 +2,7 @@ pub use asset_hub_westend_emulated_chain;
 pub use frequency_emulated_chain;
 pub use westend_emulated_chain;
 
-use asset_hub_westend_emulated_chain::AssetHubWestend;
+pub use asset_hub_westend_emulated_chain::AssetHubWestend;
 use frequency_emulated_chain::FrequencyWestend;
 use westend_emulated_chain::Westend;
 
