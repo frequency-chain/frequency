@@ -1,10 +1,10 @@
 extern crate alloc;
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 
 /// encode to eip-712
 pub trait EIP712Encode {
-	/// encode the type
-	fn encode_eip_712(&self) -> [u8; 32];
+	/// encodes the type without hashing it
+	fn encode_eip_712(&self) -> Box<[u8]>;
 }
 
 /// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1

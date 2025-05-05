@@ -7,7 +7,6 @@ use frame_support::{
 };
 use parity_scale_codec::{alloc::string::ToString, DecodeWithMemTracking};
 use sp_core::{
-	bytes::from_hex,
 	crypto,
 	crypto::{AccountId32, FromEntropy},
 	ecdsa, ed25519,
@@ -331,15 +330,6 @@ fn eth_message_hash(message: &[u8]) -> [u8; 32] {
 	sp_io::hashing::keccak_256(concatenated.as_slice())
 }
 
-fn eth_eip712(message: &[u8]) -> [u8; 32] {
-	let prefix = from_hex("0x1901").unwrap();
-	let domain =
-		from_hex("0x8d95594185f4f2b6272976bb28848c643dff3308f3472a3c409526955cca05ab").unwrap();
-	let concatenated = [prefix.as_slice(), domain.as_slice(), message].concat();
-	log::debug!(target:"ETHEREUM", "prefixed {:?}",concatenated);
-	sp_io::hashing::keccak_256(concatenated.as_slice())
-}
-
 fn check_ethereum_signature<L: Lazy<[u8]>>(
 	signature: &ecdsa::Signature,
 	mut msg: L,
@@ -355,28 +345,25 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 		return true
 	}
 
-	// signature of ethereum prefixed message eip-172
-	let eip712_hashed = eth_eip712(msg.get());
-	if verify_signature(signature.as_ref(), &eip712_hashed, signer) {
-		return true
-	}
-
-	// signature of raw payload, compatible with polkadotJs signatures
+	// PolkadotJs raw payload signatures
+	// or Ethereum based EIP-712 compatible signatures
 	let hashed = sp_io::hashing::keccak_256(msg.get());
 	verify_signature(signature.as_ref(), &hashed, signer)
 }
 
 #[cfg(test)]
 mod tests {
-	use crate::signatures::{UnifiedSignature, UnifiedSigner};
+	use crate::{
+		handles::ClaimHandlePayload,
+		signatures::{UnifiedSignature, UnifiedSigner},
+		utils::EIP712Encode,
+	};
 	use impl_serde::serialize::from_hex;
 	use sp_core::{ecdsa, Pair};
 	use sp_runtime::{
 		traits::{IdentifyAccount, Verify},
 		AccountId32,
 	};
-	use crate::handles::ClaimHandlePayload;
-	use crate::utils::EIP712Encode;
 
 	use super::{AccountAddressMapper, EthereumAddressMapper};
 
@@ -434,13 +421,10 @@ mod tests {
 		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02 testing
 		// 0x0000000000000000000000000000000000000000000000000000000000000064 100
 		// let encoded_payload = from_hex("0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064").expect("Should convert");
-		let payload = ClaimHandlePayload {
-			base_handle: b"testing".to_vec(),
-			expiration: 100u64,
-		};
+		let payload = ClaimHandlePayload { base_handle: b"testing".to_vec(), expiration: 100u32 };
 		let encoded_payload = payload.encode_eip_712();
 
-		let signature_raw = from_hex("0x146a9f0deea81fff681ab62e19485b727d99f02c95f3f98aaf738c2ef3c9bcee16b925421e71d35cdca412f4d5cddd2d3f34845bd47de0c4fa6d5291f0e770e21c").expect("Should convert");
+		let signature_raw = from_hex("0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b81b").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));

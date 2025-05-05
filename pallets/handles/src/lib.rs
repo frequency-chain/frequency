@@ -51,6 +51,7 @@ use common_primitives::benchmarks::MsaBenchmarkHelper;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	utils::EIP712Encode,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
@@ -386,7 +387,7 @@ pub mod pallet {
 			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode_eip_712().to_vec())?;
 
 			let display_handle = Self::do_claim_handle(msa_id, payload)?;
 

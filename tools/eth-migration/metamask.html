@@ -1,0 +1,93 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <title>Metamask meta transaction test</title>
+  <script>
+    async function main() {
+      if (!window.ethereum || !window.ethereum.isMetaMask) {
+        console.log("Please install MetaMask")
+        return
+      }
+
+      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+      const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+      console.log(chainId);
+      const eip712domain_type_definition = {
+        "EIP712Domain": [
+          {
+            "name": "name",
+            "type": "string"
+          },
+          {
+            "name": "version",
+            "type": "string"
+          },
+          {
+            "name": "chainId",
+            "type": "uint256"
+          },
+          {
+            "name": "verifyingContract",
+            "type": "address"
+          }
+        ]
+      }
+      const karma_request_domain = {
+        "name": "Frequency",
+        "version": "1",
+        "chainId": chainId,
+        "verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+      }
+
+      document.getElementById('signature_request')?.addEventListener("click", async function () {
+        const signature_request = {
+          "types": {
+            ...eip712domain_type_definition,
+            "ClaimHandlePayload": [
+                {
+                  "name": "handle",
+                  "type": "string"
+                },
+                {
+                  "name": "expiration",
+                  "type": "uint64"
+                }
+              ]
+          },
+          "primaryType": "ClaimHandlePayload",
+          "domain": karma_request_domain,
+          "message": {
+            "handle": "testing",
+            "expiration": 100
+          }
+        }
+        console.log(JSON.stringify({
+          "method": "eth_signTypedData_v4",
+          "params": [
+            accounts[0],
+			signature_request
+          ]
+        },null, 2));
+        let signature = await window.ethereum.request({
+          "method": "eth_signTypedData_v4",
+          "params": [
+            accounts[0],
+			signature_request
+          ]
+        })
+        console.log(signature);
+        alert("Signature: " + signature)
+      })
+    }
+    main()
+  </script>
+</head>
+
+<body>
+  <button id="signature_request">Sign</button>
+</body>
+
+</html>

@@ -10,12 +10,12 @@ const typedData = {
 			{ name: 'chainId', type: 'uint256' },
 			{ name: 'verifyingContract', type: 'address' },
 		],
-		HandlePayload: [
+		ClaimHandlePayload: [
 			{ name: 'handle', type: 'string' },
 			{ name: 'expiration', type: 'uint64' }
 		],
 	},
-	primaryType: 'HandlePayload',
+	primaryType: 'ClaimHandlePayload',
 	domain: {
 		name: 'Frequency',
 		version: '1',
@@ -121,26 +121,33 @@ console.log(compactSig);
 const rpcSig = ethUtil.toRpcSig(sig.v, sig.r, sig.s);
 console.log(rpcSig);
 
-expect(encodeType('HandlePayload')).to.equal('HandlePayload(string handle,uint64 expiration)');
-expect(ethUtil.bufferToHex(typeHash('HandlePayload'))).to.equal(
-	'0x4afae8095462377dc2c982219ff9adf392a625301e726c464bdb2be7ecbcb623',
+expect(encodeType('ClaimHandlePayload')).to.equal('ClaimHandlePayload(string handle,uint64 expiration)');
+expect(ethUtil.bufferToHex(typeHash('ClaimHandlePayload'))).to.equal(
+	'0xe5957ebf4e1c5ee379c679548f5a79f8976b3195249f2b5ffb1e3ed86b552aea',
 );
 expect(ethUtil.bufferToHex(encodeData(typedData.primaryType, typedData.message))).to.equal(
-	'0x4afae8095462377dc2c982219ff9adf392a625301e726c464bdb2be7ecbcb6235f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064',
+	'0xe5957ebf4e1c5ee379c679548f5a79f8976b3195249f2b5ffb1e3ed86b552aea5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064',
 );
 expect(ethUtil.bufferToHex(structHash(typedData.primaryType, typedData.message))).to.equal(
-	'0x1e238a8f1e6502b4718d2ca0890bf2c6da27ac3877d3068f7b642d3454ad7ad1',
+	'0xd57570b549a5aac80e99464b2e58b975b13c240d992c8e8b7d81d8f32b7a3ac6',
+);
+expect(encodeType('EIP712Domain')).to.equal('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)');
+expect(ethUtil.bufferToHex(typeHash('EIP712Domain'))).to.equal(
+	'0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400f',
+);
+expect(ethUtil.bufferToHex(encodeData('EIP712Domain', typedData.domain))).to.equal(
+	'0x8b73c3c69bb8fe3d512ecc4cf759cc79239f7b179b0ffacaa9a75d522b39400fd9b3cb8d2777b277796da1ccb2f8be9fa13f289418f2246fa1ecb7e94a0226c5c89efdaa54c0f20c7adf612882df0950f5a951637e0307cdcb4c672f298b8bc600000000000000000000000000000000000000000000000000000000190f1b44000000000000000000000000cccccccccccccccccccccccccccccccccccccccc',
 );
 expect(ethUtil.bufferToHex(structHash('EIP712Domain', typedData.domain))).to.equal(
 	'0x8d95594185f4f2b6272976bb28848c643dff3308f3472a3c409526955cca05ab',
 );
-expect(ethUtil.bufferToHex(signHash())).to.equal('0xacc2c61517380b57822b81c564ea486d6463d3c7956df925c0a8da0e19bb8c22');
+expect(ethUtil.bufferToHex(signHash())).to.equal('0x0af7dbd6bb58624546312e0512fa1e0e1eda3a15a9f36db56050a7b9a52747cb');
 expect(ethUtil.bufferToHex(address)).to.equal('0xf24ff3a9cf04c71dbc94d0b566f7a27b94566cac');
-expect(sig.v).to.equal(28);
-expect(ethUtil.bufferToHex(sig.r)).to.equal('0x146a9f0deea81fff681ab62e19485b727d99f02c95f3f98aaf738c2ef3c9bcee');
-expect(ethUtil.bufferToHex(sig.s)).to.equal('0x16b925421e71d35cdca412f4d5cddd2d3f34845bd47de0c4fa6d5291f0e770e2');
-expect(compactSig).to.equal('0x146a9f0deea81fff681ab62e19485b727d99f02c95f3f98aaf738c2ef3c9bcee96b925421e71d35cdca412f4d5cddd2d3f34845bd47de0c4fa6d5291f0e770e2');
-expect(rpcSig).to.equal('0x146a9f0deea81fff681ab62e19485b727d99f02c95f3f98aaf738c2ef3c9bcee16b925421e71d35cdca412f4d5cddd2d3f34845bd47de0c4fa6d5291f0e770e21c');
+expect(sig.v).to.equal(27);
+expect(ethUtil.bufferToHex(sig.r)).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef');
+expect(ethUtil.bufferToHex(sig.s)).to.equal('0x00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b8');
+expect(compactSig).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b8');
+expect(rpcSig).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b81b');
 
 console.log(ethUtil.bufferToHex(ethUtil.keccakFromString(typedData.message.handle)));
 console.log(ethUtil.bufferToHex(ethUtil.keccakFromString('')))

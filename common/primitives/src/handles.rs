@@ -9,9 +9,9 @@ use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 extern crate alloc;
 use crate::utils::EIP712Encode;
-use alloc::vec::Vec;
+use alloc::{boxed::Box, vec::Vec};
 use scale_info::prelude::format;
-use sp_core::bytes::from_hex;
+use sp_core::{bytes::from_hex, U256};
 
 /// The minimum base and canonical handle (not including suffix or delimiter) length in characters
 pub const HANDLE_CHARS_MIN: u32 = 3;
@@ -61,17 +61,45 @@ impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 	}
 }
 
-impl EIP712Encode for ClaimHandlePayload<u64> {
-	fn encode_eip_712(&self) -> [u8; 32] {
+impl<BlockNumber> EIP712Encode for ClaimHandlePayload<BlockNumber>
+where
+	BlockNumber: Into<U256> + TryFrom<U256> + Copy,
+{
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// eip-712 prefix
+		let prefix = from_hex("0x1901").unwrap();
+		// domain separator
+		let domain_type_hash = sp_io::hashing::keccak_256(
+			b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+		);
+		let domain_name = sp_io::hashing::keccak_256(b"Frequency");
+		let domain_version = sp_io::hashing::keccak_256(b"1");
+		let chain_id = from_hex(&format!("0x{:064x}", 420420420)).unwrap();
+		let verifier_contract =
+			from_hex(&format!("0x{:0>64}", "cccccccccccccccccccccccccccccccccccccccc")).unwrap();
+
+		let domain_separator = sp_io::hashing::keccak_256(
+			&[
+				domain_type_hash.as_slice(),
+				domain_name.as_slice(),
+				domain_version.as_slice(),
+				chain_id.as_slice(),
+				verifier_contract.as_slice(),
+			]
+			.concat(),
+		);
+
+		// signed payload
 		let handle_type_hash =
-			from_hex("0x4afae8095462377dc2c982219ff9adf392a625301e726c464bdb2be7ecbcb623").unwrap();
-		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064
+			sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint64 expiration)");
 		let coded_handle = sp_io::hashing::keccak_256(self.base_handle.as_ref());
-		let exp = format!("0x{:064x}", self.expiration);
-		let coded_expiration = from_hex(&exp).unwrap();
-		sp_io::hashing::keccak_256(
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let message = sp_io::hashing::keccak_256(
 			&[handle_type_hash.as_slice(), &coded_handle, &coded_expiration].concat(),
-		)
+		);
+		let combined = [prefix.as_slice(), domain_separator.as_slice(), &message].concat();
+		combined.into_boxed_slice()
 	}
 }
 
