@@ -17,7 +17,7 @@ export function ethereumAddressToKeyringPair(ethereumAddress: H160): KeyringPair
   return {
     type: 'ethereum',
     address: ethereumAddress.toHex(),
-    addressRaw: ethereumAddress
+    addressRaw: ethereumAddress,
   } as unknown as KeyringPair;
 }
 

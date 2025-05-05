@@ -66,15 +66,22 @@ describe('MSAs Holding Tokens', function () {
       const transferAmount = 1n + ed;
       let accountData = await ExtrinsicHelper.getAccountInfo(ethKeys);
       const initialBalance = accountData.data.free.toBigInt();
-      const op = ExtrinsicHelper.transferFunds(fundingSource, ethereumAddressToKeyringPair(ethAddress20), transferAmount);
-
+      const op = ExtrinsicHelper.transferFunds(
+        fundingSource,
+        ethereumAddressToKeyringPair(ethAddress20),
+        transferAmount
+      );
 
       const { target: transferEvent } = await op.fundAndSend(fundingSource);
       assert.notEqual(transferEvent, undefined, 'should have transferred tokens');
 
       accountData = await ExtrinsicHelper.getAccountInfo(ethKeys);
       const finalBalance = accountData.data.free.toBigInt();
-      assert.equal(finalBalance, initialBalance + transferAmount, 'Final balance should be increased by transfer amount');
+      assert.equal(
+        finalBalance,
+        initialBalance + transferAmount,
+        'Final balance should be increased by transfer amount'
+      );
     });
   });
 
