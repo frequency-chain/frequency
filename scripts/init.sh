@@ -81,8 +81,8 @@ start-paseo-collator-alice)
   ;;
 
 start-paseo-collator-bob)
-  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release --features frequency-local
+  printf "\nASSUMING that frequency with runtime '$parachain' and id '$para_id' is ALREADY BUILT...\n"
+  # cargo build --release --features frequency-local
 
   parachain_dir_bob=$base_dir/parachain/bob/${para_id}
   mkdir -p $parachain_dir_bob;
