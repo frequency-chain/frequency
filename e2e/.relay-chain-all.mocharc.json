@@ -5,5 +5,5 @@
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
   "import": "tsx/esm",
   "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
-  "timeout": 180000
+  "timeout": 300000
 }

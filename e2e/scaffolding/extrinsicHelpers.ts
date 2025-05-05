@@ -194,13 +194,14 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
             if (result.isError) {
+              console.error('result', result.toHuman(), 'op', op.toHuman(), 'txHex', op.toHex());
               throw new CallError(
                 result,
                 `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`
               );
             }
           }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => status.isFinalized),
           this.parseResult(this.event)
         )
       );
@@ -220,7 +221,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .sudo(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => status.isFinalized),
           this.parseResult(this.event)
         )
     );
@@ -243,7 +244,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
             }
           }),
           // Can comment out filter to help debug hangs
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => status.isFinalized),
           this.parseResult(this.event)
         )
     );
@@ -298,7 +299,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
           }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => status.isFinalized),
           this.parseResult(this.event)
         )
       );
@@ -846,9 +847,9 @@ export class ExtrinsicHelper {
     const blockNumber = ofBlockNumber || (await getBlockNumber());
     let currentBlock = await getFinalizedBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 300_000 < Date.now()) {
         throw new Error(
-          `Waiting for Finalized Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting for Finalized Block took longer than 300s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait
@@ -865,9 +866,9 @@ export class ExtrinsicHelper {
     const start = Date.now();
     let currentBlock = await getBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 300_000 < Date.now()) {
         throw new Error(
-          `Waiting to run to Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting to run to Block took longer than 300s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait

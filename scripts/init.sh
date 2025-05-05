@@ -53,7 +53,7 @@ stop-frequency-docker)
 
 start-paseo-collator-alice)
   printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release --features frequency-local
+  # cargo build --release --features frequency-local
 
   parachain_dir_alice=$base_dir/parachain/alice/${para_id}
   mkdir -p $parachain_dir_alice;
@@ -99,6 +99,7 @@ start-paseo-collator-bob)
     --base-path=$parachain_dir_bob/data \
     --discover-local \
     --force-authoring \
+    -ltxpool=trace \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
