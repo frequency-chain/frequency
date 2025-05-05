@@ -18,6 +18,7 @@
 )]
 // allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
+use common_primitives::utils::VecEncodingWrapper;
 use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo, RawOrigin},
@@ -36,7 +37,7 @@ use sp_runtime::{
 	AccountId32, MultiSignature,
 };
 extern crate alloc;
-use alloc::{borrow::ToOwned, vec};
+use alloc::vec;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
 pub(crate) type OnChargeTransactionOf<T> =
@@ -360,7 +361,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	) -> DispatchResult {
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-		if !check_signature(signature, key, signed_data.to_owned()) {
+		if !check_signature(signature, key, &VecEncodingWrapper(signed_data.to_vec())) {
 			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
 

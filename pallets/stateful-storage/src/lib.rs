@@ -53,6 +53,7 @@ use common_primitives::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
 	},
+	utils::EIP712Encode,
 };
 
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
@@ -382,7 +383,7 @@ pub mod pallet {
 				frame_system::Pallet::<T>::block_number(),
 				payload.expiration,
 			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 			Self::check_schema_for_write(
@@ -423,7 +424,7 @@ pub mod pallet {
 				frame_system::Pallet::<T>::block_number(),
 				payload.expiration,
 			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 			Self::check_schema_for_write(
@@ -465,7 +466,7 @@ pub mod pallet {
 				frame_system::Pallet::<T>::block_number(),
 				payload.expiration,
 			)?;
-			Self::check_signature(&proof, &delegator_key.clone(), payload.encode())?;
+			Self::check_signature(&proof, &delegator_key.clone(), &payload)?;
 			let state_owner_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
 				.map_err(|_| Error::<T>::InvalidMessageSourceAccount)?;
 			Self::check_schema_for_write(
@@ -569,11 +570,14 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::InvalidSignature`]
 	///
-	pub fn check_signature(
+	pub fn check_signature<P>(
 		signature: &MultiSignature,
 		signer: &T::AccountId,
-		payload: Vec<u8>,
-	) -> DispatchResult {
+		payload: &P,
+	) -> DispatchResult
+	where
+		P: Encode + EIP712Encode,
+	{
 		let key = T::ConvertIntoAccountId32::convert(signer.clone());
 
 		ensure!(

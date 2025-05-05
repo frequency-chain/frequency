@@ -1,8 +1,10 @@
 //! Types for the Stateful Storage Pallet
 use crate::Config;
+use alloc::boxed::Box;
 use common_primitives::{
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId, PageNonce},
+	utils::EIP712Encode,
 };
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
@@ -125,6 +127,13 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 	>,
 }
 
+impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
+}
+
 // REMOVED PaginatedSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
@@ -159,6 +168,13 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
 }
 
+impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
+}
+
 // REMOVED PaginatedDeleteSignaturePayload
 
 /// Payload containing all necessary fields to verify signatures to delete a Paginated storage
@@ -188,6 +204,13 @@ pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 
 	/// The block number at which the signed proof will expire
 	pub expiration: BlockNumberFor<T>,
+}
+
+impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
 }
 
 /// A generic page of data which supports both Itemized and Paginated

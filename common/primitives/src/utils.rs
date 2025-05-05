@@ -1,5 +1,6 @@
 extern crate alloc;
 use alloc::{boxed::Box, vec::Vec};
+use parity_scale_codec::Encode;
 
 /// encode to eip-712
 pub trait EIP712Encode {
@@ -28,6 +29,23 @@ pub enum DetectedChainType {
 	FrequencyMainNet,
 	/// Frequency Paseo Testnet
 	FrequencyPaseoTestNet,
+}
+
+/// A wrapped vec that allow different encodings for signature checks
+#[derive(Clone, Debug)]
+pub struct VecEncodingWrapper(pub Vec<u8>);
+
+impl Encode for VecEncodingWrapper {
+	fn encode(&self) -> Vec<u8> {
+		self.0.clone()
+	}
+}
+
+impl EIP712Encode for VecEncodingWrapper {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
 }
 
 /// Finds the chain type by genesis hash

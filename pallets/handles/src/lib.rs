@@ -279,11 +279,14 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::InvalidSignature`]
-		pub fn verify_signed_payload(
+		pub fn verify_signed_payload<P>(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
-			payload: Vec<u8>,
-		) -> DispatchResult {
+			payload: &P,
+		) -> DispatchResult
+		where
+			P: Encode + EIP712Encode,
+		{
 			let key = T::ConvertIntoAccountId32::convert(signer.clone());
 
 			ensure!(check_signature(signature, key, payload), Error::<T>::InvalidSignature);
@@ -387,7 +390,7 @@ pub mod pallet {
 			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode_eip_712().to_vec())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, &payload)?;
 
 			let display_handle = Self::do_claim_handle(msa_id, payload)?;
 
@@ -473,7 +476,7 @@ pub mod pallet {
 			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, &payload)?;
 
 			// Get existing handle to retire
 			MSAIdToDisplayName::<T>::get(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;

@@ -30,6 +30,13 @@ pub struct AddKeyData<T: Config> {
 	pub new_public_key: T::AccountId,
 }
 
+impl<T: Config> EIP712Encode for AddKeyData<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
+}
+
 /// Structure that is signed for granting permissions to a Provider
 #[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 pub struct AddProvider {
@@ -40,6 +47,13 @@ pub struct AddProvider {
 	pub schema_ids: Vec<SchemaId>,
 	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
+}
+
+impl EIP712Encode for AddProvider {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		// TODO: implement
+		Vec::new().into_boxed_slice()
+	}
 }
 
 impl AddProvider {

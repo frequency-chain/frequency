@@ -1,21 +1,28 @@
-use common_primitives::{signatures::UnifiedSignature, utils::wrap_binary_data};
+use common_primitives::{
+	signatures::UnifiedSignature,
+	utils::{wrap_binary_data, EIP712Encode},
+};
 use sp_runtime::{traits::Verify, AccountId32, MultiSignature};
 extern crate alloc;
-use alloc::vec::Vec;
+use sp_core::Encode;
 
-pub fn check_signature(signature: &MultiSignature, signer: AccountId32, payload: Vec<u8>) -> bool {
+pub fn check_signature<P>(signature: &MultiSignature, signer: AccountId32, payload: &P) -> bool
+where
+	P: Encode + EIP712Encode,
+{
 	let unified_signature: UnifiedSignature = signature.clone().into();
+	let scale_encoded = payload.encode();
 	let verify_signature = |payload: &[u8]| unified_signature.verify(payload, &signer.clone());
 
-	if verify_signature(&payload) {
+	if verify_signature(&scale_encoded) {
 		return true;
 	}
 
 	match unified_signature {
-		// we don't need to check the wrapped bytes for ethereum signatures
-		UnifiedSignature::Ecdsa(_) => false,
+		// we don't need to check the wrapped bytes for ethereum signatures but we need to check EIP-712 ones
+		UnifiedSignature::Ecdsa(_) => verify_signature(&payload.encode_eip_712()),
 		_ => {
-			let wrapped_payload = wrap_binary_data(payload);
+			let wrapped_payload = wrap_binary_data(scale_encoded);
 			verify_signature(&wrapped_payload)
 		},
 	}
@@ -24,7 +31,7 @@ pub fn check_signature(signature: &MultiSignature, signer: AccountId32, payload:
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use common_primitives::signatures::UnifiedSigner;
+	use common_primitives::{signatures::UnifiedSigner, utils::VecEncodingWrapper};
 	use sp_core::{ecdsa, keccak_256, sr25519, Pair};
 	use sp_runtime::traits::IdentifyAccount;
 
@@ -37,7 +44,11 @@ mod tests {
 
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
-		assert!(check_signature(&signature, key_pair_delegator.public().into(), payload.clone()));
+		assert!(check_signature(
+			&signature,
+			key_pair_delegator.public().into(),
+			&VecEncodingWrapper(payload.clone())
+		));
 	}
 
 	#[test]
@@ -48,7 +59,7 @@ mod tests {
 
 		let signature: MultiSignature = signer.sign(&payload).into();
 
-		assert!(check_signature(&signature, signer.public().into(), payload));
+		assert!(check_signature(&signature, signer.public().into(), &VecEncodingWrapper(payload)));
 	}
 
 	#[test]
@@ -61,7 +72,11 @@ mod tests {
 
 		let invalid_payload = b"invalid_payload".to_vec();
 
-		assert!(!check_signature(&signature, signer.public().into(), invalid_payload));
+		assert!(!check_signature(
+			&signature,
+			signer.public().into(),
+			&VecEncodingWrapper(invalid_payload)
+		));
 	}
 
 	#[test]
@@ -73,7 +88,11 @@ mod tests {
 		let signature: MultiSignature = signer.sign_prehashed(&keccak_256(&payload)).into();
 		let unified_signer = UnifiedSigner::from(signer.public());
 
-		assert!(check_signature(&signature, unified_signer.into_account(), payload));
+		assert!(check_signature(
+			&signature,
+			unified_signer.into_account(),
+			&VecEncodingWrapper(payload)
+		));
 	}
 
 	#[test]
@@ -86,6 +105,10 @@ mod tests {
 			signer.sign_prehashed(&keccak_256(&encode_add_provider_data)).into();
 		let unified_signer = UnifiedSigner::from(signer.public());
 
-		assert!(!check_signature(&signature, unified_signer.into_account(), payload));
+		assert!(!check_signature(
+			&signature,
+			unified_signer.into_account(),
+			&VecEncodingWrapper(payload)
+		));
 	}
 }
