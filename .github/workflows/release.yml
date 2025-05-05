@@ -451,7 +451,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{env.NETWORK}}-${{github.run_id}}
+          pattern: artifacts-binary-${{env.NETWORK}}-amd64-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
@@ -536,7 +536,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
+          pattern: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
@@ -600,7 +600,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-local-${{github.run_id}}
+          pattern: artifacts-binary-local-amd64-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
       - name: Rename and Move Binaries
         run: |
