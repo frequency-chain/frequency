@@ -1382,17 +1382,15 @@ impl<T: Config> Pallet<T> {
 	/// [17..20]: all zeroes
 	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
 		// Use a canned value for all but mainnet/testnet builds
-		let genesis_hash: [u8; 32] = if cfg!(any(
-			feature = "frequency",
-			feature = "frequency-testnet"
-		)) {
-			frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero())
-				.as_ref()
-				.try_into()
-				.unwrap()
-		} else {
-			keccak_256(b"frequency-development")
-		};
+		let genesis_hash: [u8; 32] =
+			if cfg!(any(feature = "frequency", feature = "frequency-testnet")) {
+				frame_system::Pallet::<T>::block_hash(BlockNumberFor::<T>::zero())
+					.as_ref()
+					.try_into()
+					.unwrap()
+			} else {
+				keccak_256(b"frequency-development")
+			};
 		let code = &genesis_hash;
 		let mut input_value = [0u8; 32];
 		input_value[24..32].copy_from_slice(&id.to_be_bytes());
