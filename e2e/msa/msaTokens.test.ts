@@ -13,13 +13,7 @@ import { getExistentialDeposit } from '../scaffolding/helpers';
 
 const fundingSource = getFundingSource(import.meta.url);
 const msaId = 1234; // Example MSA ID for testing
-let checksummedEthAddress: HexString;
-
-if (isTestnet()) {
-  checksummedEthAddress = '0x05500A07f5fD359e9E785c74E21d5b180e63B63b'; // Example checksummed Ethereum address for MSA ID 1234 on Paseo testnet
-} else {
-  checksummedEthAddress = '0xCa08F40AE1F1E311bC8516C9a43771828f0F14c2'; // Example checksummed Ethereum address for MSA ID 1234 on a development chain
-}
+const checksummedEthAddress = '0x65928b9a88Db189Eea76F72d86128Af834d64c32'; // Example checksummed Ethereum address for MSA ID 1234
 
 describe('MSAs Holding Tokens', function () {
   let ethKeys: KeyringPair;
