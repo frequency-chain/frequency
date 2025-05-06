@@ -9,30 +9,28 @@ LABEL description="Frequency CI Base Image"
 ARG IMAGE_VERSION
 LABEL version="${IMAGE_VERSION}"
 LABEL org.opencontainers.image.description="Frequency CI Base Image"
-ARG RUST_VERSION
-LABEL rust.version="${RUST_VERSION}"
-ARG NIGHTLY_VERSION
-LABEL rust.nightly-version="${NIGHTLY_VERSION}"
 
 WORKDIR /ci
-RUN apt-get update && \
-	apt-get install -y curl protobuf-compiler build-essential libclang-dev git file jq clang cmake && \
-	curl -fsSL https://get.docker.com -o get-docker.sh && sh get-docker.sh && \
-	rm -rf /var/lib/apt/lists/*
+# Install rustup and needed build tools
+RUN apt update && \
+  apt install --no-install-recommends -y rustup curl build-essential libclang-dev protobuf-compiler git file jq clang cmake ca-certificates && \
+  update-ca-certificates && \
+  apt remove -y --auto-remove && \
+  rm -rf /var/lib/apt/lists/*
 
-# Install Rust
-RUN curl https://sh.rustup.rs -sSf | bash -s -- -y
-ENV PATH="/home/runner/.cargo/bin:/root/.cargo/bin:${PATH}"
-ENV RUSTUP_HOME="/root/.cargo"
-ENV CARGO_HOME="/root/.cargo"
-RUN rustup toolchain install "${NIGHTLY_VERSION}"
+ARG RUST_VERSION
+LABEL rust.version="${RUST_VERSION}"
 
 # Install architecture-specific targets
-RUN rustup target add x86_64-unknown-linux-gnu --toolchain "${NIGHTLY_VERSION}";
-RUN rustup target add aarch64-unknown-linux-gnu --toolchain "${NIGHTLY_VERSION}";
-
-# Common targets and components
-RUN rustup target add wasm32v1-none --toolchain "${NIGHTLY_VERSION}"
-RUN rustup component add rust-src --toolchain "${NIGHTLY_VERSION}"
+# rustup set auto-self-update disable is required as we are installing rustup via apt
+# The list of components should match the rust-toolchain.toml file
+RUN rustup --version && \
+  echo $RUSTUP_HOME && \
+  rustup set auto-self-update disable && \
+  rustup toolchain install "${RUST_VERSION}" && \
+  rustup target add x86_64-unknown-linux-gnu --toolchain "${RUST_VERSION}" && \
+  rustup target add aarch64-unknown-linux-gnu --toolchain "${RUST_VERSION}" && \
+  rustup target add wasm32v1-none --toolchain "${RUST_VERSION}" && \
+  rustup component add clippy rust-docs rustfmt rustc-dev rustc rust-src --toolchain "${RUST_VERSION}"
 
 RUN git config --system --add safe.directory /__w/frequency/frequency

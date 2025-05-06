@@ -19,7 +19,7 @@ on:
       - "LICENSE"
 env:
   RUST_VERSION: 1.84.1
-  IMAGE_VERSION: 1.5.0
+  IMAGE_VERSION: 1.5.1
   # 1.86.0
   NIGHTLY_VERSION: nightly-2025-04-03
 
@@ -62,7 +62,7 @@ jobs:
           result-encoding: string
           script: return `ghcr.io/${context.repo.owner.toLowerCase()}/${context.repo.repo.toLowerCase()}`
 
-      - name: Build and Push Docker Image
+      - name: Build and Push Stable Docker Image
         uses: docker/build-push-action@v6
         with:
           context: .
@@ -75,4 +75,17 @@ jobs:
           build-args: |
             IMAGE_VERSION=${{env.IMAGE_VERSION}}
             RUST_VERSION=${{env.RUST_VERSION}}
-            NIGHTLY_VERSION=${{env.NIGHTLY_VERSION}}
+
+      - name: Build and Push Nightly Docker Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: ${{ github.event_name == 'push' }}
+          platforms: linux/amd64,linux/arm64
+          file: ci-base-image.dockerfile
+          tags: |
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}-nightly:latest
+            ${{steps.repo_slug.outputs.result}}/${{env.IMAGE_NAME}}-nightly:${{env.IMAGE_VERSION}}
+          build-args: |
+            IMAGE_VERSION=${{env.IMAGE_VERSION}}
+            RUST_VERSION=${{env.NIGHTLY_VERSION}}
