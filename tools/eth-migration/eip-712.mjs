@@ -10,12 +10,13 @@ const typedData = {
 			{ name: 'chainId', type: 'uint256' },
 			{ name: 'verifyingContract', type: 'address' },
 		],
-		ClaimHandlePayload: [
-			{ name: 'handle', type: 'string' },
-			{ name: 'expiration', type: 'uint64' }
+		AddKeyData: [
+			{ name: 'ownerMsaId', type: 'uint64' },
+			{ name: 'expiration', type: 'uint64' },
+			{ name: 'newPublicKey', type: 'address' }
 		],
 	},
-	primaryType: 'ClaimHandlePayload',
+	primaryType: 'AddKeyData',
 	domain: {
 		name: 'Frequency',
 		version: '1',
@@ -23,8 +24,9 @@ const typedData = {
 		verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
 	},
 	message: {
-		handle : 'testing',
+		ownerMsaId: 12876327,
 		expiration: 100,
+		newPublicKey: '0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9'
 	},
 };
 
@@ -121,15 +123,15 @@ console.log(compactSig);
 const rpcSig = ethUtil.toRpcSig(sig.v, sig.r, sig.s);
 console.log(rpcSig);
 
-expect(encodeType('ClaimHandlePayload')).to.equal('ClaimHandlePayload(string handle,uint64 expiration)');
-expect(ethUtil.bufferToHex(typeHash('ClaimHandlePayload'))).to.equal(
-	'0xe5957ebf4e1c5ee379c679548f5a79f8976b3195249f2b5ffb1e3ed86b552aea',
+expect(encodeType('AddKeyData')).to.equal('AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)');
+expect(ethUtil.bufferToHex(typeHash('AddKeyData'))).to.equal(
+	'0x6015d92440a43e374a7ad082b2f3a652a0a1e5c0d3a53cdec4a2001c07b496b4',
 );
 expect(ethUtil.bufferToHex(encodeData(typedData.primaryType, typedData.message))).to.equal(
-	'0xe5957ebf4e1c5ee379c679548f5a79f8976b3195249f2b5ffb1e3ed86b552aea5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064',
+	'0x6015d92440a43e374a7ad082b2f3a652a0a1e5c0d3a53cdec4a2001c07b496b40000000000000000000000000000000000000000000000000000000000c47a2700000000000000000000000000000000000000000000000000000000000000640000000000000000000000007a23f8d62589ab9651722c7f4a0e998d7d3ef2a9',
 );
 expect(ethUtil.bufferToHex(structHash(typedData.primaryType, typedData.message))).to.equal(
-	'0xd57570b549a5aac80e99464b2e58b975b13c240d992c8e8b7d81d8f32b7a3ac6',
+	'0x44ae393a01c8b94620eb23840e5ce6ae649fb0a045c623de4059ca01e7019c64',
 );
 expect(encodeType('EIP712Domain')).to.equal('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)');
 expect(ethUtil.bufferToHex(typeHash('EIP712Domain'))).to.equal(
@@ -141,16 +143,14 @@ expect(ethUtil.bufferToHex(encodeData('EIP712Domain', typedData.domain))).to.equ
 expect(ethUtil.bufferToHex(structHash('EIP712Domain', typedData.domain))).to.equal(
 	'0x8d95594185f4f2b6272976bb28848c643dff3308f3472a3c409526955cca05ab',
 );
-expect(ethUtil.bufferToHex(signHash())).to.equal('0x0af7dbd6bb58624546312e0512fa1e0e1eda3a15a9f36db56050a7b9a52747cb');
+expect(ethUtil.bufferToHex(signHash())).to.equal('0x65312dc0c2c3da6a1edd53f63f58abba73051ba1cafcec318b37139ff0898b44');
 expect(ethUtil.bufferToHex(address)).to.equal('0xf24ff3a9cf04c71dbc94d0b566f7a27b94566cac');
 expect(sig.v).to.equal(27);
-expect(ethUtil.bufferToHex(sig.r)).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef');
-expect(ethUtil.bufferToHex(sig.s)).to.equal('0x00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b8');
-expect(compactSig).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b8');
-expect(rpcSig).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b81b');
+expect(ethUtil.bufferToHex(sig.r)).to.equal('0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e');
+expect(ethUtil.bufferToHex(sig.s)).to.equal('0x185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f');
+// expect(compactSig).to.equal('0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b8');
+expect(rpcSig).to.equal('0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b');
 
-console.log(ethUtil.bufferToHex(ethUtil.keccakFromString(typedData.message.handle)));
-console.log(ethUtil.bufferToHex(ethUtil.keccakFromString('')))
 // CommonPrimitivesHandlesClaimHandlePayload: {
 // 	baseHandle: 'Bytes',
 // 		expiration: 'u32'

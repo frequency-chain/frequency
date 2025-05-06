@@ -6,16 +6,16 @@ use frame_support::{
 
 use frame_system::pallet_prelude::BlockNumberFor;
 
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
-use sp_runtime::{traits::Zero, MultiSignature};
-
 use crate::{
 	ensure,
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
+	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
 	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
+use common_primitives::signatures::AccountAddressMapper;
+use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
+use sp_runtime::{traits::Zero, MultiSignature};
 
 use common_primitives::{
 	msa::{
@@ -24,9 +24,12 @@ use common_primitives::{
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
-	utils::wrap_binary_data,
+	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
+	utils::{wrap_binary_data, EIP712Encode},
 };
 use pretty_assertions::assert_eq;
+use sp_core::bytes::from_hex;
+use sp_runtime::traits::{IdentifyAccount, Verify};
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
@@ -677,5 +680,33 @@ fn try_mutate_delegation_success() {
 		));
 
 		assert!(DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).is_some());
+	});
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_key_should_work() {
+	new_test_ext().execute_with(|| {
+		let address = EthereumAddressMapper::to_account_id(&from_hex("0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9").unwrap_or_default());
+		let payload: AddKeyData<Test> = AddKeyData {
+			msa_id: 12876327,
+			expiration: 100,
+			new_public_key: address.into(),
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		let signature_raw = from_hex("0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
 	});
 }

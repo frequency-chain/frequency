@@ -30,6 +30,9 @@ pub trait AccountAddressMapper<AccountId> {
 
 	/// mapping to bytes of a public key or an address
 	fn to_bytes32(public_key_or_address: &[u8]) -> [u8; 32];
+
+	/// reverses an accountId to it's 20 byte ethereum address
+	fn to_ethereum_address(account_id: AccountId) -> [u8; 20];
 }
 
 /// converting raw address bytes to 32 bytes Ethereum compatible addresses
@@ -78,6 +81,14 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 		// Fill the rest (12 bytes) with 0xEE
 		hashed[20..].fill(0xEE);
 		hashed
+	}
+
+	fn to_ethereum_address(account_id: AccountId32) -> [u8; 20] {
+		let mut eth_address = [0u8; 20];
+		if account_id.as_slice()[20..] == *[0xEE; 12].as_slice() {
+			eth_address[..].copy_from_slice(&account_id.as_slice()[0..20]);
+		}
+		eth_address
 	}
 }
 
@@ -417,7 +428,7 @@ mod tests {
 	}
 
 	#[test]
-	fn ethereum_eip712_signatures_should_work() {
+	fn ethereum_eip712_signatures_for_claim_handle_payload_should_work() {
 		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02 testing
 		// 0x0000000000000000000000000000000000000000000000000000000000000064 100
 		// let encoded_payload = from_hex("0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064").expect("Should convert");

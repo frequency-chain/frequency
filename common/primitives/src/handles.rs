@@ -8,7 +8,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 extern crate alloc;
-use crate::utils::EIP712Encode;
+use crate::utils::{get_eip712_encoding_prefix, EIP712Encode};
 use alloc::{boxed::Box, vec::Vec};
 use scale_info::prelude::format;
 use sp_core::{bytes::from_hex, U256};
@@ -66,28 +66,12 @@ where
 	BlockNumber: Into<U256> + TryFrom<U256> + Copy,
 {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// eip-712 prefix
-		let prefix = from_hex("0x1901").unwrap();
-		// domain separator
-		let domain_type_hash = sp_io::hashing::keccak_256(
-			b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
-		);
-		let domain_name = sp_io::hashing::keccak_256(b"Frequency");
-		let domain_version = sp_io::hashing::keccak_256(b"1");
-		let chain_id = from_hex(&format!("0x{:064x}", 420420420)).unwrap();
-		let verifier_contract =
-			from_hex(&format!("0x{:0>64}", "cccccccccccccccccccccccccccccccccccccccc")).unwrap();
-
-		let domain_separator = sp_io::hashing::keccak_256(
-			&[
-				domain_type_hash.as_slice(),
-				domain_name.as_slice(),
-				domain_version.as_slice(),
-				chain_id.as_slice(),
-				verifier_contract.as_slice(),
-			]
-			.concat(),
-		);
+		// get prefix and domain separator
+		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
+			.unwrap_or_default()
+			.try_into()
+			.unwrap_or_default();
+		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
 
 		// signed payload
 		let handle_type_hash =
@@ -98,7 +82,7 @@ where
 		let message = sp_io::hashing::keccak_256(
 			&[handle_type_hash.as_slice(), &coded_handle, &coded_expiration].concat(),
 		);
-		let combined = [prefix.as_slice(), domain_separator.as_slice(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }

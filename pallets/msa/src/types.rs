@@ -11,7 +11,13 @@ pub use common_primitives::msa::{
 };
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
+use alloc::format;
+use common_primitives::{
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
+	utils::get_eip712_encoding_prefix,
+};
 use scale_info::TypeInfo;
+use sp_core::{bytes::from_hex, U256};
 
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
@@ -32,8 +38,40 @@ pub struct AddKeyData<T: Config> {
 
 impl<T: Config> EIP712Encode for AddKeyData<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// TODO: implement
-		Vec::new().into_boxed_slice()
+		// get prefix and domain separator
+		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
+			.unwrap_or_default()
+			.try_into()
+			.unwrap_or_default();
+		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
+
+		// 0x6015d92440a43e374a7ad082b2f3a652a0a1e5c0d3a53cdec4a2001c07b496b4
+		//   0000000000000000000000000000000000000000000000000000000000c47a27
+		//   0000000000000000000000000000000000000000000000000000000000000064
+		//   0000000000000000000000007a23f8d62589ab9651722c7f4a0e998d7d3ef2a9
+		// signed payload
+		let handle_type_hash = sp_io::hashing::keccak_256(
+			b"AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)",
+		);
+		let owner_msa_id: U256 = self.msa_id.into();
+		let coded_owner_msa_id = from_hex(&format!("0x{:064x}", owner_msa_id)).unwrap();
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let converted_public_key = T::ConvertIntoAccountId32::convert(self.new_public_key.clone());
+		let mut zero_prefixed_address = [0u8; 32];
+		zero_prefixed_address[12..]
+			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key));
+		let message = sp_io::hashing::keccak_256(
+			&[
+				handle_type_hash.as_slice(),
+				&coded_owner_msa_id,
+				&coded_expiration,
+				&zero_prefixed_address,
+			]
+			.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
 	}
 }
 

@@ -46,22 +46,27 @@
         const signature_request = {
           "types": {
             ...eip712domain_type_definition,
-            "ClaimHandlePayload": [
-                {
-                  "name": "handle",
-                  "type": "string"
-                },
-                {
-                  "name": "expiration",
-                  "type": "uint64"
-                }
-              ]
-          },
-          "primaryType": "ClaimHandlePayload",
+			"AddKeyData": [
+				{
+					"name": "ownerMsaId",
+					"type": "uint64"
+				},
+			    {
+				  	"name": "expiration",
+				  	"type": "uint64"
+			    },
+		  		{
+				   	"name": "newPublicKey",
+					"type": "address"
+				},
+			]
+		  },
+          "primaryType": "AddKeyData",
           "domain": karma_request_domain,
           "message": {
-            "handle": "testing",
-            "expiration": 100
+            "ownerMsaId": 12876327,
+            "expiration": 100,
+			"newPublicKey": "0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9"
           }
         }
         console.log(JSON.stringify({
@@ -91,3 +96,5 @@
 </body>
 
 </html>
+
+<!--0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b-->
