@@ -681,44 +681,17 @@ fn try_mutate_delegation_success() {
 }
 
 #[test]
-fn create2() {
-	let code: [u8; 20] = [0u8; 20];
-	let mut salt = [0u8; 32];
-	salt[0..9].copy_from_slice(b"Generated");
-	let deployer_address = H160([0xeu8; 20]);
-	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
-	let expected = [
-		H160([
-			0x31, 0x5a, 0x79, 0xbd, 0x2d, 0x2f, 0x70, 0xb5, 0x6e, 0xae, 0xbf, 0x3a, 0xbf, 0xc1,
-			0xc5, 0x0c, 0x5c, 0x73, 0xe0, 0x2c,
-		]),
-		H160([
-			0xef, 0x0d, 0x46, 0x8f, 0xd9, 0xa0, 0x39, 0xbc, 0xc1, 0xf3, 0xdb, 0x94, 0x1b, 0x65,
-			0xd1, 0x5f, 0xb2, 0x34, 0x9f, 0xcb,
-		]),
-	];
-
-	for i in 0..msa_ids.len() {
-		let mut input_value = [0u8; 32];
-		input_value[24..32].copy_from_slice(&msa_ids[i].to_be_bytes());
-
-		let create2_addr = Msa::create2(&deployer_address, &code, &input_value, &salt);
-		assert_eq!(create2_addr, expected[i]);
-	}
-}
-
-#[test]
 fn msa_id_to_eth_address_binary() {
 	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
 	let expected = [
 		H160(
-			hex::decode("ca08f40ae1f1e311bc8516c9a43771828f0f14c2")
+			hex::decode("65928b9a88db189eea76f72d86128af834d64c32")
 				.unwrap()
 				.try_into()
 				.unwrap(),
 		),
 		H160(
-			hex::decode("0570495ff368a0a846b0a9d4e737da426bf9118d")
+			hex::decode("f2f77409b0054b4b14911f00961140deb316ab39")
 				.unwrap()
 				.try_into()
 				.unwrap(),

@@ -17,6 +17,13 @@ All users on Frequency must have an MSA in order to:
 Once a user creates an MSA, they are assigned an MSA Id, a unique number the time of creation with one or more keys attached for control.
 (A control key may only be attached to ONE MSA at any single point in time.)
 
+#### MSA Id and Addresses
+
+Each MSA Id has a unique 20-byte address associated with it. This address can be queried using an MSA pallet runtime call, or computed using the following algorithm:
+```
+Address = keccak256(0xD9 + <MSA Id as 8-byte big-endian bytes> + keccak256(b"MSA Generated"))[12:]
+```
+
 ### Actions
 
 The MSA pallet provides for:
