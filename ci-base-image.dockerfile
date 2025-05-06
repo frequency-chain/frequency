@@ -14,27 +14,31 @@ LABEL org.opencontainers.image.description="Frequency CI Base Image"
 RUN userdel -r ubuntu || true
 
 # Create a non-root user and give permissions
-RUN useradd -u 1001 -m -s /bin/bash ciuser && \
-  mkdir /ci && \
-  chown -R ciuser:ciuser /ci
+RUN useradd -u 1001 -d /home/runner -m -s /bin/bash runner
 
-WORKDIR /ci
 # Install rustup and needed build tools
 RUN apt update && \
-  apt install --no-install-recommends -y rustup sudo curl build-essential libclang-dev protobuf-compiler git file jq clang cmake ca-certificates && \
+  apt install --no-install-recommends -y sudo curl build-essential libclang-dev protobuf-compiler git file jq clang cmake ca-certificates && \
   update-ca-certificates && \
   apt remove -y --auto-remove && \
   rm -rf /var/lib/apt/lists/* && \
-  echo "ciuser ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+  echo "runner ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
 RUN git config --system --add safe.directory /__w/frequency/frequency
 
 # Switch to non-root by default
-USER ciuser
+USER runner
+WORKDIR /home/runner
 
 ARG TARGETARCH
 ARG RUST_VERSION
 LABEL rust.version="${RUST_VERSION}"
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | bash -s -- -y --profile minimal --default-toolchain ${RUST_VERSION}
+ENV PATH="/home/runner/.cargo/bin:${PATH}"
+ENV RUSTUP_HOME="/home/runner/.cargo"
+ENV CARGO_HOME="/home/runner/.cargo"
 
 # Install architecture-specific targets
 # rustup set auto-self-update disable is required as we are installing rustup via apt
@@ -44,7 +48,7 @@ RUN case "${TARGETARCH}" in \
   arm64) RUST_ARCH="aarch64" ;; \
   *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
   esac && \
-  echo "Installing toolchain for arch: $RUST_ARCH" && \
+  echo "Installing toolchain for arch: ${RUST_ARCH}" && \
   rustup --version && \
   rustup set auto-self-update disable && \
   rustup toolchain install "${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" && \
