@@ -2,18 +2,43 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { HexString } from '@polkadot/util/types';
-import { isTestnet } from '../scaffolding/env';
 import { ethereumAddressToKeyringPair } from '../scaffolding/ethereum';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
-import { hexToU8a } from '@polkadot/util';
+import { bnToU8a, hexToU8a, stringToU8a } from '@polkadot/util';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { getExistentialDeposit } from '../scaffolding/helpers';
+import { keccak256AsU8a } from '@polkadot/util-crypto';
 
 const fundingSource = getFundingSource(import.meta.url);
 const msaId = 1234; // Example MSA ID for testing
 const checksummedEthAddress = '0x65928b9a88Db189Eea76F72d86128Af834d64c32'; // Example checksummed Ethereum address for MSA ID 1234
+
+/**
+ *
+ * @param msaId
+ * @returns Ethereum address generated from the MSA ID
+ *
+ * This function generates an Ethereum address based on the provided MSA ID,
+ * using a specific hashing algorithm and a salt value, as follows:
+ *
+ * Domain prefix: 0xD9
+ * MSA ID: Big-endian bytes representation of the 64-bit MSA ID
+ * Salt: Keccak256 hash of the string "MSA Generated"
+ *
+ * Hash = keccak256(0xD9 || MSA ID bytes || Salt)
+ *
+ * Address = Hash[-20:]
+ */
+function generateMsaAddress(msaId: string | number | bigint): H160 {
+  const msa64 = ExtrinsicHelper.api.registry.createType('u64', msaId);
+  const msaBytes = bnToU8a(msa64.toBn(), { isLe: false, bitLength: 64 });
+  const salt = keccak256AsU8a(stringToU8a('MSA Generated'));
+  const combined = new Uint8Array([0xD9, ...msaBytes, ...salt]);
+  const hash = keccak256AsU8a(combined);
+
+  return ExtrinsicHelper.api.registry.createType('H160', hash.slice(-20));
+}
 
 describe('MSAs Holding Tokens', function () {
   let ethKeys: KeyringPair;
@@ -39,7 +64,7 @@ describe('MSAs Holding Tokens', function () {
 
     it('should validate the Ethereum address for an MSA ID', async function () {
       const isValid = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.validateEthAddressForMsa(
-        checksummedEthAddress,
+        generateMsaAddress(msaId),
         msaId
       );
       assert.equal(isValid, true, 'Expected the Ethereum address to be valid for the given MSA ID');
