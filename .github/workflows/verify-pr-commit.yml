@@ -153,7 +153,7 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: ${{matrix.build-profile}}-${{matrix.arch}}
+          shared-key: ${{matrix.build-profile}}-${{matrix.arch}}
       - name: Populate Rust Cache for ${{matrix.build-profile}}-${{matrix.arch}}
         # Using cargo check to build the cache
         run: SKIP_WASM_BUILD= cargo check ${{ matrix.build-profile == 'release' && '--release' || '' }} --all-targets --locked --features runtime-benchmarks,frequency-lint-check
@@ -229,7 +229,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: ${{matrix.build-profile}}-${{matrix.arch}}
+          shared-key: ${{matrix.build-profile}}-${{matrix.arch}}
           save-if: false # Just using it, not updating it
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
@@ -312,7 +312,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: debug-amd64
+          shared-key: debug-amd64
           save-if: false # Just using it, not updating it
       - name: Lint
         # Fail on warnings
@@ -333,7 +333,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: debug-amd64
+          shared-key: debug-amd64
           save-if: false # Just using it, not updating it
       - name: Build Docs
         run: |
@@ -351,7 +351,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: debug-amd64
+          shared-key: debug-amd64
           save-if: false # Just using it, not updating it
       - name: Check
         run: SKIP_WASM_BUILD= cargo check --locked --features runtime-benchmarks,frequency-lint-check
@@ -371,7 +371,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: debug-amd64
+          shared-key: debug-amd64
           save-if: false # Just using it, not updating it
       - name: Run Tests
         run: cargo test --locked --features runtime-benchmarks,frequency-lint-check --workspace
@@ -388,7 +388,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: debug-amd64
+          shared-key: debug-amd64
           save-if: false # Just using it, not updating it
       - name: Generate and Upload Code Coverage
         id: codecov
@@ -446,7 +446,7 @@ jobs:
       - name: Rust Cache Restore
         uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
         with:
-          key: ${{matrix.build-profile}}-amd64
+          shared-key: ${{matrix.build-profile}}-amd64
           save-if: false # Just using it, not updating it
       - name: Extract Runtime Spec Version
         run: |
