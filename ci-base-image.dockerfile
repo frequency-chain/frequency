@@ -18,19 +18,24 @@ RUN apt update && \
   apt remove -y --auto-remove && \
   rm -rf /var/lib/apt/lists/*
 
+ARG TARGETARCH
 ARG RUST_VERSION
 LABEL rust.version="${RUST_VERSION}"
 
 # Install architecture-specific targets
 # rustup set auto-self-update disable is required as we are installing rustup via apt
 # The list of components should match the rust-toolchain.toml file
-RUN rustup --version && \
-  echo $RUSTUP_HOME && \
+RUN case "${TARGETARCH}" in \
+  amd64) RUST_ARCH="x86_64" ;; \
+  arm64) RUST_ARCH="aarch64" ;; \
+  *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+  esac && \
+  echo "Installing toolchain for arch: $RUST_ARCH" && \
+  rustup --version && \
   rustup set auto-self-update disable && \
-  rustup toolchain install "${RUST_VERSION}" && \
-  rustup target add x86_64-unknown-linux-gnu --toolchain "${RUST_VERSION}" && \
-  rustup target add aarch64-unknown-linux-gnu --toolchain "${RUST_VERSION}" && \
-  rustup target add wasm32v1-none --toolchain "${RUST_VERSION}" && \
-  rustup component add clippy rust-docs rustfmt rustc-dev rustc rust-src --toolchain "${RUST_VERSION}"
+  rustup toolchain install "${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" && \
+  rustup +"${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" target add x86_64-unknown-linux-gnu aarch64-unknown-linux-gnu wasm32v1-none && \
+  rustup +"${RUST_VERSION}-${RUST_ARCH}-unknown-linux-gnu" component add clippy rust-docs rustfmt rustc-dev rustc rust-src && \
+  rustup +${RUST_VERSION} show
 
 RUN git config --system --add safe.directory /__w/frequency/frequency
