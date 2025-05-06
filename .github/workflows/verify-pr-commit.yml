@@ -139,13 +139,13 @@ jobs:
           # Run one for each profile
           - build-profile: debug
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-30
           - build-profile: release
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-30
           - build-profile: release
             arch: arm64
-            runner: ubicloud-standard-16-arm
+            runner: ubicloud-standard-30-arm
     runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
@@ -175,21 +175,21 @@ jobs:
             spec: frequency-no-relay
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-8
           - network: local
             build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-8
           - network: local
             build-profile: debug
             git_branch: main
             spec: frequency-local
             branch_alias: main
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-8
 
             # Release
           - network: testnet
@@ -197,14 +197,14 @@ jobs:
             spec: frequency-testnet
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-8
             # Release
           - network: mainnet
             build-profile: release
             spec: frequency
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-16
+            runner: ubicloud-standard-8
 
           # arm64 build only for mainnet
           - network: mainnet
@@ -212,7 +212,7 @@ jobs:
             spec: frequency
             branch_alias: pr
             arch: arm64
-            runner: ubicloud-standard-30-arm
+            runner: ubicloud-standard-16-arm
     runs-on: ${{matrix.runner}}
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
     env:
