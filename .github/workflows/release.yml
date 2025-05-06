@@ -753,7 +753,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@9a903f73f4cccdc8241077da63578b3faba06403
+        uses: mikepenz/release-changelog-builder-action@e92187bd633e680ebfdd15961a7c30b2d097e7ad
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -780,7 +780,7 @@ jobs:
               "empty_template": "- No changes",
               "transformers": [
                 {
-                  "pattern": "- (.*)",
+                  "pattern": "[\\-\\*] (.*)",
                   "target": "- $1|n|"
                 }
               ]
@@ -957,7 +957,7 @@ jobs:
           mkdir -p ./docker-build/linux/arm64/
           mkdir -p ./docker-build/scripts/
 
-          cp scripts/healthcheck.sh ./docker-build/scripts/ || echo "ERROR: Healthcheck script not found, Docker health checks may not work" && false
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || (echo "ERROR: healthcheck.sh not found" && false)
 
           # Copy binaries to the correct location
           mv ./binaries-amd64/${{matrix.release-file-name-prefix}}.amd64 ./docker-build/linux/amd64/frequency
