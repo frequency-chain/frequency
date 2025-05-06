@@ -34,7 +34,7 @@ function generateMsaAddress(msaId: string | number | bigint): H160 {
   const msa64 = ExtrinsicHelper.api.registry.createType('u64', msaId);
   const msaBytes = bnToU8a(msa64.toBn(), { isLe: false, bitLength: 64 });
   const salt = keccak256AsU8a(stringToU8a('MSA Generated'));
-  const combined = new Uint8Array([0xD9, ...msaBytes, ...salt]);
+  const combined = new Uint8Array([0xd9, ...msaBytes, ...salt]);
   const hash = keccak256AsU8a(combined);
 
   return ExtrinsicHelper.api.registry.createType('H160', hash.slice(-20));
