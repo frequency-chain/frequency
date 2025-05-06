@@ -264,6 +264,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Verify Rust Code Formatting
         run: |
+          rustup +${{env.NIGHTLY_TOOLCHAIN}} show
           cargo +${{env.NIGHTLY_TOOLCHAIN}} fmt --check
 
   lint-rust-code:
