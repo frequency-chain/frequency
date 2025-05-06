@@ -143,7 +143,6 @@ pub mod pallet {
 	use crate::types::GetAddKeyData;
 	use common_primitives::{
 		msa::{MessageSourceId, MsaKeyProvider},
-		node::AccountId,
 	};
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -182,10 +181,11 @@ pub mod pallet {
 
 		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
 
-		type MsaKeyProvider: MsaKeyProvider<AccountId, MessageSourceId>;
+		// should this be AccountId instead of frame_system::Config::AccountId?
+		type MsaKeyProvider: MsaKeyProvider<AccountId = Self::AccountId>;
 		type MsaCallFilter: GetAddKeyData<
 			<Self as frame_system::Config>::RuntimeCall,
-			AccountId,
+			Self::AccountId, // <-- I think this being node::AccountId is what has been causing the problem.
 			MessageSourceId,
 		>;
 	}
@@ -455,12 +455,15 @@ where
 				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
+			// has to be a token call, not a batch call or a capacity call
 			_ => {
 				if let Some((account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
-					let tip = self.tip(call);
-					let fee =
-						pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
-					return Ok((fee, InitialPayment::Free));
+					if Pallet::<T>::MsaKeyProvider::key_eligible_for_free_addition(account_id, msa_id) {
+						let tip = self.tip(call);
+						let fee =
+							pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+						return Ok((fee, InitialPayment::Free));
+					}
 				}
 				self.withdraw_token_fee(who, call, info, len, self.tip(call))
 			},

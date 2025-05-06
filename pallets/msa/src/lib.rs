@@ -239,6 +239,11 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
+	/// After this block, adding a second key is no longer a free transaction.
+	#[pallet::storage]
+	pub(super) type FreeKeyAddExpirationBlock<T: Config> =
+		StorageValue<_, BlockNumberFor<T>, ValueQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -1586,12 +1591,23 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 	}
 }
 
-impl<T: Config> MsaKeyProvider<AccountId, MessageSourceId> for Pallet<T> {
-	fn key_may_be_eligible_for_free_transaction(
-		old_key: AccountId,
+impl<T: Config> MsaKeyProvider<common_primitives::node::AccountId, MessageSourceId> for Pallet<T> {
+	fn key_eligible_for_free_addition(
+		old_key: common_primitives::node::AccountId,
 		msa_id: MessageSourceId,
 	) -> bool {
-		true
+		// check msa exists
+		// check it has only one public key
+		// old_key = AccountId32
+		let a: <T as frame_system::Config>::AccountId = old_key.into();
+		if let Some(stored_msa_id) = Self::get_msa_id(&a) {
+			let block = frame_system::Pallet::<T>::block_number();
+
+			return FreeKeyAddExpirationBlock::<T>::get().gt(&block)
+				&& stored_msa_id == msa_id
+				&& PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+		}
+		false
 	}
 }
 

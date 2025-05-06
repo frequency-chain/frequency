@@ -283,15 +283,16 @@ pub trait SchemaGrantValidator<BlockNumber> {
 }
 
 /// a trait that implements checking initially if adding this key might be free
-pub trait MsaKeyProvider<AccountId, MessageSourceId> {
+pub trait MsaKeyProvider {
+	type AccountId;
 	/// check if this new key being added can possibly be eligible for a free transaction
-	fn key_may_be_eligible_for_free_transaction(
-		old_key: AccountId,
+	fn key_eligible_for_free_addition(
+		old_key: Self::AccountId,
 		msa_id: MessageSourceId,
 	) -> bool;
 }
 
-/// RPC Response for getting getting MSA keys
+/// RPC Response for getting MSA keys
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {

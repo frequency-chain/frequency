@@ -1019,7 +1019,7 @@ pub fn generate_test_signature() -> MultiSignature {
 }
 
 #[test]
-fn add_public_key_to_msa_not_free_if_more_than_one_key() {
+fn add_public_key_to_msa_free_if_eligible() {
 	let balance_factor = 100_000_000;
 
 	// uses funded account with MSA Id

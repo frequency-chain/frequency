@@ -278,23 +278,11 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct MockMsaKeyProvider;
-impl MsaKeyProvider<AccountId, MessageSourceId> for MockMsaKeyProvider {
-	fn key_may_be_eligible_for_free_transaction(
-		_old_key: AccountId,
-		msa_id: MessageSourceId,
-	) -> bool {
-		if msa_id < 3 {
-			true
-		} else {
-			false
-		}
-	}
-}
 pub struct MockMsaCallFilter;
 impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, AccountId, MessageSourceId>
 	for MockMsaCallFilter
 {
+	// Always returns same account ID and msa.
 	fn get_add_key_data(
 		_call: &<Test as frame_system::Config>::RuntimeCall,
 	) -> Option<(AccountId, MessageSourceId)> {
@@ -312,8 +300,7 @@ impl Config for Test {
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type BatchProvider = CapacityBatchProvider;
-	// use Msa or a mock provider?
-	type MsaKeyProvider = MockMsaKeyProvider;
+	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MockMsaCallFilter;
 }
 
