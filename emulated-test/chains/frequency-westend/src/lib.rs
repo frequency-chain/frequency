@@ -47,6 +47,5 @@ decl_test_parachains! {
 
 impl_accounts_helpers_for_parachain!(FrequencyWestend);
 impl_assert_events_helpers_for_parachain!(FrequencyWestend);
-// impl_assets_helpers_for_parachain!(Frequency);
-// impl_foreign_assets_helpers_for_parachain!(Frequency, staging_xcm::latest::Location);
 impl_xcm_helpers_for_parachain!(FrequencyWestend);
+// impl_foreign_assets_helpers_for_parachain!(FrequencyWestend, staging_xcm::latest::Location);

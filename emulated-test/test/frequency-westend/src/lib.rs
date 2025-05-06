@@ -3,7 +3,8 @@ mod imports {
 	pub use frame_support::{
 		assert_ok,
 		sp_runtime::DispatchResult,
-		traits::fungibles::{Create as FungiblesCreate, Inspect},
+		traits::fungibles::{Create as FungiblesCreate, Inspect as FungiblesInspect},
+		traits::fungible::Inspect,
 	};
 
 	// Polkadot
