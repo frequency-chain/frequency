@@ -22,6 +22,7 @@ thiserror = "2.0.12"
 apache-avro = { version = "0.17.0", default-features = false }
 rand = "0.9.0"
 parking_lot = "0.12.1"
+lazy_static = { version = "1.5", features = ["spin_no_std"] }
 
 # substrate wasm
 parity-scale-codec = { version = "3.6.12", default-features = false }
