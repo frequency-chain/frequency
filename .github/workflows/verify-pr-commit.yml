@@ -194,7 +194,7 @@ jobs:
             arch: arm64
             runner: ubicloud-standard-16-arm
     runs-on: ${{matrix.runner}}
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     env:
       NETWORK: mainnet
     steps:
@@ -241,7 +241,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -257,8 +257,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.5
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
@@ -272,7 +271,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -288,7 +287,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -301,7 +300,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -313,7 +312,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -328,7 +327,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-30
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -441,7 +440,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -500,7 +499,7 @@ jobs:
   verify-js-schemas:
     name: Verify JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.4
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
