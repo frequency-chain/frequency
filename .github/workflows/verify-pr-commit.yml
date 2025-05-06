@@ -301,7 +301,7 @@ jobs:
           cargo +${{env.NIGHTLY_TOOLCHAIN}} fmt --check
 
   lint-rust-code:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
@@ -322,7 +322,7 @@ jobs:
             -- -Dwarnings
 
   verify-rust-developer-docs:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
@@ -340,7 +340,7 @@ jobs:
           RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --workspace --locked --features frequency
 
   verify-rust-packages-and-deps:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
@@ -357,7 +357,7 @@ jobs:
         run: SKIP_WASM_BUILD= cargo check --locked --features runtime-benchmarks,frequency-lint-check
 
   run-rust-tests:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
@@ -377,7 +377,7 @@ jobs:
         run: cargo test --locked --features runtime-benchmarks,frequency-lint-check --workspace
 
   calc-code-coverage:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-30
@@ -411,7 +411,7 @@ jobs:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   verify-build-runtimes:
-    needs: changes
+    needs: [changes, build-binaries-cache]
     if: needs.changes.outputs.rust == 'true'
     name: Verify Build Runtime for ${{matrix.network}}
     strategy:
