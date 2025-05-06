@@ -14,7 +14,7 @@ LABEL org.opencontainers.image.description="Frequency CI Base Image"
 RUN userdel -r ubuntu || true
 
 # Create a non-root user and give permissions
-RUN useradd -m -s /bin/bash ciuser && \
+RUN useradd -u 1001 -m -s /bin/bash ciuser && \
   mkdir /ci && \
   chown -R ciuser:ciuser /ci
 
