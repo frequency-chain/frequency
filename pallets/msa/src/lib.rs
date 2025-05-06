@@ -1361,7 +1361,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Converts an MSA ID into a synthetic Ethereum address (raw 20-byte format) by
 	/// taking the last 20 bytes of the keccak256 hash of the following:
-	/// [0]: 0xD9 (first byte of the keccak256 hash of the domain prefix "Frequency")
+	/// [0..1]: 0xD9 (first byte of the keccak256 hash of the domain prefix "Frequency")
 	/// [1..9]:   u64 (big endian)
 	/// [9..41]:  keccack256("MSA Generated")
 	pub fn msa_id_to_eth_address(id: MessageSourceId) -> H160 {
