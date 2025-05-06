@@ -128,11 +128,40 @@ jobs:
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
+  build-binaries-cache:
+    needs: changes
+    if: needs.changes.outputs.build-binary == 'true'
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          # Run one for each profile
+          - build-profile: debug
+            arch: amd64
+            runner: ubicloud-standard-16
+          - build-profile: release
+            arch: amd64
+            runner: ubicloud-standard-16
+          - build-profile: release
+            arch: arm64
+            runner: ubicloud-standard-16-arm
+    runs-on: ${{matrix.runner}}
+    steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: ${{matrix.build-profile}}-${{matrix.arch}}
+      - name: Populate Rust Cache for ${{matrix.build-profile}}-${{matrix.arch}}
+        # Using cargo check to build the cache
+        run: SKIP_WASM_BUILD= cargo check \
+          ${{ matrix.build-profile == 'release' && '--release' || '' }} \
+          --all-targets --locked --features runtime-benchmarks,frequency-lint-check
+
   # To save time, we MOSTLY build the debug versions, but
   # we need the release version of mainnet and testnet-paseo
-  #
   build-binaries:
-    needs: changes
+    needs: build-binaries-cache
     if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary for ${{matrix.arch}} on ${{matrix.branch_alias}} Branch
     strategy:
@@ -168,14 +197,14 @@ jobs:
             spec: frequency-testnet
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-30
+            runner: ubicloud-standard-16
             # Release
           - network: mainnet
             build-profile: release
             spec: frequency
             branch_alias: pr
             arch: amd64
-            runner: ubicloud-standard-30
+            runner: ubicloud-standard-16
 
           # arm64 build only for mainnet
           - network: mainnet
@@ -183,7 +212,7 @@ jobs:
             spec: frequency
             branch_alias: pr
             arch: arm64
-            runner: ubicloud-standard-16-arm
+            runner: ubicloud-standard-30-arm
     runs-on: ${{matrix.runner}}
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.0
     env:
@@ -197,6 +226,11 @@ jobs:
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
           echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.arch}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: ${{matrix.build-profile}}-${{matrix.arch}}
+          save-if: false # Just using it, not updating it
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
@@ -275,6 +309,11 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: debug-amd64
+          save-if: false # Just using it, not updating it
       - name: Lint
         # Fail on warnings
         run: |
@@ -291,9 +330,14 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: debug-amd64
+          save-if: false # Just using it, not updating it
       - name: Build Docs
         run: |
-          RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --workspace --features frequency
+          RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --workspace --locked --features frequency
 
   verify-rust-packages-and-deps:
     needs: changes
@@ -304,8 +348,13 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: debug-amd64
+          save-if: false # Just using it, not updating it
       - name: Check
-        run: SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
+        run: SKIP_WASM_BUILD= cargo check --locked --features runtime-benchmarks,frequency-lint-check
 
   run-rust-tests:
     needs: changes
@@ -319,8 +368,13 @@ jobs:
       - name: Init Git
         run: |
           git config --global --add safe.directory /__w/frequency/frequency
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: debug-amd64
+          save-if: false # Just using it, not updating it
       - name: Run Tests
-        run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace
+        run: cargo test --locked --features runtime-benchmarks,frequency-lint-check --workspace
 
   calc-code-coverage:
     needs: changes
@@ -331,6 +385,11 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: debug-amd64
+          save-if: false # Just using it, not updating it
       - name: Generate and Upload Code Coverage
         id: codecov
         uses: ./.github/workflows/common/codecov
@@ -384,6 +443,11 @@ jobs:
         run: |
           curl https://sh.rustup.rs -sSf | bash -s -- -y
           echo "PATH=$HOME/.cargo/bin:$PATH" >> $GITHUB_ENV
+      - name: Rust Cache Restore
+        uses: Swatinem/rust-cache@9d47c6ad4b02e050fd481d890b2ea34778fd09d6
+        with:
+          key: ${{matrix.build-profile}}-amd64
+          save-if: false # Just using it, not updating it
       - name: Extract Runtime Spec Version
         run: |
           echo "RUNTIME_SPEC_VERSION=$(awk '/spec_version:/ {match($0, /[0-9]+/); print substr($0, RSTART, RLENGTH); exit}' \
