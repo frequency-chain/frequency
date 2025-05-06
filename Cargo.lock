@@ -4906,6 +4906,7 @@ dependencies = [
  "asset-test-utils",
  "emulated-integration-tests-common",
  "frame-support",
+ "pallet-assets",
  "pallet-balances",
  "pallet-message-queue",
  "pallet-xcm",
@@ -12533,27 +12534,6 @@ name = "ruint-macro"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48fd7bd8a6377e15ad9d42a8ec25371b94ddc67abe7c8b9127bec79bebaaae18"
-
-[[package]]
-name = "runtime-integration-tests"
-version = "0.0.0"
-dependencies = [
- "asset-hub-westend-emulated-chain",
- "emulated-integration-tests-common",
- "frequency-runtime",
- "parachains-common",
- "polkadot-primitives",
- "sc-consensus-grandpa",
- "sp-authority-discovery",
- "sp-consensus-babe",
- "sp-consensus-beefy",
- "sp-core",
- "sp-runtime",
- "westend-emulated-chain",
- "westend-runtime",
- "westend-runtime-constants",
- "xcm-emulator",
-]
 
 [[package]]
 name = "rustc-demangle"

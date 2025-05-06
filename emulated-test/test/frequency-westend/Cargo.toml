@@ -7,6 +7,7 @@ name = "frequency-westend-integration-tests"
 publish = false
 version = "0.0.0"
 
+
 [dependencies]
 # codec = { workspace = true }
 asset-test-utils = { workspace = true }
@@ -21,3 +22,4 @@ westend-runtime = { workspace = true }
 westend-system-emulated-network = { path = "../../networks/westend"}
 xcm-executor = { workspace = true }
 staging-xcm = { workspace =  true }
+pallet-assets = { workspace = true }

@@ -1,7 +1,10 @@
 #[cfg(test)]
 mod imports {
-	// Substrate
-	pub use frame_support::{assert_ok, sp_runtime::DispatchResult, traits::fungibles::Inspect};
+	pub use frame_support::{
+		assert_ok,
+		sp_runtime::DispatchResult,
+		traits::fungibles::{Create as FungiblesCreate, Inspect},
+	};
 
 	// Polkadot
 	pub use staging_xcm::{latest::WESTEND_GENESIS_HASH, prelude::*};
@@ -15,7 +18,12 @@ mod imports {
 	pub use parachains_common::Balance;
 	pub use westend_system_emulated_network::{
 		self,
-		asset_hub_westend_emulated_chain::AssetHubWestendParaPallet as AssetHubWestendPallet,
+		asset_hub_westend_emulated_chain::{
+			asset_hub_westend_runtime::{
+				xcm_config::WestendLocation, ExistentialDeposit as AssetHubExistentialDeposit,
+			},
+			AssetHubWestendParaPallet as AssetHubWestendPallet,
+		},
 		frequency_emulated_chain::{
 			frequency_runtime::{
 				self, xcm_config::XcmConfig as FrequencyWestendXcmConfig,
@@ -27,16 +35,16 @@ mod imports {
 			genesis::ED as WESTEND_ED, westend_runtime::xcm_config::XcmConfig as WestendXcmConfig,
 			WestendRelayPallet as WestendPallet,
 		},
-		AssetHubWestendPara as AssetHubWestend, 
-        AssetHubWestendParaReceiver as AssetHubWestendReceiver,
-        AssetHubWestendParaSender as AssetHubWestendSender,
-        FrequencyWestendPara as FrequencyWestend,
+		AssetHubWestendPara as AssetHubWestend,
+		AssetHubWestendParaReceiver as AssetHubWestendReceiver,
+		AssetHubWestendParaSender as AssetHubWestendSender,
+		FrequencyWestendPara as FrequencyWestend,
 		FrequencyWestendParaReceiver as FrequencyWestendReceiver,
 		FrequencyWestendParaSender as FrequencyWestendSender, WestendRelay as Westend,
 		WestendRelayReceiver as WestendReceiver, WestendRelaySender as WestendSender,
 	};
 
-	pub type SystemParaToRelayTest = Test<FrequencyWestend, Westend>;
+	pub type AssetHubToFrequencyTest = Test<AssetHubWestend, FrequencyWestend>;
 }
 
 #[cfg(test)]
