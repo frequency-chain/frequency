@@ -154,8 +154,7 @@ jobs:
           key: ${{matrix.build-profile}}-${{matrix.arch}}
       - name: Populate Rust Cache for ${{matrix.build-profile}}-${{matrix.arch}}
         # Using cargo check to build the cache
-        run: SKIP_WASM_BUILD= cargo check \
-          ${{ matrix.build-profile == 'release' && '--release' || '' }} \
+        run: SKIP_WASM_BUILD= cargo check ${{ matrix.build-profile == 'release' && '--release' || '' }} \
           --all-targets --locked --features runtime-benchmarks,frequency-lint-check
 
   # To save time, we MOSTLY build the debug versions, but
