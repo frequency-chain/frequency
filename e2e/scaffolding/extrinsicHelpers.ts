@@ -280,13 +280,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     return this.signAndSend();
   }
 
-  public async fundAndSendUnsigned(source: KeyringPair) {
+  public async fundAndSendUnsigned(source: KeyringPair, willError = false) {
     await this.fundOperation(source);
     log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
-    return this.sendUnsigned();
+    return this.sendUnsigned(willError);
   }
 
-  public async sendUnsigned() {
+  public async sendUnsigned(willError = false) {
     const op = this.extrinsic();
     try {
       return await firstValueFrom(
@@ -303,8 +303,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         )
       );
     } catch (e) {
-      console.error(e);
-      if ((e as any).name === 'RpcError') {
+      if ((e as any).name === 'RpcError' && !willError) {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
       }
       throw e;
