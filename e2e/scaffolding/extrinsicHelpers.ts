@@ -188,9 +188,11 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
+      console.count(`signAndSend TX: ${op.hash} Sender: ${this.keys.address} COUNT:`);
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
+            console.log(`signAndSend TX: ${op.hash} Sender: ${this.keys.address} TxHash: ${result.txHash}`);
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
             if (result.isError) {

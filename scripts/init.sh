@@ -100,6 +100,7 @@ start-paseo-collator-bob)
     --discover-local \
     --force-authoring \
     -ltxpool=trace \
+    -lruntime=debug \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
