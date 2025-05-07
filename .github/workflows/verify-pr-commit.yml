@@ -96,21 +96,21 @@ jobs:
             spec: frequency-no-relay
             branch_alias: pr
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
           - network: local
             build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
           - network: local
             build-profile: debug
             git_branch: main
             spec: frequency-local
             branch_alias: main
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
 
             # Release
           - network: testnet
