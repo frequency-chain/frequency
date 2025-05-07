@@ -8,6 +8,18 @@ import { secp256k1 } from '@noble/curves/secp256k1';
 import { Keyring } from '@polkadot/api';
 import { Keypair } from '@polkadot/util-crypto/types';
 import { Address20MultiAddress } from './helpers';
+import { H160 } from '@polkadot/types/interfaces';
+
+/**
+ * Create a partial KeyringPair from an Ethereum address
+ */
+export function ethereumAddressToKeyringPair(ethereumAddress: H160): KeyringPair {
+  return {
+    type: 'ethereum',
+    address: ethereumAddress.toHex(),
+    addressRaw: ethereumAddress,
+  } as unknown as KeyringPair;
+}
 
 /**
  * Returns unified 32 bytes SS58 accountId
@@ -15,7 +27,7 @@ import { Address20MultiAddress } from './helpers';
  */
 export function getUnifiedAddress(pair: KeyringPair): string {
   if ('ethereum' === pair.type) {
-    const etheAddressHex = ethereumEncode(pair.publicKey);
+    const etheAddressHex = ethereumEncode(pair.publicKey || pair.address);
     return getSS58AccountFromEthereumAccount(etheAddressHex);
   }
   if (pair.type === 'ecdsa') {
@@ -71,7 +83,7 @@ export function getAccountId20MultiAddress(pair: KeyringPair): Address20MultiAdd
   if (pair.type !== 'ethereum') {
     throw new Error(`Only ethereum keys are supported!`);
   }
-  const etheAddress = ethereumEncode(pair.publicKey);
+  const etheAddress = ethereumEncode(pair.publicKey || pair.address);
   const ethAddress20 = Array.from(hexToU8a(etheAddress));
   return { Address20: ethAddress20 };
 }
@@ -86,15 +98,14 @@ export function getKeyringPairFromSecp256k1PrivateKey(secretKey: Uint8Array): Ke
     secretKey,
     publicKey,
   };
-  const keyring = new Keyring({ type: 'ethereum' });
-  return keyring.addFromPair(keypair, undefined, 'ethereum');
+  return new Keyring({ type: 'ethereum' }).createFromPair(keypair, undefined, 'ethereum');
 }
 
 /**
  * converts an ethereum account to SS58 format
  * @param accountId20Hex
  */
-function getSS58AccountFromEthereumAccount(accountId20Hex: string): string {
+export function getSS58AccountFromEthereumAccount(accountId20Hex: string): string {
   const addressBytes = hexToU8a(accountId20Hex);
   const suffix = new Uint8Array(12).fill(0xee);
   const result = new Uint8Array(32);

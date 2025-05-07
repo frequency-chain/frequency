@@ -6,6 +6,9 @@ use frame_support::{
 
 use frame_system::pallet_prelude::BlockNumberFor;
 
+use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
+use sp_runtime::{traits::Zero, MultiSignature};
+
 use crate::{
 	ensure,
 	tests::mock::*,
@@ -14,13 +17,11 @@ use crate::{
 	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
-use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
-use sp_runtime::{traits::Zero, MultiSignature};
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationResponse, DelegatorId, ProviderId, ProviderRegistryEntry,
-		SchemaGrant, SchemaGrantValidator,
+		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
+		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::BlockNumber,
 	schema::{SchemaId, SchemaValidator},
@@ -683,6 +684,109 @@ fn try_mutate_delegation_success() {
 
 		assert!(DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).is_some());
 	});
+}
+
+#[test]
+fn msa_id_to_eth_address_binary() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = [
+		H160(
+			hex::decode("65928b9a88db189eea76f72d86128af834d64c32")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("f2f77409b0054b4b14911f00961140deb316ab39")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+	];
+
+	for i in 0..msa_ids.len() {
+		let eth_address = Msa::msa_id_to_eth_address(msa_ids[i]);
+		assert_eq!(eth_address, expected[i]);
+	}
+}
+
+#[test]
+fn validate_eth_address_for_msa_good() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = msa_ids.map(|msa_id| Msa::msa_id_to_eth_address(msa_id));
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		assert_eq!(status, true);
+	}
+}
+
+#[test]
+fn validate_eth_address_for_msa_bad() {
+	let msa_ids = [1234u64, 4321u64];
+	let expected: [H160; 2] = msa_ids
+		.map(|msa_id| Msa::msa_id_to_eth_address(msa_id))
+		.iter()
+		.rev()
+		.cloned()
+		.collect::<Vec<_>>()
+		.try_into()
+		.unwrap();
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		assert_eq!(status, false);
+	}
+}
+
+#[test]
+fn eth_address_to_checksummed_string() {
+	let eth_addresses: [H160; 5] = [
+		H160(
+			hex::decode("5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("fb6916095ca1df60bb79ce92ce3ea74c37c5d359")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("dbf03b407c01e7cd3cbea99509d93f8dddc8c6fb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("d1220a0cf47c7b9be7a2e6ba89f429762e7b9adb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+	];
+
+	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md
+	let eth_results: [alloc::string::String; 5] = [
+		"0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed".to_string(),
+		"0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359".to_string(),
+		"0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB".to_string(),
+		"0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb".to_string(),
+		"0xF5b82ff246a2F4226749bd78B1bDaE28Cfffb9f7".to_string(),
+	];
+
+	for i in 0..eth_addresses.len() {
+		let generated_result = Msa::eth_address_to_checksummed_string(&eth_addresses[i]);
+		assert_eq!(generated_result, eth_results[i]);
+	}
 }
 
 #[test]
