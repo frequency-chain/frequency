@@ -14,6 +14,10 @@ on:
 env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
 
+# Set default permissions as restrictive
+permissions:
+  contents: read
+
 jobs:
   run-e2e-setup:
     name: Run E2E Test Prep

@@ -7,12 +7,16 @@ on:
   push:
     branches:
       - main
+# Set default permissions as restrictive
+permissions:
+  contents: read
+  packages: read
 
 jobs:
   publish-js-api-augment-rc:
     name: Merge - Publish JS API Augment Release Candidate
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -49,7 +53,7 @@ jobs:
   calc-code-coverage:
     name: Merge - Calculate Code Coverage
     runs-on: ubicloud-standard-30
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
