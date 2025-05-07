@@ -155,21 +155,21 @@ jobs:
             spec: frequency-no-relay
             branch_alias: pr
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
           - network: local
             build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
           - network: local
             build-profile: debug
             git_branch: main
             spec: frequency-local
             branch_alias: main
             arch: amd64
-            runner: ubuntu-24.04
+            runner: ubicloud-standard-4
 
             # Release
           - network: testnet
@@ -439,7 +439,7 @@ jobs:
   verify-js-api-augment:
     needs: build-binaries
     name: Verify JS API Augment
-    runs-on: ubuntu-24.04
+    runs-on: ubicloud-standard-4
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
@@ -666,7 +666,7 @@ jobs:
   check-metadata-and-spec-version:
     needs: build-binaries
     name: Check Metadata and Spec Version
-    runs-on: ubuntu-24.04
+    runs-on: ubicloud-standard-4
     permissions:
       pull-requests: write
     steps:
@@ -749,7 +749,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubuntu-24.04
+    runs-on: ubicloud-standard-4
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
