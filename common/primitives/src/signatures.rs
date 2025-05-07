@@ -7,7 +7,6 @@ use frame_support::{
 };
 use lazy_static::lazy_static;
 use parity_scale_codec::{alloc::string::ToString, DecodeWithMemTracking};
-use scale_info::prelude::format;
 use sp_core::{
 	bytes::from_hex,
 	crypto,
@@ -22,6 +21,7 @@ use sp_runtime::{
 	MultiSignature,
 };
 extern crate alloc;
+use crate::utils::to_abi_compatible_number;
 use alloc::boxed::Box;
 
 /// Ethereum message prefix eip-191
@@ -386,7 +386,7 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 	let eip_712_prefix = [25, 1];
 
 	// todo: different ids based on the chain type
-	let chain_id = from_hex(&format!("0x{:064x}", 420420420)).unwrap_or_default();
+	let chain_id = to_abi_compatible_number(420420420u32);
 	let mut zero_prefixed_verifier_contract = [0u8; 32];
 	zero_prefixed_verifier_contract[12..].copy_from_slice(&verifier_contract);
 

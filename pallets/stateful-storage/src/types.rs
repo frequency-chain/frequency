@@ -13,15 +13,15 @@ use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
 extern crate alloc;
-use alloc::{collections::btree_map::BTreeMap, format, vec::Vec};
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use core::{
 	cmp::*,
 	fmt::Debug,
 	hash::{Hash, Hasher},
 };
-use sp_core::{bytes::from_hex, U256};
+use sp_core::U256;
 
-use common_primitives::signatures::get_eip712_encoding_prefix;
+use common_primitives::{signatures::get_eip712_encoding_prefix, utils::to_abi_compatible_number};
 use twox_hash::XxHash64;
 
 /// Migration page size
@@ -149,10 +149,10 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 
 			static ref EMPTY_BYTES_HASH: [u8; 32] = sp_io::hashing::keccak_256([].as_slice());
 		}
-		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
-		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
 		let expiration: U256 = self.expiration.into();
-		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let coded_actions = {
 			let values: Vec<u8> = self
 				.actions
@@ -172,7 +172,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 							SUB_TYPE_HASH.as_slice(),
 							ITEM_ACTION_DELETE.as_slice(),
 							EMPTY_BYTES_HASH.as_slice(),
-							from_hex(&format!("0x{:064x}", index)).unwrap().as_slice(),
+							to_abi_compatible_number(*index).as_slice(),
 						]
 						.concat(),
 					),
@@ -240,11 +240,11 @@ impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration,bytes payload)");
 		}
-		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
-		let coded_page_id = from_hex(&format!("0x{:064x}", self.page_id)).unwrap();
-		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_page_id = to_abi_compatible_number(self.page_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
 		let expiration: U256 = self.expiration.into();
-		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let coded_payload = sp_io::hashing::keccak_256(self.payload.as_slice());
 		let message = sp_io::hashing::keccak_256(
 			&[
@@ -304,11 +304,11 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration)");
 		}
-		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
-		let coded_page_id = from_hex(&format!("0x{:064x}", self.page_id)).unwrap();
-		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_page_id = to_abi_compatible_number(self.page_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
 		let expiration: U256 = self.expiration.into();
-		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let message = sp_io::hashing::keccak_256(
 			&[
 				MAIN_TYPE_HASH.as_slice(),

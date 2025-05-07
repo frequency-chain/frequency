@@ -11,12 +11,12 @@ pub use common_primitives::msa::{
 };
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
-use alloc::format;
-use common_primitives::signatures::{
-	get_eip712_encoding_prefix, AccountAddressMapper, EthereumAddressMapper,
+use common_primitives::{
+	signatures::{get_eip712_encoding_prefix, AccountAddressMapper, EthereumAddressMapper},
+	utils::to_abi_compatible_number,
 };
 use scale_info::TypeInfo;
-use sp_core::{bytes::from_hex, U256};
+use sp_core::U256;
 
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
@@ -47,10 +47,9 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 				b"AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)",
 			);
 		}
-		let owner_msa_id: U256 = self.msa_id.into();
-		let coded_owner_msa_id = from_hex(&format!("0x{:064x}", owner_msa_id)).unwrap();
+		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
 		let expiration: U256 = self.expiration.into();
-		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let converted_public_key = T::ConvertIntoAccountId32::convert(self.new_public_key.clone());
 		let mut zero_prefixed_address = [0u8; 32];
 		zero_prefixed_address[12..]
@@ -90,19 +89,17 @@ impl EIP712Encode for AddProvider {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)",
+				b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)"
 			);
 		}
-		let authorized_msa_id: U256 = self.authorized_msa_id.into();
-		let coded_authorized_msa_id = from_hex(&format!("0x{:064x}", authorized_msa_id)).unwrap();
-		let mut schema_ids = vec![];
-		for schema_id in self.schema_ids.as_slice() {
-			let coded_schema_id = from_hex(&format!("0x{:064x}", *schema_id)).unwrap();
-			schema_ids.extend(coded_schema_id);
-		}
+		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);
+		let schema_ids: Vec<u8> = self
+			.schema_ids
+			.iter()
+			.flat_map(|schema_id| to_abi_compatible_number(*schema_id))
+			.collect();
 		let schema_ids = sp_io::hashing::keccak_256(&schema_ids);
-		let expiration: U256 = self.expiration.into();
-		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let coded_expiration = to_abi_compatible_number(self.expiration);
 		let message = sp_io::hashing::keccak_256(
 			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
 				.concat(),
