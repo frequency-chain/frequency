@@ -618,13 +618,12 @@ jobs:
       fail-fast: true
       matrix:
         arch: [amd64, arm64]
+        bin-dir: [target/debug]
         include:
           - arch: amd64
             runner: ubuntu-24.04
-            bin-dir: ${{env.BIN_DIR_DEBUG}}
           - arch: arm64
             runner: ubuntu-24.04-arm
-            bin-dir: ${{env.BIN_DIR_DEBUG}}
     runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
