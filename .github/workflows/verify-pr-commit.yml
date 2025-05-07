@@ -430,7 +430,7 @@ jobs:
   verify-js-api-augment:
     needs: build-binaries
     name: Verify JS API Augment
-    runs-on: ubicloud-standard-4
+    runs-on: ubuntu-24.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     steps:
       - name: Check Out Repo
@@ -657,7 +657,7 @@ jobs:
   check-metadata-and-spec-version:
     needs: build-binaries
     name: Check Metadata and Spec Version
-    runs-on: ubicloud-standard-4
+    runs-on: ubuntu-24.04
     container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     permissions:
       pull-requests: write
@@ -741,8 +741,7 @@ jobs:
     if: needs.changes.outputs.run-e2e == 'true'
     needs: [build-binaries, verify-js-api-augment]
     name: Run E2E Tests
-    runs-on: ubicloud-standard-4
-    container: ubuntu:24.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
