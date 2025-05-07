@@ -8,8 +8,9 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
 extern crate alloc;
-use crate::utils::{get_eip712_encoding_prefix, EIP712Encode};
+use crate::{node::EIP712Encode, signatures::get_eip712_encoding_prefix};
 use alloc::{boxed::Box, vec::Vec};
+use lazy_static::lazy_static;
 use scale_info::prelude::format;
 use sp_core::{bytes::from_hex, U256};
 
@@ -66,23 +67,22 @@ where
 	BlockNumber: Into<U256> + TryFrom<U256> + Copy,
 {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
 
-		// signed payload
-		let handle_type_hash =
-			sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint64 expiration)");
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint64 expiration)");
+		}
 		let coded_handle = sp_io::hashing::keccak_256(self.base_handle.as_ref());
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
 		let message = sp_io::hashing::keccak_256(
-			&[handle_type_hash.as_slice(), &coded_handle, &coded_expiration].concat(),
+			&[MAIN_TYPE_HASH.as_slice(), &coded_handle, &coded_expiration].concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }

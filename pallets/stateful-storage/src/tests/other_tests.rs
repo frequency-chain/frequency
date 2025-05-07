@@ -6,8 +6,9 @@ use crate::{
 	Config, Error,
 };
 use common_primitives::{
+	node::EIP712Encode,
 	signatures::{UnifiedSignature, UnifiedSigner},
-	utils::{wrap_binary_data, EIP712Encode},
+	utils::wrap_binary_data,
 };
 use frame_support::{assert_err, assert_ok};
 use parity_scale_codec::Encode;

@@ -51,7 +51,7 @@ use common_primitives::benchmarks::MsaBenchmarkHelper;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
-	utils::EIP712Encode,
+	node::EIP712Encode,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;

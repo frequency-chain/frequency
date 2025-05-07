@@ -18,7 +18,7 @@
 )]
 // allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
-use common_primitives::utils::EIP712Encode;
+use common_primitives::node::EIP712Encode;
 use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo, RawOrigin},

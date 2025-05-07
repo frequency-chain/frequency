@@ -1,13 +1,5 @@
 extern crate alloc;
-use alloc::{boxed::Box, vec::Vec};
-use scale_info::prelude::format;
-use sp_core::bytes::from_hex;
-
-/// encode to eip-712
-pub trait EIP712Encode {
-	/// encodes the type without hashing it
-	fn encode_eip_712(&self) -> Box<[u8]>;
-}
+use alloc::vec::Vec;
 
 /// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1
 pub const MAINNET_GENESIS_HASH: &[u8] = &[
@@ -41,34 +33,18 @@ pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType 
 	}
 }
 
-/// returns the ethereum encoded prefix and domain separator for EIP-712 signatures
-pub fn get_eip712_encoding_prefix(verifier_contract_address: [u8; 20]) -> Box<[u8]> {
-	// eip-712 prefix
-	let prefix = from_hex("0x1901").unwrap_or_default();
-	// domain separator
-	let domain_type_hash = sp_io::hashing::keccak_256(
-		b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
-	);
-	let domain_name = sp_io::hashing::keccak_256(b"Frequency");
-	let domain_version = sp_io::hashing::keccak_256(b"1");
-	// todo: different ids based on the chain type
-	let chain_id = from_hex(&format!("0x{:064x}", 420420420)).unwrap_or_default();
-	let mut zero_prefixed_verifier_contract = [0u8; 32];
-	zero_prefixed_verifier_contract[12..].copy_from_slice(&verifier_contract_address);
-
-	let domain_separator = sp_io::hashing::keccak_256(
-		&[
-			domain_type_hash.as_slice(),
-			domain_name.as_slice(),
-			domain_version.as_slice(),
-			chain_id.as_slice(),
-			&zero_prefixed_verifier_contract,
-		]
-		.concat(),
-	);
-	let combined = [prefix.as_slice(), domain_separator.as_slice()].concat();
-	combined.into_boxed_slice()
+/// Generic function for converting any unsigned integer to a 32-byte array compatible with ETH abi
+pub fn to_abi_compatible_number<T: Into<u128>>(value: T) -> [u8; 32] {
+	let value_u128: u128 = value.into();
+	// Convert to big-endian bytes
+	let bytes = value_u128.to_be_bytes();
+	// Copy the non-zero part to the end of the result array
+	let start_idx = 32 - bytes.len();
+	let mut result = [0u8; 32];
+	result[start_idx..].copy_from_slice(&bytes);
+	result
 }
+
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex {

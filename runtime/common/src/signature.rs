@@ -1,7 +1,5 @@
-use common_primitives::{
-	signatures::UnifiedSignature,
-	utils::{wrap_binary_data, EIP712Encode},
-};
+use common_primitives::{node, signatures::UnifiedSignature, utils::wrap_binary_data};
+use node::EIP712Encode;
 use sp_runtime::{traits::Verify, AccountId32, MultiSignature};
 extern crate alloc;
 use sp_core::Encode;

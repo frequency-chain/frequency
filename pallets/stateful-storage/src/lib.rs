@@ -48,12 +48,12 @@ use common_primitives::{
 	msa::{
 		DelegatorId, MessageSourceId, MsaLookup, MsaValidator, ProviderId, SchemaGrantValidator,
 	},
+	node::EIP712Encode,
 	schema::{PayloadLocation, SchemaId, SchemaInfoResponse, SchemaProvider, SchemaSetting},
 	stateful_storage::{
 		ItemizedStoragePageResponse, ItemizedStorageResponse, PageHash, PageId,
 		PaginatedStorageResponse,
 	},
-	utils::EIP712Encode,
 };
 
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};

@@ -68,3 +68,9 @@ pub trait UtilityProvider<Origin, RuntimeCall> {
 	/// Passthrough into the Utility::batch_all call
 	fn batch_all(origin: Origin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo;
 }
+
+/// Encode to eip-712
+pub trait EIP712Encode {
+	/// encodes the type without hashing it
+	fn encode_eip_712(&self) -> Box<[u8]>;
+}

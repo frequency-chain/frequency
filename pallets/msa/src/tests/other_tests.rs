@@ -23,10 +23,10 @@ use common_primitives::{
 		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
 		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
-	node::BlockNumber,
+	node::{BlockNumber, EIP712Encode},
 	schema::{SchemaId, SchemaValidator},
 	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
-	utils::{wrap_binary_data, EIP712Encode},
+	utils::wrap_binary_data,
 };
 use pretty_assertions::assert_eq;
 use sp_core::bytes::from_hex;

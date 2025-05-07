@@ -140,6 +140,46 @@
 				console.log(signature);
 				alert("Signature: " + signature)
 			});
+
+			document.getElementById('handle_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"ClaimHandlePayload": [
+							{
+								"name": "handle",
+								"type": "string"
+							},
+							{
+								"name": "expiration",
+								"type": "uint64"
+							},
+						],
+					},
+					"primaryType": "ClaimHandlePayload",
+					"domain": karma_request_domain,
+					"message": {
+						"handle": 'Alice',
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
 		}
 		main()
 	</script>
@@ -147,6 +187,7 @@
 <body>
 <button id="itemized_request">Itemized Sign</button>
 <button id="passkey_request">Passkey Sign</button>
+<button id="handle_request">Handle Sign</button>
 </body>
 </html>
 <!-- itemized 0x7efb5407412c745f40713ba0922e228bf5f2b628423817a7a333a36902df0df45ef4cfd3c309fcaf9c0fc72e91a96b5456740b345283fc4525f5b09802ad1c0d1c-->

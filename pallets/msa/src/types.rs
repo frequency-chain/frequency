@@ -12,9 +12,8 @@ pub use common_primitives::msa::{
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
 use alloc::format;
-use common_primitives::{
-	signatures::{AccountAddressMapper, EthereumAddressMapper},
-	utils::get_eip712_encoding_prefix,
+use common_primitives::signatures::{
+	get_eip712_encoding_prefix, AccountAddressMapper, EthereumAddressMapper,
 };
 use scale_info::TypeInfo;
 use sp_core::{bytes::from_hex, U256};
@@ -38,21 +37,16 @@ pub struct AddKeyData<T: Config> {
 
 impl<T: Config> EIP712Encode for AddKeyData<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
 
-		// 0x6015d92440a43e374a7ad082b2f3a652a0a1e5c0d3a53cdec4a2001c07b496b4
-		//   0000000000000000000000000000000000000000000000000000000000c47a27
-		//   0000000000000000000000000000000000000000000000000000000000000064
-		//   0000000000000000000000007a23f8d62589ab9651722c7f4a0e998d7d3ef2a9
-		// signed payload
-		let handle_type_hash = sp_io::hashing::keccak_256(
-			b"AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)",
-		);
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)",
+			);
+		}
 		let owner_msa_id: U256 = self.msa_id.into();
 		let coded_owner_msa_id = from_hex(&format!("0x{:064x}", owner_msa_id)).unwrap();
 		let expiration: U256 = self.expiration.into();
@@ -63,14 +57,14 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key));
 		let message = sp_io::hashing::keccak_256(
 			&[
-				handle_type_hash.as_slice(),
+				MAIN_TYPE_HASH.as_slice(),
 				&coded_owner_msa_id,
 				&coded_expiration,
 				&zero_prefixed_address,
 			]
 			.concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -89,20 +83,16 @@ pub struct AddProvider {
 
 impl EIP712Encode for AddProvider {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
-		// 0x8c64d47f36e228989c24ff35213ca7b7d8887571eff837623e1818c386664f94
-		//   0000000000000000000000000000000000000000000000000000000000c47a27
-		//   35457b9cf9b5ee88dad79a01dcab926a881310a9756cd8fdf4d0f5555874d517
-		//   0000000000000000000000000000000000000000000000000000000000000064
-		// signed payload
-		let main_type_hash = sp_io::hashing::keccak_256(
-			b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)",
-		);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)",
+			);
+		}
 		let authorized_msa_id: U256 = self.authorized_msa_id.into();
 		let coded_authorized_msa_id = from_hex(&format!("0x{:064x}", authorized_msa_id)).unwrap();
 		let mut schema_ids = vec![];
@@ -114,10 +104,10 @@ impl EIP712Encode for AddProvider {
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
 		let message = sp_io::hashing::keccak_256(
-			&[main_type_hash.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
+			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
 				.concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }

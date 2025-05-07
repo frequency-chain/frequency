@@ -72,9 +72,7 @@ use alloc::{boxed::Box, vec, vec::Vec};
 
 use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{
-	handles::HandleProvider,
-	msa::MessageSourceId,
-	utils::{wrap_binary_data, EIP712Encode},
+	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
 };
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};

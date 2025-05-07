@@ -5,8 +5,11 @@ use frame_support::{
 	__private::{codec, RuntimeDebug},
 	pallet_prelude::{Decode, Encode, MaxEncodedLen, TypeInfo},
 };
+use lazy_static::lazy_static;
 use parity_scale_codec::{alloc::string::ToString, DecodeWithMemTracking};
+use scale_info::prelude::format;
 use sp_core::{
+	bytes::from_hex,
 	crypto,
 	crypto::{AccountId32, FromEntropy},
 	ecdsa, ed25519,
@@ -19,6 +22,7 @@ use sp_runtime::{
 	MultiSignature,
 };
 extern crate alloc;
+use alloc::boxed::Box;
 
 /// Ethereum message prefix eip-191
 const ETHEREUM_MESSAGE_PREFIX: &[u8; 26] = b"\x19Ethereum Signed Message:\n";
@@ -362,12 +366,50 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 	verify_signature(signature.as_ref(), &hashed, signer)
 }
 
+/// returns the ethereum encoded prefix and domain separator for EIP-712 signatures
+pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> {
+	lazy_static! {
+		// domain separator
+		static ref DOMAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+			b"EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)",
+		);
+
+		static ref DOMAIN_NAME: [u8; 32] = sp_io::hashing::keccak_256(b"Frequency");
+		static ref DOMAIN_VERSION: [u8; 32] = sp_io::hashing::keccak_256(b"1");
+	}
+	let verifier_contract: [u8; 20] = from_hex(verifier_contract_address)
+		.unwrap_or_default()
+		.try_into()
+		.unwrap_or_default();
+
+	// eip-712 prefix 0x1901
+	let eip_712_prefix = [25, 1];
+
+	// todo: different ids based on the chain type
+	let chain_id = from_hex(&format!("0x{:064x}", 420420420)).unwrap_or_default();
+	let mut zero_prefixed_verifier_contract = [0u8; 32];
+	zero_prefixed_verifier_contract[12..].copy_from_slice(&verifier_contract);
+
+	let domain_separator = sp_io::hashing::keccak_256(
+		&[
+			DOMAIN_TYPE_HASH.as_slice(),
+			DOMAIN_NAME.as_slice(),
+			DOMAIN_VERSION.as_slice(),
+			chain_id.as_slice(),
+			&zero_prefixed_verifier_contract,
+		]
+		.concat(),
+	);
+	let combined = [eip_712_prefix.as_slice(), domain_separator.as_slice()].concat();
+	combined.into_boxed_slice()
+}
+
 #[cfg(test)]
 mod tests {
 	use crate::{
 		handles::ClaimHandlePayload,
+		node::EIP712Encode,
 		signatures::{UnifiedSignature, UnifiedSigner},
-		utils::EIP712Encode,
 	};
 	use impl_serde::serialize::from_hex;
 	use sp_core::{ecdsa, Pair};

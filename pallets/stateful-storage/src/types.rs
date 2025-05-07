@@ -2,12 +2,13 @@
 use crate::Config;
 use alloc::boxed::Box;
 use common_primitives::{
+	node::EIP712Encode,
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId, PageNonce},
-	utils::EIP712Encode,
 };
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
+use lazy_static::lazy_static;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
@@ -20,7 +21,7 @@ use core::{
 };
 use sp_core::{bytes::from_hex, U256};
 
-use common_primitives::utils::get_eip712_encoding_prefix;
+use common_primitives::signatures::get_eip712_encoding_prefix;
 use twox_hash::XxHash64;
 
 /// Migration page size
@@ -131,37 +132,36 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 
 impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
-		// 0xc4e5f09322afb594fcd1f593e7c94de678b5ae1d8b6d6977000455c1826c75ce
-		//   000000000000000000000000000000000000000000000000000000000000000a
-		//   00000000000000000000000000000000000000000000000000000000762d2def
-		//   0000000000000000000000000000000000000000000000000000000000000064
-		//   e75a5168336e69346a737d11a1cfe9397a1c154347e684157c3ad02533777085
-		// signed payload
-		let main_type_hash = sp_io::hashing::keccak_256(
-			b"ItemizedSignaturePayloadV2(uint32 schemaId,uint64 targetHash,uint64 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)",
-		);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV2(uint32 schemaId,uint64 targetHash,uint64 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)");
+
+			static ref SUB_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ItemAction(string actionType,bytes data,uint16 index)");
+
+			static ref ITEM_ACTION_ADD: [u8; 32] = sp_io::hashing::keccak_256(b"Add");
+			static ref ITEM_ACTION_DELETE: [u8; 32] = sp_io::hashing::keccak_256(b"Delete");
+
+			static ref EMPTY_BYTES_HASH: [u8; 32] = sp_io::hashing::keccak_256([].as_slice());
+		}
 		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
 		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
 		let coded_actions = {
-			let sub_type_hash = sp_io::hashing::keccak_256(
-				b"ItemAction(string actionType,bytes data,uint16 index)",
-			);
 			let values: Vec<u8> = self
 				.actions
 				.iter()
 				.flat_map(|a| match a {
 					ItemAction::Add { data } => sp_io::hashing::keccak_256(
 						&[
-							&sub_type_hash,
-							&sp_io::hashing::keccak_256(b"Add"),
+							SUB_TYPE_HASH.as_slice(),
+							ITEM_ACTION_ADD.as_slice(),
 							&sp_io::hashing::keccak_256(data.as_slice()),
 							[0u8; 32].as_slice(),
 						]
@@ -169,9 +169,9 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 					),
 					ItemAction::Delete { index } => sp_io::hashing::keccak_256(
 						&[
-							&sub_type_hash,
-							&sp_io::hashing::keccak_256(b"Delete"),
-							&sp_io::hashing::keccak_256([].as_slice()),
+							SUB_TYPE_HASH.as_slice(),
+							ITEM_ACTION_DELETE.as_slice(),
+							EMPTY_BYTES_HASH.as_slice(),
 							from_hex(&format!("0x{:064x}", index)).unwrap().as_slice(),
 						]
 						.concat(),
@@ -182,7 +182,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 		};
 		let message = sp_io::hashing::keccak_256(
 			&[
-				main_type_hash.as_slice(),
+				MAIN_TYPE_HASH.as_slice(),
 				&coded_schema_id,
 				&coded_target_hash,
 				&coded_expiration,
@@ -190,7 +190,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -231,22 +231,15 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 
 impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
-		// 0xdf3ad6d56232d8c168e82ea91402346761c03cd54e834411fbf596716cd2953f
-		//   000000000000000000000000000000000000000000000000000000000000000a
-		//   0000000000000000000000000000000000000000000000000000000000000005
-		//   00000000000000000000000000000000000000000000000000000000762d2def
-		//   0000000000000000000000000000000000000000000000000000000000000064
-		//   75b4f319565847631ac229eed3571bae5045a22daf02552ae6e7524748a8838c
-		// signed payload
-		let main_type_hash = sp_io::hashing::keccak_256(
-			b"PaginatedUpsertSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration,bytes payload)",
-		);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration,bytes payload)");
+		}
 		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
 		let coded_page_id = from_hex(&format!("0x{:064x}", self.page_id)).unwrap();
 		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
@@ -255,7 +248,7 @@ impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 		let coded_payload = sp_io::hashing::keccak_256(self.payload.as_slice());
 		let message = sp_io::hashing::keccak_256(
 			&[
-				main_type_hash.as_slice(),
+				MAIN_TYPE_HASH.as_slice(),
 				&coded_schema_id,
 				&coded_page_id,
 				&coded_target_hash,
@@ -264,7 +257,7 @@ impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -302,21 +295,15 @@ pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 
 impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// get prefix and domain separator
-		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
-			.unwrap_or_default()
-			.try_into()
-			.unwrap_or_default();
-		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
-		// 0xb39f750bbc787288d99cdae550baed4e8970f39bc91b8f4f4f16dfe356b775f7
-		//   000000000000000000000000000000000000000000000000000000000000000a
-		//   0000000000000000000000000000000000000000000000000000000000000005
-		//   00000000000000000000000000000000000000000000000000000000762d2def
-		//   0000000000000000000000000000000000000000000000000000000000000064
-		// signed payload
-		let main_type_hash = sp_io::hashing::keccak_256(
-			b"PaginatedDeleteSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration)",
-		);
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration)");
+		}
 		let coded_schema_id = from_hex(&format!("0x{:064x}", self.schema_id)).unwrap();
 		let coded_page_id = from_hex(&format!("0x{:064x}", self.page_id)).unwrap();
 		let coded_target_hash = from_hex(&format!("0x{:064x}", self.target_hash)).unwrap();
@@ -324,7 +311,7 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
 		let message = sp_io::hashing::keccak_256(
 			&[
-				main_type_hash.as_slice(),
+				MAIN_TYPE_HASH.as_slice(),
 				&coded_schema_id,
 				&coded_page_id,
 				&coded_target_hash,
@@ -332,7 +319,7 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
