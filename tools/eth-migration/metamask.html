@@ -12,7 +12,7 @@
         return
       }
 
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+	  const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       console.log(chainId);
       const eip712domain_type_definition = {
@@ -46,27 +46,48 @@
         const signature_request = {
           "types": {
             ...eip712domain_type_definition,
-			"AddKeyData": [
+			"ItemizedSignaturePayloadV2": [
 				{
-					"name": "ownerMsaId",
+					"name": "schemaId",
+					"type": "uint32"
+				},
+				{
+					"name": "targetHash",
 					"type": "uint64"
 				},
 			    {
 				  	"name": "expiration",
 				  	"type": "uint64"
 			    },
-		  		{
-				   	"name": "newPublicKey",
-					"type": "address"
+				{
+					"name": "actions",
+					"type": "ItemAction[]"
 				},
+			],
+			"ItemAction": [
+				{ "name": 'actionType', "type": 'string' },
+				{ "name": 'data', "type": 'bytes' },
+				{ "name": 'index', "type": 'uint16' }
 			]
 		  },
-          "primaryType": "AddKeyData",
+          "primaryType": "ItemizedSignaturePayloadV2",
           "domain": karma_request_domain,
           "message": {
-            "ownerMsaId": 12876327,
+            "schemaId": 10,
+			"targetHash": 1982672367,
             "expiration": 100,
-			"newPublicKey": "0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9"
+			"actions": [
+				{
+					"actionType": "Add",
+					"data": '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026',
+					"index": 0
+				},
+				{
+					"actionType": 'Delete',
+					"data": '0x',
+					"index": 2
+				}
+			]
           }
         }
         console.log(JSON.stringify({
@@ -97,4 +118,7 @@
 
 </html>
 
-<!--0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b-->
+<!-- 0x7efb5407412c745f40713ba0922e228bf5f2b628423817a7a333a36902df0df45ef4cfd3c309fcaf9c0fc72e91a96b5456740b345283fc4525f5b09802ad1c0d1c-->
+
+
+<!--partly 0xa489ad17602426140fc44836eecb300f38883b61f3d71411387356908f8d81dc2822a3278642dca6af296b23b6e35904f816a0564327324080ff26abfdcd05b31b-->

@@ -89,8 +89,36 @@ pub struct AddProvider {
 
 impl EIP712Encode for AddProvider {
 	fn encode_eip_712(&self) -> Box<[u8]> {
-		// TODO: implement
-		Vec::new().into_boxed_slice()
+		// get prefix and domain separator
+		let verifier_contract = from_hex("0xcccccccccccccccccccccccccccccccccccccccc")
+			.unwrap_or_default()
+			.try_into()
+			.unwrap_or_default();
+		let prefix_domain_separator = get_eip712_encoding_prefix(verifier_contract);
+		// 0x8c64d47f36e228989c24ff35213ca7b7d8887571eff837623e1818c386664f94
+		//   0000000000000000000000000000000000000000000000000000000000c47a27
+		//   35457b9cf9b5ee88dad79a01dcab926a881310a9756cd8fdf4d0f5555874d517
+		//   0000000000000000000000000000000000000000000000000000000000000064
+		// signed payload
+		let main_type_hash = sp_io::hashing::keccak_256(
+			b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)",
+		);
+		let authorized_msa_id: U256 = self.authorized_msa_id.into();
+		let coded_authorized_msa_id = from_hex(&format!("0x{:064x}", authorized_msa_id)).unwrap();
+		let mut schema_ids = vec![];
+		for schema_id in self.schema_ids.as_slice() {
+			let coded_schema_id = from_hex(&format!("0x{:064x}", *schema_id)).unwrap();
+			schema_ids.extend(coded_schema_id);
+		}
+		let schema_ids = sp_io::hashing::keccak_256(&schema_ids);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = from_hex(&format!("0x{:064x}", expiration)).unwrap();
+		let message = sp_io::hashing::keccak_256(
+			&[main_type_hash.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
+				.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
 	}
 }
 

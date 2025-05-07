@@ -30,6 +30,8 @@ use common_primitives::{
 use pretty_assertions::assert_eq;
 use sp_core::bytes::from_hex;
 use sp_runtime::traits::{IdentifyAccount, Verify};
+extern crate alloc;
+use alloc::vec;
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
@@ -695,6 +697,33 @@ fn ethereum_eip712_signatures_for_add_key_should_work() {
 		let encoded_payload = payload.encode_eip_712();
 
 		let signature_raw = from_hex("0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
+	});
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_provider_should_work() {
+	new_test_ext().execute_with(|| {
+		let payload = AddProvider {
+			authorized_msa_id: 12876327,
+			schema_ids: vec![2,4,5,6,7,8],
+			expiration: 100,
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		let signature_raw = from_hex("0x8ef06371476991364255f0f2cff46a4d756a8326e80567c074c10ab9503eaa866145265e572ed857e7e215744a96c744980fd9fa1646beeb9aa508f5aafa845d1b").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));
