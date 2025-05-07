@@ -353,7 +353,7 @@ jobs:
         # Also should match `verify-build-runtimes-dummy`
         # Only doing paseo-testnet and mainnet
         network: [paseo, mainnet]
-        build-profile: [dev]
+        build-profile: [bench-dev]
         runtime-dir: [runtime/frequency]
         package: [frequency-runtime]
         built-wasm-file-name-prefix: [frequency_runtime]
