@@ -78,7 +78,9 @@ ignore = [
   { id = "RUSTSEC-2025-0010", reason = "Unmaintained sub-dependency: ring, pending updates to those dependencies."},
   { id = "RUSTSEC-2025-0009", reason = "Unmaintained sub-dependency: ring, pending updates to dependencies."},
   { id = "RUSTSEC-2024-0436", reason = "Unmaintained sub-dependency: paste, pending updates to dependencies."},
-  { id = "RUSTSEC-2025-0017", reason = "Renamed sub-dependency: trust-dns-proto -> hickory-proto, pending updates to dependencies."}
+  { id = "RUSTSEC-2025-0017", reason = "Renamed sub-dependency: trust-dns-proto -> hickory-proto, pending updates to dependencies."},
+  { id = "RUSTSEC-2023-0091", reason = "'Users prior to 10.0.0 are unaffected', according to the advisory; we are on 8.0.1"},
+  { id = "RUSTSEC-2024-0438", reason = "Windows only"}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.

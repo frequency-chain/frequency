@@ -53,8 +53,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		SchemaGrant, SchemaGrantValidator,
+		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
+		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -435,7 +435,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 155,
+	spec_version: 156,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -449,7 +449,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 155,
+	spec_version: 156,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1672,6 +1672,16 @@ sp_api::impl_runtime_apis! {
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
 			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
+		}
+
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
+			let account_id = Msa::msa_id_to_eth_address(msa_id);
+			let account_id_checksummed = Msa::eth_address_to_checksummed_string(&account_id);
+			AccountId20Response { account_id, account_id_checksummed }
+		}
+
+		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+			Msa::validate_eth_address_for_msa(address, msa_id)
 		}
 	}
 

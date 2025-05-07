@@ -245,8 +245,8 @@ try-runtime = [
   "common-runtime/try-runtime",
   "sp-runtime/try-runtime",
 ]
-frequency = ["common-runtime/frequency"]
-frequency-testnet = ["common-runtime/frequency-testnet"]
+frequency = ["common-runtime/frequency", "pallet-msa/frequency"]
+frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-testnet"]
 frequency-local = ["common-runtime/frequency-local"]
 frequency-no-relay = ["common-runtime/frequency-no-relay"]
 # Following features are used in generating lean wasms
