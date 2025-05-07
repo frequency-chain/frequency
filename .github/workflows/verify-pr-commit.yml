@@ -13,7 +13,6 @@ permissions:
   contents: read
   packages: read
 env:
-  BIN_DIR_RELEASE: target/release
   BIN_DIR_DEBUG: target/debug
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
@@ -622,10 +621,10 @@ jobs:
         include:
           - arch: amd64
             runner: ubuntu-24.04
-            bin-dir: target/debug
+            bin-dir: ${{env.BIN_DIR_DEBUG}}
           - arch: arm64
             runner: ubuntu-24.04-arm
-            bin-dir: target/debug
+            bin-dir: ${{env.BIN_DIR_DEBUG}}
     runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
@@ -675,7 +674,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: artifacts-binary-local-*-${{github.run_id}}
-          path: target/debug
+          path: ${{env.BIN_DIR_DEBUG}}
           merge-multiple: true
       - name: List Downloaded Binaries
         run: |
@@ -683,13 +682,13 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Compare Metadata
         id: compare-metadata
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           set -x
           ./$REF_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata-ref.json
@@ -708,7 +707,7 @@ jobs:
       - name: Check Spec Version
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
         id: check-spec-version
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           set -x
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
@@ -729,7 +728,7 @@ jobs:
         if: |
           (steps.compare-metadata.outputs.metadata_matches != 'true') &&
             (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           spec_version=${{steps.check-spec-version.outputs.spec_version}}
           spec_version_ref=${{steps.check-spec-version.outputs.spec_version_ref}}
@@ -756,7 +755,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
-          path: target/debug
+          path: ${{env.BIN_DIR_DEBUG}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -769,11 +768,11 @@ jobs:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
       - name: Set Binaries Permissions
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 $BIN_FILENAME
       - name: Start Local Node
-        working-directory: target/debug
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           ./${{env.BIN_FILENAME}} \
             -lruntime=debug \
