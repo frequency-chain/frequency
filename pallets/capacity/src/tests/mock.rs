@@ -81,7 +81,7 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxFreezes = ConstU32<1>;
+	type MaxFreezes = ConstU32<2>;
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
 	type DoneSlashHandler = ();
@@ -175,7 +175,7 @@ parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
-impl pallet_capacity::Config for Test {
+impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeFreezeReason = RuntimeFreezeReason;
