@@ -7,12 +7,10 @@ import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
 import { bnToU8a, hexToU8a, stringToU8a } from '@polkadot/util';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { getExistentialDeposit } from '../scaffolding/helpers';
 import { keccak256AsU8a } from '@polkadot/util-crypto';
+import { getExistentialDeposit } from '../scaffolding/helpers';
 
 const fundingSource = getFundingSource(import.meta.url);
-const msaId = 1234; // Example MSA ID for testing
-const checksummedEthAddress = '0x65928b9a88Db189Eea76F72d86128Af834d64c32'; // Example checksummed Ethereum address for MSA ID 1234
 
 /**
  *
@@ -41,38 +39,40 @@ function generateMsaAddress(msaId: string | number | bigint): H160 {
 }
 
 describe('MSAs Holding Tokens', function () {
+  const MSA_ID_1234 = 1234; // MSA ID for testing
+  const CHECKSUMMED_ETH_ADDR_1234 = '0x65928b9a88Db189Eea76F72d86128Af834d64c32'; // Checksummed Ethereum address for MSA ID 1234
   let ethKeys: KeyringPair;
   let ethAddress20: H160;
 
   before(async function () {
-    ethAddress20 = ExtrinsicHelper.apiPromise.createType('H160', hexToU8a(checksummedEthAddress));
+    ethAddress20 = ExtrinsicHelper.apiPromise.createType('H160', hexToU8a(CHECKSUMMED_ETH_ADDR_1234));
     ethKeys = ethereumAddressToKeyringPair(ethAddress20);
   });
 
   describe('getEthereumAddressForMsaId', function () {
     it('should return the correct address for a given MSA ID', async function () {
-      const expectedAddress = checksummedEthAddress.toLowerCase();
+      const expectedAddress = CHECKSUMMED_ETH_ADDR_1234.toLowerCase();
       const { accountId, accountIdChecksummed } =
-        await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId);
+        await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(MSA_ID_1234);
       assert.equal(accountId.toHex(), expectedAddress, `Expected address ${expectedAddress}, but got ${accountId}`);
       assert.equal(
         accountIdChecksummed.toString(),
-        checksummedEthAddress,
-        `Expected checksummed address ${checksummedEthAddress}, but got ${accountIdChecksummed.toString()}`
+        CHECKSUMMED_ETH_ADDR_1234,
+        `Expected checksummed address ${CHECKSUMMED_ETH_ADDR_1234}, but got ${accountIdChecksummed.toString()}`
       );
     });
 
     it('should validate the Ethereum address for an MSA ID', async function () {
       const isValid = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.validateEthAddressForMsa(
-        generateMsaAddress(msaId),
-        msaId
+        generateMsaAddress(MSA_ID_1234),
+        MSA_ID_1234
       );
       assert.equal(isValid, true, 'Expected the Ethereum address to be valid for the given MSA ID');
     });
 
     it('should fail to validate the Ethereum address for an incorrect MSA ID', async function () {
       const isValid = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.validateEthAddressForMsa(
-        checksummedEthAddress,
+        CHECKSUMMED_ETH_ADDR_1234,
         4321
       );
       assert.equal(isValid, false, 'Expected the Ethereum address to be invalid for a different MSA ID');
@@ -102,12 +102,5 @@ describe('MSAs Holding Tokens', function () {
         'Final balance should be increased by transfer amount'
       );
     });
-  });
-
-  describe('Withdraw tokens from MSA', function () {
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    it.skip('should be able to withraw all tokens from the MSA', function () {});
-    // eslint-disable-next-line @typescript-eslint/no-empty-function
-    it.skip('withdrawing tokens from an MSA to another MSA should fail', function () {});
   });
 });
