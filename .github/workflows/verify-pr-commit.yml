@@ -354,6 +354,7 @@ jobs:
         # Only doing paseo-testnet and mainnet
         network: [paseo, mainnet]
         build-profile: [debug]
+        srtool-profile: [dev]
         runtime-dir: [runtime/frequency]
         package: [frequency-runtime]
         built-wasm-file-name-prefix: [frequency_runtime]
@@ -408,7 +409,7 @@ jobs:
         env:
           BUILD_OPTS: "--features on-chain-release-build,no-metadata-docs,${{matrix.features}}"
         with:
-          profile: ${{matrix.build-profile}}
+          profile: ${{matrix.srtool-profile}}
           package: ${{matrix.package}}
           chain: ${{matrix.chain}}
           runtime_dir: ${{ matrix.runtime-dir }}
