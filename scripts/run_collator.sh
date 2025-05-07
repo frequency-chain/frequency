@@ -21,6 +21,9 @@ alice_rpc_port="${ALICE_RPC_PORT:-9946}"
 bob_rpc_port="${BOB_RPC_PORT:-9947}"
 chain="${RELAY_CHAIN_SPEC:-./resources/paseo-local.json}"
 
+node_parachain="${NODE_PARACHAIN:-127.0.0.1}"
+node_parachain_rpc_port="${NODE_PARACHAIN_RPC_PORT:-9944}"
+
 get_bootnode () {
     node="$1"
     port="$2"
@@ -32,6 +35,18 @@ get_bootnode () {
     tee |\
     jq -r '.result['$SELECT_INDEX'] // ""'
 
+}
+
+bootnode_para () {
+    node="$1"
+    rpc_port="$2"
+    bootnode=$(get_bootnode "$node" "$rpc_port")
+    >&2 echo "Parachain Bootnode: $bootnode"
+    if [ ! -z "$bootnode" ]; then
+        echo "$bootnode"
+    else
+        echo >&2 "failed to get id for $node"
+    fi
 }
 
 bootnode () {
@@ -50,7 +65,15 @@ bootnode () {
     echo "$bootnode"
 }
 
-args+=( "--" "--wasm-execution=compiled" "--pool-type=fork-aware" "--chain=${chain}" "--bootnodes=$(bootnode "$alice" "$alice_rpc_port")" "--bootnodes=$(bootnode "$bob" "$bob_rpc_port")" )
+# Only add it if it's not empty
+parachain_bootnode="$(bootnode_para "$node_parachain" "$node_parachain_rpc_port")"
+if [ ! -z "$parachain_bootnode" ]; then
+    args+=( "--bootnodes=$parachain_bootnode" )
+else
+    echo "No parachain bootnode found. May not be needed..."
+fi
+
+args+=( "--" "--chain=${chain}" "--bootnodes=$(bootnode "$alice" "$alice_rpc_port")" "--bootnodes=$(bootnode "$bob" "$bob_rpc_port")" )
 
 set -x
 "$ctpc" "${args[@]}"

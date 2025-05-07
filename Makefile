@@ -1,4 +1,5 @@
 UNAME := $(shell uname)
+NIGHTLY = +nightly-2025-04-03
 
 .PHONY: all
 all: build
@@ -26,6 +27,14 @@ start-frequency:
 
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
+
+run-frequency-docker: start-frequency-docker register onboard-docker
+
+start-relay-chain-docker:
+	./scripts/init.sh start-paseo-relay-chain
+
+stop-relay-chain-docker:
+	./scripts/init.sh stop-paseo-relay-chain
 
 start-manual:
 	./scripts/init.sh start-frequency-manual
@@ -55,8 +64,14 @@ stop-relay:
 stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
+stop-paseo-relay-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-paseo-relay-chain
+
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
+
+stop-frequency-docker-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-frequency-docker
 
 .PHONY: local-block
 local-block:

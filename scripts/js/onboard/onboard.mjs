@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider, Keyring } from "@polkadot/api";
-import { readFileSync } from "fs";
+import fs from 'node:fs';
 
 const run = async () => {
   try {
@@ -9,7 +9,10 @@ const run = async () => {
     const seed = process.argv[3];
     const id = process.argv[4];
     const header = process.argv[5];
-    const wasmFile = process.argv[6];
+
+    // Read wasmHex from stdin synchronously
+    // 0 is the file descriptor for stdin
+    const wasmHex = fs.readFileSync(0, 'utf-8').trim();
 
     const wsProvider = new WsProvider(endpoint);
 
@@ -20,17 +23,9 @@ const run = async () => {
     const keyring = new Keyring({ type: "sr25519" });
     const alice = keyring.addFromUri(seed);
 
-    let wasm;
-    try {
-      wasm = readFileSync(wasmFile).toString("hex");
-    } catch (err) {
-      console.error(err);
-      throw err;
-    }
-
     let paraGenesisArgs = {
       genesis_head: header,
-      validation_code: "0x" + wasm,
+      validation_code: wasmHex,
       parachain: true,
     };
 

@@ -7,6 +7,8 @@ PROFILE=release
 PROFILE_DIR=${PROFILE}
 
 ALL_EXTERNAL_PALLETS=( \
+  frame_system_extensions \
+  cumulus_pallet_weight_reclaim \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -36,6 +38,8 @@ ALL_CUSTOM_PALLETS=( \
 declare -a CUSTOM_PALLETS
 declare -a EXTERNAL_PALLETS
 skip_build=false
+skip_tests=false
+build_only=false
 OVERHEAD=
 VERBOSE=
 
@@ -43,15 +47,19 @@ function exit_err() { echo "❌ 💔" ; exit 1; }
 
 function usage() {
   cat << EOI
-  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v]
-         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [<pallet1> [... <palletN>]]
+  Usage: $( basename ${1} ) [-d <dir>] [-p <pallet] [-s] [-t <profile>] [-v] [-b]
+         $( basename ${1} ) [-d <dir>] [-s] [-t] [-v] [-b] [<pallet1> [... <palletN>]]
 
-         -d <dir>     Sets top-level repository directory to <dir>.
+        -d <dir>      Sets top-level repository directory to <dir>.
                       Default: parent directory of script
 
         -h            Display this message and exit.
 
         -s            Skip the build step; use existing binary for the current profile
+
+        -n            Skip the test step
+
+        -b            Build only; exit after building the binary
 
         -t <profile>  Use '--profile=<profile>' in the build step & for locating the
                       resulting binary. Valid targets are: dev,release,bench-dev
@@ -92,7 +100,7 @@ function is_custom_pallet() {
   return 1
 }
 
-while getopts 'dh:p:st:v' flag; do
+while getopts 'd:hp:snt:vb' flag; do
   case "${flag}" in
     d)
       # Set project directory
@@ -105,6 +113,14 @@ while getopts 'dh:p:st:v' flag; do
     s)
       # Skip build.
       skip_build=true
+      ;;
+    n)
+        # Skip tests.
+        skip_tests=true
+        ;;
+    b)
+      # Build only
+      build_only=true
       ;;
     t)
       # Set target profile
@@ -171,26 +187,35 @@ fi
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
-echo "Running benchmarks for the following pallets:\
-${EXTERNAL_PALLETS[@]} \
-${CUSTOM_PALLETS[@]} \
-${OVERHEAD}"
-
+if [[ ${build_only} == false ]]; then
+  echo "Running benchmarks for the following pallets:\
+  ${EXTERNAL_PALLETS[@]} \
+  ${CUSTOM_PALLETS[@]} \
+  ${OVERHEAD}"
+fi
 
 function run_benchmark() {
   echo "Running benchmarks for ${1}"
+
+  TEMPLATE=${5}
+  if [[ ${1} == "frame_system_extensions" ]]
+  then
+    TEMPLATE=${PROJECT}/.maintain/frame-system-extensions-weight-template.hbs
+  fi
+
   set -x
   set -e
   ${BENCHMARK} pallet \
   --pallet=${1} \
   --extrinsic "*" \
   --heap-pages=4096 \
-  --wasm-execution=compiled \
   --steps=${2} \
   --repeat=${3} \
   --output=${4} \
-  --template=${5} \
-  --additional-trie-layers=${6}
+  --template=${TEMPLATE} \
+  --additional-trie-layers=${6} \
+  --runtime=${PROJECT}/target/${PROFILE_DIR}/wbuild/frequency-runtime/frequency_runtime.wasm \
+  --genesis-builder=runtime
   if [ -z "${VERBOSE}" ]
   then
     set +x
@@ -202,6 +227,11 @@ then
   CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
   echo ${CMD}
   ${CMD} || exit_err
+
+  if [[ ${build_only} == true ]]; then
+    echo "Build complete. Exiting as requested."
+    exit 0
+  fi
 fi
 
 for external_pallet in "${EXTERNAL_PALLETS[@]}"; do
@@ -229,10 +259,13 @@ if [[ -n "${OVERHEAD}" ]]
 then
   echo "Running extrinsic and block overhead benchmark"
   echo " "
-  ${BENCHMARK} overhead --wasm-execution=compiled --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
+  ${BENCHMARK} overhead --weight-path=runtime/common/src/weights --chain=dev --warmup=10 --repeat=100 --header="./HEADER-APACHE2" || exit_err
 fi
 
-echo "Running tests..."
-CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
-echo ${CMD}
-${CMD} || exit_err
+if [[ ${skip_tests} == false ]]
+then
+    echo "Running tests..."
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+    echo ${CMD}
+    ${CMD} || exit_err
+fi
