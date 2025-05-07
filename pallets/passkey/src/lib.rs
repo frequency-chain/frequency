@@ -18,7 +18,7 @@
 )]
 // allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
-use common_primitives::utils::VecEncodingWrapper;
+use common_primitives::utils::EIP712Encode;
 use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo, RawOrigin},
@@ -317,7 +317,7 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		let signature = self.payload.account_ownership_proof.clone();
 		let signer = &self.payload.passkey_call.account_id;
 
-		Self::check_account_signature(signer, signed_data.inner().as_ref(), &signature)
+		Self::check_account_signature(signer, &signed_data, &signature)
 			.map_err(|_e| TransactionValidityError::Invalid(InvalidTransaction::BadSigner))?;
 
 		// checking the passkey signature to ensure access to the passkey
@@ -354,14 +354,17 @@ impl<T: Config> PasskeySignatureCheck<T> {
 	/// # Return
 	/// * `Ok(())` if the signature is valid
 	/// * `Err(InvalidAccountSignature)` if the signature is invalid
-	fn check_account_signature(
+	fn check_account_signature<P>(
 		signer: &T::AccountId,
-		signed_data: &[u8],
+		payload: &P,
 		signature: &MultiSignature,
-	) -> DispatchResult {
+	) -> DispatchResult
+	where
+		P: Encode + EIP712Encode,
+	{
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
-		if !check_signature(signature, key, &VecEncodingWrapper(signed_data.to_vec())) {
+		if !check_signature(signature, key, payload) {
 			return Err(Error::<T>::InvalidAccountSignature.into());
 		}
 
