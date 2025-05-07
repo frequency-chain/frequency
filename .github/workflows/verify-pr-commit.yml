@@ -657,7 +657,7 @@ jobs:
   check-metadata-and-spec-version:
     needs: build-binaries
     name: Check Metadata and Spec Version
-    runs-on: ubicloud-standard-4
+    runs-on: ubuntu-24.04
     permissions:
       pull-requests: write
     steps:
