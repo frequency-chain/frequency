@@ -658,7 +658,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubicloud-standard-4
-    container: ubuntu:24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
     permissions:
       pull-requests: write
     steps:
