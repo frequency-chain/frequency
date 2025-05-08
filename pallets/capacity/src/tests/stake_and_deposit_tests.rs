@@ -273,13 +273,18 @@ fn stake_when_staking_amount_is_greater_than_free_balance_it_stakes_zero() {
 }
 
 #[test]
-fn get_stakable_amount_for_works() {
+fn get_stakable_amount_works_with_one_freeze_type() {
 	new_test_ext().execute_with(|| {
 		let account = 200;
+		let target = 100;
+		register_provider(target, String::from("Foo"));
 		// An amount greater than the free balance should not be stakable
-		let amount = 230;
-		let res: u64 = Capacity::get_stakable_amount_for(&account, amount);
-		assert_eq!(res, 0);
+		assert_eq!(Capacity::get_stakable_amount_for(&account, 230), 0);
+		// less than free balance should be stakable
+		assert_eq!(Capacity::get_stakable_amount_for(&account, 189), 189);
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(account), target, 189));
+		// remains correct after a stake
+		assert_eq!(Capacity::get_stakable_amount_for(&account, 189), 0);
 	})
 }
 

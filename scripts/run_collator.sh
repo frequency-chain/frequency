@@ -27,14 +27,10 @@ node_parachain_rpc_port="${NODE_PARACHAIN_RPC_PORT:-9944}"
 get_bootnode () {
     node="$1"
     port="$2"
-    SELECT_INDEX=`[[ "$alice" == "127.0.0.1" ]] && echo "0" || echo "1"`
     curl -sS \
         -H 'Content-Type: application/json' \
         --data '{"id":1,"jsonrpc":"2.0","method":"system_localListenAddresses"}' \
-        "$node:$port" |\
-    tee |\
-    jq -r '.result['$SELECT_INDEX'] // ""'
-
+        "$node:$port" | jq -r 'first((.result[] | select(test("127\\.0\\.0\\.1"))), .result[0]) // empty'
 }
 
 bootnode_para () {
