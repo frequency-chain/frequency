@@ -39,7 +39,7 @@ describe('Passkey Pallet Proxy V2 Tests', function () {
       );
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxyV2(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource), /Transaction call is not expected/);
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true), /Transaction call is not expected/);
     });
 
     it('should fail to transfer balance due to bad account ownership proof', async function () {
@@ -59,7 +59,7 @@ describe('Passkey Pallet Proxy V2 Tests', function () {
       );
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxyV2(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource), /Invalid signing address/);
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true), /Invalid signing address/);
     });
 
     it('should fail to transfer balance due to bad passkey signature', async function () {
@@ -79,7 +79,7 @@ describe('Passkey Pallet Proxy V2 Tests', function () {
       );
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxyV2(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource), /Custom error: 4/);
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true), /Custom error: 4/);
     });
 
     describe('successful transfer small balance from fundedKeys to receiverKeys', function () {

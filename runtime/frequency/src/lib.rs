@@ -347,12 +347,12 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
-		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-		AsTransactionExtension<
-			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-		>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
+		// AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+		// AsTransactionExtension<
+		// 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		// >,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),

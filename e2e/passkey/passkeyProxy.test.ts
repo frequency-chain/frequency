@@ -37,7 +37,7 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true));
     });
 
     it('should fail to transfer balance due to bad account ownership proof', async function () {
@@ -51,7 +51,7 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, false);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true));
     });
 
     it('should fail to transfer balance due to bad passkey signature', async function () {
@@ -65,7 +65,7 @@ describe('Passkey Pallet Tests', function () {
       const passkeyPayload = await createPasskeyPayload(passKeyPrivateKey, passKeyPublicKey, passkeyCall, true);
 
       const passkeyProxy = ExtrinsicHelper.executePassKeyProxy(fundedKeys, passkeyPayload);
-      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource));
+      await assert.rejects(passkeyProxy.fundAndSendUnsigned(fundingSource, true));
     });
 
     it('should transfer small balance from fundedKeys to receiverKeys', async function () {

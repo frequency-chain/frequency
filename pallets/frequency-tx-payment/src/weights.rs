@@ -35,6 +35,7 @@ use core::marker::PhantomData;
 pub trait WeightInfo {
 	fn pay_with_capacity() -> Weight;
 	fn pay_with_capacity_batch_all(n: u32, ) -> Weight;
+	fn charge_transaction_payment() -> Weight;
 }
 
 /// Weights for `pallet_frequency_tx_payment` using the Substrate node and recommended hardware.
@@ -57,6 +58,18 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			// Standard Error: 13_223
 			.saturating_add(Weight::from_parts(3_382_984, 0).saturating_mul(n.into()))
 	}
+
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	fn charge_transaction_payment() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `52`
+		//  Estimated: `3593`
+		// Minimum execution time: 35_425_000 picoseconds.
+		Weight::from_parts(35_979_000, 3593)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -77,6 +90,18 @@ impl WeightInfo for () {
 		Weight::from_parts(7_716_837, 0)
 			// Standard Error: 13_223
 			.saturating_add(Weight::from_parts(3_382_984, 0).saturating_mul(n.into()))
+	}
+
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	fn charge_transaction_payment() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `52`
+		//  Estimated: `3593`
+		// Minimum execution time: 35_425_000 picoseconds.
+		Weight::from_parts(35_979_000, 3593)
+			.saturating_add(RocksDbWeight::get().reads(1_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
 

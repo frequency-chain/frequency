@@ -103,9 +103,15 @@ describe('Add Offchain Message', function () {
 
   it('should successfully add an IPFS message', async function () {
     const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
-    const { target: event } = await f.fundAndSend(fundingSource);
+    const { target: event, eventMap } = await f.fundAndSend(fundingSource);
 
-    assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
+    assert.notEqual(
+      event,
+      undefined,
+      `should have returned a MessagesInBlock event, got: ${Object.values(eventMap)
+        .map((x) => x.toHuman())
+        .join('\n\n')}`
+    );
   });
 
   it('should successfully retrieve added message and returned CID should have Base32 encoding', async function () {
@@ -124,9 +130,15 @@ describe('Add Offchain Message', function () {
   describe('Add OnChain Message and successfully retrieve it', function () {
     it('should successfully add and retrieve an onchain message', async function () {
       const f = ExtrinsicHelper.addOnChainMessage(keys, dummySchemaId, '0xdeadbeef');
-      const { target: event } = await f.fundAndSend(fundingSource);
+      const { target: event, eventMap } = await f.fundAndSend(fundingSource);
 
-      assert.notEqual(event, undefined, 'should have returned a MessagesInBlock event');
+      assert.notEqual(
+        event,
+        undefined,
+        `should have returned a MessagesInBlock event, got: ${Object.values(eventMap)
+          .map((x) => x.toHuman())
+          .join('\n\n')}`
+      );
 
       const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
         from_block: starting_block,

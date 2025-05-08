@@ -13,7 +13,7 @@ pub fn run_as_parachain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		cli.run.base.pool_config.pool_limit,
 		cli.run.base.pool_config.pool_kbytes * 1024,
 		cli.run.base.pool_config.tx_ban_seconds,
-		TransactionPoolType::ForkAware.into(),
+		TransactionPoolType::SingleState.into(),
 		false,
 	);
 

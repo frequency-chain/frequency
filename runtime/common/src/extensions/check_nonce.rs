@@ -1,7 +1,8 @@
 // This file overrides the default Substrate CheckNonce for Frequency.
 // It only creates the token account for paid extrinsics.
+// Updated from 2503-stable
 
-// Copyright (C) 2017-2022 Parity Technologies (UK) Ltd.
+// Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,32 +17,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_system::Config;
-use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
-
-use frame_support::{
-	dispatch::{DispatchInfo, Pays},
-	sp_runtime,
-};
-use scale_info::TypeInfo;
-#[allow(deprecated)]
-use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
-	transaction_validity::{
-		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
-		ValidTransaction,
-	},
-};
 extern crate alloc;
 use alloc::vec;
+use frame_support::{
+	dispatch::DispatchInfo, pallet_prelude::TransactionSource, RuntimeDebugNoBound,
+};
+use frame_system::Config;
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
+use scale_info::TypeInfo;
+use sp_runtime::{
+	traits::{
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, PostDispatchInfoOf,
+		TransactionExtension, ValidateResult, Zero,
+	},
+	transaction_validity::{
+		InvalidTransaction, TransactionLongevity, TransactionValidityError, ValidTransaction,
+	},
+	DispatchResult, Saturating,
+};
+use sp_weights::Weight;
 
 /// Nonce check and increment to give replay protection for transactions.
 ///
 /// # Transaction Validity
 ///
 /// This extension affects `requires` and `provides` tags of validity, but DOES NOT
-/// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
+/// set the `priority` field. Make sure that AT LEAST one of the transaction extension sets
 /// some kind of priority upon validating transactions.
+///
+/// The preparation step assumes that the nonce information has not changed since the validation
+/// step. This means that other extensions ahead of `CheckNonce` in the pipeline must not alter the
+/// nonce during their own preparation step, or else the transaction may be rejected during dispatch
+/// or lead to an inconsistent account state.
 #[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
@@ -65,41 +72,99 @@ impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config> SignedExtension for CheckNonce<T>
+/// Operation to perform from `validate` to `prepare` in [`CheckNonce`] transaction extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val<T: Config> {
+	/// Account and its nonce to check for.
+	CheckNonce((T::AccountId, T::Nonce)),
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+/// Operation to perform from `prepare` to `post_dispatch_details` in [`CheckNonce`] transaction
+/// extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// The transaction extension weight should not be refunded.
+	NonceChecked,
+	/// The transaction extension weight should be refunded.
+	Refund(Weight),
+}
+
+impl<T: Config> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckNonce";
+	type Implicit = ();
+	type Val = Val<T>;
+	type Pre = Pre;
 
-	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _: &T::RuntimeCall) -> sp_weights::Weight {
+		<T::ExtensionsWeightInfo as frame_system::ExtensionsWeightInfo>::check_nonce()
 	}
 
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
+	fn validate(
+		&self,
+		origin: <T as Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> Result<(), TransactionValidityError> {
-		// Get TOKEN account from "who" key
-		let mut account = frame_system::Account::<T>::get(who);
-
-		// The default account (no account) has a nonce of 0.
-		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if self.0 != account.nonce {
-			return Err(if self.0 < account.nonce {
-				InvalidTransaction::Stale
-			} else {
-				InvalidTransaction::Future
-			}
-			.into());
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((Default::default(), Val::Refund(self.weight(call)), origin));
+		};
+		let account = frame_system::Account::<T>::get(who);
+		if account.providers.is_zero() && account.sufficients.is_zero() {
+			// Nonce storage not paid for
+			return Err(InvalidTransaction::Payment.into());
 		}
+		if self.0 < account.nonce {
+			return Err(InvalidTransaction::Stale.into());
+		}
+
+		let provides = vec![Encode::encode(&(&who, self.0))];
+		let requires = if account.nonce < self.0 {
+			vec![Encode::encode(&(&who, self.0.saturating_sub(One::one())))]
+		} else {
+			vec![]
+		};
+
+		let validity = ValidTransaction {
+			priority: 0,
+			requires,
+			provides,
+			longevity: TransactionLongevity::max_value(),
+			propagate: true,
+		};
+
+		Ok((validity, Val::CheckNonce((who.clone(), account.nonce)), origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &T::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		let (who, nonce) = match val {
+			Val::CheckNonce((who, nonce)) => (who, nonce),
+			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
+		};
+
+		// `self.0 < nonce` already checked in `validate`.
+		if self.0 > nonce {
+			return Err(InvalidTransaction::Future.into());
+		}
+		let mut account = frame_system::Account::<T>::get(&who);
+		// Increment account nonce by 1
+		account.nonce += T::Nonce::one();
 
 		// Is this an existing account?
 		// extracted from the conditions in which an account gets reaped
@@ -107,44 +172,264 @@ where
 		let existing_account =
 			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
 
-		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
-
 		// Only create or update the token account if the caller is paying or
 		// account already exists
-		if info.pays_fee == Pays::Yes || existing_account {
+		if info.pays_fee == frame_support::dispatch::Pays::Yes || existing_account {
 			frame_system::Account::<T>::insert(who, account);
 		}
 
-		Ok(())
+		Ok(Pre::NonceChecked)
 	}
 
-	fn validate(
-		&self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		// check index
-		let account = frame_system::Account::<T>::get(who);
-		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into();
+		_result: &DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::NonceChecked => Ok(Weight::zero()),
+			Pre::Refund(weight) => Ok(weight),
 		}
-
-		let provides = vec![Encode::encode(&(who, self.0))];
-		let requires = if account.nonce < self.0 {
-			vec![Encode::encode(&(who, self.0 - One::one()))]
-		} else {
-			vec![]
-		};
-
-		Ok(ValidTransaction {
-			priority: 0,
-			requires,
-			provides,
-			longevity: TransactionLongevity::MAX,
-			propagate: true,
-		})
 	}
 }
+
+// #[cfg(test)]
+// mod tests {
+// 	use super::mock::{new_test_ext, RuntimeCall, Test, CALL};
+// 	use super::*;
+// 	use frame_support::{
+// 		assert_ok, assert_storage_noop, dispatch::GetDispatchInfo, traits::OriginTrait,
+// 	};
+// 	use sp_runtime::{
+// 		traits::{AsTransactionAuthorizedOrigin, DispatchTransaction, TxBaseImplication},
+// 		transaction_validity::TransactionSource::External,
+// 	};
+
+// 	#[test]
+// 	fn signed_ext_check_nonce_works() {
+// 		new_test_ext().execute_with(|| {
+// 			frame_system::Account::<Test>::insert(
+// 				1,
+// 				frame_system::AccountInfo {
+// 					nonce: 1u64.into(),
+// 					consumers: 0,
+// 					providers: 1,
+// 					sufficients: 0,
+// 					data: 0,
+// 				},
+// 			);
+// 			let info = DispatchInfo::default();
+// 			let len = 0_usize;
+// 			// stale
+// 			assert_storage_noop!({
+// 				assert_eq!(
+// 					CheckNonce::<Test>(0u64.into())
+// 						.validate_only(Some(1).into(), CALL, &info, len, External, 0)
+// 						.unwrap_err(),
+// 					TransactionValidityError::Invalid(InvalidTransaction::Stale)
+// 				);
+// 				assert_eq!(
+// 					CheckNonce::<Test>(0u64.into())
+// 						.validate_and_prepare(Some(1).into(), CALL, &info, len, 0)
+// 						.unwrap_err(),
+// 					TransactionValidityError::Invalid(InvalidTransaction::Stale)
+// 				);
+// 			});
+// 			// correct
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_only(
+// 				Some(1).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				External,
+// 				0,
+// 			));
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_and_prepare(
+// 				Some(1).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				0,
+// 			));
+// 			// future
+// 			assert_ok!(CheckNonce::<Test>(5u64.into()).validate_only(
+// 				Some(1).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				External,
+// 				0,
+// 			));
+// 			assert_eq!(
+// 				CheckNonce::<Test>(5u64.into())
+// 					.validate_and_prepare(Some(1).into(), CALL, &info, len, 0)
+// 					.unwrap_err(),
+// 				TransactionValidityError::Invalid(InvalidTransaction::Future)
+// 			);
+// 		})
+// 	}
+
+// 	#[test]
+// 	fn signed_ext_check_nonce_requires_provider() {
+// 		new_test_ext().execute_with(|| {
+// 			frame_system::Account::<Test>::insert(
+// 				2,
+// 				frame_system::AccountInfo {
+// 					nonce: 1u64.into(),
+// 					consumers: 0,
+// 					providers: 1,
+// 					sufficients: 0,
+// 					data: 0,
+// 				},
+// 			);
+// 			frame_system::Account::<Test>::insert(
+// 				3,
+// 				frame_system::AccountInfo {
+// 					nonce: 1u64.into(),
+// 					consumers: 0,
+// 					providers: 0,
+// 					sufficients: 1,
+// 					data: 0,
+// 				},
+// 			);
+// 			let info = DispatchInfo::default();
+// 			let len = 0_usize;
+// 			// Both providers and sufficients zero
+// 			assert_storage_noop!({
+// 				assert_eq!(
+// 					CheckNonce::<Test>(1u64.into())
+// 						.validate_only(Some(1).into(), CALL, &info, len, External, 0)
+// 						.unwrap_err(),
+// 					TransactionValidityError::Invalid(InvalidTransaction::Payment)
+// 				);
+// 				assert_eq!(
+// 					CheckNonce::<Test>(1u64.into())
+// 						.validate_and_prepare(Some(1).into(), CALL, &info, len, 0)
+// 						.unwrap_err(),
+// 					TransactionValidityError::Invalid(InvalidTransaction::Payment)
+// 				);
+// 			});
+// 			// Non-zero providers
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_only(
+// 				Some(2).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				External,
+// 				0,
+// 			));
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_and_prepare(
+// 				Some(2).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				0,
+// 			));
+// 			// Non-zero sufficients
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_only(
+// 				Some(3).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				External,
+// 				0,
+// 			));
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).validate_and_prepare(
+// 				Some(3).into(),
+// 				CALL,
+// 				&info,
+// 				len,
+// 				0,
+// 			));
+// 		})
+// 	}
+
+// 	#[test]
+// 	fn unsigned_check_nonce_works() {
+// 		new_test_ext().execute_with(|| {
+// 			let info = DispatchInfo::default();
+// 			let len = 0_usize;
+// 			let (_, val, origin) = CheckNonce::<Test>(1u64.into())
+// 				.validate(None.into(), CALL, &info, len, (), &TxBaseImplication(CALL), External)
+// 				.unwrap();
+// 			assert!(!origin.is_transaction_authorized());
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).prepare(val, &origin, CALL, &info, len));
+// 		})
+// 	}
+
+// 	#[test]
+// 	fn check_nonce_preserves_account_data() {
+// 		new_test_ext().execute_with(|| {
+// 			frame_system::Account::<Test>::insert(
+// 				1,
+// 				frame_system::AccountInfo {
+// 					nonce: 1u64.into(),
+// 					consumers: 0,
+// 					providers: 1,
+// 					sufficients: 0,
+// 					data: 0,
+// 				},
+// 			);
+// 			let info = DispatchInfo::default();
+// 			let len = 0_usize;
+// 			// run the validation step
+// 			let (_, val, origin) = CheckNonce::<Test>(1u64.into())
+// 				.validate(Some(1).into(), CALL, &info, len, (), &TxBaseImplication(CALL), External)
+// 				.unwrap();
+// 			// mutate `AccountData` for the caller
+// 			frame_system::Account::<Test>::mutate(1, |info| {
+// 				info.data = 42;
+// 			});
+// 			// run the preparation step
+// 			assert_ok!(CheckNonce::<Test>(1u64.into()).prepare(val, &origin, CALL, &info, len));
+// 			// only the nonce should be altered by the preparation step
+// 			let expected_info = frame_system::AccountInfo {
+// 				nonce: 2u64.into(),
+// 				consumers: 0,
+// 				providers: 1,
+// 				sufficients: 0,
+// 				data: 42,
+// 			};
+// 			assert_eq!(frame_system::Account::<Test>::get(1), expected_info);
+// 		})
+// 	}
+
+// 	#[test]
+// 	fn check_nonce_skipped_and_refund_for_other_origins() {
+// 		new_test_ext().execute_with(|| {
+// 			let ext = CheckNonce::<Test>(1u64.into());
+
+// 			let mut info = CALL.get_dispatch_info();
+// 			info.extension_weight = ext.weight(CALL);
+
+// 			// Ensure we test the refund.
+// 			assert!(info.extension_weight != Weight::zero());
+
+// 			let len = CALL.encoded_size();
+
+// 			let origin = frame_system::RawOrigin::Root.into();
+// 			let (pre, origin) = ext.validate_and_prepare(origin, CALL, &info, len, 0).unwrap();
+
+// 			assert!(origin.as_system_ref().unwrap().is_root());
+
+// 			let pd_res = Ok(());
+// 			let mut post_info = frame_support::dispatch::PostDispatchInfo {
+// 				actual_weight: Some(info.total_weight()),
+// 				pays_fee: Default::default(),
+// 			};
+
+// 			<CheckNonce<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+// 				pre,
+// 				&info,
+// 				&mut post_info,
+// 				len,
+// 				&pd_res,
+// 			)
+// 			.unwrap();
+
+// 			assert_eq!(post_info.actual_weight, Some(info.call_weight));
+// 		})
+// 	}
+// }
