@@ -115,8 +115,8 @@ pub fn create_benchmark_extrinsic(
 		.unwrap_or(2) as u64;
 
 	#[allow(deprecated)]
-	let extra: runtime::TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim::<runtime::Runtime, _>::new(
-		(
+	let extra: runtime::TxExtension =
+		cumulus_pallet_weight_reclaim::StorageWeightReclaim::<runtime::Runtime, _>::new((
 			frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 			(
 				frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
@@ -127,18 +127,16 @@ pub fn create_benchmark_extrinsic(
 				period,
 				best_block.saturated_into(),
 			)),
-			#[allow(deprecated)]
-			AsTransactionExtension::from(common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce)),
-			#[allow(deprecated)]
-			AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
-			#[allow(deprecated)]
-			AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
-			#[allow(deprecated)]
-			AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
+			common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce),
+			// #[allow(deprecated)]
+			// AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
+			// #[allow(deprecated)]
+			// AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
+			// #[allow(deprecated)]
+			// AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
 			frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
 			frame_system::CheckWeight::<runtime::Runtime>::new(),
-		),
-	);
+		));
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(
 		call.clone(),
 		extra.clone(),
@@ -148,9 +146,9 @@ pub fn create_benchmark_extrinsic(
 			genesis_hash,
 			best_hash,
 			(),
-			(),
-			(),
-			(),
+			// (),
+			// (),
+			// (),
 			None,
 			(),
 		),

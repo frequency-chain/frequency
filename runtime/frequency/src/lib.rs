@@ -198,16 +198,18 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
@@ -221,9 +223,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 impl BaseCallFilter {
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
-			pallet_utility::Call::batch { calls, .. } |
-			pallet_utility::Call::batch_all { calls, .. } |
-			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
+			pallet_utility::Call::batch { calls, .. }
+			| pallet_utility::Call::batch_all { calls, .. }
+			| pallet_utility::Call::force_batch { calls, .. } => {
+				calls.iter().any(Self::is_batch_call_allowed)
+			},
 			_ => true,
 		}
 	}
@@ -231,16 +235,16 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all nested `batch` calls from utility batch
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
 
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
 			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. })
+			| RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -291,17 +295,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Governance => matches!(
 				c,
-				RuntimeCall::Treasury(..) |
-					RuntimeCall::Democracy(..) |
-					RuntimeCall::TechnicalCommittee(..) |
-					RuntimeCall::Council(..) |
-					RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
+				RuntimeCall::Treasury(..)
+					| RuntimeCall::Democracy(..)
+					| RuntimeCall::TechnicalCommittee(..)
+					| RuntimeCall::Council(..)
+					| RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
 			),
 			ProxyType::Staking => {
 				matches!(
 					c,
-					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
-						RuntimeCall::CollatorSelection(
+					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. })
+						| RuntimeCall::CollatorSelection(
 							pallet_collator_selection::Call::set_candidacy_bond { .. }
 						)
 				)
@@ -347,12 +351,12 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
-		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-		AsTransactionExtension<
-			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-		>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		// AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
+		// AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
+		// AsTransactionExtension<
+		// 	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		// >,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),
@@ -387,8 +391,8 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 	fn on_runtime_upgrade() -> Weight {
 		use sp_core::Get;
 
-		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
-			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version()
+			!= pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 		{
 			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 				.put::<pallet_collator_selection::Pallet<T>>();

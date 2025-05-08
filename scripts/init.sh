@@ -102,6 +102,7 @@ start-paseo-collator-bob)
     -ltxpool=trace \
     -lruntime=debug \
     --port $((30332)) \
+    -lruntime=debug \
     --rpc-port $((9943)) \
     --rpc-external \
     --rpc-cors all \

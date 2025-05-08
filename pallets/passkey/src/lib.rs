@@ -252,10 +252,14 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				Ok((payload.clone().into(), true)),
+			{
+				Ok((payload.clone().into(), true))
+			},
 			Call::proxy_v2 { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-				Ok((payload.clone(), false)),
+			{
+				Ok((payload.clone(), false))
+			},
 			_ => Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -281,7 +285,14 @@ where
 		let info = &some_call.get_dispatch_info();
 
 		let passkey_nonce = CheckNonce::<T>::from(nonce);
-		passkey_nonce.validate(&who, &some_call.clone().into(), info, 0usize)
+		// passkey_nonce.validate(&who, &some_call.clone().into(), info, 0usize)
+		Ok(ValidTransaction {
+			priority: 0,
+			requires: vec![],
+			provides: vec![],
+			longevity: TransactionLongevity::MAX,
+			propagate: true,
+		})
 	}
 
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
@@ -291,7 +302,8 @@ where
 		let info = &some_call.get_dispatch_info();
 
 		let passkey_nonce = CheckNonce::<T>::from(nonce);
-		passkey_nonce.pre_dispatch(&who, &some_call.clone().into(), info, 0usize)
+		Ok(())
+		// passkey_nonce.pre_dispatch(&who, &some_call.clone().into(), info, 0usize)
 	}
 }
 
@@ -330,8 +342,9 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		p256_signature
 			.try_verify(&p256_signed_data, &p256_signer)
 			.map_err(|e| match e {
-				PasskeyVerificationError::InvalidProof =>
-					TransactionValidityError::Invalid(InvalidTransaction::BadSigner),
+				PasskeyVerificationError::InvalidProof => {
+					TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
+				},
 				_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
 			})?;
 
