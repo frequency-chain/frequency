@@ -6,16 +6,12 @@
     "control-keys": "node fetch-control-keys.mjs",
     "offchain-keys": "node fetch-offchain-index-keys.mjs",
     "token-keys": "node fetch-token-keys.mjs",
-    "db-compare": "node db-comparison.mjs",
-    "eip712": "node eip-712.mjs"
+    "db-compare": "node db-comparison.mjs"
   },
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
     "@polkadot/api": "^15.2.1",
-    "pg": "^8.14.1",
-    "ethereumjs-util": "^7.1.5",
-    "ethereumjs-abi": "^0.6.8",
-    "chai": "^5.2.0"
+    "pg": "^8.14.1"
   }
 }

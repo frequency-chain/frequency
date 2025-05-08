@@ -36,9 +36,7 @@ pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType 
 /// Generic function for converting any unsigned integer to a 32-byte array compatible with ETH abi
 pub fn to_abi_compatible_number<T: Into<u128>>(value: T) -> [u8; 32] {
 	let value_u128: u128 = value.into();
-	// Convert to big-endian bytes
 	let bytes = value_u128.to_be_bytes();
-	// Copy the non-zero part to the end of the result array
 	let start_idx = 32 - bytes.len();
 	let mut result = [0u8; 32];
 	result[start_idx..].copy_from_slice(&bytes);

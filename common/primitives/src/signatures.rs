@@ -376,6 +376,8 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 
 		static ref DOMAIN_NAME: [u8; 32] = sp_io::hashing::keccak_256(b"Frequency");
 		static ref DOMAIN_VERSION: [u8; 32] = sp_io::hashing::keccak_256(b"1");
+		// TODO: USE correct chain ids for different networks
+		static ref CHAIN_ID: [u8; 32] = to_abi_compatible_number(420420420u32);
 	}
 	let verifier_contract: [u8; 20] = from_hex(verifier_contract_address)
 		.unwrap_or_default()
@@ -385,8 +387,6 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 	// eip-712 prefix 0x1901
 	let eip_712_prefix = [25, 1];
 
-	// todo: different ids based on the chain type
-	let chain_id = to_abi_compatible_number(420420420u32);
 	let mut zero_prefixed_verifier_contract = [0u8; 32];
 	zero_prefixed_verifier_contract[12..].copy_from_slice(&verifier_contract);
 
@@ -395,7 +395,7 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 			DOMAIN_TYPE_HASH.as_slice(),
 			DOMAIN_NAME.as_slice(),
 			DOMAIN_VERSION.as_slice(),
-			chain_id.as_slice(),
+			CHAIN_ID.as_slice(),
 			&zero_prefixed_verifier_contract,
 		]
 		.concat(),
@@ -516,6 +516,7 @@ mod tests {
 		// act
 		let account_id = EthereumAddressMapper::to_account_id(&eth);
 		let bytes = EthereumAddressMapper::to_bytes32(&eth);
+		let reversed = EthereumAddressMapper::to_ethereum_address(account_id.clone());
 
 		// assert
 		let expected_address =
@@ -523,6 +524,7 @@ mod tests {
 				.expect("should be hex");
 		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
 		assert_eq!(bytes.to_vec(), expected_address);
+		assert_eq!(reversed.to_vec(), eth);
 	}
 
 	#[test]
