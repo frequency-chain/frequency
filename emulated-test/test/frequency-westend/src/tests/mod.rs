@@ -12,3 +12,10 @@ macro_rules! foreign_balance_on {
 		}
 	};
 }
+
+// fn foreign_balance_on_frequency_westend(id: v5::Location, who: &AccountId) -> u128 {
+// 	FrequencyWestend::execute_with(|| {
+// 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
+// 		<ForeignAssets as FungiblesInspect<_>>::balance($id, $who)
+// 	})
+// }
