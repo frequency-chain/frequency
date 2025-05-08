@@ -252,14 +252,10 @@ where
 		match call {
 			Call::proxy { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-			{
-				Ok((payload.clone().into(), true))
-			},
+				Ok((payload.clone().into(), true)),
 			Call::proxy_v2 { payload }
 				if T::PasskeyCallFilter::contains(&payload.clone().passkey_call.call) =>
-			{
-				Ok((payload.clone(), false))
-			},
+				Ok((payload.clone(), false)),
 			_ => Err(InvalidTransaction::Call.into()),
 		}
 	}
@@ -342,9 +338,8 @@ impl<T: Config> PasskeySignatureCheck<T> {
 		p256_signature
 			.try_verify(&p256_signed_data, &p256_signer)
 			.map_err(|e| match e {
-				PasskeyVerificationError::InvalidProof => {
-					TransactionValidityError::Invalid(InvalidTransaction::BadSigner)
-				},
+				PasskeyVerificationError::InvalidProof =>
+					TransactionValidityError::Invalid(InvalidTransaction::BadSigner),
 				_ => TransactionValidityError::Invalid(InvalidTransaction::Custom(e.into())),
 			})?;
 
