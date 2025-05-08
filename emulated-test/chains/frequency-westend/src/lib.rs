@@ -3,32 +3,18 @@ pub use frequency_runtime::{self, xcm_config::RelayNetwork as FrequencyRelayNetw
 mod genesis;
 pub use genesis::{genesis, FrequencySudoAccount, ED, PARA_ID};
 
-// Substrate
 use frame_support::traits::OnInitialize;
-use sp_core::Encode;
 
-// Cumulus
 use emulated_integration_tests_common::{
 	impl_accounts_helpers_for_parachain, impl_assert_events_helpers_for_parachain,
-	impl_assets_helpers_for_parachain, impl_foreign_assets_helpers_for_parachain,
-	impl_xcm_helpers_for_parachain,
-	impls::{NetworkId, Parachain},
-	xcm_emulator::decl_test_parachains,
+	impl_xcm_helpers_for_parachain, impls::Parachain, xcm_emulator::decl_test_parachains,
 };
 
-// Polkadot
-use staging_xcm::latest::WESTEND_GENESIS_HASH;
-
-// Penpal Parachain declaration
 decl_test_parachains! {
 	pub struct FrequencyWestend {
 		genesis = genesis(PARA_ID),
 		on_init = {
 			frequency_runtime::AuraExt::on_initialize(1);
-			// frame_support::assert_ok!(frequency_runtime::System::set_storage(
-			// 	frequency_runtime::RuntimeOrigin::root(),
-			// 	vec![(FrequencyRelayNetworkId::get().unwrap(), NetworkId::ByGenesis(WESTEND_GENESIS_HASH).encode())],
-			// ));
 		},
 		runtime = frequency_runtime,
 		core = {

@@ -4,12 +4,11 @@ use sp_keyring::Sr25519Keyring as Keyring;
 
 // Cumulus
 use emulated_integration_tests_common::{
-	accounts, build_genesis_storage, collators, SAFE_XCM_VERSION,
+	accounts, build_genesis_storage, collators,
 };
 use parachains_common::{AccountId, Balance};
 // use frequency_runtime::xcm_config::{LocalReservableFromAssetHub, RelayLocation, UsdtFromAssetHub};
-use frequency_runtime::xcm_config::RelayLocation;
-// Penpal
+
 pub const PARA_ID: u32 = 2000;
 pub const ED: Balance = frequency_runtime::EXISTENTIAL_DEPOSIT;
 

@@ -4911,9 +4911,13 @@ dependencies = [
  "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
+ "sp-io",
  "sp-runtime",
+ "sp-tracing",
  "staging-xcm",
  "staging-xcm-executor",
+ "tracing",
+ "tracing-subscriber",
  "westend-runtime",
  "westend-system-emulated-network",
 ]

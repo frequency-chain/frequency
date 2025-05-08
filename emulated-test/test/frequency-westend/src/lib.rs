@@ -3,8 +3,10 @@ mod imports {
 	pub use frame_support::{
 		assert_ok,
 		sp_runtime::DispatchResult,
-		traits::fungibles::{Create as FungiblesCreate, Inspect as FungiblesInspect},
 		traits::fungible::Inspect,
+		traits::fungibles::{
+			Create as FungiblesCreate, Inspect as FungiblesInspect, Mutate as FungiblesMutate,
+		},
 	};
 
 	// Polkadot
@@ -46,6 +48,7 @@ mod imports {
 	};
 
 	pub type AssetHubToFrequencyTest = Test<AssetHubWestend, FrequencyWestend>;
+	pub type FrequencyToAssetHubTest = Test<FrequencyWestend, AssetHubWestend>;
 }
 
 #[cfg(test)]

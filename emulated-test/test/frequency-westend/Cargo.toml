@@ -23,3 +23,13 @@ westend-system-emulated-network = { path = "../../networks/westend"}
 xcm-executor = { workspace = true }
 staging-xcm = { workspace =  true }
 pallet-assets = { workspace = true }
+sp-io = { workspace = true }
+sp-tracing = { workspace = true }
+tracing = { version = "0.1.37" } 
+tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+
+
+[features]
+default = ["std"]
+with-tracing = ["sp-tracing/with-tracing"]
+std = ["sp-tracing/std"]
