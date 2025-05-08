@@ -44,7 +44,7 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddKeyData(uint64 ownerMsaId,uint64 expiration,address newPublicKey)",
+				b"AddKeyData(uint64 msaId,uint32 expiration,address newPublicKey)",
 			);
 		}
 		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
@@ -89,7 +89,7 @@ impl EIP712Encode for AddProvider {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"AddProvider(uint64 authorizedMsaId,uint32[] schemaIds,uint64 expiration)"
+				b"AddProvider(uint64 authorizedMsaId,uint16[] schemaIds,uint32 expiration)"
 			);
 		}
 		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);

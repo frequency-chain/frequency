@@ -800,7 +800,7 @@ fn ethereum_eip712_signatures_for_add_key_should_work() {
 		};
 		let encoded_payload = payload.encode_eip_712();
 
-		let signature_raw = from_hex("0x46f40c850581df7aef68cd7e0be952e97a77230eb08533f08adae105cb482e8e185d66097f79b439946f6eeec0a7112ffbf28cab3732d7062d8e2ada60c2ff3f1b").expect("Should convert");
+		let signature_raw = from_hex("0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));
@@ -827,7 +827,7 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 		};
 		let encoded_payload = payload.encode_eip_712();
 
-		let signature_raw = from_hex("0x8ef06371476991364255f0f2cff46a4d756a8326e80567c074c10ab9503eaa866145265e572ed857e7e215744a96c744980fd9fa1646beeb9aa508f5aafa845d1b").expect("Should convert");
+		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));

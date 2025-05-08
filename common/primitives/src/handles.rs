@@ -75,7 +75,7 @@ where
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint64 expiration)");
+				sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint32 expiration)");
 		}
 		let coded_handle = sp_io::hashing::keccak_256(self.base_handle.as_ref());
 		let expiration: U256 = self.expiration.into();

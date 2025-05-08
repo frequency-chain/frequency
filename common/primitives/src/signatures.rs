@@ -471,13 +471,10 @@ mod tests {
 
 	#[test]
 	fn ethereum_eip712_signatures_for_claim_handle_payload_should_work() {
-		// 0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b02 testing
-		// 0x0000000000000000000000000000000000000000000000000000000000000064 100
-		// let encoded_payload = from_hex("0x5f16f4c7f149ac4f9510d9cf8cf384038ad348b3bcdc01915f95de12df9d1b020000000000000000000000000000000000000000000000000000000000000064").expect("Should convert");
-		let payload = ClaimHandlePayload { base_handle: b"testing".to_vec(), expiration: 100u32 };
+		let payload = ClaimHandlePayload { base_handle: b"Alice".to_vec(), expiration: 100u32 };
 		let encoded_payload = payload.encode_eip_712();
 
-		let signature_raw = from_hex("0x12c6dc188563450175d7d68418004af167a44a0242e59a9b7c4f7bf1df43a8ef00b902a7efa580f1292a471241c267df6350b975d4523d8367c6485cd84a30b81b").expect("Should convert");
+		let signature_raw = from_hex("0x832d1f6870118f5fc6e3cc314152b87dc452bd607581f16b1e39142b553260f8397e80c9f7733aecf1bd46d4e84ad333c648e387b069fa93b4b1ca4fa0fd406b1c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
 		));

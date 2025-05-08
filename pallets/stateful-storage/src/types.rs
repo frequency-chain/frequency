@@ -139,7 +139,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV2(uint32 schemaId,uint64 targetHash,uint64 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)");
+				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV2(uint16 schemaId,uint32 targetHash,uint32 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)");
 
 			static ref SUB_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"ItemAction(string actionType,bytes data,uint16 index)");
@@ -238,7 +238,7 @@ impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration,bytes payload)");
+				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration,bytes payload)");
 		}
 		let coded_schema_id = to_abi_compatible_number(self.schema_id);
 		let coded_page_id = to_abi_compatible_number(self.page_id);
@@ -302,7 +302,7 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
-				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint32 schemaId,uint32 pageId,uint64 targetHash,uint64 expiration)");
+				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration)");
 		}
 		let coded_schema_id = to_abi_compatible_number(self.schema_id);
 		let coded_page_id = to_abi_compatible_number(self.page_id);
