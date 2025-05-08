@@ -474,6 +474,7 @@ mod tests {
 		let payload = ClaimHandlePayload { base_handle: b"Alice".to_vec(), expiration: 100u32 };
 		let encoded_payload = payload.encode_eip_712();
 
+		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x832d1f6870118f5fc6e3cc314152b87dc452bd607581f16b1e39142b553260f8397e80c9f7733aecf1bd46d4e84ad333c648e387b069fa93b4b1ca4fa0fd406b1c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),

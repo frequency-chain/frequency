@@ -800,6 +800,7 @@ fn ethereum_eip712_signatures_for_add_key_should_work() {
 		};
 		let encoded_payload = payload.encode_eip_712();
 
+		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),
@@ -827,6 +828,7 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 		};
 		let encoded_payload = payload.encode_eip_712();
 
+		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");
 		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
 			signature_raw.try_into().expect("should convert"),

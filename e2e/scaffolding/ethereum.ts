@@ -125,7 +125,7 @@ function wrapCustomFrequencyTag(hexPayload: string): Uint8Array {
 }
 
 /**
- * prefixing with the EIP-191 for personal_sign messages (this gets wrapped automatically in metamask)
+ * prefixing with the EIP-191 for personal_sign messages (this gets wrapped automatically in Metamask)
  * @param hexPayload
  */
 function prefixEthereumTags(hexPayload: string): Uint8Array {
