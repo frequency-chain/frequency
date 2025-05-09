@@ -1,5 +1,7 @@
 // mod teleport;
-mod reserve;
+
+mod reserve_transfer_dot_from_asset_hub_to_frequency;
+mod reserve_transfer_dot_from_frequency_to_asset_hub;
 
 #[macro_export]
 macro_rules! foreign_balance_on {
