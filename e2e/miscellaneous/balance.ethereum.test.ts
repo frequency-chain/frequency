@@ -19,8 +19,8 @@ describe('Balance transfer ethereum', function () {
     before(async function () {
       senderSr25519Keys = await createAndFundKeypair(fundingSource, 30n * DOLLARS);
       senderEthereumKeys = await createAndFundKeypair(fundingSource, 30n * DOLLARS, undefined, undefined, 'ethereum');
-      ethereumKeys = createKeys('another-key-1', 'ethereum');
-      ethereumKeys2 = createKeys('another-key-2', 'ethereum');
+      ethereumKeys = createKeys('balance-key-1', 'ethereum');
+      ethereumKeys2 = createKeys('balance-key-2', 'ethereum');
       sr25519Keys = createKeys('another-sr25519', 'sr25519');
     });
 

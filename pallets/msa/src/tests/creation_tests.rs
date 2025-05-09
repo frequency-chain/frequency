@@ -295,7 +295,7 @@ fn verify_signature_with_wrapped_bytes() {
 		assert!(Msa::verify_signature(
 			&signature,
 			&key_pair_delegator.public().into(),
-			add_provider_payload.encode()
+			&add_provider_payload
 		));
 	});
 }
@@ -316,7 +316,7 @@ fn verify_signature_without_wrapped_bytes() {
 		assert!(Msa::verify_signature(
 			&signature,
 			&key_pair_delegator.public().into(),
-			add_provider_payload.encode()
+			&add_provider_payload
 		));
 	});
 }

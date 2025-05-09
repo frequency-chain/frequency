@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<title>Metamask meta transaction test</title>
+	<script>
+		async function main() {
+			if (!window.ethereum || !window.ethereum.isMetaMask) {
+				console.log("Please install MetaMask")
+				return
+			}
+
+			const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+			const chainId = await window.ethereum.request({ method: 'eth_chainId' });
+			console.log(chainId);
+			const eip712domain_type_definition = {
+				"EIP712Domain": [
+					{
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"name": "version",
+						"type": "string"
+					},
+					{
+						"name": "chainId",
+						"type": "uint256"
+					},
+					{
+						"name": "verifyingContract",
+						"type": "address"
+					}
+				]
+			}
+			const karma_request_domain = {
+				"name": "Frequency",
+				"version": "1",
+				"chainId": chainId,
+				"verifyingContract": "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+			}
+
+			document.getElementById('itemized_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"ItemizedSignaturePayloadV2": [
+							{
+								"name": "schemaId",
+								"type": "uint16"
+							},
+							{
+								"name": "targetHash",
+								"type": "uint32"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+							{
+								"name": "actions",
+								"type": "ItemAction[]"
+							},
+						],
+						"ItemAction": [
+							{ "name": 'actionType', "type": 'string' },
+							{ "name": 'data', "type": 'bytes' },
+							{ "name": 'index', "type": 'uint16' }
+						]
+					},
+					"primaryType": "ItemizedSignaturePayloadV2",
+					"domain": karma_request_domain,
+					"message": {
+						"schemaId": 10,
+						"targetHash": 1982672367,
+						"expiration": 100,
+						"actions": [
+							{
+								"actionType": "Add",
+								"data": '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026',
+								"index": 0
+							},
+							{
+								"actionType": 'Delete',
+								"data": '0x',
+								"index": 2
+							}
+						]
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('paginated_upsert_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"PaginatedUpsertSignaturePayloadV2": [
+							{
+								"name": "schemaId",
+								"type": "uint16"
+							},
+							{
+								"name": "pageId",
+								"type": "uint16"
+							},
+							{
+								"name": "targetHash",
+								"type": "uint32"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+							{
+								"name": "payload",
+								"type": "bytes"
+							},
+						],
+					},
+					"primaryType": "PaginatedUpsertSignaturePayloadV2",
+					"domain": karma_request_domain,
+					"message": {
+						"schemaId": 10,
+						"pageId": 5,
+						"targetHash": 1982672367,
+						"expiration": 100,
+						"payload": "0x0000f20f0efece05af6bee4fe6b24db6febe6988d24f62015e23d1f1ce9b7040301a8a3cefc00c1162067f70d004ed86588cd6183b3564b9d92e9924cba2244a9e9f85e334e1b8bb5e8f770a81866c4c406cfadaef2a8f93bf8b89a5f4efce86a3cfc1ff4d93a8d362d630bf16ac5766de75c5fef57af69b147cb629ad8c1359691c9ab6f5380527e3c18d71b0480747a9628693b86473f1e7f01abe5bb7eadb76fad361669241e74bffed13b49e5c7dd08a8d3a7722bcbfad494627256c7e77f2c9b2b596a5f468a82e06f5905d13707355e2dd77d9b9480ec959a7f870b68fce122ddad81e06fe4dec48e01206df9e6e3a4e0d928b722220ec199d22324fb2ce6a8b6581175476d940bd499435091c0b0b3d0303e3bf60732ff8e898223a39aa8623cf33a1623af2cfc8d6fc83f4b53ed32ef4fdab29035150d9dc3b7e60ac91fb1fbb6895a007913fee3940c8f8e3ececcf50b3076b65c62f8bd8c039f90182d89bf4c0a2f426e957a8732a9936f8a0aab8b3c18183eb605f5a0bac859eb7d6d88eea4c02444116a6dec0a790d83abce10de20bb29c3f980864eb23f555422ff36421e14df39bb53606cbb4dda195c321ce4fa4fc7143ac267ae811b6949d51f521ddaf08a3663dd3a1eb2b783b31dcbfc830f6f542499857767c39fb85a29ebf175e0f0877e89a9e564307a7d7eb9d1f8401f0a65382cfc051fa5d34829381f624e2a556e2c3002eea63e50ad8463bf8ac6096249983f8d1925c0d9392e67203be98daae7305b52962b95fbeca76c7db2ceec6208d21efb68350aedec3a48cba0c9112c93efb98d363dfa26471b163b05d1655f0af7d867fd25dcc4d5e1a5cb3934586ba7a418f489439f3f551c1017bde009dba49dbc132c7066eecea25e2e231491f136a1fe9a83f0f1091c7e9b2cf8d24541fe21af50a46e6537f80ed2065da8842b928cb27ec23169c129863d5540f05a4dac070f3c834cfe998503f4a42a7ae4e2b1ef694e7600027e48721560d8d66a46c5ac7899d71985c7ccb60d4225cd08307c497138b6cbb00803cf9be1251798c6ddd8c972f78455a43acc7bf6278dda25946dc8638c20042ba333ee6e6da605bb05b1d01c5715c1723a2d6147eca637f6a7f50b807476e482c29769e1b94b43ac7b1921e99c60c795cf034a706c28befbcbe448f926ca212eb4607157dd9dd30c89b9a885202789b2ac9a6e030c1d87d5341c59b64105a88caa13cdcc42bbdda752169234e39d94f6aadcfdd99e80e9eb3a10ea5a80ba4825370ad9935d5b8cda568d2c7db63a8e016cb78bd0d657f5d1f6916fb48a3678d973dc8835a49f5e2a0ff07698c360492f568def07397129d290a86cefd0524c826b73e85c48a8e525aafe77bd0c1e9a0c2a4a4ea96343adfe81fad9ef12200ed90c6c476906d710e16d3af77a4e18164"
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('paginated_delete_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"PaginatedDeleteSignaturePayloadV2": [
+							{
+								"name": "schemaId",
+								"type": "uint16"
+							},
+							{
+								"name": "pageId",
+								"type": "uint16"
+							},
+							{
+								"name": "targetHash",
+								"type": "uint32"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+						],
+					},
+					"primaryType": "PaginatedDeleteSignaturePayloadV2",
+					"domain": karma_request_domain,
+					"message": {
+						"schemaId": 10,
+						"pageId": 5,
+						"targetHash": 1982672367,
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('passkey_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"PasskeyPublicKey": [
+							{
+								"name": "publicKey",
+								"type": "bytes"
+							},
+						],
+					},
+					"primaryType": "PasskeyPublicKey",
+					"domain": karma_request_domain,
+					"message": {
+						"publicKey": '0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026',
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('handle_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"ClaimHandlePayload": [
+							{
+								"name": "handle",
+								"type": "string"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+						],
+					},
+					"primaryType": "ClaimHandlePayload",
+					"domain": karma_request_domain,
+					"message": {
+						"handle": 'Alice',
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('add_key_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"AddKeyData": [
+							{
+								"name": "msaId",
+								"type": "uint64"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+							{
+								"name": "newPublicKey",
+								"type": "address"
+							},
+						],
+					},
+					"primaryType": "AddKeyData",
+					"domain": karma_request_domain,
+					"message": {
+						"msaId": 12876327,
+						"expiration": 100,
+						"newPublicKey": '0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9',
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('add_provider_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"AddProvider": [
+							{
+								"name": "authorizedMsaId",
+								"type": "uint64"
+							},
+							{
+								"name": "schemaIds",
+								"type": "uint16[]"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+						],
+					},
+					"primaryType": "AddProvider",
+					"domain": karma_request_domain,
+					"message": {
+						"authorizedMsaId": 12876327,
+						"schemaIds": [2,4,5,6,7,8],
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+		}
+		main()
+	</script>
+</head>
+<body>
+<button id="itemized_request">Itemized Sign</button>
+<button id="paginated_upsert_request">Paginated Upsert Sign</button>
+<button id="paginated_delete_request">Paginated Delete Sign</button>
+<br><br>
+<button id="passkey_request">Passkey Sign</button>
+<br><br>
+<button id="handle_request">Handle Sign</button>
+<br><br>
+<button id="add_key_request">AddKey Sign</button>
+<button id="add_provider_request">AddProvider Sign</button>
+</body>
+</html>

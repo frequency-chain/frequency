@@ -28,6 +28,7 @@ pallet-transaction-payment = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../../runtime/common", default-features = false }
+lazy_static = { workspace = true }
 
 [dev-dependencies]
 pallet-balances = { workspace = true }
