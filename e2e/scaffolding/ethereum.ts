@@ -55,6 +55,14 @@ export function getUnifiedPublicKey(pair: KeyringPair): Uint8Array {
   return pair.publicKey;
 }
 
+export function reverseUnifiedAddressToEthereumAddress(unifiedAddress: Uint8Array) : String {
+  let hex = Buffer.from(unifiedAddress).toString("hex");
+  if (!hex.toLowerCase().endsWith("eeeeeeeeeeeeeeeeeeeeeeee")) {
+    throw new Error(`Address ${hex} is not reversible!`);
+  }
+  return `0x${hex.substring(0, 40)}`;
+}
+
 /**
  * This custom signer can get used to mimic EIP-191 message signing. By replacing the `ethereumPair.sign` with
  * any wallet call we can sign any extrinsic with any wallet

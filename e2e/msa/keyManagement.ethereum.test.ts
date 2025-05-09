@@ -6,7 +6,7 @@ import {
   generateAddKeyPayload,
   CENTS,
   signPayload,
-  MultiSignatureType,
+  MultiSignatureType, signEip712AddKeyData, getKeyPairFromName,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -20,8 +20,10 @@ const fundingSource = getFundingSource(import.meta.url);
 
 describe('MSA Key management Ethereum', function () {
   describe('addPublicKeyToMsa Ethereum', function () {
+    let keysName: string;
     let keys: KeyringPair;
     let msaId: u64;
+    let secondaryKeyName: string;
     let secondaryKey: KeyringPair;
     const defaultPayload: AddKeyData = {};
     let payload: AddKeyData;
@@ -32,12 +34,14 @@ describe('MSA Key management Ethereum', function () {
 
     before(async function () {
       // Setup an MSA with one key and a secondary funded key
-      keys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      keysName = "key-management-1";
+      keys = await createAndFundKeypair(fundingSource, 5n * CENTS, keysName, undefined, 'ethereum');
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
 
-      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      secondaryKeyName = "key-management-2";
+      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS, secondaryKeyName, undefined, 'ethereum');
 
       // Default payload making it easier to test `addPublicKeyToMsa`
       defaultPayload.msaId = msaId;
@@ -117,6 +121,24 @@ describe('MSA Key management Ethereum', function () {
 
       // Cleanup
       await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
+    });
+
+    it('should allow using eip-712 signatures to add a new key', async function () {
+      const thirdKeyName = 'eth-key-3';
+      const ethereumKeys3 = createKeys(thirdKeyName, 'ethereum');
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        newPublicKey: getUnifiedPublicKey(ethereumKeys3),
+      });
+
+      ownerSig = await signEip712AddKeyData(getKeyPairFromName(secondaryKeyName), newPayload);
+      newSig = await signEip712AddKeyData(getKeyPairFromName(thirdKeyName), newPayload);
+      const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
+      const { target: event } = await op.fundAndSend(fundingSource);
+      assert.notEqual(event, undefined, 'should have added public key via eip-712');
+
+      // Cleanup
+      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(ethereumKeys3)).signAndSend());
     });
   });
 });
