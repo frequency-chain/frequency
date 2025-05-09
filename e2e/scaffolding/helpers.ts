@@ -3,7 +3,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
 import { Codec } from '@polkadot/types/types';
-import { u8aToHex, u8aWrapBytes} from '@polkadot/util';
+import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import {
   verbose,
@@ -39,9 +39,9 @@ import { getUnifiedAddress, reverseUnifiedAddressToEthereumAddress } from './eth
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
 import { ethers } from 'ethers';
-import { secp256k1PairFromSeed } from "@polkadot/util-crypto/secp256k1/pair/fromSeed";
-import { Keypair }  from "@polkadot/util-crypto/types";
-import { keccak256 } from "@polkadot/wasm-crypto";
+import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
+import { Keypair } from '@polkadot/util-crypto/types';
+import { keccak256 } from '@polkadot/wasm-crypto';
 
 export interface Account {
   uri: string;
@@ -105,26 +105,26 @@ export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType 
 export async function signEip712AddKeyData(keys: Keypair, payload: AddKeyData): Promise<MultiSignatureType> {
   // Define the domain separator
   const domain = {
-    name: "Frequency",
-    version: "1",
-    chainId: "0x190F1B44",
-    verifyingContract: "0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC"
+    name: 'Frequency',
+    version: '1',
+    chainId: '0x190F1B44',
+    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
   };
 
-// Define the types for your structured data
+  // Define the types for your structured data
   const types = {
     AddKeyData: [
       {
-        name: "msaId",
-        type: "uint64"
+        name: 'msaId',
+        type: 'uint64',
       },
       {
-        name: "expiration",
-        type: "uint32"
+        name: 'expiration',
+        type: 'uint32',
       },
       {
-        name: "newPublicKey",
-        type: "address"
+        name: 'newPublicKey',
+        type: 'address',
       },
     ],
   };
@@ -136,7 +136,7 @@ export async function signEip712AddKeyData(keys: Keypair, payload: AddKeyData): 
   };
 
   // Create a wallet instance from the private key
-  const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString("hex"));
+  const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString('hex'));
   const signature = await wallet.signTypedData(domain, types, data);
   return { Ecdsa: signature } as EcdsaSignature;
 }
@@ -273,13 +273,13 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
   // metadata specified
   const keyring = new Keyring({ type: keyType });
   let keypair;
-  if (keyType === "ethereum") {
-     // since we don't have access to the secret key from inside the KeyringPair
-     // we need a deterministic way to generate secret keys, so we can access them
-     const pair = getKeyPairFromName(name);
-     keypair = keyring.addFromPair(pair, {}, keyType);
+  if (keyType === 'ethereum') {
+    // since we don't have access to the secret key from inside the KeyringPair
+    // we need a deterministic way to generate secret keys, so we can access them
+    const pair = getKeyPairFromName(name);
+    keypair = keyring.addFromPair(pair, {}, keyType);
   } else {
-     keypair = keyring.addFromUri(mnemonic, { name }, keyType);
+    keypair = keyring.addFromUri(mnemonic, { name }, keyType);
   }
 
   createdKeys.set(getUnifiedAddress(keypair), keypair);
@@ -287,7 +287,7 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
 }
 
 export function getKeyPairFromName(name: string): Keypair {
-  const seed = keccak256(Buffer.from(name, "utf8"));
+  const seed = keccak256(Buffer.from(name, 'utf8'));
   return secp256k1PairFromSeed(seed);
 }
 

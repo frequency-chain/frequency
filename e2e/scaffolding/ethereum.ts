@@ -55,9 +55,9 @@ export function getUnifiedPublicKey(pair: KeyringPair): Uint8Array {
   return pair.publicKey;
 }
 
-export function reverseUnifiedAddressToEthereumAddress(unifiedAddress: Uint8Array) : string {
-  const hex = Buffer.from(unifiedAddress).toString("hex");
-  if (!hex.toLowerCase().endsWith("eeeeeeeeeeeeeeeeeeeeeeee")) {
+export function reverseUnifiedAddressToEthereumAddress(unifiedAddress: Uint8Array): string {
+  const hex = Buffer.from(unifiedAddress).toString('hex');
+  if (!hex.toLowerCase().endsWith('ee'.repeat(12))) {
     throw new Error(`Address ${hex} is not reversible!`);
   }
   return `0x${hex.substring(0, 40)}`;

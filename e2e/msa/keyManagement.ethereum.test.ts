@@ -6,7 +6,9 @@ import {
   generateAddKeyPayload,
   CENTS,
   signPayload,
-  MultiSignatureType, signEip712AddKeyData, getKeyPairFromName,
+  MultiSignatureType,
+  signEip712AddKeyData,
+  getKeyPairFromName,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -34,13 +36,13 @@ describe('MSA Key management Ethereum', function () {
 
     before(async function () {
       // Setup an MSA with one key and a secondary funded key
-      keysName = "key-management-1";
+      keysName = 'key-management-1';
       keys = await createAndFundKeypair(fundingSource, 5n * CENTS, keysName, undefined, 'ethereum');
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
 
-      secondaryKeyName = "key-management-2";
+      secondaryKeyName = 'key-management-2';
       secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS, secondaryKeyName, undefined, 'ethereum');
 
       // Default payload making it easier to test `addPublicKeyToMsa`
@@ -138,7 +140,9 @@ describe('MSA Key management Ethereum', function () {
       assert.notEqual(event, undefined, 'should have added public key via eip-712');
 
       // Cleanup
-      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(ethereumKeys3)).signAndSend());
+      await assert.doesNotReject(
+        ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(ethereumKeys3)).signAndSend()
+      );
     });
   });
 });
