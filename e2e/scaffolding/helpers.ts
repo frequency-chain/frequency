@@ -130,7 +130,7 @@ export async function signEip712AddKeyData(keys: Keypair, payload: AddKeyData): 
   };
 
   const data = {
-    msaId: payload.msaId.toNumber(),
+    msaId: payload.msaId?.toNumber(),
     expiration: payload.expiration,
     newPublicKey: reverseUnifiedAddressToEthereumAddress(payload.newPublicKey),
   };
