@@ -262,6 +262,7 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 
 // Keep track of all the funded keys so that we can drain them at the end of the test
 const createdKeys = new Map<string, KeyringPair>();
+const ethereumKeys = new Map<string, Keypair>();
 
 export function drainFundedKeys(dest: KeyringPair) {
   return drainKeys([...createdKeys.values()], dest);
@@ -272,23 +273,22 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
   // create & add the pair to the keyring with the type and some additional
   // metadata specified
   const keyring = new Keyring({ type: keyType });
-  let keypair;
+  let keyringPair;
   if (keyType === 'ethereum') {
     // since we don't have access to the secret key from inside the KeyringPair
-    // we need a deterministic way to generate secret keys, so we can access them
-    const pair = getKeyPairFromName(name);
-    keypair = keyring.addFromPair(pair, {}, keyType);
+    const keypair = secp256k1PairFromSeed(keccak256(Buffer.from(mnemonic, 'utf8')));
+    keyringPair = keyring.addFromPair(keypair, {}, keyType);
+    ethereumKeys.set(getUnifiedAddress(keyringPair), keypair);
   } else {
-    keypair = keyring.addFromUri(mnemonic, { name }, keyType);
+    keyringPair = keyring.addFromUri(mnemonic, { name }, keyType);
   }
 
-  createdKeys.set(getUnifiedAddress(keypair), keypair);
-  return keypair;
+  createdKeys.set(getUnifiedAddress(keyringPair), keyringPair);
+  return keyringPair;
 }
 
-export function getKeyPairFromName(name: string): Keypair {
-  const seed = keccak256(Buffer.from(name, 'utf8'));
-  return secp256k1PairFromSeed(seed);
+export function getEthereumKeyPairFromUnifiedAddress(unifiedAddress: string): Keypair {
+  return ethereumKeys.get(unifiedAddress) as Keypair;
 }
 
 function canDrainAccount(info: FrameSystemAccountInfo): boolean {
