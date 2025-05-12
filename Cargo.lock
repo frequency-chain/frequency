@@ -4064,6 +4064,7 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "system-runtime-api",
+ "xcm-runtime-apis",
 ]
 
 [[package]]
