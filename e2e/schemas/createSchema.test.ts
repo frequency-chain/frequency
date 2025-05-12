@@ -140,6 +140,9 @@ describe('#createSchema', function () {
     assert.notEqual(createSchemaEvent2, undefined);
     assert.notEqual(eventMap2['schemas.SchemaNameCreated'], undefined);
 
+    // Make sure we are finalized before trying to get from the RPC
+    await ExtrinsicHelper.waitForFinalization();
+
     const versions = await ExtrinsicHelper.apiPromise.rpc.schemas.getVersions(namespace);
     assert(versions.isSome);
     const versions_response_value = versions.unwrap();

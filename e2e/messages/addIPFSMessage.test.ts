@@ -33,22 +33,27 @@ describe('Add Offchain Message', function () {
 
     keys = await createAndFundKeypair(fundingSource);
 
-    // Create a new MSA
-    const createMsa = ExtrinsicHelper.createMsa(keys);
-    await createMsa.fundAndSend(fundingSource);
+    [
+      // Create a schema for IPFS
+      schemaId,
+      // Create a dummy on-chain schema
+      dummySchemaId,
+    ] = await Promise.all([
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        PARQUET_BROADCAST,
+        'Parquet',
+        'IPFS',
+        [],
+        'test.addIPFSMessage'
+      ),
+      getOrCreateDummySchema(fundingSource),
+      // Create a new MSA
+      ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
+    ]);
 
-    // Create a schema for IPFS
-    schemaId = (await ExtrinsicHelper.getOrCreateSchemaV3(
-      fundingSource,
-      PARQUET_BROADCAST,
-      'Parquet',
-      'IPFS',
-      [],
-      'test.addIPFSMessage'
-    ))!;
-
-    // Create a dummy on-chain schema
-    dummySchemaId = await getOrCreateDummySchema(fundingSource);
+    // Make sure we are finalized before tests
+    await ExtrinsicHelper.waitForFinalization();
   });
 
   it('should fail if insufficient funds', async function () {

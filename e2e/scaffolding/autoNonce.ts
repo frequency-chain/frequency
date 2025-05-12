@@ -146,8 +146,7 @@ const auto = (keys: KeyringPair, inputNonce: AutoNonce = 'auto'): Promise<number
       return current(keys);
     default:
       // Use a manual nonce if it is a number
-      const address = getUnifiedAddress(keys);
-      setAddressNonce(address, inputNonce + 1);
+      setAddressNonce(getUnifiedAddress(keys), inputNonce + 1);
       return Promise.resolve(inputNonce);
   }
 };
