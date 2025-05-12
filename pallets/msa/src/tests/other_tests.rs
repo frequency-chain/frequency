@@ -806,6 +806,7 @@ fn ethereum_eip712_signatures_for_add_key_should_work() {
 			signature_raw.try_into().expect("should convert"),
 		));
 
+		// Non-compressed public key associated with the keypair used in Metamask
 		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
 		let public_key = ecdsa::Public::from_raw(
 			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
@@ -834,6 +835,7 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 			signature_raw.try_into().expect("should convert"),
 		));
 
+		// Non-compressed public key associated with the keypair used in Metamask
 		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
 		let public_key = ecdsa::Public::from_raw(
 			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
