@@ -53,7 +53,7 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 		let converted_public_key = T::ConvertIntoAccountId32::convert(self.new_public_key.clone());
 		let mut zero_prefixed_address = [0u8; 32];
 		zero_prefixed_address[12..]
-			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key));
+			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key).0);
 		let message = sp_io::hashing::keccak_256(
 			&[
 				MAIN_TYPE_HASH.as_slice(),

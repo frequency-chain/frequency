@@ -21,7 +21,7 @@ use sp_runtime::{
 	MultiSignature,
 };
 extern crate alloc;
-use crate::utils::to_abi_compatible_number;
+use crate::{msa::H160, utils::to_abi_compatible_number};
 use alloc::boxed::Box;
 
 /// Ethereum message prefix eip-191
@@ -36,7 +36,7 @@ pub trait AccountAddressMapper<AccountId> {
 	fn to_bytes32(public_key_or_address: &[u8]) -> [u8; 32];
 
 	/// reverses an accountId to it's 20 byte ethereum address
-	fn to_ethereum_address(account_id: AccountId) -> [u8; 20];
+	fn to_ethereum_address(account_id: AccountId) -> H160;
 }
 
 /// converting raw address bytes to 32 bytes Ethereum compatible addresses
@@ -87,12 +87,14 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 		hashed
 	}
 
-	fn to_ethereum_address(account_id: AccountId32) -> [u8; 20] {
+	fn to_ethereum_address(account_id: AccountId32) -> H160 {
 		let mut eth_address = [0u8; 20];
 		if account_id.as_slice()[20..] == *[0xEE; 12].as_slice() {
 			eth_address[..].copy_from_slice(&account_id.as_slice()[0..20]);
+		} else {
+			log::error!("Incompatible ethereum account id is provided {:?}", account_id);
 		}
-		eth_address
+		eth_address.into()
 	}
 }
 
@@ -525,7 +527,7 @@ mod tests {
 				.expect("should be hex");
 		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
 		assert_eq!(bytes.to_vec(), expected_address);
-		assert_eq!(reversed.to_vec(), eth);
+		assert_eq!(reversed.0.to_vec(), eth);
 	}
 
 	#[test]
