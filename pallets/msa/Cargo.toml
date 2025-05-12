@@ -25,6 +25,7 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-weights = { workspace = true }
+pallet-balances = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 serde = { workspace = true, features = ["derive"] }

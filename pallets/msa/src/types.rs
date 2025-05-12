@@ -16,7 +16,9 @@ use scale_info::TypeInfo;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
+/// A type definition for the payload for the following operations:
+/// -  Adding an MSA key - `pallet_msa::add_public_key_to_msa`
+/// -  Authorizing a token withdrawal to an address associated with a public key - `pallet_msa::withdraw_tokens`
 #[derive(
 	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
 )]
@@ -24,7 +26,7 @@ pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 pub struct AddKeyData<T: Config> {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
-	/// The block number at which the signed proof for add_public_key_to_msa expires.
+	/// The block number at which a signed proof of this payload expires.
 	pub expiration: BlockNumberFor<T>,
 	/// The public key to be added.
 	pub new_public_key: T::AccountId,

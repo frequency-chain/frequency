@@ -587,6 +587,8 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+	// The Currency type for managing MSA token balances
+	type Currency = Balances;
 }
 
 parameter_types! {

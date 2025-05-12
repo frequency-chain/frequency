@@ -913,4 +913,16 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
   }
+
+  public static withdrawTokens(
+    keys: KeyringPair,
+    ownerKeys: KeyringPair,
+    ownerSignature: MultiSignatureType,
+    payload: AddKeyData
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.withdrawTokens(getUnifiedPublicKey(ownerKeys), ownerSignature, payload),
+      keys
+    );
+  }
 }

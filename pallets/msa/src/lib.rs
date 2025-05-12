@@ -34,7 +34,13 @@
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
-	traits::IsSubType,
+	traits::{
+		tokens::{
+			fungible::{Inspect as InspectFungible, Mutate},
+			Fortitude, Preservation,
+		},
+		IsSubType,
+	},
 };
 use lazy_static::lazy_static;
 use parity_scale_codec::{Decode, Encode};
@@ -53,6 +59,7 @@ use common_primitives::{
 	},
 	node::ProposalProvider,
 	schema::{SchemaId, SchemaValidator},
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -143,6 +150,9 @@ pub mod pallet {
 
 		/// The Council proposal provider interface
 		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
+
+		/// Currency type for managing MSA account balances
+		type Currency: Mutate<Self::AccountId> + InspectFungible<Self::AccountId>;
 	}
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -306,7 +316,7 @@ pub mod pallet {
 		/// MsaId values have reached the maximum
 		MsaIdOverflow,
 
-		/// Cryptographic signature verification failed for adding a key to MSA
+		/// Cryptographic signature verification failed
 		MsaOwnershipInvalidSignature,
 
 		/// Ony the MSA Owner may perform the operation
@@ -386,6 +396,15 @@ pub mod pallet {
 
 		/// Attempted to add a new signature to a corrupt signature registry
 		SignatureRegistryCorrupted,
+
+		/// MSA balance is zero (paid transaction) or insufficient to cover fees (free transaction)
+		InsufficientBalanceToWithdraw,
+
+		/// MSA balance to withdraw is insufficient to fund the destination account such that it would not be reaped
+		InsufficientBalanceToFundDestination,
+
+		/// Fund transfer error
+		UnexpectedTokenTransferError,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -907,6 +926,103 @@ pub mod pallet {
 				},
 			}
 
+			Ok(())
+		}
+
+		/// Withdraw all available tokens from the account associated with the MSA, to the account of the caller.
+		///
+		/// The `origin` parameter represents the account from which the function is called and must be the account receiving the tokens.
+		///
+		/// The function requires one signature: `msa_owner_proof`, which serve as proof that the owner of the MSA authorizes the transaction.
+		///
+		/// The necessary information for the withdrawal authorization, the destination account and the MSA ID, are contained in the `authorization_payload` parameter of type [AddKeyData].
+		/// It also contains an expiration block number for the proof, ensuring it is valid and must be greater than the current block.
+		///
+		/// # Events
+		/// * [`pallet_balances::<T>::Transfer`]
+		///
+		/// # Errors
+		///
+		/// * [`Error::NotKeyOwner`] - the transaction signer origin is not the owner of the public key contained in the provided `authorization_payload`
+		/// * [`Error::MsaOwnershipInvalidSignature`] - `msa_owner_public_key` is not a valid signer of the provided `authorization_payload`.
+		/// * [`Error::NoKeyExists`] - the public key supplied in `msa_owner_public_key` is not a registered control key of any MSA.
+		/// * [`Error::NotMsaOwner`] - the MSA ID in `authorization_payload` does not match the MSA ID of the `msa_owner_public_key`.
+		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` block number set in `AddKeyData`.
+		/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
+		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
+		/// * [`Error::InsufficientBalanceToWithdraw`] - the MSA account has not balance to withdraw
+		/// * [`Error::InsufficientBalanceToFundDestination`] - the transfer would result in an account that would be reaped due to existential balance requirements
+		/// * [`Error::UnexpectedTokenTransferError`] - the balances pallet threw an error during the attempted transfer
+		///
+		#[pallet::call_index(14)]
+		#[pallet::weight(T::WeightInfo::withdraw_tokens())]
+		pub fn withdraw_tokens(
+			origin: OriginFor<T>,
+			msa_owner_public_key: T::AccountId,
+			msa_owner_proof: MultiSignature,
+			authorization_payload: AddKeyData<T>,
+		) -> DispatchResult {
+			let public_key = ensure_signed(origin)?;
+
+			ensure!(public_key == authorization_payload.new_public_key, Error::<T>::NotKeyOwner);
+
+			ensure!(
+				Self::verify_signature(
+					&msa_owner_proof,
+					&msa_owner_public_key,
+					authorization_payload.encode()
+				),
+				Error::<T>::MsaOwnershipInvalidSignature
+			);
+
+			Self::register_signature(&msa_owner_proof, authorization_payload.expiration)?;
+
+			let msa_id = authorization_payload.msa_id;
+
+			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
+
+			// TODO
+			// - Get account address for MSA
+			let msa_address = Self::msa_id_to_eth_address(msa_id);
+
+			// - Convert to AccountId
+			// let msa_account_id: T::AccountId  = <T as AccountIdMapper>::to_account_id(&msa_address.0);
+			// log::warn!("MSA account ID: {:?}", msa_account_id);
+			// let msa_address32: AccountId32 = EthereumAddressMapper::to_bytes32(&msa_address.0);
+			let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
+			let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
+
+			// - Check that the MSA has a balance to withdraw
+			let msa_balance = T::Currency::reducible_balance(
+				&msa_account_id,
+				Preservation::Expendable,
+				Fortitude::Polite,
+			);
+			ensure!(msa_balance > Zero::zero(), Error::<T>::InsufficientBalanceToWithdraw);
+
+			// - TODO: Phase 2 (free transaction w/fee paid from proceeds): Check that MSA balance is > fee
+
+			let ed = T::Currency::minimum_balance();
+			// Make sure either:
+			// - Balance to be transferred > existential deposit, OR
+			// - Destination account balance  + ammount to be transferred > existential deposit
+			let amount_alone_is_insufficient = msa_balance < ed;
+			let dest_will_be_reaped = if amount_alone_is_insufficient {
+				let dest_balance = T::Currency::total_balance(&public_key);
+				(dest_balance + msa_balance) < ed
+			} else {
+				amount_alone_is_insufficient
+			};
+
+			ensure!(!dest_will_be_reaped, Error::<T>::InsufficientBalanceToFundDestination);
+
+			let result = <T as pallet::Config>::Currency::transfer(
+				&msa_account_id,
+				&public_key,
+				msa_balance,
+				Preservation::Expendable,
+			);
+			ensure!(result.is_ok(), Error::<T>::UnexpectedTokenTransferError);
 			Ok(())
 		}
 	}

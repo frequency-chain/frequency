@@ -116,7 +116,7 @@ export async function getBlockNumber(): Promise<number> {
 
 let cacheED: null | bigint = null;
 
-export async function getExistentialDeposit(): Promise<bigint> {
+export function getExistentialDeposit(): bigint {
   if (cacheED !== null) return cacheED;
   return (cacheED = ExtrinsicHelper.api.consts.balances.existentialDeposit.toBigInt());
 }

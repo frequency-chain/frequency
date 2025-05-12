@@ -1,14 +1,24 @@
-/* eslint-disable mocha/no-skipped-tests */
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { ethereumAddressToKeyringPair } from '../scaffolding/ethereum';
+import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { ethereumAddressToKeyringPair, getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
 import { bnToU8a, hexToU8a, stringToU8a } from '@polkadot/util';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { keccak256AsU8a } from '@polkadot/util-crypto';
-import { getExistentialDeposit } from '../scaffolding/helpers';
+import {
+  CENTS,
+  createAndFundKeypair,
+  createKeys,
+  DOLLARS,
+  generateAddKeyPayload,
+  getExistentialDeposit,
+  signPayloadSr25519,
+  Sr25519Signature,
+} from '../scaffolding/helpers';
+import { u64 } from '@polkadot/types';
+import { Codec } from '@polkadot/types/types';
 
 const fundingSource = getFundingSource(import.meta.url);
 
@@ -81,7 +91,7 @@ describe('MSAs Holding Tokens', function () {
 
   describe('Send tokens to MSA', function () {
     it('should send tokens to the MSA', async function () {
-      const ed = await getExistentialDeposit();
+      const ed = getExistentialDeposit();
       const transferAmount = 1n + ed;
       let accountData = await ExtrinsicHelper.getAccountInfo(ethKeys);
       const initialBalance = accountData.data.free.toBigInt();
@@ -100,6 +110,160 @@ describe('MSAs Holding Tokens', function () {
         finalBalance,
         initialBalance + transferAmount,
         'Final balance should be increased by transfer amount'
+      );
+    });
+  });
+
+  describe('withdrawTokens', function () {
+    let keys: KeyringPair;
+    let msaId: u64;
+    let msaAddress: H160;
+    let secondaryKey: KeyringPair;
+    const defaultPayload: AddKeyData = {};
+    let payload: AddKeyData;
+    let ownerSig: Sr25519Signature;
+    let badSig: Sr25519Signature;
+    let addKeyData: Codec;
+
+    before(async function () {
+      // Setup an MSA with tokens
+      keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
+      assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
+      msaId = target!.data.msaId;
+
+      const { accountId } = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId);
+      msaAddress = accountId;
+
+      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS);
+
+      // Default payload making it easier to test `withdrawTokens`
+      defaultPayload.msaId = msaId;
+      defaultPayload.newPublicKey = getUnifiedPublicKey(secondaryKey);
+    });
+
+    beforeEach(async function () {
+      payload = await generateAddKeyPayload(defaultPayload);
+    });
+
+    it('should fail if origin is not address contained in the payload (NotKeyOwner)', async function () {
+      const badPayload = { ...payload, newPublicKey: getUnifiedAddress(createKeys()) }; // Invalid MSA ID
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', badPayload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, badPayload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'NotKeyOwner',
+      });
+    });
+
+    it('should fail if MSA owner signature is invalid (MsaOwnershipInvalidSignature)', async function () {
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+      badSig = signPayloadSr25519(createKeys(), addKeyData); // Invalid signature
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, badSig, payload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'MsaOwnershipInvalidSignature',
+      });
+    });
+
+    it('should fail if expiration has passed (ProofHasExpired)', async function () {
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber(),
+      });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'ProofHasExpired',
+      });
+    });
+
+    it('should fail if expiration is not yet valid (ProofNotYetValid)', async function () {
+      const maxMortality = ExtrinsicHelper.api.consts.msa.mortalityWindowSize.toNumber();
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 999,
+      });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'ProofNotYetValid',
+      });
+    });
+
+    it('should fail if payload signer does not control the MSA in the signed payload (NotMsaOwner)', async function () {
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        msaId: new u64(ExtrinsicHelper.api.registry, 9999),
+      });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'NotMsaOwner',
+      });
+    });
+
+    it('should fail if payload signer is not an MSA control key (NoKeyExists)', async function () {
+      const badSigner = createKeys();
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        msaId: new u64(ExtrinsicHelper.api.registry, 9999),
+      });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(badSigner, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, badSigner, ownerSig, newPayload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'NoKeyExists',
+      });
+    });
+
+    it('should fail if MSA does not have a balance', async function () {
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, payload);
+      await assert.rejects(op.fundAndSend(fundingSource), {
+        name: 'InsufficientBalanceToWithdraw',
+      });
+    });
+
+    it('should succeed', async function () {
+      // Fund receiver with known amount to pay for transaction
+      const startingAmount = 1n * DOLLARS;
+      const transferAmount = 1n * DOLLARS;
+      const tertiaryKeys = await createAndFundKeypair(fundingSource, startingAmount);
+      const {
+        data: { free: startingBalance },
+      } = await ExtrinsicHelper.getAccountInfo(tertiaryKeys);
+
+      // Send tokens to MSA
+      try {
+        const { target: transferEvent } = await ExtrinsicHelper.transferFunds(
+          fundingSource,
+          ethereumAddressToKeyringPair(msaAddress),
+          transferAmount
+        ).signAndSend();
+        assert.notEqual(transferEvent, undefined, 'should have transferred tokens to MSA');
+      } catch (err: any) {
+        console.error('Error sending tokens to MSA', err.message);
+      }
+
+      const newPayload = await generateAddKeyPayload({ ...payload, newPublicKey: getUnifiedPublicKey(tertiaryKeys) });
+      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
+      ownerSig = signPayloadSr25519(keys, addKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(tertiaryKeys, keys, ownerSig, newPayload);
+      const { eventMap } = await op.fundAndSend(fundingSource);
+      const feeAmount = (eventMap['transactionPayment.TransactionFeePaid'].data as unknown as any).actualFee;
+
+      // Destination account should have had balance increased
+      const {
+        data: { free: endingBalance },
+      } = await ExtrinsicHelper.getAccountInfo(tertiaryKeys);
+
+      assert(
+        startingBalance.toBigInt() + transferAmount - feeAmount.toBigInt() === endingBalance.toBigInt(),
+        'balance of recieve should have increased by the transfer amount minus fee'
       );
     });
   });
