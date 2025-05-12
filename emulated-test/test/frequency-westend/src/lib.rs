@@ -14,9 +14,9 @@ mod imports {
 
 	// Cumulus
 	pub use asset_test_utils::xcm_helpers;
-	pub use emulated_integration_tests_common::xcm_emulator::{
+	pub use emulated_integration_tests_common::{xcm_emulator::{
 		assert_expected_events, bx, Chain, Parachain as Para, RelayChain as Relay, Test, TestArgs,
-		TestContext, TestExt,
+		TestContext, TestExt,}, RESERVABLE_ASSET_ID,
 	};
 	pub use parachains_common::Balance;
 	pub use westend_system_emulated_network::{

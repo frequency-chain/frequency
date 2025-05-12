@@ -33,60 +33,35 @@ pub fn frequency_to_asset_hub_sender_assertions(t: FrequencyToAssetHubTest) {
 	}
 }
 
-pub fn frequency_to_asset_hub_receiver_assertions(t: FrequencyToAssetHubTest) {
+fn frequency_to_asset_hub_receiver_assertions(t: FrequencyToAssetHubTest) {
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
+	let sov_frequency_on_ahr = AssetHubWestend::sovereign_account_id_of(
+		AssetHubWestend::sibling_location_of(FrequencyWestend::para_id()),
+	);
 	AssetHubWestend::assert_xcmp_queue_success(None);
-
-	let sov_acc_of_frequency = AssetHubWestend::sovereign_account_id_of(t.args.dest.clone());
-	for (idx, asset) in t.args.assets.into_inner().into_iter().enumerate() {
-		let expected_id = asset.id.0.clone().try_into().unwrap();
-		let asset_amount = if let Fungible(a) = asset.fun { Some(a) } else { None }.unwrap();
-		if idx == t.args.fee_asset_item as usize {
-			assert_expected_events!(
-				AssetHubWestend,
-				vec![
-					// Amount of native is withdrawn from Parachain's Sovereign account
-					RuntimeEvent::Balances(
-						pallet_balances::Event::Burned { who, amount }
-					) => {
-						who: *who == sov_acc_of_frequency.clone().into(),
-						amount: *amount == asset_amount,
-					},
-					RuntimeEvent::Balances(pallet_balances::Event::Minted { who, .. }) => {
-						who: *who == t.receiver.account_id,
-					},
-				]
-			);
-		} else {
-			assert_expected_events!(
-				AssetHubWestend,
-				vec![
-					// Amount of foreign asset is transferred from Parachain's Sovereign account
-					// to Receiver's account
-					RuntimeEvent::ForeignAssets(
-						pallet_assets::Event::Burned { asset_id, owner, balance },
-					) => {
-						asset_id: *asset_id == expected_id,
-						owner: *owner == sov_acc_of_frequency,
-						balance: *balance == asset_amount,
-					},
-					RuntimeEvent::ForeignAssets(
-						pallet_assets::Event::Issued { asset_id, owner, amount },
-					) => {
-						asset_id: *asset_id == expected_id,
-						owner: *owner == t.receiver.account_id,
-						amount: *amount == asset_amount,
-					},
-				]
-			);
-		}
-	}
 	assert_expected_events!(
 		AssetHubWestend,
 		vec![
-			RuntimeEvent::MessageQueue(
-				pallet_message_queue::Event::Processed { success: true, .. }
-			) => {},
+			// Amount to reserve transfer is burned from Parachain's Sovereign account
+			RuntimeEvent::Assets(pallet_assets::Event::Burned { asset_id, owner, balance }) => {
+				asset_id: *asset_id == RESERVABLE_ASSET_ID,
+				owner: *owner == sov_frequency_on_ahr,
+				balance: *balance == t.args.amount,
+			},
+			// Fee amount is burned from Parachain's Sovereign account
+			RuntimeEvent::Balances(pallet_balances::Event::Burned { who, .. }) => {
+				who: *who == sov_frequency_on_ahr,
+			},
+			// Amount to reserve transfer is issued for beneficiary
+			RuntimeEvent::Assets(pallet_assets::Event::Issued { asset_id, owner, amount }) => {
+				asset_id: *asset_id == RESERVABLE_ASSET_ID,
+				owner: *owner == t.receiver.account_id,
+				amount: *amount == t.args.amount,
+			},
+			// Remaining fee amount is minted for for beneficiary
+			RuntimeEvent::Balances(pallet_balances::Event::Minted { who, .. }) => {
+				who: *who == t.receiver.account_id,
+			},
 		]
 	);
 }
@@ -130,6 +105,7 @@ const DOT_CENT: u128 = DOT_DOLLAR / 100;
 // =========================================================================
 /// Reserve Transfers of Frequency Native from Asset Hub to Frequency should work
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_frequency_to_asset_hub -p frequency-westend-integration-tests -- --nocapture
+// transfer_type=DestinationReserve
 #[test]
 fn reserve_transfer_dot_from_frequency_to_asset_hub() {
 	let amount_dot_to_send: Balance = AssetHubExistentialDeposit::get() * 1000;
@@ -175,7 +151,7 @@ fn reserve_transfer_dot_from_frequency_to_asset_hub() {
 
 	// Set assertions and dispatchables
 	test.set_assertion::<FrequencyWestend>(frequency_to_asset_hub_sender_assertions);
-	// test.set_assertion::<AssetHubWestend>(frequency_to_asset_hub_receiver_assertions);
+	test.set_assertion::<AssetHubWestend>(frequency_to_asset_hub_receiver_assertions);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_asset_hub_reserve_transfer_assets);
 	test.assert();
 
@@ -190,15 +166,12 @@ fn reserve_transfer_dot_from_frequency_to_asset_hub() {
 		<Balances as Inspect<_>>::balance(&FrequencyWestendSender::get())
 	});
 
-	println!("--------frequency_sender_native_before: {:?}", frequency_sender_native_before);
-	println!("---------frequency_sender_native_after: {:?}", frequency_sender_native_after);
-
 	// Sender's balance is reduced by amount sent 
-	assert_eq!(sender_dot_assets_after, sender_dot_assets_before - amount_dot_to_send);
+	assert!(sender_dot_assets_after < sender_dot_assets_before - amount_dot_to_send);
 	// // Receiver's balance is increased
-	// assert!(receiver_balance_after > receiver_balance_before);
+	assert!(receiver_balance_after > receiver_balance_before);
 	// // Receiver's balance increased by `amount_to_send - delivery_fees - bought_execution`;
 	// // `delivery_fees` might be paid from transfer or JIT, also `bought_execution` is unknown but
 	// // should be non-zero
-	// assert!(receiver_balance_after < receiver_balance_before + amount_to_send);
+	assert!(receiver_balance_after < receiver_balance_before + amount_dot_to_send);
 }

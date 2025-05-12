@@ -110,7 +110,7 @@ fn setup_foreign_asset_on_frequency() {
 // ======= Reserve Transfers - WSND Native Asset - AssetHub<>Frequency==========
 // =========================================================================
 /// Reserve Transfers of Frequency Native from Asset Hub to Frequency should work
-// RUST_BACKTRACE=1 RUST_LOG="runtime::system=trace,xcm=trace" cargo test tests::reserve::reserve_transfer_native_asset_from_asset_hub_to_para -p frequency-westend-integration-tests -- --nocapture
+//RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_asset_hub_to_frequency -p frequency-westend-integration-tests -- --nocapture
 #[test]
 fn reserve_transfer_dot_from_asset_hub_to_frequency() {
 	setup_foreign_asset_on_frequency();
