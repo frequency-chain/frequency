@@ -68,6 +68,7 @@ start-paseo-collator-alice)
   NODE_PARACHAIN_RPC_PORT=9943 ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --alice \
     --base-path=$parachain_dir_alice/data \
+    --state-pruning archive \
     --force-authoring \
     --discover-local \
     --port $((30333)) \
@@ -99,6 +100,7 @@ start-paseo-collator-bob)
     --base-path=$parachain_dir_bob/data \
     --discover-local \
     --force-authoring \
+    --state-pruning archive \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
