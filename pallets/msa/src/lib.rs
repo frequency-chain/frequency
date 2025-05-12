@@ -924,7 +924,7 @@ pub mod pallet {
 
 		/// set the expiration block for free key addition
 		/// requires permitted caller.
-		#[pallet::call_index(13)]
+		#[pallet::call_index(14)]
 		#[pallet::weight(T::WeightInfo::set_free_key_add_expiration())]
 		pub fn set_free_key_add_expiration(
 			origin: OriginFor<T>,
