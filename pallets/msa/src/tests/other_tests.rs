@@ -12,9 +12,8 @@ use crate::{
 	ensure,
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult,
-    Error, Event, ProviderToRegistryEntry, PublicKeyToMsaId,
-    FreeKeyAddExpirationBlock,
+	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
+	FreeKeyAddExpirationBlock, ProviderToRegistryEntry, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
 
@@ -31,10 +30,9 @@ use common_primitives::{
 use pretty_assertions::assert_eq;
 use sp_core::bytes::from_hex;
 use sp_runtime::{
-    DispatchError::BadOrigin,
-    traits::{IdentifyAccount, Verify}
+	traits::{IdentifyAccount, Verify},
+	DispatchError::BadOrigin,
 };
-use common_primitives::msa::MsaKeyProvider;
 
 extern crate alloc;
 use alloc::vec;

@@ -14,7 +14,7 @@ import {
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { setFreeKeyAddExpirationBLock } from '../scaffolding/helpers';
+import { setFreeKeyAddExpirationBlock } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
@@ -181,7 +181,7 @@ describe('MSA Key management', function () {
     it('adds a new public key for free if there is just one and its before the expiration block', async function () {
       // Set up
       const currentBlock = await getBlockNumber();
-      setFreeKeyAddExpirationBLock(getSudo().keys, currentBlock + 30);
+      setFreeKeyAddExpirationBlock(getSudo().keys, currentBlock + 30);
       // set a completely new msa id up so it doesn't conflict with anything else.
       const some_key = await createAndFundKeypair(fundingSource, 5n * CENTS);
       const { target } = await ExtrinsicHelper.createMsa(some_key).signAndSend();
@@ -210,7 +210,7 @@ describe('MSA Key management', function () {
       );
       assert.equal(chainEvents['balances.Withdraw'], undefined, 'should not have withdrawn a balance');
 
-      await setFreeKeyAddExpirationBLock(getSudo().keys, 0);
+      await setFreeKeyAddExpirationBlock(getSudo().keys, 0);
     });
   });
 
