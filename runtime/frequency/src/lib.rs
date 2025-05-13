@@ -93,7 +93,10 @@ use frame_support::{
 	Twox128,
 };
 
-use frame_system::{limits::{BlockLength, BlockWeights}, Account, EnsureRoot, EnsureSigned};
+use frame_system::{
+	limits::{BlockLength, BlockWeights},
+	EnsureRoot, EnsureSigned,
+};
 
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -607,12 +610,11 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
-		// Who is allowed to set the FreeKeyAddExpiration block.
+	// Who is allowed to set the FreeKeyAddExpiration block.
 	type FreeKeyAddExpirationOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
-
 }
 
 parameter_types! {
@@ -1060,7 +1062,7 @@ use crate::ethereum::EthereumCompatibleAccountIdLookup;
 use pallet_frequency_tx_payment::Call as FrequencyPaymentCall;
 use pallet_handles::Call as HandlesCall;
 use pallet_messages::Call as MessagesCall;
-use pallet_msa::{Call as MsaCall};
+use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
 pub struct CapacityEligibleCalls;

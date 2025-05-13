@@ -17,7 +17,7 @@ use frame_support::{
 	pallet_prelude::*,
 	traits::{IsSubType, IsType},
 	weights::{Weight, WeightToFee},
-	DefaultNoBound, Hashable,
+	DefaultNoBound,
 };
 use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
@@ -92,9 +92,6 @@ impl<T: Config> PartialEq for InitialPayment<T> {
 			Self::Capacity => matches!(other, Self::Capacity),
 		}
 	}
-	fn ne(&self, other: &Self) -> bool {
-		!self.eq(other)
-	}
 }
 
 #[cfg(feature = "std")]
@@ -141,9 +138,7 @@ pub mod weights;
 pub mod pallet {
 	use super::*;
 	use crate::types::GetAddKeyData;
-	use common_primitives::{
-		msa::{MessageSourceId, MsaKeyProvider},
-	};
+	use common_primitives::msa::{MessageSourceId, MsaKeyProvider};
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -458,10 +453,14 @@ where
 			// has to be a token call, not a batch call or a capacity call
 			_ => {
 				if let Some((owner_account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
-					if T::MsaKeyProvider::key_eligible_for_free_addition(owner_account_id.clone(), msa_id) {
+					if T::MsaKeyProvider::key_eligible_for_free_addition(
+						owner_account_id.clone(),
+						msa_id,
+					) {
 						let tip = self.tip(call);
-						let fee =
-							pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
+						let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
+							len as u32, info, tip,
+						);
 						return Ok((fee, InitialPayment::Free));
 					}
 				}

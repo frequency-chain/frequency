@@ -14,10 +14,9 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
 		tokens::{fungible::Inspect, WithdrawConsequence},
-		ConstU16, ConstU32, ConstU64,
+		ConstU16, ConstU32, ConstU64, EitherOfDiverse,
 	},
 };
-use frame_support::traits::EitherOfDiverse;
 use frame_system::{EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
