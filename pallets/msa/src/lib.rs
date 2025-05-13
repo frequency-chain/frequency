@@ -939,7 +939,7 @@ pub mod pallet {
 		/// It also contains an expiration block number for the proof, ensuring it is valid and must be greater than the current block.
 		///
 		/// # Events
-		/// * [`pallet_balances::<T>::Transfer`]
+		/// * [`pallet_balances::Event::<T,I>::Transfer`] - Transfer token event
 		///
 		/// # Errors
 		///
@@ -981,14 +981,10 @@ pub mod pallet {
 
 			Self::ensure_msa_owner(&msa_owner_public_key, msa_id)?;
 
-			// TODO
 			// - Get account address for MSA
 			let msa_address = Self::msa_id_to_eth_address(msa_id);
 
 			// - Convert to AccountId
-			// let msa_account_id: T::AccountId  = <T as AccountIdMapper>::to_account_id(&msa_address.0);
-			// log::warn!("MSA account ID: {:?}", msa_account_id);
-			// let msa_address32: AccountId32 = EthereumAddressMapper::to_bytes32(&msa_address.0);
 			let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
 			let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
 
