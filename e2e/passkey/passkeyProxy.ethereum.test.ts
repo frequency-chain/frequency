@@ -22,8 +22,8 @@ describe('Passkey Pallet Ethereum Tests', function () {
     let receiverKeys: KeyringPair;
 
     before(async function () {
-      fundedSr25519Keys = await createAndFundKeypair(fundingSource, 300_000_000n);
-      fundedEthereumKeys = await createAndFundKeypair(fundingSource, 300_000_000n, undefined, undefined, 'ethereum');
+      fundedSr25519Keys = await createAndFundKeypair(fundingSource, 400_000_000n);
+      fundedEthereumKeys = await createAndFundKeypair(fundingSource, 400_000_000n, 'passkey-1', undefined, 'ethereum');
       receiverKeys = await createAndFundKeypair(fundingSource);
     });
 

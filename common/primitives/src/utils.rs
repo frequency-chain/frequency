@@ -32,6 +32,17 @@ pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType 
 		_ => DetectedChainType::Unknown,
 	}
 }
+
+/// Generic function for converting any unsigned integer to a 32-byte array compatible with ETH abi
+pub fn to_abi_compatible_number<T: Into<u128>>(value: T) -> [u8; 32] {
+	let value_u128: u128 = value.into();
+	let bytes = value_u128.to_be_bytes();
+	let start_idx = 32 - bytes.len();
+	let mut result = [0u8; 32];
+	result[start_idx..].copy_from_slice(&bytes);
+	result
+}
+
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex {
@@ -146,6 +157,7 @@ mod tests {
 	use parity_scale_codec::{Decode, Encode};
 	use scale_info::TypeInfo;
 	use serde::{Deserialize, Serialize};
+	use sp_core::U256;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -296,5 +308,53 @@ mod tests {
 
 		// assert
 		assert_eq!(detected, DetectedChainType::FrequencyPaseoTestNet);
+	}
+
+	#[test]
+	fn abi_compatible_number_should_work_with_different_types() {
+		// For u8
+		let u8_val: u8 = 42;
+		let coded_u8_val = to_abi_compatible_number(u8_val);
+		let u8_val: U256 = u8_val.into();
+		assert_eq!(
+			coded_u8_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u8_val)).unwrap()
+		);
+
+		// For u16
+		let u16_val: u16 = 12345;
+		let coded_u16_val = to_abi_compatible_number(u16_val);
+		let u16_val: U256 = u16_val.into();
+		assert_eq!(
+			coded_u16_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u16_val)).unwrap()
+		);
+
+		// For u32
+		let u32_val: u32 = 305419896;
+		let coded_u32_val = to_abi_compatible_number(u32_val);
+		let u32_val: U256 = u32_val.into();
+		assert_eq!(
+			coded_u32_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u32_val)).unwrap()
+		);
+
+		// For u64
+		let u64_val: u64 = 1234567890123456789;
+		let coded_u64_val = to_abi_compatible_number(u64_val);
+		let u64_val: U256 = u64_val.into();
+		assert_eq!(
+			coded_u64_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u64_val)).unwrap()
+		);
+
+		// For u128
+		let u128_val: u128 = 340282366920938463463374607431768211455; // Max u128 value
+		let coded_u128_val = to_abi_compatible_number(u128_val);
+		let u128_val: U256 = u128_val.into();
+		assert_eq!(
+			coded_u128_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u128_val)).unwrap()
+		);
 	}
 }

@@ -38,6 +38,10 @@ import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedS
 import { getUnifiedAddress, reverseUnifiedAddressToEthereumAddress } from '@frequency-chain/ethereum-utils/address';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
+import { ethers } from 'ethers';
+import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
+import { Keypair } from '@polkadot/util-crypto/types';
+import { keccak256 } from '@polkadot/wasm-crypto';
 
 export interface Account {
   uri: string;
@@ -91,6 +95,50 @@ export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType 
     case 'ethereum':
       return { Ecdsa: u8aToHex(keys.sign(data.toU8a())) };
   }
+}
+
+/**
+ * Signing EIP-712 compatible signature for AddKeyData
+ * @param keys
+ * @param payload
+ */
+export async function signEip712AddKeyData(keys: Keypair, payload: AddKeyData): Promise<MultiSignatureType> {
+  // Define the domain separator
+  const domain = {
+    name: 'Frequency',
+    version: '1',
+    chainId: '0x190F1B44',
+    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+  };
+
+  // Define the types for your structured data
+  const types = {
+    AddKeyData: [
+      {
+        name: 'msaId',
+        type: 'uint64',
+      },
+      {
+        name: 'expiration',
+        type: 'uint32',
+      },
+      {
+        name: 'newPublicKey',
+        type: 'address',
+      },
+    ],
+  };
+
+  const data = {
+    msaId: payload.msaId?.toNumber(),
+    expiration: payload.expiration,
+    newPublicKey: reverseUnifiedAddressToEthereumAddress(payload.newPublicKey),
+  };
+
+  // Create a wallet instance from the private key
+  const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString('hex'));
+  const signature = await wallet.signTypedData(domain, types, data);
+  return { Ecdsa: signature } as EcdsaSignature;
 }
 
 export async function generateDelegationPayload(
@@ -214,6 +262,7 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 
 // Keep track of all the funded keys so that we can drain them at the end of the test
 const createdKeys = new Map<string, KeyringPair>();
+const ethereumKeys = new Map<string, Keypair>();
 
 export function drainFundedKeys(dest: KeyringPair) {
   return drainKeys([...createdKeys.values()], dest);
@@ -224,10 +273,22 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
   // create & add the pair to the keyring with the type and some additional
   // metadata specified
   const keyring = new Keyring({ type: keyType });
-  const keypair = keyring.addFromUri(mnemonic, { name }, keyType);
+  let keyringPair;
+  if (keyType === 'ethereum') {
+    // since we don't have access to the secret key from inside the KeyringPair
+    const keypair = secp256k1PairFromSeed(keccak256(Buffer.from(mnemonic, 'utf8')));
+    keyringPair = keyring.addFromPair(keypair, {}, keyType);
+    ethereumKeys.set(getUnifiedAddress(keyringPair), keypair);
+  } else {
+    keyringPair = keyring.addFromUri(mnemonic, { name }, keyType);
+  }
 
-  createdKeys.set(getUnifiedAddress(keypair), keypair);
-  return keypair;
+  createdKeys.set(getUnifiedAddress(keyringPair), keyringPair);
+  return keyringPair;
+}
+
+export function getEthereumKeyPairFromUnifiedAddress(unifiedAddress: string): Keypair {
+  return ethereumKeys.get(unifiedAddress) as Keypair;
 }
 
 function canDrainAccount(info: FrameSystemAccountInfo): boolean {

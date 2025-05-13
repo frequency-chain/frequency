@@ -7,6 +7,8 @@ import {
   CENTS,
   signPayload,
   MultiSignatureType,
+  signEip712AddKeyData,
+  getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -114,6 +116,29 @@ describe('MSA Key management Ethereum', function () {
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
       const { target: event } = await op.fundAndSend(fundingSource);
       assert.notEqual(event, undefined, 'should have added public key');
+
+      // Cleanup
+      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
+    });
+
+    it('should allow using eip-712 signatures to add a new key', async function () {
+      const thirdKey = createKeys('third-key', 'ethereum');
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        newPublicKey: getUnifiedPublicKey(thirdKey),
+      });
+
+      ownerSig = await signEip712AddKeyData(
+        getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)),
+        newPayload
+      );
+      newSig = await signEip712AddKeyData(
+        getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)),
+        newPayload
+      );
+      const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
+      const { target: event } = await op.fundAndSend(fundingSource);
+      assert.notEqual(event, undefined, 'should have added public key via eip-712');
 
       // Cleanup
       await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
