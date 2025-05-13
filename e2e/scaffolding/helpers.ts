@@ -505,7 +505,7 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
-export async function setFreeKeyAddExpirationBLock(keys: KeyringPair, expires_at: number): Promise<void> {
+export async function setFreeKeyAddExpirationBlock(keys: KeyringPair, expires_at: number): Promise<void> {
   const setFreeKeyAddExpirationOp = ExtrinsicHelper.setFreeKeyAddExpiration(keys, expires_at);
   await assert.doesNotReject(setFreeKeyAddExpirationOp.sudoSignAndSend());
 }
@@ -696,7 +696,7 @@ export const base64UrlToUint8Array = (base64: string): Uint8Array => new Uint8Ar
 export async function getFreeBalance(source: KeyringPair): Promise<bigint> {
   const accountInfo = await ExtrinsicHelper.getAccountInfo(source);
   const ed = await getExistentialDeposit();
-  return (accountInfo.data.free.toBigInt() - ed);
+  return accountInfo.data.free.toBigInt() - ed;
 }
 
 // spendable = free - max(frozen - on_hold, ED)

@@ -8,7 +8,9 @@ import {
   Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
-  CENTS, getBlockNumber, assertExtrinsicSucceededAndFeesPaid,
+  CENTS,
+  getBlockNumber,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -176,7 +178,7 @@ describe('MSA Key management', function () {
       await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
     });
 
-    it('adds a new public key for free if there is just one and its before the expiration block', async function() {
+    it('adds a new public key for free if there is just one and its before the expiration block', async function () {
       // Set up
       const currentBlock = await getBlockNumber();
       setFreeKeyAddExpirationBLock(getSudo().keys, currentBlock + 30);
@@ -201,11 +203,14 @@ describe('MSA Key management', function () {
 
       // assert
       assert.notEqual(event, undefined, 'should have added public key');
-      assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
+      assert.notEqual(
+        chainEvents['system.ExtrinsicSuccess'],
+        undefined,
+        'should have returned an ExtrinsicSuccess event'
+      );
       assert.equal(chainEvents['balances.Withdraw'], undefined, 'should not have withdrawn a balance');
 
-      await setFreeKeyAddExpirationBLock(getSudo().keys, 0 );
-
+      await setFreeKeyAddExpirationBLock(getSudo().keys, 0);
     });
   });
 
