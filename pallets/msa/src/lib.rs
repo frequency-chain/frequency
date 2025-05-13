@@ -1706,11 +1706,11 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 
 impl<T: Config> MsaKeyProvider for Pallet<T> {
 	type AccountId = T::AccountId;
-	// Returns true if ALL of the following are true: 
-	// - Msa exists 
-	// - Current block is < FreeKeyAddExpirationBlock
+	// Returns true if ALL of the following are true:
+	// - Msa exists
+	// - FreeKeyAddExpirationBlock is after current block
 	// - The stored msa_id for the key == `msa_id`
-	// - It has only one key associated with it 
+	// - It has only one key associated with it
 	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool {
 		if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
 			let block = frame_system::Pallet::<T>::block_number();
@@ -1868,7 +1868,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		)
 		.any(|provider_id| {
 			Pallet::<T>::ensure_valid_delegation(provider_id, delegator_id, None).is_ok()
-		});type FreeKeyAddExpirationOrigin
+		});
 
 		ensure!(
 			!has_active_delegations,
