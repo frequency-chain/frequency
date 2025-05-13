@@ -438,12 +438,22 @@ impl WeightInfo for () {
 		// Minimum execution time: 4_000_000 picoseconds.
 		Weight::from_parts(8_000_000, 0)
 	}
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn withdraw_tokens() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 4_000_000 picoseconds.
-		Weight::from_parts(8_000_000, 0)
+		//  Measured:  `1270`
+		//  Estimated: `6691`
+		// Minimum execution time: 151_000_000 picoseconds.
+		Weight::from_parts(162_000_000, 6691)
+			.saturating_add(RocksDbWeight::get().reads(6_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
 }
 
@@ -600,6 +610,18 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 4107
+		);
+	}
+	#[test]
+	fn test_withdraw_tokens() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 6691
 		);
 	}
 }

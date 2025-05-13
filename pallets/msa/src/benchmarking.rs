@@ -5,7 +5,7 @@ use crate::types::EMPTY_FUNCTION;
 #[allow(unused)]
 use crate::Pallet as Msa;
 use frame_benchmarking::{account, v2::*};
-use frame_support::assert_ok;
+use frame_support::{assert_ok, traits::fungible::Inspect};
 use frame_system::RawOrigin;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::RuntimeAppPublic;
@@ -368,6 +368,44 @@ mod benchmarks {
 
 		Ok(())
 	}
+
+	#[benchmark]
+	fn withdraw_tokens() -> Result<(), BenchmarkError> {
+		prep_signature_registry::<T>();
+
+		let (msa_public_key, msa_key_pair, msa_id) =
+			create_msa_account_and_keys::<T>();
+
+		let eth_account_id: H160 = Msa::<T>::msa_id_to_eth_address(msa_id);
+		let mut bytes = &EthereumAddressMapper::to_bytes32(&eth_account_id.0)[..];
+		let msa_account_id = <T as frame_system::Config>::AccountId::decode(&mut bytes).unwrap();
+
+		// Fund MSA
+		// let balance = <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance.from(10_000_000u128);
+		let balance = <T as Config>::Currency::minimum_balance();
+		T::Currency::set_balance(&msa_account_id, balance);
+		assert_eq!(T::Currency::balance(&msa_account_id), balance);
+
+		let (add_key_payload, _, new_account_id) =
+			add_key_payload_and_signature::<T>(msa_id);
+
+		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
+		let owner_signature = MultiSignature::Sr25519(
+			msa_key_pair.sign(&encoded_add_key_payload).unwrap().into(),
+		);
+
+		#[extrinsic_call]
+		_(
+			RawOrigin::Signed(new_account_id.clone()),
+			msa_public_key.clone(),
+			owner_signature,
+			add_key_payload,
+		);
+
+		assert_eq!(T::Currency::balance(&msa_account_id), Zero::zero());
+		Ok(())
+	}
+
 
 	impl_benchmark_test_suite!(
 		Msa,

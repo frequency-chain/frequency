@@ -190,8 +190,8 @@ fn it_succeeds_when_balance_is_sufficient() {
 		let (msa_id, owner_key_pair) = create_account();
 		let (origin_key_pair, _) = sr25519::Pair::generate();
 		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
-		let bytes = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
-		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes.clone());
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
 
 		let (payload, _, msa_signature) = generate_payload(msa_id, &owner_key_pair, &origin_key_pair, None);
 
