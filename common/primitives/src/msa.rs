@@ -295,11 +295,11 @@ pub trait SchemaGrantValidator<BlockNumber> {
 	) -> DispatchResult;
 }
 
-/// a trait that implements checking initially if adding this key might be free
+/// A trait that allows checking whether adding a key would be free
 pub trait MsaKeyProvider {
-	/// the AccountId type to use for looking up keys in storage.
+	/// the type to use for looking up keys in storage.
 	type AccountId;
-	/// check if this new key being added can possibly be eligible for a free transaction
+	/// Returns whether adding a new key to `msa_id` would be free
 	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool;
 }
 

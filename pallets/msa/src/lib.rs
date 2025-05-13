@@ -75,7 +75,6 @@ pub use common_primitives::{
 	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
 };
 pub use pallet::*;
-
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
 
@@ -199,7 +198,7 @@ pub mod pallet {
 	/// - Key: MSA Id
 	/// - Value: [`u8`] Counter of Keys associated with the MSA
 	#[pallet::storage]
-	pub type PublicKeyCountForMsaId<T: Config> =
+	pub(super) type PublicKeyCountForMsaId<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, u8, ValueQuery>;
 
 	/// PayloadSignatureRegistryList is used to prevent replay attacks for extrinsics
@@ -919,8 +918,12 @@ pub mod pallet {
 			Ok(())
 		}
 
-		/// set the expiration block for free key addition
-		/// requires permitted caller.
+		/// Set the expiration block for free key addition
+		/// # Events
+		/// * [`Event::FreeKeyAddExpirationBlockUpdated`]
+		///
+		/// # Errors
+		/// [sp_runtime::DispatchError::BadOrigin] if not FreeKeyAddExpirationOrigin
 		#[pallet::call_index(14)]
 		#[pallet::weight(T::WeightInfo::set_free_key_add_expiration())]
 		pub fn set_free_key_add_expiration(
@@ -1703,10 +1706,12 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 
 impl<T: Config> MsaKeyProvider for Pallet<T> {
 	type AccountId = T::AccountId;
+	// Returns true if ALL of the following are true: 
+	// - Msa exists 
+	// - Current block is < FreeKeyAddExpirationBlock
+	// - The stored msa_id for the key == `msa_id`
+	// - It has only one key associated with it 
 	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool {
-		// check msa exists
-		// check it has only one public key
-		// old_key = AccountId32
 		if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
 			let block = frame_system::Pallet::<T>::block_number();
 
@@ -1863,7 +1868,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		)
 		.any(|provider_id| {
 			Pallet::<T>::ensure_valid_delegation(provider_id, delegator_id, None).is_ok()
-		});
+		});type FreeKeyAddExpirationOrigin
 
 		ensure!(
 			!has_active_delegations,

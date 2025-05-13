@@ -8,11 +8,11 @@ import {
   Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
-  CENTS, fundKeypair, DOLLARS, getBlockNumber, assertExtrinsicSucceededAndFeesPaid,
+  CENTS, getBlockNumber, assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { getFreeBalance, setFreeKeyAddExpirationBLock } from '../scaffolding/helpers';
+import { setFreeKeyAddExpirationBLock } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
@@ -177,6 +177,7 @@ describe('MSA Key management', function () {
     });
 
     it('adds a new public key for free if there is just one and its before the expiration block', async function() {
+      // Set up
       const currentBlock = await getBlockNumber();
       setFreeKeyAddExpirationBLock(getSudo().keys, currentBlock + 30);
       // set a completely new msa id up so it doesn't conflict with anything else.
@@ -193,8 +194,12 @@ describe('MSA Key management', function () {
       addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
       ownerSig = signPayloadSr25519(some_key, addKeyData);
       newSig = signPayloadSr25519(second_key, addKeyData);
+
+      // act
       const op = ExtrinsicHelper.addPublicKeyToMsa(some_key, ownerSig, newSig, newPayload);
       const { target: event, eventMap: chainEvents } = await op.fundAndSend(fundingSource);
+
+      // assert
       assert.notEqual(event, undefined, 'should have added public key');
       assert.notEqual(chainEvents['system.ExtrinsicSuccess'], undefined, 'should have returned an ExtrinsicSuccess event');
       assert.equal(chainEvents['balances.Withdraw'], undefined, 'should not have withdrawn a balance');

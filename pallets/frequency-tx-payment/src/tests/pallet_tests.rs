@@ -1096,10 +1096,3 @@ fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
 			assert_ne!(withdraw_fee.1, InitialPayment::<Test>::Free);
 		})
 }
-
-pub fn create_account(with_id: u64) -> MessageSourceId {
-	let result_key = Msa::create_account(with_id, EMPTY_FUNCTION);
-	assert_ok!(&result_key);
-	let (msa_id, _) = result_key.unwrap();
-	msa_id
-}
