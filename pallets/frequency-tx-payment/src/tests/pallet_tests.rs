@@ -8,13 +8,12 @@ use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
 use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
 
+use common_primitives::msa::MessageSourceId;
 use pallet_balances::Call as BalancesCall;
 use pallet_capacity::CapacityLedger;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
-use pallet_msa::{AddKeyData, Call as MsaCall, EMPTY_FUNCTION, Pallet as MsaPallet};
-use sp_core::{sr25519, Pair, H256};
-use sp_core::crypto::AccountId32;
-use common_primitives::msa::MessageSourceId;
+use pallet_msa::{AddKeyData, Call as MsaCall, Pallet as MsaPallet, EMPTY_FUNCTION};
+use sp_core::{crypto::AccountId32, sr25519, Pair, H256};
 
 #[test]
 #[allow(deprecated)]
@@ -1048,29 +1047,28 @@ fn add_public_key_to_msa_free_if_before_expiration_block() {
 				new_key_owner_proof: proof2,
 				add_key_payload: payload.into(),
 			});
-			
+
 			//
 			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
 				.withdraw_fee(&account_id, call, &dispatch_info, 10)
 				.unwrap();
 			assert_eq!(withdraw_fee.1, InitialPayment::<Test>::Free);
-			
+
 			// Set block 5 to make same account ineligible, past expiration block
 			System::set_block_number(6);
 			let withdraw_fee_after_free_block = ChargeFrqTransactionPayment::<Test>::from(0u64)
 				.withdraw_fee(&account_id, call, &dispatch_info, 10)
 				.unwrap();
 			assert_ne!(withdraw_fee_after_free_block.1, InitialPayment::<Test>::Free);
-
 		})
 }
 
 #[test]
 fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
 	let balance_factor = 100_000_000;
-	
+
 	let msa_id = 99u64;
-	let account_id = 2u64; 
+	let account_id = 2u64;
 	let new_account_id = 3u64;
 	let proof1: MultiSignature = generate_test_signature();
 	let proof2: MultiSignature = generate_test_signature();
@@ -1098,7 +1096,6 @@ fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
 			assert_ne!(withdraw_fee.1, InitialPayment::<Test>::Free);
 		})
 }
-
 
 pub fn create_account(with_id: u64) -> MessageSourceId {
 	let result_key = Msa::create_account(with_id, EMPTY_FUNCTION);

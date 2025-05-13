@@ -376,7 +376,7 @@ mod benchmarks {
 
 		Ok(())
 	}
-	
+
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),

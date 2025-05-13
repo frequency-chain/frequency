@@ -280,7 +280,7 @@ impl pallet_utility::Config for Test {
 }
 
 pub struct MockMsaCallFilter {
-	msa_id: MessageSourceId
+	msa_id: MessageSourceId,
 }
 impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSourceId>
 	for MockMsaCallFilter
@@ -291,11 +291,11 @@ impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSour
 	) -> Option<(u64, MessageSourceId)> {
 		match call {
 			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa {
-								 add_key_payload,
-								 new_key_owner_proof: _,
-								 msa_owner_public_key,
-								 msa_owner_proof: _,
-							 }) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
 			_ => None,
 		}
 	}
