@@ -139,6 +139,7 @@ describe('MSA Key management', function () {
 
       assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
       assertExtrinsicSucceededAndFeesPaid(chainEvents);
+      assert.notEqual(chainEvents['transactionPayment.TransactionFeePaid'], undefined);
 
       await assert.rejects(
         addPublicKeyOp.fundAndSend(fundingSource),
@@ -206,6 +207,7 @@ describe('MSA Key management', function () {
         'should have returned an ExtrinsicSuccess event'
       );
       assert.equal(chainEvents['balances.Withdraw'], undefined, 'should not have withdrawn a balance');
+      assert.equal(chainEvents['transactionPayment.TransactionFeePaid'], undefined,'should not have paid transaction fee.');
 
       await setFreeKeyAddExpirationBlock(getSudo().keys, 0);
     });
