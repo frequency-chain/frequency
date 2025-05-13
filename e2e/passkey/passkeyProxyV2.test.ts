@@ -6,7 +6,7 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCallV2, createPasskeyPayloadV2 } from '../scaffolding/P256';
-import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
 const fundingSource = getFundingSource(import.meta.url);

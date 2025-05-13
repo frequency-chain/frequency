@@ -13,7 +13,7 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex } from '@polkadot/util';
-import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const fundingSource = getFundingSource(import.meta.url);
 

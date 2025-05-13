@@ -53,7 +53,7 @@ export function reverseUnifiedAddressToEthereumAddress(unifiedAddress: HexString
   if (!unifiedAddress.toLowerCase().endsWith('ee'.repeat(12))) {
     throw new Error(`Address ${unifiedAddress} is not reversible!`);
   }
-  return `0x${unifiedAddress.substring(0, 40)}`;
+  return `${unifiedAddress.substring(0, 42)}` as HexString;
 }
 
 /**

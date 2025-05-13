@@ -4,7 +4,7 @@ import { DOLLARS, createAndFundKeypair, createKeys } from '../scaffolding/helper
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 

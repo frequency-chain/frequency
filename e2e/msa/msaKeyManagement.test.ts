@@ -14,7 +14,7 @@ import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const maxU64 = 18_446_744_073_709_551_615n;
 const fundingSource = getFundingSource(import.meta.url);

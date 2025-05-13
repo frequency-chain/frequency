@@ -35,7 +35,7 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { getUnifiedAddress, reverseUnifiedAddressToEthereumAddress } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
 import { ethers } from 'ethers';
@@ -95,50 +95,6 @@ export function signPayload(keys: KeyringPair, data: Codec): MultiSignatureType 
     case 'ethereum':
       return { Ecdsa: u8aToHex(keys.sign(data.toU8a())) };
   }
-}
-
-/**
- * Signing EIP-712 compatible signature for AddKeyData
- * @param keys
- * @param payload
- */
-export async function signEip712AddKeyData(keys: Keypair, payload: AddKeyData): Promise<MultiSignatureType> {
-  // Define the domain separator
-  const domain = {
-    name: 'Frequency',
-    version: '1',
-    chainId: '0x190F1B44',
-    verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
-  };
-
-  // Define the types for your structured data
-  const types = {
-    AddKeyData: [
-      {
-        name: 'msaId',
-        type: 'uint64',
-      },
-      {
-        name: 'expiration',
-        type: 'uint32',
-      },
-      {
-        name: 'newPublicKey',
-        type: 'address',
-      },
-    ],
-  };
-
-  const data = {
-    msaId: payload.msaId?.toNumber(),
-    expiration: payload.expiration,
-    newPublicKey: reverseUnifiedAddressToEthereumAddress(payload.newPublicKey),
-  };
-
-  // Create a wallet instance from the private key
-  const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString('hex'));
-  const signature = await wallet.signTypedData(domain, types, data);
-  return { Ecdsa: signature } as EcdsaSignature;
 }
 
 export async function generateDelegationPayload(

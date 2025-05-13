@@ -165,12 +165,12 @@ export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION = {
 };
 
 /**
- * Signing EIP-712 compatible signature for paylaod
+ * Signing EIP-712 compatible signature for payload
  * @param keys
  * @param payload
  * @param chain
  */
-export async function signEip712AddKeyData(
+export async function signEip712(
   keys: Keypair,
   payload: SupportedPayload,
   chain: ChainType = 'Mainnet-Frequency'
@@ -197,27 +197,28 @@ export async function signEip712AddKeyData(
 }
 
 function checkAndNormalizePayload(payload: SupportedPayload): Record<string, any> {
-  switch (payload.type) {
+  const clonedPayload = Object.assign({}, payload);
+  switch (clonedPayload.type) {
     case 'PaginatedUpsertSignaturePayloadV2':
-      assert(isValidUint16(payload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint16(payload.pageId), 'pageId should be a valid uint16');
-      assert(isValidUint32(payload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
-      assert(isValidHexString(payload.payload), 'payload should be valid hex');
+      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
+      assert(isValidUint16(clonedPayload.pageId), 'pageId should be a valid uint16');
+      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
+      assert(isValidHexString(clonedPayload.payload), 'payload should be valid hex');
       break;
 
     case 'PaginatedDeleteSignaturePayloadV2':
-      assert(isValidUint16(payload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint16(payload.pageId), 'pageId should be a valid uint16');
-      assert(isValidUint32(payload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
+      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
+      assert(isValidUint16(clonedPayload.pageId), 'pageId should be a valid uint16');
+      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
       break;
 
     case 'ItemizedSignaturePayloadV2':
-      assert(isValidUint16(payload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint32(payload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
-      payload.actions.forEach((item) => {
+      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
+      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
+      clonedPayload.actions.forEach((item) => {
         switch (item.actionType) {
           case 'Add':
             assert(isValidHexString(item.data), 'itemized data should be valid hex');
@@ -232,27 +233,27 @@ function checkAndNormalizePayload(payload: SupportedPayload): Record<string, any
       break;
 
     case 'PasskeyPublicKey':
-      assert(isValidHexString(payload.publicKey), 'publicKey should be valid hex');
+      assert(isValidHexString(clonedPayload.publicKey), 'publicKey should be valid hex');
       break;
 
     case 'ClaimHandlePayload':
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
-      assert(payload.handle.length > 0, 'handle should be a valid string');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
+      assert(clonedPayload.handle.length > 0, 'handle should be a valid string');
       break;
 
     case 'AddKeyData':
-      assert(isValidUint64(payload.msaId), 'msaId should be a valid uint32');
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
-      assert(isValidHexString(payload.newPublicKey), 'newPublicKey should be valid hex');
+      assert(isValidUint64(clonedPayload.msaId), 'msaId should be a valid uint32');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
+      assert(isValidHexString(clonedPayload.newPublicKey), 'newPublicKey should be valid hex');
       // convert to 20 bytes ethereum address for signature
-      payload.newPublicKey = reverseUnifiedAddressToEthereumAddress(payload.newPublicKey);
+      clonedPayload.newPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AddKeyData).newPublicKey);
 
       break;
 
     case 'AddProvider':
-      assert(isValidUint64(payload.authorizedMsaId), 'targetHash should be a valid uint32');
-      assert(isValidUint32(payload.expiration), 'expiration should be a valid uint32');
-      payload.schemaIds.forEach((schemaId) => {
+      assert(isValidUint64(clonedPayload.authorizedMsaId), 'targetHash should be a valid uint32');
+      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
+      clonedPayload.schemaIds.forEach((schemaId) => {
         assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
       });
       break;
@@ -262,7 +263,7 @@ function checkAndNormalizePayload(payload: SupportedPayload): Record<string, any
   }
 
   // Remove the type field
-  const { type, ...payloadWithoutType } = payload;
+  const { type, ...payloadWithoutType } = clonedPayload;
 
   return payloadWithoutType;
 }

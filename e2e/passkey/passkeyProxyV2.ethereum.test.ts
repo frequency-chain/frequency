@@ -4,7 +4,7 @@ import { createAndFundKeypair, EcdsaSignature, getNonce, log, Sr25519Signature }
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { createPassKeyAndSignAccount, createPassKeyCallV2, createPasskeyPayloadV2 } from '../scaffolding/P256';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { AccountId32 } from '@polkadot/types/interfaces';

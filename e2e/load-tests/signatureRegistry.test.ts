@@ -13,7 +13,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64, Option } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 interface GeneratedMsa {
   id: u64;

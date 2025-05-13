@@ -12,7 +12,7 @@ import {
 } from '../scaffolding/helpers';
 import { isTestnet } from '../scaffolding/env';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const fundingSource = getFundingSource(import.meta.url);
 

@@ -7,7 +7,6 @@ import {
   CENTS,
   signPayload,
   MultiSignatureType,
-  signEip712AddKeyData,
   getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -15,7 +14,10 @@ import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { signEip712 } from '@frequency-chain/ethereum-utils';
+import { AddKeyData as EthereumAddKeyData } from '@frequency-chain/ethereum-utils/types';
+import { u8aToHex } from '@polkadot/util';
 
 const maxU64 = 18_446_744_073_709_551_615n;
 const fundingSource = getFundingSource(import.meta.url);
@@ -128,14 +130,17 @@ describe('MSA Key management Ethereum', function () {
         newPublicKey: getUnifiedPublicKey(thirdKey),
       });
 
-      ownerSig = await signEip712AddKeyData(
+      const signingPayload: EthereumAddKeyData = {
+        type: 'AddKeyData',
+        msaId: BigInt((newPayload.msaId ?? '0').toString()),
+        newPublicKey: u8aToHex(newPayload.newPublicKey),
+        expiration: newPayload.expiration,
+      };
+      ownerSig = await signEip712(
         getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)),
-        newPayload
+        signingPayload
       );
-      newSig = await signEip712AddKeyData(
-        getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)),
-        newPayload
-      );
+      newSig = await signEip712(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)), signingPayload);
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
       const { target: event } = await op.fundAndSend(fundingSource);
       assert.notEqual(event, undefined, 'should have added public key via eip-712');
