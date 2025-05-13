@@ -589,14 +589,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static setFreeKeyAddExpiration(keys: KeyringPair, expires_at: number) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.setFreeKeyAddExpiration(expires_at),
-      keys,
-      ExtrinsicHelper.api.events.msa.FreeKeyAddExpirationBlockUpdated
-    );
-  }
-
   /** Messages Extrinsics */
   public static addIPFSMessage(keys: KeyringPair, schemaId: any, cid: string, payload_length: number) {
     return new Extrinsic(
@@ -936,5 +928,15 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
+  }
+
+  public static getCapacityFee(chainEvents: EventMap): bigint {
+    if (
+      chainEvents['capacity.CapacityWithdrawn'] &&
+      ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
+    ) {
+      return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
+    }
+    return 0n;
   }
 }

@@ -13,7 +13,7 @@ pub trait GetStableWeight<RuntimeCall, Weight> {
 
 /// Filters calls that match Msa::add_public_key_to_msa
 pub trait GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> {
-	/// If the fall matches Msa::add_public_key_to_msa, return the owner account id and msa id
+	/// If the xall matches Msa::add_public_key_to_msa, return the owner account id and msa id
 	/// from the call parameters
-	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)>;
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)>;
 }

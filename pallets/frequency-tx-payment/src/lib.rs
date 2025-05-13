@@ -50,6 +50,7 @@ pub mod types;
 
 pub mod capacity_stable_weights;
 
+use crate::types::GetAddKeyData;
 use capacity_stable_weights::CAPACITY_EXTRINSIC_BASE_WEIGHT;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
@@ -137,7 +138,6 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
-	use crate::types::GetAddKeyData;
 	use common_primitives::msa::{MessageSourceId, MsaKeyProvider};
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
@@ -178,7 +178,7 @@ pub mod pallet {
 
 		type MsaKeyProvider: MsaKeyProvider<AccountId = Self::AccountId>;
 		type MsaCallFilter: GetAddKeyData<
-			<Self as frame_system::Config>::RuntimeCall,
+			<Self as Config>::RuntimeCall,
 			Self::AccountId,
 			MessageSourceId,
 		>;
@@ -443,27 +443,12 @@ where
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		use crate::types::GetAddKeyData;
 		match call.is_sub_type() {
 			Some(Call::pay_with_capacity { call }) =>
 				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
-			_ => {
-				if let Some((owner_account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
-					if T::MsaKeyProvider::key_eligible_for_free_addition(
-						owner_account_id.clone(),
-						msa_id,
-					) {
-						let tip = self.tip(call);
-						let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(
-							len as u32, info, tip,
-						);
-						return Ok((fee, InitialPayment::Free));
-					}
-				}
-				self.withdraw_token_fee(who, call, info, len, self.tip(call))
-			},
+			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
 		}
 	}
 
@@ -476,8 +461,14 @@ where
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let mut calls_weight_sum = Weight::zero();
 		for call in calls {
-			let call_weight = T::CapacityCalls::get_stable_weight(call)
-				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
+			let call_weight = if self.call_is_adding_eligible_key_to_msa(call) {
+				// "free-ish"
+				Weight::from_parts(1_000, 0)
+			} else {
+				T::CapacityCalls::get_stable_weight(call)
+					.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?
+			};
+
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
 		}
 		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
@@ -485,6 +476,19 @@ where
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, capacity_fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
+	}
+
+	fn call_is_adding_eligible_key_to_msa(&self, call: &<T as Config>::RuntimeCall) -> bool {
+		if let Some((owner_account_id, new_account_id, msa_id)) =
+			T::MsaCallFilter::get_add_key_data(call)
+		{
+			return T::MsaKeyProvider::key_eligible_for_free_addition(
+				owner_account_id,
+				new_account_id,
+				msa_id,
+			)
+		}
+		false
 	}
 
 	/// Withdraws transaction fee paid with tokens from an.

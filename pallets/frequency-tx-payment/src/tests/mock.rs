@@ -6,7 +6,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureSigned;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
@@ -116,7 +116,13 @@ pub type MaximumCapacityBatchLength = ConstU8<10>;
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
-	fn convert(_x: u64) -> AccountId32 {
+	fn convert(x: u64) -> AccountId32 {
+		// force this key to be an ethereum-compatible key
+		if x == 999 {
+			let eth = sp_core::bytes::from_hex("0x9999999999999999999999999999999999999999")
+				.expect("should return a Vec<u8>");
+			return EthereumAddressMapper::to_account_id(&eth);
+		}
 		AccountId32::new([1u8; 32])
 	}
 }
@@ -169,7 +175,6 @@ impl pallet_msa::Config for Test {
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
-	type FreeKeyAddExpirationOrigin = EnsureRoot<u64>;
 }
 
 // Needs parameter_types! for the impls below
@@ -244,7 +249,7 @@ impl pallet_capacity::Config for Test {
 }
 
 use crate::types::GetAddKeyData;
-use common_primitives::msa::MsaKeyProvider;
+use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
@@ -255,6 +260,8 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 			RuntimeCall::Balances(BalancesCall::transfer_allow_death { .. }) =>
 				Some(Weight::from_parts(11, 0)),
 			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa { .. }) =>
+				Some(Weight::from_parts(177_629_000, 18396)), // from stable_weights
 			_ => None,
 		}
 	}
@@ -286,14 +293,18 @@ impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSour
 	// Always returns same account ID and msa.
 	fn get_add_key_data(
 		call: &<Test as frame_system::Config>::RuntimeCall,
-	) -> Option<(u64, MessageSourceId)> {
+	) -> Option<(u64, u64, MessageSourceId)> {
 		match call {
 			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa {
 				add_key_payload,
 				new_key_owner_proof: _,
 				msa_owner_public_key,
 				msa_owner_proof: _,
-			}) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
+			}) => Some((
+				msa_owner_public_key.clone(),
+				add_key_payload.new_public_key,
+				add_key_payload.msa_id,
+			)),
 			_ => None,
 		}
 	}

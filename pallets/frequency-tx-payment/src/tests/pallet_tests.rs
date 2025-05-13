@@ -1018,61 +1018,53 @@ pub fn generate_test_signature() -> MultiSignature {
 	key_pair.sign(fake_data.as_bytes()).into()
 }
 
-#[test]
-fn add_public_key_to_msa_free_if_before_expiration_block() {
-	let balance_factor = 100_000_000;
-
-	// uses funded account already with MSA Id
-	let msa_id = 2u64;
-	let account_id = 2u64;
-	let new_account_id = 3u64;
+pub fn generate_add_public_key_call(msa_id: u64, owner_id: u64) -> Box<RuntimeCall> {
+	let designated_ethereum_key = 999u64;
 	let proof1: MultiSignature = generate_test_signature();
 	let proof2: MultiSignature = generate_test_signature();
 	let payload: AddKeyData<Test> =
-		AddKeyData { msa_id, expiration: 99u32, new_public_key: new_account_id };
+		AddKeyData { msa_id, expiration: 99u32, new_public_key: designated_ethereum_key };
+	let add_public_key_inner = RuntimeCall::Msa(MsaCall::<Test>::add_public_key_to_msa {
+		msa_owner_public_key: owner_id,
+		msa_owner_proof: proof1,
+		new_key_owner_proof: proof2,
+		add_key_payload: payload.into(),
+	});
+
+	let add_public_key_call = Box::new(add_public_key_inner);
+	Box::new(RuntimeCall::FrequencyTxPayment(FrequencyTxPaymentCall::<Test>::pay_with_capacity {
+		call: add_public_key_call,
+	}))
+}
+
+#[test]
+fn add_public_key_to_msa_has_lower_capacity_charge_if_is_ethereum_compatible() {
+	let balance_factor = 100_000_000;
 	let dispatch_info =
 		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 
+	// uses funded account already with MSA Id
 	ExtBuilder::default()
 		.balance_factor(balance_factor)
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			// set expiration to later
-			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
-			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
-				msa_owner_public_key: account_id,
-				msa_owner_proof: proof1,
-				new_key_owner_proof: proof2,
-				add_key_payload: payload.into(),
-			});
-
-			//
+			let msa_id = 2u64;
+			let owner_id = 2u64;
+			let pay_with_capacity_add_public_key_call =
+				generate_add_public_key_call(msa_id, owner_id);
+			// ask if the returned weight is much less
 			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.withdraw_fee(&account_id, call, &dispatch_info, 10)
+				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
 				.unwrap();
-			assert_eq!(withdraw_fee.1, InitialPayment::<Test>::Free);
-
-			// Set block 5 to make same account ineligible, past expiration block
-			System::set_block_number(6);
-			let withdraw_fee_after_free_block = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.withdraw_fee(&account_id, call, &dispatch_info, 10)
-				.unwrap();
-			assert_ne!(withdraw_fee_after_free_block.1, InitialPayment::<Test>::Free);
-		})
+			assert!(withdraw_fee.0.lt(&106_000_000u64));
+		});
 }
 
 #[test]
 fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
+	// using same as prior test for comparison
 	let balance_factor = 100_000_000;
-
-	let msa_id = 99u64;
-	let account_id = 2u64;
-	let new_account_id = 3u64;
-	let proof1: MultiSignature = generate_test_signature();
-	let proof2: MultiSignature = generate_test_signature();
-	let payload: AddKeyData<Test> =
-		AddKeyData { msa_id, expiration: 99u32, new_public_key: new_account_id };
 	let dispatch_info =
 		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 
@@ -1081,17 +1073,14 @@ fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			// set expiration to later
-			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
-			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
-				msa_owner_public_key: account_id,
-				msa_owner_proof: proof1,
-				new_key_owner_proof: proof2,
-				add_key_payload: payload.into(),
-			});
+			let msa_id = 99u64;
+			let owner_id = 2u64;
+			let pay_with_capacity_add_public_key_call =
+				generate_add_public_key_call(msa_id, owner_id);
+			// ask if the returned weight is much less
 			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.withdraw_fee(&account_id, call, &dispatch_info, 10)
+				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
 				.unwrap();
-			assert_ne!(withdraw_fee.1, InitialPayment::<Test>::Free);
+			assert!(withdraw_fee.0.gt(&270_000_000u64));
 		})
 }

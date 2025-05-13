@@ -299,8 +299,12 @@ pub trait SchemaGrantValidator<BlockNumber> {
 pub trait MsaKeyProvider {
 	/// the type to use for looking up keys in storage.
 	type AccountId;
-	/// Returns whether adding a new key to `msa_id` would be free
-	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool;
+	/// Returns whether adding `new_key` to `msa_id` would be free
+	fn key_eligible_for_free_addition(
+		old_key: Self::AccountId,
+		new_key: Self::AccountId,
+		msa_id: MessageSourceId,
+	) -> bool;
 }
 
 /// RPC Response for getting MSA keys

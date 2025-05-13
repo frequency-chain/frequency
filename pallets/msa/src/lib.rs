@@ -46,13 +46,11 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 
 use common_primitives::{
 	capacity::TargetValidator,
-	msa::{
-		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
-		ProviderLookup, ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
-		SignatureRegistryPointer, H160,
-	},
-	node::ProposalProvider,
+	handles::HandleProvider,
+	msa::*,
+	node::{EIP712Encode, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -70,10 +68,6 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
-use common_primitives::msa::{DelegationResponse, MsaKeyProvider};
-pub use common_primitives::{
-	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
-};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -143,9 +137,6 @@ pub mod pallet {
 
 		/// The Council proposal provider interface
 		type ProposalProvider: ProposalProvider<Self::AccountId, Self::Proposal>;
-
-		/// Who can set the FreeKeyAddExpirationBlock
-		type FreeKeyAddExpirationOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -241,10 +232,6 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
-	/// After this block, adding a second key is no longer a free transaction.
-	#[pallet::storage]
-	pub type FreeKeyAddExpirationBlock<T: Config> = StorageValue<_, BlockNumberFor<T>, ValueQuery>;
-
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -302,11 +289,6 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
-		},
-		/// The FreeKeyAddExpirationBlock has been changed
-		FreeKeyAddExpirationBlockUpdated {
-			/// the new value for the expiration block
-			expires_at_block: BlockNumberFor<T>,
 		},
 	}
 
@@ -915,24 +897,6 @@ pub mod pallet {
 				},
 			}
 
-			Ok(())
-		}
-
-		/// Set the expiration block for free key addition
-		/// # Events
-		/// * [`Event::FreeKeyAddExpirationBlockUpdated`]
-		///
-		/// # Errors
-		/// [sp_runtime::DispatchError::BadOrigin] if not FreeKeyAddExpirationOrigin
-		#[pallet::call_index(14)]
-		#[pallet::weight(T::WeightInfo::set_free_key_add_expiration())]
-		pub fn set_free_key_add_expiration(
-			origin: OriginFor<T>,
-			expires_at_block: BlockNumberFor<T>,
-		) -> DispatchResult {
-			T::FreeKeyAddExpirationOrigin::ensure_origin(origin)?;
-			FreeKeyAddExpirationBlock::<T>::put(expires_at_block);
-			Self::deposit_event(Event::FreeKeyAddExpirationBlockUpdated { expires_at_block });
 			Ok(())
 		}
 	}
@@ -1707,17 +1671,20 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 impl<T: Config> MsaKeyProvider for Pallet<T> {
 	type AccountId = T::AccountId;
 	// Returns true if ALL of the following are true:
+	// - The new key is Ethereum-compatible
 	// - Msa exists
-	// - FreeKeyAddExpirationBlock is after current block
 	// - The stored msa_id for the key == `msa_id`
 	// - It has only one key associated with it
-	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool {
-		if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
-			let block = frame_system::Pallet::<T>::block_number();
-
-			return FreeKeyAddExpirationBlock::<T>::get().gt(&block) &&
-				stored_msa_id == msa_id &&
-				PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+	fn key_eligible_for_free_addition(
+		old_key: Self::AccountId,
+		new_key: Self::AccountId,
+		msa_id: MessageSourceId,
+	) -> bool {
+		let new_address32 = T::ConvertIntoAccountId32::convert((new_key).clone());
+		if EthereumAddressMapper::is_ethereum_address(&new_address32) {
+			if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
+				return stored_msa_id == msa_id && PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+			}
 		}
 		false
 	}

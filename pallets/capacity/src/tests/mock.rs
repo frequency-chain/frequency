@@ -14,10 +14,10 @@ use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
 		tokens::{fungible::Inspect, WithdrawConsequence},
-		ConstU16, ConstU32, ConstU64, EitherOfDiverse,
+		ConstU16, ConstU32, ConstU64,
 	},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::EnsureSigned;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
@@ -143,7 +143,6 @@ impl pallet_msa::Config for Test {
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
-	type FreeKeyAddExpirationOrigin = EnsureRoot<u64>;
 }
 
 // not used yet

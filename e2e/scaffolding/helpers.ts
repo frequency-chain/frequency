@@ -505,11 +505,6 @@ export async function setEpochLength(keys: KeyringPair, epochLength: number): Pr
   }
 }
 
-export async function setFreeKeyAddExpirationBlock(keys: KeyringPair, expires_at: number): Promise<void> {
-  const setFreeKeyAddExpirationOp = ExtrinsicHelper.setFreeKeyAddExpiration(keys, expires_at);
-  await assert.doesNotReject(setFreeKeyAddExpirationOp.sudoSignAndSend());
-}
-
 export async function getNextRewardEraBlock(): Promise<number> {
   const eraInfo = await ExtrinsicHelper.apiPromise.query.capacity.currentEraInfo();
   const actualEraLength: number = ExtrinsicHelper.api.consts.capacity.eraLength.toNumber();
