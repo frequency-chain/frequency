@@ -8,12 +8,11 @@ use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
 use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
 
-use common_primitives::msa::MessageSourceId;
 use pallet_balances::Call as BalancesCall;
 use pallet_capacity::CapacityLedger;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
-use pallet_msa::{AddKeyData, Call as MsaCall, Pallet as MsaPallet, EMPTY_FUNCTION};
-use sp_core::{crypto::AccountId32, sr25519, Pair, H256};
+use pallet_msa::{AddKeyData, Call as MsaCall};
+use sp_core::{sr25519, Pair, H256};
 
 #[test]
 #[allow(deprecated)]

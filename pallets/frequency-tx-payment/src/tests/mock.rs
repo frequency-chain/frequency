@@ -279,9 +279,7 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
-pub struct MockMsaCallFilter {
-	msa_id: MessageSourceId,
-}
+pub struct MockMsaCallFilter;
 impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSourceId>
 	for MockMsaCallFilter
 {
