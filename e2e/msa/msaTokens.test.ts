@@ -1,4 +1,3 @@
-/* eslint-disable mocha/no-skipped-tests */
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
