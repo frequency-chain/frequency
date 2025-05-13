@@ -7,7 +7,7 @@
 
 import type { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from './extrinsicHelpers';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
 
 export type AutoNonce = number | 'auto' | 'current';
 

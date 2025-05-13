@@ -35,7 +35,7 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress, reverseUnifiedAddressToEthereumAddress } from '@frequency-chain/ethereum-utils/address';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
 

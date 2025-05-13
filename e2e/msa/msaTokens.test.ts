@@ -2,7 +2,7 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { ethereumAddressToKeyringPair } from '../scaffolding/ethereum';
+import { ethereumAddressToKeyringPair } from '@frequency-chain/ethereum-utils/address';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
 import { bnToU8a, hexToU8a, stringToU8a } from '@polkadot/util';

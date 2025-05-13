@@ -12,7 +12,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
 const fundingSource = getFundingSource(import.meta.url);
 
 describe('Passkey Pallet Tests', function () {

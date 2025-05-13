@@ -19,7 +19,7 @@ import {
   assertAddNewKey,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils/address';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource(import.meta.url);

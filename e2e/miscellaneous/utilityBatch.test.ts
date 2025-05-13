@@ -4,7 +4,7 @@ import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { DOLLARS, createAndFundKeypair } from '../scaffolding/helpers';
 import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
 
 const fundingSource = getFundingSource(import.meta.url);
 

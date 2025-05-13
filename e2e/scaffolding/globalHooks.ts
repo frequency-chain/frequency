@@ -5,7 +5,7 @@ import { ExtrinsicHelper } from './extrinsicHelpers';
 import { getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils/address';
 import type { KeyringPair } from '@polkadot/keyring/types';
 
 const DEFAULT_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
