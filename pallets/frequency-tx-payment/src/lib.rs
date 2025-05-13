@@ -176,7 +176,6 @@ pub mod pallet {
 
 		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
 
-		// should this be AccountId instead of frame_system::Config::AccountId?
 		type MsaKeyProvider: MsaKeyProvider<AccountId = Self::AccountId>;
 		type MsaCallFilter: GetAddKeyData<
 			<Self as frame_system::Config>::RuntimeCall,
@@ -450,7 +449,6 @@ where
 				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
-			// has to be a token call, not a batch call or a capacity call
 			_ => {
 				if let Some((owner_account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
 					if T::MsaKeyProvider::key_eligible_for_free_addition(
