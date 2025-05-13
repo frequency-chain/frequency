@@ -966,7 +966,7 @@ pub mod pallet {
 				Self::verify_signature(
 					&msa_owner_proof,
 					&msa_owner_public_key,
-					authorization_payload.encode()
+					&authorization_payload
 				),
 				Error::<T>::MsaOwnershipInvalidSignature
 			);
