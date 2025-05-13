@@ -6,27 +6,33 @@ use frame_support::{
 
 use frame_system::pallet_prelude::BlockNumberFor;
 
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
 use sp_runtime::{traits::Zero, MultiSignature};
 
 use crate::{
 	ensure,
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
+	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
 	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
+use common_primitives::signatures::AccountAddressMapper;
 
 use common_primitives::{
 	msa::{
 		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
 		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
-	node::BlockNumber,
+	node::{BlockNumber, EIP712Encode},
 	schema::{SchemaId, SchemaValidator},
+	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
 	utils::wrap_binary_data,
 };
 use pretty_assertions::assert_eq;
+use sp_core::bytes::from_hex;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+extern crate alloc;
+use alloc::vec;
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
@@ -781,4 +787,63 @@ fn eth_address_to_checksummed_string() {
 		let generated_result = Msa::eth_address_to_checksummed_string(&eth_addresses[i]);
 		assert_eq!(generated_result, eth_results[i]);
 	}
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_key_should_work() {
+	new_test_ext().execute_with(|| {
+		let address = EthereumAddressMapper::to_account_id(&from_hex("0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9").unwrap_or_default());
+		let payload: AddKeyData<Test> = AddKeyData {
+			msa_id: 12876327,
+			expiration: 100,
+			new_public_key: address.into(),
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		// following signature is generated via Metamask using the same input to check compatibility
+		let signature_raw = from_hex("0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// Non-compressed public key associated with the keypair used in Metamask
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
+	});
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_provider_should_work() {
+	new_test_ext().execute_with(|| {
+		let payload = AddProvider {
+			authorized_msa_id: 12876327,
+			schema_ids: vec![2,4,5,6,7,8],
+			expiration: 100,
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		// following signature is generated via Metamask using the same input to check compatibility
+		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// Non-compressed public key associated with the keypair used in Metamask
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
+	});
 }

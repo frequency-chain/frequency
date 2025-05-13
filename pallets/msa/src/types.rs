@@ -11,7 +11,12 @@ pub use common_primitives::msa::{
 };
 use common_primitives::{node::BlockNumber, schema::SchemaId};
 
+use common_primitives::{
+	signatures::{get_eip712_encoding_prefix, AccountAddressMapper, EthereumAddressMapper},
+	utils::to_abi_compatible_number,
+};
 use scale_info::TypeInfo;
+use sp_core::U256;
 
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
@@ -32,6 +37,39 @@ pub struct AddKeyData<T: Config> {
 	pub new_public_key: T::AccountId,
 }
 
+impl<T: Config> EIP712Encode for AddKeyData<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"AddKeyData(uint64 msaId,uint32 expiration,address newPublicKey)",
+			);
+		}
+		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let converted_public_key = T::ConvertIntoAccountId32::convert(self.new_public_key.clone());
+		let mut zero_prefixed_address = [0u8; 32];
+		zero_prefixed_address[12..]
+			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key).0);
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_owner_msa_id,
+				&coded_expiration,
+				&zero_prefixed_address,
+			]
+			.concat(),
+		);
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
+}
+
 /// Structure that is signed for granting permissions to a Provider
 #[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 pub struct AddProvider {
@@ -42,6 +80,35 @@ pub struct AddProvider {
 	pub schema_ids: Vec<SchemaId>,
 	/// The block number at which the proof for grant_delegation expires.
 	pub expiration: BlockNumber,
+}
+
+impl EIP712Encode for AddProvider {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"AddProvider(uint64 authorizedMsaId,uint16[] schemaIds,uint32 expiration)"
+			);
+		}
+		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);
+		let schema_ids: Vec<u8> = self
+			.schema_ids
+			.iter()
+			.flat_map(|schema_id| to_abi_compatible_number(*schema_id))
+			.collect();
+		let schema_ids = sp_io::hashing::keccak_256(&schema_ids);
+		let coded_expiration = to_abi_compatible_number(self.expiration);
+		let message = sp_io::hashing::keccak_256(
+			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
+				.concat(),
+		);
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
 }
 
 impl AddProvider {

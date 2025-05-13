@@ -79,7 +79,7 @@ use alloc::{boxed::Box, vec, vec::Vec};
 
 use common_primitives::msa::DelegationResponse;
 pub use common_primitives::{
-	handles::HandleProvider, msa::MessageSourceId, utils::wrap_binary_data,
+	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
 };
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
@@ -488,7 +488,7 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			ensure!(
-				Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode()),
+				Self::verify_signature(&proof, &delegator_key, &add_provider_payload),
 				Error::<T>::InvalidSignature
 			);
 
@@ -581,7 +581,7 @@ pub mod pallet {
 			let provider_key = ensure_signed(origin)?;
 
 			ensure!(
-				Self::verify_signature(&proof, &delegator_key, add_provider_payload.encode()),
+				Self::verify_signature(&proof, &delegator_key, &add_provider_payload),
 				Error::<T>::AddProviderSignatureVerificationFailed
 			);
 
@@ -678,11 +678,7 @@ pub mod pallet {
 			let _ = ensure_signed(origin)?;
 
 			ensure!(
-				Self::verify_signature(
-					&msa_owner_proof,
-					&msa_owner_public_key,
-					add_key_payload.encode()
-				),
+				Self::verify_signature(&msa_owner_proof, &msa_owner_public_key, &add_key_payload),
 				Error::<T>::MsaOwnershipInvalidSignature
 			);
 
@@ -690,7 +686,7 @@ pub mod pallet {
 				Self::verify_signature(
 					&new_key_owner_proof,
 					&add_key_payload.new_public_key,
-					add_key_payload.encode()
+					&add_key_payload
 				),
 				Error::<T>::NewKeyOwnershipInvalidSignature
 			);
@@ -1215,11 +1211,14 @@ impl<T: Config> Pallet<T> {
 	/// # Errors
 	/// * [`Error::InvalidSignature`]
 	///
-	pub fn verify_signature(
+	pub fn verify_signature<P>(
 		signature: &MultiSignature,
 		signer: &T::AccountId,
-		payload: Vec<u8>,
-	) -> bool {
+		payload: &P,
+	) -> bool
+	where
+		P: Encode + EIP712Encode,
+	{
 		let key = T::ConvertIntoAccountId32::convert((*signer).clone());
 
 		check_signature(signature, key, payload)
