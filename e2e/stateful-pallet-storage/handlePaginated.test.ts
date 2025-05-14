@@ -63,7 +63,6 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       // Create an MSA that is not a provider to be used for testing failure cases
       [badMsaId],
     ] = await Promise.all([
-      // createDelegatorAndDelegation IS FAILING DUE TO FUNDING!!!! (PRE-delegatorKeys at least)
       createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys, 'sr25519', delegatorKeys),
       createMsa(fundingSource),
     ]);
