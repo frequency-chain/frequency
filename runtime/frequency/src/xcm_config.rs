@@ -220,7 +220,9 @@ impl pallet_xcm::Config for Runtime {
 	type Currency = Balances;
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
+	// I do not thingk we need this
 	type SovereignAccountOf = LocationToAccountId;
+	/// Not sure what this is for?
 	type MaxLockers = ConstU32<8>;
 	type WeightInfo = pallet_xcm::TestWeightInfo;
 	type AdminOrigin = EnsureRoot<AccountId>;
