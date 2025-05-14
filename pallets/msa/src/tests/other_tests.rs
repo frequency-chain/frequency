@@ -1,9 +1,8 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok,
-	dispatch::{GetDispatchInfo, Pays},
+	dispatch::{GetDispatchInfo, Pays, RawOrigin},
 	BoundedBTreeMap,
 };
-
 use frame_system::pallet_prelude::BlockNumberFor;
 
 use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
@@ -14,13 +13,13 @@ use crate::{
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
-	ProviderToRegistryEntry, PublicKeyToMsaId,
+	FreeKeyAddExpirationBlock, ProviderToRegistryEntry, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
+		Delegation, DelegationResponse, DelegatorId, MessageSourceId, MsaKeyProvider, ProviderId,
 		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{BlockNumber, EIP712Encode},
@@ -30,7 +29,11 @@ use common_primitives::{
 };
 use pretty_assertions::assert_eq;
 use sp_core::bytes::from_hex;
-use sp_runtime::traits::{IdentifyAccount, Verify};
+use sp_runtime::{
+	traits::{IdentifyAccount, Verify},
+	DispatchError::BadOrigin,
+};
+
 extern crate alloc;
 use alloc::vec;
 
@@ -845,5 +848,86 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 		);
 		let unified_signer = UnifiedSigner::from(public_key);
 		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
+	});
+}
+
+#[test]
+fn key_not_eligible_for_free_addition_when_more_than_one_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, key_pair) = create_account();
+		let public_key = key_pair.public();
+		let account_id32 = AccountId32::from(public_key);
+
+		let (new_key_pair, _) = sr25519::Pair::generate();
+
+		let add_new_key_data =
+			AddKeyData { msa_id, expiration: 10, new_public_key: new_key_pair.public().into() };
+		let encode_data_new_key_data = wrap_binary_data(add_new_key_data.encode());
+		let owner_signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
+		let new_key_signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
+
+		// ensure it doesn't fail because of expiration
+		let block = System::block_number();
+		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
+
+		assert_ok!(Msa::add_public_key_to_msa(
+			test_origin_signed(1),
+			key_pair.public().into(),
+			owner_signature,
+			new_key_signature,
+			add_new_key_data
+		));
+
+		assert_eq!(Msa::key_eligible_for_free_addition(account_id32.into(), msa_id), false);
+	});
+}
+
+#[test]
+fn key_eligible_for_free_addition_requires_msa_id_and_matching_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _) = create_account();
+		let invalid_msa_id = msa_id + 1;
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let new_key32 = AccountId32::from(new_key_pair.public());
+		// ensure it doesn't fail because of expiration
+		let block = System::block_number();
+		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
+
+		assert_eq!(Msa::key_eligible_for_free_addition(new_key32.clone(), msa_id), false);
+		assert_eq!(Msa::key_eligible_for_free_addition(new_key32, invalid_msa_id), false);
+	});
+}
+
+#[test]
+fn key_not_eligible_for_free_addition_after_expiration_block() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, key_pair) = create_account();
+		let account_id = key_pair.public();
+		let account_id32 = AccountId32::from(account_id);
+
+		let block = System::block_number();
+		FreeKeyAddExpirationBlock::<Test>::put(block - 1);
+
+		assert_eq!(Msa::key_eligible_for_free_addition(account_id32.into(), msa_id), false);
+	})
+}
+
+#[test]
+fn key_eligible_for_free_addition_when_only_one_key_and_before_expiration_block() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, key_pair) = create_account();
+		let account_id = key_pair.public();
+		let block = System::block_number();
+		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
+
+		assert!(Msa::key_eligible_for_free_addition(account_id.into(), msa_id));
+	});
+}
+
+#[test]
+fn set_free_key_add_expiration_succeeds_when_good_origin() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Msa::set_free_key_add_expiration(RawOrigin::Root.into(), 5u32));
+		assert_noop!(Msa::set_free_key_add_expiration(test_origin_signed(33), 5u32), BadOrigin);
 	});
 }

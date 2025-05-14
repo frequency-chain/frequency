@@ -295,7 +295,15 @@ pub trait SchemaGrantValidator<BlockNumber> {
 	) -> DispatchResult;
 }
 
-/// RPC Response for getting getting MSA keys
+/// A trait that allows checking whether adding a key would be free
+pub trait MsaKeyProvider {
+	/// the type to use for looking up keys in storage.
+	type AccountId;
+	/// Returns whether adding a new key to `msa_id` would be free
+	fn key_eligible_for_free_addition(old_key: Self::AccountId, msa_id: MessageSourceId) -> bool;
+}
+
+/// RPC Response for getting MSA keys
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {
