@@ -46,7 +46,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
       createProviderKeysAndId(fundingSource, 2n * DOLLARS),
       createAndFundKeypair(fundingSource, 2n * DOLLARS),
       ExtrinsicHelper.getOrCreateSchemaV3(
-        undelegatedProviderKeys,
+        fundingSource,
         AVRO_CHAT_MESSAGE,
         'AvroBinary',
         'Itemized',
