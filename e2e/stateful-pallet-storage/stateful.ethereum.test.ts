@@ -64,7 +64,6 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         'test.PaginatedSignatureRequired'
       ),
     ]);
-    console.count('stateful-ethereum-test');
     assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
     assert.notEqual(undelegatedProviderKeys, undefined, 'setup should populate undelegatedProviderKeys');
 
