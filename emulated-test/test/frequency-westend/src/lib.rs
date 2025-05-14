@@ -50,6 +50,7 @@ mod imports {
 	pub type AssetHubToFrequencyTest = Test<AssetHubWestend, FrequencyWestend>;
 	pub type FrequencyToAssetHubTest = Test<FrequencyWestend, AssetHubWestend>;
 	pub type RelayToFrequencyTest = Test<Westend, FrequencyWestend>;
+	pub type FrequencyToRelayTest = Test<FrequencyWestend, Westend>;
 }
 
 #[cfg(test)]
