@@ -143,7 +143,6 @@ impl pallet_msa::Config for Test {
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
-	type FreeKeyAddExpirationOrigin = EnsureRoot<u64>;
 }
 
 // not used yet

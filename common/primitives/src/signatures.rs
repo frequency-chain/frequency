@@ -96,6 +96,10 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 		}
 		eth_address.into()
 	}
+
+	fn is_ethereum_address(account_id: AccountId32) -> bool {
+		account_id.as_slice()[20..] == *[0xEE; 12].as_slice()
+	}
 }
 
 /// Signature verify that can work with any known signature types.

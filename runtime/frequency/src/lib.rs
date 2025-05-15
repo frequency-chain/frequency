@@ -606,11 +606,6 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
-	// Who is allowed to set the FreeKeyAddExpiration block.
-	type FreeKeyAddExpirationOrigin = EitherOfDiverse<
-		EnsureRoot<AccountId>,
-		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
-	>;
 }
 
 parameter_types! {

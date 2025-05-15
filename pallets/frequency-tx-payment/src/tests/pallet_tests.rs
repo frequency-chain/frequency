@@ -1019,7 +1019,7 @@ pub fn generate_test_signature() -> MultiSignature {
 }
 
 #[test]
-fn add_public_key_to_msa_free_if_before_expiration_block() {
+fn add_public_key_to_msa_free_if_is_ethereum_compatible() {
 	let balance_factor = 100_000_000;
 
 	// uses funded account already with MSA Id
@@ -1038,8 +1038,6 @@ fn add_public_key_to_msa_free_if_before_expiration_block() {
 		.base_weight(Weight::from_parts(5, 0))
 		.build()
 		.execute_with(|| {
-			// set expiration to later
-			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
 			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
 				msa_owner_public_key: account_id,
 				msa_owner_proof: proof1,
@@ -1082,7 +1080,6 @@ fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
 		.build()
 		.execute_with(|| {
 			// set expiration to later
-			pallet_msa::FreeKeyAddExpirationBlock::<Test>::put(5);
 			let call = &RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
 				msa_owner_public_key: account_id,
 				msa_owner_proof: proof1,

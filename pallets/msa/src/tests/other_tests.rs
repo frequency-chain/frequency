@@ -13,7 +13,7 @@ use crate::{
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
 	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
-	FreeKeyAddExpirationBlock, ProviderToRegistryEntry, PublicKeyToMsaId,
+	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
 use common_primitives::signatures::AccountAddressMapper;
 
@@ -866,10 +866,6 @@ fn key_not_eligible_for_free_addition_when_more_than_one_key() {
 		let owner_signature: MultiSignature = key_pair.sign(&encode_data_new_key_data).into();
 		let new_key_signature: MultiSignature = new_key_pair.sign(&encode_data_new_key_data).into();
 
-		// ensure it doesn't fail because of expiration
-		let block = System::block_number();
-		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
-
 		assert_ok!(Msa::add_public_key_to_msa(
 			test_origin_signed(1),
 			key_pair.public().into(),
@@ -889,9 +885,6 @@ fn key_eligible_for_free_addition_requires_msa_id_and_matching_key() {
 		let invalid_msa_id = msa_id + 1;
 		let (new_key_pair, _) = sr25519::Pair::generate();
 		let new_key32 = AccountId32::from(new_key_pair.public());
-		// ensure it doesn't fail because of expiration
-		let block = System::block_number();
-		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
 
 		assert_eq!(Msa::key_eligible_for_free_addition(new_key32.clone(), msa_id), false);
 		assert_eq!(Msa::key_eligible_for_free_addition(new_key32, invalid_msa_id), false);
@@ -899,35 +892,22 @@ fn key_eligible_for_free_addition_requires_msa_id_and_matching_key() {
 }
 
 #[test]
-fn key_not_eligible_for_free_addition_after_expiration_block() {
+fn key_not_eligible_for_free_addition_if_not_ethereum_compatible() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, key_pair) = create_account();
 		let account_id = key_pair.public();
 		let account_id32 = AccountId32::from(account_id);
-
-		let block = System::block_number();
-		FreeKeyAddExpirationBlock::<Test>::put(block - 1);
 
 		assert_eq!(Msa::key_eligible_for_free_addition(account_id32.into(), msa_id), false);
 	})
 }
 
 #[test]
-fn key_eligible_for_free_addition_when_only_one_key_and_before_expiration_block() {
+fn key_eligible_for_free_addition_when_only_one_key_and_ethereum_compatible() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, key_pair) = create_account();
 		let account_id = key_pair.public();
 		let block = System::block_number();
-		FreeKeyAddExpirationBlock::<Test>::put(block + 1);
-
 		assert!(Msa::key_eligible_for_free_addition(account_id.into(), msa_id));
-	});
-}
-
-#[test]
-fn set_free_key_add_expiration_succeeds_when_good_origin() {
-	new_test_ext().execute_with(|| {
-		assert_ok!(Msa::set_free_key_add_expiration(RawOrigin::Root.into(), 5u32));
-		assert_noop!(Msa::set_free_key_add_expiration(test_origin_signed(33), 5u32), BadOrigin);
 	});
 }

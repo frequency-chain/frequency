@@ -45,7 +45,6 @@ pub trait WeightInfo {
 	fn create_provider_via_governance() -> Weight;
 	fn propose_to_be_provider() -> Weight;
 	fn reindex_offchain() -> Weight;
-	fn set_free_key_add_expiration() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -237,16 +236,6 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 4_187_000 picoseconds.
 		Weight::from_parts(4_318_000, 0)
 	}
-	/// Storage: `Msa::FreeKeyAddExpirationBlock` (r:0 w:1)
-	/// Proof: `Msa::FreeKeyAddExpirationBlock` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
-	fn set_free_key_add_expiration() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_737_000 picoseconds.
-		Weight::from_parts(4_409_000, 0)
-			.saturating_add(T::DbWeight::get().writes(1_u64))
-	}
 }
 
 // For backwards compatibility and tests.
@@ -436,16 +425,6 @@ impl WeightInfo for () {
 		//  Estimated: `0`
 		// Minimum execution time: 4_187_000 picoseconds.
 		Weight::from_parts(4_318_000, 0)
-	}
-	/// Storage: `Msa::FreeKeyAddExpirationBlock` (r:0 w:1)
-	/// Proof: `Msa::FreeKeyAddExpirationBlock` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
-	fn set_free_key_add_expiration() -> Weight {
-		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 3_737_000 picoseconds.
-		Weight::from_parts(4_409_000, 0)
-			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
 
