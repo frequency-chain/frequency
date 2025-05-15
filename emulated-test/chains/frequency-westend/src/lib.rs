@@ -1,7 +1,7 @@
 pub use frequency_runtime::{self, xcm_config::RelayNetwork as FrequencyRelayNetworkId};
 
 mod genesis;
-pub use genesis::{genesis, FrequencySudoAccount, FrequencyAssetOwner, ED, PARA_ID};
+pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
 
 use frame_support::traits::OnInitialize;
 

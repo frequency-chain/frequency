@@ -3,9 +3,7 @@ use sp_core::storage::Storage;
 use sp_keyring::Sr25519Keyring as Keyring;
 
 // Cumulus
-use emulated_integration_tests_common::{
-	accounts, build_genesis_storage, collators,
-};
+use emulated_integration_tests_common::{accounts, build_genesis_storage, collators};
 use parachains_common::{AccountId, Balance};
 // use frequency_runtime::xcm_config::{LocalReservableFromAssetHub, RelayLocation, UsdtFromAssetHub};
 

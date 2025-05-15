@@ -1,14 +1,15 @@
 use crate::{
-	AccountId, AllPalletsWithSystem, Balances, ForeignAssets, ParachainInfo, ParachainSystem,
-	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue, polkadot_xcm_fee::default_fee_per_second,
+	polkadot_xcm_fee::default_fee_per_second, AccountId, AllPalletsWithSystem, Balances,
+	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, XcmpQueue,
 };
 
 use staging_xcm_builder::{
-	AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
-	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
-	FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete, IsParentsOnly,
-	MatchedConvertedConcreteId, NativeAsset, NoChecking, SignedToAccountId32, TakeWeightCredit,
-	TrailingSetTopicAsId, UsingComponents, FixedRateOfFungible, WithComputedOrigin, WithUniqueTopic,
+	AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedRateOfFungible,
+	FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete,
+	IsParentsOnly, MatchedConvertedConcreteId, NativeAsset, NoChecking, SignedToAccountId32,
+	TakeWeightCredit, TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
 
 pub use crate::xcm_commons::{
@@ -46,9 +47,9 @@ parameter_types! {
 	pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
+	// TODO: From AssetHub Westend source in p.sdk
+	pub const WestendLocation: Location = Location::parent();
 }
-
-
 
 parameter_types! {
 	pub RelayPerSecondAndByte: (AssetId, u128,u128) = (Location::new(1,Here).into(), default_fee_per_second(), 1024);
@@ -125,8 +126,8 @@ pub type Barrier = TrailingSetTopicAsId<
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 					// ^^^ Parent and its exec plurality get free execution
-										// Subscriptions for version tracking are OK.
-					// AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
+					// Subscriptions for version tracking are OK.
+					AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
 				),
 				UniversalLocation,
 				ConstU32<8>,
@@ -152,15 +153,18 @@ impl xcm_executor::Config for XcmConfig {
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = (NativeAsset, ConcreteAssetFromSystem<RelayLocation>, AssetFrom<AssetHubLocation>);
+	type IsReserve =
+		(NativeAsset, ConcreteAssetFromSystem<RelayLocation>, AssetFrom<AssetHubLocation>);
 	// in order to register our asset in asset hub
 	// once the asset is registered we can teleport our native asset to asset hub
 	type IsTeleporter = TrustedTeleporter;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-	type Trader =
-		(FixedRateOfFungible<RelayPerSecondAndByte, ()>, UsingComponents<WeightToFee, HereLocation, AccountId, Balances, ToAuthor<Runtime>>,);
+	type Trader = (
+		FixedRateOfFungible<RelayPerSecondAndByte, ()>,
+		UsingComponents<WeightToFee, HereLocation, AccountId, Balances, ToAuthor<Runtime>>,
+	);
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
