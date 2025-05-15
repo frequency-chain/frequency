@@ -15,16 +15,21 @@ const fundingSource = getFundingSource(import.meta.url);
 
 describe('Capacity: change_staking_target', function () {
   const tokenMinStake: bigint = 1n * CENTS;
-  const capacityMin: bigint = tokenMinStake / 50n;
 
   it('successfully stake tokens to a provider', async function () {
     const providerBalance = 2n * DOLLARS;
     const stakeKeys = createKeys('staker');
-    const oldProvider = await createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance);
-    const [_bar, newProvider] = await createProviderKeysAndId(fundingSource, providerBalance);
 
+    // Setup
+    const [oldProvider, [_bar, newProvider]] = await Promise.all([
+      createMsaAndProvider(fundingSource, stakeKeys, 'Provider1', providerBalance),
+      createProviderKeysAndId(fundingSource, providerBalance),
+    ]);
+
+    // Stake
     await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, oldProvider, tokenMinStake * 3n));
 
+    // Change Stake
     const call = ExtrinsicHelper.changeStakingTarget(stakeKeys, oldProvider, newProvider, tokenMinStake);
     const events = await call.signAndSend();
     assert.notEqual(events, undefined);

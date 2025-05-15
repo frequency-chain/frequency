@@ -39,7 +39,7 @@ function fundSourceTransfer(root: KeyringPair, dest: KeyringPair, amount: bigint
     // Only transfer the amount needed
     return ExtrinsicHelper.transferFunds(root, dest, amount).signAndSend(nonce);
   } catch (e) {
-    console.error('Unable to fund soruce', { dest });
+    console.error('Unable to fund source', { dest });
     throw e;
   }
 }
@@ -54,6 +54,8 @@ async function fundAccountsToDefault(dests: KeyringPair[]) {
       .filter(({ amount }) => amount > 0n)
       .map(({ amount, dest }, i) => fundSourceTransfer(root, dest, amount, nonce + i))
   );
+  // Make sure we are finalized before trying to use the funds
+  await ExtrinsicHelper.waitForFinalization();
   console.log('Root funding complete!');
 }
 
