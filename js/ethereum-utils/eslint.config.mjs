@@ -2,7 +2,7 @@
 
 import eslint from '@eslint/js';
 import tseslint from 'typescript-eslint';
-import mocha from 'eslint-plugin-mocha';
+import mochaPlugin from 'eslint-plugin-mocha';
 import globals from 'globals';
 
 // Needed for eslint 9
@@ -21,9 +21,9 @@ const mochaConfig = [
 
 export default tseslint.config(
   eslint.configs.recommended,
+  mochaPlugin.configs.recommended,
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
-  ...mochaConfig,
   {
 	  ignores: ['dist/', 'scripts/'],
   },
