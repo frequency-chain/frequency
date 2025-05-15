@@ -1,7 +1,5 @@
 import '@frequency-chain/api-augment';
 
-import assert from 'assert';
-
 import { KeyringPair } from '@polkadot/keyring/types';
 import { merkleizeMetadata } from '@polkadot-api/merkleize-metadata';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -20,7 +18,8 @@ const fundingSource = getFundingSource(import.meta.url);
 // This is skipped as it requires the e2e tests to be run
 // against a Frequency build that has the metadata-hash feature
 // enabled. That feature is a large increase in compile time however.
-// eslint-disable-next-line mocha/no-skipped-tests
+
+// eslint-disable-next-line mocha/no-pending-tests
 describe.skip('Check Metadata Hash', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;

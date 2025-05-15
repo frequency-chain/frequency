@@ -2,11 +2,11 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
   createKeys,
-  createAndFundKeypair,
   generateAddKeyPayload,
-  CENTS,
   signPayload,
   MultiSignatureType,
+  DOLLARS,
+  createAndFundKeypairs,
   getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
@@ -35,12 +35,15 @@ describe('MSA Key management Ethereum', function () {
 
     before(async function () {
       // Setup an MSA with one key and a secondary funded key
-      keys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      [keys, secondaryKey] = await createAndFundKeypairs(
+        fundingSource,
+        ['keys', 'secondaryKey'],
+        2n * DOLLARS,
+        'ethereum'
+      );
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
-
-      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
 
       // Default payload making it easier to test `addPublicKeyToMsa`
       defaultPayload.msaId = msaId;
@@ -115,7 +118,7 @@ describe('MSA Key management Ethereum', function () {
       ownerSig = signPayload(secondaryKey, addKeyData);
       newSig = signPayload(thirdKey, addKeyData);
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
-      const { target: event } = await op.fundAndSend(fundingSource);
+      const { target: event } = await op.fundAndSend(fundingSource, false);
       assert.notEqual(event, undefined, 'should have added public key');
 
       // Cleanup

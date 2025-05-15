@@ -326,10 +326,12 @@ describe('Capacity Staking Tests', function () {
 
       const vestedTransferTx = ExtrinsicHelper.timeReleaseTransfer(fundingSource, vesterKeys, schedule);
 
-      await assert.doesNotReject(vestedTransferTx.signAndSend());
+      await assert.doesNotReject(vestedTransferTx.signAndSend(undefined, undefined, false));
       await assertFrozen(vesterKeys, 100n * DOLLARS);
 
-      await assert.doesNotReject(ExtrinsicHelper.stake(vesterKeys, providerId, 80n * DOLLARS).signAndSend());
+      await assert.doesNotReject(
+        ExtrinsicHelper.stake(vesterKeys, providerId, 80n * DOLLARS).signAndSend(undefined, undefined, false)
+      );
 
       const spendable = await getSpendableBalance(vesterKeys);
       // after txn fees

@@ -220,7 +220,9 @@ export async function generatePaginatedDeleteSignaturePayloadV2(
 const createdKeys = new Map<string, KeyringPair>();
 const ethereumKeys = new Map<string, Keypair>();
 
-export function drainFundedKeys(dest: KeyringPair) {
+export async function drainFundedKeys(dest: KeyringPair) {
+  // Make sure we are finalized before trying to drain
+  await ExtrinsicHelper.waitForFinalization();
   return drainKeys([...createdKeys.values()], dest);
 }
 
@@ -276,7 +278,7 @@ export async function fundKeypair(
   amount: bigint,
   nonce?: number
 ): Promise<void> {
-  await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce);
+  await ExtrinsicHelper.transferFunds(source, dest, amount).signAndSend(nonce, undefined, false);
 }
 
 // create and Fund keys with existential deposit amount or the value provided.
@@ -320,14 +322,19 @@ export function log(...args: any[]) {
 
 export async function createProviderKeysAndId(
   source: KeyringPair,
-  amount: bigint = 1n * DOLLARS
+  amount: bigint = 1n * DOLLARS,
+  waitForInBlock = true
 ): Promise<[KeyringPair, u64]> {
   const providerKeys = await createAndFundKeypair(source, amount);
-  await ExtrinsicHelper.createMsa(providerKeys).fundAndSend(source);
-  const createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider');
-  const { target: providerEvent } = await createProviderOp.fundAndSend(source);
-  const providerId = providerEvent?.data.providerId || new u64(ExtrinsicHelper.api.registry, 0);
-  return [providerKeys, providerId];
+  const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(providerKeys, [
+    ExtrinsicHelper.createMsa(providerKeys).extrinsic(),
+    ExtrinsicHelper.createProvider(providerKeys, 'PrivateProvider').extrinsic(),
+  ]).fundAndSend(source, waitForInBlock);
+  const providerCreatedEvent = eventMap['msa.ProviderCreated'];
+  if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
+    return [providerKeys, providerCreatedEvent.data.providerId];
+  }
+  throw new Error('createProviderKeysAndId failed to return a ProviderCreated event!');
 }
 
 export async function createDelegatorAndDelegation(
@@ -335,10 +342,11 @@ export async function createDelegatorAndDelegation(
   schemaId: u16 | u16[],
   providerId: u64,
   providerKeys: KeyringPair,
-  keyType: KeypairType = 'sr25519'
+  keyType: KeypairType = 'sr25519',
+  createdDelegatorKeys?: KeyringPair
 ): Promise<[KeyringPair, u64]> {
-  // Create a  delegator msa + keys.
-  const [delegatorMsaId, delegatorKeys] = await createMsa(source, undefined, keyType);
+  // Create a  delegator keys.
+  const delegatorKeys = createdDelegatorKeys || createKeys('delegator', keyType);
   // Grant delegation to the provider
   const payload = await generateDelegationPayload({
     authorizedMsaId: providerId,
@@ -346,15 +354,15 @@ export async function createDelegatorAndDelegation(
   });
   const addProviderData = ExtrinsicHelper.api.registry.createType('PalletMsaAddProvider', payload);
 
-  const grantDelegationOp = ExtrinsicHelper.grantDelegation(
+  const grantDelegationOp = ExtrinsicHelper.createSponsoredAccountWithDelegation(
     delegatorKeys,
     providerKeys,
     signPayload(delegatorKeys, addProviderData),
     payload
   );
-  await grantDelegationOp.fundAndSend(source);
+  const { target: targetEvent } = await grantDelegationOp.fundAndSend(source, false);
 
-  return [delegatorKeys, delegatorMsaId];
+  return [delegatorKeys, targetEvent!.data.msaId];
 }
 
 export async function getCurrentItemizedHash(msa_id: MessageSourceId, schemaId: u16): Promise<PageHash> {
@@ -387,7 +395,7 @@ export async function createMsa(
 ): Promise<[u64, KeyringPair]> {
   const keys = await createAndFundKeypair(source, amount, undefined, undefined, keyType);
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
-  const { target } = await createMsaOp.fundAndSend(source);
+  const { target } = await createMsaOp.fundAndSend(source, false);
   assert.notEqual(target, undefined, 'createMsa: should have returned MsaCreated event');
 
   return [target!.data.msaId, keys];
@@ -399,7 +407,8 @@ export async function createMsaAndProvider(
   source: KeyringPair,
   keys: KeyringPair,
   providerName: string,
-  amount: bigint | undefined = undefined
+  amount: bigint | undefined = undefined,
+  waitForInBlock = true
 ): Promise<u64> {
   const createMsaOp = ExtrinsicHelper.createMsa(keys);
   const createProviderOp = ExtrinsicHelper.createProvider(keys, providerName);
@@ -413,7 +422,7 @@ export async function createMsaAndProvider(
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(keys, [
     createMsaOp.extrinsic(),
     createProviderOp.extrinsic(),
-  ]).signAndSend();
+  ]).signAndSend(undefined, undefined, waitForInBlock);
 
   const providerCreatedEvent = eventMap['msa.ProviderCreated'];
   if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
@@ -430,7 +439,8 @@ export async function stakeToProvider(
   tokensToStake: bigint
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.stake(keys, providerId, tokensToStake);
-  const { target: stakeEvent } = await stakeOp.fundAndSend(source);
+  // Wait for finalized capacity before continuing
+  const { target: stakeEvent } = await stakeOp.fundAndSend(source, false);
   assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
 
   if (stakeEvent) {
@@ -506,7 +516,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
   if (existingSchemaId) {
     return new u16(ExtrinsicHelper.api.registry, existingSchemaId);
   } else {
-    const op = await ExtrinsicHelper.createSchemaV3(
+    const op = ExtrinsicHelper.createSchemaV3(
       source,
       AVRO_GRAPH_CHANGE,
       'AvroBinary',
@@ -514,7 +524,7 @@ export async function getOrCreateGraphChangeSchema(source: KeyringPair): Promise
       [],
       'test.graphChangeSchema'
     );
-    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source);
+    const { target: createSchemaEvent, eventMap } = await op.fundAndSend(source, false);
     assertExtrinsicSuccess(eventMap);
     if (createSchemaEvent) {
       return createSchemaEvent.data.schemaId;
@@ -537,7 +547,7 @@ export async function getOrCreateParquetBroadcastSchema(source: KeyringPair): Pr
       [],
       'test.parquetBroadcast'
     );
-    const { target: event } = await createSchema.fundAndSend(source);
+    const { target: event } = await createSchema.fundAndSend(source, false);
     if (event) {
       return event.data.schemaId;
     } else {
@@ -559,7 +569,7 @@ export async function getOrCreateDummySchema(source: KeyringPair): Promise<u16> 
       [],
       'test.dummySchema'
     );
-    const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source);
+    const { target: dummySchemaEvent } = await createDummySchema.fundAndSend(source, false);
     if (dummySchemaEvent) {
       return dummySchemaEvent.data.schemaId;
     } else {
@@ -582,7 +592,7 @@ export async function getOrCreateAvroChatMessagePaginatedSchema(source: KeyringP
       [],
       'test.AvroChatMessagePaginated'
     );
-    const { target: event } = await createSchema.fundAndSend(source);
+    const { target: event } = await createSchema.fundAndSend(source, false);
     if (event) {
       return event.data.schemaId;
     } else {
@@ -605,7 +615,7 @@ export async function getOrCreateAvroChatMessageItemizedSchema(source: KeyringPa
       [],
       'test.AvroChatMessageItemized'
     );
-    const { target: event } = await createSchema.fundAndSend(source);
+    const { target: event } = await createSchema.fundAndSend(source, false);
     if (event) {
       return event.data.schemaId;
     } else {

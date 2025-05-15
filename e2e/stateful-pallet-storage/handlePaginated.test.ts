@@ -9,6 +9,7 @@ import {
   DOLLARS,
   getOrCreateAvroChatMessagePaginatedSchema,
   assertExtrinsicSucceededAndFeesPaid,
+  createAndFundKeypair,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -30,34 +31,48 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   let badMsaId: u64;
 
   before(async function () {
-    // Create a provider for the MSA, the provider will be used to grant delegation
-    [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    [
+      // Create a provider for the MSA, the provider will be used to grant delegation
+      [providerKeys, providerId],
+      // Delegator Keys
+      delegatorKeys,
+      // Create a schema for Paginated PayloadLocation
+      schemaId,
+      // Create non supported schema
+      schemaId_unsupported,
+    ] = await Promise.all([
+      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      createAndFundKeypair(fundingSource, 2n * DOLLARS),
+      getOrCreateAvroChatMessagePaginatedSchema(fundingSource),
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'OnChain',
+        [],
+        'test.handlePaginatedUnsupported'
+      ),
+    ]);
+
     assert.notEqual(providerId, undefined, 'setup should populate providerId');
     assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
-    // Create a schema for Paginated PayloadLocation
-    schemaId = await getOrCreateAvroChatMessagePaginatedSchema(providerKeys);
+    [
+      // Create a MSA for the delegator and delegate to the provider
+      [delegatorKeys, msa_id],
+      // Create an MSA that is not a provider to be used for testing failure cases
+      [badMsaId],
+    ] = await Promise.all([
+      createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys, 'sr25519', delegatorKeys),
+      createMsa(fundingSource),
+    ]);
 
-    // Create non supported schema
-    schemaId_unsupported = await ExtrinsicHelper.getOrCreateSchemaV3(
-      providerKeys,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.handlePaginatedUnsupported'
-    );
-
-    // Create a MSA for the delegator and delegate to the provider
-    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(fundingSource, schemaId, providerId, providerKeys);
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
-
-    // Create an MSA that is not a provider to be used for testing failure cases
-    [badMsaId] = await createMsa(fundingSource);
+    assert.notEqual(badMsaId, undefined, 'setup should populate badMsaId');
   });
 
   describe('Paginated Storage Upsert/Remove Tests 😊/😥', function () {
-    it('✅ should be able to call upsert page and add a page and remove a page via id', async function () {
+    it('should be able to call upsert page and add a page and remove a page via id', async function () {
       let page_id = 0;
       let target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
 
@@ -122,7 +137,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
     });
 
-    it('🛑 should fail call to upsert page with invalid schemaId', async function () {
+    it('should fail call to upsert page with invalid schemaId', async function () {
       const page_id = 0;
       const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
@@ -141,7 +156,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       });
     });
 
-    it('🛑 should fail call to upsert page with invalid schema location', async function () {
+    it('should fail call to upsert page with invalid schema location', async function () {
       const page_id = 0;
       const target_hash = await getCurrentPaginatedHash(msa_id, schemaId, page_id);
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
@@ -159,7 +174,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       });
     });
 
-    it('🛑 should fail call to upsert page with for un-delegated attempts', async function () {
+    it('should fail call to upsert page with for un-delegated attempts', async function () {
       const page_id = 0;
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
 
@@ -178,7 +193,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       });
     });
 
-    it('🛑 should fail call to upsert page with stale target hash', async function () {
+    it('should fail call to upsert page with stale target hash', async function () {
       const page_id = 0;
       const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
 
@@ -191,7 +206,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   });
 
   describe('Paginated Storage Removal Negative Tests 😊/😥', function () {
-    it('🛑 should fail call to remove page with invalid schemaId', async function () {
+    it('should fail call to remove page with invalid schemaId', async function () {
       const page_id = 0;
       const paginated_add_result_1 = ExtrinsicHelper.removePage(delegatorKeys, badSchemaId, msa_id, page_id, 0);
       await assert.rejects(paginated_add_result_1.fundAndSend(fundingSource), {
@@ -200,7 +215,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
       });
     });
 
-    it('🛑 should fail call to remove page with invalid schema location', async function () {
+    it('should fail call to remove page with invalid schema location', async function () {
       const page_id = 0;
       const paginated_add_result_1 = ExtrinsicHelper.removePage(
         delegatorKeys,
