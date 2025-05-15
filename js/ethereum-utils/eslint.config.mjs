@@ -5,20 +5,6 @@ import tseslint from 'typescript-eslint';
 import mochaPlugin from 'eslint-plugin-mocha';
 import globals from 'globals';
 
-// Needed for eslint 9
-const mochaConfig = [
-  {
-    name: 'mocha/recommended',
-    languageOptions: {
-      globals: globals.mocha,
-    },
-    plugins: {
-      mocha,
-    },
-    rules: mocha.configs.flat.recommended.rules,
-  },
-];
-
 export default tseslint.config(
   eslint.configs.recommended,
   mochaPlugin.configs.recommended,

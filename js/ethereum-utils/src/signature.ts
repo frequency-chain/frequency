@@ -1,4 +1,3 @@
-import { Keypair } from '@polkadot/util-crypto/types';
 import {
   AddKeyData,
   AddProvider,
@@ -31,12 +30,12 @@ import {
 
 /**
  * Signing EIP-712 compatible signature for payload
- * @param keys
+ * @param secretKey
  * @param payload
  * @param chain
  */
 export async function signEip712(
-  keys: Keypair,
+  secretKey: HexString,
   payload: SupportedPayload,
   chain: ChainType = 'Mainnet-Frequency'
 ): Promise<EcdsaSignature> {
@@ -56,7 +55,7 @@ export async function signEip712(
 
   const types = getTypesFor(payload.type);
   const normalizedPayload = normalizePayload(payload);
-  const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString('hex'));
+  const wallet = new ethers.Wallet(secretKey);
   const signature = await wallet.signTypedData(domainData, types, normalizedPayload);
   return { Ecdsa: signature } as EcdsaSignature;
 }

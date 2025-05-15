@@ -836,7 +836,7 @@ jobs:
         with:
           node-version: 20
           cache: "npm"
-#          cache-dependency-path: e2e/package-lock.json not sure errors out
+          cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment and ethereum-utils
         run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
         working-directory: e2e

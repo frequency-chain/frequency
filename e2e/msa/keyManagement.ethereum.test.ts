@@ -138,10 +138,13 @@ describe('MSA Key management Ethereum', function () {
         newPayload.expiration
       );
       ownerSig = await signEip712(
-        getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)),
+        u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)).secretKey),
         signingPayload
       );
-      newSig = await signEip712(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)), signingPayload);
+      newSig = await signEip712(
+        u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)).secretKey),
+        signingPayload
+      );
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
       const { target: event } = await op.fundAndSend(fundingSource);
       assert.notEqual(event, undefined, 'should have added public key via eip-712');
