@@ -4,8 +4,4 @@ describe('placeholder', function () {
   it('first test', function () {
     assert.equal(1, 1);
   });
-
-  it('second test', function () {
-    assert.equal(1, 1);
-  });
 });

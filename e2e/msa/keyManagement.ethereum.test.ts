@@ -14,9 +14,8 @@ import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { createAddKeyData, getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { signEip712 } from '@frequency-chain/ethereum-utils';
-import { AddKeyData as EthereumAddKeyData } from '@frequency-chain/ethereum-utils/types';
 import { u8aToHex } from '@polkadot/util';
 
 const maxU64 = 18_446_744_073_709_551_615n;
@@ -130,12 +129,11 @@ describe('MSA Key management Ethereum', function () {
         newPublicKey: getUnifiedPublicKey(thirdKey),
       });
 
-      const signingPayload: EthereumAddKeyData = {
-        type: 'AddKeyData',
-        msaId: BigInt((newPayload.msaId ?? '0').toString()),
-        newPublicKey: u8aToHex(newPayload.newPublicKey),
-        expiration: newPayload.expiration,
-      };
+      const signingPayload = createAddKeyData(
+        `${payload.msaId}`,
+        u8aToHex(newPayload.newPublicKey),
+        newPayload.expiration
+      );
       ownerSig = await signEip712(
         getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)),
         signingPayload

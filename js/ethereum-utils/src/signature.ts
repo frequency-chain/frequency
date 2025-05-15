@@ -10,159 +10,24 @@ import {
   PaginatedUpsertSignaturePayloadV2,
   PasskeyPublicKey,
   SupportedPayload,
+  HexString,
+  AddItemizedAction,
+  DeleteItemizedAction,
+  ItemizedAction,
 } from './types';
 import { assert, isValidHexString, isValidUint16, isValidUint32, isValidUint64 } from './utils';
 import { reverseUnifiedAddressToEthereumAddress } from './address';
 import { ethers, TypedDataField } from 'ethers';
-
-export const EIP712_DOMAIN_DEFINITION = {
-  EIP712Domain: [
-    {
-      name: 'name',
-      type: 'string',
-    },
-    {
-      name: 'version',
-      type: 'string',
-    },
-    {
-      name: 'chainId',
-      type: 'uint256',
-    },
-    {
-      name: 'verifyingContract',
-      type: 'address',
-    },
-  ],
-};
-
-export const ADD_PROVIDER_DEFINITION = {
-  AddProvider: [
-    {
-      name: 'authorizedMsaId',
-      type: 'uint64',
-    },
-    {
-      name: 'schemaIds',
-      type: 'uint16[]',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-  ],
-};
-
-export const ADD_KEY_DATA_DEFINITION = {
-  AddKeyData: [
-    {
-      name: 'msaId',
-      type: 'uint64',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-    {
-      name: 'newPublicKey',
-      type: 'address',
-    },
-  ],
-};
-
-export const CLAIM_HANDLE_PAYLOAD_DEFINITION = {
-  ClaimHandlePayload: [
-    {
-      name: 'handle',
-      type: 'string',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-  ],
-};
-
-export const PASSKEY_PUBLIC_KEY_DEFINITION = {
-  PasskeyPublicKey: [
-    {
-      name: 'publicKey',
-      type: 'bytes',
-    },
-  ],
-};
-
-export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION = {
-  PaginatedDeleteSignaturePayloadV2: [
-    {
-      name: 'schemaId',
-      type: 'uint16',
-    },
-    {
-      name: 'pageId',
-      type: 'uint16',
-    },
-    {
-      name: 'targetHash',
-      type: 'uint32',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-  ],
-};
-
-export const PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION = {
-  PaginatedUpsertSignaturePayloadV2: [
-    {
-      name: 'schemaId',
-      type: 'uint16',
-    },
-    {
-      name: 'pageId',
-      type: 'uint16',
-    },
-    {
-      name: 'targetHash',
-      type: 'uint32',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-    {
-      name: 'payload',
-      type: 'bytes',
-    },
-  ],
-};
-
-export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION = {
-  ItemizedSignaturePayloadV2: [
-    {
-      name: 'schemaId',
-      type: 'uint16',
-    },
-    {
-      name: 'targetHash',
-      type: 'uint32',
-    },
-    {
-      name: 'expiration',
-      type: 'uint32',
-    },
-    {
-      name: 'actions',
-      type: 'ItemAction[]',
-    },
-  ],
-  ItemAction: [
-    { name: 'actionType', type: 'string' },
-    { name: 'data', type: 'bytes' },
-    { name: 'index', type: 'uint16' },
-  ],
-};
+import { u8aToHex } from '@polkadot/util';
+import {
+  ADD_KEY_DATA_DEFINITION,
+  ADD_PROVIDER_DEFINITION,
+  CLAIM_HANDLE_PAYLOAD_DEFINITION,
+  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
+  PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
+  PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
+  PASSKEY_PUBLIC_KEY_DEFINITION,
+} from './signature.definitions';
 
 /**
  * Signing EIP-712 compatible signature for payload
@@ -190,72 +55,26 @@ export async function signEip712(
   };
 
   const types = getTypesFor(payload.type);
-  const normalizedPayload = checkAndNormalizePayload(payload);
+  const normalizedPayload = normalizePayload(payload);
   const wallet = new ethers.Wallet(Buffer.from(keys.secretKey).toString('hex'));
   const signature = await wallet.signTypedData(domainData, types, normalizedPayload);
   return { Ecdsa: signature } as EcdsaSignature;
 }
 
-function checkAndNormalizePayload(payload: SupportedPayload): Record<string, any> {
+function normalizePayload(payload: SupportedPayload): Record<string, any> {
   const clonedPayload = Object.assign({}, payload);
   switch (clonedPayload.type) {
     case 'PaginatedUpsertSignaturePayloadV2':
-      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint16(clonedPayload.pageId), 'pageId should be a valid uint16');
-      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      assert(isValidHexString(clonedPayload.payload), 'payload should be valid hex');
-      break;
-
     case 'PaginatedDeleteSignaturePayloadV2':
-      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint16(clonedPayload.pageId), 'pageId should be a valid uint16');
-      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      break;
-
     case 'ItemizedSignaturePayloadV2':
-      assert(isValidUint16(clonedPayload.schemaId), 'schemaId should be a valid uint16');
-      assert(isValidUint32(clonedPayload.targetHash), 'targetHash should be a valid uint32');
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      clonedPayload.actions.forEach((item) => {
-        switch (item.actionType) {
-          case 'Add':
-            assert(isValidHexString(item.data), 'itemized data should be valid hex');
-            assert(item.index === 0);
-            break;
-          case 'Delete':
-            assert(isValidUint16(item.index), 'itemized index should be a valid uint16');
-            assert(item.data === '0x');
-            break;
-        }
-      });
-      break;
-
     case 'PasskeyPublicKey':
-      assert(isValidHexString(clonedPayload.publicKey), 'publicKey should be valid hex');
-      break;
-
     case 'ClaimHandlePayload':
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      assert(clonedPayload.handle.length > 0, 'handle should be a valid string');
+    case 'AddProvider':
       break;
 
     case 'AddKeyData':
-      assert(isValidUint64(clonedPayload.msaId), 'msaId should be a valid uint32');
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      assert(isValidHexString(clonedPayload.newPublicKey), 'newPublicKey should be valid hex');
       // convert to 20 bytes ethereum address for signature
       clonedPayload.newPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AddKeyData).newPublicKey);
-
-      break;
-
-    case 'AddProvider':
-      assert(isValidUint64(clonedPayload.authorizedMsaId), 'targetHash should be a valid uint32');
-      assert(isValidUint32(clonedPayload.expiration), 'expiration should be a valid uint32');
-      clonedPayload.schemaIds.forEach((schemaId) => {
-        assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
-      });
       break;
 
     default:
@@ -269,27 +88,209 @@ function checkAndNormalizePayload(payload: SupportedPayload): Record<string, any
 }
 
 function getTypesFor(payloadType: string): Record<string, TypedDataField[]> {
-  switch (payloadType) {
-    case 'PaginatedUpsertSignaturePayloadV2':
-      return PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION;
+  const PAYLOAD_TYPE_DEFINITIONS: Record<string, Record<string, TypedDataField[]>> = {
+    PaginatedUpsertSignaturePayloadV2: PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
+    PaginatedDeleteSignaturePayloadV2: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
+    ItemizedSignaturePayloadV2: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
+    PasskeyPublicKey: PASSKEY_PUBLIC_KEY_DEFINITION,
+    ClaimHandlePayload: CLAIM_HANDLE_PAYLOAD_DEFINITION,
+    AddKeyData: ADD_KEY_DATA_DEFINITION,
+    AddProvider: ADD_PROVIDER_DEFINITION,
+  };
 
-    case 'PaginatedDeleteSignaturePayloadV2':
-      return PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION;
+  const definition = PAYLOAD_TYPE_DEFINITIONS[payloadType];
 
-    case 'ItemizedSignaturePayloadV2':
-      return ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION;
-
-    case 'PasskeyPublicKey':
-      return PASSKEY_PUBLIC_KEY_DEFINITION;
-
-    case 'ClaimHandlePayload':
-      return CLAIM_HANDLE_PAYLOAD_DEFINITION;
-
-    case 'AddKeyData':
-      return ADD_KEY_DATA_DEFINITION;
-
-    case 'AddProvider':
-      return ADD_PROVIDER_DEFINITION;
+  if (!definition) {
+    throw new Error(`Unsupported payload type: ${payloadType}`);
   }
-  throw new Error(`Unsupported payload type: ${payloadType}`);
+
+  return definition;
+}
+
+/**
+ * Build an AddKeyData payload for signature.
+ *
+ * @param msaId           MSA ID (uint64) to add the key
+ * @param newPublicKey    32 bytes public key to add in hex or Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createAddKeyData(
+  msaId: string | bigint,
+  newPublicKey: HexString | Uint8Array,
+  expirationBlock: number
+): AddKeyData {
+  const parsedMsaId: bigint = typeof msaId === 'bigint' ? msaId : BigInt(msaId);
+  const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
+
+  assert(isValidUint64(parsedMsaId), 'msaId should be a valid uint32');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+  assert(isValidHexString(parsedNewPublicKey), 'newPublicKey should be valid hex');
+  return {
+    type: 'AddKeyData',
+    msaId: parsedMsaId,
+    expiration: expirationBlock,
+    newPublicKey: parsedNewPublicKey,
+  };
+}
+
+/**
+ * Build an AddProvider payload for signature.
+ *
+ * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
+ * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createAddProvider(
+  authorizedMsaId: string | bigint,
+  schemaIds: number[],
+  expirationBlock: number
+): AddProvider {
+  const parsedMsaId: bigint = typeof authorizedMsaId === 'bigint' ? authorizedMsaId : BigInt(authorizedMsaId);
+
+  assert(isValidUint64(parsedMsaId), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+  schemaIds.forEach((schemaId) => {
+    assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  });
+
+  return {
+    type: 'AddProvider',
+    authorizedMsaId: parsedMsaId,
+    schemaIds,
+    expiration: expirationBlock,
+  };
+}
+
+/**
+ * Build a ClaimHandlePayload for signature.
+ *
+ * @param handle          The handle the user wishes to claim
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createClaimHandlePayload(handle: string, expirationBlock: number): ClaimHandlePayload {
+  assert(handle.length > 0, 'handle should be a valid string');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+
+  return {
+    type: 'ClaimHandlePayload',
+    handle,
+    expiration: expirationBlock,
+  };
+}
+
+/**
+ * Build a PasskeyPublicKey payload for signature.
+ *
+ * @param publicKey The passkey’s public key (hex string or raw bytes)
+ */
+export function createPasskeyPublicKey(publicKey: HexString | Uint8Array): PasskeyPublicKey {
+  const parsedNewPublicKey: HexString = typeof publicKey === 'object' ? u8aToHex(publicKey) : publicKey;
+  assert(isValidHexString(parsedNewPublicKey), 'publicKey should be valid hex');
+
+  return {
+    type: 'PasskeyPublicKey',
+    publicKey: parsedNewPublicKey,
+  };
+}
+
+export function createItemizedAddAction(data: HexString | Uint8Array): AddItemizedAction {
+  const parsedData: HexString = typeof data === 'object' ? u8aToHex(data) : data;
+  assert(isValidHexString(parsedData), 'itemized data should be valid hex');
+  return { actionType: 'Add', data, index: 0 } as AddItemizedAction;
+}
+
+export function createItemizedDeleteAction(index: number): DeleteItemizedAction {
+  assert(isValidUint16(index), 'itemized index should be a valid uint16');
+
+  return { actionType: 'Delete', data: '0x', index };
+}
+
+/**
+ * Build an ItemizedSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param actions    Array of Add/Delete itemized actions
+ */
+export function createItemizedSignaturePayloadV2(
+  schemaId: number,
+  targetHash: number,
+  expiration: number,
+  actions: ItemizedAction[]
+): ItemizedSignaturePayloadV2 {
+  assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expiration), 'expiration should be a valid uint32');
+  assert(actions.length > 0, 'At least one action is required for ItemizedSignaturePayloadV2');
+
+  return {
+    type: 'ItemizedSignaturePayloadV2',
+    schemaId,
+    targetHash,
+    expiration,
+    actions,
+  };
+}
+
+/**
+ * Build a PaginatedDeleteSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ */
+export function createPaginatedDeleteSignaturePayloadV2(
+  schemaId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number
+): PaginatedDeleteSignaturePayloadV2 {
+  assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  assert(isValidUint16(pageId), 'pageId should be a valid uint16');
+  assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expiration), 'expiration should be a valid uint32');
+
+  return {
+    type: 'PaginatedDeleteSignaturePayloadV2',
+    schemaId,
+    pageId,
+    targetHash,
+    expiration,
+  };
+}
+
+/**
+ * Build a PaginatedUpsertSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param payload    HexString or Uint8Array data to upsert
+ */
+export function createPaginatedUpsertSignaturePayloadV2(
+  schemaId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number,
+  payload: HexString | Uint8Array
+): PaginatedUpsertSignaturePayloadV2 {
+  const parsedPayload: HexString = typeof payload === 'object' ? u8aToHex(payload) : payload;
+
+  assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
+  assert(isValidUint16(pageId), 'pageId should be a valid uint16');
+  assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
+  assert(isValidUint32(expiration), 'expiration should be a valid uint32');
+  assert(isValidHexString(parsedPayload), 'payload should be valid hex');
+
+  return {
+    type: 'PaginatedUpsertSignaturePayloadV2',
+    schemaId,
+    pageId,
+    targetHash,
+    expiration,
+    payload: parsedPayload,
+  };
 }

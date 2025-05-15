@@ -837,11 +837,14 @@ jobs:
           node-version: 20
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
+      - name: Clean cache
+        run: npm cache clean --force
+        working-directory: e2e
       - name: Install Built api-augment
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz --no-integrity
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
         working-directory: e2e
       - name: Install Built ethereum-utils
-        run: npm install ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz --no-integrity
+        run: npm install ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
         working-directory: e2e
       - name: Install NPM Modules
         run: npm ci

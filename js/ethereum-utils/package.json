@@ -18,6 +18,7 @@
     "prepackage": "cp CONTRIBUTING.md README.md ../../LICENSE ./dist",
     "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
     "postbuild": "npm run package",
+    "pack": "cd dist; npm pack",
     "test": "mocha --import=tsx  ./test/**/*.test.ts",
     "format": "tsc --noEmit --pretty && prettier --write . && eslint --fix",
     "lint": "tsc --noEmit --pretty && prettier --check . && eslint"
