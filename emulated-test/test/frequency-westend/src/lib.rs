@@ -28,6 +28,7 @@ mod imports {
 			AssetHubWestendParaPallet as AssetHubWestendPallet,
 		},
 		frequency_emulated_chain::{
+			FrequencyAssetOwner,
 			frequency_runtime::{
 				self, xcm_config::XcmConfig as FrequencyWestendXcmConfig,
 				ExistentialDeposit as FrequencyExistentialDeposit,

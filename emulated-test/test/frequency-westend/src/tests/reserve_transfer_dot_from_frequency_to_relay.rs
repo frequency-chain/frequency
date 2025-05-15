@@ -113,8 +113,6 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 	let receiver = WestendReceiver::get();
 	let frequency_location_as_seen_by_relay =
 		Westend::child_location_of(FrequencyWestend::para_id());
-	let sov_frequency_on_relay =
-		Westend::sovereign_account_id_of(frequency_location_as_seen_by_relay);
 
 	let test_args = TestContext {
 		sender: sender.clone(),
