@@ -18,18 +18,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-pub mod xcm_config;
+pub mod xcm;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
-use xcm_config::ForeignAssetsAssetId;
-
-#[cfg(feature = "frequency-bridging")]
-pub mod xcm_queue;
-
-#[cfg(feature = "frequency-bridging")]
-pub mod xcm_commons;
-#[cfg(feature = "frequency-bridging")]
-use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
+use xcm::{
+	parameters::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight, ForeignAssetsAssetId},
+	queue as xcm_queue,
+};
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
@@ -107,7 +102,7 @@ use frame_support::{
 		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
 		OnRuntimeUpgrade,
 	},
-	weights::{ConstantMultiplier, Weight, constants::WEIGHT_REF_TIME_PER_SECOND},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight},
 	Twox128,
 };
 
@@ -152,7 +147,7 @@ mod ethereum;
 mod genesis;
 
 pub mod polkadot_xcm_fee {
-	use crate::{Balance, WEIGHT_REF_TIME_PER_SECOND, ExtrinsicBaseWeight};
+	use crate::{Balance, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
 	pub const MICRO_DOT: Balance = 10_000;
 	pub const MILLI_DOT: Balance = 1_000 * MICRO_DOT;
 

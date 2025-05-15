@@ -57,22 +57,34 @@ fn relay_to_frequency_sender_assertions(t: RelayToFrequencyTest) {
 	);
 }
 
-fn setup_foreign_asset_on_frequency() {
+fn create_dot_asset_on_frequency() {
 	FrequencyWestend::execute_with(|| {
 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-		let sender = FrequencyWestendSender::get();
+		type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+		let sudo_origin = <FrequencyWestend as Chain>::RuntimeOrigin::root();
 
-		let _ = <ForeignAssets as FungiblesCreate<_>>::create(
+		let _ = ForeignAssets::force_create(
+			sudo_origin,
 			Parent.into(),
-			sender.clone(),
+			FrequencyAssetOwner::get().into(),
 			false,
-			1u32.into(),
+			1u128.into(),
+		);
+
+		assert_expected_events!(
+			FrequencyWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(
+					pallet_assets::Event::ForceCreated { asset_id, .. }
+				) => {
+					asset_id: *asset_id == Parent.into(),
+				},
+			]
 		);
 
 		assert!(<ForeignAssets as FungiblesInspect<_>>::asset_exists(Parent.into()));
 	});
 }
-
 
 // =========================================================================
 // ========= Reserve Transfers - DOT Asset - Relay<>Frequency ===========
@@ -81,33 +93,33 @@ fn setup_foreign_asset_on_frequency() {
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_relay_to_frequency -p frequency-westend-integration-tests -- --nocapture
 // transfer_type=DestinationReserve
 #[test]
-fn reserve_transfer_dot_asset_from_relay_to_frequency() {
-    setup_foreign_asset_on_frequency();
-    let destination = Westend::child_location_of(FrequencyWestend::para_id());
-    let sender = WestendSender::get();
-    let amount_to_send: Balance = WESTEND_ED * 1000;
+fn reserve_transfer_dot_from_relay_to_frequency() {
+	create_dot_asset_on_frequency();
+	let destination = Westend::child_location_of(FrequencyWestend::para_id());
+	let sender = WestendSender::get();
+	let amount_to_send: Balance = WESTEND_ED * 1000;
 
-    let relay_native_asset_location = WestendLocation::get();
-    let receiver = FrequencyWestendReceiver::get();
+	let relay_native_asset_location = WestendLocation::get();
+	let receiver = FrequencyWestendReceiver::get();
 
-    let test_args = TestContext {
-        sender,
-        receiver: receiver.clone(),
-        args: TestArgs::new_relay(destination.clone(), receiver.clone(), amount_to_send),
+	let test_args = TestContext {
+		sender,
+		receiver: receiver.clone(),
+		args: TestArgs::new_relay(destination.clone(), receiver.clone(), amount_to_send),
+	};
 
-    };
+	let mut test = RelayToFrequencyTest::new(test_args);
 
-    let mut test = RelayToFrequencyTest::new(test_args);
+	let sender_balance_before = test.sender.balance;
+	let receiver_assets_before =
+		foreign_balance_on!(FrequencyWestend, relay_native_asset_location.clone(), &receiver);
 
-    let sender_balance_before = test.sender.balance;
-    let receiver_assets_before = foreign_balance_on!(FrequencyWestend, relay_native_asset_location.clone(), &receiver);
+	test.set_assertion::<Westend>(relay_to_frequency_sender_assertions);
+	test.set_assertion::<FrequencyWestend>(relay_to_frequency_receiver_assertions);
+	test.set_dispatchable::<Westend>(relay_to_frequency_reserve_transfer_assets);
+	test.assert();
 
-    test.set_assertion::<Westend>(relay_to_frequency_sender_assertions);
-    test.set_assertion::<FrequencyWestend>(relay_to_frequency_receiver_assertions);
-    test.set_dispatchable::<Westend>(relay_to_frequency_reserve_transfer_assets);
-    test.assert();
-
-    let sender_balance_after = test.sender.balance;
+	let sender_balance_after = test.sender.balance;
 	let receiver_assets_after =
 		foreign_balance_on!(FrequencyWestend, relay_native_asset_location, &receiver);
 
@@ -119,5 +131,4 @@ fn reserve_transfer_dot_asset_from_relay_to_frequency() {
 	// `delivery_fees` might be paid from transfer or JIT, also `bought_execution` is unknown but
 	// should be non-zero
 	assert!(receiver_assets_after < receiver_assets_before + amount_to_send);
-
 }

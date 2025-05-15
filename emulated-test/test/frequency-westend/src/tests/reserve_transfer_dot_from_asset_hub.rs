@@ -31,11 +31,9 @@ pub fn system_para_to_para_receiver_assertions(t: AssetHubToFrequencyTest) {
 }
 
 pub fn system_para_to_para_sender_assertions(t: AssetHubToFrequencyTest) {
-	use pallet_assets::Event as AssetsEvent;
 	use pallet_assets::Event as ForeignAssetsEvent;
 	use pallet_balances::Event as BalancesEvent;
 	use pallet_xcm::Event as XcmEvent;
-	use AssetId as AID;
 
 	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
 
@@ -93,15 +91,32 @@ pub fn system_para_to_para_sender_assertions(t: AssetHubToFrequencyTest) {
 	AssetHubWestend::assert_xcm_pallet_sent();
 }
 
-fn setup_foreign_asset_on_frequency() {
+
+fn create_dot_asset_on_frequency() {
 	FrequencyWestend::execute_with(|| {
 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-		<ForeignAssets as FungiblesCreate<_>>::create(
+		type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+		let sudo_origin = <FrequencyWestend as Chain>::RuntimeOrigin::root();
+
+		let _ = ForeignAssets::force_create(
+			sudo_origin,
 			Parent.into(),
-			FrequencyWestendSender::get(),
+			FrequencyAssetOwner::get().into(),
 			false,
-			1u32.into(),
+			1u128.into(),
 		);
+
+		assert_expected_events!(
+			FrequencyWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(
+					pallet_assets::Event::ForceCreated { asset_id, .. }
+				) => {
+					asset_id: *asset_id == Parent.into(),
+				},
+			]
+		);
+
 		assert!(<ForeignAssets as FungiblesInspect<_>>::asset_exists(Parent.into()));
 	});
 }
@@ -113,7 +128,7 @@ fn setup_foreign_asset_on_frequency() {
 //RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_asset_hub_to_frequency -p frequency-westend-integration-tests -- --nocapture
 #[test]
 fn reserve_transfer_dot_from_asset_hub_to_frequency() {
-	setup_foreign_asset_on_frequency();
+	create_dot_asset_on_frequency();
 
 	let destination = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
 	let sender = AssetHubWestendSender::get();

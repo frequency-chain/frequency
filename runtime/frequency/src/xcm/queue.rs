@@ -1,5 +1,5 @@
 use crate::{
-	Balance, AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent, XcmpQueue,
+	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent, XcmpQueue,
 };
 
 #[cfg(not(feature = "runtime-benchmarks"))]
@@ -11,9 +11,12 @@ use frame_support::{
 	weights::Weight,
 };
 
-use crate::xcm_commons::{XcmOriginToTransactDispatchOrigin, AssetLocationId};
+use crate::xcm::location_converter::XcmOriginToTransactDispatchOrigin;
+use crate::xcm::parameters::{BaseDeliveryFee, FeeAssetId, TransactionByteFee};
+use crate::xcm::XcmConfig;
 
 use frame_system::EnsureRoot;
+use staging_xcm_builder::WithUniqueTopic;
 
 use cumulus_primitives_core::{AggregateMessageOrigin, ParaId};
 
@@ -21,29 +24,14 @@ use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 
 // use xcm_config;
 #[cfg(not(feature = "runtime-benchmarks"))]
-use crate::xcm_config;
-
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+use super::xcm_config;
 
 pub use sp_runtime::{Perbill, Saturating};
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 use xcm_executor;
 
-parameter_types! {
-	/// The asset ID for the asset that we use to pay for message delivery fees.
-	pub FeeAssetId: AssetLocationId = AssetLocationId(xcm_config::RelayLocation::get());
-	/// The base fee for the message delivery fees (3 CENTS).
-	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
-}
-
-pub const MICROUNIT: Balance = 1_000_000;
-
-parameter_types! {
-	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
-}
-
+/// Pricing logic for sibling parachain message delivery
 pub type PriceForSiblingParachainDelivery = polkadot_runtime_common::xcm_sender::ExponentialPrice<
 	FeeAssetId,
 	BaseDeliveryFee,
@@ -51,10 +39,29 @@ pub type PriceForSiblingParachainDelivery = polkadot_runtime_common::xcm_sender:
 	XcmpQueue,
 >;
 
+/// Pricing logic for relay message delivery
+pub type PriceForParentDelivery = polkadot_runtime_common::xcm_sender::ExponentialPrice<
+	FeeAssetId,
+	BaseDeliveryFee,
+	TransactionByteFee,
+	ParachainSystem,
+>;
+
 parameter_types! {
+	/// How much weight to allocate to the background message queue service
 	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(35) * RuntimeBlockWeights::get().max_block;
 }
 
+/// The means for routing XCM messages which are not for local execution into the right message
+/// queues.
+pub type XcmRouter = WithUniqueTopic<(
+	// Two routers - use UMP to communicate with the relay chain:
+	cumulus_primitives_utility::ParentAsUmp<ParachainSystem, (), PriceForParentDelivery>,
+	// ..and XCMP to communicate with the sibling chains.
+	XcmpQueue,
+)>;
+
+/// Configures the queue that handles incoming XCMP messages
 impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type ChannelInfo = ParachainSystem;
@@ -70,6 +77,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type PriceForSiblingDelivery = PriceForSiblingParachainDelivery;
 }
 
+/// Configures the local message queue service
 impl pallet_message_queue::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -80,7 +88,7 @@ impl pallet_message_queue::Config for Runtime {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = staging_xcm_builder::ProcessXcmMessage<
 		AggregateMessageOrigin,
-		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		xcm_executor::XcmExecutor<XcmConfig>,
 		RuntimeCall,
 	>;
 	type Size = u32;

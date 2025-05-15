@@ -1,7 +1,7 @@
-pub use frequency_runtime::{self, xcm_config::RelayNetwork as FrequencyRelayNetworkId};
+pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId};
 
 mod genesis;
-pub use genesis::{genesis, FrequencySudoAccount, ED, PARA_ID};
+pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
 
 use frame_support::traits::OnInitialize;
 
@@ -19,7 +19,7 @@ decl_test_parachains! {
 		runtime = frequency_runtime,
 		core = {
 			XcmpMessageHandler: frequency_runtime::XcmpQueue,
-			LocationToAccountId: frequency_runtime::xcm_config::LocationToAccountId,
+			LocationToAccountId: frequency_runtime::xcm::LocationToAccountId,
 			ParachainInfo: frequency_runtime::ParachainInfo,
 			MessageOrigin: cumulus_primitives_core::AggregateMessageOrigin,
 		},
@@ -32,6 +32,5 @@ decl_test_parachains! {
 }
 
 impl_accounts_helpers_for_parachain!(FrequencyWestend);
-impl_assert_events_helpers_for_parachain!(FrequencyWestend);
 impl_xcm_helpers_for_parachain!(FrequencyWestend);
-// impl_foreign_assets_helpers_for_parachain!(FrequencyWestend, staging_xcm::latest::Location);
+impl_assert_events_helpers_for_parachain!(FrequencyWestend);

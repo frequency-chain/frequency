@@ -7,16 +7,23 @@ mod imports {
 		traits::fungibles::{
 			Create as FungiblesCreate, Inspect as FungiblesInspect, Mutate as FungiblesMutate,
 		},
+		BoundedVec,
 	};
 
 	// Polkadot
-	pub use staging_xcm::{latest::WESTEND_GENESIS_HASH, prelude::*};
+	pub use staging_xcm::{
+		latest::{AssetTransferFilter, ROCOCO_GENESIS_HASH, WESTEND_GENESIS_HASH},
+		prelude::{AccountId32 as AccountId32Junction, *},
+	};
 
 	// Cumulus
-	pub use asset_test_utils::xcm_helpers;
-	pub use emulated_integration_tests_common::{xcm_emulator::{
-		assert_expected_events, bx, Chain, Parachain as Para, RelayChain as Relay, Test, TestArgs,
-		TestContext, TestExt,}, RESERVABLE_ASSET_ID,
+	pub use emulated_integration_tests_common::{
+		xcm_emulator::{
+			assert_expected_events, bx, AccountIdOf, Chain, Parachain as Para, RelayChain as Relay,
+			Test, TestArgs, TestContext, TestExt,
+		},
+		xcm_helpers::{fee_asset, non_fee_asset},
+		RESERVABLE_ASSET_ID,
 	};
 	pub use parachains_common::Balance;
 	pub use westend_system_emulated_network::{
@@ -28,16 +35,10 @@ mod imports {
 			AssetHubWestendParaPallet as AssetHubWestendPallet,
 		},
 		frequency_emulated_chain::{
-			frequency_runtime::{
-				self, xcm_config::XcmConfig as FrequencyWestendXcmConfig,
-				ExistentialDeposit as FrequencyExistentialDeposit,
-			},
-			FrequencyWestendParaPallet as FrequencyWestendPallet,
+			frequency_runtime::ExistentialDeposit as FrequencyExistentialDeposit,
+			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
 		},
-		westend_emulated_chain::{
-			genesis::ED as WESTEND_ED, westend_runtime::xcm_config::XcmConfig as WestendXcmConfig,
-			WestendRelayPallet as WestendPallet,
-		},
+		westend_emulated_chain::{genesis::ED as WESTEND_ED, WestendRelayPallet as WestendPallet},
 		AssetHubWestendPara as AssetHubWestend,
 		AssetHubWestendParaReceiver as AssetHubWestendReceiver,
 		AssetHubWestendParaSender as AssetHubWestendSender,
@@ -51,6 +52,22 @@ mod imports {
 	pub type FrequencyToAssetHubTest = Test<FrequencyWestend, AssetHubWestend>;
 	pub type RelayToFrequencyTest = Test<Westend, FrequencyWestend>;
 	pub type FrequencyToRelayTest = Test<FrequencyWestend, Westend>;
+
+	pub fn frequency_balance_of(
+		who: &AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
+	) -> Balance {
+		FrequencyWestend::execute_with(|| {
+			type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
+			<Balances as Inspect<_>>::balance(who)
+		})
+	}
+
+	pub fn assethub_balance_of(who: &AccountIdOf<<AssetHubWestend as Chain>::Runtime>) -> Balance {
+		AssetHubWestend::execute_with(|| {
+			type Balances = <AssetHubWestend as AssetHubWestendPallet>::Balances;
+			<Balances as Inspect<_>>::balance(who)
+		})
+	}
 }
 
 #[cfg(test)]
