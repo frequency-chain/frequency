@@ -52,6 +52,33 @@
         {
             "type": "lldb",
             "request": "launch",
+            "name": "Debug unit tests in executable 'Emulated test'",
+            "cargo": {
+                "args": [
+                    "test",
+                    "--no-run",
+                    "--package=frequency-westend-integration-tests"
+                ],
+                // "filter": {
+                //     "name": "frequency-westend-integration-tests",
+                //     "kind": "test"
+                // }
+            },
+            // "program": "${workspaceFolder}/emulated-test/test/frequency-westend/target/tests/debug/deps/frequency_westend_integration_tests-b4edad4aeb26ecb5",
+            "args": [
+                "--",
+                "--nocapture"
+              ],
+            "env": {
+                "RUST_BACKTRACE": "1",
+                "RUST_LOG": "events,runtime::system=trace,xcm=trace"
+            },
+            "cwd": "${workspaceFolder}",
+            "stopOnEntry": true
+        },
+        {
+            "type": "lldb",
+            "request": "launch",
             "name": "Debug unit tests in executable 'frequency'",
             "cargo": {
                 "args": [

@@ -18,13 +18,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_config;
+pub mod xcm_config;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
 use xcm_config::ForeignAssetsAssetId;
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_queue;
+pub mod xcm_queue;
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_commons;
@@ -124,7 +124,7 @@ use frame_support::{
 		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
 		OnRuntimeUpgrade,
 	},
-	weights::{ConstantMultiplier, Weight},
+	weights::{ConstantMultiplier, Weight, constants::WEIGHT_REF_TIME_PER_SECOND},
 	Twox128,
 };
 
@@ -167,6 +167,22 @@ use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
+
+pub mod polkadot_xcm_fee {
+	use crate::{Balance, WEIGHT_REF_TIME_PER_SECOND, ExtrinsicBaseWeight};
+	pub const MICRO_DOT: Balance = 10_000;
+	pub const MILLI_DOT: Balance = 1_000 * MICRO_DOT;
+
+	pub fn default_fee_per_second() -> u128 {
+		let base_weight = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+		let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+		base_tx_per_second * base_relay_tx_fee()
+	}
+
+	pub fn base_relay_tx_fee() -> Balance {
+		MILLI_DOT
+	}
+}
 
 pub struct SchedulerProvider;
 
@@ -233,16 +249,18 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) =>
-					Self::is_utility_call_allowed(pallet_utility_call),
+				RuntimeCall::Utility(pallet_utility_call) => {
+					Self::is_utility_call_allowed(pallet_utility_call)
+				},
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
@@ -256,9 +274,11 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 impl BaseCallFilter {
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
-			pallet_utility::Call::batch { calls, .. } |
-			pallet_utility::Call::batch_all { calls, .. } |
-			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
+			pallet_utility::Call::batch { calls, .. }
+			| pallet_utility::Call::batch_all { calls, .. }
+			| pallet_utility::Call::force_batch { calls, .. } => {
+				calls.iter().any(Self::is_batch_call_allowed)
+			},
 			_ => true,
 		}
 	}
@@ -266,16 +286,16 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all nested `batch` calls from utility batch
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
-			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
+			| RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
 
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
 			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. })
+			| RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -326,17 +346,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Governance => matches!(
 				c,
-				RuntimeCall::Treasury(..) |
-					RuntimeCall::Democracy(..) |
-					RuntimeCall::TechnicalCommittee(..) |
-					RuntimeCall::Council(..) |
-					RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
+				RuntimeCall::Treasury(..)
+					| RuntimeCall::Democracy(..)
+					| RuntimeCall::TechnicalCommittee(..)
+					| RuntimeCall::Council(..)
+					| RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
 			),
 			ProxyType::Staking => {
 				matches!(
 					c,
-					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
-						RuntimeCall::CollatorSelection(
+					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. })
+						| RuntimeCall::CollatorSelection(
 							pallet_collator_selection::Call::set_candidacy_bond { .. }
 						)
 				)
@@ -425,8 +445,8 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 	fn on_runtime_upgrade() -> Weight {
 		use sp_core::Get;
 
-		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
-			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version()
+			!= pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 		{
 			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 				.put::<pallet_collator_selection::Pallet<T>>();
@@ -800,6 +820,10 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
+parameter_types! {
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
+}
+
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = BalancesMaxLocks;
 	/// The type for recording an account's balance.
@@ -807,7 +831,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -1521,7 +1545,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
 		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,

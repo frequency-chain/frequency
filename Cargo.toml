@@ -2,6 +2,9 @@
 members = [
   "node",
   "node/cli",
+  "emulated-test/networks/westend",
+  "emulated-test/chains/frequency-westend",
+  "emulated-test/test/frequency-westend",
   "node/service",
   "pallets/*",
   "runtime/*",
@@ -124,6 +127,24 @@ xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/par
 xcm-runtime-apis = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 
 cumulus-primitives-utility = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+
+
+# xcm-test emulator
+xcm-emulator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+westend-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+westend-runtime-constants = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sc-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sp-consensus-beefy = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sp-authority-discovery = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sp-consensus-babe = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sp-tracing = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+tracing = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false } 
+tracing-subscriber = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false } 
+
+emulated-integration-tests-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+asset-hub-westend-emulated-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+westend-emulated-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+asset-test-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
 
 # client
 derive_more = "0.99.17"
