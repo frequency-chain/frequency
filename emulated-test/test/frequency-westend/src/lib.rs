@@ -7,16 +7,19 @@ mod imports {
 		traits::fungibles::{
 			Create as FungiblesCreate, Inspect as FungiblesInspect, Mutate as FungiblesMutate,
 		},
+		BoundedVec,
 	};
 
 	// Polkadot
-	pub use staging_xcm::{latest::WESTEND_GENESIS_HASH, prelude::*};
+	pub use staging_xcm::{latest::{AssetTransferFilter, ROCOCO_GENESIS_HASH, WESTEND_GENESIS_HASH}, prelude::{AccountId32 as AccountId32Junction, * } };
 
 	// Cumulus
 	pub use asset_test_utils::xcm_helpers;
-	pub use emulated_integration_tests_common::{xcm_emulator::{
+	pub use emulated_integration_tests_common::{
+		xcm_emulator::{
+		AccountIdOf,
 		assert_expected_events, bx, Chain, Parachain as Para, RelayChain as Relay, Test, TestArgs,
-		TestContext, TestExt,}, RESERVABLE_ASSET_ID,
+		TestContext, TestExt,}, RESERVABLE_ASSET_ID, xcm_helpers::non_fee_asset,
 	};
 	pub use parachains_common::Balance;
 	pub use westend_system_emulated_network::{
