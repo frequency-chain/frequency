@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Title</title>
+  </head>
+  <body>
+    <script src="./dist/browser/frequency-ethereum-utils.umd.js"></script>
+    <script>
+      console.log(EthereumUtils.EIP712_DOMAIN_DEFINITION);
+    </script>
+    <script type="module">
+      import * as Library from './dist/browser/frequency-ethereum-utils.esm.js';
+      console.log(Library.ADD_KEY_DATA_DEFINITION);
+    </script>
+  </body>
+</html>

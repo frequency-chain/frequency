@@ -23,7 +23,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['eslint.config.mjs', 'test/*.ts'],
+          allowDefaultProject: ['eslint.config.mjs', 'test/*.ts', 'rollup.config.mjs'],
           defaultProject: './tsconfig.eslint.json',
         },
       },
