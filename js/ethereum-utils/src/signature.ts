@@ -13,7 +13,7 @@ import {
   AddItemizedAction,
   DeleteItemizedAction,
   ItemizedAction,
-} from './types';
+} from './payloads';
 import { assert, isValidHexString, isValidUint16, isValidUint32, isValidUint64 } from './utils';
 import { reverseUnifiedAddressToEthereumAddress } from './address';
 import { ethers, TypedDataField } from 'ethers';

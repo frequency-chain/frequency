@@ -2,7 +2,7 @@ import { H160 } from '@polkadot/types/interfaces';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { encodeAddress, ethereumEncode } from '@polkadot/util-crypto';
 import { hexToU8a, u8aToHex } from '@polkadot/util';
-import { HexString } from './types';
+import { HexString } from './payloads';
 
 /**
  * Create a partial KeyringPair from an Ethereum address

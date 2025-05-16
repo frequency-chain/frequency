@@ -1,11 +1,11 @@
 import * as address from './address';
-import * as types from './types';
+import * as payloads from './payloads';
 import * as signature from './signature';
 import * as signatureDefinitions from './signature.definitions';
 
-export * from './types';
+export * from './payloads';
 export * from './signature';
 export * from './signature.definitions';
 export * from './address';
 
-export default { ...types, ...address, ...signatureDefinitions, ...signature };
+export default { ...payloads, ...address, ...signatureDefinitions, ...signature };
