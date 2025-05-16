@@ -1,5 +1,6 @@
 use crate::{
-	AccountId, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent, XcmpQueue,
+	AccountId, Balance, MessageQueue, ParachainSystem, Runtime, RuntimeBlockWeights, RuntimeEvent,
+	XcmpQueue,
 };
 
 #[cfg(not(feature = "runtime-benchmarks"))]
@@ -11,7 +12,7 @@ use frame_support::{
 	weights::Weight,
 };
 
-use crate::xcm_commons::XcmOriginToTransactDispatchOrigin;
+use crate::xcm_commons::{AssetLocationId, XcmOriginToTransactDispatchOrigin};
 
 use frame_system::EnsureRoot;
 
@@ -23,12 +24,33 @@ use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 #[cfg(not(feature = "runtime-benchmarks"))]
 use crate::xcm_config;
 
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
+// use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
 
-pub use sp_runtime::Perbill;
+pub use sp_runtime::{Perbill, Saturating};
 
 #[cfg(not(feature = "runtime-benchmarks"))]
 use xcm_executor;
+
+parameter_types! {
+	/// The asset ID for the asset that we use to pay for message delivery fees.
+	pub FeeAssetId: AssetLocationId = AssetLocationId(xcm_config::RelayLocation::get());
+	/// The base fee for the message delivery fees (3 CENTS).
+	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
+}
+
+pub const MICROUNIT: Balance = 1_000_000;
+
+parameter_types! {
+	/// Relay Chain `TransactionByteFee` / 10
+	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+}
+
+pub type PriceForSiblingParachainDelivery = polkadot_runtime_common::xcm_sender::ExponentialPrice<
+	FeeAssetId,
+	BaseDeliveryFee,
+	TransactionByteFee,
+	XcmpQueue,
+>;
 
 parameter_types! {
 	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(35) * RuntimeBlockWeights::get().max_block;
@@ -46,7 +68,7 @@ impl cumulus_pallet_xcmp_queue::Config for Runtime {
 	type ControllerOrigin = EnsureRoot<AccountId>;
 	type ControllerOriginConverter = XcmOriginToTransactDispatchOrigin;
 	type WeightInfo = ();
-	type PriceForSiblingDelivery = NoPriceForMessageDelivery<ParaId>;
+	type PriceForSiblingDelivery = PriceForSiblingParachainDelivery;
 }
 
 impl pallet_message_queue::Config for Runtime {

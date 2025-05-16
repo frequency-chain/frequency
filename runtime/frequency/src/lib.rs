@@ -18,13 +18,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_config;
+pub mod xcm_config;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
 use xcm_config::ForeignAssetsAssetId;
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_queue;
+pub mod xcm_queue;
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_commons;
@@ -33,6 +33,19 @@ use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
+
+#[cfg(feature = "frequency-bridging")]
+use staging_xcm::{
+	prelude::AssetId as AssetLocationId, Version as XcmVersion, VersionedAsset, VersionedAssetId,
+	VersionedAssets, VersionedLocation, VersionedXcm,
+};
+
+#[cfg(feature = "frequency-bridging")]
+use xcm_runtime_apis::{
+	dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
+	fees::Error as XcmPaymentApiError,
+};
+
 #[cfg(any(
 	not(feature = "frequency-no-relay"),
 	feature = "frequency-lint-check",
@@ -62,6 +75,7 @@ use parity_scale_codec::Encode;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 
@@ -107,7 +121,7 @@ use frame_support::{
 		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
 		OnRuntimeUpgrade,
 	},
-	weights::{ConstantMultiplier, Weight},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight},
 	Twox128,
 };
 
@@ -150,6 +164,22 @@ use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
+
+pub mod polkadot_xcm_fee {
+	use crate::{Balance, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
+	pub const MICRO_DOT: Balance = 10_000;
+	pub const MILLI_DOT: Balance = 1_000 * MICRO_DOT;
+
+	pub fn default_fee_per_second() -> u128 {
+		let base_weight = Balance::from(ExtrinsicBaseWeight::get().ref_time());
+		let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+		base_tx_per_second * base_relay_tx_fee()
+	}
+
+	pub fn base_relay_tx_fee() -> Balance {
+		MILLI_DOT
+	}
+}
 
 pub struct SchedulerProvider;
 
@@ -523,9 +553,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 0;
 	pub const ApprovalDeposit: Balance = 0;
 	pub const AssetsStringLimit: u32 = 50;
-}
-#[cfg(feature = "frequency-bridging")]
-parameter_types! {
+
 	// we just reuse the same deposits
 	pub const ForeignAssetsAssetDeposit: Balance = AssetDeposit::get();
 	pub const ForeignAssetsAssetAccountDeposit: Balance = AssetAccountDeposit::get();
@@ -783,6 +811,10 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
+parameter_types! {
+	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
+}
+
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = BalancesMaxLocks;
 	/// The type for recording an account's balance.
@@ -790,7 +822,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
+	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -1504,7 +1536,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
 		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
@@ -1922,6 +1954,94 @@ sp_api::impl_runtime_apis! {
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
+		fn query_acceptable_payment_assets(xcm_version: staging_xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
+			let acceptable_assets = vec![AssetLocationId(xcm_config::RelayLocation::get())];
+			PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
+		}
+
+		// Frequency implementation of the query_weight_to_asset_fee function
+		fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
+			// TODO: based penpal from p.sdk
+			// Bring weight_to_fee into scope for the Trait WeightToFee
+			use frame_support::weights::WeightToFee;
+
+			match asset.try_as::<AssetLocationId>() {
+				Ok(asset_id) if asset_id.0 == xcm_config::NativeToken::get().0 => {
+					// for native token
+					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
+				},
+				Ok(asset_id) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - unhandled asset_id: {asset_id:?}!");
+					Err(XcmPaymentApiError::AssetNotFound)
+				},
+				Err(_) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - failed to convert asset: {asset:?}!");
+					Err(XcmPaymentApiError::VersionedConversionFailed)
+				}
+			}
+		}
+
+		fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
+			PolkadotXcm::query_xcm_weight(message)
+		}
+
+		fn query_delivery_fees(destination: VersionedLocation, message: VersionedXcm<()>) -> Result<VersionedAssets, XcmPaymentApiError> {
+			PolkadotXcm::query_delivery_fees(destination, message)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
+		fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+			PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
+		}
+
+		fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
+			PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::conversions::LocationToAccountApi<Block, AccountId> for Runtime {
+		fn convert_location(location: VersionedLocation) -> Result<
+			AccountId,
+			xcm_runtime_apis::conversions::Error
+		> {
+			xcm_runtime_apis::conversions::LocationToAccountHelper::<
+				AccountId,
+				xcm_commons::LocationToAccountId,
+			>::convert_location(location)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::trusted_query::TrustedQueryApi<Block> for Runtime {
+		fn is_trusted_reserve(asset: VersionedAsset, location: VersionedLocation) -> xcm_runtime_apis::trusted_query::XcmTrustedQueryResult {
+			PolkadotXcm::is_trusted_reserve(asset, location)
+		}
+		fn is_trusted_teleporter(asset: VersionedAsset, location: VersionedLocation) -> xcm_runtime_apis::trusted_query::XcmTrustedQueryResult {
+			PolkadotXcm::is_trusted_teleporter(asset, location)
+		}
+	}
+
+	#[cfg(feature = "frequency-bridging")]
+	impl xcm_runtime_apis::authorized_aliases::AuthorizedAliasersApi<Block> for Runtime {
+		fn authorized_aliasers(target: VersionedLocation) -> Result<
+			Vec<xcm_runtime_apis::authorized_aliases::OriginAliaser>,
+			xcm_runtime_apis::authorized_aliases::Error
+		> {
+			PolkadotXcm::authorized_aliasers(target)
+		}
+		fn is_authorized_alias(origin: VersionedLocation, target: VersionedLocation) -> Result<
+			bool,
+			xcm_runtime_apis::authorized_aliases::Error
+		> {
+			PolkadotXcm::is_authorized_alias(origin, target)
 		}
 	}
 }

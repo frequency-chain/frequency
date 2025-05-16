@@ -1,17 +1,22 @@
 use crate::{
-	AccountId, AllPalletsWithSystem, Balances, ForeignAssets, ParachainInfo, ParachainSystem,
-	PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent, RuntimeOrigin, XcmpQueue,
+	polkadot_xcm_fee::default_fee_per_second, AccountId, AllPalletsWithSystem, Balances,
+	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin, XcmpQueue,
 };
 
 use staging_xcm_builder::{
 	AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
-	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedWeightBounds,
-	FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete, IsParentsOnly,
-	MatchedConvertedConcreteId, NativeAsset, NoChecking, SignedToAccountId32, TakeWeightCredit,
-	TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
+	DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin, FixedRateOfFungible,
+	FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter, FungiblesAdapter, IsConcrete,
+	IsParentsOnly, MatchedConvertedConcreteId, NativeAsset, NoChecking, SignedToAccountId32,
+	TakeWeightCredit, TrailingSetTopicAsId, UsingComponents, WithComputedOrigin, WithUniqueTopic,
 };
 
-use crate::xcm_commons::{LocationToAccountId, RelayNetwork, XcmOriginToTransactDispatchOrigin};
+pub use crate::xcm_commons::{
+	LocationToAccountId, RelayNetwork, XcmOriginToTransactDispatchOrigin,
+};
+use parachains_common::xcm_config::ConcreteAssetFromSystem;
+// ParentRelayOrSiblingParachains
 
 use frame_support::{
 	pallet_prelude::Get,
@@ -45,6 +50,7 @@ parameter_types! {
 }
 
 parameter_types! {
+	pub RelayPerSecondAndByte: (AssetId, u128,u128) = (Location::new(1,Here).into(), default_fee_per_second(), 1024);
 	pub const RelayLocation: Location = Location::parent();
 	pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
 	pub HereLocation: Location = Location::here();
@@ -118,6 +124,8 @@ pub type Barrier = TrailingSetTopicAsId<
 					AllowTopLevelPaidExecutionFrom<Everything>,
 					AllowExplicitUnpaidExecutionFrom<ParentOrParentsExecutivePlurality>,
 					// ^^^ Parent and its exec plurality get free execution
+					// Subscriptions for version tracking are OK.
+					// AllowSubscriptionsFrom<ParentRelayOrSiblingParachains>,
 				),
 				UniversalLocation,
 				ConstU32<8>,
@@ -143,15 +151,18 @@ impl xcm_executor::Config for XcmConfig {
 	// How to withdraw and deposit an asset.
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
-	type IsReserve = (NativeAsset, AssetFrom<AssetHubLocation>);
+	type IsReserve =
+		(NativeAsset, ConcreteAssetFromSystem<RelayLocation>, AssetFrom<AssetHubLocation>);
 	// in order to register our asset in asset hub
 	// once the asset is registered we can teleport our native asset to asset hub
 	type IsTeleporter = TrustedTeleporter;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
-	type Trader =
-		UsingComponents<WeightToFee, RelayLocation, AccountId, Balances, ToAuthor<Runtime>>;
+	type Trader = (
+		FixedRateOfFungible<RelayPerSecondAndByte, ()>,
+		UsingComponents<WeightToFee, HereLocation, AccountId, Balances, ToAuthor<Runtime>>,
+	);
 	type ResponseHandler = PolkadotXcm;
 	type AssetTrap = PolkadotXcm;
 	type AssetClaims = PolkadotXcm;
@@ -198,6 +209,7 @@ impl pallet_xcm::Config for Runtime {
 	type XcmExecutor = XcmExecutor<XcmConfig>;
 	// update to only allow to teleport native
 	type XcmTeleportFilter = Everything;
+	// Lets only allow reserve transfers of DOT
 	type XcmReserveTransferFilter = Everything;
 	type Weigher = FixedWeightBounds<UnitWeightCost, RuntimeCall, MaxInstructions>;
 	type UniversalLocation = UniversalLocation;
@@ -210,9 +222,12 @@ impl pallet_xcm::Config for Runtime {
 	type Currency = Balances;
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
+	// I do not thingk we need this
 	type SovereignAccountOf = LocationToAccountId;
+	/// Not sure what this is for?
 	type MaxLockers = ConstU32<8>;
 	type WeightInfo = pallet_xcm::TestWeightInfo;
+
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
