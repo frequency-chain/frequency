@@ -73,7 +73,10 @@ function normalizePayload(payload: SupportedPayload): Record<string, any> {
 
     case 'AddKeyData':
       // convert to 20 bytes ethereum address for signature
-      clonedPayload.newPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AddKeyData).newPublicKey);
+      if (clonedPayload.newPublicKey.length !== 22) {
+        clonedPayload.newPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AddKeyData).newPublicKey);
+      }
+      clonedPayload.newPublicKey = clonedPayload.newPublicKey.toLowerCase() as HexString;
       break;
 
     default:
