@@ -450,9 +450,12 @@ where
 			Some(Call::pay_with_capacity_batch_all { calls }) =>
 				self.withdraw_capacity_fee(who, calls, len),
 			_ => {
-				if let Some((owner_account_id, msa_id)) = T::MsaCallFilter::get_add_key_data(call) {
+				if let Some((owner_account_id, new_account_id, msa_id)) =
+					T::MsaCallFilter::get_add_key_data(call)
+				{
 					if T::MsaKeyProvider::key_eligible_for_free_addition(
-						owner_account_id.clone(),
+						owner_account_id,
+						new_account_id,
 						msa_id,
 					) {
 						let tip = self.tip(call);

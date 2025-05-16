@@ -46,13 +46,12 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 
 use common_primitives::{
 	capacity::TargetValidator,
-	msa::{
-		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
-		ProviderLookup, ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
-		SignatureRegistryPointer, H160,
-	},
-	node::ProposalProvider,
+	handles::HandleProvider,
+	msa::*,
+	node::{EIP712Encode, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
+	utils::wrap_binary_data,
 };
 use frame_system::pallet_prelude::*;
 use scale_info::TypeInfo;
@@ -70,10 +69,6 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
-use common_primitives::msa::{DelegationResponse, MsaKeyProvider};
-pub use common_primitives::{
-	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
-};
 pub use pallet::*;
 pub use types::{AddKeyData, AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION};
 pub use weights::*;
@@ -1686,11 +1681,11 @@ impl<T: Config> MsaKeyProvider for Pallet<T> {
 		new_key: Self::AccountId,
 		msa_id: MessageSourceId,
 	) -> bool {
-		// if isn't ethereum compatible, return false.
-		if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
-			let block = frame_system::Pallet::<T>::block_number();
-
-			return stored_msa_id == msa_id && PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+		let new_address32 = T::ConvertIntoAccountId32::convert((new_key).clone());
+		if EthereumAddressMapper::is_ethereum_address(&new_address32) {
+			if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
+				return stored_msa_id == msa_id && PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+			}
 		}
 		false
 	}

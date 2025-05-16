@@ -340,7 +340,7 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 pub struct MsaCallFilter;
 use pallet_frequency_tx_payment::types::GetAddKeyData;
 impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
-	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, MessageSourceId)> {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)> {
 		match call {
 			#[cfg(feature = "runtime-benchmarks")]
 			RuntimeCall::System(frame_system::Call::remark { .. }) => None,
@@ -350,7 +350,10 @@ impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
 				new_key_owner_proof: _,
 				msa_owner_public_key,
 				msa_owner_proof: _,
-			}) => Some((msa_owner_public_key.clone(), add_key_payload.msa_id)),
+			}) => {
+				let new_key = add_key_payload.clone().new_public_key;
+				Some((msa_owner_public_key.clone(), new_key, add_key_payload.msa_id))
+			},
 			_ => None,
 		}
 	}

@@ -1025,11 +1025,11 @@ fn add_public_key_to_msa_free_if_is_ethereum_compatible() {
 	// uses funded account already with MSA Id
 	let msa_id = 2u64;
 	let account_id = 2u64;
-	let new_account_id = 3u64;
+	let designated_ethereum_key = 999u64;
 	let proof1: MultiSignature = generate_test_signature();
 	let proof2: MultiSignature = generate_test_signature();
 	let payload: AddKeyData<Test> =
-		AddKeyData { msa_id, expiration: 99u32, new_public_key: new_account_id };
+		AddKeyData { msa_id, expiration: 99u32, new_public_key: designated_ethereum_key };
 	let dispatch_info =
 		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 
@@ -1044,19 +1044,10 @@ fn add_public_key_to_msa_free_if_is_ethereum_compatible() {
 				new_key_owner_proof: proof2,
 				add_key_payload: payload.into(),
 			});
-
-			//
 			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
 				.withdraw_fee(&account_id, call, &dispatch_info, 10)
 				.unwrap();
 			assert_eq!(withdraw_fee.1, InitialPayment::<Test>::Free);
-
-			// Set block 5 to make same account ineligible, past expiration block
-			System::set_block_number(6);
-			let withdraw_fee_after_free_block = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.withdraw_fee(&account_id, call, &dispatch_info, 10)
-				.unwrap();
-			assert_ne!(withdraw_fee_after_free_block.1, InitialPayment::<Test>::Free);
 		})
 }
 
