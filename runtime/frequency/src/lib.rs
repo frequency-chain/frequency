@@ -36,19 +36,15 @@ use common_runtime::constants::currency::UNITS;
 
 #[cfg(feature = "frequency-bridging")]
 use staging_xcm::{
-	prelude::AssetId as AssetLocationId, Version as XcmVersion, VersionedAsset,
-	VersionedAssetId, VersionedAssets, VersionedLocation, VersionedXcm,
+	prelude::AssetId as AssetLocationId, Version as XcmVersion, VersionedAsset, VersionedAssetId,
+	VersionedAssets, VersionedLocation, VersionedXcm,
 };
-#[cfg(feature = "frequency-bridging")]
-use staging_xcm::v3::MultiLocation;
 
 #[cfg(feature = "frequency-bridging")]
 use xcm_runtime_apis::{
 	dry_run::{CallDryRunEffects, Error as XcmDryRunApiError, XcmDryRunEffects},
 	fees::Error as XcmPaymentApiError,
 };
-#[cfg(feature = "frequency-bridging")]
-use xcm_executor::traits::{WeightToFeeConverter, WeightInfoProvider};
 
 #[cfg(any(
 	not(feature = "frequency-no-relay"),
@@ -79,6 +75,7 @@ use parity_scale_codec::Encode;
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
+
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 
@@ -124,7 +121,7 @@ use frame_support::{
 		EqualPrivilegeOnly, GetStorageVersion, InstanceFilter, LinearStoragePrice,
 		OnRuntimeUpgrade,
 	},
-	weights::{ConstantMultiplier, Weight, constants::WEIGHT_REF_TIME_PER_SECOND},
+	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, ConstantMultiplier, Weight},
 	Twox128,
 };
 
@@ -169,7 +166,7 @@ mod ethereum;
 mod genesis;
 
 pub mod polkadot_xcm_fee {
-	use crate::{Balance, WEIGHT_REF_TIME_PER_SECOND, ExtrinsicBaseWeight};
+	use crate::{Balance, ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
 	pub const MICRO_DOT: Balance = 10_000;
 	pub const MILLI_DOT: Balance = 1_000 * MICRO_DOT;
 
@@ -249,18 +246,16 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 		#[cfg(not(feature = "frequency"))]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) => {
-					Self::is_utility_call_allowed(pallet_utility_call)
-				},
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				_ => true,
 			}
 		}
 		#[cfg(feature = "frequency")]
 		{
 			match call {
-				RuntimeCall::Utility(pallet_utility_call) => {
-					Self::is_utility_call_allowed(pallet_utility_call)
-				},
+				RuntimeCall::Utility(pallet_utility_call) =>
+					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
@@ -274,11 +269,9 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 impl BaseCallFilter {
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
-			pallet_utility::Call::batch { calls, .. }
-			| pallet_utility::Call::batch_all { calls, .. }
-			| pallet_utility::Call::force_batch { calls, .. } => {
-				calls.iter().any(Self::is_batch_call_allowed)
-			},
+			pallet_utility::Call::batch { calls, .. } |
+			pallet_utility::Call::batch_all { calls, .. } |
+			pallet_utility::Call::force_batch { calls, .. } => calls.iter().any(Self::is_batch_call_allowed),
 			_ => true,
 		}
 	}
@@ -286,16 +279,16 @@ impl BaseCallFilter {
 	fn is_batch_call_allowed(call: &RuntimeCall) -> bool {
 		match call {
 			// Block all nested `batch` calls from utility batch
-			RuntimeCall::Utility(pallet_utility::Call::batch { .. })
-			| RuntimeCall::Utility(pallet_utility::Call::batch_all { .. })
-			| RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
+			RuntimeCall::Utility(pallet_utility::Call::batch { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::batch_all { .. }) |
+			RuntimeCall::Utility(pallet_utility::Call::force_batch { .. }) => false,
 
 			// Block all `FrequencyTxPayment` calls from utility batch
 			RuntimeCall::FrequencyTxPayment(..) => false,
 
 			// Block `create_provider` and `create_schema` calls from utility batch
-			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. })
-			| RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
+			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
 			_ if Self::is_pays_no_call(call) => false,
@@ -346,17 +339,17 @@ impl InstanceFilter<RuntimeCall> for ProxyType {
 			),
 			ProxyType::Governance => matches!(
 				c,
-				RuntimeCall::Treasury(..)
-					| RuntimeCall::Democracy(..)
-					| RuntimeCall::TechnicalCommittee(..)
-					| RuntimeCall::Council(..)
-					| RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
+				RuntimeCall::Treasury(..) |
+					RuntimeCall::Democracy(..) |
+					RuntimeCall::TechnicalCommittee(..) |
+					RuntimeCall::Council(..) |
+					RuntimeCall::Utility(..) // Calls inside a batch are also run through filters
 			),
 			ProxyType::Staking => {
 				matches!(
 					c,
-					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. })
-						| RuntimeCall::CollatorSelection(
+					RuntimeCall::Capacity(pallet_capacity::Call::stake { .. }) |
+						RuntimeCall::CollatorSelection(
 							pallet_collator_selection::Call::set_candidacy_bond { .. }
 						)
 				)
@@ -445,8 +438,8 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 	fn on_runtime_upgrade() -> Weight {
 		use sp_core::Get;
 
-		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version()
-			!= pallet_collator_selection::Pallet::<T>::in_code_storage_version()
+		if pallet_collator_selection::Pallet::<T>::on_chain_storage_version() !=
+			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 		{
 			pallet_collator_selection::Pallet::<T>::in_code_storage_version()
 				.put::<pallet_collator_selection::Pallet<T>>();
@@ -560,9 +553,7 @@ parameter_types! {
 	pub const MetadataDepositPerByte: Balance = 0;
 	pub const ApprovalDeposit: Balance = 0;
 	pub const AssetsStringLimit: u32 = 50;
-}
-#[cfg(feature = "frequency-bridging")]
-parameter_types! {
+
 	// we just reuse the same deposits
 	pub const ForeignAssetsAssetDeposit: Balance = AssetDeposit::get();
 	pub const ForeignAssetsAssetAccountDeposit: Balance = AssetAccountDeposit::get();
@@ -1973,12 +1964,26 @@ sp_api::impl_runtime_apis! {
 			PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
 		}
 
+		// Frequency implementation of the query_weight_to_asset_fee function
 		fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-			use crate::xcm_config::XcmConfig;
+			// TODO: based penpal from p.sdk
+			// Bring weight_to_fee into scope for the Trait WeightToFee
+			use frame_support::weights::WeightToFee;
 
-			type Trader = <XcmConfig as xcm_executor::Config>::Trader;
-
-			PolkadotXcm::query_weight_to_asset_fee::<Trader>(weight, asset)
+			match asset.try_as::<AssetLocationId>() {
+				Ok(asset_id) if asset_id.0 == xcm_config::NativeToken::get().0 => {
+					// for native token
+					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
+				},
+				Ok(asset_id) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - unhandled asset_id: {asset_id:?}!");
+					Err(XcmPaymentApiError::AssetNotFound)
+				},
+				Err(_) => {
+					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - failed to convert asset: {asset:?}!");
+					Err(XcmPaymentApiError::VersionedConversionFailed)
+				}
+			}
 		}
 
 		fn query_xcm_weight(message: VersionedXcm<()>) -> Result<Weight, XcmPaymentApiError> {
