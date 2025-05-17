@@ -13,7 +13,7 @@ import {
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource(import.meta.url);

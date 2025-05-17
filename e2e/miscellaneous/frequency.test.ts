@@ -6,7 +6,7 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
-import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 

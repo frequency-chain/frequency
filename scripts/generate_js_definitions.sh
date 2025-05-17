@@ -46,3 +46,12 @@ fi
 # Generate the new packed tgz
 cd dist
 npm pack
+
+# build ethereum-utils
+cd "../../ethereum-utils"
+npm install
+npm run build
+
+# Generate ethereum-utils packed tgz
+cd dist
+npm pack
