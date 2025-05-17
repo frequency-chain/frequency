@@ -1,3 +1,5 @@
+import { EipDomainPayload } from './payloads';
+
 export const EIP712_DOMAIN_DEFINITION = {
   EIP712Domain: [
     {
@@ -17,6 +19,13 @@ export const EIP712_DOMAIN_DEFINITION = {
       type: 'address',
     },
   ],
+};
+
+export const EIP712_DOMAIN_DEFAULT: EipDomainPayload = {
+  name: 'Frequency',
+  version: '1',
+  chainId: '0x190f1b44',
+  verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
 };
 
 export const ADD_PROVIDER_DEFINITION = {

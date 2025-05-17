@@ -15,8 +15,9 @@ export function isValidUint32(value: number): boolean {
 /**
  * Validate that a number is a valid uint64 (0 to 4294967295)
  */
-export function isValidUint64(value: bigint): boolean {
-  return value >= 0 && value <= 18446744073709551615n;
+export function isValidUint64String(value: bigint | string): boolean {
+  const bigIntValue = typeof value === 'string' ? BigInt(value) : value;
+  return bigIntValue >= 0 && bigIntValue <= 18446744073709551615n;
 }
 
 /**

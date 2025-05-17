@@ -13,8 +13,9 @@ import {
   AddItemizedAction,
   DeleteItemizedAction,
   ItemizedAction,
+  EipDomainPayload,
 } from './payloads';
-import { assert, isValidHexString, isValidUint16, isValidUint32, isValidUint64 } from './utils';
+import { assert, isValidHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils';
 import { reverseUnifiedAddressToEthereumAddress } from './address';
 import { ethers, TypedDataField } from 'ethers';
 import { u8aToHex } from '@polkadot/util';
@@ -22,6 +23,8 @@ import {
   ADD_KEY_DATA_DEFINITION,
   ADD_PROVIDER_DEFINITION,
   CLAIM_HANDLE_PAYLOAD_DEFINITION,
+  EIP712_DOMAIN_DEFAULT,
+  EIP712_DOMAIN_DEFINITION,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
@@ -73,7 +76,7 @@ function normalizePayload(payload: SupportedPayload): Record<string, any> {
 
     case 'AddKeyData':
       // convert to 20 bytes ethereum address for signature
-      if (clonedPayload.newPublicKey.length !== 22) {
+      if (clonedPayload.newPublicKey.length !== 42) {
         clonedPayload.newPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AddKeyData).newPublicKey);
       }
       clonedPayload.newPublicKey = clonedPayload.newPublicKey.toLowerCase() as HexString;
@@ -121,10 +124,10 @@ export function createAddKeyData(
   newPublicKey: HexString | Uint8Array,
   expirationBlock: number
 ): AddKeyData {
-  const parsedMsaId: bigint = typeof msaId === 'bigint' ? msaId : BigInt(msaId);
+  const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
   const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
 
-  assert(isValidUint64(parsedMsaId), 'msaId should be a valid uint32');
+  assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint32');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
   assert(isValidHexString(parsedNewPublicKey), 'newPublicKey should be valid hex');
   return {
@@ -147,9 +150,7 @@ export function createAddProvider(
   schemaIds: number[],
   expirationBlock: number
 ): AddProvider {
-  const parsedMsaId: bigint = typeof authorizedMsaId === 'bigint' ? authorizedMsaId : BigInt(authorizedMsaId);
-
-  assert(isValidUint64(parsedMsaId), 'targetHash should be a valid uint32');
+  assert(isValidUint64String(authorizedMsaId), 'targetHash should be a valid uint32');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
   schemaIds.forEach((schemaId) => {
     assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
@@ -157,7 +158,7 @@ export function createAddProvider(
 
   return {
     type: 'AddProvider',
-    authorizedMsaId: parsedMsaId,
+    authorizedMsaId: authorizedMsaId.toString(),
     schemaIds,
     expiration: expirationBlock,
   };
@@ -294,5 +295,196 @@ export function createPaginatedUpsertSignaturePayloadV2(
     targetHash,
     expiration,
     payload: parsedPayload,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a AddKeyData for signing.
+ *
+ * @param msaId           MSA ID (uint64) to add the key
+ * @param newPublicKey    32 bytes public key to add in hex or Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestAddKeyData(
+  msaId: string | bigint,
+  newPublicKey: HexString | Uint8Array,
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createAddKeyData(msaId, newPublicKey, expirationBlock);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...ADD_KEY_DATA_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a AddProvider for signing.
+ *
+ * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
+ * @param schemaIds       One or more schema IDs (uint16) the provider may use
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestAddProvider(
+  authorizedMsaId: string | bigint,
+  schemaIds: number[],
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...ADD_PROVIDER_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a PaginatedUpsertSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param payload    HexString or Uint8Array data to upsert
+ * @param domain
+ */
+export function getEip712BrowserRequestPaginatedUpsertSignaturePayloadV2(
+  schemaId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number,
+  payload: HexString | Uint8Array,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createPaginatedUpsertSignaturePayloadV2(schemaId, pageId, targetHash, expiration, payload);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a PaginatedDeleteSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param pageId     uint16 page identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param domain
+ */
+export function getEip712BrowserRequestPaginatedDeleteSignaturePayloadV2(
+  schemaId: number,
+  pageId: number,
+  targetHash: number,
+  expiration: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createPaginatedDeleteSignaturePayloadV2(schemaId, pageId, targetHash, expiration);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a ItemizedSignaturePayloadV2 for signing.
+ *
+ * @param schemaId   uint16 schema identifier
+ * @param targetHash uint32 page hash
+ * @param expiration uint32 expiration block
+ * @param actions    Array of Add/Delete itemized actions
+ * @param domain
+ */
+export function getEip712BrowserRequestItemizedSignaturePayloadV2(
+  schemaId: number,
+  targetHash: number,
+  expiration: number,
+  actions: ItemizedAction[],
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createItemizedSignaturePayloadV2(schemaId, targetHash, expiration, actions);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a ClaimHandlePayload for signing.
+ *
+ * @param handle          The handle the user wishes to claim
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestClaimHandlePayload(
+  handle: string,
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createClaimHandlePayload(handle, expirationBlock);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...CLAIM_HANDLE_PAYLOAD_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
+  };
+}
+
+/**
+ * Returns the EIP-712 browser request for a PasskeyPublicKey for signing.
+ *
+ * @param publicKey The passkey’s public key (hex string or raw bytes)
+ * @param domain
+ */
+export function getEip712BrowserRequestPasskeyPublicKey(
+  publicKey: HexString | Uint8Array,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createPasskeyPublicKey(publicKey);
+  const normalized = normalizePayload(message);
+  return {
+    types: {
+      ...EIP712_DOMAIN_DEFINITION,
+      ...PASSKEY_PUBLIC_KEY_DEFINITION,
+    },
+    primaryType: message.type,
+    domain: domain,
+    message: normalized,
   };
 }

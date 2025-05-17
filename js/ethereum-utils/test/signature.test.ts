@@ -21,7 +21,7 @@ describe('Signature related tests', function () {
 
       const expected = {
         type: 'AddKeyData',
-        msaId: 27,
+        msaId: '27',
         expiration: 90,
         newPublicKey: '0x123456',
       };
@@ -36,7 +36,7 @@ describe('Signature related tests', function () {
 
       const expected = {
         type: 'AddProvider',
-        authorizedMsaId: 27,
+        authorizedMsaId: '27',
         expiration: 90,
         schemaIds: [18, 52, 86],
       };

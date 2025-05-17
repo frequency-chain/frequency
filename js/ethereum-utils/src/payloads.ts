@@ -88,7 +88,7 @@ export interface AddKeyData {
   // type discriminator
   type: 'AddKeyData';
   // uint64 type MessageSourceId
-  msaId: bigint;
+  msaId: string;
   // uint32 type payload expiration block number
   expiration: number;
   // hex encoded public key to be signed
@@ -99,7 +99,7 @@ export interface AddProvider {
   // type discriminator
   type: 'AddProvider';
   // uint64 type MessageSourceId
-  authorizedMsaId: bigint;
+  authorizedMsaId: string;
   // uint16[] type schema ids
   schemaIds: number[];
   // uint32 type payload expiration block number
@@ -114,3 +114,10 @@ export type SupportedPayload =
   | ClaimHandlePayload
   | AddKeyData
   | AddProvider;
+
+export interface EipDomainPayload {
+  name: string;
+  version: string;
+  chainId: HexString;
+  verifyingContract: HexString;
+}

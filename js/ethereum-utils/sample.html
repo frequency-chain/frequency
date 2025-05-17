@@ -8,10 +8,31 @@
     <script src="./dist/browser/frequency-ethereum-utils.umd.js"></script>
     <script>
       console.log(EthereumUtils.EIP712_DOMAIN_DEFINITION);
+	  const signatureRequest = EthereumUtils.getEip712BrowserRequestItemizedSignaturePayloadV2(
+		  10,
+		  1982672367,
+		  100,
+		  [
+			  EthereumUtils.createItemizedAddAction('0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026'),
+			  EthereumUtils.createItemizedDeleteAction(3)
+		  ]
+	  );
+	  console.log(signatureRequest);
     </script>
     <script type="module">
       import * as Library from './dist/browser/frequency-ethereum-utils.esm.js';
+
       console.log(Library.ADD_KEY_DATA_DEFINITION);
+	  const signatureRequest = Library.getEip712BrowserRequestItemizedSignaturePayloadV2(
+		  10,
+		  1982672367,
+		  100,
+		  [
+			  Library.createItemizedAddAction('0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026'),
+			  Library.createItemizedDeleteAction(3)
+		  ]
+	  );
+	  console.log(signatureRequest);
     </script>
   </body>
 </html>
