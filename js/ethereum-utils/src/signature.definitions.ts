@@ -21,6 +21,7 @@ export const EIP712_DOMAIN_DEFINITION = {
   ],
 };
 
+// using pallet_revive test chain ID for now.
 export const EIP712_DOMAIN_DEFAULT: EipDomainPayload = {
   name: 'Frequency',
   version: '1',

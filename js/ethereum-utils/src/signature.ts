@@ -42,24 +42,12 @@ export async function signEip712(
   payload: SupportedPayload,
   chain: ChainType = 'Mainnet-Frequency'
 ): Promise<EcdsaSignature> {
-  // TODO: use correct chainID for different networks
-  // using pallet_revive test chain ID for now.
-  const chainId = '0x190F1B44';
-  // TODO: use correct contract address for different payloads
-  const verifyingContract = '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC';
-
-  // Define the domain separator
-  const domainData = {
-    name: 'Frequency',
-    version: '1',
-    chainId,
-    verifyingContract,
-  };
-
   const types = getTypesFor(payload.type);
   const normalizedPayload = normalizePayload(payload);
   const wallet = new ethers.Wallet(secretKey);
-  const signature = await wallet.signTypedData(domainData, types, normalizedPayload);
+  // TODO: use correct chainID for different networks
+  // TODO: use correct contract address for different payloads
+  const signature = await wallet.signTypedData(EIP712_DOMAIN_DEFAULT, types, normalizedPayload);
   return { Ecdsa: signature } as EcdsaSignature;
 }
 
