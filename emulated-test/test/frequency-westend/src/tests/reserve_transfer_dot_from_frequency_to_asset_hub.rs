@@ -166,7 +166,7 @@ fn reserve_transfer_dot_from_frequency_to_asset_hub() {
 		<Balances as Inspect<_>>::balance(&FrequencyWestendSender::get())
 	});
 
-	// Sender's balance is reduced by amount sent 
+	// Sender's balance is reduced by amount sent
 	assert!(sender_dot_assets_after < sender_dot_assets_before - amount_dot_to_send);
 	// // Receiver's balance is increased
 	assert!(receiver_balance_after > receiver_balance_before);

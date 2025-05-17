@@ -19,7 +19,7 @@ mod imports {
 		xcm_emulator::{
 		AccountIdOf,
 		assert_expected_events, bx, Chain, Parachain as Para, RelayChain as Relay, Test, TestArgs,
-		TestContext, TestExt,}, RESERVABLE_ASSET_ID, xcm_helpers::non_fee_asset,
+		TestContext, TestExt,}, RESERVABLE_ASSET_ID, xcm_helpers::{non_fee_asset, fee_asset},
 	};
 	pub use parachains_common::Balance;
 	pub use westend_system_emulated_network::{

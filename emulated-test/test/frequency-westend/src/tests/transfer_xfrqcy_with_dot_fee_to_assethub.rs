@@ -3,20 +3,13 @@ use crate::imports::*;
 
 pub const ASSET_MIN_BALANCE: u128 = 1;
 
-/// Teleport Transfers of native asset from Parachain to System Parachain should work
-// ===========================================================================
-// ======= Transfer - DOT + Frequency - Parachain->AssetHub ==========
-// ===========================================================================
-/// Transfers of dot plus frequency asset from some Parachain to AssetHub
-/// while paying fees using dot.
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::setup_foreign_dot_on_frequency_and_fund_sov_on_ah -p frequency-westend-integration-tests -- --nocapture
-
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
 }
 
-fn find_fee_asset_item(assets: &[Asset], fee_asset_id: AssetId) -> u32 {
+fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
 	assets
+		.into_inner()
 		.iter()
 		.position(|a| a.id == fee_asset_id)
 		.expect("Fee asset not found in asset list") as u32
@@ -29,8 +22,8 @@ fn setup_frequency_to_asset_hub_test_env(dot_to_send: Balance) {
 
 fn build_fee_and_value_assets(fee_dot: Balance, native_token: Balance) -> Vec<Asset> {
 	vec![
-		(Parent, fee_dot).into(),    // DOT (foreign) - used as fee
-		(Here, native_token).into(), // XRQCY (native) - used as main transfer asset
+		(Parent, fee_dot).into(),    // DOT - used as fee
+		(Here, native_token).into(), // XRQCY used as main transfer asset
 	]
 }
 
@@ -39,20 +32,13 @@ fn build_frequency_to_asset_hub_test(
 	receiver: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
 	destination: Location,
 	frqcy_amount: Balance,
-	assets: Vec<Asset>,
+	assets: Assets,
 	fee_asset_item: u32,
 ) -> FrequencyToAssetHubTest {
 	let test_args = TestContext {
 		sender: sender.clone(),
 		receiver: receiver.clone(),
-		args: TestArgs::new_para(
-			destination,
-			receiver,
-			frqcy_amount,
-			assets.into(),
-			None,
-			fee_asset_item,
-		),
+		args: TestArgs::new_para(destination, receiver, frqcy_amount, assets, None, fee_asset_item),
 	};
 
 	FrequencyToAssetHubTest::new(test_args)
@@ -106,34 +92,41 @@ fn create_frequency_asset_on_ah() {
 }
 
 fn execute_xcm_frequency_to_asset_hub(t: FrequencyToAssetHubTest) -> DispatchResult {
-	let all_assets: Vec<Asset> = t.args.assets.clone().into_inner();
-	let mut assets = all_assets.clone();
+	let assets: Assets = t.args.assets.clone();
 
-	let local_asset = assets.remove(t.args.fee_asset_item as usize);
+	let local_teleportable_asset: Asset =
+		non_fee_asset(&assets, t.args.fee_asset_item as usize).unwrap().into();
 	// TODO(https://github.com/paritytech/polkadot-sdk/issues/6197): dry-run to get exact fees.
 	// For now )just use half the fees locally, half on dest
-	let mut remote_fees = assets.remove(0usize);
-	if let Fungible(fees_amount) = remote_fees.fun {
-		remote_fees.fun = Fungible(fees_amount / 2);
+
+	// Use half of the fees to cover remote execution and the
+	// remainding to cover delivery fees
+	let mut remote_execution_fee_asset: Asset =
+		fee_asset(&assets, t.args.fee_asset_item as usize).unwrap().into();
+	if let Fungible(fees_amount) = remote_execution_fee_asset.fun {
+		remote_execution_fee_asset.fun = Fungible(fees_amount / 2);
 	}
 
 	let xcm_on_dest = Xcm(vec![
 		RefundSurplus,
 		DepositAsset { assets: Wild(All), beneficiary: t.args.beneficiary },
 	]);
+
 	let xcm = Xcm::<()>(vec![
-		WithdrawAsset(all_assets.into()),
+		WithdrawAsset(assets),
 		// PayFees { asset: remote_fees.clone() },
 		InitiateTransfer {
 			destination: t.args.dest,
-			remote_fees: Some(AssetTransferFilter::ReserveWithdraw(remote_fees.into())),
+			remote_fees: Some(AssetTransferFilter::ReserveWithdraw(
+				remote_execution_fee_asset.into(),
+			)),
 			preserve_origin: false,
 			assets: BoundedVec::truncate_from(vec![AssetTransferFilter::Teleport(
-				local_asset.into(),
+				local_teleportable_asset.into(),
 			)]),
 			remote_xcm: xcm_on_dest,
 		},
-		RefundSurplus,
+		RefundSurplus, // the remainding part after reducing delivery fees
 		DepositAsset {
 			assets: Wild(All),
 			beneficiary: AccountId32Junction {
@@ -156,7 +149,7 @@ fn execute_xcm_frequency_to_asset_hub(t: FrequencyToAssetHubTest) -> DispatchRes
 fn assert_sender_assets_burned_correctly(t: FrequencyToAssetHubTest) {
 	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
 	let system_para_native_asset_location = WestendLocation::get();
-	let (_, expected_asset_amount) =
+	let (_, xrqcy_teleport_amount) =
 		non_fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
 
 	FrequencyWestend::assert_xcm_pallet_attempted_complete(None);
@@ -171,6 +164,7 @@ fn assert_sender_assets_burned_correctly(t: FrequencyToAssetHubTest) {
 			},
 			RuntimeEvent::Balances(pallet_balances::Event::Burned { who, amount }) => {
 				who: *who == t.sender.account_id,
+				amount: *amount == xrqcy_teleport_amount,
 			},
 		]
 	);
@@ -182,41 +176,55 @@ fn assert_receiver_fee_burned_and_asset_minted(t: FrequencyToAssetHubTest) {
 	let sovereign_account_of_frequency =
 		AssetHubWestend::sovereign_account_id_of(frequency_location_as_seen_by_asset_hub());
 
-	let (_, remote_fee) = non_fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
+	let frequency_location = frequency_location_as_seen_by_asset_hub();
+
+	let (_, total_fee) = fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
+	let remote_execution_fee: u128 = total_fee / 2;
+
+	let (_, xrqcy_teleport_amount) =
+		non_fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
 
 	assert_expected_events!(
 		AssetHubWestend,
 		vec![
+			// Withdraw the fee amount from sov account and burn it
 			RuntimeEvent::Balances(
 				pallet_balances::Event::Burned {  who, amount }
 			) => {
 				 who: *who == sovereign_account_of_frequency,
-				 amount: *amount == remote_fee / 2,
+				 amount: *amount == remote_execution_fee,
 				},
+			// Issue the xFRQCY amount
+			RuntimeEvent::ForeignAssets(
+				pallet_assets::Event::Issued { asset_id, owner, amount }
+			) => {
+				asset_id: *asset_id == frequency_location,
+				owner: *owner == AssetHubWestendReceiver::get(),
+				amount: *amount == xrqcy_teleport_amount,
+			},
+			// Mint remaining fees and deposit them into receiver otherwise
+			RuntimeEvent::Balances(
+				pallet_balances::Event::Minted { who, .. }
+			) => {
+				who: *who == AssetHubWestendReceiver::get(),
+			},
 		]
 	);
-
-	// # burn the fee
-	// # mint frequency token
-	// # create account account on
 }
 
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::hybrid_transfer_native_from_frequency_to_asset_hub -p frequency-westend-integration-tests -- --nocapture
+// ===========================================================================
+// ======= DOT (fee) + xFRQCY (value) Transfer: Frequency → AssetHub =========
+// ===========================================================================
+/// This test transfers xFRQCY from the Frequency parachain to AssetHub,
+/// using DOT as the fee asset for both delivery and remote execution.
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::transfer_xfrqcy_with_dot_fee_to_assethub -p frequency-westend-integration-tests -- --nocapture
 #[test]
-fn hybrid_transfer_native_from_frequency_to_asset_hub() {
-	// Local fee amount(in DOT) should cover
-	// 1. execution cost on AH
-	// 2. delivery cost to BH
-	// 3. execution cost on BH
-	// let local_fee_amount = 200_000_000_000;
-	// Remote fee amount(in WETH) should cover execution cost on Ethereum
-	// let remote_fee_amount = 4_000_000_000;
-
+fn transfer_xfrqcy_with_dot_fee_to_assethub() {
 	// ────────────────
-	// 🔧 Test Setup
+	// Test Setup
 	// ────────────────
-	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 1000000;
-	let frqcy_transfer_amount = FrequencyExistentialDeposit::get() * 1000;
+	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 1000;
+	let xrqcy_transfer_amount = FrequencyExistentialDeposit::get() * 1000;
 
 	setup_frequency_to_asset_hub_test_env(dot_fee_amount);
 
@@ -225,13 +233,17 @@ fn hybrid_transfer_native_from_frequency_to_asset_hub() {
 	let destination = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());
 	let frequency_location_on_ah = frequency_location_as_seen_by_asset_hub();
 
-	let assets: Vec<Asset> = build_fee_and_value_assets(dot_fee_amount, frqcy_transfer_amount);
-	let fee_asset_item = find_fee_asset_item(&assets, AssetId(Parent.into()));
+	// Local fee amount(in DOT) should cover
+	// 1. delivery cost to AH
+	// 2. execution cost on AH
+	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_transfer_amount).into();
+	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
 	//  Pre-dispatch State Snapshot
 	// ────────────────────────────────
-	let sender_dot_assets_before = foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
+	let sender_balance_of_dot_on_frequency_before =
+		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
 
 	let frequency_sender_native_before = FrequencyWestend::execute_with(|| {
 		type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
@@ -239,7 +251,7 @@ fn hybrid_transfer_native_from_frequency_to_asset_hub() {
 	});
 
 	assert_eq!(frequency_sender_native_before, 4_096_000_000u128);
-	assert_eq!(sender_dot_assets_before, 2_000_000_000_000_000u128);
+	assert_eq!(sender_balance_of_dot_on_frequency_before, 2_000_000_000_000u128);
 
 	let receiver_frequency_before =
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &sender);
@@ -253,7 +265,7 @@ fn hybrid_transfer_native_from_frequency_to_asset_hub() {
 		sender.clone(),
 		receiver.clone(),
 		destination.clone(),
-		frqcy_transfer_amount,
+		xrqcy_transfer_amount,
 		assets,
 		fee_asset_item,
 	);
@@ -266,13 +278,19 @@ fn hybrid_transfer_native_from_frequency_to_asset_hub() {
 	test.set_dispatchable::<FrequencyWestend>(execute_xcm_frequency_to_asset_hub);
 	test.assert();
 
-	let sender_balance_after = test.sender.balance;
+	let sender_balance_of_dot_on_frequency_after =
+		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
 
-	let receiver_assets_after =
+	let receiver_balance_of_xfrqcy_on_ah_after =
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &receiver);
 
+	assert!(
+		sender_balance_of_dot_on_frequency_after
+			< sender_balance_of_dot_on_frequency_before + dot_fee_amount
+	);
+
 	assert_eq!(
-		receiver_assets_after, frqcy_transfer_amount,
-		"Sender's balance was NOT reduced by amount sent plus delivery fees"
+		receiver_balance_of_xfrqcy_on_ah_after, xrqcy_transfer_amount,
+		"Sender's balance on AH does not equal the transfer amount"
 	);
 }
