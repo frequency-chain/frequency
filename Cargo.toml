@@ -2,9 +2,6 @@
 members = [
   "node",
   "node/cli",
-  "emulated-test/networks/westend",
-  "emulated-test/chains/frequency-westend",
-  "emulated-test/test/frequency-westend",
   "node/service",
   "pallets/*",
   "runtime/*",

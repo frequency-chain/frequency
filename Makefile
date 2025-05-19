@@ -286,6 +286,9 @@ check-bridging:
 check-bridging-westend:
 	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
 
+check-bridging-local:
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+
 
 .PHONY: js
 js:
