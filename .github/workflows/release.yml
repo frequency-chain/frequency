@@ -476,6 +476,35 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
+  build-js-ethereum-utils:
+    name: Build JS Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install
+        run: npm install
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+      - name: Upload Dist Dir
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
+          if-no-files-found: error
+
   build-js-schemas:
     name: Build JS Schemas
     runs-on: ubuntu-24.04
@@ -705,6 +734,7 @@ jobs:
         test-version-matches-release,
         build-rust-developer-docs,
         build-js-api-augment,
+        build-js-ethereum-utils,
         build-js-schemas,
       ]
     name: Wait for All Builds to Finish
@@ -1202,6 +1232,52 @@ jobs:
           steps.is-full-release.outputs.is-full-release != 'true'
         run: npm publish --tag next --access public
         working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
+  release-js-ethereum-utils:
+    needs: wait-for-all-builds
+    name: Release JS Ethereum utils
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Download Dist Dir
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: js-api-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
+      - name: Version Package
+        if: env.TEST_RUN != 'true'
+        run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
+        working-directory: js/ethereum-utils/dist
+      - name: Release on NPM @latest
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release == 'true'
+        run: npm publish --tag latest --access public
+        working-directory: ./js/ethereum-utils/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Release Candidate on NPM
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release != 'true'
+        run: npm publish --tag next --access public
+        working-directory: ./js/ethereum-utils/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 

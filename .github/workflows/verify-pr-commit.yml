@@ -49,6 +49,7 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
+              - 'js/ethereum-utils/**'
               - 'e2e/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
