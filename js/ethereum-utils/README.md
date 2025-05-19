@@ -27,6 +27,14 @@ A package which facilitates use of Ethereum addresses, signatures and standards 
 
 - `npm install @frequency-chain/ethereum-utils`
 
+### Usage in browser
+
+Simply include the library in your HTML from [jsDelivr](https://www.jsdelivr.com/package/npm/@frequency-chain/ethereum-utils) (update the version as needed):
+
+```html
+<script src="https://cdn.jsdelivr.net/npm/@frequency-chain/ethereum-utils@0.0.1/dist/browser/frequency-ethereum-utils.umd.min.js"></script>
+```
+
 ## Upgrades and Matching Versions
 
 Assuming you are using no deprecated methods, any release version of `@frequency-chain/ethereum-utils` should work against a release version of a Frequency node.
