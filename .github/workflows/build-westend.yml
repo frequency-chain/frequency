@@ -10,32 +10,6 @@ env:
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
 
 jobs:
-  build-binaries:
-    name: Build Branch
-    runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
-    env:
-      BIN_DIR: target/release
-    steps:
-      - name: Check Out Repo
-        uses: actions/checkout@v4
-      - name: Compile Binary
-        run: |
-          CARGO_INCREMENTAL=0 cargo build --locked --release \
-            --features frequency-westend,frequency-bridging
-      - name: Run Sanity Checks
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          file frequency && \
-            ./frequency --version
-          mv frequency frequency-testnet-westend.amd64
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: artifacts-binary-testnet-westend-${{github.run_id}}
-          path: ${{env.BIN_DIR}}/frequency-testnet-westend.amd64
-          if-no-files-found: error
-
   release-node-images:
     needs: build-binaries
     name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
@@ -50,7 +24,7 @@ jobs:
     env:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
-      NEW_RELEASE_TAG: v0.0.1
+      NEW_RELEASE_TAG: v0.0.2
     runs-on: ubuntu-24.04
     steps:
       - name: Set Env Vars
@@ -60,12 +34,6 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v4
-      - name: Download Binaries
-        id: download-binaries
-        uses: actions/download-artifact@v4
-        with:
-          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
-          path: .
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -75,7 +43,7 @@ jobs:
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          mv ./frequency ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
           chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
