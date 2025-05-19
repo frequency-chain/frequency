@@ -43,7 +43,7 @@ use super::mock::{
 // Parachain(2000) -------------------------------------------> Parachain(1000)
 #[test]
 fn fee_estimation_for_teleport() {
-	sp_tracing::init_for_tests();
+	// sp_tracing::init_for_tests();
 	let who = 1; // AccountId = u64.
 	let balances = vec![(who, 100 + DeliveryFees::get() + ExistentialDeposit::get())];
 	let assets = vec![(1, who, 50)];
@@ -202,7 +202,7 @@ fn dry_run_reserve_asset_transfer_common(
 	expected_result_xcms_version: XcmVersion,
 	dry_run_call: impl FnOnce(&TestClient, OriginCaller, RuntimeCall) -> CallDryRunEffects<RuntimeEvent>,
 ) {
-	sp_tracing::init_for_tests();
+	// sp_tracing::init_for_tests();
 	let who = 1; // AccountId = u64.
 			  // Native token used for fees.
 	let balances = vec![(who, DeliveryFees::get() + ExistentialDeposit::get())];
@@ -337,7 +337,7 @@ fn dry_run_before_api_v2_reserve_asset_transfer() {
 }
 
 fn dry_run_xcm_common(xcm_version: XcmVersion) {
-	sp_tracing::init_for_tests();
+	// sp_tracing::init_for_tests();
 	let who = 1; // AccountId = u64.
 	let transfer_amount = 100u128;
 	// We need to build the XCM to weigh it and then build the real XCM that can pay for fees.

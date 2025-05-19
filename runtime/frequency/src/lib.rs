@@ -1972,8 +1972,16 @@ sp_api::impl_runtime_apis! {
 
 			match asset.try_as::<AssetLocationId>() {
 				Ok(asset_id) if asset_id.0 == xcm_config::NativeToken::get().0 => {
-					// for native token
+					// FRQCY/XRQCY, native token
 					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
+				},
+				Ok(asset_id) if asset_id.0 == xcm_config::RelayLocation::get() => {
+					// DOT, WND, or KSM on the relay chain
+					// calculate fee in DOT using Polkadot relay fee schedule
+					let dot_fee = crate::polkadot_xcm_fee::default_fee_per_second()
+						.saturating_mul(weight.ref_time() as u128)
+						.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
+					Ok(dot_fee)
 				},
 				Ok(asset_id) => {
 					log::trace!(target: "xcm::xcm_runtime_apis", "query_weight_to_asset_fee - unhandled asset_id: {asset_id:?}!");
@@ -2047,7 +2055,7 @@ sp_api::impl_runtime_apis! {
 }
 
 #[cfg(test)]
-mod tests {
+mod unit_tests {
 	use super::*;
 	use frame_support::traits::WhitelistedStorageKeys;
 	use sp_core::hexdisplay::HexDisplay;
@@ -2086,4 +2094,26 @@ mod tests {
 	fn runtime_apis_are_populated() {
 		assert!(RUNTIME_API_VERSIONS.len() > 0);
 	}
+
+	#[cfg(feature = "frequency-bridging")]
+	#[test]
+	fn test_default_fee_per_second() {
+		use super::polkadot_xcm_fee::{default_fee_per_second, base_relay_tx_fee};
+		use super::{ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
+		use sp_weights::Weight;
+
+		let base_weight = ExtrinsicBaseWeight::get().ref_time() as u128;
+		let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+		assert_eq!(default_fee_per_second(), base_tx_per_second * base_relay_tx_fee());
+
+		let weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND * 3);
+		let dot_fee = default_fee_per_second()
+			.saturating_mul(weight.ref_time() as u128)
+			.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
+		// For 3 seconds of weight, fee should be 3 * base fee per second
+		assert_eq!(dot_fee, default_fee_per_second() * 3);
+	}
 }
+// filepath: runtime/frequency/src/lib.rs
+#[cfg(test)]
+mod tests;
