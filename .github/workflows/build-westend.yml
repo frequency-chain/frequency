@@ -33,12 +33,6 @@ jobs:
           echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
       - name: Check Out Repo
         uses: actions/checkout@v4
-      - name: Extract and List Downloaded Binaries
-        run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Move Binary to Target Dir
         run: |
           mkdir -p ${{env.BIN_DIR}}
