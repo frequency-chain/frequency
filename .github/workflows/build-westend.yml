@@ -11,7 +11,6 @@ env:
 
 jobs:
   release-node-images:
-    needs: build-binaries
     name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
     strategy:
       fail-fast: true
