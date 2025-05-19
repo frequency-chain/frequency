@@ -18,7 +18,7 @@
     "prepackage": "cp CONTRIBUTING.md README.md ../../LICENSE ./dist",
     "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
     "rollup:build": "rollup -c rollup.config.mjs",
-    "postbuild": "npm run package",
+    "postbuild": "npm run package; npm run rollup:build;",
     "pack": "cd dist; npm pack",
     "test": "mocha --import=tsx  ./test/**/*.test.ts",
     "format": "tsc --noEmit --pretty && prettier --write . && eslint --fix",

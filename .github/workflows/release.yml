@@ -493,7 +493,7 @@ jobs:
           registry-url: "https://registry.npmjs.org"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install
-        run: npm install
+        run: npm ci
         working-directory: js/ethereum-utils
       - name: Build
         run: npm run build

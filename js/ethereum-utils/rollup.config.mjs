@@ -28,7 +28,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/browser/frequency-ethereum-utils.esm.js',
+      file: 'dist/browser/frequency-ethereum-utils.esm.min.js',
       format: 'esm',
       sourcemap: false,
     },
@@ -43,7 +43,7 @@ export default [
   {
     input: 'src/index.ts',
     output: {
-      file: 'dist/browser/frequency-ethereum-utils.umd.js',
+      file: 'dist/browser/frequency-ethereum-utils.umd.min.js',
       format: 'umd',
       name: 'EthereumUtils',
       sourcemap: false,
