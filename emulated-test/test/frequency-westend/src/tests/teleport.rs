@@ -1,7 +1,5 @@
 use crate::imports::*;
-use emulated_integration_tests_common::{
-	test_parachain_is_trusted_teleporter_for_relay, test_parachain_is_trusted_teleporter, test_relay_is_trusted_teleporter,
-};
+use emulated_integration_tests_common::test_parachain_is_trusted_teleporter;
 
 #[test]
 fn teleport_from_and_to_asset_hub() {

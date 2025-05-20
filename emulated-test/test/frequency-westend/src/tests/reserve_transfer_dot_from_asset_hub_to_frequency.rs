@@ -31,7 +31,6 @@ pub fn system_para_to_para_receiver_assertions(t: AssetHubToFrequencyTest) {
 }
 
 pub fn system_para_to_para_sender_assertions(t: AssetHubToFrequencyTest) {
-	use pallet_assets::Event as AssetsEvent;
 	use pallet_assets::Event as ForeignAssetsEvent;
 	use pallet_balances::Event as BalancesEvent;
 	use pallet_xcm::Event as XcmEvent;

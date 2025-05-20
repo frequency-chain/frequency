@@ -1,13 +1,13 @@
 pub use frequency_runtime::{self, xcm_config::RelayNetwork as FrequencyRelayNetworkId};
 
 mod genesis;
-pub use genesis::{genesis, FrequencySudoAccount, FrequencyAssetOwner, ED, PARA_ID};
+pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
 
 use frame_support::traits::OnInitialize;
 
 use emulated_integration_tests_common::{
 	impl_accounts_helpers_for_parachain, impl_assert_events_helpers_for_parachain,
-	impl_xcm_helpers_for_parachain, impl_foreign_assets_helpers_for_parachain, impls::Parachain, xcm_emulator::decl_test_parachains,
+	impl_xcm_helpers_for_parachain, impls::Parachain, xcm_emulator::decl_test_parachains,
 };
 
 decl_test_parachains! {
@@ -34,4 +34,3 @@ decl_test_parachains! {
 impl_accounts_helpers_for_parachain!(FrequencyWestend);
 impl_assert_events_helpers_for_parachain!(FrequencyWestend);
 impl_xcm_helpers_for_parachain!(FrequencyWestend);
-// impl_foreign_assets_helpers_for_parachain!(FrequencyWestend, staging_xcm::latest::Location);

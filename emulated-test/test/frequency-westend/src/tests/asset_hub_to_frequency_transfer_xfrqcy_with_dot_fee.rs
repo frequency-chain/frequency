@@ -227,7 +227,7 @@ fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchRes
 	let mut assets = all_assets.clone();
 
 	let mut fees = assets.remove(t.args.fee_asset_item as usize);
-	
+
 	if let Fungible(fees_amount) = fees.fun {
 		fees.fun = Fungible(fees_amount / 2);
 	}
@@ -280,17 +280,13 @@ fn asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee() {
 	create_dot_asset_on_frequency();
 
 	create_frequency_asset_on_ah();
-	mint_xrqcy_on_asset_hub(
-		AssetHubWestendSender::get().clone(),
-		(xrqcy_amount * 2).clone(),
-	);
+	mint_xrqcy_on_asset_hub(AssetHubWestendSender::get().clone(), (xrqcy_amount * 2).clone());
 
 	let sender = AssetHubWestendSender::get();
 	let receiver = FrequencyWestendReceiver::get();
 	let destination = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
 
-	let assets: Assets =
-		build_fee_and_value_assets(dot_fee_amount * 2, xrqcy_amount).into();
+	let assets: Assets = build_fee_and_value_assets(dot_fee_amount * 2, xrqcy_amount).into();
 	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
@@ -300,8 +296,11 @@ fn asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee() {
 		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
 	assert_eq!(sender_balance_of_dot_on_frequency_before, 0u128);
 
-	let sender_balance_of_xrqcy_on_asset_hub_before =
-		foreign_balance_on!(AssetHubWestend, frequency_location_on_asset_hub.clone(), &sender.clone());
+	let sender_balance_of_xrqcy_on_asset_hub_before = foreign_balance_on!(
+		AssetHubWestend,
+		frequency_location_on_asset_hub.clone(),
+		&sender.clone()
+	);
 	assert_eq!(sender_balance_of_xrqcy_on_asset_hub_before, 2_000_000_000u128);
 
 	let sender_dot_before = AssetHubWestend::execute_with(|| {

@@ -23,8 +23,6 @@ use parachains_common::message_queue::{NarrowOriginToSibling, ParaIdToSibling};
 #[cfg(not(feature = "runtime-benchmarks"))]
 use crate::xcm_config;
 
-use polkadot_runtime_common::xcm_sender::NoPriceForMessageDelivery;
-
 pub use sp_runtime::{Perbill, Saturating};
 
 #[cfg(not(feature = "runtime-benchmarks"))]

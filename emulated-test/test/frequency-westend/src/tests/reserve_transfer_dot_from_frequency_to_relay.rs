@@ -1,6 +1,5 @@
 use crate::foreign_balance_on;
 use crate::imports::*;
-use westend_system_emulated_network::westend_emulated_chain::westend_runtime::Dmp;
 
 fn frequency_to_relay_reserve_transfer_assets(t: FrequencyToRelayTest) -> DispatchResult {
 	<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::limited_reserve_transfer_assets(
@@ -98,7 +97,7 @@ fn setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_to_send: Balance) {
 // ========= Reserve Transfers - DOT Asset - Frequency<>Relay ===========
 // =========================================================================
 /// Reserve Transfers of DOT from Relay to Parachain should work
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_relay_to_frequency -p frequency-westend-integration-tests -- --nocapture
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_frequency_to_relay -p frequency-westend-integration-tests -- --nocapture
 #[test]
 fn reserve_transfer_dot_from_frequency_to_relay() {
 	let destination = FrequencyWestend::parent_location();
@@ -111,8 +110,6 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 	setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_to_send);
 
 	let receiver = WestendReceiver::get();
-	let frequency_location_as_seen_by_relay =
-		Westend::child_location_of(FrequencyWestend::para_id());
 
 	let test_args = TestContext {
 		sender: sender.clone(),
