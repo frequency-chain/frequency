@@ -5,6 +5,7 @@ import {
   getSS58AccountFromEthereumAccount,
   getUnifiedPublicKey,
   getUnifiedAddress,
+  createRandomKey,
 } from '../src';
 import { hexToU8a, u8aToHex } from '@polkadot/util';
 
@@ -105,6 +106,18 @@ describe('Address tests', function () {
 
       const result = getUnifiedAddress(ethPair);
       assert.deepEqual(result, unifiedPublicKey);
+    });
+  });
+
+  describe('should create new keys', function () {
+    it('it should generate random keys', function () {
+      const key1 = createRandomKey();
+      const key2 = createRandomKey();
+
+      assert.notDeepEqual(key1.publicKey, key2.publicKey);
+      assert.notDeepEqual(key1.privateKey, key2.privateKey);
+      assert.notDeepEqual(key1.address, key2.address);
+      assert.notDeepEqual(key1.mnemonic, key2.mnemonic);
     });
   });
 });

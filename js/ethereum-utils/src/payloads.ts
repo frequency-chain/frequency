@@ -6,6 +6,26 @@ export interface EcdsaSignature {
 
 export type ChainType = 'Mainnet-Frequency' | 'Paseo-Testnet-Frequency';
 
+export interface AddressWrapper {
+  // 20 byte ethereum address in hex
+  ethereumAddress: HexString;
+  // 32 byte unified address in hex
+  unifiedAddress: HexString;
+  // SS58 unified address
+  unifiedAddressSS58: string;
+}
+
+export interface EthereumKeyPair {
+  // private key of ethereum key
+  privateKey: HexString;
+  // 33 bytes public key
+  publicKey: HexString;
+  // different address representations
+  address: AddressWrapper;
+  // 12 word mnemonic
+  mnemonic: string;
+}
+
 export interface PaginatedUpsertSignaturePayloadV2 {
   // type discriminator
   type: 'PaginatedUpsertSignaturePayloadV2';
