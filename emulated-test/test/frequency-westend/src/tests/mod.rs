@@ -8,6 +8,8 @@ mod reserve_transfer_dot_from_relay_to_frequency;
 mod teleport;
 mod transfer_xfrqcy_with_dot_fee_to_assethub;
 
+mod asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee;
+
 #[macro_export]
 macro_rules! foreign_balance_on {
 	( $chain:ident, $id:expr, $who:expr ) => {
