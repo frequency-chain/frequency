@@ -205,8 +205,9 @@ jobs:
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
       - name: Compile Binary for ${{matrix.network}} on ${{matrix.arch}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
+        # The various rust flags here are for faster builds, but are not exactly the same as release builds
         run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked \
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings -C debuginfo=0 -C opt-level=0 -C codegen-units=265" cargo build --locked \
             ${{ matrix.build-profile == 'release' && '--release' || '' }} \
             --features ${{matrix.spec}}
       - name: Run Sanity Checks
