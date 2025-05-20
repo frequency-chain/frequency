@@ -51,6 +51,25 @@ export async function signEip712(
   return { Ecdsa: signature } as EcdsaSignature;
 }
 
+/**
+ * Verify EIP-712 signatures
+ * @param ethereumAddress
+ * @param signature
+ * @param payload
+ */
+export function verifyEip712Signature(
+  ethereumAddress: HexString,
+  signature: HexString,
+  payload: SupportedPayload
+): boolean {
+  const types = getTypesFor(payload.type);
+  const normalizedPayload = normalizePayload(payload);
+  // TODO: use correct chainID for different networks
+  // TODO: use correct contract address for different payloads
+  const recoveredAddress = ethers.verifyTypedData(EIP712_DOMAIN_DEFAULT, types, normalizedPayload, signature);
+  return recoveredAddress.toLowerCase() === ethereumAddress.toLowerCase();
+}
+
 function normalizePayload(payload: SupportedPayload): Record<string, any> {
   const clonedPayload = Object.assign({}, payload);
   switch (clonedPayload.type) {

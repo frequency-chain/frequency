@@ -11,6 +11,7 @@ import {
   createPasskeyPublicKey,
   signEip712,
   HexString,
+  verifyEip712Signature,
 } from '../src';
 
 describe('Signature related tests', function () {
@@ -140,6 +141,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for PaginatedDeleteSignaturePayloadV2', async function () {
@@ -152,6 +157,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for ItemizedSignaturePayloadV2', async function () {
@@ -167,6 +176,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for AddKeyData', async function () {
@@ -183,6 +196,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for AddProvider', async function () {
@@ -195,6 +212,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for ClaimHandlePayload', async function () {
@@ -207,6 +228,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
 
     it('should create a valid signature for PasskeyPublicKey', async function () {
@@ -219,6 +244,10 @@ describe('Signature related tests', function () {
       };
 
       assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
     });
   });
 });
