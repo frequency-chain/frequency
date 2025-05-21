@@ -39,7 +39,9 @@ use common_primitives::{
 	msa::MsaKeyProvider,
 	node::UtilityProvider,
 };
+use core::ops::Mul;
 pub use pallet::*;
+use sp_runtime::Permill;
 pub use weights::*;
 
 mod payment;
@@ -450,22 +452,33 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let mut calls_weight_sum = Weight::zero();
+		let mut subsidized_calls_weight_sum = Weight::zero();
+
 		for call in calls {
-			let call_weight = if self.call_is_adding_eligible_key_to_msa(call) {
-				// "free-ish"
-				Weight::from_parts(1_000, 0)
-			} else {
-				T::CapacityCalls::get_stable_weight(call)
-					.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?
-			};
-
+			let call_weight = T::CapacityCalls::get_stable_weight(call)
+				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
-		}
-		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
+			if self.call_is_adding_eligible_key_to_msa(call) {
+				subsidized_calls_weight_sum =
+					subsidized_calls_weight_sum.saturating_add(call_weight);
+			}
+		}
+		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum)
+			.saturating_sub(Self::subsidized_calls_reduction(len, subsidized_calls_weight_sum));
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, capacity_fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
+	}
+
+	// Reduction for subsidized calls.
+	fn subsidized_calls_reduction(len: usize, eligible_call_weight: Weight) -> BalanceOf<T> {
+		if eligible_call_weight.is_zero() {
+			0u32.into()
+		} else {
+			let reduction: Permill = Permill::from_percent(70u32);
+			reduction.mul(Pallet::<T>::compute_capacity_fee(len as u32, eligible_call_weight))
+		}
 	}
 
 	fn call_is_adding_eligible_key_to_msa(&self, call: &<T as Config>::RuntimeCall) -> bool {

@@ -91,7 +91,7 @@ describe('adding an Ethereum key for low cost', function () {
     assertEvent(eventMap, 'msa.PublicKeyAdded');
     const capacityFee = ExtrinsicHelper.getCapacityFee(eventMap);
     assert(capacityFee > 0);
-    assert(capacityFee < 4n * CENTS);
+    assert(capacityFee < 1_320_000n); // ~1.3 CENTS
 
     // add another key; this should cost a lot more
     const thirdKeyEth = await createKeys('Eth2', 'ethereum');
@@ -116,7 +116,7 @@ describe('adding an Ethereum key for low cost', function () {
     assertEvent(eventMap2, 'msa.PublicKeyAdded');
     const thirdKeyCapacityFee = ExtrinsicHelper.getCapacityFee(eventMap2);
     // 4260363n vs
-    // 3258176n
+    // 1278109n
     assert(thirdKeyCapacityFee > capacityFee);
     assert(thirdKeyCapacityFee < 5n * CENTS);
   });
