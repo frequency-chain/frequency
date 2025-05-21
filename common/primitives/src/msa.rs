@@ -295,11 +295,11 @@ pub trait SchemaGrantValidator<BlockNumber> {
 	) -> DispatchResult;
 }
 
-/// A trait that allows checking whether adding a key would be free
+/// A trait that allows checking whether adding a key may be subsidized
 pub trait MsaKeyProvider {
 	/// the type to use for looking up keys in storage.
 	type AccountId;
-	/// Returns whether adding `new_key` to `msa_id` would be free
+	/// Returns whether adding `new_key` to `msa_id` may be subsidized
 	fn key_eligible_for_subsidized_addition(
 		old_key: Self::AccountId,
 		new_key: Self::AccountId,
