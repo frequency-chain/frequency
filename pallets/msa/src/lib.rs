@@ -940,7 +940,7 @@ pub mod pallet {
 		/// It also contains an expiration block number for the proof, ensuring it is valid and must be greater than the current block.
 		///
 		/// # Events
-		/// * [`pallet_balances::Event::<T,I>::Transfer`] - Transfer token event
+		/// * `pallet_balances::Event::<T,I>::Transfer` - Transfer token event
 		///
 		/// # Errors
 		///
@@ -953,7 +953,6 @@ pub mod pallet {
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
 		/// * [`Error::InsufficientBalanceToWithdraw`] - the MSA account has not balance to withdraw
 		/// * [`Error::InsufficientBalanceToFundDestination`] - the transfer would result in an account that would be reaped due to existential balance requirements
-		/// * [`Error::UnexpectedTokenTransferError`] - the balances pallet threw an error during the attempted transfer
 		///
 		#[pallet::call_index(14)]
 		#[pallet::weight((T::WeightInfo::withdraw_tokens(), DispatchClass::Normal, Pays::No))]
@@ -1948,8 +1947,8 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		ensure!(
 			Pallet::<T>::verify_signature(
-				&msa_owner_proof,
-				&msa_owner_public_key,
+				msa_owner_proof,
+				msa_owner_public_key,
 				authorization_payload
 			),
 			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
@@ -1957,11 +1956,11 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// Origin must NOT be an MSA control key
 		ensure!(
-			!PublicKeyToMsaId::<T>::contains_key(&receiver_account_id),
+			!PublicKeyToMsaId::<T>::contains_key(receiver_account_id),
 			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8)
 		);
 
-		Pallet::<T>::register_signature(&msa_owner_proof, authorization_payload.expiration)
+		Pallet::<T>::register_signature(msa_owner_proof, authorization_payload.expiration)
 			.map_err(|err: DispatchError| {
 				InvalidTransaction::Custom(match err {
 					DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
@@ -1985,7 +1984,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		let msa_id = authorization_payload.msa_id;
 
-		Pallet::<T>::ensure_msa_owner(&msa_owner_public_key, msa_id).map_err(|err| {
+		Pallet::<T>::ensure_msa_owner(msa_owner_public_key, msa_id).map_err(|err| {
 			InvalidTransaction::Custom(match err {
 				DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
 					if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
@@ -2028,7 +2027,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		// - Destination account balance  + ammount to be transferred > existential deposit
 		let amount_alone_is_insufficient = msa_balance < ed;
 		let dest_will_be_reaped = if amount_alone_is_insufficient {
-			let dest_balance = T::Currency::total_balance(&receiver_account_id);
+			let dest_balance = T::Currency::total_balance(receiver_account_id);
 			(dest_balance + msa_balance) < ed
 		} else {
 			false
