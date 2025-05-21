@@ -1675,7 +1675,7 @@ impl<T: Config> MsaKeyProvider for Pallet<T> {
 	// - Msa exists
 	// - The stored msa_id for the key == `msa_id`
 	// - It has only one key associated with it
-	fn key_eligible_for_free_addition(
+	fn key_eligible_for_subsidized_addition(
 		old_key: Self::AccountId,
 		new_key: Self::AccountId,
 		msa_id: MessageSourceId,

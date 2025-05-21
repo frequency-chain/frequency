@@ -85,16 +85,6 @@ pub enum InitialPayment<T: Config> {
 	Capacity,
 }
 
-impl<T: Config> PartialEq for InitialPayment<T> {
-	fn eq(&self, other: &Self) -> bool {
-		match self {
-			Self::Free => matches!(other, Self::Free),
-			Self::Token(_liquidity_info) => matches!(other, Self::Token(_liquidity_info)),
-			Self::Capacity => matches!(other, Self::Capacity),
-		}
-	}
-}
-
 #[cfg(feature = "std")]
 impl<T: Config> InitialPayment<T> {
 	pub fn is_free(&self) -> bool {
@@ -482,7 +472,7 @@ where
 		if let Some((owner_account_id, new_account_id, msa_id)) =
 			T::MsaCallFilter::get_add_key_data(call)
 		{
-			return T::MsaKeyProvider::key_eligible_for_free_addition(
+			return T::MsaKeyProvider::key_eligible_for_subsidized_addition(
 				owner_account_id,
 				new_account_id,
 				msa_id,

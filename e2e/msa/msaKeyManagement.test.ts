@@ -8,8 +8,7 @@ import {
   Sr25519Signature,
   generateAddKeyPayload,
   createProviderKeysAndId,
-  CENTS,
-  getBlockNumber,
+  DOLLARS,
   assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
