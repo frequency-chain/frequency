@@ -4,12 +4,7 @@ import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import {
-  FrameSystemAccountInfo,
-  PalletTimeReleaseReleaseSchedule,
-  SpRuntimeDispatchError,
-  PalletSchedulerScheduled,
-} from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
@@ -31,6 +26,7 @@ import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
 import { getUnifiedAddress, getUnifiedPublicKey } from './ethereum';
+import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
 
 export interface ReleaseSchedule {
   start: number;
@@ -43,6 +39,11 @@ export interface AddKeyData {
   msaId?: u64;
   expiration?: any;
   newPublicKey?: any;
+}
+export interface AuthorizedKeyData {
+  msaId: u64;
+  expiration?: AnyNumber;
+  authorizedPublicKey: KeyringPair['publicKey'];
 }
 export interface AddProviderPayload {
   authorizedMsaId?: u64;
@@ -89,6 +90,10 @@ export interface PaginatedDeleteSignaturePayloadV2 {
   pageId?: u16;
   targetHash?: u32;
   expiration?: any;
+}
+
+export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
+  return e?.name === 'RpcError';
 }
 
 export class EventError extends Error {
@@ -188,6 +193,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
+      // eslint-disable-next-line no-restricted-syntax
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
@@ -205,8 +211,11 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         )
       );
     } catch (e) {
-      if ((e as any).name === 'RpcError' && inputNonce === 'auto') {
-        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+      if (isRpcError(e)) {
+        if (inputNonce === 'auto') {
+          console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+        }
+        log(`RpcError:`, { code: e.code, data: e.data });
       }
       throw e;
     }

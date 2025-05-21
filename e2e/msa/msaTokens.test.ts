@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AuthorizedKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { ethereumAddressToKeyringPair, getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
@@ -12,7 +12,7 @@ import {
   createAndFundKeypair,
   createKeys,
   DOLLARS,
-  generateAddKeyPayload,
+  generateAuthorizedKeyPayload,
   getExistentialDeposit,
   signPayloadSr25519,
   Sr25519Signature,
@@ -115,127 +115,163 @@ describe('MSAs Holding Tokens', function () {
   });
 
   describe('withdrawTokens', function () {
-    let keys: KeyringPair;
+    let msaKeys: KeyringPair;
     let msaId: u64;
     let msaAddress: H160;
+    let otherMsaKeys: KeyringPair;
     let secondaryKey: KeyringPair;
-    const defaultPayload: AddKeyData = {};
-    let payload: AddKeyData;
+    let defaultPayload: AuthorizedKeyData;
+    let payload: AuthorizedKeyData;
     let ownerSig: Sr25519Signature;
     let badSig: Sr25519Signature;
-    let addKeyData: Codec;
+    let authorizedKeyData: Codec;
 
     before(async function () {
       // Setup an MSA with tokens
-      keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
-      const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
+      msaKeys = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      let { target } = await ExtrinsicHelper.createMsa(msaKeys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
+
+      // Setup another MSA control key
+      otherMsaKeys = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      ({ target } = await ExtrinsicHelper.createMsa(otherMsaKeys).signAndSend());
+      assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
 
       const { accountId } = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId);
       msaAddress = accountId;
 
-      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS);
+      // Create unfunded keys; this extrinsic should be free
+      secondaryKey = createKeys();
 
       // Default payload making it easier to test `withdrawTokens`
-      defaultPayload.msaId = msaId;
-      defaultPayload.newPublicKey = getUnifiedPublicKey(secondaryKey);
+      defaultPayload = {
+        msaId,
+        authorizedPublicKey: getUnifiedPublicKey(secondaryKey),
+      };
     });
 
     beforeEach(async function () {
-      payload = await generateAddKeyPayload(defaultPayload);
+      payload = await generateAuthorizedKeyPayload(defaultPayload);
     });
 
     it('should fail if origin is not address contained in the payload (NotKeyOwner)', async function () {
-      const badPayload = { ...payload, newPublicKey: getUnifiedAddress(createKeys()) }; // Invalid MSA ID
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', badPayload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, badPayload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'NotKeyOwner',
+      const badPayload = { ...payload, authorizedPublicKey: getUnifiedAddress(createKeys()) }; // Invalid MSA ID
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', badPayload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, badPayload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 5', // NotKeyOwner,
       });
     });
 
     it('should fail if MSA owner signature is invalid (MsaOwnershipInvalidSignature)', async function () {
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
-      badSig = signPayloadSr25519(createKeys(), addKeyData); // Invalid signature
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, badSig, payload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'MsaOwnershipInvalidSignature',
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+      badSig = signPayloadSr25519(createKeys(), authorizedKeyData); // Invalid signature
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, badSig, payload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 8', // MsaOwnershipInvalidSignature
       });
     });
 
     it('should fail if expiration has passed (ProofHasExpired)', async function () {
-      const newPayload = await generateAddKeyPayload({
+      const newPayload = await generateAuthorizedKeyPayload({
         ...defaultPayload,
         expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber(),
       });
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'ProofHasExpired',
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', newPayload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, newPayload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 14', // ProofHasExpired,
       });
     });
 
     it('should fail if expiration is not yet valid (ProofNotYetValid)', async function () {
       const maxMortality = ExtrinsicHelper.api.consts.msa.mortalityWindowSize.toNumber();
-      const newPayload = await generateAddKeyPayload({
+      const newPayload = await generateAuthorizedKeyPayload({
         ...defaultPayload,
         expiration: (await ExtrinsicHelper.getLastBlock()).block.header.number.toNumber() + maxMortality + 999,
       });
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'ProofNotYetValid',
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', newPayload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, newPayload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 13', // ProofNotYetValid,
+      });
+    });
+
+    it('should fail if origin is an MSA control key (IneligibleOrigin)', async function () {
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+      const newPayload = await generateAuthorizedKeyPayload({
+        ...defaultPayload,
+        authorizedPublicKey: getUnifiedPublicKey(otherMsaKeys),
+      });
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', newPayload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(otherMsaKeys, msaKeys, ownerSig, newPayload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 12', // IneligibleOrigin,
       });
     });
 
     it('should fail if payload signer does not control the MSA in the signed payload (NotMsaOwner)', async function () {
-      const newPayload = await generateAddKeyPayload({
+      const newPayload = await generateAuthorizedKeyPayload({
         ...defaultPayload,
         msaId: new u64(ExtrinsicHelper.api.registry, 9999),
       });
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, newPayload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'NotMsaOwner',
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', newPayload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, newPayload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 17', // NotMsaOwner,
       });
     });
 
     it('should fail if payload signer is not an MSA control key (NoKeyExists)', async function () {
       const badSigner = createKeys();
-      const newPayload = await generateAddKeyPayload({
+      const newPayload = await generateAuthorizedKeyPayload({
         ...defaultPayload,
         msaId: new u64(ExtrinsicHelper.api.registry, 9999),
       });
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
-      ownerSig = signPayloadSr25519(badSigner, addKeyData);
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', newPayload);
+      ownerSig = signPayloadSr25519(badSigner, authorizedKeyData);
       const op = ExtrinsicHelper.withdrawTokens(secondaryKey, badSigner, ownerSig, newPayload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'NoKeyExists',
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 16', // NoKeyExists,
       });
     });
 
     it('should fail if MSA does not have a balance', async function () {
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, keys, ownerSig, payload);
-      await assert.rejects(op.fundAndSend(fundingSource), {
-        name: 'InsufficientBalanceToWithdraw',
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload);
+      await assert.rejects(op.signAndSend(), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 9', // InsufficientBalanceToWithdraw,
       });
     });
 
     it('should succeed', async function () {
-      // Fund receiver with known amount to pay for transaction
-      const startingAmount = 1n * DOLLARS;
       const transferAmount = 1n * DOLLARS;
-      const tertiaryKeys = await createAndFundKeypair(fundingSource, startingAmount);
       const {
         data: { free: startingBalance },
-      } = await ExtrinsicHelper.getAccountInfo(tertiaryKeys);
+      } = await ExtrinsicHelper.getAccountInfo(secondaryKey);
 
       // Send tokens to MSA
       try {
@@ -249,20 +285,18 @@ describe('MSAs Holding Tokens', function () {
         console.error('Error sending tokens to MSA', err.message);
       }
 
-      const newPayload = await generateAddKeyPayload({ ...payload, newPublicKey: getUnifiedPublicKey(tertiaryKeys) });
-      addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', newPayload);
-      ownerSig = signPayloadSr25519(keys, addKeyData);
-      const op = ExtrinsicHelper.withdrawTokens(tertiaryKeys, keys, ownerSig, newPayload);
-      const { eventMap } = await op.fundAndSend(fundingSource);
-      const feeAmount = (eventMap['transactionPayment.TransactionFeePaid'].data as unknown as any).actualFee;
+      authorizedKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+      ownerSig = signPayloadSr25519(msaKeys, authorizedKeyData);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload);
+      await assert.doesNotReject(op.signAndSend(), 'token transfer transaction should have succeeded');
 
       // Destination account should have had balance increased
       const {
         data: { free: endingBalance },
-      } = await ExtrinsicHelper.getAccountInfo(tertiaryKeys);
+      } = await ExtrinsicHelper.getAccountInfo(secondaryKey);
 
       assert(
-        startingBalance.toBigInt() + transferAmount - feeAmount.toBigInt() === endingBalance.toBigInt(),
+        startingBalance.toBigInt() + transferAmount === endingBalance.toBigInt(),
         'balance of recieve should have increased by the transfer amount minus fee'
       );
     });

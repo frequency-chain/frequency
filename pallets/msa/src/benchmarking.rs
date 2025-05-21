@@ -56,6 +56,25 @@ fn add_key_payload_and_signature<T: Config>(
 	(add_key_payload, MultiSignature::Sr25519(signature.into()), acc)
 }
 
+fn withdraw_tokens_payload_and_signature<T: Config>(
+	msa_id: u64,
+	msa_key_pair: SignerId,
+) -> (AuthorizedKeyData<T>, MultiSignature, T::AccountId) {
+	let new_keys = SignerId::generate_pair(None);
+	let public_key = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
+	let withdraw_tokens_payload = AuthorizedKeyData::<T> {
+		msa_id,
+		expiration: 10u32.into(),
+		authorized_public_key: public_key,
+	};
+
+	let encoded_withdraw_tokens_payload = wrap_binary_data(withdraw_tokens_payload.encode());
+
+	let signature = msa_key_pair.sign(&encoded_withdraw_tokens_payload).unwrap();
+	let acc = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
+	(withdraw_tokens_payload, MultiSignature::Sr25519(signature.into()), acc)
+}
+
 fn create_msa_account_and_keys<T: Config>() -> (T::AccountId, SignerId, MessageSourceId) {
 	let key_pair = SignerId::generate_pair(None);
 	let account_id = T::AccountId::decode(&mut &key_pair.encode()[..]).unwrap();
@@ -385,11 +404,8 @@ mod benchmarks {
 		T::Currency::set_balance(&msa_account_id, balance);
 		assert_eq!(T::Currency::balance(&msa_account_id), balance);
 
-		let (add_key_payload, _, new_account_id) = add_key_payload_and_signature::<T>(msa_id);
-
-		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
-		let owner_signature =
-			MultiSignature::Sr25519(msa_key_pair.sign(&encoded_add_key_payload).unwrap().into());
+		let (add_key_payload, owner_signature, new_account_id) =
+			withdraw_tokens_payload_and_signature::<T>(msa_id, msa_key_pair);
 
 		#[extrinsic_call]
 		_(

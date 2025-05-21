@@ -1,15 +1,14 @@
 use frame_support::{
-	assert_noop, assert_ok,
-	traits::{
+	assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction, traits::{
 		tokens::{fungible::Inspect, Fortitude, Preservation},
 		Currency,
-	},
+	}
 };
 
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use crate::{tests::mock::*, types::AddKeyData, Config, Error};
+use crate::{tests::mock::*, types::AuthorizedKeyData, CheckFreeExtrinsicUse, Config, Error, ValidityError};
 
 use common_primitives::{
 	msa::{MessageSourceId, H160},
@@ -23,16 +22,16 @@ use pallet_balances::Event as BalancesEvent;
 fn generate_payload(
 	msa_id: MessageSourceId,
 	msa_owner_keys: &sr25519::Pair,
-	new_public_key: &sr25519::Pair,
+	authorized_public_key: &sr25519::Pair,
 	expiration: Option<BlockNumber>,
-) -> (AddKeyData<Test>, Vec<u8>, MultiSignature) {
-	let payload = AddKeyData::<Test> {
+) -> (AuthorizedKeyData<Test>, Vec<u8>, MultiSignature) {
+	let payload = AuthorizedKeyData::<Test> {
 		msa_id,
 		expiration: match expiration {
 			Some(block_number) => block_number,
 			None => 10,
 		},
-		new_public_key: new_public_key.public().into(),
+		authorized_public_key: authorized_public_key.public().into(),
 	};
 
 	let encoded_payload = wrap_binary_data(payload.encode());
@@ -52,13 +51,13 @@ fn it_fails_when_caller_key_does_not_match_payload() {
 			generate_payload(msa_id, &owner_key_pair, &other_key_pair, None);
 
 		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::NotKeyOwner
+			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
 		);
 	});
 }
@@ -74,13 +73,13 @@ fn it_fails_when_payload_signature_is_invalid() {
 			generate_payload(msa_id, &other_key_pair, &origin_key_pair, None);
 
 		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::MsaOwnershipInvalidSignature
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
 		);
 	});
 }
@@ -97,13 +96,13 @@ fn it_fails_when_proof_is_expired() {
 			generate_payload(msa_id, &owner_key_pair, &origin_key_pair, Some(1));
 
 		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::ProofHasExpired
+			InvalidTransaction::Custom(ValidityError::ProofHasExpired as u8)
 		);
 	});
 }
@@ -124,13 +123,34 @@ fn it_fails_when_proof_is_not_yet_valid() {
 		);
 
 		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::ProofNotYetValid
+			InvalidTransaction::Custom(ValidityError::ProofNotYetValid as u8)
+		);
+	});
+}
+
+#[test]
+fn it_fails_when_origin_is_an_msa_control_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (_, origin_key_pair) = create_account();
+
+		let (payload, _, msa_signature) =
+			generate_payload(msa_id, &owner_key_pair, &origin_key_pair, None);
+
+		assert_noop!(
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
+			),
+			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8)
 		);
 	});
 }
@@ -144,14 +164,14 @@ fn it_fails_when_msa_key_is_not_an_msa_control_key() {
 		let (payload, _, msa_signature) =
 			generate_payload(msa_id + 1, &owner_key_pair, &origin_key_pair, None);
 
-		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::NotMsaOwner
+			InvalidTransaction::Custom(ValidityError::NotMsaOwner as u8)
 		);
 	})
 }
@@ -166,14 +186,14 @@ fn it_fails_when_msa_key_does_not_control_msa_in_payload() {
 		let (payload, _, msa_signature) =
 			generate_payload(msa_id, &other_key_pair, &origin_key_pair, None);
 
-		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				other_key_pair.public().into(),
-				msa_signature,
-				payload
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&other_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::NoKeyExists
+			InvalidTransaction::Custom(ValidityError::NoKeyExists as u8)
 		);
 	})
 }
@@ -187,14 +207,14 @@ fn it_fails_when_msa_does_not_have_a_balance() {
 		let (payload, _, msa_signature) =
 			generate_payload(msa_id, &owner_key_pair, &origin_key_pair, None);
 
-		assert_noop!(
-			Msa::withdraw_tokens(
-				RuntimeOrigin::signed(origin_key_pair.public().into()),
-				owner_key_pair.public().into(),
-				msa_signature,
-				payload
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
 			),
-			Error::<Test>::InsufficientBalanceToWithdraw
+			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToWithdraw as u8)
 		);
 	})
 }

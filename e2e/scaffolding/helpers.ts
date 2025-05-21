@@ -16,6 +16,7 @@ import {
 import {
   AddKeyData,
   AddProviderPayload,
+  AuthorizedKeyData,
   EventMap,
   ExtrinsicHelper,
   ItemizedSignaturePayloadV2,
@@ -176,6 +177,18 @@ export async function generateAddKeyPayload(
 ): Promise<AddKeyData> {
   const { expiration, ...payload } = payloadInputs;
 
+  return {
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
+    ...payload,
+  };
+}
+
+export async function generateAuthorizedKeyPayload(
+  payloadInputs: AuthorizedKeyData,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<AuthorizedKeyData> {
+  const { expiration, ...payload } = payloadInputs;
   return {
     expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
