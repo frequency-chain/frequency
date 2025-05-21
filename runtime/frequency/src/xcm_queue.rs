@@ -11,7 +11,7 @@ use frame_support::{
 	weights::Weight,
 };
 
-use crate::xcm_commons::{XcmOriginToTransactDispatchOrigin, AssetLocationId};
+use crate::xcm_commons::{XcmOriginToTransactDispatchOrigin, AssetLocationId, FeeAssetId, BaseDeliveryFee, TransactionByteFee};
 
 use frame_system::EnsureRoot;
 
@@ -28,19 +28,19 @@ pub use sp_runtime::{Perbill, Saturating};
 #[cfg(not(feature = "runtime-benchmarks"))]
 use xcm_executor;
 
-parameter_types! {
-	/// The asset ID for the asset that we use to pay for message delivery fees.
-	pub FeeAssetId: AssetLocationId = AssetLocationId(xcm_config::RelayLocation::get());
-	/// The base fee for the message delivery fees (3 CENTS).
-	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
-}
+// parameter_types! {
+// 	/// The asset ID for the asset that we use to pay for message delivery fees.
+// 	pub FeeAssetId: AssetLocationId = AssetLocationId(xcm_config::RelayLocation::get());
+// 	/// The base fee for the message delivery fees (3 CENTS).
+// 	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
+// }
 
-pub const MICROUNIT: Balance = 1_000_000;
+// pub const MICROUNIT: Balance = 1_000_000;
 
-parameter_types! {
-	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
-}
+// parameter_types! {
+// 	/// Relay Chain `TransactionByteFee` / 10
+// 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+// }
 
 pub type PriceForSiblingParachainDelivery = polkadot_runtime_common::xcm_sender::ExponentialPrice<
 	FeeAssetId,

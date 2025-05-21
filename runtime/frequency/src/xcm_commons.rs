@@ -1,4 +1,4 @@
-use crate::{AccountId, RuntimeOrigin};
+use crate::{AccountId, RuntimeOrigin, Balance};
 
 use crate::MAXIMUM_BLOCK_WEIGHT;
 use cumulus_primitives_core::AggregateMessageOrigin;
@@ -11,6 +11,24 @@ use staging_xcm_builder::{
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 	// ParentRelayOrSiblingParachains,
 };
+
+parameter_types! {
+	pub const RelayLocation: Location = Location::parent();
+}
+
+parameter_types! {
+	/// The asset ID for the asset that we use to pay for message delivery fees.
+	pub FeeAssetId: AssetLocationId = AssetLocationId(RelayLocation::get());
+	/// The base fee for the message delivery fees (3 CENTS).
+	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
+}
+
+parameter_types! {
+	/// Relay Chain `TransactionByteFee` / 10
+	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
+}
+
+pub const MICROUNIT: Balance = 1_000_000;
 
 /// Shared Relay Network
 pub const RELAY_GENESIS: [u8; 32] = WESTEND_GENESIS_HASH;

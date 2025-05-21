@@ -32,5 +32,5 @@ decl_test_parachains! {
 }
 
 impl_accounts_helpers_for_parachain!(FrequencyWestend);
-impl_assert_events_helpers_for_parachain!(FrequencyWestend);
 impl_xcm_helpers_for_parachain!(FrequencyWestend);
+impl_assert_events_helpers_for_parachain!(FrequencyWestend);
