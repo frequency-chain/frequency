@@ -448,8 +448,8 @@ function createEip712Payload(typeDefinition: any, primaryType: any, domain: EipD
       ...EIP712_DOMAIN_DEFINITION,
       ...typeDefinition,
     },
-    primaryType: primaryType,
-    domain: domain,
-    message: message,
+    primaryType,
+    domain,
+    message,
   };
 }
