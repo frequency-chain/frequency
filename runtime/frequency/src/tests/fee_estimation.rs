@@ -470,7 +470,6 @@ fn runtime_apis_are_populated() {
 	assert!(RUNTIME_API_VERSIONS.len() > 0);
 }
 
-// #[cfg(feature = "frequency-bridging")]
 #[test]
 fn test_default_fee_per_second() {
 	use crate::{
