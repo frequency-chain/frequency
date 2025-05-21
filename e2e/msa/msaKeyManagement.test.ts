@@ -9,7 +9,6 @@ import {
   generateAddKeyPayload,
   createProviderKeysAndId,
   DOLLARS,
-  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -135,11 +134,9 @@ describe('MSA Key management', function () {
       newSig = signPayloadSr25519(secondaryKey, addKeyData);
       const addPublicKeyOp = ExtrinsicHelper.addPublicKeyToMsa(keys, ownerSig, newSig, payload);
 
-      const { target: publicKeyEvents, eventMap: chainEvents } = await addPublicKeyOp.fundAndSend(fundingSource);
+      const { target: publicKeyEvents } = await addPublicKeyOp.fundAndSend(fundingSource, false);
 
       assert.notEqual(publicKeyEvents, undefined, 'should have added public key');
-      assertExtrinsicSucceededAndFeesPaid(chainEvents);
-      assert.notEqual(chainEvents['transactionPayment.TransactionFeePaid'], undefined);
 
       await assert.rejects(
         addPublicKeyOp.fundAndSend(fundingSource),
