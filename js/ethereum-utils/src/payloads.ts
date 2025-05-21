@@ -4,7 +4,7 @@ export interface EcdsaSignature {
   Ecdsa: HexString;
 }
 
-export type ChainType = 'Mainnet-Frequency' | 'Paseo-Testnet-Frequency';
+export type ChainType = 'Mainnet-Frequency' | 'Paseo-Testnet-Frequency' | 'Dev';
 
 export interface AddressWrapper {
   // 20 byte ethereum address in hex

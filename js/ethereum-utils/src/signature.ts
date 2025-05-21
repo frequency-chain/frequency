@@ -15,7 +15,7 @@ import {
   ItemizedAction,
   EipDomainPayload,
 } from './payloads';
-import { assert, isValidHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils';
+import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils';
 import { reverseUnifiedAddressToEthereumAddress } from './address';
 import { ethers, TypedDataField } from 'ethers';
 import { u8aToHex } from '@polkadot/util';
@@ -25,9 +25,9 @@ import {
   CLAIM_HANDLE_PAYLOAD_DEFINITION,
   EIP712_DOMAIN_DEFAULT,
   EIP712_DOMAIN_DEFINITION,
-  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
-  PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
-  PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
+  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PASSKEY_PUBLIC_KEY_DEFINITION,
 } from './signature.definitions';
 
@@ -56,11 +56,13 @@ export async function signEip712(
  * @param ethereumAddress
  * @param signature
  * @param payload
+ * @param chain
  */
 export function verifyEip712Signature(
   ethereumAddress: HexString,
   signature: HexString,
-  payload: SupportedPayload
+  payload: SupportedPayload,
+  chain: ChainType = 'Mainnet-Frequency'
 ): boolean {
   const types = getTypesFor(payload.type);
   const normalizedPayload = normalizePayload(payload);
@@ -101,9 +103,9 @@ function normalizePayload(payload: SupportedPayload): Record<string, any> {
 
 function getTypesFor(payloadType: string): Record<string, TypedDataField[]> {
   const PAYLOAD_TYPE_DEFINITIONS: Record<string, Record<string, TypedDataField[]>> = {
-    PaginatedUpsertSignaturePayloadV2: PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
-    PaginatedDeleteSignaturePayloadV2: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
-    ItemizedSignaturePayloadV2: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
+    PaginatedUpsertSignaturePayloadV2: PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
+    PaginatedDeleteSignaturePayloadV2: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
+    ItemizedSignaturePayloadV2: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
     PasskeyPublicKey: PASSKEY_PUBLIC_KEY_DEFINITION,
     ClaimHandlePayload: CLAIM_HANDLE_PAYLOAD_DEFINITION,
     AddKeyData: ADD_KEY_DATA_DEFINITION,
@@ -134,9 +136,9 @@ export function createAddKeyData(
   const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
   const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
 
-  assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint32');
+  assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
-  assert(isValidHexString(parsedNewPublicKey), 'newPublicKey should be valid hex');
+  assert(isHexString(parsedNewPublicKey), 'newPublicKey should be valid hex');
   return {
     type: 'AddKeyData',
     msaId: parsedMsaId,
@@ -157,7 +159,7 @@ export function createAddProvider(
   schemaIds: number[],
   expirationBlock: number
 ): AddProvider {
-  assert(isValidUint64String(authorizedMsaId), 'targetHash should be a valid uint32');
+  assert(isValidUint64String(authorizedMsaId), 'authorizedMsaId should be a valid uint64');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
   schemaIds.forEach((schemaId) => {
     assert(isValidUint16(schemaId), 'schemaId should be a valid uint16');
@@ -195,7 +197,7 @@ export function createClaimHandlePayload(handle: string, expirationBlock: number
  */
 export function createPasskeyPublicKey(publicKey: HexString | Uint8Array): PasskeyPublicKey {
   const parsedNewPublicKey: HexString = typeof publicKey === 'object' ? u8aToHex(publicKey) : publicKey;
-  assert(isValidHexString(parsedNewPublicKey), 'publicKey should be valid hex');
+  assert(isHexString(parsedNewPublicKey), 'publicKey should be valid hex');
 
   return {
     type: 'PasskeyPublicKey',
@@ -205,7 +207,7 @@ export function createPasskeyPublicKey(publicKey: HexString | Uint8Array): Passk
 
 export function createItemizedAddAction(data: HexString | Uint8Array): AddItemizedAction {
   const parsedData: HexString = typeof data === 'object' ? u8aToHex(data) : data;
-  assert(isValidHexString(parsedData), 'itemized data should be valid hex');
+  assert(isHexString(parsedData), 'itemized data should be valid hex');
   return { actionType: 'Add', data, index: 0 } as AddItemizedAction;
 }
 
@@ -293,7 +295,7 @@ export function createPaginatedUpsertSignaturePayloadV2(
   assert(isValidUint16(pageId), 'pageId should be a valid uint16');
   assert(isValidUint32(targetHash), 'targetHash should be a valid uint32');
   assert(isValidUint32(expiration), 'expiration should be a valid uint32');
-  assert(isValidHexString(parsedPayload), 'payload should be valid hex');
+  assert(isHexString(parsedPayload), 'payload should be valid hex');
 
   return {
     type: 'PaginatedUpsertSignaturePayloadV2',
@@ -321,15 +323,7 @@ export function getEip712BrowserRequestAddKeyData(
 ): unknown {
   const message = createAddKeyData(msaId, newPublicKey, expirationBlock);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...ADD_KEY_DATA_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(ADD_KEY_DATA_DEFINITION, message.type, domain, normalized);
 }
 
 /**
@@ -348,15 +342,7 @@ export function getEip712BrowserRequestAddProvider(
 ): unknown {
   const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...ADD_PROVIDER_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(ADD_PROVIDER_DEFINITION, message.type, domain, normalized);
 }
 
 /**
@@ -379,15 +365,7 @@ export function getEip712BrowserRequestPaginatedUpsertSignaturePayloadV2(
 ): unknown {
   const message = createPaginatedUpsertSignaturePayloadV2(schemaId, pageId, targetHash, expiration, payload);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2, message.type, domain, normalized);
 }
 
 /**
@@ -408,15 +386,7 @@ export function getEip712BrowserRequestPaginatedDeleteSignaturePayloadV2(
 ): unknown {
   const message = createPaginatedDeleteSignaturePayloadV2(schemaId, pageId, targetHash, expiration);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2, message.type, domain, normalized);
 }
 
 /**
@@ -437,15 +407,7 @@ export function getEip712BrowserRequestItemizedSignaturePayloadV2(
 ): unknown {
   const message = createItemizedSignaturePayloadV2(schemaId, targetHash, expiration, actions);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2, message.type, domain, normalized);
 }
 
 /**
@@ -462,15 +424,7 @@ export function getEip712BrowserRequestClaimHandlePayload(
 ): unknown {
   const message = createClaimHandlePayload(handle, expirationBlock);
   const normalized = normalizePayload(message);
-  return {
-    types: {
-      ...EIP712_DOMAIN_DEFINITION,
-      ...CLAIM_HANDLE_PAYLOAD_DEFINITION,
-    },
-    primaryType: message.type,
-    domain: domain,
-    message: normalized,
-  };
+  return createEip712Payload(CLAIM_HANDLE_PAYLOAD_DEFINITION, message.type, domain, normalized);
 }
 
 /**
@@ -485,13 +439,17 @@ export function getEip712BrowserRequestPasskeyPublicKey(
 ): unknown {
   const message = createPasskeyPublicKey(publicKey);
   const normalized = normalizePayload(message);
+  return createEip712Payload(PASSKEY_PUBLIC_KEY_DEFINITION, message.type, domain, normalized);
+}
+
+function createEip712Payload(typeDefinition: any, primaryType: any, domain: EipDomainPayload, message: any): unknown {
   return {
     types: {
       ...EIP712_DOMAIN_DEFINITION,
-      ...PASSKEY_PUBLIC_KEY_DEFINITION,
+      ...typeDefinition,
     },
-    primaryType: message.type,
+    primaryType: primaryType,
     domain: domain,
-    message: normalized,
+    message: message,
   };
 }

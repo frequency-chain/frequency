@@ -1,3 +1,5 @@
+import { HexString } from './payloads';
+
 /**
  * Validate that a number is a valid uint16 (0 to 65535)
  */
@@ -13,7 +15,7 @@ export function isValidUint32(value: number): boolean {
 }
 
 /**
- * Validate that a number is a valid uint64 (0 to 4294967295)
+ * Validate that a number is a valid uint64 (0 to 18446744073709551615n)
  */
 export function isValidUint64String(value: bigint | string): boolean {
   const bigIntValue = typeof value === 'string' ? BigInt(value) : value;
@@ -23,7 +25,7 @@ export function isValidUint64String(value: bigint | string): boolean {
 /**
  * Validate that a string is a valid hex string
  */
-export function isValidHexString(value: string): boolean {
+export function isHexString(value: string): value is HexString {
   // Check if string starts with '0x' and contains only hex characters
   const hexRegex = /^0[xX][0-9a-fA-F]*$/;
   const isHex = hexRegex.test(value);

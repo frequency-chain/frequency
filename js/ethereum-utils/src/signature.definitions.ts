@@ -85,7 +85,7 @@ export const PASSKEY_PUBLIC_KEY_DEFINITION = {
   ],
 };
 
-export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION = {
+export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   PaginatedDeleteSignaturePayloadV2: [
     {
       name: 'schemaId',
@@ -106,7 +106,7 @@ export const PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION = {
   ],
 };
 
-export const PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION = {
+export const PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   PaginatedUpsertSignaturePayloadV2: [
     {
       name: 'schemaId',
@@ -131,7 +131,7 @@ export const PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION = {
   ],
 };
 
-export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION = {
+export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   ItemizedSignaturePayloadV2: [
     {
       name: 'schemaId',
