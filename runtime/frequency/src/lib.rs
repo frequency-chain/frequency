@@ -18,13 +18,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-pub mod xcm_config;
+mod xcm_config;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
 use xcm_config::ForeignAssetsAssetId;
 
 #[cfg(feature = "frequency-bridging")]
-pub mod xcm_queue;
+mod xcm_queue;
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_commons;
