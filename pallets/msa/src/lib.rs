@@ -1947,7 +1947,11 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		);
 
 		ensure!(
-			Pallet::<T>::verify_signature(&msa_owner_proof, &msa_owner_public_key, authorization_payload),
+			Pallet::<T>::verify_signature(
+				&msa_owner_proof,
+				&msa_owner_public_key,
+				authorization_payload
+			),
 			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
 		);
 
@@ -1957,29 +1961,33 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8)
 		);
 
-		Pallet::<T>::register_signature(&msa_owner_proof, authorization_payload.expiration).map_err(|err: DispatchError| {
-			InvalidTransaction::Custom(match err {
-				DispatchError::Module(sp_runtime::ModuleError { error, ..}) => {
-					if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
-						match decoded_err {
-							pallet::Error::<T>::ProofNotYetValid => ValidityError::ProofNotYetValid as u8,
-							pallet::Error::<T>::ProofHasExpired => ValidityError::ProofHasExpired as u8,
-							pallet::Error::<T>::SignatureAlreadySubmitted => ValidityError::SignatureAlreadySubmitted as u8,
-							_ => 255u8,
+		Pallet::<T>::register_signature(&msa_owner_proof, authorization_payload.expiration)
+			.map_err(|err: DispatchError| {
+				InvalidTransaction::Custom(match err {
+					DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
+						if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
+							match decoded_err {
+								pallet::Error::<T>::ProofNotYetValid =>
+									ValidityError::ProofNotYetValid as u8,
+								pallet::Error::<T>::ProofHasExpired =>
+									ValidityError::ProofHasExpired as u8,
+								pallet::Error::<T>::SignatureAlreadySubmitted =>
+									ValidityError::SignatureAlreadySubmitted as u8,
+								_ => 255u8,
+							}
+						} else {
+							255u8
 						}
-					} else {
-						255u8
-					}
-				},
-				_ => 255u8,
-			})
-		})?;
+					},
+					_ => 255u8,
+				})
+			})?;
 
 		let msa_id = authorization_payload.msa_id;
 
 		Pallet::<T>::ensure_msa_owner(&msa_owner_public_key, msa_id).map_err(|err| {
 			InvalidTransaction::Custom(match err {
-				DispatchError::Module(sp_runtime::ModuleError {error, ..}) => {
+				DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
 					if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
 						match decoded_err {
 							pallet::Error::<T>::NoKeyExists => ValidityError::NoKeyExists as u8,
@@ -1990,7 +1998,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 						255u8
 					}
 				},
-				_ => 255u8
+				_ => 255u8,
 			})
 		})?;
 
@@ -2007,7 +2015,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			Preservation::Expendable,
 			Fortitude::Polite,
 		);
-		ensure!(msa_balance > Zero::zero(), InvalidTransaction::Custom(ValidityError::InsufficientBalanceToWithdraw as u8));
+		ensure!(
+			msa_balance > Zero::zero(),
+			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToWithdraw as u8)
+		);
 
 		// - TODO: Phase 2 (free transaction w/fee paid from proceeds): Check that MSA balance is > fee
 
@@ -2023,9 +2034,14 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			false
 		};
 
-		ensure!(!dest_will_be_reaped, InvalidTransaction::Custom(ValidityError::InsufficientBalanceToFundDestination as u8));
+		ensure!(
+			!dest_will_be_reaped,
+			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToFundDestination as u8)
+		);
 
-		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(receiver_account_id).build()
+		ValidTransaction::with_tag_prefix(TAG_PREFIX)
+			.and_provides(receiver_account_id)
+			.build()
 	}
 }
 
@@ -2066,7 +2082,7 @@ pub enum ValidityError {
 	/// No key exists
 	NoKeyExists,
 	/// Not MSA owner
-	NotMsaOwner
+	NotMsaOwner,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {

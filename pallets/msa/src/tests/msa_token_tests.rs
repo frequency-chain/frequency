@@ -1,14 +1,18 @@
 use frame_support::{
-	assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction, traits::{
+	assert_err, assert_noop, assert_ok,
+	pallet_prelude::InvalidTransaction,
+	traits::{
 		tokens::{fungible::Inspect, Fortitude, Preservation},
 		Currency,
-	}
+	},
 };
 
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use crate::{tests::mock::*, types::AuthorizedKeyData, CheckFreeExtrinsicUse, Config, Error, ValidityError};
+use crate::{
+	tests::mock::*, types::AuthorizedKeyData, CheckFreeExtrinsicUse, Config, Error, ValidityError,
+};
 
 use common_primitives::{
 	msa::{MessageSourceId, H160},
