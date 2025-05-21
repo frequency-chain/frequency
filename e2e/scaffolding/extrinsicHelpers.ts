@@ -30,7 +30,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
-import { getUnifiedAddress, getUnifiedPublicKey } from './ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 export interface ReleaseSchedule {
   start: number;

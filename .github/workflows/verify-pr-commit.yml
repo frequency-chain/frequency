@@ -49,6 +49,7 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
+              - 'js/ethereum-utils/**'
               - 'e2e/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
@@ -487,6 +488,45 @@ jobs:
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
+  verify-js-ethereum-utils:
+    needs: build-binaries
+    name: Verify Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install Latest Versions
+        run: npm install
+        working-directory: js/ethereum-utils
+      - name: Lint
+        run: npm run lint
+        working-directory: js/ethereum-utils
+      - name: Test
+        run: npm test
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+      - name: Build & Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/ethereum-utils/dist
+      - name: Generate npm tarball
+        run: npm pack
+        working-directory: js/ethereum-utils/dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
+          if-no-files-found: error
+
   verify-js-schemas:
     name: Verify JS Schemas
     runs-on: ubuntu-24.04
@@ -738,7 +778,7 @@ jobs:
 
   run-e2e:
     if: needs.changes.outputs.run-e2e == 'true'
-    needs: [build-binaries, verify-js-api-augment]
+    needs: [build-binaries, verify-js-api-augment, verify-js-ethereum-utils]
     name: Run E2E Tests
     runs-on: ubuntu-24.04
     steps:
@@ -767,6 +807,11 @@ jobs:
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
+      - name: Download ethereum-utils tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
@@ -794,8 +839,8 @@ jobs:
           node-version: 20
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
-      - name: Install Built api-augment
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+      - name: Install Built api-augment and ethereum-utils
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
         working-directory: e2e
       - name: Install NPM Modules
         run: npm ci
