@@ -1,48 +1,14 @@
-use crate::{AccountId, RuntimeOrigin, Balance};
-
-use crate::MAXIMUM_BLOCK_WEIGHT;
-use cumulus_primitives_core::AggregateMessageOrigin;
-use frame_support::parameter_types;
+use crate::{AccountId, RuntimeOrigin};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain_primitives::primitives::Sibling;
-pub use staging_xcm::latest::{prelude::{*, AssetId as AssetLocationId}, WESTEND_GENESIS_HASH};
 use staging_xcm_builder::{
 	AccountId32Aliases, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
-	// ParentRelayOrSiblingParachains,
 };
 
-parameter_types! {
-	pub const RelayLocation: Location = Location::parent();
-}
+use cumulus_primitives_core::AggregateMessageOrigin;
 
-parameter_types! {
-	/// The asset ID for the asset that we use to pay for message delivery fees.
-	pub FeeAssetId: AssetLocationId = AssetLocationId(RelayLocation::get());
-	/// The base fee for the message delivery fees (3 CENTS).
-	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
-}
-
-parameter_types! {
-	/// Relay Chain `TransactionByteFee` / 10
-	pub const TransactionByteFee: Balance = 10 * MICROUNIT;
-}
-
-pub const MICROUNIT: Balance = 1_000_000;
-
-/// Shared Relay Network
-pub const RELAY_GENESIS: [u8; 32] = WESTEND_GENESIS_HASH;
-
-parameter_types! {
-	pub const ReservedXcmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const ReservedDmpWeight: Weight = MAXIMUM_BLOCK_WEIGHT.saturating_div(4);
-	pub const RelayOrigin: AggregateMessageOrigin = AggregateMessageOrigin::Parent;
-}
-
-parameter_types! {
-	pub const RelayNetwork: Option<NetworkId> = Some(NetworkId::ByGenesis(RELAY_GENESIS));
-	pub RelayChainOrigin: RuntimeOrigin = cumulus_pallet_xcm::Origin::Relay.into();
-}
+use super::constants::{RelayChainOrigin, RelayNetwork, RelayOrigin};
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM
@@ -61,6 +27,7 @@ pub type LocationToAccountId = (
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
 /// ready for dispatching a transaction with Xcm's `Transact`. There is an `OriginKind` which can
 /// biases the kind of local `Origin` it will become.
+/// Converts an incoming XCM origin into a local `RuntimeOrigin` for `Transact` dispatch.
 pub type XcmOriginToTransactDispatchOrigin = (
 	// Sovereign account converter; this attempts to derive an `AccountId` from the origin location
 	// using `LocationToAccountId` and then turn that into the usual `Signed` origin. Useful for
@@ -78,3 +45,9 @@ pub type XcmOriginToTransactDispatchOrigin = (
 	// Xcm origins can be represented natively under the Xcm pallet's Xcm origin.
 	XcmPassthrough<RuntimeOrigin>,
 );
+
+/// Converts a local signed origin into an XCM location. Forms the basis for local origins
+/// sending/executing XCMs.
+/// Converts a local signed origin into a `MultiLocation` for outbound XCMs.
+pub type LocalOriginToLocation =
+	staging_xcm_builder::SignedToAccountId32<RuntimeOrigin, AccountId, RelayNetwork>;

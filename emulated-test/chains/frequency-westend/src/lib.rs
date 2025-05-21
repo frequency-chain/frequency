@@ -1,4 +1,4 @@
-pub use frequency_runtime::{self, xcm_config::RelayNetwork as FrequencyRelayNetworkId};
+pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId};
 
 mod genesis;
 pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
@@ -19,7 +19,7 @@ decl_test_parachains! {
 		runtime = frequency_runtime,
 		core = {
 			XcmpMessageHandler: frequency_runtime::XcmpQueue,
-			LocationToAccountId: frequency_runtime::xcm_config::LocationToAccountId,
+			LocationToAccountId: frequency_runtime::xcm::LocationToAccountId,
 			ParachainInfo: frequency_runtime::ParachainInfo,
 			MessageOrigin: cumulus_primitives_core::AggregateMessageOrigin,
 		},
