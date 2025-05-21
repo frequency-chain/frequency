@@ -341,6 +341,9 @@ build-bridging-westend-local:
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
+test-bridging:
+	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,frequency-bridging
+
 e2e-tests:
 	./scripts/run_e2e_tests.sh
 

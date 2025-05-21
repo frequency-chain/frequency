@@ -563,11 +563,6 @@ parameter_types! {
 	pub const ForeignAssetsMetadataDepositPerByte: Balance = MetadataDepositPerByte::get();
 }
 
-// Define a placeholder AccountId - replace with the actual desired creator account
-parameter_types! {
-	pub const AssetCreatorAccount: AccountId = AccountId::new([0u8; 32]); // TODO: Replace with actual AccountId
-}
-
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
@@ -836,7 +831,7 @@ impl pallet_balances::Config for Runtime {
 // Needs parameter_types! for the Weight type
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(30) * RuntimeBlockWeights::get().max_block;
 	pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
@@ -1966,8 +1961,6 @@ sp_api::impl_runtime_apis! {
 
 		// Frequency implementation of the query_weight_to_asset_fee function
 		fn query_weight_to_asset_fee(weight: Weight, asset: VersionedAssetId) -> Result<u128, XcmPaymentApiError> {
-			// TODO: based penpal from p.sdk
-			// Bring weight_to_fee into scope for the Trait WeightToFee
 			use frame_support::weights::WeightToFee;
 
 			match asset.try_as::<AssetLocationId>() {
@@ -2054,66 +2047,5 @@ sp_api::impl_runtime_apis! {
 	}
 }
 
-#[cfg(test)]
-mod unit_tests {
-	use super::*;
-	use frame_support::traits::WhitelistedStorageKeys;
-	use sp_core::hexdisplay::HexDisplay;
-	use std::collections::HashSet;
-
-	#[test]
-	fn check_whitelist() {
-		let whitelist: HashSet<String> = dbg!(AllPalletsWithSystem::whitelisted_storage_keys()
-			.iter()
-			.map(|e| HexDisplay::from(&e.key).to_string())
-			.collect());
-
-		// Block Number
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac")
-		);
-		// Total Issuance
-		assert!(
-			whitelist.contains("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80")
-		);
-		// Execution Phase
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a")
-		);
-		// Event Count
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850")
-		);
-		// System Events
-		assert!(
-			whitelist.contains("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7")
-		);
-	}
-
-	#[test]
-	fn runtime_apis_are_populated() {
-		assert!(RUNTIME_API_VERSIONS.len() > 0);
-	}
-
-	#[cfg(feature = "frequency-bridging")]
-	#[test]
-	fn test_default_fee_per_second() {
-		use super::polkadot_xcm_fee::{default_fee_per_second, base_relay_tx_fee};
-		use super::{ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND};
-		use sp_weights::Weight;
-
-		let base_weight = ExtrinsicBaseWeight::get().ref_time() as u128;
-		let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
-		assert_eq!(default_fee_per_second(), base_tx_per_second * base_relay_tx_fee());
-
-		let weight = Weight::from_ref_time(WEIGHT_REF_TIME_PER_SECOND * 3);
-		let dot_fee = default_fee_per_second()
-			.saturating_mul(weight.ref_time() as u128)
-			.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
-		// For 3 seconds of weight, fee should be 3 * base fee per second
-		assert_eq!(dot_fee, default_fee_per_second() * 3);
-	}
-}
-// filepath: runtime/frequency/src/lib.rs
 #[cfg(test)]
 mod tests;

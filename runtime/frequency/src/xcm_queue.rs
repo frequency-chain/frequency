@@ -33,7 +33,7 @@ use xcm_executor;
 
 parameter_types! {
 	/// The asset ID for the asset that we use to pay for message delivery fees.
-	pub FeeAssetId: AssetLocationId = AssetLocationId(xcm_config::RelayLocation::get());
+	pub FeeAssetId: AssetLocationId = AssetLocationId(crate::xcm_config::RelayLocation::get());
 	/// The base fee for the message delivery fees (3 CENTS).
 	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
 }

@@ -17,7 +17,6 @@
 //! Mock runtime for tests.
 //! Implements both runtime APIs for fee estimation and getting the messages for transfers.
 
-use parity_scale_codec::Encode;
 use core::{cell::RefCell, marker::PhantomData};
 use frame_support::{
 	construct_runtime, derive_impl, parameter_types, sp_runtime,
@@ -33,6 +32,7 @@ use frame_support::{
 };
 use frame_system::{EnsureRoot, RawOrigin as SystemRawOrigin};
 use pallet_xcm::TestWeightInfo;
+use parity_scale_codec::Encode;
 use staging_xcm::{prelude::*, Version as XcmVersion};
 use staging_xcm_builder::{
 	AllowTopLevelPaidExecutionFrom, ConvertedConcreteId, EnsureXcmOrigin, FixedRateOfFungible,

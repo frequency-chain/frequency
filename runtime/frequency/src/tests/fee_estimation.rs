@@ -463,3 +463,30 @@ fn calling_payment_api_with_a_lower_version_works() {
 		.unwrap();
 	assert!(execution_fees.is_ok());
 }
+
+#[test]
+fn runtime_apis_are_populated() {
+	use crate::RUNTIME_API_VERSIONS;
+	assert!(RUNTIME_API_VERSIONS.len() > 0);
+}
+
+// #[cfg(feature = "frequency-bridging")]
+#[test]
+fn test_default_fee_per_second() {
+	use crate::{
+		polkadot_xcm_fee::{base_relay_tx_fee, default_fee_per_second},
+		ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND,
+	};
+
+	let base_weight = ExtrinsicBaseWeight::get().ref_time() as u128;
+	let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
+	assert_eq!(default_fee_per_second(), base_tx_per_second * base_relay_tx_fee());
+
+	let weight = Weight::from_parts(3u64 * WEIGHT_REF_TIME_PER_SECOND, 0u64);
+	// let weight: u128 = Balance::from(ExtrinsicBaseWeight::get().ref_time() * 3);
+	let dot_fee = default_fee_per_second()
+		.saturating_mul(weight.ref_time() as u128)
+		.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
+	// For 3 seconds of weight, fee should be 3 * base fee per second
+	assert_eq!(dot_fee, default_fee_per_second() * 3);
+}
