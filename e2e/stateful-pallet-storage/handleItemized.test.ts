@@ -9,6 +9,7 @@ import {
   getCurrentItemizedHash,
   getOrCreateAvroChatMessageItemizedSchema,
   assertExtrinsicSucceededAndFeesPaid,
+  createAndFundKeypair,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -29,31 +30,47 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
   let badMsaId: u64;
 
   before(async function () {
-    // Create a provider for the MSA, the provider will be used to grant delegation
-    [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    [
+      // Create a provider for the MSA, the provider will be used to grant delegation
+      [providerKeys, providerId],
+      // Delegator Keys
+      delegatorKeys,
+      schemaId_deletable,
+      schemaId_unsupported,
+    ] = await Promise.all([
+      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      createAndFundKeypair(fundingSource, 2n * DOLLARS),
+      getOrCreateAvroChatMessageItemizedSchema(fundingSource),
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'OnChain',
+        [],
+        'test.handleItemizedUnsupported'
+      ),
+    ]);
     assert.notEqual(providerId, undefined, 'setup should populate providerId');
     assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
-    schemaId_deletable = await getOrCreateAvroChatMessageItemizedSchema(providerKeys);
-
-    schemaId_unsupported = await ExtrinsicHelper.getOrCreateSchemaV3(
-      providerKeys,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.handleItemizedUnsupported'
-    );
-    // Create a MSA for the delegator and delegate to the provider
-    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
-      fundingSource,
-      schemaId_deletable,
-      providerId,
-      providerKeys
-    );
+    [
+      // Create a MSA for the delegator and delegate to the provider
+      [delegatorKeys, msa_id],
+      // Create an MSA that is not a provider to be used for testing failure cases
+      [badMsaId],
+    ] = await Promise.all([
+      createDelegatorAndDelegation(
+        fundingSource,
+        schemaId_deletable,
+        providerId,
+        providerKeys,
+        'sr25519',
+        delegatorKeys
+      ),
+      createMsa(fundingSource),
+    ]);
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
-    // Create an MSA that is not a provider to be used for testing failure cases
-    [badMsaId] = await createMsa(fundingSource);
+    assert.notEqual(badMsaId, undefined, 'setup should populate badMsaId');
   });
 
   describe('Itemized Storage Tests 😊/😥', function () {

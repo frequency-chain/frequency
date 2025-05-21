@@ -99,7 +99,7 @@ describe('TimeRelease', function () {
         schedule,
         currentBlock + 10
       );
-      const { target: target1 } = await scheduleTransferTx1.signAndSend();
+      const { target: target1 } = await scheduleTransferTx1.signAndSend(undefined, undefined, false);
       assert.notEqual(target1, undefined, 'should have returned Scheduled event');
 
       const reservedAmountBefore =

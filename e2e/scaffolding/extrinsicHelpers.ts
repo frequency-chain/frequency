@@ -187,7 +187,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   // This uses automatic nonce management by default.
-  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}) {
+  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}, waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
@@ -199,6 +199,9 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
+            if (result.status.isInvalid) {
+              console.error('SEND ALERT: INVALID FOUND', op.method.toHuman(), 'txHash', result.txHash.toHex());
+            }
             if (result.isError) {
               throw new CallError(
                 result,
@@ -206,7 +209,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
               );
             }
           }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
       );
@@ -221,7 +224,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     }
   }
 
-  public async sudoSignAndSend() {
+  public async sudoSignAndSend(waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
@@ -229,13 +232,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .sudo(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
     );
   }
 
-  public async payWithCapacity(inputNonce?: AutoNonce) {
+  public async payWithCapacity(inputNonce?: AutoNonce, waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
@@ -244,6 +247,14 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
           tap((result) => {
+            if (result.status.isInvalid) {
+              console.error(
+                'CAPACITY ALERT: INVALID FOUND',
+                this.extrinsic().method.toHuman(),
+                'txHash',
+                result.txHash
+              );
+            }
             if (result.isError) {
               throw new CallError(
                 result,
@@ -252,7 +263,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
             }
           }),
           // Can comment out filter to help debug hangs
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
     );
@@ -279,23 +290,25 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
-      await assert.doesNotReject(ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend());
+      await assert.doesNotReject(
+        ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend(undefined, undefined, false)
+      );
     }
   }
 
-  public async fundAndSend(source: KeyringPair) {
+  public async fundAndSend(source: KeyringPair, waitForInBlock = true) {
     await this.fundOperation(source);
     log('Fund and Send', `${this.extrinsic().method.method} Fund Source: ${getUnifiedAddress(source)}`);
-    return this.signAndSend();
+    return this.signAndSend(undefined, undefined, waitForInBlock);
   }
 
-  public async fundAndSendUnsigned(source: KeyringPair) {
+  public async fundAndSendUnsigned(source: KeyringPair, willError = false) {
     await this.fundOperation(source);
     log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
-    return this.sendUnsigned();
+    return this.sendUnsigned(willError);
   }
 
-  public async sendUnsigned() {
+  public async sendUnsigned(willError = false) {
     const op = this.extrinsic();
     try {
       return await firstValueFrom(
@@ -303,6 +316,9 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
+            if (result.status.isInvalid) {
+              console.error('UNSIGNED ALERT: INVALID FOUND', op.method.toHuman(), 'txHash', result.txHash);
+            }
             if (result.isError) {
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
@@ -312,8 +328,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         )
       );
     } catch (e) {
-      console.error(e);
-      if ((e as any).name === 'RpcError') {
+      if ((e as any).name === 'RpcError' && !willError) {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
       }
       throw e;
@@ -430,7 +445,7 @@ export class ExtrinsicHelper {
       payloadLocation,
       grant,
       schemaNme
-    ).signAndSend();
+    ).signAndSend(undefined, undefined, false);
     if (event?.data.schemaId) {
       return event.data.schemaId;
     }
@@ -856,9 +871,9 @@ export class ExtrinsicHelper {
     const blockNumber = ofBlockNumber || (await getBlockNumber());
     let currentBlock = await getFinalizedBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 120_000 < Date.now()) {
         throw new Error(
-          `Waiting for Finalized Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting for Finalized Block took longer than 120s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait
@@ -875,9 +890,9 @@ export class ExtrinsicHelper {
     const start = Date.now();
     let currentBlock = await getBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 120_000 < Date.now()) {
         throw new Error(
-          `Waiting to run to Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting to run to Block took longer than 120s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait
