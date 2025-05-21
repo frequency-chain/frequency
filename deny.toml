@@ -73,8 +73,8 @@ ignore = [
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error is used by a few dependencies, and while unmaintained, is not currently an issue." },
   { id = "RUSTSEC-2024-0384", reason = "This is an inner dependency that would get updated when libp2p v0.51.4 and wasm-timer v0.2.5 are updated to a newer version"},
   { id = "RUSTSEC-2024-0436", reason = "Unmaintained sub-dependency: paste, pending updates to dependencies."},
-  { id = "RUSTSEC-2023-0091", reason = "This is an inner dependency of polkadot."},
-  { id = "RUSTSEC-2024-0438", reason = "This is an inner dependency of polkadot."}
+  { id = "RUSTSEC-2023-0091", reason = "This applies to wasmtime versions 10.0.0-12.0.1, not a concern for the version used here."},
+  { id = "RUSTSEC-2024-0438", reason = "Only applies to version <= 24.0.1-26.0.0 for Windows."}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
