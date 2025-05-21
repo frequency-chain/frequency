@@ -194,6 +194,9 @@ large_enum_variant = "allow"
 empty_line_after_outer_attr = "allow"
 enum_variant_names = "allow"
 
+# debug is profile.dev
+# Defaults: https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles
+
 [profile.release]
 panic = "unwind"
 lto = true
