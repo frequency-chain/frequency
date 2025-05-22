@@ -1260,7 +1260,7 @@ jobs:
         id: download
         uses: actions/download-artifact@v4
         with:
-          name: js-api-ethereum-utils-${{github.run_id}}
+          name: js-ethereum-utils-${{github.run_id}}
           path: js/ethereum-utils/dist
       - name: Version Package
         if: env.TEST_RUN != 'true'
