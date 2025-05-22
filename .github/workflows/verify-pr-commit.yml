@@ -652,9 +652,27 @@ jobs:
           platforms: linux/amd64,linux/arm64 # Testing both arch here
           file: ./docker/parachain-node.dockerfile
 
+  execute-binary-checks-dummy:
+    needs: build-binaries-dummy
+    if: needs.changes.outputs.build-binary != 'true'
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        bin-dir: [target/debug]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
+
   execute-binary-checks:
     needs: build-binaries
     name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    # If you change, also update execute-binary-checks-dummy
     strategy:
       fail-fast: true
       matrix:
