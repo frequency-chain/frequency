@@ -14,7 +14,6 @@ mod imports {
 	pub use staging_xcm::{latest::{AssetTransferFilter, ROCOCO_GENESIS_HASH, WESTEND_GENESIS_HASH}, prelude::{AccountId32 as AccountId32Junction, * } };
 
 	// Cumulus
-	pub use asset_test_utils::xcm_helpers;
 	pub use emulated_integration_tests_common::{
 		xcm_emulator::{
 		AccountIdOf,
@@ -33,13 +32,12 @@ mod imports {
 		frequency_emulated_chain::{
 			FrequencyAssetOwner,
 			frequency_runtime::{
-				self, xcm::XcmConfig as FrequencyWestendXcmConfig,
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
 			FrequencyWestendParaPallet as FrequencyWestendPallet,
 		},
 		westend_emulated_chain::{
-			genesis::ED as WESTEND_ED, westend_runtime::xcm_config::XcmConfig as WestendXcmConfig,
+			genesis::ED as WESTEND_ED,
 			WestendRelayPallet as WestendPallet,
 		},
 		AssetHubWestendPara as AssetHubWestend,

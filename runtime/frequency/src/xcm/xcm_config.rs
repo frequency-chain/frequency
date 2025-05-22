@@ -1,17 +1,9 @@
 use crate::{
-	polkadot_xcm_fee::default_fee_per_second, AccountId, AllPalletsWithSystem, Balances,
-	ForeignAssets, ParachainInfo, ParachainSystem, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
-	RuntimeOrigin, XcmpQueue,
+	AccountId, AllPalletsWithSystem, Balances, PolkadotXcm, Runtime, RuntimeCall, RuntimeEvent,
+	RuntimeOrigin,
 };
 
-use staging_xcm_builder::{
-	AllowExplicitUnpaidExecutionFrom, AllowSubscriptionsFrom, AllowTopLevelPaidExecutionFrom,
-	DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry, EnsureXcmOrigin,
-	FixedRateOfFungible, FixedWeightBounds, FrameTransactionalProcessor, FungibleAdapter,
-	FungiblesAdapter, IsConcrete, IsParentsOnly, MatchedConvertedConcreteId, NativeAsset,
-	NoChecking, SignedToAccountId32, TakeWeightCredit, TrailingSetTopicAsId, UsingComponents,
-	WithComputedOrigin, WithUniqueTopic,
-};
+use staging_xcm_builder::{EnsureXcmOrigin, FrameTransactionalProcessor};
 
 use crate::xcm::{
 	AssetTransactors, Barrier, LocalOriginToLocation, LocationToAccountId, MaxAssetsIntoHolding,
@@ -26,13 +18,9 @@ use frame_support::{
 
 pub use common_runtime::fee::WeightToFee;
 
-use staging_xcm::latest::prelude::*;
-
 use frame_system::EnsureRoot;
 
 use xcm_executor::XcmExecutor;
-
-use polkadot_runtime_common::impls::ToAuthor;
 
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
