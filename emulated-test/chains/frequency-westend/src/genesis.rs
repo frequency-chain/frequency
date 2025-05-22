@@ -3,9 +3,7 @@ use sp_core::storage::Storage;
 use sp_keyring::Sr25519Keyring as Keyring;
 
 // Cumulus
-use emulated_integration_tests_common::{
-	accounts, build_genesis_storage, collators,
-};
+use emulated_integration_tests_common::{accounts, build_genesis_storage, collators};
 use parachains_common::{AccountId, Balance};
 // use frequency_runtime::xcm_config::{LocalReservableFromAssetHub, RelayLocation, UsdtFromAssetHub};
 
@@ -46,18 +44,7 @@ pub fn genesis(para_id: u32) -> Storage {
 				.collect(),
 			..Default::default()
 		},
-		// polkadot_xcm: frequency_runtime::PolkadotXcmConfig {
-		// 	safe_xcm_version: Some(SAFE_XCM_VERSION),
-		// 	..Default::default()
-		// },
 		sudo: frequency_runtime::SudoConfig { key: Some(FrequencySudoAccount::get()) },
-		// foreign_assets: frequency_runtime::ForeignAssetsConfig {
-		// 	assets: vec![
-		// 		// Relay Native asset representation
-		// 		(RelayLocation::get(), FrequencyAssetOwner::get(), true, ED),
-		// 	],
-		// 	..Default::default()
-		// },
 		..Default::default()
 	};
 

@@ -1,6 +1,6 @@
 [package]
 authors = ["Frequency"]
-edition    = '2021'
+edition = '2021'
 homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 name = 'frequency-emulated-chain'
@@ -15,9 +15,12 @@ parachains-common = { workspace = true }
 polkadot-primitives = { workspace = true }
 
 emulated-integration-tests-common = { workspace = true }
-frequency-runtime = { path = "../../../runtime/frequency", features = ["frequency-westend", "frequency-bridging", "frequency-local"] }
+frequency-runtime = { path = "../../../runtime/frequency", features = [
+    "frequency-westend",
+    "frequency-bridging",
+    "frequency-local",
+] }
 cumulus-primitives-core = { workspace = true }
 sp-keyring = { workspace = true }
 frame-support = { workspace = true }
 staging-xcm = { workspace = true }
-
