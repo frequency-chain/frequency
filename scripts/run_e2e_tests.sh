@@ -141,7 +141,7 @@ fi
 
 if [ "${SKIP_JS_BUILD}" = "1" ]
 then
-    echo "Skipping js/api-augment build"
+    echo "Skipping js/api-augment and js/ethereum-utils build"
 else
     echo "Building js/api-augment..."
     cd js/api-augment
@@ -152,12 +152,22 @@ else
     echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
     npm pack --silent
     cd ../../..
+
+    echo "Building js/ethereum-utils..."
+    cd js/ethereum-utils
+    npm i
+    npm run --silent build
+    cd dist
+    echo "Packaging up into js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz"
+    npm pack --silent
+    cd ../../..
 fi
 
 
 cd e2e
 echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
-npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+echo "Installing js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz"
+npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
 npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."

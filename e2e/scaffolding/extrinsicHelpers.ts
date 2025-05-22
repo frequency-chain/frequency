@@ -25,7 +25,7 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
-import { getUnifiedAddress, getUnifiedPublicKey } from './ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
 
 export interface ReleaseSchedule {
@@ -193,7 +193,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
-       
+
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {

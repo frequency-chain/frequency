@@ -1,7 +1,7 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import { AuthorizedKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
-import { ethereumAddressToKeyringPair, getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { ethereumAddressToKeyringPair, getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
 import { bnToU8a, hexToU8a, stringToU8a } from '@polkadot/util';

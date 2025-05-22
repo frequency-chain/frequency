@@ -49,6 +49,7 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
+              - 'js/ethereum-utils/**'
               - 'e2e/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
@@ -184,7 +185,7 @@ jobs:
             arch: arm64
             runner: ubicloud-standard-30-arm
     runs-on: ${{matrix.runner}}
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     env:
       NETWORK: mainnet
     steps:
@@ -232,7 +233,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -248,7 +249,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.7
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
@@ -262,7 +263,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -278,7 +279,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -291,7 +292,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -303,7 +304,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -318,7 +319,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-30
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -431,7 +432,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -487,10 +488,49 @@ jobs:
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
+  verify-js-ethereum-utils:
+    needs: build-binaries
+    name: Verify Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install Latest Versions
+        run: npm install
+        working-directory: js/ethereum-utils
+      - name: Lint
+        run: npm run lint
+        working-directory: js/ethereum-utils
+      - name: Test
+        run: npm test
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+      - name: Build & Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/ethereum-utils/dist
+      - name: Generate npm tarball
+        run: npm pack
+        working-directory: js/ethereum-utils/dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
+          if-no-files-found: error
+
   verify-js-schemas:
     name: Verify JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -612,9 +652,28 @@ jobs:
           platforms: linux/amd64,linux/arm64 # Testing both arch here
           file: ./docker/parachain-node.dockerfile
 
+  execute-binary-checks-dummy:
+    needs: build-binaries-dummy
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    if: needs.changes.outputs.build-binary != 'true'
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        bin-dir: [target/debug]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
+
   execute-binary-checks:
     needs: build-binaries
     name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    # If you change, also update execute-binary-checks-dummy
     strategy:
       fail-fast: true
       matrix:
@@ -657,7 +716,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       pull-requests: write
     steps:
@@ -738,7 +797,7 @@ jobs:
 
   run-e2e:
     if: needs.changes.outputs.run-e2e == 'true'
-    needs: [build-binaries, verify-js-api-augment]
+    needs: [build-binaries, verify-js-api-augment, verify-js-ethereum-utils]
     name: Run E2E Tests
     runs-on: ubuntu-24.04
     steps:
@@ -767,6 +826,11 @@ jobs:
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
+      - name: Download ethereum-utils tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
       - name: Set Binaries Permissions
         working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
@@ -794,8 +858,8 @@ jobs:
           node-version: 20
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
-      - name: Install Built api-augment
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+      - name: Install Built api-augment and ethereum-utils
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
         working-directory: e2e
       - name: Install NPM Modules
         run: npm ci

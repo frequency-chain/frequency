@@ -10,7 +10,7 @@ import {
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey, getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 const fundingSource = getFundingSource(import.meta.url);
