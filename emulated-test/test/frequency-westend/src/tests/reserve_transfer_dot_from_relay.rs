@@ -57,16 +57,29 @@ fn relay_to_frequency_sender_assertions(t: RelayToFrequencyTest) {
 	);
 }
 
-fn setup_foreign_asset_on_frequency() {
+fn create_dot_asset_on_frequency() {
 	FrequencyWestend::execute_with(|| {
 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-		let sender = FrequencyWestendSender::get();
+		type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+		let sudo_origin = <FrequencyWestend as Chain>::RuntimeOrigin::root();
 
-		let _ = <ForeignAssets as FungiblesCreate<_>>::create(
+		let _ = ForeignAssets::force_create(
+			sudo_origin,
 			Parent.into(),
-			sender.clone(),
+			FrequencyAssetOwner::get().into(),
 			false,
-			1u32.into(),
+			1u128.into(),
+		);
+
+		assert_expected_events!(
+			FrequencyWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(
+					pallet_assets::Event::ForceCreated { asset_id, .. }
+				) => {
+					asset_id: *asset_id == Parent.into(),
+				},
+			]
 		);
 
 		assert!(<ForeignAssets as FungiblesInspect<_>>::asset_exists(Parent.into()));
@@ -81,7 +94,7 @@ fn setup_foreign_asset_on_frequency() {
 // transfer_type=DestinationReserve
 #[test]
 fn reserve_transfer_dot_from_relay_to_frequency() {
-	setup_foreign_asset_on_frequency();
+	create_dot_asset_on_frequency();
 	let destination = Westend::child_location_of(FrequencyWestend::para_id());
 	let sender = WestendSender::get();
 	let amount_to_send: Balance = WESTEND_ED * 1000;
