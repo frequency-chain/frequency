@@ -931,7 +931,7 @@ pub mod pallet {
 		/// It also contains an expiration block number for the proof, ensuring it is valid and must be greater than the current block.
 		///
 		/// # Events
-		/// * `pallet_balances::Event::<T,I>::Transfer` - Transfer token event
+		/// * [`pallet_balances::Event::<T,I>::Transfer`](https://docs.rs/pallet-balances/latest/pallet_balances/pallet/enum.Event.html#variant.Transfer) - Transfer token event
 		///
 		/// # Errors
 		///
