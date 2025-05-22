@@ -80,7 +80,7 @@ fn setup_foreign_asset_on_frequency() {
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_relay_to_frequency -p frequency-westend-integration-tests -- --nocapture
 // transfer_type=DestinationReserve
 #[test]
-fn reserve_transfer_dot_asset_from_relay_to_frequency() {
+fn reserve_transfer_dot_from_relay_to_frequency() {
 	setup_foreign_asset_on_frequency();
 	let destination = Westend::child_location_of(FrequencyWestend::para_id());
 	let sender = WestendSender::get();

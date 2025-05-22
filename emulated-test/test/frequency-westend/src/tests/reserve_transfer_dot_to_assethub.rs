@@ -118,7 +118,7 @@ fn setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_to_send: Balance) {
 /// Reserve Transfers of Frequency Native from Asset Hub to Frequency should work
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_frequency_to_asset_hub -p frequency-westend-integration-tests -- --nocapture
 #[test]
-fn reserve_transfer_dot_from_frequency_to_asset_hub() {
+fn reserve_transfer_dot_from_frequency_to_assethub() {
 	let amount_dot_to_send: Balance = AssetHubExistentialDeposit::get() * 1000;
 	// assert_eq!(amount_to_send, 10_000 * DOLLAR);
 	setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_dot_to_send);

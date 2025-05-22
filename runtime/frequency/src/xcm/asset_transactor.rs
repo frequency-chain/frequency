@@ -1,11 +1,11 @@
-use crate::{AccountId, Balances, ForeignAssets, PolkadotXcm, Runtime, RuntimeOrigin};
+use crate::{AccountId, Balances, ForeignAssets, PolkadotXcm};
 use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::{
 	FungibleAdapter, FungiblesAdapter, IsConcrete, IsParentsOnly, MatchedConvertedConcreteId,
 	NoChecking,
 };
 
-use crate::xcm::{location_converter::LocationToAccountId, parameters::ForeignAssetsAssetId};
+use crate::xcm::{location_converter::LocationToAccountId, };
 
 use frame_support::{parameter_types, traits::ConstU8};
 
