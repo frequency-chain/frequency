@@ -31,6 +31,9 @@ pub mod xcm_commons;
 #[cfg(feature = "frequency-bridging")]
 use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
 
+#[cfg(feature = "frequency-bridging")]
+mod xcm; // Tests are contained the xcm directory
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 
@@ -2046,6 +2049,3 @@ sp_api::impl_runtime_apis! {
 		}
 	}
 }
-
-#[cfg(test)]
-mod tests;

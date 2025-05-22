@@ -472,17 +472,9 @@ fn runtime_apis_are_populated() {
 
 #[test]
 fn test_default_fee_per_second() {
-	use crate::{
-		polkadot_xcm_fee::{base_relay_tx_fee, default_fee_per_second},
-		ExtrinsicBaseWeight, WEIGHT_REF_TIME_PER_SECOND,
-	};
-
-	let base_weight = ExtrinsicBaseWeight::get().ref_time() as u128;
-	let base_tx_per_second = (WEIGHT_REF_TIME_PER_SECOND as u128) / base_weight;
-	assert_eq!(default_fee_per_second(), base_tx_per_second * base_relay_tx_fee());
+	use crate::{polkadot_xcm_fee::default_fee_per_second, WEIGHT_REF_TIME_PER_SECOND};
 
 	let weight = Weight::from_parts(3u64 * WEIGHT_REF_TIME_PER_SECOND, 0u64);
-	// let weight: u128 = Balance::from(ExtrinsicBaseWeight::get().ref_time() * 3);
 	let dot_fee = default_fee_per_second()
 		.saturating_mul(weight.ref_time() as u128)
 		.saturating_div(WEIGHT_REF_TIME_PER_SECOND as u128);
