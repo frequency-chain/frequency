@@ -654,6 +654,7 @@ jobs:
 
   execute-binary-checks-dummy:
     needs: build-binaries-dummy
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
     if: needs.changes.outputs.build-binary != 'true'
     strategy:
       fail-fast: true
