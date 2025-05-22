@@ -47,7 +47,7 @@ pub type PriceForParentDelivery = polkadot_runtime_common::xcm_sender::Exponenti
 >;
 
 parameter_types! {
-    /// How much weight to allocate to the background message queue service
+	/// How much weight to allocate to the background message queue service
 	pub MessageQueueServiceWeight: Weight = Perbill::from_percent(35) * RuntimeBlockWeights::get().max_block;
 }
 

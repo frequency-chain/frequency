@@ -6,8 +6,6 @@ use staging_xcm_builder::{
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 
-use cumulus_primitives_core::AggregateMessageOrigin;
-
 use super::constants::{RelayChainOrigin, RelayNetwork, RelayOrigin};
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used

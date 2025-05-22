@@ -1,27 +1,13 @@
-use frame_support::{
-	traits::{ConstU32, Contains, Everything}
-};
-
-// use frame_support::{
-// 	pallet_prelude::Get,
-// 	parameter_types,
-// 	traits::{ConstU32, ConstU8, Contains, ContainsPair, Disabled, Everything, Nothing},
-// 	weights::Weight,
-// };
-
+use frame_support::traits::{ConstU32, Contains, Everything};
 
 use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::{
-	DenyRecursively, DenyReserveTransferToRelayChain, DenyThenTry, TakeWeightCredit,
-	WithComputedOrigin, TrailingSetTopicAsId, AllowTopLevelPaidExecutionFrom,
-	AllowExplicitUnpaidExecutionFrom,
+	AllowExplicitUnpaidExecutionFrom, AllowTopLevelPaidExecutionFrom, DenyRecursively,
+	DenyReserveTransferToRelayChain, DenyThenTry, TakeWeightCredit, TrailingSetTopicAsId,
+	WithComputedOrigin,
 };
 
 use crate::xcm::constants::UniversalLocation;
-
-// parameter_types! {
-//     pub UniversalLocation: InteriorLocation = [GlobalConsensus(RelayNetwork::get().unwrap()), Parachain(ParachainInfo::parachain_id().into())].into();
-// }
 
 pub struct ParentOrParentsExecutivePlurality;
 impl Contains<Location> for ParentOrParentsExecutivePlurality {
@@ -29,7 +15,6 @@ impl Contains<Location> for ParentOrParentsExecutivePlurality {
 		matches!(location.unpack(), (1, []) | (1, [Plurality { id: BodyId::Executive, .. }]))
 	}
 }
-
 
 pub type Barrier = TrailingSetTopicAsId<
 	DenyThenTry<

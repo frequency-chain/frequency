@@ -1,6 +1,6 @@
 use frame_support::parameter_types;
-use staging_xcm_builder::Case;
 use staging_xcm::latest::prelude::*;
+use staging_xcm_builder::Case;
 
 /// The location of AssetHub on the relay network.
 pub const ASSET_HUB_ID: u32 = 1000;
@@ -14,8 +14,8 @@ parameter_types! {
 		id: AssetId(NativeTokenLocation::get()),
 	});
 
-    pub AssetHubLocation: Location = Location::new(1, [Parachain(ASSET_HUB_ID)]);
-    
+	pub AssetHubLocation: Location = Location::new(1, [Parachain(ASSET_HUB_ID)]);
+
 	/// The specific (asset, destination) combination allowed for teleport.
 	pub NativeForAssetHub: (AssetFilter, Location) = (
 		NativeTokenFilter::get(),

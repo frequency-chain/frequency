@@ -2,10 +2,9 @@ use crate::{AccountId, Balances, ForeignAssets, PolkadotXcm, Runtime, RuntimeOri
 use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::{
 	FungibleAdapter, FungiblesAdapter, IsConcrete, IsParentsOnly, MatchedConvertedConcreteId,
-	NoChecking, SignedToAccountId32,
+	NoChecking,
 };
 
-use crate::xcm::constants::{RelayLocation, RelayNetwork};
 use crate::xcm::location_converter::LocationToAccountId;
 
 use frame_support::{parameter_types, traits::ConstU8};
