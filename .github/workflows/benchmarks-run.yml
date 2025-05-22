@@ -20,7 +20,7 @@ jobs:
     if: github.repository == 'frequency-chain/frequency'
     name: Build Benchmark Binary
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       contents: read
     steps:
@@ -117,7 +117,7 @@ jobs:
     name: Post Benchmark Tests
     needs: run-benchmarks
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       contents: read
     steps:

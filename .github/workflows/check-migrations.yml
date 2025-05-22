@@ -16,7 +16,7 @@ jobs:
     name: Check Migrations on Paseo
     continue-on-error: false
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4

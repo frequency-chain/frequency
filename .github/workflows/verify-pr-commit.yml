@@ -185,7 +185,7 @@ jobs:
             arch: arm64
             runner: ubicloud-standard-30-arm
     runs-on: ${{matrix.runner}}
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     env:
       NETWORK: mainnet
     steps:
@@ -233,7 +233,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -249,7 +249,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.7
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
@@ -263,7 +263,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -279,7 +279,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -292,7 +292,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -304,7 +304,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -319,7 +319,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-30
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -432,7 +432,7 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -530,7 +530,7 @@ jobs:
   verify-js-schemas:
     name: Verify JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -652,9 +652,28 @@ jobs:
           platforms: linux/amd64,linux/arm64 # Testing both arch here
           file: ./docker/parachain-node.dockerfile
 
+  execute-binary-checks-dummy:
+    needs: build-binaries-dummy
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    if: needs.changes.outputs.build-binary != 'true'
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        bin-dir: [target/debug]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
+
   execute-binary-checks:
     needs: build-binaries
     name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    # If you change, also update execute-binary-checks-dummy
     strategy:
       fail-fast: true
       matrix:
@@ -697,7 +716,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.6
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       pull-requests: write
     steps:
