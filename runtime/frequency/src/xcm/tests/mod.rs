@@ -1,4 +1,4 @@
 mod mock;
 
-mod fee_estimation;
 mod check_whitelist;
+mod fee_estimation;
