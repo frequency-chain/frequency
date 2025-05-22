@@ -2,7 +2,7 @@ use crate::{AccountId, Balances, Runtime};
 use polkadot_runtime_common::impls::ToAuthor;
 use staging_xcm_builder::{FixedRateOfFungible, UsingComponents};
 
-use crate::xcm::constants::{HereLocation, RelayPerSecondAndByte};
+use crate::xcm::parameters::{HereLocation, RelayPerSecondAndByte};
 use common_runtime::fee::WeightToFee;
 
 /// The full Trader used for pricing XCM execution and delivery

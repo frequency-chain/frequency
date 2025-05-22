@@ -4,8 +4,8 @@ use staging_xcm_builder::FixedWeightBounds;
 
 use crate::RuntimeCall;
 
-/// The cost of executing a single XCM instruction
 parameter_types! {
+	/// The cost of executing a single XCM instruction
 	pub const UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 }

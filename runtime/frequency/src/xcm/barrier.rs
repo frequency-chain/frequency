@@ -7,7 +7,7 @@ use staging_xcm_builder::{
 	WithComputedOrigin,
 };
 
-use crate::xcm::constants::UniversalLocation;
+use crate::xcm::parameters::UniversalLocation;
 
 pub struct ParentOrParentsExecutivePlurality;
 impl Contains<Location> for ParentOrParentsExecutivePlurality {

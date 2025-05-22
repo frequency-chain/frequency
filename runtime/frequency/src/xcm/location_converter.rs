@@ -6,7 +6,7 @@ use staging_xcm_builder::{
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
 };
 
-use super::constants::{RelayChainOrigin, RelayNetwork, RelayOrigin};
+use super::parameters::{RelayChainOrigin, RelayNetwork};
 
 /// Type for specifying how a `Location` can be converted into an `AccountId`. This is used
 /// when determining ownership of accounts for asset transacting and when attempting to use XCM

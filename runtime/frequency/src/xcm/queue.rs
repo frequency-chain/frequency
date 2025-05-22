@@ -11,8 +11,9 @@ use frame_support::{
 	weights::Weight,
 };
 
-use crate::xcm::constants::{BaseDeliveryFee, FeeAssetId, TransactionByteFee};
+use crate::xcm::parameters::{BaseDeliveryFee, FeeAssetId, TransactionByteFee};
 use crate::xcm::location_converter::XcmOriginToTransactDispatchOrigin;
+use crate::xcm::XcmConfig;
 
 use frame_system::EnsureRoot;
 use staging_xcm_builder::WithUniqueTopic;
@@ -87,7 +88,7 @@ impl pallet_message_queue::Config for Runtime {
 	#[cfg(not(feature = "runtime-benchmarks"))]
 	type MessageProcessor = staging_xcm_builder::ProcessXcmMessage<
 		AggregateMessageOrigin,
-		xcm_executor::XcmExecutor<xcm_config::XcmConfig>,
+		xcm_executor::XcmExecutor<XcmConfig>,
 		RuntimeCall,
 	>;
 	type Size = u32;

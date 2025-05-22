@@ -5,18 +5,16 @@ use staging_xcm_builder::{
 	NoChecking,
 };
 
-use crate::xcm::location_converter::LocationToAccountId;
+use crate::xcm::{parameters::ForeignAssetsAssetId, location_converter::LocationToAccountId};
 
 use frame_support::{parameter_types, traits::ConstU8};
 
-/// A placeholder account used to hold reserved balances temporarily during checking.
 parameter_types! {
+    /// A placeholder account used to hold reserved balances temporarily during checking.
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
 	pub HereLocation: Location = Location::here();
 }
 
-/// The ID of a foreign asset
-pub type ForeignAssetsAssetId = Location;
 
 /// Adapter for transacting native assets (like balances)
 /// Means for transacting assets on this chain.

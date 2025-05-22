@@ -10,6 +10,8 @@ pub const MICROUNIT: Balance = 1_000_000;
 pub const RELAY_GENESIS: [u8; 32] = WESTEND_GENESIS_HASH;
 const ASSET_HUB_ID: u32 = 1000;
 
+pub type ForeignAssetsAssetId = Location;
+
 parameter_types! {
 	pub const RelayLocation: Location = Location::parent();
 	pub FeeAssetId: AssetId = AssetId(RelayLocation::get());
@@ -29,4 +31,12 @@ parameter_types! {
 	pub NativeTokenFilter: AssetFilter = Wild(AllOf { fun: WildFungible, id: NativeToken::get() });
 	pub AssetHubLocation: Location = Location::new(1, [Parachain(ASSET_HUB_ID)]);
 	pub NativeForAssetHub: (AssetFilter, Location) = (NativeTokenFilter::get(), AssetHubLocation::get());
+}
+
+parameter_types! {
+	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
+	// XCM instruction weight cost
+	// pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
+	// pub const MaxInstructions: u32 = 100;
+	pub const MaxAssetsIntoHolding: u32 = 64;
 }

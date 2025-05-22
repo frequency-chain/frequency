@@ -14,15 +14,14 @@ use staging_xcm_builder::{
 };
 
 use crate::xcm::{
-	AssetTransactors, Barrier, LocalOriginToLocation, LocationToAccountId, Trader, TrustedReserves,
-	TrustedTeleporters, UniversalLocation, Weigher, XcmOriginToTransactDispatchOrigin, XcmRouter,
+	AssetTransactors, Barrier, LocalOriginToLocation, LocationToAccountId, MaxAssetsIntoHolding,
+	Trader, TrustedReserves, TrustedTeleporters, UniversalLocation, Weigher,
+	XcmOriginToTransactDispatchOrigin, XcmRouter,
 };
 
 use frame_support::{
-	pallet_prelude::Get,
 	parameter_types,
-	traits::{ConstU32, ConstU8, Contains, ContainsPair, Disabled, Everything, Nothing},
-	weights::Weight,
+	traits::{ConstU32, Disabled, Everything, Nothing},
 };
 
 pub use common_runtime::fee::WeightToFee;
@@ -35,18 +34,8 @@ use xcm_executor::XcmExecutor;
 
 use polkadot_runtime_common::impls::ToAuthor;
 
-pub type ForeignAssetsAssetId = Location;
-
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();
-}
-
-parameter_types! {
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	// XCM instruction weight cost
-	// pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
-	// pub const MaxInstructions: u32 = 100;
-	pub const MaxAssetsIntoHolding: u32 = 64;
 }
 
 pub struct XcmConfig;

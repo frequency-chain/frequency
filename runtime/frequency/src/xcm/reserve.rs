@@ -1,4 +1,4 @@
-use crate::xcm::constants::{AssetHubLocation, RelayLocation};
+use crate::xcm::parameters::{AssetHubLocation, RelayLocation};
 
 use frame_support::traits::ContainsPair;
 use parachains_common::xcm_config::ConcreteAssetFromSystem;

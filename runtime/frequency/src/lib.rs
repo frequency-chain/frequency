@@ -22,8 +22,7 @@ pub mod xcm;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
 use xcm::{
-	constants::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight},
-	xcm_config::ForeignAssetsAssetId,
+	parameters::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight, ForeignAssetsAssetId},
 	queue as xcm_queue,
 };
 
