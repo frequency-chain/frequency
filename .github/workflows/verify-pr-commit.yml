@@ -8,6 +8,7 @@ on:
     branches:
       - main
       - "*-development" # Feature Branches should suffix with -development
+      - "feat/eth-bridging-development" # This feature branch isn't matching the above pattern??
 env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed

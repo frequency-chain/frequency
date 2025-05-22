@@ -286,6 +286,9 @@ check-bridging:
 check-bridging-westend:
 	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
 
+check-bridging-local:
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+
 
 .PHONY: js
 js:
@@ -337,6 +340,9 @@ build-bridging-westend-local:
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
+
+test-bridging:
+	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,frequency-bridging
 
 e2e-tests:
 	./scripts/run_e2e_tests.sh
