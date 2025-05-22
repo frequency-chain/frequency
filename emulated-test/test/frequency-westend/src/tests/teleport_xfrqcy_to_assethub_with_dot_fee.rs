@@ -219,7 +219,7 @@ fn assert_receiver_fee_burned_and_asset_minted(t: FrequencyToAssetHubTest) {
 /// using DOT as the fee asset for both delivery and remote execution.
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::transfer_xfrqcy_with_dot_fee_to_assethub -p frequency-westend-integration-tests -- --nocapture
 #[test]
-fn transfer_xfrqcy_with_dot_fee_to_assethub() {
+fn teleport_xfrqcy_from_assethub_with_dot_fee() {
 	// ────────────────
 	// Test Setup
 	// ────────────────
