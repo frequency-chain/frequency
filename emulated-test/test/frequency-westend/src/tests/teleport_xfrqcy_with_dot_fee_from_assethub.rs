@@ -15,10 +15,10 @@ fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
 		.expect("Fee asset not found in asset list") as u32
 }
 
-fn build_fee_and_value_assets(fee_dot: Balance, xrqcy_value: Balance) -> Vec<Asset> {
+fn build_fee_and_value_assets(fee_dot: Balance, xrqcy_teleport_amount: Balance) -> Vec<Asset> {
 	vec![
 		(Parent, fee_dot).into(), // DOT - used as fee
-		(frequency_location_as_seen_by_asset_hub(), xrqcy_value).into(), // XRQCY used as main transfer asset
+		(frequency_location_as_seen_by_asset_hub(), xrqcy_teleport_amount).into(), // XRQCY used as main transfer asset
 	]
 }
 
@@ -148,46 +148,13 @@ fn mint_xrqcy_on_asset_hub(
 	});
 }
 
-fn mint_dot_on_frequency(
-	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	amount_to_mint: Balance,
-) {
-	type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
-
-	FrequencyWestend::execute_with(|| {
-		let signed_origin =
-			<FrequencyWestend as Chain>::RuntimeOrigin::signed(FrequencyAssetOwner::get());
-
-		assert_ok!(ForeignAssets::mint(
-			signed_origin,
-			Parent.into(),
-			beneficiary.clone().into(),
-			amount_to_mint
-		));
-
-		assert_expected_events!(
-			FrequencyWestend,
-			vec![
-				RuntimeEvent::ForeignAssets(
-					pallet_assets::Event::Issued { asset_id, owner, amount }
-				) => {
-					asset_id: *asset_id == Parent.into(),
-					owner: *owner == beneficiary.clone().into(),
-					amount: *amount == amount_to_mint,
-				},
-			]
-		);
-	});
-}
-
 fn create_dot_asset_on_frequency() {
 	FrequencyWestend::execute_with(|| {
 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
 		type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
 		let sudo_origin = <FrequencyWestend as Chain>::RuntimeOrigin::root();
 
-		ForeignAssets::force_create(
+		let _ = ForeignAssets::force_create(
 			sudo_origin,
 			Parent.into(),
 			FrequencyAssetOwner::get().into(),
@@ -233,9 +200,6 @@ fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchRes
 	}
 	// xcm to be executed at dest
 	let xcm_on_dest = Xcm(vec![
-		// since this is the last hop, we don't need to further use any assets previously
-		// reserved for fees (there are no further hops to cover delivery fees for); we
-		// RefundSurplus to get back any unspent fees
 		RefundSurplus,
 		DepositAsset { assets: Wild(All), beneficiary: t.args.beneficiary },
 	]);
@@ -263,58 +227,62 @@ fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchRes
 // ===========================================================================
 // ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency =========
 // ===========================================================================
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee -p frequency-westend-integration-tests -- --nocapture
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_with_dot_fee_from_assethub -p frequency-westend-integration-tests -- --nocapture
 #[test]
-fn asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee() {
+fn teleport_xfrqcy_with_dot_fee_from_assethub() {
 	// ────────────────
 	// Test Setup
 	// ────────────────
-	AssetHubWestend::fund_accounts(vec![(
-		AssetHubWestendSender::get(),
-		AssetHubExistentialDeposit::get() * 10_000,
-	)]);
-	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 3000;
-	let xrqcy_amount = FrequencyExistentialDeposit::get() * 1000;
+	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 1000; // ONE_DOT =  1_000_000_000_000
+	let xrqcy_teleport_amount = FrequencyExistentialDeposit::get() * 100; // ONE_XRQCY = 100_000_000
 	let frequency_location_on_asset_hub = frequency_location_as_seen_by_asset_hub();
 
-	create_dot_asset_on_frequency();
+	AssetHubWestend::fund_accounts(vec![(
+		AssetHubWestendSender::get(),
+		AssetHubExistentialDeposit::get() * 100,
+	)]);
 
+	create_dot_asset_on_frequency();
 	create_frequency_asset_on_ah();
-	mint_xrqcy_on_asset_hub(AssetHubWestendSender::get().clone(), (xrqcy_amount * 2).clone());
+	mint_xrqcy_on_asset_hub(
+		AssetHubWestendSender::get().clone(),
+		(xrqcy_teleport_amount * 2).clone(),
+	);
 
 	let sender = AssetHubWestendSender::get();
 	let receiver = FrequencyWestendReceiver::get();
 	let destination = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
 
-	let assets: Assets = build_fee_and_value_assets(dot_fee_amount * 2, xrqcy_amount).into();
+	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_teleport_amount).into();
 	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
 	//  Pre-dispatch State Snapshot
 	// ────────────────────────────────
-	let sender_balance_of_dot_on_frequency_before =
+	let sender_dot_on_frequency_before =
 		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
-	assert_eq!(sender_balance_of_dot_on_frequency_before, 0u128);
+	assert_eq!(sender_dot_on_frequency_before, 0u128);
 
-	let sender_balance_of_xrqcy_on_asset_hub_before = foreign_balance_on!(
+	let sender_xrqcy_on_assethub_before = foreign_balance_on!(
 		AssetHubWestend,
 		frequency_location_on_asset_hub.clone(),
 		&sender.clone()
 	);
-	assert_eq!(sender_balance_of_xrqcy_on_asset_hub_before, 2_000_000_000u128);
 
-	let sender_dot_before = AssetHubWestend::execute_with(|| {
+	assert_eq!(sender_xrqcy_on_assethub_before, 200_000_000u128);
+
+	let sender_dot_on_assethub_before = AssetHubWestend::execute_with(|| {
 		type Balances = <AssetHubWestend as AssetHubWestendPallet>::Balances;
 		<Balances as Inspect<_>>::balance(&sender)
 	});
-	assert_eq!(sender_dot_before, 14_096_000_000_000u128);
+	assert_eq!(sender_dot_on_assethub_before, 4_196_000_000_000u128);
 
-	let receiver_xrqcy_before = FrequencyWestend::execute_with(|| {
+	let receiver_xrqcy_on_frequency_before = FrequencyWestend::execute_with(|| {
 		type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
 		<Balances as Inspect<_>>::balance(&receiver)
 	});
 
-	assert_eq!(receiver_xrqcy_before, 4_096_000_000u128);
+	assert_eq!(receiver_xrqcy_on_frequency_before, 4_096_000_000u128);
 
 	// ─────────────────────────────
 	// Build Test Context
@@ -323,7 +291,7 @@ fn asset_hub_to_frequency_transfer_xfrqcy_with_dot_fee() {
 		sender.clone(),
 		receiver.clone(),
 		destination.clone(),
-		xrqcy_amount,
+		xrqcy_teleport_amount,
 		assets,
 		fee_asset_item,
 	);

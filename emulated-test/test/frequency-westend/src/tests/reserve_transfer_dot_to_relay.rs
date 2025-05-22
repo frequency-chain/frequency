@@ -129,10 +129,8 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 
 	let sender_assets_before =
 		foreign_balance_on!(FrequencyWestend, relay_native_asset_location.clone(), &sender);
-	
-	println!("sender_assets_before ------------ {:?}", sender_assets_before);
+
 	let receiver_balance_before = test.receiver.balance;
-	println!("receiver_balance_before -------- {:?}", receiver_balance_before);
 
 	test.set_assertion::<FrequencyWestend>(frequency_to_relay_sender_assertions);
 	test.set_assertion::<Westend>(frequency_to_relay_receiver_assertions);
@@ -141,10 +139,6 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 
 	let sender_assets_after =
 		foreign_balance_on!(FrequencyWestend, relay_native_asset_location, &sender);
-	
-	println!("sender_assets_after------ {:?}", sender_assets_after);
-	println!("sender_assets_before ----- {:?}", sender_assets_before);
-	println!("amount_to_send----- {:?}", amount_to_send);
 
 	let receiver_balance_after = test.receiver.balance;
 

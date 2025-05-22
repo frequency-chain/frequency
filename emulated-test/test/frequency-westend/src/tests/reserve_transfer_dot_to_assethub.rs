@@ -120,10 +120,8 @@ fn setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_to_send: Balance) {
 #[test]
 fn reserve_transfer_dot_from_frequency_to_assethub() {
 	let amount_dot_to_send: Balance = AssetHubExistentialDeposit::get() * 1000;
-	// assert_eq!(amount_to_send, 10_000 * DOLLAR);
 	setup_foreign_asset_on_frequency_and_fund_ah_sov(amount_dot_to_send);
 
-	// 20K dollars
 	let sender = FrequencyWestendSender::get();
 	let receiver = AssetHubWestendReceiver::get();
 	let destination = FrequencyWestend::sibling_location_of(AssetHubWestend::para_id());
@@ -164,11 +162,6 @@ fn reserve_transfer_dot_from_frequency_to_assethub() {
 		foreign_balance_on!(FrequencyWestend, asset_hub_native_asset_location, &sender);
 
 	let receiver_balance_after = test.receiver.balance;
-
-	let frequency_sender_native_after = FrequencyWestend::execute_with(|| {
-		type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
-		<Balances as Inspect<_>>::balance(&FrequencyWestendSender::get())
-	});
 
 	// Sender's balance is reduced by amount sent
 	assert!(sender_dot_assets_after < sender_dot_assets_before - amount_dot_to_send);

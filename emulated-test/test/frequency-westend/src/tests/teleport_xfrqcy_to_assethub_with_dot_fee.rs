@@ -3,6 +3,8 @@ use crate::imports::*;
 
 pub const ASSET_MIN_BALANCE: u128 = 1;
 
+
+
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
 }
@@ -42,6 +44,39 @@ fn build_frequency_to_asset_hub_test(
 	};
 
 	FrequencyToAssetHubTest::new(test_args)
+}
+
+fn mint_dot_on_frequency(
+	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
+	amount_to_mint: Balance,
+) {
+	type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
+	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+
+	FrequencyWestend::execute_with(|| {
+		let signed_origin =
+			<FrequencyWestend as Chain>::RuntimeOrigin::signed(FrequencyAssetOwner::get());
+
+		assert_ok!(ForeignAssets::mint(
+			signed_origin,
+			Parent.into(),
+			beneficiary.clone().into(),
+			amount_to_mint
+		));
+
+		assert_expected_events!(
+			FrequencyWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(
+					pallet_assets::Event::Issued { asset_id, owner, amount }
+				) => {
+					asset_id: *asset_id == Parent.into(),
+					owner: *owner == beneficiary.clone().into(),
+					amount: *amount == amount_to_mint,
+				},
+			]
+		);
+	});
 }
 
 fn setup_foreign_dot_on_frequency_and_fund_sov_on_ah(amount_to_send: Balance) {
@@ -126,7 +161,7 @@ fn execute_xcm_frequency_to_asset_hub(t: FrequencyToAssetHubTest) -> DispatchRes
 			)]),
 			remote_xcm: xcm_on_dest,
 		},
-		RefundSurplus, // the remainding part after reducing delivery fees
+		RefundSurplus,
 		DepositAsset {
 			assets: Wild(All),
 			beneficiary: AccountId32Junction {
@@ -244,14 +279,11 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// ────────────────────────────────
 	let sender_balance_of_dot_on_frequency_before =
 		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
-
-	let frequency_sender_native_before = FrequencyWestend::execute_with(|| {
-		type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
-		<Balances as Inspect<_>>::balance(&sender)
-	});
-
-	assert_eq!(frequency_sender_native_before, 4_096_000_000u128);
 	assert_eq!(sender_balance_of_dot_on_frequency_before, 2_000_000_000_000u128);
+
+
+	let frequency_sender_native_before = frequency_balance_of(&sender);
+	assert_eq!(frequency_sender_native_before, 4_096_000_000u128);
 
 	let receiver_frequency_before =
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &sender);
