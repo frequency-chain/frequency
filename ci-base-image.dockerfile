@@ -18,7 +18,7 @@ RUN useradd -u 1001 -d /home/runner -m -s /bin/bash runner
 
 # Install rustup and needed build tools
 RUN apt update && \
-  apt install --no-install-recommends -y gpg sudo curl build-essential libclang-dev protobuf-compiler git file jq clang cmake ca-certificates && \
+  apt install --no-install-recommends -y gpg gpg-agent sudo curl build-essential libclang-dev protobuf-compiler git file jq clang cmake ca-certificates && \
   update-ca-certificates && \
   apt remove -y --auto-remove && \
   rm -rf /var/lib/apt/lists/* && \
