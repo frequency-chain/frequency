@@ -4317,6 +4317,7 @@ dependencies = [
  "static_assertions",
  "substrate-wasm-builder",
  "system-runtime-api",
+ "xcm-runtime-apis 0.7.1 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2503)",
 ]
 
 [[package]]
