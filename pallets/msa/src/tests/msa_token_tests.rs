@@ -106,7 +106,7 @@ fn it_fails_when_proof_is_expired() {
 				&msa_signature,
 				&payload
 			),
-			InvalidTransaction::Custom(ValidityError::ProofHasExpired as u8)
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
 		);
 	});
 }
@@ -133,7 +133,7 @@ fn it_fails_when_proof_is_not_yet_valid() {
 				&msa_signature,
 				&payload
 			),
-			InvalidTransaction::Custom(ValidityError::ProofNotYetValid as u8)
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
 		);
 	});
 }
@@ -175,7 +175,7 @@ fn it_fails_when_msa_key_is_not_an_msa_control_key() {
 				&msa_signature,
 				&payload
 			),
-			InvalidTransaction::Custom(ValidityError::NotMsaOwner as u8)
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
 		);
 	})
 }
@@ -197,7 +197,7 @@ fn it_fails_when_msa_key_does_not_control_msa_in_payload() {
 				&msa_signature,
 				&payload
 			),
-			InvalidTransaction::Custom(ValidityError::NoKeyExists as u8)
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
 		);
 	})
 }
@@ -263,5 +263,51 @@ fn it_succeeds_when_balance_is_sufficient() {
 			to: origin_key_pair.public().into(),
 			amount: transfer_amount,
 		}));
+	})
+}
+
+#[test]
+fn it_fails_when_duplicate_signature_submitted() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+
+		let (payload, _, msa_signature) =
+			generate_payload(msa_id, &owner_key_pair, &origin_key_pair, None);
+
+		let transfer_amount = 10_000_000;
+
+		// Fund MSA
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+
+		assert_ok!(Msa::withdraw_tokens(
+			RuntimeOrigin::signed(origin_key_pair.public().into()),
+			owner_key_pair.public().into(),
+			msa_signature.clone(),
+			payload.clone()
+		));
+
+		assert_err!(
+			CheckFreeExtrinsicUse::<Test>::validate_msa_token_withdrawal(
+				&origin_key_pair.public().into(),
+				&owner_key_pair.public().into(),
+				&msa_signature,
+				&payload
+			),
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
+		);
+
+		assert_err!(
+			Msa::withdraw_tokens(
+				RuntimeOrigin::signed(origin_key_pair.public().into()),
+				owner_key_pair.public().into(),
+				msa_signature.clone(),
+				payload.clone()
+			),
+			Error::<Test>::SignatureAlreadySubmitted
+		);
 	})
 }

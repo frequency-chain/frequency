@@ -399,17 +399,8 @@ pub mod pallet {
 		/// Attempted to add a new signature to a corrupt signature registry
 		SignatureRegistryCorrupted,
 
-		/// MSA balance is zero (paid transaction) or insufficient to cover fees (free transaction)
-		InsufficientBalanceToWithdraw,
-
-		/// MSA balance to withdraw is insufficient to fund the destination account such that it would not be reaped
-		InsufficientBalanceToFundDestination,
-
 		/// Fund transfer error
 		UnexpectedTokenTransferError,
-
-		/// Origin is ineleligible for the current transaction
-		IneligibleOrigin,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -959,10 +950,11 @@ pub mod pallet {
 		pub fn withdraw_tokens(
 			origin: OriginFor<T>,
 			_msa_owner_public_key: T::AccountId,
-			_msa_owner_proof: MultiSignature,
+			msa_owner_proof: MultiSignature,
 			authorization_payload: AuthorizedKeyData<T>,
 		) -> DispatchResult {
 			let public_key = ensure_signed(origin)?;
+			Self::register_signature(&msa_owner_proof, authorization_payload.expiration)?;
 
 			let msa_id = authorization_payload.msa_id;
 
@@ -972,14 +964,12 @@ pub mod pallet {
 			// - Convert to AccountId
 			let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
 			let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
-
 			// - Check that the MSA has a balance to withdraw
 			let msa_balance = T::Currency::reducible_balance(
 				&msa_account_id,
 				Preservation::Expendable,
 				Fortitude::Polite,
 			);
-
 			let result = <T as pallet::Config>::Currency::transfer(
 				&msa_account_id,
 				&public_key,
@@ -1525,7 +1515,24 @@ impl<T: Config> Pallet<T> {
 		signature: &MultiSignature,
 		signature_expires_at: BlockNumberFor<T>,
 	) -> DispatchResult {
-		let current_block = frame_system::Pallet::<T>::block_number();
+		let current_block = Self::check_signature(signature, signature_expires_at)?;
+
+		Self::enqueue_signature(signature, signature_expires_at, current_block)
+	}
+
+	/// Check that mortality_block is within bounds.
+	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
+	///
+	/// # Errors
+	/// * [`Error::ProofNotYetValid`]
+	/// * [`Error::ProofHasExpired`]
+	/// * [`Error::SignatureAlreadySubmitted`]
+	///
+	pub fn check_signature(
+		signature: &MultiSignature,
+		signature_expires_at: BlockNumberFor<T>,
+	) -> Result<BlockNumberFor<T>, DispatchError> {
+		let current_block: BlockNumberFor<T> = frame_system::Pallet::<T>::block_number();
 
 		let max_lifetime = Self::mortality_block_limit(current_block);
 		ensure!(max_lifetime > signature_expires_at, Error::<T>::ProofNotYetValid);
@@ -1536,8 +1543,11 @@ impl<T: Config> Pallet<T> {
 			!<PayloadSignatureRegistryList<T>>::contains_key(signature),
 			Error::<T>::SignatureAlreadySubmitted
 		);
+		if let Some(signature_pointer) = PayloadSignatureRegistryPointer::<T>::get() {
+			ensure!(signature_pointer.newest != *signature, Error::<T>::SignatureAlreadySubmitted);
+		}
 
-		Self::enqueue_signature(signature, signature_expires_at, current_block)
+		Ok(current_block)
 	}
 
 	/// Do the actual enqueuing into the list storage and update the pointer
@@ -1585,7 +1595,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Add the newest signature if we are not the first
-		if pointer.count != 0 {
+		if pointer.count != 0 && current_block.le(&pointer.newest_expires_at) {
 			<PayloadSignatureRegistryList<T>>::insert(
 				pointer.newest,
 				(pointer.newest_expires_at, signature.clone()),
@@ -1960,46 +1970,14 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8)
 		);
 
-		Pallet::<T>::register_signature(msa_owner_proof, authorization_payload.expiration)
-			.map_err(|err: DispatchError| {
-				InvalidTransaction::Custom(match err {
-					DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
-						if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
-							match decoded_err {
-								pallet::Error::<T>::ProofNotYetValid =>
-									ValidityError::ProofNotYetValid as u8,
-								pallet::Error::<T>::ProofHasExpired =>
-									ValidityError::ProofHasExpired as u8,
-								pallet::Error::<T>::SignatureAlreadySubmitted =>
-									ValidityError::SignatureAlreadySubmitted as u8,
-								_ => 255u8,
-							}
-						} else {
-							255u8
-						}
-					},
-					_ => 255u8,
-				})
-			})?;
+		Pallet::<T>::check_signature(msa_owner_proof, authorization_payload.expiration).map_err(
+			|_| InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
+		)?;
 
 		let msa_id = authorization_payload.msa_id;
 
-		Pallet::<T>::ensure_msa_owner(msa_owner_public_key, msa_id).map_err(|err| {
-			InvalidTransaction::Custom(match err {
-				DispatchError::Module(sp_runtime::ModuleError { error, .. }) => {
-					if let Ok(decoded_err) = pallet::Error::<T>::decode(&mut &error[..]) {
-						match decoded_err {
-							pallet::Error::<T>::NoKeyExists => ValidityError::NoKeyExists as u8,
-							pallet::Error::<T>::NotMsaOwner => ValidityError::NotMsaOwner as u8,
-							_ => 255u8,
-						}
-					} else {
-						255u8
-					}
-				},
-				_ => 255u8,
-			})
-		})?;
+		Pallet::<T>::ensure_msa_owner(msa_owner_public_key, msa_id)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		// - Get account address for MSA
 		let msa_address = Pallet::<T>::msa_id_to_eth_address(msa_id);
@@ -2018,26 +1996,6 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			msa_balance > Zero::zero(),
 			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToWithdraw as u8)
 		);
-
-		// - TODO: Phase 2 (free transaction w/fee paid from proceeds): Check that MSA balance is > fee
-
-		let ed = T::Currency::minimum_balance();
-		// Make sure either:
-		// - Balance to be transferred > existential deposit, OR
-		// - Destination account balance  + ammount to be transferred > existential deposit
-		let amount_alone_is_insufficient = msa_balance < ed;
-		let dest_will_be_reaped = if amount_alone_is_insufficient {
-			let dest_balance = T::Currency::total_balance(receiver_account_id);
-			(dest_balance + msa_balance) < ed
-		} else {
-			false
-		};
-
-		ensure!(
-			!dest_will_be_reaped,
-			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToFundDestination as u8)
-		);
-
 		ValidTransaction::with_tag_prefix(TAG_PREFIX)
 			.and_provides(receiver_account_id)
 			.build()
@@ -2064,24 +2022,10 @@ pub enum ValidityError {
 	HandleNotRetired,
 	/// Cryptographic signature verification failed
 	MsaOwnershipInvalidSignature,
-	/// MSA balance is zero (paid transaction) or insufficient to cover fees (free transaction)
+	/// MSA balance is zero
 	InsufficientBalanceToWithdraw,
-	/// MSA balance to withdraw is insufficient to fund the destination account such that it would not be reaped
-	InsufficientBalanceToFundDestination,
-	/// Fund transfer error
-	UnexpectedTokenTransferError,
 	/// Origin is ineleligible for the current transaction
 	IneligibleOrigin,
-	/// Proof not yet valid
-	ProofNotYetValid,
-	/// Proof has expired
-	ProofHasExpired,
-	/// Duplicate signature
-	SignatureAlreadySubmitted,
-	/// No key exists
-	NoKeyExists,
-	/// Not MSA owner
-	NotMsaOwner,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
@@ -2134,6 +2078,7 @@ where
 	/// * revoke_delegation_by_delegator
 	/// * delete_msa_public_key
 	/// * retire_msa
+	/// * withdraw_tokens
 	///
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
@@ -2162,12 +2107,15 @@ where
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
-			}) => CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
-				who,
-				msa_owner_public_key,
-				msa_owner_proof,
-				authorization_payload,
-			),
+			}) => {
+				let result = CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
+					who,
+					msa_owner_public_key,
+					msa_owner_proof,
+					authorization_payload,
+				);
+				result
+			},
 			_ => Ok(Default::default()),
 		}
 	}

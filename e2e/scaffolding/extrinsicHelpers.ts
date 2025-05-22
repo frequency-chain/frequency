@@ -193,7 +193,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
-      // eslint-disable-next-line no-restricted-syntax
+       
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
