@@ -304,9 +304,10 @@ describe('MSAs Holding Tokens', function () {
     });
 
     it('should fail for duplicate signature submission (MsaOwnershipInvalidSignature)', async function () {
-      // Due to the fact that we're testing this free extrinsic with unfunded accounts (ie, with no nonce),
-      // we'll use a unique keypair for this test so that it doesn't matter whether other tests using
-      // the same keypair ended up funding the account & therefore initializing a nonce.
+      // In order to test this, we need to create a new keypair and fund it, because otherwise the nonce will
+      // be the same for both transactions (and, because we're using Edcs signatures, the signature will be the same).
+      // Not sure exactly what happens in this case, but it seems to be that the second transaction is siliently dropped
+      // by the node, but the status call back in polkadot.js still resolves (ie, gets 'isInBlock' or 'isFinalized')
       const keys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
       payload.authorizedPublicKey = getUnifiedPublicKey(keys);
 
