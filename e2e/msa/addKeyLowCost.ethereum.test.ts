@@ -1,5 +1,5 @@
 import { KeyringPair } from '@polkadot/keyring/types';
-import { AddKeyData, EventMap, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import {
   assertEvent,
   CENTS,
@@ -9,23 +9,22 @@ import {
   DOLLARS,
   generateAddKeyPayload,
   getEthereumKeyPairFromUnifiedAddress,
-  signEip712AddKeyData,
   signPayloadSr25519,
   stakeToProvider,
 } from '../scaffolding/helpers';
 import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
 import assert from 'assert';
 import { getFundingSource } from '../scaffolding/funding';
-import { U64, u64 } from '@polkadot/types';
-import { BigInt } from '@polkadot/x-bigint';
+import { u64 } from '@polkadot/types';
 import { MessageSourceId } from '@frequency-chain/api-augment/interfaces';
+import { createAddKeyData, signEip712 } from '@frequency-chain/ethereum-utils';
+import { u8aToHex } from '@polkadot/util';
 
 const fundingSource = getFundingSource(import.meta.url);
 
 describe('adding an Ethereum key for low cost', function () {
   let providerKeys;
   let providerMsaId;
-  const defaultPayload: AddKeyData = {};
 
   before(async function () {
     providerKeys = await createKeys('KeyAdder');
@@ -56,15 +55,24 @@ describe('adding an Ethereum key for low cost', function () {
     delegatorMsaId: u64,
     ethereumKeyringPair: KeyringPair
   ) {
-    const ethereumKeyPair = getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(ethereumKeyringPair));
     const addKeyPayload = await generateAddKeyPayload({});
     addKeyPayload.msaId = delegatorMsaId;
     addKeyPayload.newPublicKey = getUnifiedPublicKey(ethereumKeyringPair);
-    const addKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
 
-    const delegatorSig = signPayloadSr25519(delegatorKeys, addKeyData);
-    const newSig = await signEip712AddKeyData(ethereumKeyPair, addKeyPayload);
-    return { addKeyPayload, delegatorSig, newSig };
+    const srSignatureaddKeyData = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
+    const delegatorSrSignature = signPayloadSr25519(delegatorKeys, srSignatureaddKeyData);
+
+    const ethereumSecretKey = u8aToHex(
+      getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(ethereumKeyringPair)).secretKey
+    );
+    const eip712AddKeyData = createAddKeyData(
+      addKeyPayload.msaId.toBigInt(),
+      u8aToHex(addKeyPayload.newPublicKey),
+      addKeyPayload.expiration
+    );
+    const ecdsaSignature = await signEip712(ethereumSecretKey, eip712AddKeyData);
+
+    return { addKeyPayload, delegatorSig: delegatorSrSignature, newSig: ecdsaSignature };
   }
 
   it('addPublicKeyToMsa costs less for capacity call with eligibility conditions', async function () {

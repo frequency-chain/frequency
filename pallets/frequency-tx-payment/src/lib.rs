@@ -471,7 +471,7 @@ where
 		Ok((fee.into(), InitialPayment::Capacity))
 	}
 
-	// Reduction for subsidized calls.
+	// Give a 70% discount for eligible calls
 	fn subsidized_calls_reduction(len: usize, eligible_call_weight: Weight) -> BalanceOf<T> {
 		if eligible_call_weight.is_zero() {
 			0u32.into()

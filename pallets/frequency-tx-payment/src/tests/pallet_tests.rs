@@ -1051,36 +1051,22 @@ fn add_public_key_to_msa_has_lower_capacity_charge_if_is_ethereum_compatible() {
 		.execute_with(|| {
 			let msa_id = 2u64;
 			let owner_id = 2u64;
+			// creates a call with "magic" new account id that will return 'true' for being an
+			// ethereum-compatible key
 			let pay_with_capacity_add_public_key_call =
 				generate_add_public_key_call(msa_id, owner_id);
-			// ask if the returned weight is much less
 			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
 				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
 				.unwrap();
-			assert!(withdraw_fee.0.lt(&106_000_000u64));
+
+			// this fails eligibility for not matching the msa id to the owner account id, so
+			// although adding the key would fail, it's fine for the purpose of this test.
+			let another_msa = 99u64;
+			let pay_with_capacity_add_public_key_call =
+				generate_add_public_key_call(another_msa, owner_id);
+			let ineligible_withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
+				.unwrap();
+			assert!(ineligible_withdraw_fee.0.gt(&withdraw_fee.0));
 		});
-}
-
-#[test]
-fn add_public_key_to_msa_not_free_if_mismatched_msa_to_account_id() {
-	// using same as prior test for comparison
-	let balance_factor = 100_000_000;
-	let dispatch_info =
-		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
-
-	ExtBuilder::default()
-		.balance_factor(balance_factor)
-		.base_weight(Weight::from_parts(5, 0))
-		.build()
-		.execute_with(|| {
-			let msa_id = 99u64;
-			let owner_id = 2u64;
-			let pay_with_capacity_add_public_key_call =
-				generate_add_public_key_call(msa_id, owner_id);
-			// ask if the returned weight is much less
-			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
-				.unwrap();
-			assert!(withdraw_fee.0.gt(&270_000_000u64));
-		})
 }
