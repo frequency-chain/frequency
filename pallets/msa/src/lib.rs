@@ -1499,12 +1499,6 @@ impl<T: Config> Pallet<T> {
 	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
 	/// Raises `SignatureRegistryLimitExceeded` if the oldest signature of the list has not yet expired.
 	///
-	/// Example list:
-	/// - `1,2 (oldest)`
-	/// - `2,3`
-	/// - `3,4`
-	/// - 4 (newest in pointer storage)`
-	///
 	/// # Errors
 	/// * [`Error::ProofNotYetValid`]
 	/// * [`Error::ProofHasExpired`]
@@ -1551,6 +1545,27 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Do the actual enqueuing into the list storage and update the pointer
+	///
+	/// The signature registry consist of two storage items:
+	/// - `PayloadSignatureRegistryList` - a linked list of signatures, in which each entry
+	///   points to the next newest signature. The list is stored as a mapping of
+	///   `MultiSignature` to a tuple of `(BlockNumberFor<T>, MultiSignature)`.
+	///   The tuple contains the expiration block number and the next signature in the list.
+	/// - `PayloadSignatureRegistryPointer` - a struct containing the newest signature,
+	///   the oldest signature, the count of signatures, and the expiration block number of the newest signature.
+	///
+	/// NOTE: 'newest' and 'oldest' refer to the order in which the signatures were added to the list,
+	/// which is not necessarily the order in which they expire.
+	///
+	/// Example: (key [signature], value [next newest signature])
+	/// - `1,2 (oldest)`
+	/// - `2,3`
+	/// - `3,4`
+	/// - 4 (newest in pointer storage)`
+	///
+	// DEVELOPER NOTE: As currently implemented, the signature registry list will continue to grow until it reaches
+	// the maximum number of signatures, at which point it will remain at that size, only ever replacing the oldest
+	// signature with the newest one. This is a trade-off between storage space and performance.
 	fn enqueue_signature(
 		signature: &MultiSignature,
 		signature_expires_at: BlockNumberFor<T>,
@@ -1595,7 +1610,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Add the newest signature if we are not the first
-		if pointer.count != 0 && current_block.le(&pointer.newest_expires_at) {
+		if pointer.count != 0 {
 			<PayloadSignatureRegistryList<T>>::insert(
 				pointer.newest,
 				(pointer.newest_expires_at, signature.clone()),
