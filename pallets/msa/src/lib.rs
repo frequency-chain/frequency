@@ -1514,24 +1514,6 @@ impl<T: Config> Pallet<T> {
 		Self::enqueue_signature(signature, signature_expires_at, current_block)
 	}
 
-	fn display_signature(
-		signature: &MultiSignature,
-	) {
-		use sp_core::hexdisplay;
-		match signature {
-			MultiSignature::Ecdsa(signature) => {
-				log::warn!("{:?}", hexdisplay::HexDisplay::from(&&signature.0[..]));
-			},
-			MultiSignature::Sr25519(signature) => {
-				log::warn!("{:?}", hexdisplay::HexDisplay::from(&&signature.0[..]));
-			},
-			MultiSignature::Ed25519(signature) => {
-				log::warn!("{:?}", hexdisplay::HexDisplay::from(&&signature.0[..]));
-			},
-		};
-	}
-
-
 	/// Check that mortality_block is within bounds.
 	/// Raises `SignatureAlreadySubmitted` if the signature exists in the registry.
 	///
@@ -1555,11 +1537,7 @@ impl<T: Config> Pallet<T> {
 			!<PayloadSignatureRegistryList<T>>::contains_key(signature),
 			Error::<T>::SignatureAlreadySubmitted
 		);
-		log::warn!("Checking for duplicate signature in pointer:");
-		if let Ok(signature_pointer) = PayloadSignatureRegistryPointer::<T>::try_get() {
-			log::warn!("Checking for duplicate signature (incoming, pointer):");
-			Self::display_signature(signature);
-			Self::display_signature(&signature_pointer.newest);
+		if let Some(signature_pointer) = PayloadSignatureRegistryPointer::<T>::get() {
 			ensure!(signature_pointer.newest != *signature, Error::<T>::SignatureAlreadySubmitted);
 		}
 
@@ -1593,8 +1571,6 @@ impl<T: Config> Pallet<T> {
 		signature_expires_at: BlockNumberFor<T>,
 		current_block: BlockNumberFor<T>,
 	) -> DispatchResult {
-		log::warn!("Enqueuing signature:");
-		Self::display_signature(signature);
 		// Get the current pointer, or if this is the initialization, generate an empty pointer
 		let pointer =
 			PayloadSignatureRegistryPointer::<T>::get().unwrap_or(SignatureRegistryPointer {
@@ -2108,12 +2084,6 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		match call.is_sub_type() {
-			Some(Call::withdraw_tokens { .. }) => {
-				log::warn!("CheckFreeExtrinsicUse::pre_dispatch: withdraw_tokens");
-			},
-			_ => {}
-		}
 		self.validate(who, call, info, len).map(|_| ())
 	}
 
@@ -2152,16 +2122,12 @@ where
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
-			}) => {
-				log::warn!("Validating MSA token withdrawal");
-				let result = CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
-					who,
-					msa_owner_public_key,
-					msa_owner_proof,
-					authorization_payload,
-				);
-				result
-			},
+			}) => CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
+				who,
+				msa_owner_public_key,
+				msa_owner_proof,
+				authorization_payload,
+			),
 			_ => Ok(Default::default()),
 		}
 	}

@@ -99,11 +99,12 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
     case 'AuthorizedKeyData':
       // convert to 20 bytes ethereum address for signature
       if (clonedPayload.authorizedPublicKey.length !== 42) {
-        clonedPayload.authorizedPublicKey = reverseUnifiedAddressToEthereumAddress((payload as AuthorizedKeyData).authorizedPublicKey);
+        clonedPayload.authorizedPublicKey = reverseUnifiedAddressToEthereumAddress(
+          (payload as AuthorizedKeyData).authorizedPublicKey
+        );
       }
       clonedPayload.authorizedPublicKey = clonedPayload.authorizedPublicKey.toLowerCase() as HexString;
       break;
-
 
     default:
       throw new Error(`Unsupported payload type: ${JSON.stringify(payload)}`);
@@ -502,7 +503,12 @@ export function getEip712BrowserRequestPasskeyPublicKey(
   return createEip712Payload(PASSKEY_PUBLIC_KEY_DEFINITION, message.type, domain, normalized);
 }
 
-function createEip712Payload(typeDefinition: SupportedPayloadDefinitions, primaryType: SupportedPayloadTypes, domain: EipDomainPayload, message: NormalizedSupportedPayload): unknown {
+function createEip712Payload(
+  typeDefinition: SupportedPayloadDefinitions,
+  primaryType: SupportedPayloadTypes,
+  domain: EipDomainPayload,
+  message: NormalizedSupportedPayload
+): unknown {
   return {
     types: {
       ...EIP712_DOMAIN_DEFINITION,
