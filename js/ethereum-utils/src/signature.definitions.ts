@@ -63,6 +63,23 @@ export const ADD_KEY_DATA_DEFINITION = {
   ],
 };
 
+export const AUTHORIZED_KEY_DATA_DEFINITION = {
+  AuthorizedKeyData: [
+    {
+      name: 'msaId',
+      type: 'uint64',
+    },
+    {
+      name: 'expiration',
+      type: 'uint32',
+    },
+    {
+      name: 'authorizedPublicKey',
+      type: 'address',
+    },
+  ],
+};
+
 export const CLAIM_HANDLE_PAYLOAD_DEFINITION = {
   ClaimHandlePayload: [
     {
@@ -156,3 +173,10 @@ export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
     { name: 'index', type: 'uint16' },
   ],
 };
+
+const PAYLOAD_DEFINITIONS = [ADD_PROVIDER_DEFINITION, ADD_KEY_DATA_DEFINITION, AUTHORIZED_KEY_DATA_DEFINITION, CLAIM_HANDLE_PAYLOAD_DEFINITION,
+  PASSKEY_PUBLIC_KEY_DEFINITION, PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2, PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
+];
+
+export type SupportedPayloadDefinitions = typeof PAYLOAD_DEFINITIONS[number];

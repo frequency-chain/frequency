@@ -42,7 +42,7 @@ export interface AddKeyData {
 }
 export interface AuthorizedKeyData {
   msaId: u64;
-  expiration?: AnyNumber;
+  expiration?: number | any;
   authorizedPublicKey: KeyringPair['publicKey'];
 }
 export interface AddProviderPayload {
