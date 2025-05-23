@@ -37,6 +37,9 @@ pub trait AccountAddressMapper<AccountId> {
 
 	/// reverses an accountId to it's 20 byte ethereum address
 	fn to_ethereum_address(account_id: AccountId) -> H160;
+
+	/// returns whether `account_id` converts to a valid Ethereum address
+	fn is_ethereum_address(account_id: &AccountId) -> bool;
 }
 
 /// converting raw address bytes to 32 bytes Ethereum compatible addresses
@@ -89,12 +92,16 @@ impl AccountAddressMapper<AccountId32> for EthereumAddressMapper {
 
 	fn to_ethereum_address(account_id: AccountId32) -> H160 {
 		let mut eth_address = [0u8; 20];
-		if account_id.as_slice()[20..] == *[0xEE; 12].as_slice() {
+		if Self::is_ethereum_address(&account_id) {
 			eth_address[..].copy_from_slice(&account_id.as_slice()[0..20]);
 		} else {
 			log::error!("Incompatible ethereum account id is provided {:?}", account_id);
 		}
 		eth_address.into()
+	}
+
+	fn is_ethereum_address(account_id: &AccountId32) -> bool {
+		account_id.as_slice()[20..] == *[0xEE; 12].as_slice()
 	}
 }
 
@@ -414,7 +421,7 @@ mod tests {
 		signatures::{UnifiedSignature, UnifiedSigner},
 	};
 	use impl_serde::serialize::from_hex;
-	use sp_core::{ecdsa, Pair};
+	use sp_core::{ecdsa, sr25519, Pair};
 	use sp_runtime::{
 		traits::{IdentifyAccount, Verify},
 		AccountId32,
@@ -600,5 +607,19 @@ mod tests {
 		let expected_address = vec![0u8; 32]; // zero default values
 		assert_eq!(account_id, AccountId32::new(expected_address.clone().try_into().unwrap()));
 		assert_eq!(bytes.to_vec(), expected_address);
+	}
+
+	#[test]
+	fn ethereum_address_mapper_is_ethereum_address_correctly_detects() {
+		let valid_eth_address =
+			from_hex("0x917B536617B0A42B2ABE85AC88788825F29F0B29eeeeeeeeeeeeeeeeeeeeeeee")
+				.expect("should be hex");
+		let valid_addr32 = AccountId32::new(valid_eth_address.clone().try_into().unwrap());
+
+		assert!(EthereumAddressMapper::is_ethereum_address(&valid_addr32));
+
+		let (pair, _) = sr25519::Pair::generate();
+		let random_addr32 = AccountId32::from(pair.public());
+		assert!(!EthereumAddressMapper::is_ethereum_address(&random_addr32));
 	}
 }

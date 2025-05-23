@@ -116,7 +116,13 @@ pub type MaximumCapacityBatchLength = ConstU8<10>;
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
-	fn convert(_x: u64) -> AccountId32 {
+	fn convert(x: u64) -> AccountId32 {
+		// force this key to be an ethereum-compatible key
+		if x == 999 {
+			let eth = sp_core::bytes::from_hex("0x9999999999999999999999999999999999999999")
+				.expect("should return a Vec<u8>");
+			return EthereumAddressMapper::to_account_id(&eth);
+		}
 		AccountId32::new([1u8; 32])
 	}
 }
@@ -242,6 +248,8 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<2>;
 }
 
+use crate::types::GetAddKeyData;
+use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
@@ -252,6 +260,8 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 			RuntimeCall::Balances(BalancesCall::transfer_allow_death { .. }) =>
 				Some(Weight::from_parts(11, 0)),
 			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa { .. }) =>
+				Some(Weight::from_parts(177_629_000, 18396)), // from stable_weights
 			_ => None,
 		}
 	}
@@ -276,6 +286,30 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
+pub struct MockMsaCallFilter;
+impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSourceId>
+	for MockMsaCallFilter
+{
+	// Always returns same account ID and msa.
+	fn get_add_key_data(
+		call: &<Test as frame_system::Config>::RuntimeCall,
+	) -> Option<(u64, u64, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => Some((
+				msa_owner_public_key.clone(),
+				add_key_payload.new_public_key,
+				add_key_payload.msa_id,
+			)),
+			_ => None,
+		}
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -285,6 +319,8 @@ impl Config for Test {
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type BatchProvider = CapacityBatchProvider;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MockMsaCallFilter;
 }
 
 pub struct ExtBuilder {

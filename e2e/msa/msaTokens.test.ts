@@ -51,8 +51,10 @@ describe('MSAs Holding Tokens', function () {
   describe('getEthereumAddressForMsaId', function () {
     it('should return the correct address for a given MSA ID', async function () {
       const expectedAddress = CHECKSUMMED_ETH_ADDR_1234.toLowerCase();
-      const { accountId, accountIdChecksummed } =
-        await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(MSA_ID_1234);
+      const result: any = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(MSA_ID_1234);
+      const accountId = result?.accountId;
+      const accountIdChecksummed = result?.accountIdChecksummed;
+
       assert.equal(accountId.toHex(), expectedAddress, `Expected address ${expectedAddress}, but got ${accountId}`);
       assert.equal(
         accountIdChecksummed.toString(),
