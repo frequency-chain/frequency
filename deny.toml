@@ -70,13 +70,8 @@ ignore = [
   #{ crate = "a-crate-that-is-yanked@0.1.1", reason = "you can specify why you are ignoring the yanked crate" },
   { id = "RUSTSEC-2022-0061", reason = "Substrate Dependency deprecation. Eventually there will be an update. See https://github.com/paritytech/parity-wasm/pull/334 and https://github.com/paritytech/polkadot-sdk/issues/118" },
   { id = "RUSTSEC-2020-0168", reason = "There is no suitable replacement for mach and the mach2 crate has not been vetted." },
-  { id = "RUSTSEC-2024-0336", reason = "Only use of rustls@v0.20.9 is in futures-rustls which does not use the effected code" },
   { id = "RUSTSEC-2024-0370", reason = "proc-macro-error is used by a few dependencies, and while unmaintained, is not currently an issue." },
-  { id = "RUSTSEC-2024-0388", reason = "This is an inner dependency that would get updated when cumulus-primitives-core v0.7.0 is updated to a newer version"},
   { id = "RUSTSEC-2024-0384", reason = "This is an inner dependency that would get updated when libp2p v0.51.4 and wasm-timer v0.2.5 are updated to a newer version"},
-  { id = "RUSTSEC-2024-0421", reason = "Vulnerable code is not used." },
-  { id = "RUSTSEC-2025-0010", reason = "Unmaintained sub-dependency: ring, pending updates to those dependencies."},
-  { id = "RUSTSEC-2025-0009", reason = "Unmaintained sub-dependency: ring, pending updates to dependencies."},
   { id = "RUSTSEC-2024-0436", reason = "Unmaintained sub-dependency: paste, pending updates to dependencies."},
   { id = "RUSTSEC-2025-0017", reason = "Renamed sub-dependency: trust-dns-proto -> hickory-proto, pending updates to dependencies."},
   { id = "RUSTSEC-2023-0091", reason = "'Users prior to 10.0.0 are unaffected', according to the advisory; we are on 8.0.1"},
@@ -92,6 +87,7 @@ ignore = [
 # More documentation for the licenses section can be found here:
 # https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
 [licenses]
+unused-allowed-license = "allow"
 # List of explicitly allowed licenses
 # See https://spdx.org/licenses/ for list of possible licenses
 # [possible values: any SPDX 3.11 short identifier (+ optional exception)].
@@ -109,7 +105,7 @@ allow = [
   "OpenSSL",
   "Zlib",
   "Unicode-3.0",
-  "CDLA-Permissive-2.0"
+  "CDLA-Permissive-2.0",
 ]
 # The confidence threshold for detecting a license from license text.
 # The higher the value, the more closely the license text must be to the
@@ -247,7 +243,7 @@ unknown-git = "warn"
 # if not specified. If it is specified but empty, no registries are allowed.
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 # List of URLs for allowed Git repositories
-allow-git = ["https://github.com/multiformats/rust-cid"]
+allow-git = []
 
 [sources.allow-org]
 # 1 or more github.com organizations to allow git sources for
