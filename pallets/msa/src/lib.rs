@@ -1948,19 +1948,14 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// - Signed payload matches MSA ID and signature validation
 	/// - Signature is not a duplicate
 	/// - MSA has tokens available to be withdrawn
-	/// - Receiver account has/will have enough balance to avoid being reaped
 	///
 	/// # Errors
 	///
-	/// * [`Error::NotKeyOwner`] - the transaction signer origin is not the owner of the public key contained in the provided `authorization_payload`
-	/// * [`Error::MsaOwnershipInvalidSignature`] - `msa_owner_public_key` is not a valid signer of the provided `authorization_payload`.
-	/// * [`Error::NoKeyExists`] - the public key supplied in `msa_owner_public_key` is not a registered control key of any MSA.
-	/// * [`Error::NotMsaOwner`] - the MSA ID in `authorization_payload` does not match the MSA ID of the `msa_owner_public_key`.
-	/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` block number set in `AddKeyData`.
-	/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
-	/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
-	/// * [`Error::InsufficientBalanceToWithdraw`] - the MSA account has not balance to withdraw
-	/// * [`Error::InsufficientBalanceToFundDestination`] - the transfer would result in an account that would be reaped due to existential balance requirements
+	/// `[ValidityError::NotKeyOwner]` - transaction origin does not match the authorized public key
+	/// `[ValidityError::MsaOwnershipInvalidSignature]` - payload verification failed (bad signature, duplicate signature, invalid payload, payload/signature mismatch)
+	/// `[ValidityError::IneligibleOrigin]` - transaction origin is an MSA control key
+	/// `[ValidityError::InsufficientBalanceToWithdraw]` - MSA balance is zero
+	/// `[ValidityError::InvalidMsaKey]` - signingg MSA control key does not match MSA ID in payload
 	///
 	pub fn validate_msa_token_withdrawal(
 		receiver_account_id: &T::AccountId,
