@@ -399,6 +399,9 @@ pub mod pallet {
 		/// Attempted to add a new signature to a corrupt signature registry
 		SignatureRegistryCorrupted,
 
+		/// Account has no/insufficient balance to withdraw
+		InsufficientBalanceToWithdraw,
+
 		/// Fund transfer error
 		UnexpectedTokenTransferError,
 	}
@@ -935,15 +938,11 @@ pub mod pallet {
 		///
 		/// # Errors
 		///
-		/// * [`Error::NotKeyOwner`] - the transaction signer origin is not the owner of the public key contained in the provided `authorization_payload`
-		/// * [`Error::MsaOwnershipInvalidSignature`] - `msa_owner_public_key` is not a valid signer of the provided `authorization_payload`.
-		/// * [`Error::NoKeyExists`] - the public key supplied in `msa_owner_public_key` is not a registered control key of any MSA.
-		/// * [`Error::NotMsaOwner`] - the MSA ID in `authorization_payload` does not match the MSA ID of the `msa_owner_public_key`.
 		/// * [`Error::ProofHasExpired`] - the current block is less than the `expired` block number set in `AddKeyData`.
 		/// * [`Error::ProofNotYetValid`] - the `expired` block number set in `AddKeyData` is greater than the current block number plus mortality_block_limit().
 		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used.
 		/// * [`Error::InsufficientBalanceToWithdraw`] - the MSA account has not balance to withdraw
-		/// * [`Error::InsufficientBalanceToFundDestination`] - the transfer would result in an account that would be reaped due to existential balance requirements
+		/// * [`Error::UnexpectedTokenTransferError`] - the token transfer failed
 		///
 		#[pallet::call_index(14)]
 		#[pallet::weight((T::WeightInfo::withdraw_tokens(), DispatchClass::Normal, Pays::No))]
@@ -954,6 +953,7 @@ pub mod pallet {
 			authorization_payload: AuthorizedKeyData<T>,
 		) -> DispatchResult {
 			let public_key = ensure_signed(origin)?;
+
 			Self::register_signature(&msa_owner_proof, authorization_payload.expiration)?;
 
 			let msa_id = authorization_payload.msa_id;
@@ -964,12 +964,16 @@ pub mod pallet {
 			// - Convert to AccountId
 			let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
 			let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
-			// - Check that the MSA has a balance to withdraw
+
+			// Get balance to transfer
 			let msa_balance = T::Currency::reducible_balance(
 				&msa_account_id,
 				Preservation::Expendable,
 				Fortitude::Polite,
 			);
+			ensure!(msa_balance > Zero::zero(), Error::<T>::InsufficientBalanceToWithdraw);
+
+			// Transfer balance to the caller
 			let result = <T as pallet::Config>::Currency::transfer(
 				&msa_account_id,
 				&public_key,
@@ -977,6 +981,7 @@ pub mod pallet {
 				Preservation::Expendable,
 			);
 			ensure!(result.is_ok(), Error::<T>::UnexpectedTokenTransferError);
+
 			Ok(())
 		}
 	}
