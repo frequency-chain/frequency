@@ -33,7 +33,7 @@ fn it_succeeds_when_balance_is_sufficient() {
 			None,
 		);
 
-		let transfer_amount = 10_000_000;
+		let transfer_amount: u64 = 10_000_000;
 
 		// Fund MSA
 		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);

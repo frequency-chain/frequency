@@ -1892,6 +1892,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 	/// Validates that a MSA being retired exists, does not belong to a registered provider,
 	/// that `account_id` is the only access key associated with the MSA,
+	/// does not have a token balance associated with it,
 	/// and that there are no delegations to providers.
 	/// Returns a `ValidTransaction` or wrapped [`ValidityError]
 	/// # Arguments:
@@ -1902,6 +1903,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// * [`ValidityError::InvalidRegisteredProviderCannotBeRetired`]
 	/// * [`ValidityError::InvalidMoreThanOneKeyExists`]
 	/// * [`ValidityError::InvalidNonZeroProviderDelegations`]
+	/// * [`ValidityError::InvalidMsaHoldingTokenCannotBeRetired`]
 	///
 	pub fn ensure_msa_can_retire(account_id: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "MSARetirement";
@@ -1938,6 +1940,24 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		ensure!(
 			!has_active_delegations,
 			InvalidTransaction::Custom(ValidityError::InvalidNonZeroProviderDelegations as u8)
+		);
+
+		// - Get account address for MSA
+		let msa_address = Pallet::<T>::msa_id_to_eth_address(msa_id);
+
+		// - Convert to AccountId
+		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
+		let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
+
+		// - Check that the MSA does not have a token balance
+		let msa_balance = T::Currency::reducible_balance(
+			&msa_account_id,
+			Preservation::Expendable,
+			Fortitude::Polite,
+		);
+		ensure!(
+			msa_balance == Zero::zero(),
+			InvalidTransaction::Custom(ValidityError::InvalidMsaHoldingTokenCannotBeRetired as u8)
 		);
 
 		ValidTransaction::with_tag_prefix(TAG_PREFIX).and_provides(account_id).build()
@@ -2041,6 +2061,8 @@ pub enum ValidityError {
 	InsufficientBalanceToWithdraw,
 	/// Origin is ineleligible for the current transaction
 	IneligibleOrigin,
+	/// Cannot retire an MSA that has a token balance
+	InvalidMsaHoldingTokenCannotBeRetired,
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
