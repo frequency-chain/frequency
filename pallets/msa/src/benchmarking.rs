@@ -4,6 +4,7 @@ use super::*;
 use crate::types::EMPTY_FUNCTION;
 #[allow(unused)]
 use crate::Pallet as Msa;
+use common_primitives::utils::wrap_binary_data;
 use frame_benchmarking::{account, v2::*};
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -368,7 +369,6 @@ mod benchmarks {
 
 		Ok(())
 	}
-
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),

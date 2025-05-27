@@ -15,7 +15,7 @@ import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
 import autoNonce, { AutoNonce } from './autoNonce';
 import { connect, connectPromise } from './apiConnection';
-import { DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
+import { BlockNumber, DispatchError, Event, Index, SignedBlock } from '@polkadot/types/interfaces';
 import { IsEvent } from '@polkadot/types/metadata/decorate/types';
 import {
   HandleResponse,
@@ -785,6 +785,7 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.capacity.EpochLengthUpdated
     );
   }
+
   public static stake(keys: KeyringPair, target: any, amount: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.capacity.stake(target, amount),
@@ -927,5 +928,15 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
+  }
+
+  public static getCapacityFee(chainEvents: EventMap): bigint {
+    if (
+      chainEvents['capacity.CapacityWithdrawn'] &&
+      ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
+    ) {
+      return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
+    }
+    return 0n;
   }
 }
