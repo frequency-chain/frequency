@@ -1,4 +1,4 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
+use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData};
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
@@ -378,6 +378,27 @@ pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 		Vec::from(name)
 	));
 	(provider_msa_id, provider_account)
+}
+
+pub fn generate_and_sign_authorized_key_payload(
+	msa_id: MessageSourceId,
+	msa_owner_keys: &sr25519::Pair,
+	authorized_public_key: &sr25519::Pair,
+	expiration: Option<BlockNumber>,
+) -> (AuthorizedKeyData<Test>, Vec<u8>, MultiSignature) {
+	let payload = AuthorizedKeyData::<Test> {
+		msa_id,
+		expiration: match expiration {
+			Some(block_number) => block_number,
+			None => 10,
+		},
+		authorized_public_key: authorized_public_key.public().into(),
+	};
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
+
+	(payload, encoded_payload, signature)
 }
 
 pub fn generate_test_signature() -> MultiSignature {
