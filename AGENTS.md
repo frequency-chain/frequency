@@ -38,11 +38,17 @@
 
 ## Testing Instructions
 - Find the CI plan in the .github directory. `verify-pr-commit.yml` is the main CI plan that runs on every PR.
-- Run the unit test suite using the provided commands.
+- First run `make check` to ensure that cargo is installed and the project is set up correctly.
+- Run the build to ensure that the project compiles without errors.
+    ```bash
+    make build-no-relay
+    ```
+- Rust builds can take up to 20 minutes, so be patient.
+- Run the unit test suite using the provided commands. Network access is not required for these tests.
     ```bash
     make test
     ```
-- Run the e2e test suite using the provided commands.
+- Run the e2e test suite using the provided commands. Network access is not required for these tests, only that you have a local node running.
     ```bash
     make e2e-tests
     ```
