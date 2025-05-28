@@ -178,7 +178,7 @@ describe('MSAs Holding Tokens', function () {
     });
 
     it('should fail if origin is not address contained in the payload (NotKeyOwner)', async function () {
-      const badPayload = { ...payload, authorizedPublicKey: getUnifiedAddress(createKeys()) }; // Invalid MSA ID
+      const badPayload = { ...payload, authorizedPublicKey: getUnifiedPublicKey(createKeys()) }; // Invalid MSA ID
       ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, payload));
       const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, badPayload);
       await assert.rejects(op.signAndSend('current'), {
