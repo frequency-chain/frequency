@@ -7,6 +7,7 @@ import {
   createProviderKeysAndId,
   DOLLARS,
   createAndFundKeypairs,
+  generateAuthorizedKeyPayload,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -100,14 +101,29 @@ describe('MSA Key management: delete keys and retire', function () {
   });
 
   it('should fail to retire MSA if MSA holds tokens', async function () {
+    // Make sure we are finalized removing before trying to retire
+    await ExtrinsicHelper.waitForFinalization();
+
     const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
     await assert.rejects(retireMsaOp.signAndSend('current'), {
       name: 'RpcError',
-      message: /Custom error: 2/,
+      message: /Custom error: 11/,
     });
   });
 
-  it('should allow retiring MSA after additional keys have been deleted', async function () {
+  it('should allow retiring MSA after additional keys have been deleted and tokens withdran', async function () {
+    // Withdraw tokens from MSA account
+    const receiverKeys = createKeys('receiver keys');
+    const payload = await generateAuthorizedKeyPayload({
+      msaId,
+      authorizedPublicKey: getUnifiedPublicKey(receiverKeys),
+    });
+    const payloadToSign = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+    const ownerSig = signPayloadSr25519(keys, payloadToSign);
+    const drainMsaOp = ExtrinsicHelper.withdrawTokens(receiverKeys, keys, ownerSig, payload);
+    const { target: withdrawTransferEvent } = await drainMsaOp.signAndSend();
+    assert.notEqual(withdrawTransferEvent, undefined, 'should have withdrawn tokens from MSA account');
+
     const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
 
     // Make sure we are finalized removing before trying to retire
