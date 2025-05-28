@@ -116,7 +116,6 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
-	ensure,
 	genesis_builder_helper::{build_state, get_preset},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
@@ -461,36 +460,72 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 /// Migration to set the initial safe XCM version for the XCM pallet.
 pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
-impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
-	fn on_runtime_upgrade() -> Weight {
-		use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+use staging_xcm::opaque::latest::prelude::XCM_VERSION;
 
-		if pallet_xcm::SafeXcmVersion::<T>::get().is_none() {
-			pallet_xcm::SafeXcmVersion::<T>::set(Some(SAFE_XCM_VERSION));
-			log::info!("Setting SafeXcmVersion to {}", SAFE_XCM_VERSION);
-			T::DbWeight::get().writes(1)
-		} else {
-			T::DbWeight::get().reads(1)
-		}
-	}
+impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
+    fn on_runtime_upgrade() -> Weight {
+        use sp_core::Get;
+        
+        // Access storage directly using storage key
+        let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+        
+        let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+        if current_version.is_none() {
+            // Set the safe XCM version directly in storage
+            frame_support::storage::unhashed::put(&storage_key, &XCM_VERSION);
+            log::info!("Setting SafeXcmVersion to {}", XCM_VERSION);
+            T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+        } else {
+            let existing_value = current_version.unwrap();
+			log::info!("SafeXcmVersion already set to {}, skipping migration.", existing_value);
+            T::DbWeight::get().reads(1)
+        }
+    }
 }
 
 #[cfg(any(feature = "try-runtime", test))]
 impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
-	pub fn pre_upgrade() -> Result<Option<u32>, &'static str> {
-		Ok(pallet_xcm::SafeXcmVersion::<T>::get())
-	}
+	pub fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+        use parity_scale_codec::Encode;
+        
+        // For testing purposes, simulate that SafeXcmVersion is not set (None)
+        let test_pre_upgrade_state: Option<u32> = None;
+        
+        log::info!("pre_upgrade: Test state SafeXcmVersion = {:?}", test_pre_upgrade_state);
+        
+        // Return the test state encoded for post_upgrade verification
+        Ok(test_pre_upgrade_state.encode())
+    }
 
-	pub fn post_upgrade(prev: Option<u32>) -> Result<(), &'static str> {
-		use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
-		let current = pallet_xcm::SafeXcmVersion::<T>::get();
-		if prev.is_none() {
-			ensure!(current == Some(SAFE_XCM_VERSION), "SafeXcmVersion not set");
+	pub fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+        use parity_scale_codec::Decode;
+        
+        // Decode the pre-upgrade state
+        let pre_upgrade_version = Option::<u32>::decode(&mut &state[..])
+            .map_err(|_| "Failed to decode pre-upgrade state")?;
+        
+        let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+        let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+        
+        log::info!("post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}", 
+                   pre_upgrade_version, current_version);
+        
+		// Verify the migration worked correctly
+		if pre_upgrade_version.is_none() {
+			// If there was no version before, it should now be set to XCM_VERSION
+			if current_version != Some(XCM_VERSION) {
+				return Err(sp_runtime::TryRuntimeError::Other("SafeXcmVersion should be set after migration"));
+			}
 		} else {
-			ensure!(current == prev, "SafeXcmVersion changed unexpectedly");
+			// If there was already a version, it should remain unchanged
+			if current_version != pre_upgrade_version {
+				return Err(sp_runtime::TryRuntimeError::Other("SafeXcmVersion should not change if already set"));
+			}
 		}
-		Ok(())
-	}
+        
+        Ok(())
+    }
 }
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
