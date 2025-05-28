@@ -337,6 +337,25 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => {
+				let new_key = add_key_payload.clone().new_public_key;
+				Some((msa_owner_public_key.clone(), new_key, add_key_payload.msa_id))
+			},
+			_ => None,
+		}
+	}
+}
+
 /// The TransactionExtension to the basic transaction logic.
 #[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
@@ -435,7 +454,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 162,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -449,7 +468,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 162,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1083,6 +1102,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet
