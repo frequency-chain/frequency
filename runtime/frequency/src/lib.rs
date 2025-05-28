@@ -471,14 +471,13 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
         
         let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
-        if current_version.is_none() {
+        if current_version != Some(XCM_VERSION) {
             // Set the safe XCM version directly in storage
             frame_support::storage::unhashed::put(&storage_key, &XCM_VERSION);
             log::info!("Setting SafeXcmVersion to {}", XCM_VERSION);
             T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
         } else {
-            let existing_value = current_version.unwrap();
-			log::info!("SafeXcmVersion already set to {}, skipping migration.", existing_value);
+			log::info!("SafeXcmVersion already set to {}, skipping migration.", current_version.unwrap());
             T::DbWeight::get().reads(1)
         }
     }
