@@ -34,6 +34,9 @@ use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
 #[cfg(feature = "frequency-bridging")]
 mod xcm; // Tests are contained the xcm directory
 
+#[cfg(test)]
+mod tests;
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 
@@ -113,6 +116,7 @@ pub use common_runtime::{
 use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
+	ensure,
 	genesis_builder_helper::{build_state, get_preset},
 	pallet_prelude::DispatchResultWithPostInfo,
 	parameter_types,
@@ -432,7 +436,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -451,6 +455,41 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		}
 
 		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+/// Migration to set the initial safe XCM version for the XCM pallet.
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
+
+impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
+	fn on_runtime_upgrade() -> Weight {
+		use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+
+		if pallet_xcm::SafeXcmVersion::<T>::get().is_none() {
+			pallet_xcm::SafeXcmVersion::<T>::set(Some(SAFE_XCM_VERSION));
+			log::info!("Setting SafeXcmVersion to {}", SAFE_XCM_VERSION);
+			T::DbWeight::get().writes(1)
+		} else {
+			T::DbWeight::get().reads(1)
+		}
+	}
+}
+
+#[cfg(any(feature = "try-runtime", test))]
+impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
+	pub fn pre_upgrade() -> Result<Option<u32>, &'static str> {
+		Ok(pallet_xcm::SafeXcmVersion::<T>::get())
+	}
+
+	pub fn post_upgrade(prev: Option<u32>) -> Result<(), &'static str> {
+		use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+		let current = pallet_xcm::SafeXcmVersion::<T>::get();
+		if prev.is_none() {
+			ensure!(current == Some(SAFE_XCM_VERSION), "SafeXcmVersion not set");
+		} else {
+			ensure!(current == prev, "SafeXcmVersion changed unexpectedly");
+		}
+		Ok(())
 	}
 }
 
@@ -489,7 +528,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 160,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -503,7 +542,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 160,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
