@@ -34,8 +34,13 @@ describe('MSA Key management: delete keys and retire', function () {
     msaId = target!.data.msaId;
 
     // Send tokens to the MSA account
-    ({ accountId: msaAccountId } = await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId));
-    const fundingOp = ExtrinsicHelper.transferFunds(fundingSource, ethereumAddressToKeyringPair(msaAccountId), 1n * DOLLARS);
+    ({ accountId: msaAccountId } =
+      await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId));
+    const fundingOp = ExtrinsicHelper.transferFunds(
+      fundingSource,
+      ethereumAddressToKeyringPair(msaAccountId),
+      1n * DOLLARS
+    );
     const { target: fundingEvent } = await fundingOp.signAndSend();
     assert.notEqual(fundingEvent, undefined, 'should have funded MSA account');
 
