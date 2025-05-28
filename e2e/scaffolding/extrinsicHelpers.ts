@@ -943,11 +943,12 @@ export class ExtrinsicHelper {
     keys: KeyringPair,
     ownerKeys: KeyringPair,
     ownerSignature: MultiSignatureType,
-    payload: AddKeyData
+    payload: AuthorizedKeyData
   ) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.withdrawTokens(getUnifiedPublicKey(ownerKeys), ownerSignature, payload),
-      keys
+      keys,
+      ExtrinsicHelper.api.events.balances.Transfer
     );
   }
 
