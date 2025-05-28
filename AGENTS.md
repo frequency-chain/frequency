@@ -44,7 +44,7 @@
     ```
 - Run the e2e test suite using the provided commands.
     ```bash
-    make e2e-test
+    make e2e-tests
     ```
 - Run the linter to check for code style issues.
     ```bash
