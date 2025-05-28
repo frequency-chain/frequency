@@ -794,6 +794,7 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.capacity.EpochLengthUpdated
     );
   }
+
   public static stake(keys: KeyringPair, target: any, amount: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.capacity.stake(target, amount),
@@ -948,5 +949,15 @@ export class ExtrinsicHelper {
       () => ExtrinsicHelper.api.tx.msa.withdrawTokens(getUnifiedPublicKey(ownerKeys), ownerSignature, payload),
       keys
     );
+  }
+
+  public static getCapacityFee(chainEvents: EventMap): bigint {
+    if (
+      chainEvents['capacity.CapacityWithdrawn'] &&
+      ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
+    ) {
+      return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
+    }
+    return 0n;
   }
 }

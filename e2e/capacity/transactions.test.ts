@@ -53,16 +53,6 @@ describe('Capacity Transactions', function () {
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
       });
 
-      function getCapacityFee(chainEvents: EventMap): bigint {
-        if (
-          chainEvents['capacity.CapacityWithdrawn'] &&
-          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
-        ) {
-          return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
-        }
-        return 0n;
-      }
-
       describe('when capacity eligible transaction is from the msa pallet', function () {
         let capacityKeys: KeyringPair;
         let capacityProvider: u64;
@@ -142,7 +132,7 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           assertEvent(eventMap, 'msa.DelegationGranted');
 
-          const fee = getCapacityFee(eventMap);
+          const fee = ExtrinsicHelper.getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / getTokenPerCapacity() - fee;
 

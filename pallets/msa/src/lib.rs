@@ -52,12 +52,9 @@ use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmar
 
 use common_primitives::{
 	capacity::TargetValidator,
-	msa::{
-		Delegation, DelegationValidator, DelegatorId, MsaLookup, MsaValidator, ProviderId,
-		ProviderLookup, ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator,
-		SignatureRegistryPointer, H160,
-	},
-	node::ProposalProvider,
+	handles::HandleProvider,
+	msa::*,
+	node::{EIP712Encode, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
@@ -77,10 +74,6 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
-use common_primitives::msa::DelegationResponse;
-pub use common_primitives::{
-	handles::HandleProvider, msa::MessageSourceId, node::EIP712Encode, utils::wrap_binary_data,
-};
 pub use pallet::*;
 pub use types::{
 	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, EMPTY_FUNCTION,
@@ -1785,6 +1778,28 @@ impl<T: Config> SchemaGrantValidator<BlockNumberFor<T>> for Pallet<T> {
 		);
 
 		Ok(())
+	}
+}
+
+impl<T: Config> MsaKeyProvider for Pallet<T> {
+	type AccountId = T::AccountId;
+	// Returns true if ALL of the following are true:
+	// - The new key is Ethereum-compatible
+	// - Msa exists
+	// - The stored msa_id for the key == `msa_id`
+	// - It has only one key associated with it
+	fn key_eligible_for_subsidized_addition(
+		old_key: Self::AccountId,
+		new_key: Self::AccountId,
+		msa_id: MessageSourceId,
+	) -> bool {
+		let new_address32 = T::ConvertIntoAccountId32::convert((new_key).clone());
+		if EthereumAddressMapper::is_ethereum_address(&new_address32) {
+			if let Some(stored_msa_id) = Self::get_msa_id(&old_key) {
+				return stored_msa_id == msa_id && PublicKeyCountForMsaId::<T>::get(msa_id).eq(&1u8);
+			}
+		}
+		false
 	}
 }
 
