@@ -8,7 +8,7 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^15.10.2",
-    "@polkadot/keyring": "^13.4.4"
+    "@polkadot/api": "^16.0.1",
+    "@polkadot/keyring": "^13.5.1"
   }
 }
