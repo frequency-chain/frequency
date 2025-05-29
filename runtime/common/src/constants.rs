@@ -404,8 +404,8 @@ pub type CapacityRewardEraLength =
 // --- XCM Version ---
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm_version {
-	use staging_xcm::prelude::XCM_VERSION;
-
 	/// The default XCM version considered safe for the network.
-	pub const SAFE_XCM_VERSION: u32 = XCM_VERSION;
+	/// This is not the latest version, but the one that is considered stable and safe to use.
+	/// It is used to ensure that the network can handle XCM messages without issues.
+	pub const SAFE_XCM_VERSION: u32 = 4;
 }
