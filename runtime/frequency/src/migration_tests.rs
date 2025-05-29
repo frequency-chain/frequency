@@ -1,7 +1,6 @@
 use super::*;
 use crate::xcm::tests::mock::{new_test_ext_with_balances, TestRuntime};
 use parity_scale_codec::Decode;
-use staging_xcm::opaque::latest::prelude::XCM_VERSION;
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
 
 #[test]
@@ -25,7 +24,7 @@ fn post_upgrade_sets_safe_version() {
 		SetSafeXcmVersion::<TestRuntime>::post_upgrade(pre).unwrap();
 		assert_eq!(
 			frame_support::storage::unhashed::get::<u32>(&storage_key).unwrap(),
-			XCM_VERSION
+			SAFE_XCM_VERSION
 		);
 	});
 }
