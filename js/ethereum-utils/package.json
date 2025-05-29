@@ -27,7 +27,7 @@
   "author": "frequency-chain",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^16.0.1",
+    "@polkadot/api": "^16.1.1",
     "@polkadot/util": "13.5.1",
     "ethers": "^6.14.3"
   },
