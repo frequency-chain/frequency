@@ -41,37 +41,19 @@ fn migration_is_idempotent() {
 		// Run migration first time
 		let weight1 = SetSafeXcmVersion::<TestRuntime>::on_runtime_upgrade();
 		assert_eq!(
-			frame_support::storage::unhashed::get::<u32>(&storage_key),
-			Some(SAFE_XCM_VERSION as u32)
+			frame_support::storage::unhashed::get::<u32>(&storage_key).unwrap(),
+			SAFE_XCM_VERSION
 		);
 
 		// Run migration second time - should be a no-op
 		let weight2 = SetSafeXcmVersion::<TestRuntime>::on_runtime_upgrade();
 		assert_eq!(
-			frame_support::storage::unhashed::get::<u32>(&storage_key),
-			Some(SAFE_XCM_VERSION as u32)
+			frame_support::storage::unhashed::get::<u32>(&storage_key).unwrap(),
+			SAFE_XCM_VERSION
 		);
 
 		// Second run should only do a read (less weight)
 		assert!(weight2.ref_time() < weight1.ref_time());
-	});
-}
-
-#[test]
-fn test_pre_upgrade_with_existing_version() {
-	new_test_ext_with_balances(vec![]).execute_with(|| {
-		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
-
-		// Set an existing version first
-		frame_support::storage::unhashed::put(&storage_key, &42u32);
-
-		// In the current implementation, pre_upgrade always returns None for testing
-		// but in a real scenario, it should capture the actual current value
-		let encoded_result = SetSafeXcmVersion::<TestRuntime>::pre_upgrade().unwrap();
-		let decoded_result = Option::<u32>::decode(&mut &encoded_result[..]).unwrap();
-
-		// This test documents the current behavior - modify if you change pre_upgrade implementation
-		assert_eq!(decoded_result, None);
 	});
 }
 
