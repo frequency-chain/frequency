@@ -34,6 +34,9 @@ use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
 #[cfg(feature = "frequency-bridging")]
 mod xcm; // Tests are contained the xcm directory
 
+#[cfg(test)]
+mod migration_tests;
+
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
 
@@ -432,7 +435,7 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -451,6 +454,100 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		}
 
 		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+/// Migration to set the initial safe XCM version for the XCM pallet.
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
+
+use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+
+impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
+	fn on_runtime_upgrade() -> Weight {
+		use sp_core::Get;
+
+		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!(
+					"SafeXcmVersion already set to {}, skipping migration.",
+					version
+				);
+				T::DbWeight::get().reads(1)
+			},
+			Some(version) => {
+				log::info!(
+					"SafeXcmVersion currently set to {}, updating to {}",
+					version,
+					SAFE_XCM_VERSION
+				);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+			None => {
+				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+		}
+	}
+}
+
+#[cfg(any(feature = "try-runtime", test))]
+impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
+	pub fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Encode;
+
+		// For testing purposes, simulate that SafeXcmVersion is not set (None)
+		let test_pre_upgrade_state: Option<u32> = None;
+
+		log::info!("pre_upgrade: Test state SafeXcmVersion = {:?}", test_pre_upgrade_state);
+
+		// Return the test state encoded for post_upgrade verification
+		Ok(test_pre_upgrade_state.encode())
+	}
+
+	pub fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Decode;
+
+		// Decode the pre-upgrade state
+		let pre_upgrade_version = Option::<u32>::decode(&mut &state[..])
+			.map_err(|_| "Failed to decode pre-upgrade state")?;
+
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+
+		log::info!(
+			"post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}",
+			pre_upgrade_version,
+			current_version
+		);
+
+		// Verify the migration worked correctly
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!("post_upgrade: Migration successful - SafeXcmVersion correctly set to {}", version);
+			},
+			Some(version) => {
+				log::error!("post_upgrade: Migration failed - SafeXcmVersion was set to {}, but expected {}", version, SAFE_XCM_VERSION);
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion was set to incorrect version after migration"
+				));
+			},
+			None => {
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion should be set after migration but found None"
+				));
+			},
+		}
+
+		Ok(())
 	}
 }
 
@@ -489,7 +586,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 160,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -503,7 +600,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 160,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
