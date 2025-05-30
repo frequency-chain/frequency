@@ -12,7 +12,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const fundingSource = getFundingSource(import.meta.url);
 
