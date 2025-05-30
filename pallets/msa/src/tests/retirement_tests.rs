@@ -1,4 +1,6 @@
-use frame_support::{assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction};
+use frame_support::{
+	assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction, traits::Currency,
+};
 
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
@@ -7,7 +9,7 @@ use sp_runtime::MultiSignature;
 use crate::{
 	tests::mock::*,
 	types::{AddKeyData, EMPTY_FUNCTION},
-	CheckFreeExtrinsicUse, Error, Event, PublicKeyCountForMsaId, ValidityError,
+	CheckFreeExtrinsicUse, Config, Error, Event, PublicKeyCountForMsaId, ValidityError,
 };
 
 use crate::tests::other_tests::{
@@ -16,6 +18,7 @@ use crate::tests::other_tests::{
 use common_primitives::{
 	handles::ClaimHandlePayload,
 	msa::{DelegatorId, ProviderId},
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
 	utils::wrap_binary_data,
 };
 
@@ -212,4 +215,29 @@ fn test_ensure_msa_cannot_retire_if_handle_exists() {
 			InvalidTransaction::Custom(ValidityError::HandleNotRetired as u8)
 		);
 	})
+}
+
+#[test]
+fn test_ensure_msa_can_retire_fails_if_msa_holds_token_balance() {
+	new_test_ext().execute_with(|| {
+		let msa_id = 1u64;
+		let (test_account_key_pair, _) = sr25519::Pair::generate();
+		let test_account = AccountId32::new(test_account_key_pair.public().into());
+
+		// Add an account to the MSA
+		assert_ok!(Msa::add_key(msa_id, &test_account, EMPTY_FUNCTION));
+
+		// Fund the MSA with some tokens
+		let transfer_amount: u64 = 10_000_000;
+		let msa_address = Msa::msa_id_to_eth_address(msa_id);
+		let bytes = EthereumAddressMapper::to_bytes32(&msa_address.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+
+		// Retire the MSA
+		assert_noop!(
+			CheckFreeExtrinsicUse::<Test>::ensure_msa_can_retire(&test_account),
+			InvalidTransaction::Custom(ValidityError::InvalidMsaHoldingTokenCannotBeRetired as u8)
+		);
+	});
 }

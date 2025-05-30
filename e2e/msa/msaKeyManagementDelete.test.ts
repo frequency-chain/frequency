@@ -7,12 +7,15 @@ import {
   createProviderKeysAndId,
   DOLLARS,
   createAndFundKeypairs,
+  generateAuthorizedKeyPayload,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { H160 } from '@polkadot/types/interfaces';
+import { ethereumAddressToKeyringPair } from '@frequency-chain/ethereum-utils';
 
 const fundingSource = getFundingSource(import.meta.url);
 
@@ -20,6 +23,7 @@ describe('MSA Key management: delete keys and retire', function () {
   let keys: KeyringPair;
   let secondaryKey: KeyringPair;
   let msaId: u64;
+  let msaAccountId: H160;
 
   before(async function () {
     // Generates a msa with two control keys
@@ -29,6 +33,17 @@ describe('MSA Key management: delete keys and retire', function () {
     const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
     assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
     msaId = target!.data.msaId;
+
+    // Send tokens to the MSA account
+    ({ accountId: msaAccountId } =
+      await ExtrinsicHelper.apiPromise.call.msaRuntimeApi.getEthereumAddressForMsaId(msaId));
+    const fundingOp = ExtrinsicHelper.transferFunds(
+      fundingSource,
+      ethereumAddressToKeyringPair(msaAccountId),
+      1n * DOLLARS
+    );
+    const { target: fundingEvent } = await fundingOp.signAndSend();
+    assert.notEqual(fundingEvent, undefined, 'should have funded MSA account');
 
     const payload = await generateAddKeyPayload({
       msaId,
@@ -85,7 +100,30 @@ describe('MSA Key management: delete keys and retire', function () {
     assert.notEqual(event, undefined, 'should have returned PublicKeyDeleted event');
   });
 
-  it('should allow retiring MSA after additional keys have been deleted', async function () {
+  it('should fail to retire MSA if MSA holds tokens', async function () {
+    // Make sure we are finalized removing before trying to retire
+    await ExtrinsicHelper.waitForFinalization();
+
+    const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
+    await assert.rejects(retireMsaOp.signAndSend('current'), {
+      name: 'RpcError',
+      message: /Custom error: 11/,
+    });
+  });
+
+  it('should allow retiring MSA after additional keys have been deleted and tokens withdran', async function () {
+    // Withdraw tokens from MSA account
+    const receiverKeys = createKeys('receiver keys');
+    const payload = await generateAuthorizedKeyPayload({
+      msaId,
+      authorizedPublicKey: getUnifiedPublicKey(receiverKeys),
+    });
+    const payloadToSign = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+    const ownerSig = signPayloadSr25519(keys, payloadToSign);
+    const drainMsaOp = ExtrinsicHelper.withdrawTokens(receiverKeys, keys, ownerSig, payload);
+    const { target: withdrawTransferEvent } = await drainMsaOp.signAndSend();
+    assert.notEqual(withdrawTransferEvent, undefined, 'should have withdrawn tokens from MSA account');
+
     const retireMsaOp = ExtrinsicHelper.retireMsa(keys);
 
     // Make sure we are finalized removing before trying to retire
