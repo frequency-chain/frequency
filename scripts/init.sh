@@ -187,7 +187,6 @@ start-bridging-westend-local)
   fi
 
   ./target/debug/frequency \
-    --dev \
     --state-pruning archive \
     -lbasic-authorship=debug \
     -ltxpool=debug \
