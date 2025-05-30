@@ -1,3 +1,4 @@
+#![cfg(all(feature = "frequency-bridging", feature = "try-runtime"))]
 use super::*;
 use crate::xcm::tests::mock::{new_test_ext_with_balances, TestRuntime};
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;

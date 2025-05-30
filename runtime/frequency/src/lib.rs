@@ -429,6 +429,7 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
+#[cfg(feature = "frequency-bridging")]
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,
@@ -436,6 +437,16 @@ pub type Executive = frame_executive::Executive<
 	Runtime,
 	AllPalletsWithSystem,
 	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
+>;
+
+#[cfg(not(feature = "frequency-bridging"))]
+pub type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
+	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
@@ -458,10 +469,13 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 }
 
 /// Migration to set the initial safe XCM version for the XCM pallet.
+#[cfg(feature = "frequency-bridging")]
 pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
+#[cfg(feature = "frequency-bridging")]
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
 
+#[cfg(feature = "frequency-bridging")]
 impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 	fn on_runtime_upgrade() -> Weight {
 		use sp_core::Get;
@@ -496,7 +510,7 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 	}
 }
 
-#[cfg(any(feature = "try-runtime", test))]
+#[cfg(all(feature = "frequency-bridging", feature = "try-runtime"))]
 impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
 	pub fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use parity_scale_codec::Encode;
@@ -550,6 +564,9 @@ impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
 		Ok(())
 	}
 }
+
+#[cfg(not(feature = "frequency-bridging"))]
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
