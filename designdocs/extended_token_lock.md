@@ -1,121 +1,153 @@
-# 📄 Token Locking with Delayed Thaw and Boosting Rewards
+# 📄 Token Locking for Extended Boosting Rewards
 
 ## 📚 Context and Scope
 
-This design document introduces a new `pallet-delayed_thaw` to the Frequency runtime. The primary focus is on defining a
-mechanism for locking tokens in a way that is both time-sensitive and event-driven, with immutably defined thawing
-behavior. While this design does not aim to change the Provider Boosting system itself, it leverages that mechanism to
-provide users with an incentive to commit tokens to long-term locks. The `capacity` pallet's Provider Boosting system
-serves as the vehicle for rewarding these users, with minimal changes required to accept staked tokens that are
-simultaneously locked.
+This design introduces a new boosting option in the Frequency runtime. It defines a mechanism for locking tokens that is both time-sensitive and event-driven, with immutable thawing behavior.
+
+While the core `Provider Boosting` system remains unchanged, this proposal builds upon it to incentivize long-term token commitments. Users who participate in extended locks will receive differentiated rewards via minimal extensions to the existing `capacity` pallet.
 
 ## ❗ Problem Statement
-Business needs dictate that users be able to lock tokens subject to a Precipitating Tokenomic Event (PTE),
-following which, tokens would unlock according to pre-set rules. The specifics of the locking/unlocking
-scheme is not supported by the current `time-release` pallet.
 
-Additionally:
-- While the announcement of the PTE would be a Governance action, the subsequent ability to unlock
-portions of the locked tokens over time should not be modifiable, even by Governance
-- Tokens must be locked prior to the PTE as a condition of the PTE; however, if Governance fails
-to act (or the PTE does not happen) by a certain date, there should be a failsafe whereby any
-tokens so locked would automatically be able to be unlocked.
-- Due to the exceesive lock period and delayed thaw, there should be some incentive mechanism for
-users to participate in the extended locking scheme.
-- 
+Business requirements call for a mechanism that allows users to:
+
+- Lock tokens before a **Precipitating Tokenomic Event (PTE)**.
+- Unlock tokens over time based on rules triggered by the PTE.
+- Maintain **immutability** of the unlock schedule—even governance cannot change it.
+- Reclaim tokens safely if the PTE never occurs (via a failsafe).
+- Earn **additional rewards** as compensation for committing to extended lock periods.
+
+### Additional Constraints
+
+- The PTE is a **Governance action**.
+- Users **must lock** tokens **prior** to the PTE.
+- If the PTE is not triggered by a set deadline, tokens should become fully unlockable (failsafe).
+- The system must **encourage participation** through enhanced rewards.
+
 ## 🎯 Goals and Non-Goals
 
-### Goals:
+### Goals
 
-- Introduce a new pallet, `pallet-delayed_thaw`, to manage event-driven and schedule-based token unlocking.
-- Enable tokens locked by `pallet-delayed_thaw` to participate in Provider Boosting.
-- Provide separate reward behavior for locked tokens using the `RewardsProvider` trait.
-- Ensure immutability of thawing logic while allowing governance to trigger the precipitating event.
+- Introduce **event-driven, schedule-based unlocking**.
+- Add **new boosting programs** using a new `StakingType`.
+- Provide an **immutable** thaw schedule post-PTE.
+- Maintain reward disbursement through a custom `RewardsProvider`.
+- Allow users to **opt-in** to extended boosting programs.
 
-### Non-Goals:
+### Non-Goals
 
-- This proposal does not change or refactor the general mechanics of Provider Boosting.
-- It does not provide a user interface or wallet-level integration.
-- It does not address consolidation or configuration of Provider Boosting parameters.
+- No UI or wallet-level implementation.
+- No parameter consolidation for Provider Boosting.
 
 ## ✨ Summary
 
 This document proposes an enhancement to the `Provider Boosting` feature in the `capacity` pallet and the introduction
-of a new `delayed_thaw` pallet to handle token locking logic. The objective is to support tokens locked with specific
+of a new `boosting program` types to handle creation of programs with new structures. The objective is to support tokens locked with specific
 thawing behavior, with such tokens participating in Provider Boosting at a distinct reward rate.
 
-## 📂 `pallet-delayed_thaw` - Token Locking Mechanism
+### Key Terms
 
-This new pallet manages the locking and gradual thawing of tokens. It does not handle reward logic but contributes to
-reward calculation via a custom implementation of the `RewardsProvider` trait.
+- **Extended Boosting Program**: New reward program with distinct rules.
+- **Precipitating Tokenomic Event (PTE)**: Governance-triggered event that starts unlock schedule.
+- **Pre-PTE Freeze**: Lock phase before PTE.
+- **Post-PTE Freeze**: Lock phase after PTE but before thawing starts.
+- **Extended Thaw**: Gradual unlock phase after freeze ends.
+- **Expired Program**: All tokens can be unlocked; normal rewards resume.
+
+### Extended Boosting Phases
+
+| Phase            | Can Join | Can Unstake | Unstake Amount | Stake Reward     |
+|------------------|----------|-------------|----------------|------------------|
+| Pre-PTE          | ✅       | 🚫          | 0%             | Extended Rewards |
+| Post-PTE         | ✅       | 🚫          | 0%             | Extended Rewards |
+| Extended Thaw    | 🚫       | ✅          | Formula-Based  | Extended Rewards |
+| Expired Program  | 🚫       | ✅          | 100%           | Default Rewards  |
+| Failsafe Trigger | 🚫       | ✅          | 100%           | Default Rewards  |
+
+## 📂 Capacity Pallet Changes
 
 ### Storage and Constants:
 
 ```rust
+pub enum StakingType {
+    MaximumCapacity,
+    ProviderBoost,
+    ProviderExtendedBoost, // NEW
+}
+
+pub const EXTENDED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: BlockNumber = <some constant>;
+
 #[pallet::storage]
 pub type PrecipitatingEventBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
-
-pub const FAILSAFE_UNLOCK_BLOCK_NUMBER: BlockNumber = < some constant>;
 ```
 
 - `PrecipitatingEventBlockNumber`: Set by governance to signal a precipitating event.
-- `FAILSAFE_UNLOCK_BLOCK_NUMBER`: Ensures unlock safety if governance fails to act.
+- `EXTENDED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER`: Block after which full unlock is allowed if PTE does not occur.
+
+
+### Reward Parameters for Extended Boosting
+
+- `RewardPercentCap` from `Permill::from_parts(5_750);` to `Permill::from_parts(TBD);`
+
+#### Notes
+
+- This could be a new `RewardsProvider` implementation; however, it MUST NOT be possible to exceed the `RewardPoolPerEra` which a simple adjustment of the cap could enable.
 
 ### Thaw Parameters:
 
 ```rust
-pub const THAW_ERA_LENGTH: BlockNumber = < some constant>;
-pub const INITIAL_FREEZE_THAW_ERAS: u32 = < some constant>;
-pub const UNLOCK_THAW_ERAS: u32 = < some constant>;
+/// Number of epochs after the `PrecipitatingEventBlockNumber` that no unstaking is allowed
+pub const INITIAL_FREEZE_THAW_EPOCHS: u32 = < some constant>;
+/// Number of epochs after the `INITIAL_FREEZE_THAW_EPOCHS` that restrict the unstake amount
+pub const UNLOCK_THAW_EPOCHS: u32 = < some constant>;
 ```
 
 **Unlock formula per era:**
 
 ```text
-If current_era < INITIAL_FREEZE_THAW_ERAS:
+If current_era < INITIAL_FREEZE_THAW_EPOCHS:
     unlock_ratio = 0
 Else:
     thaw_era = current_era - INITIAL_FREEZE_THAW_ERAS
-    unlock_ratio = 1 / (UNLOCK_THAW_ERAS - min(thaw_era, UNLOCK_THAW_ERAS) + 1)
+    unlock_ratio = 1 / (UNLOCK_THAW_EPOCHS - min(thaw_era, UNLOCK_THAW_EPOCHS) + 1)
 ```
 
-### Open Design Question:
+### Optional Optimizations
+- Instead of having the PTE set to the PTE, it could instead be set to the `INITIAL_FREEZE_THAW_EPOCHS` value and remove the `INITIAL_FREEZE_THAW_EPOCHS` value entirely. Governance could do the calculation of the PTE plus the `INITIAL_FREEZE_THAW_EPOCHS` and just set an `ExtendedBoostThawStartBlockNumber`.
+- The `ExtendedBoostThawStartBlockNumber` or `PrecipitatingEventBlockNumber` could be set via upgrade migration to be the same as the fallback value, although that would then not have the immediate 100% unlock ratio
 
-> How should we enforce immutability of thaw parameters?
+### Additional Related Capacity Changes
 
-Options:
-
-- **Hard-code into the pallet**: Ensures absolute immutability.
-    - Chain code upgrade would be required to modify thaw parameters
-- **Store with each lock**
-    - Thaw modification would require both a chain code update and storage migration
-
-**→ Feedback requested from the blockchain team.**
-
-## 📈 Rewards Integration
-
-### Interaction with Token Locks
-
-The `pallet-delayed_thaw` will define a new `LockReason` for its locking operations. Since the balances pallet supports
-multiple simultaneous locks under different `LockReason`s, tokens locked by `pallet-delayed_thaw` can still be
-independently used for Provider Boosting. This is similar to how tokens locked for governance voting can also be reused
-elsewhere in the runtime, provided the logic permits it.
-
-To support this, the `capacity` pallet may require a minor change to its internal staking logic to accept tokens locked
-under the `delayed_thaw` `LockReason` as valid staking collateral. This ensures seamless participation in boosting
-rewards while maintaining lock-specific thawing behavior.
-
-The rewards system remains in `pallet-capacity`. One change:
-
-- `pallet-delayed_thaw` will implement the `RewardsProvider` trait.
-- Allows for differential reward rate logic for locked tokens.
+- Increase `MaxUnlockingChunks` to `40` to accommodate extended unlocks.
+- Adjust RewardPercentCap:
+    - From: `Permill::from_parts(5_750);` 0.575%
+    - To: `Permill::from_parts(3_833);` 0.3833%
+    - Rationale: Larger participation expected, but lower per-user reward.
 
 ## 🔐 Governance Integration
 
-- Governance can set `PrecipitatingEventBlockNumber`.
-- No governance control over thaw parameters.
+- Governance sets the `PrecipitatingEventBlockNumber`.
+- Governance cannot modify thaw rules or formulas once the PTE occurs.
+
+## PTE Failsafe
+
+If the PTE is never triggered before the failsafe block, the program automatically expires:
+
+- Rewards revert to default.
+- Thaw ratio becomes 100%.
+- Users can unstake fully.
 
 ## 🔄 Migration Strategy
 
-- Existing boost types and reward parameters remain unchanged.
-- Integration of `pallet-delayed_thaw` adds new locked-stake source for boosting without altering core logic.
+All current ProviderBoost participants will be migrated to ProviderExtendedBoost during rollout.
+
+Users who wish to opt-out must unstake before the upgrade.
+
+## Example User actions for the Extended Boosting Program
+
+1. Stake
+    - Before the upgrade (to be migrated): `capacity.provider_boost(target, amount)`
+    - After the upgrade: `capacity.extended_boost(target, amount)`
+2. Claim Rewards
+3. (Governance) PTE Happens, Time Passes
+4. (If desired) Extended Thaw Period: User requests a partial unstake: `capacity.unstake(limited_amount)`
+5. (If desired) Post Expiration: Unstake up to full amount: `capacity.unstake(full_amount)`
