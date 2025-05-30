@@ -1,4 +1,4 @@
-# 📄 Token Locking for Extended Boosting Rewards
+# 📄 Boosting Rewards Extension
 
 ## 📚 Context and Scope
 
@@ -31,7 +31,7 @@ Business requirements call for a mechanism that allows users to:
 - Add **new boosting programs** using a new `StakingType`.
 - Provide an **immutable** thaw schedule post-PTE.
 - Maintain reward disbursement through a custom `RewardsProvider`.
-- Allow users to **opt-in** to extended boosting programs.
+- Allow users to **opt-in** to different boosting programs.
 
 ### Non-Goals
 
@@ -46,22 +46,23 @@ thawing behavior, with such tokens participating in Provider Boosting at a disti
 
 ### Key Terms
 
-- **Extended Boosting Program**: New reward program with distinct rules.
-- **Precipitating Tokenomic Event (PTE)**: Governance-triggered event that starts unlock schedule.
-- **Pre-PTE Freeze**: Lock phase before PTE.
-- **Post-PTE Freeze**: Lock phase after PTE but before thawing starts.
-- **Extended Thaw**: Gradual unlock phase after freeze ends.
-- **Expired Program**: All tokens can be unlocked; normal rewards resume.
+- **Flexible Boosting**: The current and default reward program.
+- **Committed Boosting**: New reward program with new rules.
+- **Precipitating Tokenomic Event (PTE)**: Governance-triggered event that starts unlock schedule for Committed Boosting.
+- **Pre-PTE Phase**: Phase before the PTE is set by governance.
+- **Commitment Phase**: Phase after PTE is triggered where the tokens are 100% frozen.
+- **Staged Release Phase**: Phase with a gradual decrease in the commitment requirement phase that allows greater and greater percentage of the committed amount to be unstaked.
+- **Expired Phase**: After the Release Phase is completed and all tokens can be unlocked; rewards return to the flexible model.
 
 ### Extended Boosting Phases
 
-| Phase            | Can Join | Can Unstake | Unstake Amount | Stake Reward     |
-|------------------|----------|-------------|----------------|------------------|
-| Pre-PTE          | ✅       | 🚫          | 0%             | Extended Rewards |
-| Post-PTE         | ✅       | 🚫          | 0%             | Extended Rewards |
-| Extended Thaw    | 🚫       | ✅          | Formula-Based  | Extended Rewards |
-| Expired Program  | 🚫       | ✅          | 100%           | Default Rewards  |
-| Failsafe Trigger | 🚫       | ✅          | 100%           | Default Rewards  |
+| Phase               | Can Join | Can Unstake | Unstake Amount | Reward Type       |
+|---------------------|----------|-------------|----------------|-------------------|
+| Pre-PTE Commitment  | ✅       | 🚫          | 0%             | Committed Rewards |
+| Post-PTE Commitment | ✅       | 🚫          | 0%             | Committed Rewards |
+| Staged Release      | 🚫       | ✅          | Formula-Based  | Committed Rewards |
+| Expired             | 🚫       | ✅          | 100%           | Flexible Rewards  |
+| Failsafe Trigger    | 🚫       | ✅          | 100%           | Flexible Rewards  |
 
 ## 📂 Capacity Pallet Changes
 
@@ -70,21 +71,21 @@ thawing behavior, with such tokens participating in Provider Boosting at a disti
 ```rust
 pub enum StakingType {
     MaximumCapacity,
-    ProviderBoost,
-    ProviderExtendedBoost, // NEW
+    ProviderCommitedBoost, // RENAME from ProviderBoost
+    ProviderFlexibleBoost, // NEW for the default
 }
 
-pub const EXTENDED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: BlockNumber = <some constant>;
+pub const COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: BlockNumber = <some constant>;
 
 #[pallet::storage]
 pub type PrecipitatingEventBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, OptionQuery>;
 ```
 
 - `PrecipitatingEventBlockNumber`: Set by governance to signal a precipitating event.
-- `EXTENDED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER`: Block after which full unlock is allowed if PTE does not occur.
+- `COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER`: Block after which full unlock is allowed if PTE does not occur.
 
 
-### Reward Parameters for Extended Boosting
+### Reward Parameters for Committed Boosting
 
 - `RewardPercentCap` from `Permill::from_parts(5_750);` to `Permill::from_parts(TBD);`
 
@@ -92,28 +93,28 @@ pub type PrecipitatingEventBlockNumber<T: Config> = StorageValue<_, T::BlockNumb
 
 - This could be a new `RewardsProvider` implementation; however, it MUST NOT be possible to exceed the `RewardPoolPerEra` which a simple adjustment of the cap could enable.
 
-### Thaw Parameters:
+### Commitment Release Parameters:
 
 ```rust
 /// Number of epochs after the `PrecipitatingEventBlockNumber` that no unstaking is allowed
-pub const INITIAL_FREEZE_THAW_EPOCHS: u32 = < some constant>;
-/// Number of epochs after the `INITIAL_FREEZE_THAW_EPOCHS` that restrict the unstake amount
-pub const UNLOCK_THAW_EPOCHS: u32 = < some constant>;
+pub const COMMITMENT_EPOCHS: u32 = < some constant>;
+/// Number of epochs after the `COMMITMENT_EPOCHS` that restrict the unstake amount
+pub const COMMITMENT_RELEASE_EPOCHS: u32 = < some constant>;
 ```
 
 **Unlock formula per era:**
 
 ```text
-If current_era < INITIAL_FREEZE_THAW_EPOCHS:
+If current_era < COMMITMENT_EPOCHS:
     unlock_ratio = 0
 Else:
     thaw_era = current_era - INITIAL_FREEZE_THAW_ERAS
-    unlock_ratio = 1 / (UNLOCK_THAW_EPOCHS - min(thaw_era, UNLOCK_THAW_EPOCHS) + 1)
+    unlock_ratio = 1 / (COMMITMENT_RELEASE_EPOCHS - min(thaw_era, COMMITMENT_RELEASE_EPOCHS) + 1)
 ```
 
 ### Optional Optimizations
-- Instead of having the PTE set to the PTE, it could instead be set to the `INITIAL_FREEZE_THAW_EPOCHS` value and remove the `INITIAL_FREEZE_THAW_EPOCHS` value entirely. Governance could do the calculation of the PTE plus the `INITIAL_FREEZE_THAW_EPOCHS` and just set an `ExtendedBoostThawStartBlockNumber`.
-- The `ExtendedBoostThawStartBlockNumber` or `PrecipitatingEventBlockNumber` could be set via upgrade migration to be the same as the fallback value, although that would then not have the immediate 100% unlock ratio
+- Instead of having the PTE set to the PTE, it could instead be set to the `COMMITMENT_EPOCHS` value and remove the `COMMITMENT_EPOCHS` value entirely. Governance could do the calculation of the PTE plus the `COMMITMENT_EPOCHS` and just set an `CommittedBoostThawStartBlockNumber`.
+- The `CommittedBoostThawStartBlockNumber` or `PrecipitatingEventBlockNumber` could be set via upgrade migration to be the same as the fallback value, although that would then not have the immediate 100% unlock ratio
 
 ### Additional Related Capacity Changes
 
@@ -138,16 +139,16 @@ If the PTE is never triggered before the failsafe block, the program automatical
 
 ## 🔄 Migration Strategy
 
-All current ProviderBoost participants will be migrated to ProviderExtendedBoost during rollout.
+All current ProviderBoost participants will be migrated to ProviderCommitedBoost during rollout.
 
 Users who wish to opt-out must unstake before the upgrade.
 
-## Example User actions for the Extended Boosting Program
+## Example User actions for the Committed Boosting Program
 
 1. Stake
-    - Before the upgrade (to be migrated): `capacity.provider_boost(target, amount)`
-    - After the upgrade: `capacity.extended_boost(target, amount)`
+    - Before the upgrade (to be migrated and then deprecated): `capacity.provider_boost(target, amount)`
+    - After the upgrade: `capacity.provider_boost_v2(target, amount, type)`
 2. Claim Rewards
 3. (Governance) PTE Happens, Time Passes
-4. (If desired) Extended Thaw Period: User requests a partial unstake: `capacity.unstake(limited_amount)`
+4. (If desired) Commitment Release Period: User requests a partial unstake: `capacity.unstake(limited_amount)`
 5. (If desired) Post Expiration: Unstake up to full amount: `capacity.unstake(full_amount)`
