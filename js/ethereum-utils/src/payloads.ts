@@ -4,6 +4,10 @@ export interface EcdsaSignature {
   Ecdsa: HexString;
 }
 
+export interface Address20MultiAddress {
+  Address20: number[];
+}
+
 export type ChainType = 'Mainnet-Frequency' | 'Paseo-Testnet-Frequency' | 'Dev';
 
 export interface AddressWrapper {

@@ -30,6 +30,8 @@ import {
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PASSKEY_PUBLIC_KEY_DEFINITION,
 } from './signature.definitions';
+import { KeyringPair } from '@polkadot/keyring/types';
+import { Signer, SignerResult } from '@polkadot/types/types';
 
 /**
  * Signing EIP-712 compatible signature for payload
@@ -452,4 +454,54 @@ function createEip712Payload(typeDefinition: any, primaryType: any, domain: EipD
     domain,
     message,
   };
+}
+
+/**
+ * Returns An ethereum compatible signature for the extrinsic
+ * @param ethereumPair
+ */
+
+export function getEthereumRegularSigner(ethereumPair: KeyringPair): Signer {
+  return {
+    signRaw: async (payload): Promise<SignerResult> => {
+      const sig = ethereumPair.sign(payload.data);
+      const prefixedSignature = new Uint8Array(sig.length + 1);
+      prefixedSignature[0] = 2;
+      prefixedSignature.set(sig, 1);
+      const hex = u8aToHex(prefixedSignature);
+      return {
+        signature: hex,
+      } as SignerResult;
+    },
+  };
+}
+
+/**
+ * This custom signer can get used to mimic EIP-191 message signing. By replacing the `ethereumPair.sign` with
+ * any wallet call we can sign any extrinsic with any wallet
+ * @param ethereumPair
+ */
+export function getEthereumMessageSigner(ethereumPair: KeyringPair): Signer {
+  return {
+    signRaw: async (payload): Promise<SignerResult> => {
+      const sig = ethereumPair.sign(prefixEthereumTags(payload.data));
+      const prefixedSignature = new Uint8Array(sig.length + 1);
+      prefixedSignature[0] = 2;
+      prefixedSignature.set(sig, 1);
+      const hex = u8aToHex(prefixedSignature);
+      return {
+        signature: hex,
+      } as SignerResult;
+    },
+  };
+}
+
+/**
+ * prefixing with the EIP-191 for personal_sign messages (this gets wrapped automatically in Metamask)
+ * @param hexPayload
+ */
+function prefixEthereumTags(hexPayload: string): Uint8Array {
+  const wrapped = `\x19Ethereum Signed Message:\n${hexPayload.length}${hexPayload}`;
+  const buffer = Buffer.from(wrapped, 'utf-8');
+  return new Uint8Array(buffer.buffer, buffer.byteOffset, buffer.length);
 }
