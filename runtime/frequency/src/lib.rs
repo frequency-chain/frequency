@@ -473,10 +473,7 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 		match current_version {
 			Some(version) if version == SAFE_XCM_VERSION => {
-				log::info!(
-					"SafeXcmVersion already set to {}, skipping migration.",
-					version
-				);
+				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
 				T::DbWeight::get().reads(1)
 			},
 			Some(version) => {
@@ -532,17 +529,20 @@ impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
 		// Verify the migration worked correctly
 		match current_version {
 			Some(version) if version == SAFE_XCM_VERSION => {
-				log::info!("post_upgrade: Migration successful - SafeXcmVersion correctly set to {}", version);
+				log::info!(
+					"post_upgrade: Migration successful - SafeXcmVersion correctly set to {}",
+					version
+				);
 			},
 			Some(version) => {
 				log::error!("post_upgrade: Migration failed - SafeXcmVersion was set to {}, but expected {}", version, SAFE_XCM_VERSION);
 				return Err(sp_runtime::TryRuntimeError::Other(
-					"SafeXcmVersion was set to incorrect version after migration"
+					"SafeXcmVersion was set to incorrect version after migration",
 				));
 			},
 			None => {
 				return Err(sp_runtime::TryRuntimeError::Other(
-					"SafeXcmVersion should be set after migration but found None"
+					"SafeXcmVersion should be set after migration but found None",
 				));
 			},
 		}

@@ -1,7 +1,7 @@
 use super::*;
 use crate::xcm::tests::mock::{new_test_ext_with_balances, TestRuntime};
-use parity_scale_codec::Decode;
 use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+use parity_scale_codec::Decode;
 
 #[test]
 fn pre_upgrade_returns_current_value() {
