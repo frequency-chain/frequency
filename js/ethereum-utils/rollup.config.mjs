@@ -1,7 +1,6 @@
 import resolve from '@rollup/plugin-node-resolve';
 import commonjs from '@rollup/plugin-commonjs';
-import typescript from 'rollup-plugin-typescript2';
-import { terser } from 'rollup-plugin-terser';
+import typescript from '@rollup/plugin-typescript';
 import pkg from './package.json' assert { type: 'json' };
 
 // Dependencies to exclude in ESM
@@ -31,13 +30,13 @@ export default [
       file: 'dist/browser/frequency-ethereum-utils.esm.min.js',
       format: 'esm',
       sourcemap: false,
+      compact: true,
     },
     external: makeExternal('ESM'),
     plugins: [
       resolve({ browser: true, preferBuiltins: false }),
       commonjs(),
-      typescript({ tsconfig: './tsconfig.json', clean: true }),
-      terser(),
+      typescript({ tsconfig: './tsconfig.json' }),
     ],
   },
   {
@@ -47,13 +46,13 @@ export default [
       format: 'umd',
       name: 'EthereumUtils',
       sourcemap: false,
+      compact: true,
     },
     external: makeExternal('UMD'),
     plugins: [
       resolve({ browser: true, preferBuiltins: false }),
       commonjs(),
-      typescript({ tsconfig: './tsconfig.json', clean: true }),
-      terser(),
+      typescript({ tsconfig: './tsconfig.json' }),
     ],
   },
 ];
