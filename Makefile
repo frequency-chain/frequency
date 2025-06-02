@@ -97,8 +97,8 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
-.PHONY: onboard-debug
-onboard-debug:
+.PHONY: onboard-res-local
+onboard-res-local:
 	./scripts/init.sh onboard-res-local
 
 .PHONY: onboard-docker

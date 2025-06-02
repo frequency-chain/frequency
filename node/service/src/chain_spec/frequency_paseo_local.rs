@@ -1,4 +1,4 @@
-#![allow(missing_docs)]
+#![allow(missing_docs, clippy::unwrap_used)]
 use common_runtime::constants::{FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS};
 use frequency_runtime::Ss58Prefix;
 use polkadot_service::chain_spec::Extensions as RelayChainExtensions;
