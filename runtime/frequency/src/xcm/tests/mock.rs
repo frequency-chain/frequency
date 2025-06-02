@@ -17,6 +17,7 @@
 //! Mock runtime for tests.
 //! Implements both runtime APIs for fee estimation and getting the messages for transfers.
 
+use common_runtime::weights::rocksdb_weights::constants::RocksDbWeight;
 use core::{cell::RefCell, marker::PhantomData};
 use frame_support::{
 	construct_runtime, derive_impl, parameter_types, sp_runtime,
@@ -81,6 +82,7 @@ impl frame_system::Config for TestRuntime {
 	type AccountId = AccountId;
 	type AccountData = pallet_balances::AccountData<Balance>;
 	type Lookup = IdentityLookup<AccountId>;
+	type DbWeight = RocksDbWeight;
 }
 
 #[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
