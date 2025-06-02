@@ -400,3 +400,12 @@ pub type CapacityRewardEraLength =
 	ConstU32<{ prod_or_testnet_or_local!(14 * DAYS, 1 * HOURS, 50) }>;
 
 // -end- Capacity Pallet ---
+
+// --- XCM Version ---
+#[cfg(feature = "frequency-bridging")]
+pub mod xcm_version {
+	/// The default XCM version considered safe for the network.
+	/// This is not the latest version, but the one that is considered stable and safe to use.
+	/// It is used to ensure that the network can handle XCM messages without issues.
+	pub const SAFE_XCM_VERSION: u32 = 4;
+}
