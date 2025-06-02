@@ -7,7 +7,7 @@ homepage = "https://frequency.xyz"
 license = "Apache-2.0"
 repository = "https://github.com/frequency-chain/frequency/"
 publish = false
-version = "0.0.0"
+version = "1.17.0-rc5+polkadotstable2503"
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["max-encoded-len"] }
