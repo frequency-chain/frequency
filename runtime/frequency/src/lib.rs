@@ -87,8 +87,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		SchemaGrant, SchemaGrantValidator,
+		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
+		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -383,6 +383,25 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 
 			RuntimeCall::Balances(_) | RuntimeCall::Capacity(_) => true,
 			_ => false,
+		}
+	}
+}
+
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => {
+				let new_key = add_key_payload.clone().new_public_key;
+				Some((msa_owner_public_key.clone(), new_key, add_key_payload.msa_id))
+			},
+			_ => None,
 		}
 	}
 }
@@ -1274,6 +1293,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet
@@ -1952,6 +1973,16 @@ sp_api::impl_runtime_apis! {
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
 			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
+		}
+
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
+			let account_id = Msa::msa_id_to_eth_address(msa_id);
+			let account_id_checksummed = Msa::eth_address_to_checksummed_string(&account_id);
+			AccountId20Response { account_id, account_id_checksummed }
+		}
+
+		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+			Msa::validate_eth_address_for_msa(address, msa_id)
 		}
 	}
 

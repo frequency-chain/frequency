@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { assertExtrinsicSucceededAndFeesPaid, createAndFundKeypair } from '../scaffolding/helpers';
+import { assertExtrinsicSucceededAndFeesPaid, CENTS, createAndFundKeypair } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -11,7 +11,7 @@ describe('Create Accounts', function () {
   let keys: KeyringPair;
 
   before(async function () {
-    keys = await createAndFundKeypair(fundingSource, 50_000_000n);
+    keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
   });
 
   describe('createMsa', function () {

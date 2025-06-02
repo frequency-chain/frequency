@@ -17,6 +17,21 @@ Note: this is for the "createMsa" tests
 
 See below for running load tests and relay chain tests.
 
+Waiting for Finalization
+============================
+
+Some actions require waiting for finalization before the next action can happen.
+
+Example: Funding a key that will then take an action that uses that funding.
+
+While sometimes this is not needed, it creates a race condition and sometimes the transaction pool will reject the
+second transaction as it is unfunded.
+
+The transaction pool doesn't know when two transactions are dependent if they are not from the same account with the
+same nonce.
+
+Make sure to wait for finalization before attempting the next dependent transaction.
+
 Notes on E2E Testing
 ============================
 

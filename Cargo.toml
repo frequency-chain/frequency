@@ -9,9 +9,6 @@ members = [
 ]
 resolver = "2"
 
-[patch.crates-io]
-cid = { git="https://github.com/multiformats/rust-cid", tag ="v0.10.1" }
-
 [workspace.dependencies]
 log = { version = "0.4.17", default-features = false }
 env_logger = "0.11.7"
@@ -22,6 +19,7 @@ thiserror = "2.0.12"
 apache-avro = { version = "0.17.0", default-features = false }
 rand = "0.9.0"
 parking_lot = "0.12.1"
+lazy_static = { version = "1.5", features = ["spin_no_std"] }
 
 # substrate wasm
 parity-scale-codec = { version = "3.6.12", default-features = false }
@@ -208,6 +206,9 @@ len_zero = "allow"
 large_enum_variant = "allow"
 empty_line_after_outer_attr = "allow"
 enum_variant_names = "allow"
+
+# debug is profile.dev
+# Defaults: https://doc.rust-lang.org/cargo/reference/profiles.html#default-profiles
 
 [profile.release]
 panic = "unwind"

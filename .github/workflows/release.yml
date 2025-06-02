@@ -75,7 +75,7 @@ jobs:
     needs: create-release-branch
     name: Run All Benchmarks - Build
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       contents: read
     steps:
@@ -154,7 +154,7 @@ jobs:
     needs: run-all-benchmarks-bench
     name: Run All Benchmarks - Test
     runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -213,26 +213,27 @@ jobs:
       fail-fast: true
       matrix:
         network: [dev, local, testnet, mainnet]
-        arch: [amd64]
+        arch: [amd64, arm64]
+        build-profile: [release]
         include:
           - network: dev
             spec: frequency-no-relay
-            build-profile: release
             release-file-name-prefix: frequency-dev
           - network: local
             spec: frequency-local
-            build-profile: release
             release-file-name-prefix: frequency-local
           - network: testnet
             spec: frequency-testnet
-            build-profile: release
             release-file-name-prefix: frequency-testnet
           - network: mainnet
             spec: frequency
-            build-profile: release
             release-file-name-prefix: frequency
-    runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+          - arch: amd64
+            runner: ubicloud-standard-16
+          - arch: arm64
+            runner: ubicloud-standard-16-arm
+    runs-on: ${{matrix.runner}}
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     env:
       SIGNING_SUBKEY_FINGERPRINT: B6327D1474C6392032870E8EFA4FD1E73A0FE707
     steps:
@@ -289,7 +290,7 @@ jobs:
       - name: Upload Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${{github.run_id}}
+          name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: |
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}
             ${{env.BIN_DIR}}/${{env.RELEASE_BIN_FILENAME}}.sha256
@@ -311,28 +312,20 @@ jobs:
         # Remember, runtimes are separate for each relay chain
         # We do not release frequency-*-local runtimes however
         network: [dev, paseo, mainnet]
+        build-profile: [release]
+        package: [frequency-runtime]
+        runtime-dir: [runtime/frequency]
+        built-wasm-file-name-prefix: [frequency_runtime]
         include:
           - network: dev
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-dev_runtime
             features: frequency-no-relay
             wasm-core-version: frequency-testnet
           - network: paseo
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency-paseo_runtime
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             release-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
@@ -382,7 +375,7 @@ jobs:
             ./${{env.WASM_DIR}}/${{env.RELEASE_WASM_FILENAME}}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.21.3 --force
           subwasm --version
       - name: Test WASM file
         run: |
@@ -401,7 +394,7 @@ jobs:
     needs: version-code
     name: Build Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -434,7 +427,7 @@ jobs:
       RELEASE_FILENAME_PREFIX: frequency-local
       ARCH: amd64
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Set Env Vars
         run: |
@@ -458,7 +451,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{env.NETWORK}}-${{github.run_id}}
+          pattern: artifacts-binary-${{env.NETWORK}}-amd64-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
@@ -483,10 +476,39 @@ jobs:
           path: js/api-augment/dist
           if-no-files-found: error
 
+  build-js-ethereum-utils:
+    name: Build JS Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+      - name: Upload Dist Dir
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
+          if-no-files-found: error
+
   build-js-schemas:
     name: Build JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -543,7 +565,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
+          pattern: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{github.run_id}}
           path: .
       - name: Extract and List Downloaded Binaries
         run: |
@@ -607,7 +629,7 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-local-${{github.run_id}}
+          pattern: artifacts-binary-local-amd64-${{github.run_id}}
           path: ${{env.TEST_DOWNLOAD_DIR}}
       - name: Rename and Move Binaries
         run: |
@@ -712,6 +734,7 @@ jobs:
         test-version-matches-release,
         build-rust-developer-docs,
         build-js-api-augment,
+        build-js-ethereum-utils,
         build-js-schemas,
       ]
     name: Wait for All Builds to Finish
@@ -728,7 +751,7 @@ jobs:
     needs: wait-for-all-builds
     name: Release Built Artifacts
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       contents: write
     steps:
@@ -760,7 +783,7 @@ jobs:
           tera --version
       - name: Build Changelog
         id: build-changelog
-        uses: mikepenz/release-changelog-builder-action@9a903f73f4cccdc8241077da63578b3faba06403
+        uses: mikepenz/release-changelog-builder-action@e92187bd633e680ebfdd15961a7c30b2d097e7ad
         env:
           GITHUB_TOKEN: ${{ github.token }}
         with:
@@ -787,7 +810,7 @@ jobs:
               "empty_template": "- No changes",
               "transformers": [
                 {
-                  "pattern": "- (.*)",
+                  "pattern": "[\\-\\*] (.*)",
                   "target": "- $1|n|"
                 }
               ]
@@ -908,11 +931,10 @@ jobs:
 
   release-node-images:
     needs: wait-for-all-builds
-    name: Release ${{matrix.arch}} Node Docker Image for ${{matrix.network}}
+    name: Release Node Docker Image for ${{matrix.network}}
     strategy:
       fail-fast: true
       matrix:
-        arch: [amd64]
         network: [testnet, mainnet]
         include:
           - network: testnet
@@ -921,8 +943,6 @@ jobs:
           - network: mainnet
             build-profile: release
             release-file-name-prefix: frequency
-          - arch: amd64
-            docker-platform: linux/amd64
     env:
       DOCKER_HUB_PROFILE: frequencychain
       IMAGE_NAME: parachain-node
@@ -932,63 +952,91 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+
       - name: Full Release?
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Download Binaries
-        id: download-binaries
+
+      # Download binaries for each architecture
+      - name: Download amd64 Binary
+        id: download-amd64
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
-          path: .
-      - name: Extract and List Downloaded Binaries
+          name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
+          path: ./binaries-amd64
+
+      - name: Download arm64 Binary
+        id: download-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
+          path: ./binaries-arm64
+
+      # Create directory structure for Docker build context
+      - name: Prepare Binary and Docker Structure
         run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          # Create directory structure
+          mkdir -p ./docker-build/linux/amd64/
+          mkdir -p ./docker-build/linux/arm64/
+          mkdir -p ./docker-build/scripts/
+
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || (echo "ERROR: healthcheck.sh not found" && false)
+
+          # Copy binaries to the correct location
+          mv ./binaries-amd64/${{matrix.release-file-name-prefix}}.amd64 ./docker-build/linux/amd64/frequency
+          mv ./binaries-arm64/${{matrix.release-file-name-prefix}}.arm64 ./docker-build/linux/arm64/frequency
+
+          # Make binaries executable
+          chmod +x ./docker-build/linux/amd64/frequency
+          chmod +x ./docker-build/linux/arm64/frequency
+
+          echo "Binary structure prepared:"
+          ls -la ./docker-build/linux/amd64/
+          ls -la ./docker-build/linux/arm64/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: ${{matrix.arch}}
+          platforms: arm64,amd64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
-      - name: Build and Push Parachain Image
+
+      # Build and push using the multi-arch Dockerfile
+      - name: Build and Push Multi-Platform Image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
+          context: ./docker-build
+          platforms: linux/amd64,linux/arm64
           push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:${{env.NEW_RELEASE_TAG}}
+
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v6
         with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
+          context: ./docker-build
+          platforms: linux/amd64,linux/arm64
           push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{env.IMAGE_NAME}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{env.IMAGE_NAME}}-${{matrix.network}}:latest
+
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
@@ -1004,16 +1052,14 @@ jobs:
     strategy:
       fail-fast: true
       matrix:
-        arch: [amd64]
         node: [collator-node-local, standalone-node]
+        build-profile: [release]
         include:
           - node: collator-node-local
             network: local
-            build-profile: release
             release-file-name-prefix: frequency-local
           - node: standalone-node
             network: dev
-            build-profile: release
             release-file-name-prefix: frequency-dev
     env:
       DOCKER_HUB_PROFILE: frequencychain
@@ -1023,64 +1069,99 @@ jobs:
         run: |
           echo "BIN_DIR=target/${{matrix.build-profile}}" >> $GITHUB_ENV
           echo "BUILT_BIN_FILENAME=frequency" >> $GITHUB_ENV
-          echo "RELEASE_BIN_FILENAME=${{matrix.release-file-name-prefix}}.${{matrix.arch}}" >> $GITHUB_ENV
+
       - name: Check Out Repo
         uses: actions/checkout@v4
         with:
           ref: ${{env.RELEASE_BRANCH_NAME}}
+
       - name: Full Release?
         id: is-full-release
         uses: ./.github/workflows/common/is-full-release
         with:
           version-tag: ${{env.NEW_RELEASE_TAG}}
-      - name: Download Binaries
-        id: download-binaries
+
+      # Download binaries for each architecture
+      - name: Download amd64 Binary
+        id: download-amd64
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-${{matrix.network}}-${{github.run_id}}
-          path: .
-      - name: Extract and List Downloaded Binaries
+          name: artifacts-binary-${{matrix.network}}-amd64-${{github.run_id}}
+          path: ./binaries-amd64
+
+      - name: Download arm64 Binary
+        id: download-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-binary-${{matrix.network}}-arm64-${{github.run_id}}
+          path: ./binaries-arm64
+
+      # Create directory structure for Docker build context
+      - name: Prepare Binary and Docker Structure
         run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          mv "${download_dir}"/artifacts*/* "${download_dir}"
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Move Binary to Target Dir
-        run: |
-          mkdir -p ${{env.BIN_DIR}}
-          mv ${{env.RELEASE_BIN_FILENAME}} ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
-          chmod +x ${{env.BIN_DIR}}/${{env.BUILT_BIN_FILENAME}}
+          mkdir -p ./docker-build/linux/amd64/
+          mkdir -p ./docker-build/linux/arm64/
+          mkdir -p ./docker-build/scripts/
+          mkdir -p ./docker-build/resources/
+
+          # Copy scripts needed for the Docker image
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || (echo "ERROR: healthcheck.sh not found" && false)
+          cp docker/frequency-start.sh ./docker-build/scripts/ || (echo "ERROR: frequency-start.sh not found" && false)
+          cp scripts/init.sh ./docker-build/scripts/ || (echo "ERROR: init.sh not found" && false)
+          cp scripts/run_collator.sh ./docker-build/scripts/ || (echo "ERROR: run_collator.sh not found" && false)
+
+          # Copy resources if needed
+          cp -r resources/* ./docker-build/resources/ || (echo "ERROR: resources directory not found" && false)
+
+          # Move binaries to the right place
+          ls -la ./binaries-amd64/
+          mv ./binaries-amd64/${{matrix.release-file-name-prefix}}.amd64 ./docker-build/linux/amd64/frequency
+          ls -la ./binaries-arm64/
+          mv ./binaries-arm64/${{matrix.release-file-name-prefix}}.arm64 ./docker-build/linux/arm64/frequency
+
+          chmod +x ./docker-build/linux/amd64/frequency
+          chmod +x ./docker-build/linux/arm64/frequency
+
+          echo "Binary structure prepared:"
+          ls -la ./docker-build/linux/amd64/
+          ls -la ./docker-build/linux/arm64/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: ${{matrix.arch}}
+          platforms: arm64,amd64
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
       - name: Login to DockerHub
         uses: docker/login-action@v3
         with:
           username: ${{secrets.DOCKERHUB_USERNAME}}
           password: ${{secrets.DOCKERHUB_TOKEN}}
-      - name: Build and Push Dev Image
-        # if: env.TEST_RUN != 'true'
+
+      # Build and push multi-arch images
+      - name: Build and Push Multi-Platform Image
         uses: docker/build-push-action@v6
         with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
+          context: ./docker-build
+          platforms: linux/amd64,linux/arm64
           push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:${{env.NEW_RELEASE_TAG}}
+
       - name: Update DockerHub Latest Tag
         if: steps.is-full-release.outputs.is-full-release == 'true'
         uses: docker/build-push-action@v6
         with:
-          context: .
-          platforms: ${{matrix.docker-platform}}
+          context: ./docker-build
+          platforms: linux/amd64,linux/arm64
           push: ${{env.TEST_RUN != 'true'}}
           file: ./docker/${{matrix.node}}.dockerfile
           tags: |
             ${{env.DOCKER_HUB_PROFILE}}/${{matrix.node}}:latest
+
       - name: Update DockerHub Description
         if: env.TEST_RUN != 'true'
         uses: peter-evans/dockerhub-description@e98e4d1628a5f3be2be7c231e50981aee98723ae
@@ -1151,6 +1232,52 @@ jobs:
           steps.is-full-release.outputs.is-full-release != 'true'
         run: npm publish --tag next --access public
         working-directory: ./js/api-augment/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
+  release-js-ethereum-utils:
+    needs: wait-for-all-builds
+    name: Release JS Ethereum utils
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Full Release?
+        id: is-full-release
+        uses: ./.github/workflows/common/is-full-release
+        with:
+          version-tag: ${{env.NEW_RELEASE_TAG}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Download Dist Dir
+        id: download
+        uses: actions/download-artifact@v4
+        with:
+          name: js-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
+      - name: Version Package
+        if: env.TEST_RUN != 'true'
+        run: npm version --new-version "${{env.NEW_RELEASE_TAG}}" --no-git-tag-version
+        working-directory: js/ethereum-utils/dist
+      - name: Release on NPM @latest
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release == 'true'
+        run: npm publish --tag latest --access public
+        working-directory: ./js/ethereum-utils/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+      - name: Release Candidate on NPM
+        if: env.TEST_RUN != 'true' &&
+          steps.is-full-release.outputs.is-full-release != 'true'
+        run: npm publish --tag next --access public
+        working-directory: ./js/ethereum-utils/dist
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 

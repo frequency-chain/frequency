@@ -10,9 +10,17 @@ on:
       release-version:
         description: "Test Release version (v#.#.#[-rc#])"
         required: true
+      ethereum-utils-version:
+        description: "Ethereum utils version to use (v#.#.#[-rc#])"
+        required: true
 
 env:
   TAG_FROM_UI: ${{github.event.inputs.release-version}}
+  ETHEREUM_UTILS_FROM_UI: ${{github.event.inputs.ethereum-utils-version}}
+
+# Set default permissions as restrictive
+permissions:
+  contents: read
 
 jobs:
   run-e2e-setup:
@@ -25,10 +33,12 @@ jobs:
         shell: bash
         run: |
           version=${{env.TAG_FROM_UI}}
+          ethereum_utils_version=${{env.ETHEREUM_UTILS_FROM_UI}}
           echo "Release version entered in UI: $version"
+          echo "Ethereum utils version entered in UI: $ethereum_utils_version"
           regex='^v([0-9]+)\.(0|([1-9][0-9]*))\.(0|([1-9][0-9]*))(-rc[1-9][0-9]*)?$'
-          if [[ ! $version =~ $regex ]]; then
-            echo "ERROR: Entered version $version is not valid."
+          if [[ ! $version =~ $regex ]] || [[ ! $ethereum_utils_version =~ $regex ]]; then
+            echo "ERROR: Entered version $version or ethereum_version $ethereum_utils_version is not valid."
             echo "Please use v#.#.#[-rc#] format."
             exit 1
           fi
@@ -40,6 +50,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
+          echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -47,7 +58,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment
-        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }}
         working-directory: e2e
       - name: Fund e2e Tests
         working-directory: e2e
@@ -83,6 +94,7 @@ jobs:
       - name: Set Env Vars
         run: |
           echo "API_AUGMENT_VERSION=$(echo ${{ env.TAG_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
+          echo "ETHEREUM_UTILS_VERSION=$(echo ${{ env.ETHEREUM_UTILS_FROM_UI }} | sed 's/^v//')" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -90,7 +102,7 @@ jobs:
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment
-        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }}
+        run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }}
         working-directory: e2e
       - name: E2E Test - ${{ matrix.test-file }}
         working-directory: e2e

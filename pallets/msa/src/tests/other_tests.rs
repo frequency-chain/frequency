@@ -6,27 +6,33 @@ use frame_support::{
 
 use frame_system::pallet_prelude::BlockNumberFor;
 
-use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
+use sp_core::{crypto::AccountId32, ecdsa, sr25519, Encode, Pair};
 use sp_runtime::{traits::Zero, MultiSignature};
 
 use crate::{
 	ensure,
 	tests::mock::*,
 	types::{AddProvider, PermittedDelegationSchemas, EMPTY_FUNCTION},
-	Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
+	AddKeyData, Config, DelegatorAndProviderToDelegation, DispatchResult, Error, Event,
 	ProviderToRegistryEntry, PublicKeyToMsaId,
 };
+use common_primitives::signatures::AccountAddressMapper;
 
 use common_primitives::{
 	msa::{
-		Delegation, DelegationResponse, DelegatorId, ProviderId, ProviderRegistryEntry,
-		SchemaGrant, SchemaGrantValidator,
+		Delegation, DelegationResponse, DelegatorId, MessageSourceId, ProviderId,
+		ProviderRegistryEntry, SchemaGrant, SchemaGrantValidator, H160,
 	},
-	node::BlockNumber,
+	node::{BlockNumber, EIP712Encode},
 	schema::{SchemaId, SchemaValidator},
+	signatures::{EthereumAddressMapper, UnifiedSignature, UnifiedSigner},
 	utils::wrap_binary_data,
 };
 use pretty_assertions::assert_eq;
+use sp_core::bytes::from_hex;
+use sp_runtime::traits::{IdentifyAccount, Verify};
+extern crate alloc;
+use alloc::vec;
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
 	test_account: AccountId32,
@@ -677,5 +683,167 @@ fn try_mutate_delegation_success() {
 		));
 
 		assert!(DelegatorAndProviderToDelegation::<Test>::get(delegator, provider).is_some());
+	});
+}
+
+#[test]
+fn msa_id_to_eth_address_binary() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = [
+		H160(
+			hex::decode("65928b9a88db189eea76f72d86128af834d64c32")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("f2f77409b0054b4b14911f00961140deb316ab39")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+	];
+
+	for i in 0..msa_ids.len() {
+		let eth_address = Msa::msa_id_to_eth_address(msa_ids[i]);
+		assert_eq!(eth_address, expected[i]);
+	}
+}
+
+#[test]
+fn validate_eth_address_for_msa_good() {
+	let msa_ids: [MessageSourceId; 2] = [1234u64, 4321u64];
+	let expected = msa_ids.map(|msa_id| Msa::msa_id_to_eth_address(msa_id));
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		assert_eq!(status, true);
+	}
+}
+
+#[test]
+fn validate_eth_address_for_msa_bad() {
+	let msa_ids = [1234u64, 4321u64];
+	let expected: [H160; 2] = msa_ids
+		.map(|msa_id| Msa::msa_id_to_eth_address(msa_id))
+		.iter()
+		.rev()
+		.cloned()
+		.collect::<Vec<_>>()
+		.try_into()
+		.unwrap();
+
+	for i in 0..msa_ids.len() {
+		let status = Msa::validate_eth_address_for_msa(&expected[i], msa_ids[i]);
+		assert_eq!(status, false);
+	}
+}
+
+#[test]
+fn eth_address_to_checksummed_string() {
+	let eth_addresses: [H160; 5] = [
+		H160(
+			hex::decode("5aaeb6053f3e94c9b9a09f33669435e7ef1beaed")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("fb6916095ca1df60bb79ce92ce3ea74c37c5d359")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("dbf03b407c01e7cd3cbea99509d93f8dddc8c6fb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("d1220a0cf47c7b9be7a2e6ba89f429762e7b9adb")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+		H160(
+			hex::decode("f5b82ff246a2f4226749bd78b1bdae28cfffb9f7")
+				.unwrap()
+				.try_into()
+				.unwrap(),
+		),
+	];
+
+	// Test values from https://github.com/ethereum/ercs/blob/master/ERCS/erc-55.md
+	let eth_results: [alloc::string::String; 5] = [
+		"0x5aAeb6053F3E94C9b9A09f33669435E7Ef1BeAed".to_string(),
+		"0xfB6916095ca1df60bB79Ce92cE3Ea74c37c5d359".to_string(),
+		"0xdbF03B407c01E7cD3CBea99509d93f8DDDC8C6FB".to_string(),
+		"0xD1220A0cf47c7B9Be7A2E6BA89F429762e7b9aDb".to_string(),
+		"0xF5b82ff246a2F4226749bd78B1bDaE28Cfffb9f7".to_string(),
+	];
+
+	for i in 0..eth_addresses.len() {
+		let generated_result = Msa::eth_address_to_checksummed_string(&eth_addresses[i]);
+		assert_eq!(generated_result, eth_results[i]);
+	}
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_key_should_work() {
+	new_test_ext().execute_with(|| {
+		let address = EthereumAddressMapper::to_account_id(&from_hex("0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9").unwrap_or_default());
+		let payload: AddKeyData<Test> = AddKeyData {
+			msa_id: 12876327,
+			expiration: 100,
+			new_public_key: address.into(),
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		// following signature is generated via Metamask using the same input to check compatibility
+		let signature_raw = from_hex("0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// Non-compressed public key associated with the keypair used in Metamask
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
+	});
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_add_provider_should_work() {
+	new_test_ext().execute_with(|| {
+		let payload = AddProvider {
+			authorized_msa_id: 12876327,
+			schema_ids: vec![2,4,5,6,7,8],
+			expiration: 100,
+		};
+		let encoded_payload = payload.encode_eip_712();
+
+		// following signature is generated via Metamask using the same input to check compatibility
+		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// Non-compressed public key associated with the keypair used in Metamask
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
 	});
 }

@@ -5,7 +5,7 @@ import { base32 } from 'multiformats/bases/base32';
 import { CID } from 'multiformats/cid';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import assert from 'assert';
-import { assertHasMessage, createAndFundKeypair, getOrCreateDummySchema } from '../scaffolding/helpers';
+import { assertEvent, assertHasMessage, createAndFundKeypair, getOrCreateDummySchema } from '../scaffolding/helpers';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
@@ -33,22 +33,27 @@ describe('Add Offchain Message', function () {
 
     keys = await createAndFundKeypair(fundingSource);
 
-    // Create a new MSA
-    const createMsa = ExtrinsicHelper.createMsa(keys);
-    await createMsa.fundAndSend(fundingSource);
+    [
+      // Create a schema for IPFS
+      schemaId,
+      // Create a dummy on-chain schema
+      dummySchemaId,
+    ] = await Promise.all([
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        PARQUET_BROADCAST,
+        'Parquet',
+        'IPFS',
+        [],
+        'test.addIPFSMessage'
+      ),
+      getOrCreateDummySchema(fundingSource),
+      // Create a new MSA
+      ExtrinsicHelper.createMsa(keys).fundAndSend(fundingSource),
+    ]);
 
-    // Create a schema for IPFS
-    schemaId = (await ExtrinsicHelper.getOrCreateSchemaV3(
-      fundingSource,
-      PARQUET_BROADCAST,
-      'Parquet',
-      'IPFS',
-      [],
-      'test.addIPFSMessage'
-    ))!;
-
-    // Create a dummy on-chain schema
-    dummySchemaId = await getOrCreateDummySchema(fundingSource);
+    // Make sure we are finalized before tests
+    await ExtrinsicHelper.waitForFinalization();
   });
 
   it('should fail if insufficient funds', async function () {
@@ -103,9 +108,14 @@ describe('Add Offchain Message', function () {
 
   it('should successfully add an IPFS message', async function () {
     const f = ExtrinsicHelper.addIPFSMessage(keys, schemaId, ipfs_cid_64, ipfs_payload_len);
-    const { target: event } = await f.fundAndSend(fundingSource);
+    const { target: event, eventMap } = await f.fundAndSend(fundingSource);
 
-    assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
+    // messages.MessagesInBlock in block might not be on this transaction if there are others
+    assertEvent(eventMap, 'system.ExtrinsicSuccess');
+
+    if (event) {
+      assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
+    }
   });
 
   it('should successfully retrieve added message and returned CID should have Base32 encoding', async function () {
@@ -124,9 +134,14 @@ describe('Add Offchain Message', function () {
   describe('Add OnChain Message and successfully retrieve it', function () {
     it('should successfully add and retrieve an onchain message', async function () {
       const f = ExtrinsicHelper.addOnChainMessage(keys, dummySchemaId, '0xdeadbeef');
-      const { target: event } = await f.fundAndSend(fundingSource);
+      const { target: event, eventMap } = await f.fundAndSend(fundingSource);
 
-      assert.notEqual(event, undefined, 'should have returned a MessagesInBlock event');
+      // messages.MessagesInBlock in block might not be on this transaction if there are others
+      assertEvent(eventMap, 'system.ExtrinsicSuccess');
+
+      if (event) {
+        assert.notEqual(event, undefined, `should have returned a MessagesInBlock event, got: ${event?.toHuman()}`);
+      }
 
       const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
         from_block: starting_block,

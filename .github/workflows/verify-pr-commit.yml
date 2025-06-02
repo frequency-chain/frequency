@@ -7,10 +7,14 @@ on:
   pull_request:
     branches:
       - main
-      - "*-development" # Feature Branches should suffix with -development
-      - "feat/eth-bridging-development" # This feature branch isn't matching the above pattern??
+      - "**-development" # Feature Branches should suffix with -development
+      - hotfix/**
+# Set default permissions as restrictive
+permissions:
+  contents: read
+  packages: read
 env:
-  BIN_DIR: target/release
+  BIN_DIR_DEBUG: target/debug
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
@@ -46,6 +50,7 @@ jobs:
               - '**/Cargo.toml'
               - '**/Cargo.lock'
               - 'js/api-augment/**'
+              - 'js/ethereum-utils/**'
               - 'e2e/**/*.{ts,json}'
             cargo-lock:
               - '**/Cargo.toml'
@@ -80,60 +85,108 @@ jobs:
     needs: changes
     if: needs.changes.outputs.build-binary != 'true'
     runs-on: ubuntu-24.04
-    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
+    name: Build ${{matrix.network}} Binary for ${{matrix.arch}} on ${{matrix.branch_alias}} Branch
     strategy:
       matrix:
-        # Match this to the real build-binaries job
+        # Match this to the real build-binaries job except the runners should all be GitHub not Ubicloud
         include:
+          # amd64 builds for all networks
           - network: dev
+            build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
+            arch: amd64
+            runner: ubuntu-24.04
           - network: local
+            build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
+            arch: amd64
+            runner: ubuntu-24.04
           - network: local
+            build-profile: debug
             git_branch: main
             spec: frequency-local
             branch_alias: main
+            arch: amd64
+            runner: ubuntu-24.04
           - network: testnet
+            build-profile: debug
             spec: frequency-testnet
             branch_alias: pr
+            arch: amd64
+            runner: ubuntu-24.04
           - network: mainnet
+            build-profile: debug
             spec: frequency
             branch_alias: pr
+            arch: amd64
+            runner: ubuntu-24.04
+
+          # arm64 build only for mainnet
+          - network: mainnet
+            build-profile: debug
+            spec: frequency
+            branch_alias: pr
+            arch: arm64
+            runner: ubuntu-24.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   build-binaries:
     needs: changes
     if: needs.changes.outputs.build-binary == 'true'
-    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
+    name: Build ${{matrix.network}} Binary for ${{matrix.arch}} on ${{matrix.branch_alias}} Branch
     strategy:
       fail-fast: true
       matrix:
         include:
+          # amd64 builds for all networks
           - network: dev
+            build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-no-relay
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-8
           - network: local
+            build-profile: debug
             git_branch: ${{github.head_ref}}
             spec: frequency-local
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-8
           - network: local
+            build-profile: debug
             git_branch: main
             spec: frequency-local
             branch_alias: main
+            arch: amd64
+            runner: ubicloud-standard-8
           - network: testnet
+            build-profile: debug
             spec: frequency-testnet
             branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
           - network: mainnet
+            build-profile: debug
             spec: frequency
             branch_alias: pr
-    runs-on: ubicloud-standard-16
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+            arch: amd64
+            runner: ubicloud-standard-16
+
+          # arm64 build only for mainnet
+          - network: mainnet
+            build-profile: debug
+            spec: frequency
+            branch_alias: pr
+            arch: arm64
+            runner: ubicloud-standard-30-arm
+    runs-on: ${{matrix.runner}}
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     env:
       NETWORK: mainnet
     steps:
@@ -144,34 +197,36 @@ jobs:
       - name: Set Env Vars
         run: |
           export BUILT_BIN_FILENAME=frequency; echo "BUILT_BIN_FILENAME=$BUILT_BIN_FILENAME" >> $GITHUB_ENV
-          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
+          echo "FINAL_BIN_FILENAME=$BUILT_BIN_FILENAME.${{matrix.network}}.${{matrix.arch}}.${{matrix.spec}}.${{matrix.branch_alias}}" >> $GITHUB_ENV
       # # XXX Keep this step as it lets us skip full binary builds during development/testing
       # - name: Cache Binary for Testing
       #   id: cache-binary
       #   uses: actions/cache@v3
       #   with:
-      #     path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}
+      #     path: target/${{matrix.build-profile}}/${{env.FINAL_BIN_FILENAME}}
       #     key: binaries-${{runner.os}}-${{env.NETWORK}}-${{github.head_ref}}
-      - name: Compile Binary
+      - name: Compile Binary for ${{matrix.network}} on ${{matrix.arch}}
         if: steps.cache-binary.outputs.cache-hit != 'true'
+        # The various rust flags here are for faster builds, but are not exactly the same as release builds
         run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings -C debuginfo=0 -C opt-level=0 -C codegen-units=265" cargo build --locked \
+            ${{ matrix.build-profile == 'release' && '--release' || '' }} \
             --features ${{matrix.spec}}
       - name: Run Sanity Checks
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: target/${{matrix.build-profile}}
         run: |
           file ${{env.BUILT_BIN_FILENAME}} && \
             ./${{env.BUILT_BIN_FILENAME}} --version
       - name: Rename Reference Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: target/${{matrix.build-profile}}
         run: cp ${{env.BUILT_BIN_FILENAME}} ${{env.FINAL_BIN_FILENAME}}
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: artifacts-binary-${{matrix.network}}-${{matrix.branch_alias}}-${{github.run_id}}
-          path: ${{env.BIN_DIR}}/${{env.FINAL_BIN_FILENAME}}*
+          name: artifacts-binary-${{matrix.network}}-${{matrix.arch}}-${{matrix.branch_alias}}-${{github.run_id}}
+          path: target/${{matrix.build-profile}}/${{env.FINAL_BIN_FILENAME}}*
           if-no-files-found: error
 
   check-for-vulnerable-crates:
@@ -179,7 +234,7 @@ jobs:
     if: needs.changes.outputs.cargo-lock == 'true'
     name: Check for Vulnerable Crates
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -195,22 +250,13 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Code Format
     runs-on: ubuntu-24.04
-    container:
-      image: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image-nightly:1.5.7
     steps:
       - name: Check Out Repository
         uses: actions/checkout@v4
-      - name: Install Nightly Toolchain
-        run: |
-          rustup toolchain install ${{env.NIGHTLY_TOOLCHAIN}}
-      - name: Install Rust Target
-        run: |
-          rustup target add wasm32v1-none --toolchain ${{env.NIGHTLY_TOOLCHAIN}}
-      - name: Install Rust Source Component
-        run: |
-          rustup component add rust-src --toolchain ${{env.NIGHTLY_TOOLCHAIN}}
       - name: Verify Rust Code Formatting
         run: |
+          rustup +${{env.NIGHTLY_TOOLCHAIN}} show
           cargo +${{env.NIGHTLY_TOOLCHAIN}} fmt --check
 
   lint-rust-code:
@@ -218,7 +264,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Lint Rust Code
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -234,7 +280,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Developer Docs
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -247,7 +293,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Verify Rust Packages and Dependencies
     runs-on: ubicloud-standard-4
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -259,7 +305,7 @@ jobs:
     if: needs.changes.outputs.rust == 'true'
     name: Run Rust Tests
     runs-on: ubicloud-standard-8
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -267,14 +313,14 @@ jobs:
         run: |
           git config --global --add safe.directory /__w/frequency/frequency
       - name: Run Tests
-        run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace --release
+        run: cargo test --features runtime-benchmarks,frequency-lint-check --workspace
 
   calc-code-coverage:
     needs: changes
     if: needs.changes.outputs.rust == 'true'
     name: Calculate Code Coverage
     runs-on: ubicloud-standard-30
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -293,7 +339,7 @@ jobs:
     strategy:
       matrix:
         # Should match `verify-build-runtimes`
-        network: [dev, paseo, mainnet]
+        network: [paseo, mainnet]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -306,32 +352,20 @@ jobs:
       fail-fast: true
       matrix:
         # Remember, runtimes are separate for each relay chain
-        # We do not release frequency-*-local runtimes however
         # Also should match `verify-build-runtimes-dummy`
-        network: [dev, paseo, mainnet]
+        # Only doing paseo-testnet and mainnet
+        network: [paseo, mainnet]
+        build-profile: [bench-dev]
+        runtime-dir: [runtime/frequency]
+        package: [frequency-runtime]
+        built-wasm-file-name-prefix: [frequency_runtime]
         include:
-          - network: dev
-            chain: dev
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
-            features: frequency-no-relay
-            wasm-core-version: frequency-testnet
           - network: paseo
             chain: frequency-paseo
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             features: frequency-testnet
             wasm-core-version: frequency-testnet
           - network: mainnet
             chain: frequency
-            build-profile: release
-            package: frequency-runtime
-            runtime-dir: runtime/frequency
-            built-wasm-file-name-prefix: frequency_runtime
             features: frequency
             wasm-core-version: frequency
     runs-on: ubicloud-standard-8
@@ -387,7 +421,7 @@ jobs:
           file ${{ steps.srtool_build.outputs.wasm }}
       - name: Install Subwasm
         run: |
-          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.20.0 --force
+          cargo install --locked --git https://github.com/chevdor/subwasm --tag v0.21.3 --force
           subwasm --version
       - name: Test WASM file
         run: |
@@ -399,13 +433,13 @@ jobs:
     needs: build-binaries
     name: Verify JS API Augment
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
@@ -422,8 +456,8 @@ jobs:
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-local-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
+          pattern: artifacts-binary-local-amd64-pr-${{github.run_id}}
+          path: ${{env.BIN_DIR_DEBUG}}
       - name: Extract and List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -431,11 +465,11 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 ${{env.BIN_FILENAME}}
       - name: Output Metadata
-        run: ${{env.BIN_DIR}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
+        run: ${{env.BIN_DIR_DEBUG}}/${{env.BIN_FILENAME}} export-metadata  --chain=frequency-paseo-local --tmp ./js/api-augment/metadata.json
       - name: Build
         run: npm run build
         working-directory: js/api-augment
@@ -455,10 +489,49 @@ jobs:
           path: js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
           if-no-files-found: error
 
+  verify-js-ethereum-utils:
+    needs: build-binaries
+    name: Verify Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install Latest Versions
+        run: npm install
+        working-directory: js/ethereum-utils
+      - name: Lint
+        run: npm run lint
+        working-directory: js/ethereum-utils
+      - name: Test
+        run: npm test
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+      - name: Build & Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/ethereum-utils/dist
+      - name: Generate npm tarball
+        run: npm pack
+        working-directory: js/ethereum-utils/dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
+          if-no-files-found: error
+
   verify-js-schemas:
     name: Verify JS Schemas
     runs-on: ubuntu-24.04
-    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.4.0
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
@@ -500,68 +573,131 @@ jobs:
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
-      - name: Set Env Vars
-        run: |
-          echo "BUILT_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
-          echo "DOCKER_BIN_FILENAME=frequency" >> $GITHUB_ENV
-      - name: Download Binaries
-        id: download-binaries
+
+      - name: Download amd64 Binaries
+        id: download-amd64-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-*-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
-          merge-multiple: true
-      - name: List Downloaded Binaries
+          name: artifacts-binary-mainnet-amd64-pr-${{github.run_id}}
+          path: ./binaries-amd64
+
+      # For PR verification, just use the mainnet arm64 build
+      - name: Download arm64 Binary
+        id: download-arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-binary-mainnet-arm64-pr-${{github.run_id}}
+          path: ./binaries-arm64
+
+      # Prepare directory structure for multi-platform docker build
+      - name: Prepare Docker Build Context
         run: |
-          download_dir=${{steps.download-binaries.outputs.download-path}}
-          echo "Download dir: $download_dir"
-          echo "Downloaded binaries: $(ls -l $download_dir)"
-      - name: Rename Binary
-        working-directory: ${{env.BIN_DIR}}
-        run: mv ${{env.BUILT_BIN_FILENAME}} ${{env.DOCKER_BIN_FILENAME}}
-      - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
-        run: |
-          chmod 755 ${{env.DOCKER_BIN_FILENAME}}
+          mkdir -p ./docker-build/linux/amd64/
+          mkdir -p ./docker-build/linux/arm64/
+          mkdir -p ./docker-build/scripts/
+
+          # Copy scripts needed for the Docker image
+          cp scripts/healthcheck.sh ./docker-build/scripts/ || (echo "ERROR: healthcheck.sh not found" && false)
+          cp docker/frequency-start.sh ./docker-build/scripts/ || (echo "ERROR: frequency-start.sh not found" && false)
+          cp scripts/init.sh ./docker-build/scripts/ || (echo "ERROR: init.sh not found" && false)
+          cp scripts/run_collator.sh ./docker-build/scripts/ || (echo "ERROR: run_collator.sh not found" && false)
+
+          # Copy resources if needed
+          mkdir -p ./docker-build/resources/
+          cp -r resources/* ./docker-build/resources/ || (echo "ERROR: resources directory not found" && false)
+
+          # Move binaries to the right place
+          ls -la ./binaries-amd64/
+          mv ./binaries-amd64/frequency.mainnet.amd64.frequency.pr ./docker-build/linux/amd64/frequency
+          ls -la ./binaries-arm64/
+          mv ./binaries-arm64/frequency.mainnet.arm64.frequency.pr ./docker-build/linux/arm64/frequency
+
+          chmod +x ./docker-build/linux/amd64/frequency
+          chmod +x ./docker-build/linux/arm64/frequency
+
+          echo "Binary structure prepared:"
+          ls -la ./docker-build/linux/amd64/
+          ls -la ./docker-build/linux/arm64/
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
         with:
-          platforms: "amd64"
+          platforms: "arm64,amd64"
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - name: Build collator standalone
-        env:
-          IMAGE_NAME: standalone-node
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          file: ./docker/${{env.IMAGE_NAME}}.dockerfile
-      - name: Build collator image for local relay chain
-        env:
-          IMAGE_NAME: collator-node-local
+
+      # Uses the mainnet binary as this is testing the docker setup
+      - name: Build standalone node image
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./docker-build
           push: false
-          file: docker/${{env.IMAGE_NAME}}.dockerfile
+          platforms: linux/amd64 # Only amd64 for the pr verify
+          file: ./docker/standalone-node.dockerfile
+
+      # Uses the mainnet binary as this is testing the docker setup
+      - name: Build collator image for local relay chain
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-build
+          push: false
+          platforms: linux/amd64 # Only amd64 for the pr verify
+          file: ./docker/collator-node-local.dockerfile
+
+      - name: Build parachain node image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./docker-build
+          push: false
+          platforms: linux/amd64,linux/arm64 # Testing both arch here
+          file: ./docker/parachain-node.dockerfile
+
+  execute-binary-checks-dummy:
+    needs: build-binaries-dummy
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    if: needs.changes.outputs.build-binary != 'true'
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        bin-dir: [target/debug]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ubuntu-24.04
+    steps:
+      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   execute-binary-checks:
     needs: build-binaries
-    name: Execute Binary Checks
-    runs-on: ubuntu-24.04
+    name: Execute Mainnet Binary Checks for ${{matrix.arch}}
+    # If you change, also update execute-binary-checks-dummy
+    strategy:
+      fail-fast: true
+      matrix:
+        arch: [amd64, arm64]
+        bin-dir: [target/debug]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{matrix.runner}}
     steps:
       - name: Check Out Repo
         uses: actions/checkout@v4
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.mainnet.${{matrix.arch}}.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-mainnet-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
+          pattern: artifacts-binary-mainnet-${{matrix.arch}}-pr-${{github.run_id}}
+          path: ${{matrix.bin-dir}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -569,11 +705,11 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{matrix.bin-dir}}
         run: |
           chmod 755 ${{env.TEST_BIN_FILENAME}}
       - name: Output Binary Version
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{matrix.bin-dir}}
         run: |
           file ./${{env.TEST_BIN_FILENAME}} && ./${{env.TEST_BIN_FILENAME}} --version
 
@@ -581,6 +717,7 @@ jobs:
     needs: build-binaries
     name: Check Metadata and Spec Version
     runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
     permissions:
       pull-requests: write
     steps:
@@ -590,14 +727,14 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "TEST_BIN_FILENAME=frequency.local.frequency-local.pr" >> $GITHUB_ENV
-          echo "REF_BIN_FILENAME=frequency.local.frequency-local.main" >> $GITHUB_ENV
+          echo "TEST_BIN_FILENAME=frequency.local.amd64.frequency-local.pr" >> $GITHUB_ENV
+          echo "REF_BIN_FILENAME=frequency.local.amd64.frequency-local.main" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
           pattern: artifacts-binary-local-*-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
+          path: ${{env.BIN_DIR_DEBUG}}
           merge-multiple: true
       - name: List Downloaded Binaries
         run: |
@@ -605,13 +742,13 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 $TEST_BIN_FILENAME
           chmod 755 $REF_BIN_FILENAME
       - name: Compare Metadata
         id: compare-metadata
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           set -x
           ./$REF_BIN_FILENAME export-metadata --chain=frequency-paseo-local --tmp metadata-ref.json
@@ -630,7 +767,7 @@ jobs:
       - name: Check Spec Version
         if: steps.compare-metadata.outputs.metadata_matches != 'true'
         id: check-spec-version
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           set -x
           spec_version_ref=$(./$REF_BIN_FILENAME export-runtime-version | jq -r .specVersion)
@@ -651,7 +788,7 @@ jobs:
         if: |
           (steps.compare-metadata.outputs.metadata_matches != 'true') &&
             (steps.check-spec-version.outputs.metadata_version_incremented != 'true')
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           spec_version=${{steps.check-spec-version.outputs.spec_version}}
           spec_version_ref=${{steps.check-spec-version.outputs.spec_version_ref}}
@@ -661,7 +798,7 @@ jobs:
 
   run-e2e:
     if: needs.changes.outputs.run-e2e == 'true'
-    needs: [build-binaries, verify-js-api-augment]
+    needs: [build-binaries, verify-js-api-augment, verify-js-ethereum-utils]
     name: Run E2E Tests
     runs-on: ubuntu-24.04
     steps:
@@ -671,14 +808,14 @@ jobs:
           fetch-depth: 0
       - name: Set Env Vars
         run: |
-          echo "BIN_FILENAME=frequency.dev.frequency-no-relay.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME=frequency.dev.amd64.frequency-no-relay.pr" >> $GITHUB_ENV
           echo "FREQUENCY_PROCESS_NAME=frequency" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
-          pattern: artifacts-binary-dev-pr-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
+          pattern: artifacts-binary-dev-amd64-pr-${{github.run_id}}
+          path: ${{env.BIN_DIR_DEBUG}}
       - name: List Downloaded Binaries
         run: |
           download_dir=${{steps.download-binaries.outputs.download-path}}
@@ -690,12 +827,17 @@ jobs:
         with:
           name: artifacts-api-augment-${{github.run_id}}
           path: js/api-augment/dist
+      - name: Download ethereum-utils tarball
+        uses: actions/download-artifact@v4
+        with:
+          name: artifacts-ethereum-utils-${{github.run_id}}
+          path: js/ethereum-utils/dist
       - name: Set Binaries Permissions
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 $BIN_FILENAME
       - name: Start Local Node
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           ./${{env.BIN_FILENAME}} \
             -lruntime=debug \
@@ -717,8 +859,8 @@ jobs:
           node-version: 20
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
-      - name: Install Built api-augment
-        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+      - name: Install Built api-augment and ethereum-utils
+        run: npm install ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
         working-directory: e2e
       - name: Install NPM Modules
         run: npm ci
@@ -745,14 +887,14 @@ jobs:
         run: |
           echo "EXPECTED_GENESIS_STATE_PASEO=0x000000000000000000000000000000000000000000000000000000000000000000805f6ddb6879aa31316a38c149e52ffe4e9f2a193e966ddcf3b6a2cb5846e96903170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
           echo "EXPECTED_GENESIS_STATE_MAINNET=0x000000000000000000000000000000000000000000000000000000000000000000393a2a0f7778716d006206c5a4787cbf2ea3b26a67379b7a38ee54519d7fd4be03170a2e7597b7b7e3d84c05391d139a62b157e78786d8c082f29dcf4c11131400" >> $GITHUB_ENV
-          echo "BIN_FILENAME_TESTNET=frequency.testnet.frequency-testnet.pr" >> $GITHUB_ENV
-          echo "BIN_FILENAME_MAINNET=frequency.mainnet.frequency.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_TESTNET=frequency.testnet.amd64.frequency-testnet.pr" >> $GITHUB_ENV
+          echo "BIN_FILENAME_MAINNET=frequency.mainnet.amd64.frequency.pr" >> $GITHUB_ENV
       - name: Download Binaries
         id: download-binaries
         uses: actions/download-artifact@v4
         with:
           pattern: artifacts-binary-*-${{github.run_id}}
-          path: ${{env.BIN_DIR}}
+          path: ${{env.BIN_DIR_DEBUG}}
           merge-multiple: true
       - name: List Downloaded Binaries
         run: |
@@ -760,12 +902,12 @@ jobs:
           echo "Download dir: $download_dir"
           echo "Downloaded binaries: $(ls -l $download_dir)"
       - name: Set Binary Permissions
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           chmod 755 $BIN_FILENAME_TESTNET
           chmod 755 $BIN_FILENAME_MAINNET
       - name: Test Frequency Paseo Genesis State
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_PASEO}}
           echo "Expected genesis state: $expected_genesis_state"
@@ -774,7 +916,7 @@ jobs:
           [ $actual_genesis_state = $expected_genesis_state ] || \
             (echo "ERROR: The actual genesis state does not match the expected" && exit 1)
       - name: Test Frequency Mainnet Genesis State
-        working-directory: ${{env.BIN_DIR}}
+        working-directory: ${{env.BIN_DIR_DEBUG}}
         run: |
           expected_genesis_state=${{env.EXPECTED_GENESIS_STATE_MAINNET}}
           echo "Expected genesis state: $expected_genesis_state"
