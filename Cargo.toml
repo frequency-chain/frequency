@@ -191,6 +191,7 @@ style = { level = "deny", priority = -1 }
 complexity = { level = "deny", priority = -1 }
 perf = { level = "deny", priority = -1 }
 suspicious = { level = "deny", priority = -1 }
+unwrap_used = "deny"
 # These should stay
 unwrap_used = "deny"
 wildcard_dependencies = "deny"
