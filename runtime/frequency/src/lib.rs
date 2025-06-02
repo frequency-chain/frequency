@@ -18,21 +18,17 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_config;
+pub mod xcm;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
-use xcm_config::ForeignAssetsAssetId;
-
-#[cfg(feature = "frequency-bridging")]
-mod xcm_queue;
-
-#[cfg(feature = "frequency-bridging")]
-pub mod xcm_commons;
-#[cfg(feature = "frequency-bridging")]
-use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
-
-#[cfg(feature = "frequency-bridging")]
-mod xcm; // Tests are contained the xcm directory
+use xcm::{
+	parameters::{
+		ForeignAssetsAssetId, NativeToken, RelayLocation, RelayOrigin, ReservedDmpWeight,
+		ReservedXcmpWeight,
+	},
+	queue::XcmRouter,
+	LocationToAccountId, XcmConfig,
+};
 
 #[cfg(test)]
 mod migration_tests;
@@ -1562,7 +1558,7 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
+	type BenchmarkHelper = xcm::xcm_config::XcmBenchmarkHelper;
 	type Holder = ();
 }
 
@@ -1648,7 +1644,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
 		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
@@ -2072,7 +2068,7 @@ sp_api::impl_runtime_apis! {
 	#[cfg(feature = "frequency-bridging")]
 	impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
 		fn query_acceptable_payment_assets(xcm_version: staging_xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
-			let acceptable_assets = vec![AssetLocationId(xcm_config::RelayLocation::get())];
+			let acceptable_assets = vec![AssetLocationId(RelayLocation::get())];
 			PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
 		}
 
@@ -2081,11 +2077,11 @@ sp_api::impl_runtime_apis! {
 			use frame_support::weights::WeightToFee;
 
 			match asset.try_as::<AssetLocationId>() {
-				Ok(asset_id) if asset_id.0 == xcm_config::NativeToken::get().0 => {
+				Ok(asset_id) if asset_id.0 == NativeToken::get().0 => {
 					// FRQCY/XRQCY, native token
 					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
 				},
-				Ok(asset_id) if asset_id.0 == xcm_config::RelayLocation::get() => {
+				Ok(asset_id) if asset_id.0 == RelayLocation::get() => {
 					// DOT, WND, or KSM on the relay chain
 					// calculate fee in DOT using Polkadot relay fee schedule
 					let dot_fee = crate::polkadot_xcm_fee::default_fee_per_second()
@@ -2116,11 +2112,11 @@ sp_api::impl_runtime_apis! {
 	#[cfg(feature = "frequency-bridging")]
 	impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
 		fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-			PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
+			PolkadotXcm::dry_run_call::<Runtime, XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
 		}
 
 		fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-			PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+			PolkadotXcm::dry_run_xcm::<Runtime, XcmRouter, RuntimeCall, XcmConfig>(origin_location, xcm)
 		}
 	}
 
@@ -2132,7 +2128,7 @@ sp_api::impl_runtime_apis! {
 		> {
 			xcm_runtime_apis::conversions::LocationToAccountHelper::<
 				AccountId,
-				xcm_commons::LocationToAccountId,
+				LocationToAccountId,
 			>::convert_location(location)
 		}
 	}

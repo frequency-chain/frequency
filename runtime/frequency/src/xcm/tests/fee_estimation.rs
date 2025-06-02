@@ -387,10 +387,12 @@ fn dry_run_xcm_common(xcm_version: XcmVersion) {
 				VersionedLocation::from([AccountIndex64 { index: 1, network: None }])
 					.into_version(xcm_version)
 					.unwrap(),
-				VersionedXcm::from(xcm).into_version(xcm_version).unwrap(),
+				VersionedXcm::from(xcm.clone()).into_version(xcm_version).unwrap(),
 			)
 			.unwrap()
 			.unwrap();
+
+		let topic = fake_message_hash(&xcm.clone());
 		let expected_xcms = Xcm::<()>::builder_unsafe()
 			.reserve_asset_deposited((
 				(Parent, Parachain(2000)),
@@ -399,6 +401,7 @@ fn dry_run_xcm_common(xcm_version: XcmVersion) {
 			.clear_origin()
 			.buy_execution((Here, 1u128), Unlimited)
 			.deposit_asset(AllCounted(1), [0u8; 32])
+			.set_topic(topic)
 			.build();
 		let expected_msg_id = fake_message_hash(&expected_xcms);
 		assert_eq!(
