@@ -613,6 +613,8 @@ parameter_types! {
 	pub const ProviderBoostHistoryLimit : u32 = 30;
 	/// The number of chunks of Reward Pool history we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
+	/// Max differece between PTE and current block number
+	pub const MaxPteDifferenceFromCurrentBlock: u32 = 30 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
@@ -641,6 +643,11 @@ impl pallet_capacity::Config for Runtime {
 	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
+	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;
+	type PteGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
+	>;
 }
 
 impl pallet_schemas::Config for Runtime {

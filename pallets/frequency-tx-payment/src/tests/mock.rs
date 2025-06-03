@@ -6,28 +6,25 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_system::EnsureSigned;
+use common_runtime::constants::DAYS;
+pub use common_runtime::{
+	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
+	weights::rocksdb_weights::constants::RocksDbWeight,
+};
+use frame_support::{
+	pallet_prelude::Weight,
+	parameter_types,
+	traits::{ConstU16, ConstU64, EitherOfDiverse},
+	weights::WeightToFee as WeightToFeeTrait,
+};
+use frame_system::{EnsureRoot, EnsureSigned};
+use pallet_capacity::CapacityLedger;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
 	AccountId32, BuildStorage, Perbill, Permill,
 };
-
-use frame_support::{
-	parameter_types,
-	traits::{ConstU16, ConstU64},
-	weights::WeightToFee as WeightToFeeTrait,
-};
-
-use pallet_capacity::CapacityLedger;
-
-pub use common_runtime::{
-	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
-	weights::rocksdb_weights::constants::RocksDbWeight,
-};
-
-use frame_support::weights::Weight;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -37,6 +34,7 @@ frame_support::construct_runtime!(
 		{
 			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+			Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
@@ -114,6 +112,24 @@ impl pallet_balances::Config for Test {
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 pub type MaximumCapacityBatchLength = ConstU8<10>;
 
+pub type CouncilCollective = pallet_collective::Instance1;
+impl pallet_collective::Config<CouncilCollective> for Test {
+	type RuntimeOrigin = RuntimeOrigin;
+	type Proposal = RuntimeCall;
+	type RuntimeEvent = RuntimeEvent;
+	type MotionDuration = ConstU32<{ 5 * DAYS }>;
+	type MaxProposals = ConstU32<25>;
+	type MaxMembers = ConstU32<10>;
+	type DefaultVote = pallet_collective::PrimeDefaultVote;
+	type WeightInfo = ();
+
+	type SetMembersOrigin = frame_system::EnsureRoot<Self::AccountId>;
+	type MaxProposalWeight = MaxProposalWeight;
+	type DisapproveOrigin = EnsureRoot<AccountId>;
+	type KillOrigin = EnsureRoot<AccountId>;
+	type Consideration = ();
+}
+
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
 	fn convert(x: u64) -> AccountId32 {
@@ -182,6 +198,7 @@ parameter_types! {
 	pub static WeightToFee: u64 = 1;
 	pub static TransactionByteFee: u64 = 1;
 	static ExtrinsicBaseWeight: Weight = Weight::zero();
+	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 
 impl WeightToFeeTrait for WeightToFee {
@@ -246,6 +263,11 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolPerEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<2>;
+	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
+	// type PteGovernanceOrigin = EitherOfDiverse<
+	// 	EnsureRoot<AccountId>,
+	// 	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
+	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 }
 
 use crate::types::GetAddKeyData;

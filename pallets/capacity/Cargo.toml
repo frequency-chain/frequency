@@ -29,6 +29,7 @@ sp-runtime = { workspace = true }
 common-runtime = { path = '../../runtime/common', default-features = false }
 pallet-balances = { workspace = true }
 pallet-msa = { path = '../msa' }
+pallet-collective = { workspace = true }
 
 [features]
 default = ["std"]
