@@ -645,7 +645,7 @@ pub mod pallet {
 
 		/// Sets the Precipitating Tokenomic Event value via Governance
 		#[pallet::call_index(7)]
-		#[pallet::weight(T::WeightInfo::claim_staking_rewards())] // TODO:
+		#[pallet::weight(T::WeightInfo::set_pte_via_governance())]
 		pub fn set_pte_via_governance(
 			origin: OriginFor<T>,
 			pte_block_number: BlockNumberFor<T>,

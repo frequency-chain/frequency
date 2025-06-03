@@ -336,5 +336,19 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn set_pte_via_governance() -> Result<(), BenchmarkError> {
+
+		#[extrinsic_call]
+		set_pte_via_governance(RawOrigin::Root, 100u32.into());
+
+		ensure!(
+			PrecipitatingEventBlockNumber::<T>::get() == Some(100u32.into()),
+			"PTE should be set"
+		);
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(Capacity, tests::mock::new_test_ext(), tests::mock::Test);
 }

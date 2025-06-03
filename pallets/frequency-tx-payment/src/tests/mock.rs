@@ -6,7 +6,6 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::constants::DAYS;
 pub use common_runtime::{
 	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
 	weights::rocksdb_weights::constants::RocksDbWeight,
@@ -14,7 +13,7 @@ pub use common_runtime::{
 use frame_support::{
 	pallet_prelude::Weight,
 	parameter_types,
-	traits::{ConstU16, ConstU64, EitherOfDiverse},
+	traits::{ConstU16, ConstU64},
 	weights::WeightToFee as WeightToFeeTrait,
 };
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -34,7 +33,6 @@ frame_support::construct_runtime!(
 		{
 			System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 			Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-			Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 			Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 			Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 			TransactionPayment: pallet_transaction_payment::{Pallet, Storage, Event<T>},
@@ -111,24 +109,6 @@ impl pallet_balances::Config for Test {
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 pub type MaximumCapacityBatchLength = ConstU8<10>;
-
-pub type CouncilCollective = pallet_collective::Instance1;
-impl pallet_collective::Config<CouncilCollective> for Test {
-	type RuntimeOrigin = RuntimeOrigin;
-	type Proposal = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type MotionDuration = ConstU32<{ 5 * DAYS }>;
-	type MaxProposals = ConstU32<25>;
-	type MaxMembers = ConstU32<10>;
-	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = ();
-
-	type SetMembersOrigin = frame_system::EnsureRoot<Self::AccountId>;
-	type MaxProposalWeight = MaxProposalWeight;
-	type DisapproveOrigin = EnsureRoot<AccountId>;
-	type KillOrigin = EnsureRoot<AccountId>;
-	type Consideration = ();
-}
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
@@ -264,9 +244,6 @@ impl pallet_capacity::Config for Test {
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<2>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
-	// type PteGovernanceOrigin = EitherOfDiverse<
-	// 	EnsureRoot<AccountId>,
-	// 	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 }
 

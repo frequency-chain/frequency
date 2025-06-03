@@ -1,10 +1,12 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	CapacityLedger, Config, CurrentEraProviderBoostTotal, Error, Event, FreezeReason,
-	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType,
+	BlockNumberFor, CapacityLedger, Config, CurrentEraProviderBoostTotal, Error, Event,
+	FreezeReason, PrecipitatingEventBlockNumber, StakingAccountLedger, StakingDetails,
+	StakingTargetLedger, StakingType,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
+use frame_system::RawOrigin;
 
 #[test]
 fn provider_boost_works() {
@@ -103,6 +105,52 @@ fn calling_provider_boost_on_staked_target_errors() {
 		assert_noop!(
 			Capacity::provider_boost(RuntimeOrigin::signed(account), target, 50),
 			Error::<Test>::CannotChangeStakingType
+		);
+	})
+}
+
+#[test]
+fn set_pte_via_governance_happy_path() {
+	new_test_ext().execute_with(|| {
+		// assign
+		let pte_block: BlockNumberFor<Test> = 10u32.into();
+
+		// act
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
+
+		// assert
+		let res = PrecipitatingEventBlockNumber::<Test>::get();
+
+		assert_eq!(res, Some(pte_block));
+	})
+}
+
+#[test]
+fn set_pte_via_governance_outside_valid_window_should_fail() {
+	new_test_ext().execute_with(|| {
+		// assign
+		let pte_block: BlockNumberFor<Test> = 1_000_000u32.into();
+
+		// act
+		assert_noop!(
+			Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block),
+			Error::<Test>::InvalidPteValue
+		);
+	})
+}
+
+#[test]
+fn set_pte_via_governance_value_should_fail_after_setting() {
+	new_test_ext().execute_with(|| {
+		// assign
+		let pte_block: BlockNumberFor<Test> = 10u32.into();
+		let pte_block_2: BlockNumberFor<Test> = 20u32.into();
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block));
+
+		// act
+		assert_noop!(
+			Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block_2),
+			Error::<Test>::PteValueAlreadySet
 		);
 	})
 }

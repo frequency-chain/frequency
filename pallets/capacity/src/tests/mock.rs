@@ -8,13 +8,13 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::{constants::DAYS, weights};
+use common_runtime::weights;
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
 		tokens::{fungible::Inspect, WithdrawConsequence},
-		ConstU16, ConstU32, ConstU64, EitherOfDiverse,
+		ConstU16, ConstU32, ConstU64,
 	},
 };
 use frame_system::{EnsureRoot, EnsureSigned};
@@ -32,7 +32,6 @@ construct_runtime!(
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
-		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Capacity: pallet_capacity::{Pallet, Call, Storage, Event<T>, FreezeReason},
 	}
@@ -86,22 +85,6 @@ impl pallet_balances::Config for Test {
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
 	type DoneSlashHandler = ();
-}
-pub type CouncilCollective = pallet_collective::Instance1;
-impl pallet_collective::Config<CouncilCollective> for Test {
-	type RuntimeOrigin = RuntimeOrigin;
-	type Proposal = RuntimeCall;
-	type RuntimeEvent = RuntimeEvent;
-	type MotionDuration = ConstU32<{ 5 * DAYS }>;
-	type MaxProposals = ConstU32<25>;
-	type MaxMembers = ConstU32<10>;
-	type DefaultVote = pallet_collective::PrimeDefaultVote;
-	type WeightInfo = ();
-	type SetMembersOrigin = frame_system::EnsureRoot<AccountId32>;
-	type MaxProposalWeight = MaxProposalWeight;
-	type DisapproveOrigin = EnsureRoot<AccountId>;
-	type KillOrigin = EnsureRoot<AccountId>;
-	type Consideration = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -221,10 +204,6 @@ impl Config for Test {
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
-	// type PteGovernanceOrigin = EitherOfDiverse<
-	// 	EnsureRoot<AccountId>,
-	// 	pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
-	// >;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 }
 
