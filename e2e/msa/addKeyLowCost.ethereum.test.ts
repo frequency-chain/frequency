@@ -12,7 +12,7 @@ import {
   signPayloadSr25519,
   stakeToProvider,
 } from '../scaffolding/helpers';
-import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import assert from 'assert';
 import { getFundingSource } from '../scaffolding/funding';
 import { u64 } from '@polkadot/types';
