@@ -856,11 +856,18 @@ impl<T: Config> Pallet<T> {
 			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 		let mut unlocks = UnstakeUnlocks::<T>::get(unstaker).unwrap_or_default();
 
-		let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> =
-			UnlockChunk { value: actual_unstaked_amount, thaw_at };
-		unlocks
-			.try_push(unlock_chunk)
-			.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+		match unlocks.iter_mut().find(|chunk| chunk.thaw_at == thaw_at) {
+			Some(chunk) => {
+				chunk.value += actual_unstaked_amount;
+			},
+			None => {
+				let unlock_chunk: UnlockChunk<BalanceOf<T>, T::EpochNumber> =
+					UnlockChunk { value: actual_unstaked_amount, thaw_at };
+				unlocks
+					.try_push(unlock_chunk)
+					.map_err(|_| Error::<T>::MaxUnlockingChunksExceeded)?;
+			},
+		}
 
 		UnstakeUnlocks::<T>::set(unstaker, Some(unlocks));
 		Ok(())
