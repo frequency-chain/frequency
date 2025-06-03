@@ -10,7 +10,7 @@ While the core `Provider Boosting` system remains unchanged, this proposal build
 
 Business requirements call for a mechanism that allows users to:
 
-- Lock tokens before a **Precipitating Tokenomic Event (PTE)**.
+- Lock tokens before a **Participating Tokenomic Event (PTE)**.
 - Unlock tokens over time based on rules triggered by the PTE.
 - Maintain **immutability** of the unlock schedule—even governance cannot change it.
 - Reclaim tokens safely if the PTE never occurs (via a failsafe).
