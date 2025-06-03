@@ -91,7 +91,15 @@ pub type PrecipitatingEventBlockNumber<T: Config> = StorageValue<_, T::BlockNumb
 
 #### Notes
 
-- This could be a new `RewardsProvider` implementation; however, it MUST NOT be possible to exceed the `RewardPoolPerEra` which a simple adjustment of the cap could enable.
+- This could be a new `RewardsProvider` implementation; however, it MUST NOT be possible to exceed the `RewardPoolPerEra`.
+- It is possible that the RewardPool is saturated such that the `RewardPercentCap` does NOT apply to those with the higher `RewardPercentCap`, but DOES to those with the lower `RewardPercentCap`. In this case, the entire `RewardPoolPerEra` would NOT be given away. This is an acceptable, but rare outcome.
+    - Simple Example:
+        - Reward Pool: 9
+        - Total Stake: 30
+        - Staker 1: 10 @ 50% cap boost type, Reward determined by Stake Percentage 33%, gets 3 Tokens
+        - Staker 2: 10 @ 50% cap boost type, Reward determined by Stake Percentage 33%, gets 3 Tokens
+        - Staker 3: 10 @ 10% cap boost type, Reward determined by Cap 10%, gets 0.9 Tokens
+        - Total Reward Pool not distributed: 2.1 Tokens
 
 ### Commitment Release Parameters:
 
