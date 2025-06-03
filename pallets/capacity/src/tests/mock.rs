@@ -202,6 +202,7 @@ impl Config for Test {
 	type RewardPoolChunkLength = ConstU32<3>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
 }
 
 fn initialize_reward_pool() {

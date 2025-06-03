@@ -244,6 +244,7 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<2>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
 }
 
 use crate::types::GetAddKeyData;

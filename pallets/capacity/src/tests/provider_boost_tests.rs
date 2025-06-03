@@ -114,6 +114,7 @@ fn set_pte_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		// assign
 		let pte_block: BlockNumberFor<Test> = 10u32.into();
+		System::set_block_number(pte_block + 1);
 
 		// act
 		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
@@ -126,10 +127,10 @@ fn set_pte_via_governance_happy_path() {
 }
 
 #[test]
-fn set_pte_via_governance_outside_valid_window_should_fail() {
+fn set_pte_via_governance_in_future_should_fail() {
 	new_test_ext().execute_with(|| {
 		// assign
-		let pte_block: BlockNumberFor<Test> = 1_000_000u32.into();
+		let pte_block: BlockNumberFor<Test> = 2u32.into();
 
 		// act
 		assert_noop!(
@@ -145,12 +146,29 @@ fn set_pte_via_governance_value_should_fail_after_setting() {
 		// assign
 		let pte_block: BlockNumberFor<Test> = 10u32.into();
 		let pte_block_2: BlockNumberFor<Test> = 20u32.into();
+		System::set_block_number(pte_block_2 + 1);
 		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block));
 
 		// act
 		assert_noop!(
 			Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block_2),
 			Error::<Test>::PteValueAlreadySet
+		);
+	})
+}
+
+#[test]
+fn set_pte_via_governance_value_should_fail_after_failsafe_block_number() {
+	new_test_ext().execute_with(|| {
+		// assign
+		let failsafe_block_number: u32 = 1000;
+		let pte_block: BlockNumberFor<Test> = failsafe_block_number.into();
+		System::set_block_number(pte_block + 1);
+
+		// act
+		assert_noop!(
+			Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block),
+			Error::<Test>::PteExpired
 		);
 	})
 }

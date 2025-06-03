@@ -648,6 +648,7 @@ impl pallet_capacity::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
 	>;
+	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
 }
 
 impl pallet_schemas::Config for Runtime {

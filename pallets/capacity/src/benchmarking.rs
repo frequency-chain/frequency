@@ -339,10 +339,10 @@ mod benchmarks {
 	#[benchmark]
 	fn set_pte_via_governance() -> Result<(), BenchmarkError> {
 		#[extrinsic_call]
-		set_pte_via_governance(RawOrigin::Root, 100u32.into());
+		set_pte_via_governance(RawOrigin::Root, 1u32.into());
 
 		ensure!(
-			PrecipitatingEventBlockNumber::<T>::get() == Some(100u32.into()),
+			PrecipitatingEventBlockNumber::<T>::get() == Some(1u32.into()),
 			"PTE should be set"
 		);
 

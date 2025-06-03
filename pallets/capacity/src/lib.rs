@@ -192,6 +192,10 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxPteDifferenceFromCurrentBlock: Get<u32>;
 
+		/// Block after which full unlock is allowed if PTE does not occur.
+		#[pallet::constant]
+		type CommittedBoostFailsafeUnlockBlockNumber: Get<u32>;
+
 		/// The origin that is allowed to set Precipitating Tokenomic Event (PTE) via governance
 		type PteGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
@@ -421,6 +425,8 @@ pub mod pallet {
 		InvalidPteValue,
 		/// Pte value is alrerady set
 		PteValueAlreadySet,
+		/// Pte is exipred error
+		PteExpired,
 	}
 
 	#[pallet::hooks]
@@ -653,11 +659,16 @@ pub mod pallet {
 			T::PteGovernanceOrigin::ensure_origin(origin)?;
 
 			let current_block = frame_system::Pallet::<T>::block_number();
-			let bigger = pte_block_number.max(current_block);
-			let smaller = pte_block_number.min(current_block);
+			// PTE can only be in the present or past (with some valid window)
 			ensure!(
-				bigger - smaller < T::MaxPteDifferenceFromCurrentBlock::get().into(),
+				current_block >= pte_block_number &&
+					current_block - pte_block_number <
+						T::MaxPteDifferenceFromCurrentBlock::get().into(),
 				Error::<T>::InvalidPteValue
+			);
+			ensure!(
+				current_block < T::CommittedBoostFailsafeUnlockBlockNumber::get().into(),
+				Error::<T>::PteExpired
 			);
 			ensure!(
 				PrecipitatingEventBlockNumber::<T>::get().is_none(),
