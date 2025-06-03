@@ -10,7 +10,7 @@ While the core `Provider Boosting` system remains unchanged, this proposal build
 
 Business requirements call for a mechanism that allows users to:
 
-- Lock tokens before a **Participating Tokenomic Event (PTE)**.
+- Lock tokens before a **Precipitating Tokenomic Event (PTE)**.
 - Unlock tokens over time based on rules triggered by the PTE.
 - Maintain **immutability** of the unlock schedule—even governance cannot change it.
 - Reclaim tokens safely if the PTE never occurs (via a failsafe).
@@ -104,24 +104,24 @@ pub type PrecipitatingEventBlockNumber<T: Config> = StorageValue<_, T::BlockNumb
 ### Commitment Release Parameters:
 
 ```rust
-/// Number of epochs after the `PrecipitatingEventBlockNumber` that no unstaking is allowed
-pub const COMMITMENT_EPOCHS: u32 = < some constant>;
-/// Number of epochs after the `COMMITMENT_EPOCHS` that restrict the unstake amount
-pub const COMMITMENT_RELEASE_EPOCHS: u32 = < some constant>;
+/// Number of blocks after the `PrecipitatingEventBlockNumber` that no unstaking is allowed
+pub const COMMITMENT_BLOCKS: u32 = < some constant>;
+/// Number of blocks after the `COMMITMENT_BLOCKS` that restrict the unstake amount
+pub const COMMITMENT_RELEASE_BLOCKS: u32 = < some constant>;
 ```
 
 **Unlock formula per era:**
 
 ```text
-If current_era < COMMITMENT_EPOCHS:
+If current_era < COMMITMENT_BLOCKS:
     unlock_ratio = 0
 Else:
     thaw_era = current_era - INITIAL_FREEZE_THAW_ERAS
-    unlock_ratio = 1 / (COMMITMENT_RELEASE_EPOCHS - min(thaw_era, COMMITMENT_RELEASE_EPOCHS) + 1)
+    unlock_ratio = 1 / (COMMITMENT_RELEASE_BLOCKS - min(thaw_era, COMMITMENT_RELEASE_BLOCKS) + 1)
 ```
 
 ### Optional Optimizations
-- Instead of having the PTE set to the PTE, it could instead be set to the `COMMITMENT_EPOCHS` value and remove the `COMMITMENT_EPOCHS` value entirely. Governance could do the calculation of the PTE plus the `COMMITMENT_EPOCHS` and just set an `CommittedBoostThawStartBlockNumber`.
+- Instead of having the PTE set to the PTE, it could instead be set to the `COMMITMENT_BLOCKS` value and remove the `COMMITMENT_BLOCKS` value entirely. Governance could do the calculation of the PTE plus the `COMMITMENT_BLOCKS` and just set an `CommittedBoostThawStartBlockNumber`.
 - The `CommittedBoostThawStartBlockNumber` or `PrecipitatingEventBlockNumber` could be set via upgrade migration to be the same as the fallback value, although that would then not have the immediate 100% unlock ratio
 
 ### Additional Related Capacity Changes
