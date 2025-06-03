@@ -174,9 +174,6 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
-	pub BlockWeights: frame_system::limits::BlockWeights =
-	frame_system::limits::BlockWeights::simple_max(crate::Weight::MAX);
-	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;

@@ -178,7 +178,6 @@ parameter_types! {
 	pub static WeightToFee: u64 = 1;
 	pub static TransactionByteFee: u64 = 1;
 	static ExtrinsicBaseWeight: Weight = Weight::zero();
-	pub MaxProposalWeight: frame_support::weights::Weight  = sp_runtime::Perbill::from_percent(50) * BlockWeights::get().max_block;
 }
 
 impl WeightToFeeTrait for WeightToFee {

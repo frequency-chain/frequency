@@ -338,7 +338,6 @@ mod benchmarks {
 
 	#[benchmark]
 	fn set_pte_via_governance() -> Result<(), BenchmarkError> {
-
 		#[extrinsic_call]
 		set_pte_via_governance(RawOrigin::Root, 100u32.into());
 
