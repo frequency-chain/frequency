@@ -2037,9 +2037,8 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// - Convert to AccountId
 		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
-		let msa_account_id = T::AccountId::decode(&mut bytes).map_err(|_| {
-			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
-		})?;
+		let msa_account_id = T::AccountId::decode(&mut bytes)
+			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
 
 		// - Check that the MSA has a balance to withdraw
 		let msa_balance = T::Currency::reducible_balance(
