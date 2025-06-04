@@ -614,7 +614,7 @@ parameter_types! {
 	/// The number of chunks of Reward Pool history we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
 	/// Max differece between PTE and current block number
-	pub const MaxPteDifferenceFromCurrentBlock: u32 = 30 * DAYS;
+	pub const MaxPteDifferenceFromCurrentBlock: u32 = 60 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
