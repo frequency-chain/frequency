@@ -630,7 +630,7 @@ impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
 				reward_percent_cap: Permill::from_parts(8_000),
 			},
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(5_750) }, // 0.575% or 0.00575 per RewardEra
+				StakingConfig { reward_percent_cap: Permill::from_parts(3_833) }, // 0.3833% or 0.003833 per RewardEra
 		}
 	}
 }
