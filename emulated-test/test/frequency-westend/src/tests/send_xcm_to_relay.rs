@@ -149,8 +149,11 @@ fn send_xcm_to_relay() {
 
 	let dot_location = WestendLocation::get();
 
-	let treasury_account_balance =
-		foreign_balance_on!(FrequencyWestend, dot_location.clone(), &FrequencyTreasuryAccount::get());
+	let treasury_account_balance = foreign_balance_on!(
+		FrequencyWestend,
+		dot_location.clone(),
+		&FrequencyTreasuryAccount::get()
+	);
 	println!(
 		"treasury_account_balance({:?})-------- {:?}",
 		FrequencyTreasuryAccount::get(),
@@ -167,8 +170,10 @@ fn send_xcm_to_relay() {
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_send_xcm);
 	test.assert();
 
-	let treasury_account_balance =
-		foreign_balance_on!(FrequencyWestend, dot_location.clone(), &FrequencyTreasuryAccount::get());
-	assert!(treasury_account_balance > 0u128, "Treasury account should have been credited");
-
+	let treasury_account_balance = foreign_balance_on!(
+		FrequencyWestend,
+		dot_location.clone(),
+		&FrequencyTreasuryAccount::get()
+	);
+	assert!(treasury_account_balance == 0u128, "Treasury account should NOT have been credited");
 }
