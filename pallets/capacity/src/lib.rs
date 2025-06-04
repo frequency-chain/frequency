@@ -40,7 +40,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
+	ArithmeticError, BoundedVec, DispatchError, Perbill,
 };
 
 pub use common_primitives::{
@@ -179,10 +179,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type RewardPoolPerEra: Get<BalanceOf<Self>>;
 
-		/// the percentage cap per era of an individual Provider Boost reward
-		#[pallet::constant]
-		type RewardPercentCap: Get<Permill>;
-
 		/// The number of chunks of Reward Pool history we expect to store
 		/// Is a divisor of [`Self::ProviderBoostHistoryLimit`]
 		#[pallet::constant]
@@ -198,6 +194,9 @@ pub mod pallet {
 
 		/// The origin that is allowed to set Precipitating Tokenomic Event (PTE) via governance
 		type PteGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
+		/// Provdies the configurations for each staking type
+		type StakingConfigProvider: StakingConfigProvider;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -727,8 +726,8 @@ impl<T: Config> Pallet<T> {
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
 		let (mut staking_details, stakable_amount) =
-			Self::ensure_can_stake(staker, *target, *amount, StakingType::ProviderBoost)?;
-		staking_details.staking_type = StakingType::ProviderBoost;
+			Self::ensure_can_stake(staker, *target, *amount, StakingType::FlexibleBoost)?;
+		staking_details.staking_type = StakingType::FlexibleBoost;
 		Ok((staking_details, stakable_amount))
 	}
 
@@ -847,7 +846,7 @@ impl<T: Config> Pallet<T> {
 		Self::set_staking_account(unstaker, &staking_account);
 
 		let staking_type = staking_account.staking_type;
-		if staking_type == StakingType::ProviderBoost {
+		if staking_type == StakingType::FlexibleBoost {
 			let era = CurrentEraInfo::<T>::get().era_index;
 			Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
 			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
@@ -934,6 +933,7 @@ impl<T: Config> Pallet<T> {
 	fn get_thaw_at_epoch() -> <T as Config>::EpochNumber {
 		let current_epoch: T::EpochNumber = CurrentEpoch::<T>::get();
 		let thaw_period = T::UnstakingThawPeriod::get();
+
 		current_epoch.saturating_add(thaw_period.into())
 	}
 
@@ -954,7 +954,7 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
-		} else if staking_type.eq(&StakingType::ProviderBoost) {
+		} else if staking_type.eq(&StakingType::FlexibleBoost) {
 			Perbill::from_rational(amount, staking_target_details.amount)
 				.mul_ceil(staking_target_details.capacity)
 		} else {
@@ -1140,6 +1140,7 @@ impl<T: Config> Pallet<T> {
 
 		let current_era_info = CurrentEraInfo::<T>::get(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
+		let staking_type = StakingAccountLedger::<T>::get(account).unwrap_or_default().staking_type;
 
 		let start_era = current_era_info.era_index.saturating_sub(max_history);
 		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
@@ -1165,6 +1166,7 @@ impl<T: Config> Pallet<T> {
 					eligible_amount,
 					total_for_era,
 					T::RewardPoolPerEra::get(),
+					staking_type,
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1380,8 +1382,11 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 		era_amount_staked: Self::Balance,
 		era_total_staked: Self::Balance,
 		era_reward_pool_size: Self::Balance,
+		staking_type: StakingType,
 	) -> Self::Balance {
-		let capped_reward = T::RewardPercentCap::get().mul(era_amount_staked);
+		let capped_reward = T::StakingConfigProvider::get(staking_type)
+			.reward_percent_cap
+			.mul(era_amount_staked);
 		let proportional_reward = era_reward_pool_size
 			.saturating_mul(era_amount_staked)
 			.checked_div(&era_total_staked)

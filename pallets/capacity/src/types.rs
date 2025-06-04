@@ -19,18 +19,6 @@ use alloc::vec::Vec;
 /// this value should be between 0 and 100
 pub const STAKED_PERCENTAGE_TO_BOOST: u32 = 50;
 
-#[derive(
-	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
-)]
-/// The type of staking a given Staking Account is doing.
-pub enum StakingType {
-	/// Staking account targets Providers for capacity only, no token reward
-	MaximumCapacity,
-	/// Staking account targets Providers and splits reward between capacity to the Provider
-	/// and token for the account holder
-	ProviderBoost,
-}
-
 /// The type used for storing information about staking details.
 #[derive(
 	TypeInfo, RuntimeDebugNoBound, PartialEqNoBound, EqNoBound, Clone, Decode, Encode, MaxEncodedLen,
@@ -533,6 +521,7 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
 		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
 		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
+		staking_type: StakingType,       // staking type
 	) -> BalanceOf<T>;
 
 	/// Return the effective amount when staked for a Provider Boost
