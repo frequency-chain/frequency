@@ -105,12 +105,6 @@ pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 
 /// Staking configuration details
 pub struct StakingConfig {
-	// /// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
-	// pub minimum_staking_amount: Balance,
-	// /// The minimum required token amount to remain in the account after staking.
-	// pub minimum_token_balance: Balance,
-	/// The number of Epochs before you can unlock tokens after unstaking.
-	pub unstaking_thaw_period: u16,
 	/// the percentage cap per era of an individual Provider Boost reward
 	pub reward_percent_cap: Permill,
 }

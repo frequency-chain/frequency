@@ -615,7 +615,7 @@ parameter_types! {
 	/// The number of chunks of Reward Pool history we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
 	/// Max differece between PTE and current block number
-	pub const MaxPteDifferenceFromCurrentBlock: u32 = 30 * DAYS;
+	pub const MaxPteDifferenceFromCurrentBlock: u32 = 60 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
@@ -624,22 +624,13 @@ const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() ==
 pub struct FreqeuncyStakingConfigProvider;
 impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
 	fn get(staking_type: StakingType) -> StakingConfig {
-		#[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]
-		let unstaking_thaw_period: u16 = 30;
-
-		#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
-		let unstaking_thaw_period: u16 = 2;
-
 		match staking_type {
 			StakingType::CommittedBoost => StakingConfig {
 				// TODO: TBD
 				reward_percent_cap: Permill::from_parts(8_000),
-				unstaking_thaw_period,
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
-				reward_percent_cap: Permill::from_parts(3_833),
-				unstaking_thaw_period,
-			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
+				StakingConfig { reward_percent_cap: Permill::from_parts(3_833) },
 		}
 	}
 }
@@ -654,6 +645,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxUnlockingChunks = CapacityMaxUnlockingChunks;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = Msa;
+	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
@@ -664,7 +656,6 @@ impl pallet_capacity::Config for Runtime {
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
 	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(153_424_650u128) }>;
-	// type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
 	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;

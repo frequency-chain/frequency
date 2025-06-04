@@ -3,7 +3,7 @@ use crate as pallet_capacity;
 use crate::{
 	CapacityDetails, CapacityLedger, CurrentEpoch, CurrentEraProviderBoostTotal, FreezeReason,
 	ProviderBoostHistories, ProviderBoostHistory, StakingAccountLedger, StakingDetails,
-	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::CommittedBoost,
+	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::FlexibleBoost,
 	UnlockChunk, UnstakeUnlocks,
 };
 use common_primitives::msa::MessageSourceId;
@@ -569,7 +569,7 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		let amount = 1_000u64;
 
 		// staking 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 
 		// staking 2k as of block 11, era 2
 		run_to_block(11);

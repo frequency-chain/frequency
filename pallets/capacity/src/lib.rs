@@ -132,6 +132,10 @@ pub mod pallet {
 		/// A set of helper functions for benchmarking.
 		type BenchmarkHelper: RegisterProviderBenchmarkHelper;
 
+		/// The number of Epochs before you can unlock tokens after unstaking.
+		#[pallet::constant]
+		type UnstakingThawPeriod: Get<u16>;
+
 		/// Maximum number of blocks an epoch can be
 		#[pallet::constant]
 		type MaxEpochLength: Get<BlockNumberFor<Self>>;
@@ -722,8 +726,8 @@ impl<T: Config> Pallet<T> {
 		amount: &BalanceOf<T>,
 	) -> Result<(StakingDetails<T>, BalanceOf<T>), DispatchError> {
 		let (mut staking_details, stakable_amount) =
-			Self::ensure_can_stake(staker, *target, *amount, StakingType::CommittedBoost)?;
-		staking_details.staking_type = StakingType::CommittedBoost;
+			Self::ensure_can_stake(staker, *target, *amount, StakingType::FlexibleBoost)?;
+		staking_details.staking_type = StakingType::FlexibleBoost;
 		Ok((staking_details, stakable_amount))
 	}
 
@@ -842,7 +846,7 @@ impl<T: Config> Pallet<T> {
 		Self::set_staking_account(unstaker, &staking_account);
 
 		let staking_type = staking_account.staking_type;
-		if staking_type == StakingType::CommittedBoost {
+		if staking_type == StakingType::FlexibleBoost {
 			let era = CurrentEraInfo::<T>::get().era_index;
 			Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
 			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
@@ -858,10 +862,8 @@ impl<T: Config> Pallet<T> {
 		actual_unstaked_amount: BalanceOf<T>,
 	) -> Result<(), DispatchError> {
 		let current_epoch: T::EpochNumber = CurrentEpoch::<T>::get();
-		// TODO: pass staking type
-		let thaw_at = current_epoch.saturating_add(T::EpochNumber::from(
-			T::StakingConfigProvider::get(StakingType::CommittedBoost).unstaking_thaw_period,
-		));
+		let thaw_at =
+			current_epoch.saturating_add(T::EpochNumber::from(T::UnstakingThawPeriod::get()));
 		let mut unlocks = UnstakeUnlocks::<T>::get(unstaker).unwrap_or_default();
 
 		match unlocks.iter_mut().find(|chunk| chunk.thaw_at == thaw_at) {
@@ -930,9 +932,7 @@ impl<T: Config> Pallet<T> {
 	#[allow(unused)]
 	fn get_thaw_at_epoch() -> <T as Config>::EpochNumber {
 		let current_epoch: T::EpochNumber = CurrentEpoch::<T>::get();
-		// TODO: pass staking_type
-		let thaw_period =
-			T::StakingConfigProvider::get(StakingType::CommittedBoost).unstaking_thaw_period;
+		let thaw_period = T::UnstakingThawPeriod::get();
 
 		current_epoch.saturating_add(thaw_period.into())
 	}
@@ -954,7 +954,7 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
-		} else if staking_type.eq(&StakingType::CommittedBoost) {
+		} else if staking_type.eq(&StakingType::FlexibleBoost) {
 			Perbill::from_rational(amount, staking_target_details.amount)
 				.mul_ceil(staking_target_details.capacity)
 		} else {
@@ -1382,7 +1382,7 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 		era_reward_pool_size: Self::Balance,
 	) -> Self::Balance {
 		// TODO: pass staking_type
-		let capped_reward = T::StakingConfigProvider::get(StakingType::CommittedBoost)
+		let capped_reward = T::StakingConfigProvider::get(StakingType::FlexibleBoost)
 			.reward_percent_cap
 			.mul(era_amount_staked);
 		let proportional_reward = era_reward_pool_size

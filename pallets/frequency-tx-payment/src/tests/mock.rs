@@ -230,7 +230,7 @@ impl pallet_capacity::Config for Test {
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = ();
 
-	// type UnstakingThawPeriod = ConstU16<2>;
+	type UnstakingThawPeriod = ConstU16<2>;
 	type MaxEpochLength = ConstU32<100>;
 	type EpochNumber = u32;
 	type CapacityPerToken = TestCapacityPerToken;

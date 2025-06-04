@@ -383,6 +383,12 @@ pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
 pub type CapacityMaxUnlockingChunks = ConstU32<4>;
 pub type CapacityMaxEpochLength = ConstU32<{ 2 * DAYS }>; // Two days, assuming 6 second blocks.
 
+#[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]
+pub type CapacityUnstakingThawPeriod = ConstU16<30>; // 30 Epochs, or 30 days given the above
+
+#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
+pub type CapacityUnstakingThawPeriod = ConstU16<2>; // 2 Epochs
+
 // Needs parameter_types! for the Perbil
 parameter_types! {
 	// 1:50 Capacity:Token, must be declared this way instead of using `from_rational` because of

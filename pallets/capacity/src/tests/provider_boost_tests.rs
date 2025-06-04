@@ -24,7 +24,7 @@ fn provider_boost_works() {
 
 		// Check that the staking account has the correct staking type.
 		assert_eq!(boost_account.active, 200);
-		assert_eq!(boost_account.staking_type, StakingType::CommittedBoost);
+		assert_eq!(boost_account.staking_type, StakingType::FlexibleBoost);
 
 		// Check that the capacity generated is correct. (5% of amount staked, since 10% is what's in the mock)
 		let capacity_details = CapacityLedger::<Test>::get(target).unwrap();

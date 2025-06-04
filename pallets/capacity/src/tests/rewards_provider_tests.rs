@@ -102,7 +102,7 @@ fn list_unclaimed_rewards_has_eligible_rewards() {
 		let amount = 1_000u64;
 
 		// staking 1k as of block 1, era 1 (1-10)
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 
 		// staking 2k as of block 11, era 2  (11-20)
 		run_to_block(11);
@@ -197,7 +197,7 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		// boost 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		run_to_block(131); // era 13
@@ -243,7 +243,7 @@ fn list_unclaimed_rewards_current_era_starts_at_later_block_works() {
 
 		System::set_block_number(9900);
 		set_era_and_reward_pool(0, 9898, 10_000);
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 
 		run_to_block(9910); // middle of era 1
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 1u32);
@@ -286,7 +286,7 @@ fn has_unclaimed_rewards_works() {
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		// staking 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		// staking 2k as of block 11, era 2
@@ -313,7 +313,7 @@ fn has_unclaimed_rewards_returns_true_with_old_single_boost() {
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		// boost 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, CommittedBoost);
+		setup_provider(&account, &target, &amount, FlexibleBoost);
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
 		run_to_block(71);
