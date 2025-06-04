@@ -1140,6 +1140,7 @@ impl<T: Config> Pallet<T> {
 
 		let current_era_info = CurrentEraInfo::<T>::get(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
+		let staking_type = StakingAccountLedger::<T>::get(account).unwrap_or_default().staking_type;
 
 		let start_era = current_era_info.era_index.saturating_sub(max_history);
 		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
@@ -1165,6 +1166,7 @@ impl<T: Config> Pallet<T> {
 					eligible_amount,
 					total_for_era,
 					T::RewardPoolPerEra::get(),
+					staking_type,
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1380,9 +1382,9 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 		era_amount_staked: Self::Balance,
 		era_total_staked: Self::Balance,
 		era_reward_pool_size: Self::Balance,
+		staking_type: StakingType,
 	) -> Self::Balance {
-		// TODO: pass staking_type
-		let capped_reward = T::StakingConfigProvider::get(StakingType::FlexibleBoost)
+		let capped_reward = T::StakingConfigProvider::get(staking_type)
 			.reward_percent_cap
 			.mul(era_amount_staked);
 		let proportional_reward = era_reward_pool_size

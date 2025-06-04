@@ -8,7 +8,7 @@ use crate::{
 	StakingType::*,
 	UnclaimedRewardInfo,
 };
-use common_primitives::msa::MessageSourceId;
+use common_primitives::{capacity::StakingType, msa::MessageSourceId};
 use frame_support::{assert_ok, traits::Len};
 use frame_system::pallet_prelude::BlockNumberFor;
 use sp_core::Get;
@@ -63,7 +63,12 @@ fn era_staking_reward_implementation() {
 	];
 	for tc in test_cases {
 		assert_eq!(
-			Capacity::era_staking_reward(tc.amount_staked, tc.total_staked, tc.reward_pool),
+			Capacity::era_staking_reward(
+				tc.amount_staked,
+				tc.total_staked,
+				tc.reward_pool,
+				StakingType::FlexibleBoost
+			),
 			tc.expected_reward
 		);
 	}

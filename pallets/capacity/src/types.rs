@@ -521,6 +521,7 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
 		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
 		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
+		staking_type: StakingType,       // staking type
 	) -> BalanceOf<T>;
 
 	/// Return the effective amount when staked for a Provider Boost

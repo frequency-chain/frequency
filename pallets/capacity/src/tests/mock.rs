@@ -5,6 +5,7 @@ use crate::{
 	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
+	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
@@ -161,8 +162,9 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		amount_staked: Self::Balance,
 		total_staked: Self::Balance,
 		reward_pool_size: Self::Balance,
+		staking_type: StakingType,
 	) -> Self::Balance {
-		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size, staking_type)
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
@@ -170,10 +172,22 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 	}
 }
 
+/// Test configuration
+pub struct TestStakingConfigProvider;
+impl StakingConfigProvider for TestStakingConfigProvider {
+	fn get(staking_type: StakingType) -> StakingConfig {
+		match staking_type {
+			StakingType::CommittedBoost =>
+				StakingConfig { reward_percent_cap: Permill::from_parts(8_000) },
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
+				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) },
+		}
+	}
+}
+
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
-	// pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
@@ -198,11 +212,11 @@ impl Config for Test {
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolPerEra = ConstU64<10_000>;
-	// type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
+	type StakingConfigProvider = TestStakingConfigProvider;
 }
 
 fn initialize_reward_pool() {
