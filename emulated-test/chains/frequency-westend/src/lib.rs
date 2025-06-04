@@ -27,6 +27,7 @@ decl_test_parachains! {
 			PolkadotXcm: frequency_runtime::PolkadotXcm,
 			ForeignAssets: frequency_runtime::ForeignAssets,
 			Balances: frequency_runtime::Balances,
+			Sudo: frequency_runtime::Sudo,
 		}
 	},
 }

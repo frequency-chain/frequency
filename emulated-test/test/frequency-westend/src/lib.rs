@@ -9,6 +9,7 @@ mod imports {
 		},
 		BoundedVec,
 	};
+	pub use staging_xcm_builder::{DescribeTerminus, HashedDescription};
 
 	pub use staging_xcm::{
 		latest::AssetTransferFilter,

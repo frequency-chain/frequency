@@ -4,6 +4,7 @@ use polkadot_parachain_primitives::primitives::Sibling;
 use staging_xcm_builder::{
 	AccountId32Aliases, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
 	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
+	HashedDescription, DescribeTerminus,
 };
 
 use super::parameters::{RelayChainOrigin, RelayNetwork};
@@ -20,6 +21,12 @@ pub type LocationToAccountId = (
 	SiblingParachainConvertsVia<Sibling, AccountId>,
 	// Straight up local `AccountId32` origins just alias directly to `AccountId`.
 	AccountId32Aliases<RelayNetwork, AccountId>,
+	// Foreign locations alias into accounts according to a hash of their standard description.
+	// HashedDescription<AccountId, (DescribeTerminus, DescribeFamily<DescribeAllTerminal>)>,
+
+	// Here/local root location to `AccountId`.
+	HashedDescription<AccountId, DescribeTerminus>,
+
 );
 
 /// This is the type we use to convert an (incoming) XCM origin into a local `Origin` instance,
