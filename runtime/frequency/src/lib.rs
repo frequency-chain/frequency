@@ -35,6 +35,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, DispatchError,
 };
 
+use common_primitives::capacity::{StakingConfig, StakingConfigProvider, StakingType};
 use pallet_collective::Members;
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
@@ -619,6 +620,30 @@ parameter_types! {
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
 
+/// Configuration definitions for Staking types
+pub struct FreqeuncyStakingConfigProvider;
+impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
+	fn get(staking_type: StakingType) -> StakingConfig {
+		#[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]
+		let unstaking_thaw_period: u16 = 30;
+
+		#[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
+		let unstaking_thaw_period: u16 = 2;
+
+		match staking_type {
+			StakingType::CommittedBoost => StakingConfig {
+				// TODO: TBD
+				reward_percent_cap: Permill::from_parts(8_000),
+				unstaking_thaw_period,
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(3_833),
+				unstaking_thaw_period,
+			},
+		}
+	}
+}
+
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = pallet_capacity::weights::SubstrateWeight<Runtime>;
@@ -629,7 +654,6 @@ impl pallet_capacity::Config for Runtime {
 	type MaxUnlockingChunks = CapacityMaxUnlockingChunks;
 	#[cfg(feature = "runtime-benchmarks")]
 	type BenchmarkHelper = Msa;
-	type UnstakingThawPeriod = CapacityUnstakingThawPeriod;
 	type MaxEpochLength = CapacityMaxEpochLength;
 	type EpochNumber = u32;
 	type CapacityPerToken = CapacityPerToken;
@@ -640,7 +664,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
 	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(153_424_650u128) }>;
-	type RewardPercentCap = CapacityRewardCap;
+	// type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
 	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;
@@ -649,6 +673,7 @@ impl pallet_capacity::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
 	>;
 	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
+	type StakingConfigProvider = FreqeuncyStakingConfigProvider;
 }
 
 impl pallet_schemas::Config for Runtime {

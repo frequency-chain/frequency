@@ -2,7 +2,7 @@ use crate::msa::MessageSourceId;
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
-use sp_runtime::DispatchError;
+use sp_runtime::{DispatchError, Permill};
 
 /// The type of a Reward Era
 pub type RewardEra = u32;
@@ -11,6 +11,29 @@ pub type RewardEra = u32;
 pub trait TargetValidator {
 	/// Checks if an MSA is a valid target.
 	fn validate(target: MessageSourceId) -> bool;
+}
+
+#[derive(
+	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
+)]
+/// The type of staking a given Staking Account is doing.
+pub enum StakingType {
+	/// Staking account targets Providers for capacity only, no token reward
+	MaximumCapacity,
+	/// New reward program with new rules.
+	/// Defines a mechanism for locking tokens that is both time-sensitive and event-driven, with immutable thawing behavior.
+	CommittedBoost,
+	/// Staking account targets Providers and splits reward between capacity to the Provider
+	/// and token for the account holder
+	FlexibleBoost,
+}
+
+/// A trait for checking that a target MSA can be staked to.
+pub trait StakingConfigProvider {
+	/// Scalar type for representing balance of an account.
+	// type Balance: Balance;
+	/// returns the configuration for the stake type
+	fn get(staking_type: StakingType) -> StakingConfig;
 }
 
 /// A blanket implementation
@@ -78,4 +101,16 @@ pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 	pub eligible_amount: Balance,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
 	pub earned_amount: Balance,
+}
+
+/// Staking configuration details
+pub struct StakingConfig {
+	// /// The minimum required token amount to stake. It facilitates cleaning dust when unstaking.
+	// pub minimum_staking_amount: Balance,
+	// /// The minimum required token amount to remain in the account after staking.
+	// pub minimum_token_balance: Balance,
+	/// The number of Epochs before you can unlock tokens after unstaking.
+	pub unstaking_thaw_period: u16,
+	/// the percentage cap per era of an individual Provider Boost reward
+	pub reward_percent_cap: Permill,
 }

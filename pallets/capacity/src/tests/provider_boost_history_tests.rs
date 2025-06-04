@@ -4,7 +4,7 @@ use crate::{
 		testing_utils::{run_to_block, setup_provider, system_run_to_block},
 	},
 	Config, ProviderBoostHistories, ProviderBoostHistory,
-	StakingType::{MaximumCapacity, ProviderBoost},
+	StakingType::{CommittedBoost, MaximumCapacity},
 };
 use common_primitives::capacity::RewardEra;
 use frame_support::assert_ok;
@@ -16,7 +16,7 @@ fn provider_boost_adds_to_staking_history() {
 		let staker = 10_000u64;
 		let target = 1u64;
 
-		setup_provider(&staker, &target, &1_000u64, ProviderBoost);
+		setup_provider(&staker, &target, &1_000u64, CommittedBoost);
 		let history = ProviderBoostHistories::<Test>::get(staker);
 		assert!(history.is_some());
 	})
@@ -27,7 +27,7 @@ fn multiple_provider_boosts_updates_history_correctly() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000u64;
 		let target = 1u64;
-		setup_provider(&staker, &target, &500u64, ProviderBoost);
+		setup_provider(&staker, &target, &500u64, CommittedBoost);
 
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, 200));
 

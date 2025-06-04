@@ -64,7 +64,7 @@ pub fn setup_provider_stake<T: Config>(
 
 	let mut staking_account = StakingDetails::<T>::default();
 	if is_provider_boost {
-		staking_account.staking_type = ProviderBoost;
+		staking_account.staking_type = CommittedBoost;
 	}
 	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 	let mut capacity_details =

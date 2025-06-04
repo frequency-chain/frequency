@@ -19,7 +19,7 @@ fn claim_staking_rewards_leaves_one_history_item_for_current_era() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, CommittedBoost);
 		run_to_block(31);
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 
@@ -37,7 +37,7 @@ fn claim_staking_rewards_allows_unstake() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, CommittedBoost);
 		run_to_block(31);
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(account), target, 100u64),
@@ -55,7 +55,7 @@ fn claim_staking_rewards_mints_and_transfers_expected_total() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, CommittedBoost);
 		run_to_block(31);
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
@@ -91,7 +91,7 @@ fn claim_staking_rewards_has_expected_total_when_other_stakers() {
 
 		let other_staker = 600_u64;
 		let other_amount = 300_u64;
-		setup_provider(&other_staker, &target, &other_amount, ProviderBoost);
+		setup_provider(&other_staker, &target, &other_amount, CommittedBoost);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 		run_to_block(31); // 4
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
@@ -105,7 +105,7 @@ fn claim_staking_rewards_has_expected_total_if_amount_should_be_capped() {
 		let account = 10_000u64;
 		let target: MessageSourceId = 10;
 		let amount = 9_900u64;
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, CommittedBoost);
 		run_to_block(31);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		assert_eq!(get_balance::<Test>(&account), 10_076u64); // cap is 0.38%,*2 = 76, rounded
@@ -120,7 +120,7 @@ fn claim_staking_rewards_fails_if_no_available_rewards() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, CommittedBoost);
 		// Unclaimed rewards should have zero length b/c it's still Era 1.
 		// Nothing will be in history
 		assert_noop!(
