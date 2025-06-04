@@ -4,11 +4,8 @@ concurrency:
   group: ${{github.workflow}}-${{github.ref}}
   cancel-in-progress: true
 on:
-  pull_request:
-    branches:
-      - main
-      - "**-development" # Feature Branches should suffix with -development
-      - hotfix/**
+  push:
+
 env:
   BIN_DIR: target/release
   PR_LABEL_METADATA_CHANGED: metadata-changed
@@ -77,38 +74,6 @@ jobs:
         with:
           GITHUB_TOKEN: ${{ github.token }}
           LABELS_TO_REMOVE: ${{env.PR_LABEL_METADATA_VERSION_NOT_INCREMENTED}}
-
-  # Workaround to handle skipped required check inside matrix
-  # https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/defining-the-mergeability-of-pull-requests/troubleshooting-required-status-checks
-  build-binaries-dummy:
-    needs: changes
-    if: needs.changes.outputs.build-binary != 'true'
-    runs-on: ubuntu-24.04
-    name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
-    strategy:
-      matrix:
-        # Match this to the real build-binaries job
-        include:
-          - network: dev
-            git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay
-            branch_alias: pr
-          - network: local
-            git_branch: ${{github.head_ref}}
-            spec: frequency-local
-            branch_alias: pr
-          - network: local
-            git_branch: main
-            spec: frequency-local
-            branch_alias: main
-          - network: testnet
-            spec: frequency-testnet
-            branch_alias: pr
-          - network: mainnet
-            spec: frequency
-            branch_alias: pr
-    steps:
-      - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
 
   build-binaries:
     needs: changes
