@@ -63,14 +63,14 @@ describe('Capacity: list_unclaimed_rewards', function () {
     // Boosted entire eras, should have rewards
     assert.equal(result[1].stakedAmount.toHuman(), '100,000,000');
     assert.equal(result[1].eligibleAmount.toHuman(), '100,000,000');
-    assert.equal(result[1].earnedAmount.toHuman(), '575,000');
+    assert.equal(result[1].earnedAmount.toHuman(), '383,300');
 
     assert.equal(result[2].stakedAmount.toHuman(), '100,000,000');
     assert.equal(result[2].eligibleAmount.toHuman(), '100,000,000');
-    assert.equal(result[2].earnedAmount.toHuman(), '575,000');
+    assert.equal(result[2].earnedAmount.toHuman(), '383,300');
 
     assert.equal(result[3].stakedAmount.toHuman(), '100,000,000');
     assert.equal(result[3].eligibleAmount.toHuman(), '100,000,000');
-    assert.equal(result[3].earnedAmount.toHuman(), '575,000');
+    assert.equal(result[3].earnedAmount.toHuman(), '383,300');
   });
 });
