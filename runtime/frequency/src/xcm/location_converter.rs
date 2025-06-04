@@ -2,8 +2,9 @@ use crate::{AccountId, RuntimeOrigin};
 use pallet_xcm::XcmPassthrough;
 use polkadot_parachain_primitives::primitives::Sibling;
 use staging_xcm_builder::{
-	AccountId32Aliases, ParentIsPreset, RelayChainAsNative, SiblingParachainAsNative,
-	SiblingParachainConvertsVia, SignedAccountId32AsNative, SovereignSignedViaLocation,
+	AccountId32Aliases, DescribeTerminus, HashedDescription, ParentIsPreset, RelayChainAsNative,
+	SiblingParachainAsNative, SiblingParachainConvertsVia, SignedAccountId32AsNative,
+	SovereignSignedViaLocation,
 };
 
 use super::parameters::{RelayChainOrigin, RelayNetwork};

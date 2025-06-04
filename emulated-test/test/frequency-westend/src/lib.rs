@@ -9,6 +9,7 @@ mod imports {
 		},
 		BoundedVec,
 	};
+	pub use staging_xcm_builder::{DescribeTerminus, HashedDescription};
 
 	pub use staging_xcm::{
 		latest::AssetTransferFilter,
@@ -36,7 +37,7 @@ mod imports {
 				xcm::CheckingAccount as FrequencyCheckingAccount,
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
-			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
+			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet, TreasuryAccount as FrequencyTreasuryAccount,
 		},
 		westend_emulated_chain::{genesis::ED as WESTEND_ED, WestendRelayPallet as WestendPallet},
 		AssetHubWestendPara as AssetHubWestend,

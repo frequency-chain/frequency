@@ -14,6 +14,7 @@ pub type ForeignAssetsAssetId = Location;
 
 parameter_types! {
 	pub const RelayLocation: Location = Location::parent();
+	pub const RootLocation: Location = Location::here();
 	pub FeeAssetId: AssetId = AssetId(RelayLocation::get());
 	pub const BaseDeliveryFee: u128 = (1_000_000_000_000u128 / 100).saturating_mul(3);
 	pub const TransactionByteFee: Balance = 10 * MICROUNIT;

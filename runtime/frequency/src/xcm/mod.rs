@@ -5,6 +5,7 @@ pub mod xcm_config;
 
 pub mod asset_transactor;
 pub mod barrier;
+pub mod fees;
 pub mod location_converter;
 pub mod parameters;
 pub mod reserve;
@@ -13,6 +14,7 @@ pub mod trader;
 pub mod weigher;
 
 pub use xcm_config::*;
+pub use fees::{FeeManager};
 
 pub use asset_transactor::{AssetTransactors, Checking, CheckingAccount};
 pub use barrier::Barrier;
