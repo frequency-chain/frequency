@@ -1,4 +1,4 @@
-pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId};
+pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId, TreasuryAccount};
 
 mod genesis;
 pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
