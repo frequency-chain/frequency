@@ -217,7 +217,7 @@ impl StakingConfigProvider for TestStakingConfigProvider {
 			StakingType::CommittedBoost =>
 				StakingConfig { reward_percent_cap: Permill::from_parts(8_000) },
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) },
+				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) }, // 0.38% or 0.0038 per RewardEra
 		}
 	}
 }
