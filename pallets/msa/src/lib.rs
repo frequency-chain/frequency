@@ -31,6 +31,7 @@
 	missing_docs
 )]
 
+extern crate alloc;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
@@ -50,6 +51,7 @@ use common_runtime::signature::check_signature;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::{MsaBenchmarkHelper, RegisterProviderBenchmarkHelper};
 
+use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::TargetValidator,
 	handles::HandleProvider,
@@ -71,8 +73,6 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature,
 };
-extern crate alloc;
-use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use pallet::*;
 pub use types::{
@@ -1510,7 +1510,8 @@ impl<T: Config> Pallet<T> {
 		signature: &MultiSignature,
 		signature_expires_at: BlockNumberFor<T>,
 	) -> DispatchResult {
-		let current_block = Self::check_signature(signature, signature_expires_at)?;
+		let current_block =
+			Self::check_signature_against_registry(signature, signature_expires_at)?;
 
 		Self::enqueue_signature(signature, signature_expires_at, current_block)
 	}
@@ -1523,7 +1524,7 @@ impl<T: Config> Pallet<T> {
 	/// * [`Error::ProofHasExpired`]
 	/// * [`Error::SignatureAlreadySubmitted`]
 	///
-	pub fn check_signature(
+	pub fn check_signature_against_registry(
 		signature: &MultiSignature,
 		signature_expires_at: BlockNumberFor<T>,
 	) -> Result<BlockNumberFor<T>, DispatchError> {
@@ -2023,9 +2024,13 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8)
 		);
 
-		Pallet::<T>::check_signature(msa_owner_proof, authorization_payload.expiration).map_err(
-			|_| InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
-		)?;
+		Pallet::<T>::check_signature_against_registry(
+			msa_owner_proof,
+			authorization_payload.expiration,
+		)
+		.map_err(|_| {
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
+		})?;
 
 		let msa_id = authorization_payload.msa_id;
 
