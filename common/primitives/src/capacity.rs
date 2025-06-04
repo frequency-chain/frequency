@@ -28,7 +28,8 @@ pub enum StakingType {
 	FlexibleBoost,
 }
 
-/// A trait for checking that a target MSA can be staked to.
+// A trait defining the attributes for calculating freeze/release and reward values
+/// associated with a particular `StakingType`
 pub trait StakingConfigProvider {
 	/// Scalar type for representing balance of an account.
 	// type Balance: Balance;
