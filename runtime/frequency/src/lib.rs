@@ -454,7 +454,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 163,
+	spec_version: 164,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -468,7 +468,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 163,
+	spec_version: 164,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -613,6 +613,8 @@ parameter_types! {
 	pub const ProviderBoostHistoryLimit : u32 = 30;
 	/// The number of chunks of Reward Pool history we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
+	/// Max differece between PTE and current block number
+	pub const MaxPteDifferenceFromCurrentBlock: u32 = 60 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
@@ -641,6 +643,12 @@ impl pallet_capacity::Config for Runtime {
 	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
+	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;
+	type PteGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
 }
 
 impl pallet_schemas::Config for Runtime {

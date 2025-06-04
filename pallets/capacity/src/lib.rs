@@ -187,6 +187,17 @@ pub mod pallet {
 		/// Is a divisor of [`Self::ProviderBoostHistoryLimit`]
 		#[pallet::constant]
 		type RewardPoolChunkLength: Get<u32>;
+
+		/// Max differece between PTE and current block number
+		#[pallet::constant]
+		type MaxPteDifferenceFromCurrentBlock: Get<u32>;
+
+		/// Block after which full unlock is allowed if PTE does not occur.
+		#[pallet::constant]
+		type CommittedBoostFailsafeUnlockBlockNumber: Get<u32>;
+
+		/// The origin that is allowed to set Precipitating Tokenomic Event (PTE) via governance
+		type PteGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -267,6 +278,11 @@ pub mod pallet {
 	pub type ProviderBoostHistories<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, ProviderBoostHistory<T>>;
 
+	// Governance-triggered event that starts unlock schedule for Committed Boosting.
+	#[pallet::storage]
+	pub type PrecipitatingEventBlockNumber<T: Config> =
+		StorageValue<_, BlockNumberFor<T>, OptionQuery>;
+
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
 	#[pallet::pallet]
@@ -346,6 +362,11 @@ pub mod pallet {
 			/// The reward amount
 			reward_amount: BalanceOf<T>,
 		},
+		/// Precipitating Tokenomic Event value is set
+		PrecipitatingTokenomicEventSet {
+			/// The block number of the event
+			at: BlockNumberFor<T>,
+		},
 	}
 
 	#[pallet::error]
@@ -400,6 +421,12 @@ pub mod pallet {
 		CollectionBoundExceeded,
 		/// This origin has nothing staked for ProviderBoost.
 		NotAProviderBoostAccount,
+		/// Pte value is not in the valid window
+		InvalidPteValue,
+		/// Pte value is alrerady set
+		PteValueAlreadySet,
+		/// Pte is exipred error
+		PteExpired,
 	}
 
 	#[pallet::hooks]
@@ -619,6 +646,37 @@ pub mod pallet {
 				account: staker.clone(),
 				reward_amount: total_to_mint,
 			});
+			Ok(())
+		}
+
+		/// Sets the Precipitating Tokenomic Event value via Governance
+		#[pallet::call_index(7)]
+		#[pallet::weight(T::WeightInfo::set_pte_via_governance())]
+		pub fn set_pte_via_governance(
+			origin: OriginFor<T>,
+			pte_block_number: BlockNumberFor<T>,
+		) -> DispatchResult {
+			T::PteGovernanceOrigin::ensure_origin(origin)?;
+
+			let current_block = frame_system::Pallet::<T>::block_number();
+			// PTE can only be in the present or past (with some valid window)
+			ensure!(
+				current_block >= pte_block_number &&
+					current_block - pte_block_number <
+						T::MaxPteDifferenceFromCurrentBlock::get().into(),
+				Error::<T>::InvalidPteValue
+			);
+			ensure!(
+				current_block < T::CommittedBoostFailsafeUnlockBlockNumber::get().into(),
+				Error::<T>::PteExpired
+			);
+			ensure!(
+				PrecipitatingEventBlockNumber::<T>::get().is_none(),
+				Error::<T>::PteValueAlreadySet
+			);
+
+			PrecipitatingEventBlockNumber::<T>::set(Some(pte_block_number));
+			Self::deposit_event(Event::PrecipitatingTokenomicEventSet { at: pte_block_number });
 			Ok(())
 		}
 	}

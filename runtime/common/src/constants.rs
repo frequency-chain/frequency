@@ -399,4 +399,7 @@ parameter_types! {
 pub type CapacityRewardEraLength =
 	ConstU32<{ prod_or_testnet_or_local!(14 * DAYS, 1 * HOURS, 50) }>;
 
+// Targeted date is 12/31/2025
+pub type CommittedBoostFailsafeUnlockBlockNumber =
+	ConstU32<{ prod_or_testnet_or_local!(11_108_669, 7_833_788, 1_000) }>;
 // -end- Capacity Pallet ---

@@ -17,7 +17,7 @@ use frame_support::{
 		ConstU16, ConstU32, ConstU64,
 	},
 };
-use frame_system::EnsureSigned;
+use frame_system::{EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
@@ -200,6 +200,9 @@ impl Config for Test {
 	type RewardPoolPerEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
+	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
+	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
 }
 
 fn initialize_reward_pool() {

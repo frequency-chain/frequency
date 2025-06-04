@@ -6,28 +6,24 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_system::EnsureSigned;
+pub use common_runtime::{
+	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
+	weights::rocksdb_weights::constants::RocksDbWeight,
+};
+use frame_support::{
+	pallet_prelude::Weight,
+	parameter_types,
+	traits::{ConstU16, ConstU64},
+	weights::WeightToFee as WeightToFeeTrait,
+};
+use frame_system::{EnsureRoot, EnsureSigned};
+use pallet_capacity::CapacityLedger;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
 	AccountId32, BuildStorage, Perbill, Permill,
 };
-
-use frame_support::{
-	parameter_types,
-	traits::{ConstU16, ConstU64},
-	weights::WeightToFee as WeightToFeeTrait,
-};
-
-use pallet_capacity::CapacityLedger;
-
-pub use common_runtime::{
-	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
-	weights::rocksdb_weights::constants::RocksDbWeight,
-};
-
-use frame_support::weights::Weight;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -246,6 +242,9 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolPerEra = ConstU64<10_000>;
 	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<2>;
+	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
+	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
 }
 
 use crate::types::GetAddKeyData;
