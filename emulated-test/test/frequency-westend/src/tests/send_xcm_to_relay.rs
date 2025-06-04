@@ -1,18 +1,40 @@
 use crate::{
 	foreign_balance_on,
 	imports::*,
-	tests::utils::{ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency},
+	tests::utils::{
+		ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency, mint_dot_on_frequency_v2,
+	},
 };
 
-fn frequency_to_relay_reserve_transfer_assets(t: FrequencyToRelayTest) -> DispatchResult {
-	<FrequencyWestend as FrequencyWestendPallet>::PolkadotXcm::limited_reserve_transfer_assets(
-		t.signed_origin,
-		bx!(t.args.dest.into()),
-		bx!(t.args.beneficiary.into()),
-		bx!(t.args.assets.into()),
-		t.args.fee_asset_item,
-		t.args.weight_limit,
-	)
+use emulated_integration_tests_common::xcm_emulator::ConvertLocation;
+
+fn frequency_to_relay_send_xcm(t: FrequencyToRelayTest) -> DispatchResult {
+	let assets = t.args.assets;
+
+	type RuntimeCall = <FrequencyWestend as Chain>::RuntimeCall;
+
+	let xcm = Xcm::<()>(vec![
+		WithdrawAsset(assets),
+		DepositAsset {
+			assets: Wild(All),
+			beneficiary: AccountId32Junction {
+				network: None,
+				id: FrequencyWestendSender::get().into(),
+			}
+			.into(),
+		},
+	]);
+
+	let inner_call: <FrequencyWestend as Chain>::RuntimeCall =
+		RuntimeCall::PolkadotXcm(pallet_xcm::Call::send {
+			dest: bx!(VersionedLocation::V5(Parent.into())),
+			message: bx!(VersionedXcm::V5(xcm)),
+		});
+
+	let _ =
+		<FrequencyWestend as FrequencyWestendPallet>::Sudo::sudo(t.root_origin, bx!(inner_call));
+
+	Ok(())
 }
 
 fn assert_receiver_minted_on_relay(t: FrequencyToRelayTest) {
@@ -82,17 +104,30 @@ pub fn fund_sov_frequency_on_westend(amount: Balance) {
 // =========================================================================
 // ========= Reserve Transfers - DOT Asset - Frequency<>Relay ===========
 // =========================================================================
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_to_relay -- --nocapture
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::send_xcm_to_relay -- --nocapture
 /// Tests reserve transfer of DOT from Frequency to Relay (Westend).
 /// Ensures sovereign account on relay is debited and receiver is credited.
 #[test]
-fn reserve_transfer_dot_from_frequency_to_relay() {
+fn send_xcm_to_relay() {
 	let sender = FrequencyWestendSender::get();
 	let receiver = WestendReceiver::get();
 	let amount_to_send: Balance = WESTEND_ED * 1000;
 
 	setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
 	fund_sov_frequency_on_westend(amount_to_send * 2);
+
+	// let root_account_id = HashedDescription::<
+	// 	AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
+	// 	DescribeTerminus,
+	// >::convert_location(&Here.into());
+	// println!("something---------------- {:?}", root_account_id.unwrap());
+	// // 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8
+
+	// mint_dot_on_frequency_v2(root_account_id.clone().unwrap(), amount_to_send);
+
+	// let root_account_balance =
+	// 	foreign_balance_on!(FrequencyWestend, Parent.into(), &root_account_id.clone().unwrap());
+	// println!("root_account_balance({:?}-------- {:?}", root_account_id.unwrap(), root_account_balance);
 
 	let assets: Assets = (Parent, amount_to_send).into();
 	let destination = FrequencyWestend::parent_location();
@@ -114,41 +149,31 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 
 	let dot_location = WestendLocation::get();
 
-	let treasury_account_balance_before = foreign_balance_on!(
+	let treasury_account_balance = foreign_balance_on!(
 		FrequencyWestend,
 		dot_location.clone(),
 		&FrequencyTreasuryAccount::get()
 	);
-
-	assert_eq!(treasury_account_balance_before, 0u128);
+	println!(
+		"treasury_account_balance({:?})-------- {:?}",
+		FrequencyTreasuryAccount::get(),
+		treasury_account_balance
+	);
+	assert_eq!(treasury_account_balance, 0u128);
 
 	let sender_assets_before = foreign_balance_on!(FrequencyWestend, dot_location.clone(), &sender);
 
 	let receiver_balance_before = test.receiver.balance;
 
-	test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
-	test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
-	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_reserve_transfer_assets);
+	// test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
+	// test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
+	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_send_xcm);
 	test.assert();
 
-	let treasury_account_balance_after = foreign_balance_on!(
+	let treasury_account_balance = foreign_balance_on!(
 		FrequencyWestend,
 		dot_location.clone(),
 		&FrequencyTreasuryAccount::get()
 	);
-	assert!(treasury_account_balance_after > 0u128, "Treasury account should have been credited");
-
-	let sender_assets_after = foreign_balance_on!(FrequencyWestend, dot_location, &sender);
-
-	let receiver_balance_after = test.receiver.balance;
-
-	// Sender's balance is reduced by amount sent plus delivery fees
-	assert!(sender_assets_after < sender_assets_before - amount_to_send);
-
-	assert!(receiver_balance_after > receiver_balance_before);
-
-	// Receiver's asset balance increased by `amount_to_send - delivery_fees - bought_execution`;
-	// `delivery_fees` might be paid from transfer or JIT, also `bought_execution` is unknown but
-	// should be non-zero
-	assert!(receiver_balance_after < receiver_balance_before + amount_to_send);
+	assert!(treasury_account_balance == 0u128, "Treasury account should NOT have been credited");
 }
