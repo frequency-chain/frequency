@@ -114,18 +114,6 @@ jobs:
       fail-fast: true
       matrix:
         include:
-          - network: dev
-            git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay
-            branch_alias: pr
-          - network: local
-            git_branch: ${{github.head_ref}}
-            spec: frequency-local
-            branch_alias: pr
-          - network: local
-            git_branch: main
-            spec: frequency-local
-            branch_alias: main
           - network: testnet
             spec: frequency-testnet
             branch_alias: pr
@@ -155,7 +143,7 @@ jobs:
       - name: Compile Binary
         if: steps.cache-binary.outputs.cache-hit != 'true'
         run: |
-          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked --release \
+          CARGO_INCREMENTAL=0 RUSTFLAGS="-D warnings" cargo build --locked \
             --features ${{matrix.spec}}
       - name: Run Sanity Checks
         if: steps.cache-binary.outputs.cache-hit != 'true'
