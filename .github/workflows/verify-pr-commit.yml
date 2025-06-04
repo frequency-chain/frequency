@@ -37,6 +37,8 @@ jobs:
               - '**/*.rs'
               - '**/*.hbs'
               - '.rustfmt.toml'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
             build-binary:
@@ -45,6 +47,8 @@ jobs:
               - '.rustfmt.toml'
               - '**/Cargo.toml'
               - '**/Cargo.lock'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
               - 'js/api-augment/**'
               - 'e2e/**/*.{ts,json}'
             cargo-lock:
@@ -108,7 +112,6 @@ jobs:
 
   build-binaries:
     needs: changes
-    if: needs.changes.outputs.build-binary == 'true'
     name: Build ${{matrix.network}} Binary on ${{matrix.branch_alias}} Branch
     strategy:
       fail-fast: true
