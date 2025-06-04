@@ -1,21 +1,18 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
+  createAndFundKeypairs,
   createKeys,
-  signPayloadSr25519,
-  generateAddKeyPayload,
   createProviderKeysAndId,
   DOLLARS,
-  createAndFundKeypairs,
-  generateAuthorizedKeyPayload,
+  generateAddKeyPayload,
+  signPayloadSr25519,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
-import { H160 } from '@polkadot/types/interfaces';
-import { ethereumAddressToKeyringPair } from '@frequency-chain/ethereum-utils';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const fundingSource = getFundingSource(import.meta.url);
 
