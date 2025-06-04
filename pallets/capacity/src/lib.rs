@@ -28,7 +28,6 @@
 )]
 
 use core::ops::Mul;
-
 use frame_support::{
 	ensure,
 	traits::{
@@ -40,7 +39,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, BoundedVec, DispatchError, Perbill,
+	ArithmeticError, BoundedVec, DispatchError, Perbill, Percent,
 };
 
 pub use common_primitives::{
@@ -426,6 +425,8 @@ pub mod pallet {
 		PteValueAlreadySet,
 		/// Pte is exipred error
 		PteExpired,
+		/// Requested unstake amount exceeds available unfrozen staked balance
+		InsufficientUnfrozenStakingBalance,
 	}
 
 	#[pallet::hooks]
@@ -830,10 +831,54 @@ impl<T: Config> Pallet<T> {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
 
+	fn get_unfrozen_staked_balance(staking_account: &StakingDetails<T>) -> BalanceOf<T> {
+		if staking_account.staking_type == StakingType::CommittedBoost {
+			let staking_config = T::StakingConfigProvider::get(StakingType::CommittedBoost);
+			let unfrozen_pct: Percent = if let Some(pte_block) =
+				PrecipitatingEventBlockNumber::<T>::get()
+			{
+				let current_block = frame_system::Pallet::<T>::block_number();
+				if current_block.lt(pte_block.saturating_add(staking_config.commitment_blocks)) {
+					Percent::from_percent(0)
+				} else {
+					let unfreeze_era = current_block
+						.saturating_sub(pte_block)
+						.saturating_sub(staking_config.commitment_blocks)
+						.checked_div(staking_config.commitment_thaw_era_blocks.into())
+						.unwrap_or(Zero::zero());
+					Percent::from_rational(
+						One::one(),
+						staking_config.commitment_thaw_eras.saturating_sub(
+							unfreeze_era
+								.min(staking_config.commitment_thaw_eras)
+								.saturating_add(One::one()),
+						),
+					)
+				}
+			} else if frame_system::Pallet::<T>::block_number()
+				.ge(T::CommittedBoostFailsafeUnlockBlockNumber::get().into())
+			{
+				Percent::from_percent(100)
+			} else {
+				Percent::from_percent(0)
+			};
+
+			unfrozen_pct.mul_ceil(staking_account.active)
+		} else {
+			staking_account.active
+		}
+	}
+
 	/// Decrease a staking account's active token and reap if it goes below the minimum.
 	/// Returns: actual amount unstaked, plus the staking type + StakingDetails,
 	/// since StakingDetails may be reaped and staking type must be used to calculate the
 	/// capacity reduction later.
+	///
+	/// # Errors
+	/// * [`Error::NotAStakingAccount`]
+	/// * [`Error::InsufficientStakingBalance`]
+	/// * [`Error::InsufficientUnfrozenStakingBalance`]
+	///
 	fn decrease_active_staking_balance(
 		unstaker: &T::AccountId,
 		amount: BalanceOf<T>,
@@ -841,6 +886,13 @@ impl<T: Config> Pallet<T> {
 		let mut staking_account =
 			StakingAccountLedger::<T>::get(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
+
+		if staking_account.staking_type == StakingType::CommittedBoost {
+			ensure!(
+				amount <= Self::get_unfrozen_staked_balance(&staking_account),
+				Error::<T>::InsufficientUnfrozenStakingBalance
+			)
+		}
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
 		Self::set_staking_account(unstaker, &staking_account);
@@ -1257,6 +1309,7 @@ impl<T: Config> Pallet<T> {
 		}
 		ProviderBoostRewardPools::<T>::set(chunk_idx, Some(new_chunk)); // 1w
 	}
+
 	fn do_claim_rewards(staker: &T::AccountId) -> Result<BalanceOf<T>, DispatchError> {
 		let rewards = Self::list_unclaimed_rewards(staker)?;
 		ensure!(!rewards.len().is_zero(), Error::<T>::NoRewardsEligibleToClaim);

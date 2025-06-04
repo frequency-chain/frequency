@@ -108,4 +108,10 @@ pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 pub struct StakingConfig {
 	/// the percentage cap per era of an individual Provider Boost reward
 	pub reward_percent_cap: Permill,
+	/// the number of blocks a stake is initially frozen for
+	pub commitment_blocks: u32,
+	/// the length in blocks of a commitment thaw era
+	pub commitment_thaw_era_blocks: u32,
+	/// the number of thaw eras that must elapse before the entire commitment can be thawed
+	pub commitment_thaw_eras: u32,
 }

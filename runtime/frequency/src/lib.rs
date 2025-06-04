@@ -2,6 +2,13 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
+extern crate alloc;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking;
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -30,7 +37,9 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
+	traits::{
+		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup, Zero,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
@@ -99,7 +108,6 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -628,9 +636,16 @@ impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
 			StakingType::CommittedBoost => StakingConfig {
 				// TODO: TBD
 				reward_percent_cap: Permill::from_parts(8_000),
+				commitment_blocks: 365 * DAYS,         // 1 year
+				commitment_thaw_eras: 26,              // 1 year
+				commitment_thaw_era_blocks: 14 * DAYS, // 2 weeks
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(5_750) }, // 0.575% or 0.00575 per RewardEra
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(5_750), // 0.575% or 0.00575 per RewardEra
+				commitment_blocks: Zero::zero(),
+				commitment_thaw_eras: Zero::zero(),
+				commitment_thaw_era_blocks: Zero::zero(),
+			},
 		}
 	}
 }
@@ -1430,10 +1445,6 @@ construct_runtime!(
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
 	}
 );
-
-#[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
