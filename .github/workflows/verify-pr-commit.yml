@@ -7,7 +7,7 @@ on:
   push:
 
 env:
-  BIN_DIR: target/release
+  BIN_DIR: target/debug
   PR_LABEL_METADATA_CHANGED: metadata-changed
   PR_LABEL_METADATA_VERSION_NOT_INCREMENTED: metadata-version-not-incremented
   NIGHTLY_TOOLCHAIN: nightly-2025-04-03
