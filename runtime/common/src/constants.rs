@@ -380,7 +380,7 @@ impl core::fmt::Debug for MaxItemizedBlobSizeBytes {
 // --- Capacity Pallet ---
 pub type CapacityMinimumStakingAmount = ConstU128<{ currency::EXISTENTIAL_DEPOSIT }>;
 pub type CapacityMinimumTokenBalance = ConstU128<{ currency::DOLLARS }>;
-pub type CapacityMaxUnlockingChunks = ConstU32<4>;
+pub type CapacityMaxUnlockingChunks = ConstU32<40>;
 pub type CapacityMaxEpochLength = ConstU32<{ 2 * DAYS }>; // Two days, assuming 6 second blocks.
 
 #[cfg(not(any(feature = "frequency-local", feature = "frequency-no-relay")))]

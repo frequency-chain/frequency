@@ -9,7 +9,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::weights;
+use common_runtime::{constants::DAYS, weights};
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -21,7 +21,7 @@ use frame_support::{
 use frame_system::{EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup, Zero},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
 
@@ -177,10 +177,18 @@ pub struct TestStakingConfigProvider;
 impl StakingConfigProvider for TestStakingConfigProvider {
 	fn get(staking_type: StakingType) -> StakingConfig {
 		match staking_type {
-			StakingType::CommittedBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(8_000) },
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) }, // 0.38% or 0.0038 per RewardEra
+			StakingType::CommittedBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(8_000),
+				commitment_blocks: 365 * DAYS,         // 1 year
+				commitment_thaw_eras: 26,              // 1 year
+				commitment_thaw_era_blocks: 14 * DAYS, // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
+				commitment_blocks: Zero::zero(),
+				commitment_thaw_eras: Zero::zero(),
+				commitment_thaw_era_blocks: Zero::zero(),
+			},
 		}
 	}
 }

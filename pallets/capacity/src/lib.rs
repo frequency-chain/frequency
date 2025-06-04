@@ -423,7 +423,7 @@ pub mod pallet {
 		InvalidPteValue,
 		/// Pte value is alrerady set
 		PteValueAlreadySet,
-		/// Pte is exipred error
+		/// Pte is expired error
 		PteExpired,
 		/// Requested unstake amount exceeds available unfrozen staked balance
 		InsufficientUnfrozenStakingBalance,
@@ -833,33 +833,39 @@ impl<T: Config> Pallet<T> {
 
 	fn get_unfrozen_staked_balance(staking_account: &StakingDetails<T>) -> BalanceOf<T> {
 		if staking_account.staking_type == StakingType::CommittedBoost {
+			let current_block = frame_system::Pallet::<T>::block_number();
 			let staking_config = T::StakingConfigProvider::get(StakingType::CommittedBoost);
 			let unfrozen_pct: Percent = if let Some(pte_block) =
 				PrecipitatingEventBlockNumber::<T>::get()
 			{
-				let current_block = frame_system::Pallet::<T>::block_number();
-				if current_block.lt(pte_block.saturating_add(staking_config.commitment_blocks)) {
+				// PTE is set
+				if current_block
+					.lt(&pte_block.saturating_add(staking_config.commitment_blocks.into()))
+				{
+					// in post PTE stage before scheduled release
 					Percent::from_percent(0)
 				} else {
+					// in scheduled release stage
 					let unfreeze_era = current_block
 						.saturating_sub(pte_block)
-						.saturating_sub(staking_config.commitment_blocks)
-						.checked_div(staking_config.commitment_thaw_era_blocks.into())
+						.saturating_sub(staking_config.commitment_blocks.into())
+						.checked_div(&staking_config.commitment_thaw_era_blocks.into())
 						.unwrap_or(Zero::zero());
+
+					let commitment_thaw_eras: BlockNumberFor<T> =
+						staking_config.commitment_thaw_eras.into();
 					Percent::from_rational(
 						One::one(),
-						staking_config.commitment_thaw_eras.saturating_sub(
-							unfreeze_era
-								.min(staking_config.commitment_thaw_eras)
-								.saturating_add(One::one()),
+						commitment_thaw_eras.saturating_sub(
+							unfreeze_era.min(commitment_thaw_eras).saturating_add(One::one()),
 						),
 					)
 				}
-			} else if frame_system::Pallet::<T>::block_number()
-				.ge(T::CommittedBoostFailsafeUnlockBlockNumber::get().into())
-			{
+			} else if current_block >= T::CommittedBoostFailsafeUnlockBlockNumber::get().into() {
+				// PTE is not set and committed boosting expired
 				Percent::from_percent(100)
 			} else {
+				// PTE is not set and committed boosting is still valid
 				Percent::from_percent(0)
 			};
 
