@@ -1,11 +1,11 @@
-# This is a copy of the action file from https://github.com/chevdor/srtool-actions/blob/48e9baed50ca414936dfac59d34d8b9bbe581abd/action.yml
+# This is a copy of the action file from https://github.com/paritytech/srtool-actions/blob/9cf7232631d71f9510e05ab6297b1aa57e588fce/action.yml
 # It is pulled in and modified for the following reasons:
 # 1. We needed to add an additional environment variable to the docker run (CARGO_NET_RETRY=10)
 # 2. Local for direct auditing of the action building the runtime
 
 name: "Srtool"
 description: "Build WASM Runtime with SRTOOL"
-author: chevdor
+author: chevdor & paritytech
 branding:
   icon: "package"
   color: "blue"

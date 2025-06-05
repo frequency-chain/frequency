@@ -19,7 +19,7 @@ import {
   assertAddNewKey,
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource(import.meta.url);
@@ -160,7 +160,13 @@ describe('Capacity Transaction Failures', function () {
       // from the transaction pool.
       it('fails to pay for a transaction with empty capacity', async function () {
         const noCapacityKeys = createKeys('noCapacityKeys');
-        const noCapacityProvider = await createMsaAndProvider(fundingSource, noCapacityKeys, 'NoCapProvider');
+        const noCapacityProvider = await createMsaAndProvider(
+          fundingSource,
+          noCapacityKeys,
+          'NoCapProvider',
+          undefined,
+          false
+        );
 
         const delegatorKeys = createKeys('delegatorKeys');
 

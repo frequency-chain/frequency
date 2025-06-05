@@ -18,21 +18,20 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 }
 
 #[cfg(feature = "frequency-bridging")]
-mod xcm_config;
+pub mod xcm;
 // use pallet_assets::BenchmarkHelper;
 #[cfg(feature = "frequency-bridging")]
-use xcm_config::ForeignAssetsAssetId;
+use xcm::{
+	parameters::{
+		ForeignAssetsAssetId, NativeToken, RelayLocation, RelayOrigin, ReservedDmpWeight,
+		ReservedXcmpWeight,
+	},
+	queue::XcmRouter,
+	LocationToAccountId, XcmConfig,
+};
 
-#[cfg(feature = "frequency-bridging")]
-mod xcm_queue;
-
-#[cfg(feature = "frequency-bridging")]
-pub mod xcm_commons;
-#[cfg(feature = "frequency-bridging")]
-use xcm_commons::{RelayOrigin, ReservedDmpWeight, ReservedXcmpWeight};
-
-#[cfg(feature = "frequency-bridging")]
-mod xcm; // Tests are contained the xcm directory
+#[cfg(test)]
+mod migration_tests;
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
@@ -88,8 +87,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		SchemaGrant, SchemaGrantValidator,
+		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
+		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -388,6 +387,25 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => {
+				let new_key = add_key_payload.clone().new_public_key;
+				Some((msa_owner_public_key.clone(), new_key, add_key_payload.msa_id))
+			},
+			_ => None,
+		}
+	}
+}
+
 /// The TransactionExtension to the basic transaction logic.
 #[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
@@ -426,6 +444,17 @@ pub type UncheckedExtrinsic =
 	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
+#[cfg(feature = "frequency-bridging")]
+pub type Executive = frame_executive::Executive<
+	Runtime,
+	Block,
+	frame_system::ChainContext<Runtime>,
+	Runtime,
+	AllPalletsWithSystem,
+	(MigratePalletsCurrentStorage<Runtime>, SetSafeXcmVersion<Runtime>),
+>;
+
+#[cfg(not(feature = "frequency-bridging"))]
 pub type Executive = frame_executive::Executive<
 	Runtime,
 	Block,
@@ -453,6 +482,106 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		T::DbWeight::get().reads_writes(1, 1)
 	}
 }
+
+/// Migration to set the initial safe XCM version for the XCM pallet.
+#[cfg(feature = "frequency-bridging")]
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
+
+#[cfg(feature = "frequency-bridging")]
+use common_runtime::constants::xcm_version::SAFE_XCM_VERSION;
+
+#[cfg(feature = "frequency-bridging")]
+impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
+	fn on_runtime_upgrade() -> Weight {
+		use sp_core::Get;
+
+		// Access storage directly using storage key because `pallet_xcm` does not provide a direct API to get the safe XCM version.
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		log::info!("Checking SafeXcmVersion in storage with key: {:?}", storage_key);
+
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!("SafeXcmVersion already set to {}, skipping migration.", version);
+				T::DbWeight::get().reads(1)
+			},
+			Some(version) => {
+				log::info!(
+					"SafeXcmVersion currently set to {}, updating to {}",
+					version,
+					SAFE_XCM_VERSION
+				);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+			None => {
+				log::info!("SafeXcmVersion not set, setting to {}", SAFE_XCM_VERSION);
+				// Set the safe XCM version directly in storage
+				frame_support::storage::unhashed::put(&storage_key, &(SAFE_XCM_VERSION));
+				T::DbWeight::get().reads(1).saturating_add(T::DbWeight::get().writes(1))
+			},
+		}
+	}
+}
+
+#[cfg(all(feature = "frequency-bridging", feature = "try-runtime"))]
+impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
+	pub fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Encode;
+
+		// For testing purposes, simulate that SafeXcmVersion is not set (None)
+		let test_pre_upgrade_state: Option<u32> = None;
+
+		log::info!("pre_upgrade: Test state SafeXcmVersion = {:?}", test_pre_upgrade_state);
+
+		// Return the test state encoded for post_upgrade verification
+		Ok(test_pre_upgrade_state.encode())
+	}
+
+	pub fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+		use parity_scale_codec::Decode;
+
+		// Decode the pre-upgrade state
+		let pre_upgrade_version = Option::<u32>::decode(&mut &state[..])
+			.map_err(|_| "Failed to decode pre-upgrade state")?;
+
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
+
+		log::info!(
+			"post_upgrade: Pre-upgrade version = {:?}, Current version = {:?}",
+			pre_upgrade_version,
+			current_version
+		);
+
+		// Verify the migration worked correctly
+		match current_version {
+			Some(version) if version == SAFE_XCM_VERSION => {
+				log::info!(
+					"post_upgrade: Migration successful - SafeXcmVersion correctly set to {}",
+					version
+				);
+			},
+			Some(version) => {
+				log::error!("post_upgrade: Migration failed - SafeXcmVersion was set to {}, but expected {}", version, SAFE_XCM_VERSION);
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion was set to incorrect version after migration",
+				));
+			},
+			None => {
+				return Err(sp_runtime::TryRuntimeError::Other(
+					"SafeXcmVersion should be set after migration but found None",
+				));
+			},
+		}
+
+		Ok(())
+	}
+}
+
+#[cfg(not(feature = "frequency-bridging"))]
+pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
@@ -489,7 +618,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 163,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -503,7 +632,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 159,
+	spec_version: 163,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1164,6 +1293,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet
@@ -1448,7 +1579,7 @@ impl pallet_assets::Config for Runtime {
 	type RemoveItemsLimit = frame_support::traits::ConstU32<1000>;
 
 	#[cfg(feature = "runtime-benchmarks")]
-	type BenchmarkHelper = xcm_config::XcmBenchmarkHelper;
+	type BenchmarkHelper = xcm::xcm_config::XcmBenchmarkHelper;
 	type Holder = ();
 }
 
@@ -1534,7 +1665,7 @@ construct_runtime!(
 		XcmpQueue: cumulus_pallet_xcmp_queue::{Pallet, Call, Storage, Event<T>} = 71,
 
 		#[cfg(feature = "frequency-bridging")]
-		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin} = 72,
+		PolkadotXcm: pallet_xcm::{Pallet, Call, Storage, Event<T>, Origin } = 72,
 
 		#[cfg(feature = "frequency-bridging")]
 		CumulusXcm: cumulus_pallet_xcm::{Pallet, Event<T>, Origin} = 73,
@@ -1843,6 +1974,16 @@ sp_api::impl_runtime_apis! {
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
 			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
 		}
+
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
+			let account_id = Msa::msa_id_to_eth_address(msa_id);
+			let account_id_checksummed = Msa::eth_address_to_checksummed_string(&account_id);
+			AccountId20Response { account_id, account_id_checksummed }
+		}
+
+		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+			Msa::validate_eth_address_for_msa(address, msa_id)
+		}
 	}
 
 	impl pallet_stateful_storage_runtime_api::StatefulStorageRuntimeApi<Block> for Runtime {
@@ -1958,7 +2099,7 @@ sp_api::impl_runtime_apis! {
 	#[cfg(feature = "frequency-bridging")]
 	impl xcm_runtime_apis::fees::XcmPaymentApi<Block> for Runtime {
 		fn query_acceptable_payment_assets(xcm_version: staging_xcm::Version) -> Result<Vec<VersionedAssetId>, XcmPaymentApiError> {
-			let acceptable_assets = vec![AssetLocationId(xcm_config::RelayLocation::get())];
+			let acceptable_assets = vec![AssetLocationId(RelayLocation::get())];
 			PolkadotXcm::query_acceptable_payment_assets(xcm_version, acceptable_assets)
 		}
 
@@ -1967,11 +2108,11 @@ sp_api::impl_runtime_apis! {
 			use frame_support::weights::WeightToFee;
 
 			match asset.try_as::<AssetLocationId>() {
-				Ok(asset_id) if asset_id.0 == xcm_config::NativeToken::get().0 => {
+				Ok(asset_id) if asset_id.0 == NativeToken::get().0 => {
 					// FRQCY/XRQCY, native token
 					Ok(common_runtime::fee::WeightToFee::weight_to_fee(&weight))
 				},
-				Ok(asset_id) if asset_id.0 == xcm_config::RelayLocation::get() => {
+				Ok(asset_id) if asset_id.0 == RelayLocation::get() => {
 					// DOT, WND, or KSM on the relay chain
 					// calculate fee in DOT using Polkadot relay fee schedule
 					let dot_fee = crate::polkadot_xcm_fee::default_fee_per_second()
@@ -2002,11 +2143,11 @@ sp_api::impl_runtime_apis! {
 	#[cfg(feature = "frequency-bridging")]
 	impl xcm_runtime_apis::dry_run::DryRunApi<Block, RuntimeCall, RuntimeEvent, OriginCaller> for Runtime {
 		fn dry_run_call(origin: OriginCaller, call: RuntimeCall, result_xcms_version: XcmVersion) -> Result<CallDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-			PolkadotXcm::dry_run_call::<Runtime, xcm_config::XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
+			PolkadotXcm::dry_run_call::<Runtime, XcmRouter, OriginCaller, RuntimeCall>(origin, call, result_xcms_version)
 		}
 
 		fn dry_run_xcm(origin_location: VersionedLocation, xcm: VersionedXcm<RuntimeCall>) -> Result<XcmDryRunEffects<RuntimeEvent>, XcmDryRunApiError> {
-			PolkadotXcm::dry_run_xcm::<Runtime, xcm_config::XcmRouter, RuntimeCall, xcm_config::XcmConfig>(origin_location, xcm)
+			PolkadotXcm::dry_run_xcm::<Runtime, XcmRouter, RuntimeCall, XcmConfig>(origin_location, xcm)
 		}
 	}
 
@@ -2018,7 +2159,7 @@ sp_api::impl_runtime_apis! {
 		> {
 			xcm_runtime_apis::conversions::LocationToAccountHelper::<
 				AccountId,
-				xcm_commons::LocationToAccountId,
+				LocationToAccountId,
 			>::convert_location(location)
 		}
 	}

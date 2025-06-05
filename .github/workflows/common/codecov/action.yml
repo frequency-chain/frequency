@@ -7,12 +7,16 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install grcov
-      shell: bash
-      run: cargo install --locked grcov --version 0.9.0
     - name: Add llvm-tools
       shell: bash
-      run: rustup component add llvm-tools-preview
+      run: rustup component add llvm-tools-preview && rustup show && echo $PATH
+
+    - name: Install grcov
+      shell: bash
+      run: |
+        cargo install --locked grcov --version 0.9.1
+        which grcov
+
     - name: Build
       shell: bash # Limited to 10 threads max
       run: cargo build -j 10 --features frequency-lint-check

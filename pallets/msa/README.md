@@ -17,6 +17,13 @@ All users on Frequency must have an MSA in order to:
 Once a user creates an MSA, they are assigned an MSA Id, a unique number the time of creation with one or more keys attached for control.
 (A control key may only be attached to ONE MSA at any single point in time.)
 
+#### MSA Id and Addresses
+
+Each MSA Id has a unique 20-byte address associated with it. This address can be queried using an MSA pallet runtime call, or computed using the following algorithm:
+```ignore
+Address = keccak256(0xD9 + <MSA Id as 8-byte big-endian bytes> + keccak256(b"MSA Generated"))[12..]
+```
+
 ### Actions
 
 The MSA pallet provides for:
@@ -70,3 +77,13 @@ Note: May be restricted based on node settings and configuration.
 \* Must be enabled with off-chain indexing
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html) for more details.
+
+### Runtime API
+
+| Name | Description | Call | Runtime Added | MSA Runtime API Version Added |
+| ------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------- |
+| Has Delegation                        | Check to see if a delegation existed between the given delegator and provider at a given block | ['hasDelegation'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.has_delegation) | 1 | 1 |
+| Get Granted Schemas by MSA ID         | Get the list of schema permission grants (if any) that exist in any delegation between the delegator and provider. | ['getGrantedSchemasByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_granted_schemas_by_msa_id) | 1 | 1 |
+| Get All Granted Delegations by MSA ID | Get the list of all delegated providers with schema permission grants (if any) that exist in any delegation between the delegator and provider. | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_all_granted_delegations_by_msa_id) | 83 | 2 |
+| Get Ethereum Address for MSA ID       | Get the Ethereum address of the given MSA. | ['getEthereumAddressForMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_ethereum_address_for_msa_id) | 156 | 3 |
+| Validate Ethereum Address for MSA ID  | Validate if the given Ethereum address is associated with the given MSA. | ['validateEthAddressForMsa'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.validate_eth_address_for_msa) | 156 | 3 |

@@ -1,0 +1,49 @@
+{
+  "name": "@frequency-chain/ethereum-utils",
+  "version": "0.0.0",
+  "bugs": {
+    "url": "https://github.com/frequency-chain/frequency/issues"
+  },
+  "description": "A package which facilitates use of Ethereum addresses, signatures and standards with Frequency chain.",
+  "main": "index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/frequency-chain/frequency.git",
+    "directory": "js/ethereum-utils"
+  },
+  "scripts": {
+    "clean": "rm -Rf dist",
+    "package": "node scripts/package.cjs",
+    "prepackage": "cp CONTRIBUTING.md README.md ../../LICENSE ./dist",
+    "build": "tsc -p ./tsconfig.types.json && tsc -p ./tsconfig.cjs.json && tsc -p ./tsconfig.esm.json",
+    "rollup:build": "rollup -c rollup.config.mjs",
+    "postbuild": "npm run package; npm run rollup:build;",
+    "pack": "cd dist; npm pack",
+    "test": "mocha --import=tsx  ./test/**/*.test.ts",
+    "format": "tsc --noEmit --pretty && prettier --write . && eslint --fix",
+    "lint": "tsc --noEmit --pretty && prettier --check . && eslint"
+  },
+  "author": "frequency-chain",
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@polkadot/api": "^16.1.1",
+    "@polkadot/util": "13.5.1",
+    "ethers": "^6.14.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.27.0",
+    "@rollup/plugin-commonjs": "^28.0.3",
+    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-typescript": "^12.1.2",
+    "@types/mocha": "^10.0.10",
+    "eslint": "^9.27.0",
+    "eslint-plugin-mocha": "^11.1.0",
+    "mocha": "11.5.0",
+    "prettier": "^3.5.3",
+    "rollup": "^4.41.1",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.33.0"
+  }
+}

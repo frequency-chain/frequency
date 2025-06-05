@@ -31,6 +31,7 @@ sp-externalities = { workspace = true }
 sp-runtime-interface = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["hmac"] }
 log = "0.4.22"
+lazy_static = { workspace = true }
 
 [features]
 default = ['std']

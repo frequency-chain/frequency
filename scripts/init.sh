@@ -68,6 +68,7 @@ start-paseo-collator-alice)
   NODE_PARACHAIN_RPC_PORT=9943 ./scripts/run_collator.sh \
     --chain="frequency-paseo-local" --alice \
     --base-path=$parachain_dir_alice/data \
+    --state-pruning archive \
     --force-authoring \
     --discover-local \
     --port $((30333)) \
@@ -81,8 +82,8 @@ start-paseo-collator-alice)
   ;;
 
 start-paseo-collator-bob)
-  printf "\nBuilding frequency with runtime '$parachain' and id '$para_id'...\n"
-  cargo build --release --features frequency-local
+  printf "\nASSUMING that frequency with runtime '$parachain' and id '$para_id' is ALREADY BUILT...\n"
+  # cargo build --release --features frequency-local
 
   parachain_dir_bob=$base_dir/parachain/bob/${para_id}
   mkdir -p $parachain_dir_bob;
@@ -99,6 +100,7 @@ start-paseo-collator-bob)
     --base-path=$parachain_dir_bob/data \
     --discover-local \
     --force-authoring \
+    --state-pruning archive \
     --port $((30332)) \
     --rpc-port $((9943)) \
     --rpc-external \
@@ -187,7 +189,6 @@ start-bridging-westend-local)
   fi
 
   ./target/debug/frequency \
-    --dev \
     --state-pruning archive \
     -lbasic-authorship=debug \
     -ltxpool=debug \

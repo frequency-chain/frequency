@@ -36,9 +36,12 @@ extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
+	msa::MsaKeyProvider,
 	node::UtilityProvider,
 };
+use core::ops::Mul;
 pub use pallet::*;
+use sp_runtime::Permill;
 pub use weights::*;
 
 mod payment;
@@ -49,6 +52,7 @@ pub mod types;
 
 pub mod capacity_stable_weights;
 
+use crate::types::GetAddKeyData;
 use capacity_stable_weights::CAPACITY_EXTRINSIC_BASE_WEIGHT;
 
 /// Type aliases used for interaction with `OnChargeTransaction`.
@@ -126,6 +130,7 @@ pub mod weights;
 #[frame_support::pallet]
 pub mod pallet {
 	use super::*;
+	use common_primitives::msa::{MessageSourceId, MsaKeyProvider};
 
 	// Simple declaration of the `Pallet` type. It is placeholder we use to implement traits and
 	// method.
@@ -162,6 +167,13 @@ pub mod pallet {
 		type MaximumCapacityBatchLength: Get<u8>;
 
 		type BatchProvider: UtilityProvider<OriginFor<Self>, <Self as Config>::RuntimeCall>;
+
+		type MsaKeyProvider: MsaKeyProvider<AccountId = Self::AccountId>;
+		type MsaCallFilter: GetAddKeyData<
+			<Self as Config>::RuntimeCall,
+			Self::AccountId,
+			MessageSourceId,
+		>;
 	}
 
 	#[pallet::event]
@@ -440,16 +452,46 @@ where
 		len: usize,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		let mut calls_weight_sum = Weight::zero();
+		let mut subsidized_calls_weight_sum = Weight::zero();
+
 		for call in calls {
 			let call_weight = T::CapacityCalls::get_stable_weight(call)
 				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
 			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
-		}
-		let fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum);
 
-		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, fee.into())?;
+			if self.call_is_adding_eligible_key_to_msa(call) {
+				subsidized_calls_weight_sum =
+					subsidized_calls_weight_sum.saturating_add(call_weight);
+			}
+		}
+		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum)
+			.saturating_sub(Self::subsidized_calls_reduction(len, subsidized_calls_weight_sum));
+		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, capacity_fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
+	}
+
+	// Give a 70% discount for eligible calls
+	fn subsidized_calls_reduction(len: usize, eligible_call_weight: Weight) -> BalanceOf<T> {
+		if eligible_call_weight.is_zero() {
+			0u32.into()
+		} else {
+			let reduction: Permill = Permill::from_percent(70u32);
+			reduction.mul(Pallet::<T>::compute_capacity_fee(len as u32, eligible_call_weight))
+		}
+	}
+
+	fn call_is_adding_eligible_key_to_msa(&self, call: &<T as Config>::RuntimeCall) -> bool {
+		if let Some((owner_account_id, new_account_id, msa_id)) =
+			T::MsaCallFilter::get_add_key_data(call)
+		{
+			return T::MsaKeyProvider::key_eligible_for_subsidized_addition(
+				owner_account_id,
+				new_account_id,
+				msa_id,
+			)
+		}
+		false
 	}
 
 	/// Withdraws transaction fee paid with tokens from an.

@@ -36,7 +36,7 @@ import {
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
 const fundingSource = getFundingSource(import.meta.url);
@@ -52,16 +52,6 @@ describe('Capacity Transactions', function () {
         schemaId = await getOrCreateGraphChangeSchema(fundingSource);
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
       });
-
-      function getCapacityFee(chainEvents: EventMap): bigint {
-        if (
-          chainEvents['capacity.CapacityWithdrawn'] &&
-          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
-        ) {
-          return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
-        }
-        return 0n;
-      }
 
       describe('when capacity eligible transaction is from the msa pallet', function () {
         let capacityKeys: KeyringPair;
@@ -142,7 +132,7 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           assertEvent(eventMap, 'msa.DelegationGranted');
 
-          const fee = getCapacityFee(eventMap);
+          const fee = ExtrinsicHelper.getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / getTokenPerCapacity() - fee;
 
@@ -181,7 +171,8 @@ describe('Capacity Transactions', function () {
 
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesInBlock');
+          // messages.MessagesInBlock in block might not be on this transaction if there are others
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
         });
 
         it('successfully pays with Capacity for eligible transaction - addOnchainMessage', async function () {
@@ -190,7 +181,8 @@ describe('Capacity Transactions', function () {
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, '0xdeadbeef');
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesInBlock');
+          // messages.MessagesInBlock in block might not be on this transaction if there are others
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
           const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
             from_block: starting_block,
             from_index: 0,

@@ -97,8 +97,8 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
-.PHONY: onboard-debug
-onboard-debug:
+.PHONY: onboard-res-local
+onboard-res-local:
 	./scripts/init.sh onboard-res-local
 
 .PHONY: onboard-docker
@@ -373,29 +373,55 @@ check-try-runtime-installed:
 try-runtime-create-snapshot-paseo-testnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://0.rpc.testnet.amplica.io:443 testnet-paseo-all-pallets.state
 
+try-runtime-create-snapshot-westend-testnet: check-try-runtime-installed
+	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
+		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
+		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
+		exit 1; \
+	fi
+	try-runtime create-snapshot --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY) testnet-paseo-all-pallets.state
+
 # mainnet snapshot takes as many as 24 hours to complete
 try-runtime-create-snapshot-mainnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
 
 try-runtime-upgrade-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://0.rpc.testnet.amplica.io:443
 
 try-runtime-upgrade-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://1.rpc.frequency.xyz:443
 
 try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path testnet-paseo-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path testnet-paseo-all-pallets.state
 
 try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path mainnet-all-pallets.state
 
 try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+
+try-runtime-check-migrations-westend-testnet: check-try-runtime-installed
+	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
+		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
+		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
+		exit 1; \
+	fi
+	cargo build --release --features frequency-westend,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY)
+
+try-runtime-check-migrations-local: check-try-runtime-installed
+	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+
+try-runtime-check-migrations-none-local: check-try-runtime-installed
+	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
 POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'branch[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/branch *= *"\(.*\)"/\1/' | head -n 1)

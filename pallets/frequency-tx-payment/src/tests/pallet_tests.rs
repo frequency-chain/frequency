@@ -6,12 +6,13 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo,
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
-use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError};
+use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_capacity::CapacityLedger;
 use pallet_frequency_tx_payment::Call as FrequencyTxPaymentCall;
-use pallet_msa::Call as MsaCall;
+use pallet_msa::{AddKeyData, Call as MsaCall};
+use sp_core::{sr25519, Pair, H256};
 
 #[test]
 #[allow(deprecated)]
@@ -1008,5 +1009,64 @@ fn can_withdraw_fee_errors_on_token_txn_witout_enough_funds() {
 			let len = 10;
 			let error = charge_tx_payment.dryrun_withdraw_fee(&who, call, &info, len).unwrap_err();
 			assert_eq!(error, TransactionValidityError::Invalid(InvalidTransaction::Payment));
+		});
+}
+
+pub fn generate_test_signature() -> MultiSignature {
+	let (key_pair, _) = sr25519::Pair::generate();
+	let fake_data = H256::random();
+	key_pair.sign(fake_data.as_bytes()).into()
+}
+
+pub fn generate_add_public_key_call(msa_id: u64, owner_id: u64) -> Box<RuntimeCall> {
+	let designated_ethereum_key = 999u64;
+	let proof1: MultiSignature = generate_test_signature();
+	let proof2: MultiSignature = generate_test_signature();
+	let payload: AddKeyData<Test> =
+		AddKeyData { msa_id, expiration: 99u32, new_public_key: designated_ethereum_key };
+	let add_public_key_inner = RuntimeCall::Msa(MsaCall::<Test>::add_public_key_to_msa {
+		msa_owner_public_key: owner_id,
+		msa_owner_proof: proof1,
+		new_key_owner_proof: proof2,
+		add_key_payload: payload.into(),
+	});
+
+	let add_public_key_call = Box::new(add_public_key_inner);
+	Box::new(RuntimeCall::FrequencyTxPayment(FrequencyTxPaymentCall::<Test>::pay_with_capacity {
+		call: add_public_key_call,
+	}))
+}
+
+#[test]
+fn add_public_key_to_msa_has_lower_capacity_charge_if_is_ethereum_compatible() {
+	let balance_factor = 100_000_000;
+	let dispatch_info =
+		DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
+
+	// uses funded account already with MSA Id
+	ExtBuilder::default()
+		.balance_factor(balance_factor)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let msa_id = 2u64;
+			let owner_id = 2u64;
+			// creates a call with "magic" new account id that will return 'true' for being an
+			// ethereum-compatible key
+			let pay_with_capacity_add_public_key_call =
+				generate_add_public_key_call(msa_id, owner_id);
+			let withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
+				.unwrap();
+
+			// this fails eligibility for not matching the msa id to the owner account id, so
+			// although adding the key would fail, it's fine for the purpose of this test.
+			let another_msa = 99u64;
+			let pay_with_capacity_add_public_key_call =
+				generate_add_public_key_call(another_msa, owner_id);
+			let ineligible_withdraw_fee = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
+				.unwrap();
+			assert!(ineligible_withdraw_fee.0.gt(&withdraw_fee.0));
 		});
 }

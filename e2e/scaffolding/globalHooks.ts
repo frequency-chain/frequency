@@ -5,7 +5,7 @@ import { ExtrinsicHelper } from './extrinsicHelpers';
 import { getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import type { KeyringPair } from '@polkadot/keyring/types';
 
 const DEFAULT_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
@@ -39,7 +39,7 @@ function fundSourceTransfer(root: KeyringPair, dest: KeyringPair, amount: bigint
     // Only transfer the amount needed
     return ExtrinsicHelper.transferFunds(root, dest, amount).signAndSend(nonce);
   } catch (e) {
-    console.error('Unable to fund soruce', { dest });
+    console.error('Unable to fund source', { dest });
     throw e;
   }
 }
@@ -54,6 +54,8 @@ async function fundAccountsToDefault(dests: KeyringPair[]) {
       .filter(({ amount }) => amount > 0n)
       .map(({ amount, dest }, i) => fundSourceTransfer(root, dest, amount, nonce + i))
   );
+  // Make sure we are finalized before trying to use the funds
+  await ExtrinsicHelper.waitForFinalization();
   console.log('Root funding complete!');
 }
 

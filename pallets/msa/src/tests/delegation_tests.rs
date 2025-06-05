@@ -24,7 +24,6 @@ fn create_two_keypairs() -> (sr25519::Pair, sr25519::Pair) {
 	let (pair1, _) = sr25519::Pair::generate();
 	let (pair2, _) = sr25519::Pair::generate();
 	(pair1, pair2)
-	// (pair1.public(), pair2.public())
 }
 
 #[test]

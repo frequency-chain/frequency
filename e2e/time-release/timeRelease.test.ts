@@ -1,35 +1,11 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, getBlockNumber } from '../scaffolding/helpers';
+import { createAndFundKeypair, getBlockNumber, calculateReleaseSchedule } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper, ReleaseSchedule } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 
 const DOLLARS: number = 100000000; // 100_000_000
-
-function getBlocksInMonthPeriod(blockTime: number, periodInMonths: number) {
-  const secondsPerMonth = 2592000; // Assuming 30 days in a month
-
-  // Calculate the number of blocks in the given period
-  const blocksInPeriod = Math.floor((periodInMonths * secondsPerMonth) / blockTime);
-
-  return blocksInPeriod;
-}
-
-function calculateReleaseSchedule(amount: number | bigint): ReleaseSchedule {
-  const start = 0;
-  const period = getBlocksInMonthPeriod(6, 4);
-  const periodCount = 4;
-
-  const perPeriod = BigInt(amount) / BigInt(periodCount);
-
-  return {
-    start,
-    period,
-    periodCount,
-    perPeriod,
-  };
-}
 
 const fundingSource: KeyringPair = getFundingSource(import.meta.url);
 
@@ -86,7 +62,7 @@ describe('TimeRelease', function () {
 
       await ExtrinsicHelper.runToBlock(currentBlock + 2);
 
-      const cancelScheduleTransferTx1 = await ExtrinsicHelper.timeReleaseCancelScheduledNamedTransfer(
+      const cancelScheduleTransferTx1 = ExtrinsicHelper.timeReleaseCancelScheduledNamedTransfer(
         fundingSource,
         scheduleName1
       );
@@ -97,7 +73,7 @@ describe('TimeRelease', function () {
         await ExtrinsicHelper.apiPromise.query.timeRelease.scheduleReservedAmounts(scheduleName1);
       assert.equal(true, reservedAmountAfter.isEmpty, 'reserved amount should be empty');
 
-      const cancelScheduleTransferTx2 = await ExtrinsicHelper.timeReleaseCancelScheduledNamedTransfer(
+      const cancelScheduleTransferTx2 = ExtrinsicHelper.timeReleaseCancelScheduledNamedTransfer(
         fundingSource,
         scheduleName2
       );
@@ -123,7 +99,7 @@ describe('TimeRelease', function () {
         schedule,
         currentBlock + 10
       );
-      const { target: target1 } = await scheduleTransferTx1.signAndSend();
+      const { target: target1 } = await scheduleTransferTx1.signAndSend(undefined, undefined, false);
       assert.notEqual(target1, undefined, 'should have returned Scheduled event');
 
       const reservedAmountBefore =
