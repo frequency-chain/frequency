@@ -1,0 +1,67 @@
+[workspace]
+members = [
+  "chains/frequency-westend",
+  "networks/westend",
+  "test/frequency-westend"
+]
+resolver = "2"
+
+[workspace.lints.rust]
+nonstandard-style = "deny"
+
+[workspace.lints.clippy]
+correctness = { level = "deny", priority = -1 }
+style = { level = "deny", priority = -1 }
+complexity = { level = "deny", priority = -1 }
+perf = { level = "deny", priority = -1 }
+suspicious = { level = "deny", priority = -1 }
+
+wildcard_dependencies = "deny"
+from_over_into = "allow"
+type_complexity = "allow"
+identity_op = "allow"
+derivable_impls = "allow"
+assign_op_pattern = "allow"
+too_many_arguments = "allow"
+new_without_default = "allow"
+get_first = "allow"
+len_zero = "allow"
+large_enum_variant = "allow"
+empty_line_after_outer_attr = "allow"
+enum_variant_names = "allow"
+
+[workspace.dependencies]
+log = { version = "0.4.17", default-features = false }
+env_logger = "0.11.7"
+xcm-emulator = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+parachains-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+polkadot-primitives = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+
+emulated-integration-tests-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+frequency-runtime = { path = "../runtime/frequency", features = [
+    "frequency-westend",
+    "frequency-bridging",
+    "frequency-local",
+    "frequency-lint-check",
+] }
+cumulus-primitives-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+staging-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+
+asset-hub-westend-emulated-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+frequency-emulated-chain = { path = "./chains/frequency-westend" }
+westend-emulated-chain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+
+asset-test-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+pallet-message-queue = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+pallet-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+westend-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
+westend-system-emulated-network = { path = "../../networks/westend" }
+xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+
