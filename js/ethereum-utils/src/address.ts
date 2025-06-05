@@ -2,8 +2,10 @@ import { H160 } from '@polkadot/types/interfaces';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { encodeAddress, ethereumEncode } from '@polkadot/util-crypto';
 import { hexToU8a, u8aToHex } from '@polkadot/util';
-import { EthereumKeyPair, HexString } from './payloads';
+import { Address20MultiAddress, EthereumKeyPair, HexString } from './payloads';
 import { ethers } from 'ethers';
+import { Keyring } from '@polkadot/api';
+import { Keypair } from '@polkadot/util-crypto/types';
 
 /**
  * Creates a Random Ethereum key
@@ -81,6 +83,32 @@ export function getSS58AccountFromEthereumAccount(accountId20Hex: string): strin
   result.set(addressBytes, 0);
   result.set(suffix, 20);
   return encodeAddress(result);
+}
+
+/**
+ *
+ * @param secretKey of secp256k1 keypair exported from any wallet (should be 32 bytes)
+ */
+export function getKeyringPairFromSecp256k1PrivateKey(secretKey: Uint8Array): KeyringPair {
+  const publicKey = ethers.SigningKey.computePublicKey(secretKey, true);
+  const keypair: Keypair = {
+    secretKey,
+    publicKey: hexToU8a(publicKey),
+  };
+  return new Keyring({ type: 'ethereum' }).createFromPair(keypair, undefined, 'ethereum');
+}
+
+/**
+ * Convert a keyPair into a 20 byte ethereum address
+ * @param pair
+ */
+export function getAccountId20MultiAddress(pair: KeyringPair): Address20MultiAddress {
+  if (pair.type !== 'ethereum') {
+    throw new Error(`Only ethereum keys are supported!`);
+  }
+  const etheAddress = ethereumEncode(pair.publicKey || pair.address);
+  const ethAddress20 = Array.from(hexToU8a(etheAddress));
+  return { Address20: ethAddress20 };
 }
 
 function getUnified32BytesAddress(ethAddressOrPublicKey: string): HexString {
