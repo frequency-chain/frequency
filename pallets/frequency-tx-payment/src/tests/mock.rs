@@ -217,15 +217,15 @@ impl StakingConfigProvider for TestStakingConfigProvider {
 		match staking_type {
 			StakingType::CommittedBoost => StakingConfig {
 				reward_percent_cap: Permill::from_parts(8_000),
-				commitment_blocks: 365 * DAYS,         // 1 year
-				commitment_thaw_eras: 26,              // 1 year
-				commitment_thaw_era_blocks: 14 * DAYS, // 2 weeks
+				initial_commitment_blocks: 365 * DAYS,      // 1 year
+				commitment_release_stages: 26,              // 1 year
+				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
 			},
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
 				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
-				commitment_blocks: Zero::zero(),
-				commitment_thaw_eras: Zero::zero(),
-				commitment_thaw_era_blocks: Zero::zero(),
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
 			},
 		}
 	}
