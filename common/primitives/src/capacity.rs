@@ -1,6 +1,5 @@
 use crate::{msa::MessageSourceId, node::BlockNumber};
 use frame_support::traits::tokens::Balance;
-use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
 use sp_runtime::{DispatchError, Permill};

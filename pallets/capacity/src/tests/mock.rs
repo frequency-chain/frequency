@@ -1,8 +1,9 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config,
+	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
+	RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
 	capacity::{StakingConfig, StakingConfigProvider, StakingType},
@@ -18,7 +19,7 @@ use frame_support::{
 		ConstU16, ConstU32, ConstU64,
 	},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup, Zero},
@@ -197,6 +198,8 @@ impl StakingConfigProvider for TestStakingConfigProvider {
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 }
+
+pub const COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: u32 = 1000;
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -223,7 +226,8 @@ impl Config for Test {
 	type RewardPoolChunkLength = ConstU32<3>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
-	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
+	type CommittedBoostFailsafeUnlockBlockNumber =
+		ConstU32<COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER>;
 	type StakingConfigProvider = TestStakingConfigProvider;
 }
 
@@ -233,6 +237,10 @@ fn initialize_reward_pool() {
 	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
+}
+
+pub fn set_pte_block<T: Config>(block_number: Option<BlockNumberFor<T>>) {
+	PrecipitatingEventBlockNumber::<T>::set(block_number);
 }
 
 pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
