@@ -1,12 +1,13 @@
 use crate::{
 	tests::{
-		mock::{new_test_ext, Capacity, RuntimeOrigin, Test},
+		mock::{new_test_ext, Capacity, RuntimeOrigin, System, Test, TestStakingConfigProvider},
 		testing_utils::{capacity_events, register_provider},
 	},
 	*,
 };
 use common_primitives::{capacity::StakingType, msa::MessageSourceId};
-use frame_support::{assert_noop, assert_ok};
+use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin};
+use sp_runtime::traits::Scale;
 
 #[test]
 fn committed_boost_works() {
@@ -63,6 +64,27 @@ fn committed_boost_unstake_should_fail_before_pte() {
 		let amount = 200;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(account), target, amount),
+			Error::<Test>::InsufficientUnfrozenStakingBalance
+		);
+	});
+}
+
+#[test]
+fn committed_boost_unstake_should_fail_after_pte_and_before_release_stage() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let pte_block: BlockNumberFor<Test> = 500u32.into();
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(pte_block + 1);
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
+		System::set_block_number(2000);
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(account), target, amount),
