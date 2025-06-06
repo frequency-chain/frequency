@@ -7904,6 +7904,7 @@ dependencies = [
  "hex",
  "lazy_static",
  "log",
+ "pallet-balances",
  "pallet-collective",
  "pallet-handles",
  "pallet-schemas",
