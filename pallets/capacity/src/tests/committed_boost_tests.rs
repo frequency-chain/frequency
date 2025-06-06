@@ -1,3 +1,5 @@
+use core::ops::Add;
+
 use super::mock::*;
 use crate as pallet_capacity;
 use crate::{
@@ -195,6 +197,157 @@ fn committed_boost_unstake_should_fail_after_pte_and_before_release_stage() {
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::InsufficientUnfrozenStakingBalance
+		);
+	});
+}
+
+#[test]
+fn committed_boost_unstake_should_unstake_some_amount_in_release_stage() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let pte_block: BlockNumberFor<Test> = 500u32.into();
+		let cfg = <Test as crate::Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+		let release_middle: BlockNumberFor<Test> = cfg
+			.commitment_release_stage_blocks
+			.mul(cfg.commitment_release_stages)
+			.div_ceil(2);
+		let unstaking_amount = 10;
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(pte_block + 1);
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
+		System::set_block_number(
+			pte_block as u32 + cfg.initial_commitment_blocks + release_middle as u32,
+		);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, unstaking_amount),);
+
+		// Assert that staking account detail values are decremented correctly after unstaking
+		let staking_account_details = StakingAccountLedger::<Test>::get(account).unwrap();
+
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk { value: unstaking_amount, thaw_at: 2u32 }])
+			.unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
+
+		assert_eq!(
+			StakingDetails::<Test> {
+				active: amount - unstaking_amount,
+				staking_type: StakingType::CommittedBoost
+			},
+			staking_account_details,
+		);
+
+		// Assert that staking target detail values are decremented correctly after unstaking
+		let staking_target_details = StakingTargetLedger::<Test>::get(account, target).unwrap();
+
+		assert_eq!(
+			staking_target_details,
+			StakingTargetDetails::<BalanceOf<Test>> {
+				amount: amount - unstaking_amount,
+				capacity: 9u64
+			}
+		);
+
+		let events = capacity_events();
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::UnStaked { account, target, amount: unstaking_amount, capacity: 1u64 }
+		);
+	});
+}
+
+#[test]
+fn committed_boost_unstake_should_unstake_all_amount_after_release_stage() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let pte_block: BlockNumberFor<Test> = 500u32.into();
+		let cfg = <Test as crate::Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+		let after_release: BlockNumberFor<Test> =
+			cfg.commitment_release_stage_blocks.mul(cfg.commitment_release_stages).add(1u32);
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(pte_block + 1);
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
+		System::set_block_number(
+			pte_block as u32 + cfg.initial_commitment_blocks + after_release as u32,
+		);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount),);
+
+		// Assert that staking account detail values are decremented correctly after unstaking
+		let staking_account_details = StakingAccountLedger::<Test>::get(account);
+
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk { value: amount, thaw_at: 2u32 }]).unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
+
+		assert_eq!(None, staking_account_details,);
+
+		// Assert that staking target detail values are decremented correctly after unstaking
+		let staking_target_details = StakingTargetLedger::<Test>::get(account, target);
+
+		assert_eq!(staking_target_details, None,);
+
+		let events = capacity_events();
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::UnStaked { account, target, amount, capacity: 10u64 }
+		);
+	});
+}
+
+#[test]
+fn committed_boost_unstake_should_unstake_all_amount_after_pte_expiration() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let expiration_block: u32 =
+			<Test as crate::Config>::CommittedBoostFailsafeUnlockBlockNumber::get();
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(expiration_block + 1);
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, amount),);
+
+		// Assert that staking account detail values are decremented correctly after unstaking
+		let staking_account_details = StakingAccountLedger::<Test>::get(account);
+
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk { value: amount, thaw_at: 2u32 }]).unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
+
+		assert_eq!(None, staking_account_details,);
+
+		// Assert that staking target detail values are decremented correctly after unstaking
+		let staking_target_details = StakingTargetLedger::<Test>::get(account, target);
+
+		assert_eq!(staking_target_details, None,);
+
+		let events = capacity_events();
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::UnStaked { account, target, amount, capacity: 10u64 }
 		);
 	});
 }
