@@ -373,6 +373,19 @@ pub mod pallet {
 			/// The block number of the event
 			at: BlockNumberFor<T>,
 		},
+		/// Tokens have been staked to the Frequency network with a certain type
+		StakedV2 {
+			/// The token account that staked tokens to the network.
+			account: T::AccountId,
+			/// The MSA that a token account targeted to receive Capacity based on this staking amount.
+			target: MessageSourceId,
+			/// An amount that was staked.
+			amount: BalanceOf<T>,
+			/// The Capacity amount issued to the target as a result of the stake.
+			capacity: BalanceOf<T>,
+			/// staking type
+			staking_type: StakingType,
+		},
 	}
 
 	#[pallet::error]
@@ -435,6 +448,8 @@ pub mod pallet {
 		PteExpired,
 		/// Requested unstake amount exceeds available unfrozen staked balance
 		InsufficientUnfrozenStakingBalance,
+		/// No longer can join the committed boost
+		CommittedBoostStakingPeriodPassed,
 	}
 
 	#[pallet::hooks]
@@ -687,6 +702,43 @@ pub mod pallet {
 			Self::deposit_event(Event::PrecipitatingTokenomicEventSet { at: pte_block_number });
 			Ok(())
 		}
+
+		/// Stakes some amount of tokens to the network and locks it for a certain period for higher rewards and the tokens get unlocked gradually after a certain lock period.
+		/// ### Errors
+		///
+		/// - Error::InvalidTarget if attempting to stake to an invalid target.
+		/// - Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
+		/// - Error::CannotChangeStakingType if the staking account exists and staking_type is MaximumCapacity
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::committed_boost())]
+		pub fn committed_boost(
+			origin: OriginFor<T>,
+			target: MessageSourceId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+
+			let (mut staking_details, stakable_amount) =
+				Self::ensure_can_stake(&staker, target, amount, StakingType::CommittedBoost)?;
+			staking_details.staking_type = StakingType::CommittedBoost;
+
+			let capacity = Self::increase_stake_and_issue_boost_capacity(
+				&staker,
+				&mut staking_details,
+				&target,
+				&stakable_amount,
+			)?;
+
+			Self::deposit_event(Event::StakedV2 {
+				account: staker,
+				amount: stakable_amount,
+				target,
+				capacity,
+				staking_type: StakingType::CommittedBoost,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -725,6 +777,27 @@ impl<T: Config> Pallet<T> {
 			stakable_amount >= T::MinimumStakingAmount::get(),
 			Error::<T>::StakingAmountBelowMinimum
 		);
+
+		if staking_type == StakingType::CommittedBoost {
+			let curr_block = frame_system::Pallet::<T>::block_number();
+			let staking_config = T::StakingConfigProvider::get(staking_type);
+			match PrecipitatingEventBlockNumber::<T>::get() {
+				Some(pte_block) => {
+					ensure!(
+						curr_block <
+							pte_block
+								.saturating_add(staking_config.initial_commitment_blocks.into()),
+						Error::<T>::CommittedBoostStakingPeriodPassed
+					);
+				},
+				None => {
+					ensure!(
+						curr_block < T::CommittedBoostFailsafeUnlockBlockNumber::get().into(),
+						Error::<T>::CommittedBoostStakingPeriodPassed
+					);
+				},
+			}
+		}
 
 		Ok((staking_details, stakable_amount))
 	}
@@ -852,7 +925,8 @@ impl<T: Config> Pallet<T> {
 				let max_staged_release_blocks = initial_commitment_block.saturating_add(
 					staking_config
 						.commitment_release_stage_blocks
-						.mul(staking_config.commitment_release_stages),
+						.mul(staking_config.commitment_release_stages)
+						.into(),
 				);
 				if block_number >=
 					initial_commitment_block.saturating_add(max_staged_release_blocks)
@@ -951,27 +1025,29 @@ impl<T: Config> Pallet<T> {
 		let mut staking_account =
 			StakingAccountLedger::<T>::get(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
-
-		if staking_account.staking_type == StakingType::CommittedBoost {
-			ensure!(
+		ensure!(
+			staking_account.staking_type != StakingType::CommittedBoost ||
 				amount <= Self::get_unfrozen_staked_balance(unstaker, &staking_account),
-				Error::<T>::InsufficientUnfrozenStakingBalance
-			)
-		}
+			Error::<T>::InsufficientUnfrozenStakingBalance
+		);
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
 		Self::set_staking_account(unstaker, &staking_account);
 
-		let staking_type = staking_account.staking_type;
-		if staking_type == StakingType::FlexibleBoost {
-			let era = CurrentEraInfo::<T>::get().era_index;
-			Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
-			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
-			CurrentEraProviderBoostTotal::<T>::set(
-				reward_pool_total.saturating_sub(actual_unstaked_amount),
-			);
+		match staking_account.staking_type {
+			StakingType::FlexibleBoost | StakingType::CommittedBoost => {
+				let era = CurrentEraInfo::<T>::get().era_index;
+				Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
+				let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
+				CurrentEraProviderBoostTotal::<T>::set(
+					reward_pool_total.saturating_sub(actual_unstaked_amount),
+				);
+			},
+			StakingType::MaximumCapacity => {
+				// do nothing
+			},
 		}
-		Ok((actual_unstaked_amount, staking_type))
+		Ok((actual_unstaked_amount, staking_account.staking_type))
 	}
 
 	fn add_unlock_chunk(
@@ -1015,6 +1091,14 @@ impl<T: Config> Pallet<T> {
 			proposed_amount
 		} else {
 			Zero::zero()
+		}
+	}
+
+	/// Calculates a unstakable amount from a staked account
+	pub fn get_unstakable_amount_for(staker: &T::AccountId) -> BalanceOf<T> {
+		match StakingAccountLedger::<T>::get(staker) {
+			None => Zero::zero(),
+			Some(details) => Self::get_unfrozen_staked_balance(staker, &details),
 		}
 	}
 
@@ -1071,7 +1155,9 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
-		} else if staking_type.eq(&StakingType::FlexibleBoost) {
+		} else if staking_type.eq(&StakingType::FlexibleBoost) ||
+			staking_type.eq(&StakingType::CommittedBoost)
+		{
 			Perbill::from_rational(amount, staking_target_details.amount)
 				.mul_ceil(staking_target_details.capacity)
 		} else {
@@ -1257,7 +1343,7 @@ impl<T: Config> Pallet<T> {
 
 		let current_era_info = CurrentEraInfo::<T>::get(); // cached read, ditto
 		let max_history: u32 = T::ProviderBoostHistoryLimit::get();
-		let staking_type = StakingAccountLedger::<T>::get(account).unwrap_or_default().staking_type;
+		let staking_detail = StakingAccountLedger::<T>::get(account).unwrap_or_default();
 
 		let start_era = current_era_info.era_index.saturating_sub(max_history);
 		let end_era = current_era_info.era_index.saturating_sub(One::one()); // stop at previous era
@@ -1280,10 +1366,12 @@ impl<T: Config> Pallet<T> {
 				let total_for_era =
 					Self::get_total_stake_for_past_era(reward_era, current_era_info.era_index)?;
 				let earned_amount = <T>::RewardsProvider::era_staking_reward(
+					account,
+					&staking_detail,
 					eligible_amount,
 					total_for_era,
 					T::RewardPoolPerEra::get(),
-					staking_type,
+					staking_detail.staking_type,
 				);
 				unclaimed_rewards
 					.try_push(UnclaimedRewardInfo {
@@ -1497,13 +1585,16 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
+		staker: &T::AccountId,
+		staking_details: &StakingDetails<T>,
 		era_amount_staked: Self::Balance,
 		era_total_staked: Self::Balance,
 		era_reward_pool_size: Self::Balance,
 		staking_type: StakingType,
 	) -> Self::Balance {
 		let (new_staking_type, _) = Self::get_staking_type_and_releasable_amount_in_force(
-			staking_type,
+			staker,
+			staking_details,
 			&T::StakingConfigProvider::get(staking_type),
 		);
 		let capped_reward = T::StakingConfigProvider::get(new_staking_type)

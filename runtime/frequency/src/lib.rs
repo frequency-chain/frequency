@@ -1776,8 +1776,12 @@ sp_api::impl_runtime_apis! {
 				Ok(rewards) => rewards.into_inner(),
 				Err(_) => Vec::new(),
 			}
-
 		}
+
+		fn get_unstakable_eligible_amount(who: AccountId) -> Balance {
+			Capacity::get_unstakable_amount_for(&who)
+		}
+
 	}
 
 	#[cfg(feature = "try-runtime")]

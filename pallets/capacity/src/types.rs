@@ -518,10 +518,12 @@ pub trait ProviderBoostRewardsProvider<T: Config> {
 	/// Calculate the reward for a single era.  We don't care about the era number,
 	/// just the values.
 	fn era_staking_reward(
-		era_amount_staked: BalanceOf<T>, // how much individual staked for a specific era
-		era_total_staked: BalanceOf<T>,  // how much everyone staked for the era
-		era_reward_pool_size: BalanceOf<T>, // how much token in the reward pool that era
-		staking_type: StakingType,       // staking type
+		staker: &T::AccountId,               // staker account
+		staking_details: &StakingDetails<T>, // staking details
+		era_amount_staked: BalanceOf<T>,     // how much individual staked for a specific era
+		era_total_staked: BalanceOf<T>,      // how much everyone staked for the era
+		era_reward_pool_size: BalanceOf<T>,  // how much token in the reward pool that era
+		staking_type: StakingType,           // staking type
 	) -> BalanceOf<T>;
 
 	/// Return the effective amount when staked for a Provider Boost

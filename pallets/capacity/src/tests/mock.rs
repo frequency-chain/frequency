@@ -1,6 +1,10 @@
 use crate as pallet_capacity;
 
-use crate::{tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, InitialBoostingCommitments, PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST};
+use crate::{
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, InitialBoostingCommitments,
+	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
+	RewardPoolHistoryChunk, StakingDetails, STAKED_PERCENTAGE_TO_BOOST,
+};
 use common_primitives::{
 	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	node::{AccountId, ProposalProvider},
@@ -156,12 +160,21 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 
 	// use the pallet version of the era calculation.
 	fn era_staking_reward(
+		staker: &<Test as frame_system::Config>::AccountId, // staker account
+		staking_details: &StakingDetails<Test>,             // staking details
 		amount_staked: Self::Balance,
 		total_staked: Self::Balance,
 		reward_pool_size: Self::Balance,
 		staking_type: StakingType,
 	) -> Self::Balance {
-		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size, staking_type)
+		Capacity::era_staking_reward(
+			staker,
+			staking_details,
+			amount_staked,
+			total_staked,
+			reward_pool_size,
+			staking_type,
+		)
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
@@ -239,7 +252,7 @@ pub fn set_pte_block<T: Config>(block_number: Option<BlockNumberFor<T>>) {
 	PrecipitatingEventBlockNumber::<T>::set(block_number);
 }
 
-pub fn set_initial_commitment<T: Config>(account:  &T::AccountId, amount: Option<BalanceOf::<T>>) {
+pub fn set_initial_commitment<T: Config>(account: &T::AccountId, amount: Option<BalanceOf<T>>) {
 	InitialBoostingCommitments::<T>::set(account, amount);
 }
 
