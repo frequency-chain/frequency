@@ -1,10 +1,6 @@
 use crate as pallet_capacity;
 
-use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config,
-	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
-	RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
-};
+use crate::{tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, InitialBoostingCommitments, PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST};
 use common_primitives::{
 	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	node::{AccountId, ProposalProvider},
@@ -241,6 +237,10 @@ fn initialize_reward_pool() {
 
 pub fn set_pte_block<T: Config>(block_number: Option<BlockNumberFor<T>>) {
 	PrecipitatingEventBlockNumber::<T>::set(block_number);
+}
+
+pub fn set_initial_commitment<T: Config>(account:  &T::AccountId, amount: Option<BalanceOf::<T>>) {
+	InitialBoostingCommitments::<T>::set(account, amount);
 }
 
 pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {

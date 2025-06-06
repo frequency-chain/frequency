@@ -38,7 +38,7 @@ use frame_support::{
 };
 
 use sp_runtime::{
-	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
+	traits::{CheckedAdd, CheckedDiv, One, SaturatedConversion, Saturating, Zero},
 	ArithmeticError, BoundedVec, DispatchError, Perbill,
 };
 
@@ -204,6 +204,14 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type StakingAccountLedger<T: Config> =
 		StorageMap<_, Twox64Concat, T::AccountId, StakingDetails<T>>;
+
+	/// Storage for keeping track of the initial staked amount for Committed Boosting
+	/// Will be set the first time a user unstakes a CommittedBoosting stake amount.
+	/// - Keys: AccountId
+	/// - Value: [`BalanceOf<T>`]
+	#[pallet::storage]
+	pub type InitialBoostingCommitments<T: Config> =
+		StorageMap<_, Twox64Concat, T::AccountId, BalanceOf<T>>;
 
 	/// Storage to record how many tokens were targeted to an MSA.
 	/// - Keys: AccountId, MSA Id
@@ -831,79 +839,99 @@ impl<T: Config> Pallet<T> {
 		CapacityLedger::<T>::insert(target, capacity_details);
 	}
 
-	fn get_staking_type_and_releasable_percent_in_force(
-		current_staking_type: StakingType,
+	/// Get the phase of Committed Boosting at the indicated block
+	fn get_committed_boosting_phase(
+		block_number: BlockNumberFor<T>,
 		staking_config: &StakingConfig,
-	) -> (StakingType, Perbill) {
+	) -> CommittmentPhase {
+		let commitment_phase = if let Some(pte_block) = PrecipitatingEventBlockNumber::<T>::get() {
+			let initial_commitment_block =
+				pte_block.saturating_add(staking_config.initial_commitment_blocks.into());
+			// We are past the PreCommitment phase
+			if block_number >= initial_commitment_block {
+				let max_staged_release_blocks = initial_commitment_block.saturating_add(
+					staking_config
+						.commitment_release_stage_blocks
+						.mul(staking_config.commitment_release_stages),
+				);
+				if block_number >=
+					initial_commitment_block.saturating_add(max_staged_release_blocks)
+				{
+					CommittmentPhase::RewardProgramEnded
+				} else {
+					CommittmentPhase::StagedRelease
+				}
+			} else {
+				CommittmentPhase::InitialCommitment
+			}
+		} else if block_number >= T::CommittedBoostFailsafeUnlockBlockNumber::get().into() {
+			CommittmentPhase::Failsafe
+		} else {
+			CommittmentPhase::PreCommitment
+		};
+
+		commitment_phase
+	}
+
+	fn get_staking_type_and_releasable_amount_in_force(
+		staking_account: &T::AccountId,
+		staking_details: &StakingDetails<T>,
+		staking_config: &StakingConfig,
+	) -> (StakingType, BalanceOf<T>) {
+		let StakingDetails { active: current_balance, staking_type: current_staking_type } =
+			staking_details;
+		let curr_block = frame_system::Pallet::<T>::block_number();
 		match current_staking_type {
-			StakingType::CommittedBoost => {
-				let curr_block = frame_system::Pallet::<T>::block_number();
-				// If PTE is set, then we may be in some phase of Committed Boosting
-				if let Some(pte_block) = PrecipitatingEventBlockNumber::<T>::get() {
-					// We are past the Initial Commitment phase of Committed Boosting
-					if curr_block >=
-						pte_block.saturating_add(staking_config.initial_commitment_blocks.into())
-					{
-						let max_staged_release_blocks = pte_block
-							.saturating_add(staking_config.initial_commitment_blocks.into())
-							.saturating_add(
-								staking_config
-									.commitment_release_stage_blocks
-									.mul(staking_config.commitment_release_stages)
-									.into(),
-							);
-						// We are past the Commitment Release Stage of Committed Boosting; fall back to Flexible Boosting
-						if curr_block >= max_staged_release_blocks {
-							(StakingType::FlexibleBoost, Perbill::from_percent(100))
-						} else {
-							let unfreeze_stage: BlockNumberFor<T> = curr_block
-								.saturating_sub(pte_block)
-								.saturating_sub(staking_config.initial_commitment_blocks.into())
-								.checked_div(&staking_config.commitment_release_stage_blocks.into())
-								.unwrap_or(Zero::zero());
+			StakingType::CommittedBoost =>
+				match Self::get_committed_boosting_phase(curr_block, staking_config) {
+					CommittmentPhase::PreCommitment | CommittmentPhase::InitialCommitment =>
+						(*current_staking_type, Zero::zero()),
+					CommittmentPhase::RewardProgramEnded | CommittmentPhase::Failsafe =>
+						(StakingType::FlexibleBoost, *current_balance),
+					CommittmentPhase::StagedRelease => {
+						let pte_block =
+							PrecipitatingEventBlockNumber::<T>::get().unwrap_or_default();
+						let initial_commitment: BalanceOf<T> =
+							InitialBoostingCommitments::<T>::try_get(staking_account.clone())
+								.unwrap_or(*current_balance);
+						let unfreeze_stage: u32 = curr_block
+							.saturating_sub(pte_block)
+							.saturating_sub(staking_config.initial_commitment_blocks.into())
+							.checked_div(&staking_config.commitment_release_stage_blocks.into())
+							.unwrap_or(Zero::zero())
+							.saturated_into::<u32>();
 
-							let num_unfreeze_stages: BlockNumberFor<T> =
-								staking_config.commitment_release_stages.into();
+						let num_unfreeze_stages: u32 = staking_config.commitment_release_stages;
 
-							(
-								current_staking_type,
-								Perbill::from_rational(
-									One::one(),
-									num_unfreeze_stages.saturating_sub(
-										unfreeze_stage
-											.min(num_unfreeze_stages)
-											.saturating_add(One::one()),
-									),
-								),
-							)
-						}
-					}
-					// We are in the Initial Commitment phase of Committed Boosting
-					else {
-						(current_staking_type, Perbill::zero())
-					}
-				}
-				// PTE block is not set, and we're past the failsafe block; the Committed Boosting program is ended
-				else if curr_block >= T::CommittedBoostFailsafeUnlockBlockNumber::get().into() {
-					(StakingType::FlexibleBoost, Perbill::from_percent(100))
-				}
-				// PTE block is not set, but we haven't passed the failsafe block yet--we're in the Pre-Commitment phase
-				else {
-					(current_staking_type, Perbill::zero())
-				}
-			},
+						let cumulative_releasable_stake: BalanceOf<T> = initial_commitment
+							.mul(unfreeze_stage.saturating_add(One::one()).into())
+							.checked_div(&staking_config.commitment_release_stages.into())
+							.unwrap_or(Zero::zero());
+
+						let total_released_to_date = initial_commitment - *current_balance;
+
+						(
+							*current_staking_type,
+							cumulative_releasable_stake.saturating_sub(total_released_to_date),
+						)
+					},
+				},
 			// Only Commited Boosting has token lockup requirements; tokens staked with other staking types
 			// are always 100% releasable.
-			_ => (current_staking_type, Perbill::from_percent(100)),
+			_ => (*current_staking_type, *current_balance),
 		}
 	}
 
-	fn get_unfrozen_staked_balance(staking_account: &StakingDetails<T>) -> BalanceOf<T> {
-		let (_, percent_releasable) = Self::get_staking_type_and_releasable_percent_in_force(
-			staking_account.staking_type,
+	fn get_unfrozen_staked_balance(
+		account_id: &T::AccountId,
+		staking_account: &StakingDetails<T>,
+	) -> BalanceOf<T> {
+		let (_, amount_releasable) = Self::get_staking_type_and_releasable_amount_in_force(
+			account_id,
+			staking_account,
 			&T::StakingConfigProvider::get(staking_account.staking_type),
 		);
-		percent_releasable.mul_ceil(staking_account.active)
+		amount_releasable
 	}
 
 	/// Decrease a staking account's active token and reap if it goes below the minimum.
@@ -926,7 +954,7 @@ impl<T: Config> Pallet<T> {
 
 		if staking_account.staking_type == StakingType::CommittedBoost {
 			ensure!(
-				amount <= Self::get_unfrozen_staked_balance(&staking_account),
+				amount <= Self::get_unfrozen_staked_balance(unstaker, &staking_account),
 				Error::<T>::InsufficientUnfrozenStakingBalance
 			)
 		}
@@ -1474,7 +1502,7 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 		era_reward_pool_size: Self::Balance,
 		staking_type: StakingType,
 	) -> Self::Balance {
-		let (new_staking_type, _) = Self::get_staking_type_and_releasable_percent_in_force(
+		let (new_staking_type, _) = Self::get_staking_type_and_releasable_amount_in_force(
 			staking_type,
 			&T::StakingConfigProvider::get(staking_type),
 		);

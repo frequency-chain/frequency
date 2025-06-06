@@ -28,6 +28,23 @@ pub enum StakingType {
 	FlexibleBoost,
 }
 
+#[derive(
+	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
+)]
+/// The phase of Committed Boosting at a given block number
+pub enum CommittmentPhase {
+	/// The PTE block has not been set, nor has the failsafe block been exceeded
+	PreCommitment,
+	/// The PTE block has been set, but the initial commitment period has not yet elapsed
+	InitialCommitment,
+	/// The PTE has been set & the initial commitment period has elapsed, but the release period has not yet elapsed`
+	StagedRelease,
+	/// The release period has elapsed, and the commitment can be released
+	RewardProgramEnded,
+	/// The PTE block has not been set, and the failsafe block has been exceeded
+	Failsafe,
+}
+
 // A trait defining the attributes for calculating freeze/release and reward values
 /// associated with a particular `StakingType`
 pub trait StakingConfigProvider {
@@ -113,5 +130,5 @@ pub struct StakingConfig {
 	/// the length in blocks of a commitment release stage
 	pub commitment_release_stage_blocks: BlockNumber,
 	/// the number of release stages that must elapse before the entire commitment can be released
-	pub commitment_release_stages: BlockNumber,
+	pub commitment_release_stages: u32,
 }
