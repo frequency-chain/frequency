@@ -4,7 +4,7 @@ use crate::{
 		run_to_block, set_era_and_reward_pool, setup_provider, system_run_to_block,
 	},
 	BalanceOf, Config, CurrentEraInfo, ProviderBoostHistories, ProviderBoostHistory,
-	ProviderBoostRewardsProvider,
+	ProviderBoostRewardsProvider, StakingDetails,
 	StakingType::*,
 	UnclaimedRewardInfo,
 };
@@ -23,55 +23,63 @@ fn era_staking_reward_implementation() {
 		expected_reward: u64, // for a single era
 		reward_pool: u64,     // reward pool size
 	}
-	let test_cases: Vec<TestCase> = vec![
-		TestCase {
-			total_staked: 1_000_000,
-			amount_staked: 0,
-			expected_reward: 0,
-			reward_pool: 10_000,
-		}, // shouldn't happen, but JIC
-		TestCase {
-			total_staked: 1_000_000,
-			amount_staked: 30,
-			expected_reward: 0,
-			reward_pool: 10_000,
-		}, // truncated result
-		TestCase {
-			total_staked: 1_000_000,
-			amount_staked: 150,
-			expected_reward: 1,
-			reward_pool: 10_000,
-		}, // truncated result
-		TestCase {
-			total_staked: 1_000_000,
-			amount_staked: 1000,
-			expected_reward: 4,
-			reward_pool: 10_000,
-		}, // hits the cap starting with this example
-		TestCase {
-			total_staked: 1_000_000,
-			amount_staked: 11000,
-			expected_reward: 42,
-			reward_pool: 10_000,
-		}, // > 0.0038% of total, reward = 11000*.0038
-		TestCase {
-			total_staked: 20_000_000,
-			amount_staked: 888_889,
-			expected_reward: 3378,
-			reward_pool: 11_000_000,
-		}, //  testnet/mainnet values
-	];
-	for tc in test_cases {
-		assert_eq!(
-			Capacity::era_staking_reward(
-				tc.amount_staked,
-				tc.total_staked,
-				tc.reward_pool,
-				StakingType::FlexibleBoost
-			),
-			tc.expected_reward
-		);
-	}
+
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let staking_detail =
+			StakingDetails { active: Default::default(), staking_type: StakingType::FlexibleBoost };
+		let test_cases: Vec<TestCase> = vec![
+			TestCase {
+				total_staked: 1_000_000,
+				amount_staked: 0,
+				expected_reward: 0,
+				reward_pool: 10_000,
+			}, // shouldn't happen, but JIC
+			TestCase {
+				total_staked: 1_000_000,
+				amount_staked: 30,
+				expected_reward: 0,
+				reward_pool: 10_000,
+			}, // truncated result
+			TestCase {
+				total_staked: 1_000_000,
+				amount_staked: 150,
+				expected_reward: 1,
+				reward_pool: 10_000,
+			}, // truncated result
+			TestCase {
+				total_staked: 1_000_000,
+				amount_staked: 1000,
+				expected_reward: 4,
+				reward_pool: 10_000,
+			}, // hits the cap starting with this example
+			TestCase {
+				total_staked: 1_000_000,
+				amount_staked: 11000,
+				expected_reward: 42,
+				reward_pool: 10_000,
+			}, // > 0.0038% of total, reward = 11000*.0038
+			TestCase {
+				total_staked: 20_000_000,
+				amount_staked: 888_889,
+				expected_reward: 3378,
+				reward_pool: 11_000_000,
+			}, //  testnet/mainnet values
+		];
+		for tc in test_cases {
+			assert_eq!(
+				Capacity::era_staking_reward(
+					&account,
+					&staking_detail,
+					tc.amount_staked,
+					tc.total_staked,
+					tc.reward_pool,
+					StakingType::FlexibleBoost
+				),
+				tc.expected_reward
+			);
+		}
+	})
 }
 
 #[test]

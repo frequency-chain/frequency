@@ -3,116 +3,143 @@ use core::ops::Add;
 use super::mock::*;
 use crate as pallet_capacity;
 use crate::{
-	tests::{
-		mock::{new_test_ext, Capacity, RuntimeOrigin, System, Test},
-		testing_utils::{capacity_events, register_provider},
-	},
-	BalanceOf, StakingConfigProvider, StakingType, *,
+	tests::testing_utils::{capacity_events, register_provider},
+	BalanceOf, BlockNumberFor, CapacityLedger, Error, Event, FreezeReason, StakingAccountLedger,
+	StakingConfigProvider, StakingDetails, StakingTargetDetails, StakingTargetLedger, StakingType,
+	StakingType::FlexibleBoost,
+	UnlockChunk, UnstakeUnlocks,
 };
-use common_primitives::msa::MessageSourceId;
-use frame_support::{assert_noop, assert_ok, dispatch::RawOrigin, traits::Get};
+use common_primitives::{capacity::StakingType::CommittedBoost, msa::MessageSourceId};
+use frame_support::{
+	assert_err, assert_noop, assert_ok,
+	dispatch::RawOrigin,
+	traits::{fungible::InspectFreeze, Get},
+	BoundedVec,
+};
 use pallet_capacity::Config;
+use sp_runtime::Perbill;
 
 #[test]
-fn percent_releasable_in_pre_commit_phase_should_be_zero() {
+fn amount_releasable_in_pre_commit_phase_should_be_zero() {
 	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let staking_account =
+			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
+
 		// Indicate we are in the pre-commit phase
 		set_pte_block::<Test>(None);
 
-		let (staking_type, percent_releasable) =
-			Capacity::get_staking_type_and_releasable_percent_in_force(
-				StakingType::CommittedBoost,
-				&<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost),
+		let (staking_type, amount_releasable) =
+			Capacity::get_staking_type_and_releasable_amount_in_force(
+				&account,
+				&staking_account,
+				&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 			);
-		assert_eq!(staking_type, StakingType::CommittedBoost);
-		assert_eq!(percent_releasable, Perbill::zero());
+		assert_eq!(staking_type, CommittedBoost);
+		assert_eq!(amount_releasable, 0);
 	})
 }
 
 #[test]
-fn percent_releasable_in_initial_commit_phase_should_be_zero() {
+fn amount_releasable_in_initial_commit_phase_should_be_zero() {
 	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let staking_account =
+			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
+
 		// Indicate we are in the initial-commit phase
 		set_pte_block::<Test>(Some(1));
 
-		let (staking_type, percent_releasable) =
-			Capacity::get_staking_type_and_releasable_percent_in_force(
-				StakingType::CommittedBoost,
-				&<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost),
+		let (staking_type, amount_releasable) =
+			Capacity::get_staking_type_and_releasable_amount_in_force(
+				&account,
+				&staking_account,
+				&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 			);
-		assert_eq!(staking_type, StakingType::CommittedBoost);
-		assert_eq!(percent_releasable, Perbill::zero());
+		assert_eq!(staking_type, CommittedBoost);
+		assert_eq!(amount_releasable, 0);
 	})
 }
 
 #[test]
-fn percent_releasable_after_failsafe_block_should_be_one_hundred() {
+fn amount_releasable_after_failsafe_block_should_be_one_hundred() {
 	new_test_ext().execute_with(|| {
-		// Indicate we are in the initiai-commit phase
+		let account = 10_000u64;
+		let staking_account =
+			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
+
+		// Indicate we are in the initial-commit phase
 		set_pte_block::<Test>(None);
 		System::set_block_number(<Test as Config>::CommittedBoostFailsafeUnlockBlockNumber::get());
 
-		let (staking_type, percent_releasable) =
-			Capacity::get_staking_type_and_releasable_percent_in_force(
-				StakingType::CommittedBoost,
-				&<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost),
+		let (staking_type, amount_releasable) =
+			Capacity::get_staking_type_and_releasable_amount_in_force(
+				&account,
+				&staking_account,
+				&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 			);
-		assert_eq!(staking_type, StakingType::FlexibleBoost);
-		assert_eq!(percent_releasable, Perbill::from_percent(100));
+		assert_eq!(staking_type, FlexibleBoost);
+		assert_eq!(amount_releasable, staking_account.active);
 	})
 }
 
 #[test]
-fn percent_releasable_at_end_of_staged_release_should_be_one_hundred() {
+fn amount_releasable_at_end_of_staged_release_should_be_one_hundred() {
 	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let staking_account =
+			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
+
 		// Indicate we are in the initiai-commit phase
 		set_pte_block::<Test>(Some(1));
-		let staking_config =
-			<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+		let staking_config = <Test as Config>::StakingConfigProvider::get(CommittedBoost);
 		let block_number = 1 +
 			staking_config.initial_commitment_blocks +
 			(staking_config.commitment_release_stage_blocks *
 				staking_config.commitment_release_stages);
 		System::set_block_number(block_number);
 
-		let (staking_type, percent_releasable) =
-			Capacity::get_staking_type_and_releasable_percent_in_force(
-				StakingType::CommittedBoost,
-				&<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost),
+		let (staking_type, amount_releasable) =
+			Capacity::get_staking_type_and_releasable_amount_in_force(
+				&account,
+				&staking_account,
+				&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 			);
-		assert_eq!(staking_type, StakingType::FlexibleBoost);
-		assert_eq!(percent_releasable, Perbill::from_percent(100));
+		assert_eq!(staking_type, FlexibleBoost);
+		assert_eq!(amount_releasable, staking_account.active);
 	})
 }
 
 #[test]
 fn amount_releasable_during_staged_release_should_be_consistent_if_always_unstaked() {
 	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let staking_account =
+			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
+		let initial_commitment = staking_account.active;
+
 		// Indicate we are in the initial-commit phase
 		set_pte_block::<Test>(Some(1));
-		let staking_config =
-			<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+		set_initial_commitment::<Test>(&account, Some(initial_commitment));
+		let staking_config = <Test as Config>::StakingConfigProvider::get(CommittedBoost);
 		let start_block_number = 1 + staking_config.initial_commitment_blocks;
 		System::set_block_number(start_block_number);
-		let mut prev_amount: BalanceOf<Test> = 0;
-		let mut total_balance: BalanceOf<Test> = 1_000_000;
 
 		for stage in 0..staking_config.commitment_release_stages {
 			let offset_blocks = stage * staking_config.commitment_release_stage_blocks;
 			let block_number = start_block_number + offset_blocks;
 			System::set_block_number(block_number);
-			let (staking_type, percent_releasable) =
-				Capacity::get_staking_type_and_releasable_percent_in_force(
-					StakingType::CommittedBoost,
-					&<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost),
+			let (staking_type, amount_releasable) =
+				Capacity::get_staking_type_and_releasable_amount_in_force(
+					&account,
+					&staking_account,
+					&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 				);
-			assert_eq!(staking_type, StakingType::CommittedBoost);
-			let amount = percent_releasable.mul_floor(total_balance);
-			if prev_amount > 0 && amount > 0 {
-				assert!((prev_amount as i32 - amount as i32).abs() <= 1);
-			}
-			prev_amount = amount;
-			total_balance = total_balance.saturating_sub(amount);
+			assert_eq!(staking_type, CommittedBoost);
+			assert_eq!(
+				amount_releasable,
+				initial_commitment / u64::from(staking_config.commitment_release_stages)
+			);
 		}
 	})
 }
@@ -209,19 +236,15 @@ fn committed_boost_unstake_should_unstake_some_amount_in_release_stage() {
 		let amount = 200;
 		let pte_block: BlockNumberFor<Test> = 500u32.into();
 		let cfg = <Test as crate::Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
-		let release_middle: BlockNumberFor<Test> = cfg
-			.commitment_release_stage_blocks
-			.mul(cfg.commitment_release_stages)
-			.div_ceil(2);
+		let release_middle: u32 =
+			cfg.commitment_release_stage_blocks * cfg.commitment_release_stages / 2;
 		let unstaking_amount = 10;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
 
 		System::set_block_number(pte_block + 1);
 		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
-		System::set_block_number(
-			pte_block as u32 + cfg.initial_commitment_blocks + release_middle as u32,
-		);
+		System::set_block_number(pte_block as u32 + cfg.initial_commitment_blocks + release_middle);
 
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, unstaking_amount),);
 
@@ -272,8 +295,8 @@ fn committed_boost_unstake_should_unstake_all_amount_after_release_stage() {
 		let amount = 200;
 		let pte_block: BlockNumberFor<Test> = 500u32.into();
 		let cfg = <Test as crate::Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
-		let after_release: BlockNumberFor<Test> =
-			cfg.commitment_release_stage_blocks.mul(cfg.commitment_release_stages).add(1u32);
+		let after_release: u32 =
+			cfg.commitment_release_stage_blocks * cfg.commitment_release_stages + 1u32;
 		register_provider(target, String::from("Foo"));
 		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
 
