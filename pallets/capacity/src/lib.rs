@@ -39,7 +39,7 @@ use frame_support::{
 
 use sp_runtime::{
 	traits::{CheckedAdd, CheckedDiv, One, Saturating, Zero},
-	ArithmeticError, BoundedVec, DispatchError, Perbill, Percent,
+	ArithmeticError, BoundedVec, DispatchError, Perbill,
 };
 
 pub use common_primitives::{
@@ -907,7 +907,7 @@ impl<T: Config> Pallet<T> {
 	fn get_staking_type_and_releasable_percent_in_force(
 		current_staking_type: StakingType,
 		staking_config: &StakingConfig,
-	) -> (StakingType, Percent) {
+	) -> (StakingType, Perbill) {
 		match current_staking_type {
 			StakingType::CommittedBoost => {
 				let curr_block = frame_system::Pallet::<T>::block_number();
@@ -927,7 +927,7 @@ impl<T: Config> Pallet<T> {
 							);
 						// We are past the Commitment Release Stage of Committed Boosting; fall back to Flexible Boosting
 						if curr_block >= max_staged_release_blocks {
-							(StakingType::FlexibleBoost, Percent::from_percent(100))
+							(StakingType::FlexibleBoost, Perbill::from_percent(100))
 						} else {
 							let unfreeze_stage: BlockNumberFor<T> = curr_block
 								.saturating_sub(pte_block)
@@ -940,7 +940,7 @@ impl<T: Config> Pallet<T> {
 
 							(
 								current_staking_type,
-								Percent::from_rational(
+								Perbill::from_rational(
 									One::one(),
 									num_unfreeze_stages.saturating_sub(
 										unfreeze_stage
@@ -953,21 +953,21 @@ impl<T: Config> Pallet<T> {
 					}
 					// We are in the Initial Commitment phase of Committed Boosting
 					else {
-						(current_staking_type, Percent::zero())
+						(current_staking_type, Perbill::zero())
 					}
 				}
 				// PTE block is not set, and we're past the failsafe block; the Committed Boosting program is ended
 				else if curr_block >= T::CommittedBoostFailsafeUnlockBlockNumber::get().into() {
-					(StakingType::FlexibleBoost, Percent::from_percent(100))
+					(StakingType::FlexibleBoost, Perbill::from_percent(100))
 				}
 				// PTE block is not set, but we haven't passed the failsafe block yet--we're in the Pre-Commitment phase
 				else {
-					(current_staking_type, Percent::zero())
+					(current_staking_type, Perbill::zero())
 				}
 			},
 			// Only Commited Boosting has token lockup requirements; tokens staked with other staking types
 			// are always 100% releasable.
-			_ => (current_staking_type, Percent::from_percent(100)),
+			_ => (current_staking_type, Perbill::from_percent(100)),
 		}
 	}
 
@@ -1287,7 +1287,7 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Get all unclaimed rewards information for each eligible Reward Era.
-	/// If no unclaimed rewards, returns empty list.
+	/// If no unclaimed rewards, returns an empty list.
 	pub fn list_unclaimed_rewards(
 		account: &T::AccountId,
 	) -> Result<
