@@ -1,8 +1,8 @@
-use crate::msa::MessageSourceId;
+use crate::{msa::MessageSourceId, node::BlockNumber};
 use frame_support::traits::tokens::Balance;
 use scale_info::TypeInfo;
-use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
-use sp_runtime::DispatchError;
+use sp_core::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, RuntimeDebug};
+use sp_runtime::{DispatchError, Permill};
 
 /// The type of a Reward Era
 pub type RewardEra = u32;
@@ -11,6 +11,40 @@ pub type RewardEra = u32;
 pub trait TargetValidator {
 	/// Checks if an MSA is a valid target.
 	fn validate(target: MessageSourceId) -> bool;
+}
+
+#[derive(
+	Clone,
+	Copy,
+	Debug,
+	Decode,
+	Encode,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	PartialEq,
+	PartialOrd,
+	DecodeWithMemTracking,
+)]
+/// The type of staking a given Staking Account is doing.
+pub enum StakingType {
+	/// Staking account targets Providers for capacity only, no token reward
+	MaximumCapacity,
+	/// New reward program with new rules.
+	/// Defines a mechanism for locking tokens that is both time-sensitive and event-driven, with immutable thawing behavior.
+	CommittedBoost,
+	/// Staking account targets Providers and splits reward between Capacity to the Provider
+	/// and token for the account holder
+	FlexibleBoost,
+}
+
+// A trait defining the attributes for calculating freeze/release and reward values
+/// associated with a particular `StakingType`
+pub trait StakingConfigProvider {
+	/// Scalar type for representing balance of an account.
+	// type Balance: Balance;
+	/// returns the configuration for the stake type
+	fn get(staking_type: StakingType) -> StakingConfig;
 }
 
 /// A blanket implementation
@@ -35,7 +69,7 @@ pub trait Nontransferable {
 	fn deduct(msa_id: MessageSourceId, capacity_amount: Self::Balance)
 		-> Result<(), DispatchError>;
 
-	/// Increase Staked Token + Capacity amounts of an MSA. (unused)
+	/// Increase Staked Token and Capacity amounts of an MSA. (unused)
 	fn deposit(
 		msa_id: MessageSourceId,
 		token_amount: Self::Balance,
@@ -69,7 +103,7 @@ pub trait Replenishable {
 pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 	/// The Reward Era for which this reward was earned
 	pub reward_era: RewardEra,
-	/// When this reward expires, i.e. can no longer be claimed
+	/// When this reward expires, i.e., can no longer be claimed
 	pub expires_at_block: BlockNumber,
 	/// The total staked in this era as of the current block
 	pub staked_amount: Balance,
@@ -78,4 +112,16 @@ pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 	pub eligible_amount: Balance,
 	/// The amount in token of the reward (only if it can be calculated using only on chain data)
 	pub earned_amount: Balance,
+}
+
+/// Staking configuration details
+pub struct StakingConfig {
+	/// the percentage cap per era of an individual Provider Boost reward
+	pub reward_percent_cap: Permill,
+	/// the number of blocks a stake is initially frozen for
+	pub initial_commitment_blocks: BlockNumber,
+	/// the length in blocks of a commitment release stage
+	pub commitment_release_stage_blocks: BlockNumber,
+	/// the number of release stages that must elapse before the entire commitment can be released
+	pub commitment_release_stages: BlockNumber,
 }
