@@ -1,8 +1,7 @@
 use crate::{msa::MessageSourceId, node::BlockNumber};
 use frame_support::traits::tokens::Balance;
-use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
-use sp_core::{Decode, Encode, MaxEncodedLen, RuntimeDebug};
+use sp_core::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, RuntimeDebug};
 use sp_runtime::{DispatchError, Permill};
 
 /// The type of a Reward Era
@@ -15,7 +14,17 @@ pub trait TargetValidator {
 }
 
 #[derive(
-	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
+	Clone,
+	Copy,
+	Debug,
+	Decode,
+	Encode,
+	TypeInfo,
+	Eq,
+	MaxEncodedLen,
+	PartialEq,
+	PartialOrd,
+	DecodeWithMemTracking,
 )]
 /// The type of staking a given Staking Account is doing.
 pub enum StakingType {

@@ -365,6 +365,19 @@ pub mod pallet {
 			/// The block number of the event
 			at: BlockNumberFor<T>,
 		},
+		/// Tokens have been staked to the Frequency network with a certain type
+		StakedV2 {
+			/// The token account that staked tokens to the network.
+			account: T::AccountId,
+			/// The MSA that a token account targeted to receive Capacity based on this staking amount.
+			target: MessageSourceId,
+			/// An amount that was staked.
+			amount: BalanceOf<T>,
+			/// The Capacity amount issued to the target as a result of the stake.
+			capacity: BalanceOf<T>,
+			/// staking type
+			staking_type: StakingType,
+		},
 	}
 
 	#[pallet::error]
@@ -427,6 +440,8 @@ pub mod pallet {
 		PteExpired,
 		/// Requested unstake amount exceeds available unfrozen staked balance
 		InsufficientUnfrozenStakingBalance,
+		/// No longer can join the committed boost
+		CommittedBoostStakingPeriodPassed,
 	}
 
 	#[pallet::hooks]
@@ -679,6 +694,43 @@ pub mod pallet {
 			Self::deposit_event(Event::PrecipitatingTokenomicEventSet { at: pte_block_number });
 			Ok(())
 		}
+
+		/// Stakes some amount of tokens to the network and locks it for a certain period for higher rewards and the tokens get unlocked gradually after a certain lock period.
+		/// ### Errors
+		///
+		/// - Error::InvalidTarget if attempting to stake to an invalid target.
+		/// - Error::StakingAmountBelowMinimum if attempting to stake an amount below the minimum amount.
+		/// - Error::CannotChangeStakingType if the staking account exists and staking_type is MaximumCapacity
+		#[pallet::call_index(8)]
+		#[pallet::weight(T::WeightInfo::committed_boost())]
+		pub fn committed_boost(
+			origin: OriginFor<T>,
+			target: MessageSourceId,
+			amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let staker = ensure_signed(origin)?;
+
+			let (mut staking_details, stakable_amount) =
+				Self::ensure_can_stake(&staker, target, amount, StakingType::CommittedBoost)?;
+			staking_details.staking_type = StakingType::CommittedBoost;
+
+			let capacity = Self::increase_stake_and_issue_boost_capacity(
+				&staker,
+				&mut staking_details,
+				&target,
+				&stakable_amount,
+			)?;
+
+			Self::deposit_event(Event::StakedV2 {
+				account: staker,
+				amount: stakable_amount,
+				target,
+				capacity,
+				staking_type: StakingType::CommittedBoost,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -717,6 +769,27 @@ impl<T: Config> Pallet<T> {
 			stakable_amount >= T::MinimumStakingAmount::get(),
 			Error::<T>::StakingAmountBelowMinimum
 		);
+
+		if staking_type == StakingType::CommittedBoost {
+			let curr_block = frame_system::Pallet::<T>::block_number();
+			let staking_config = T::StakingConfigProvider::get(staking_type);
+			match PrecipitatingEventBlockNumber::<T>::get() {
+				Some(pte_block) => {
+					ensure!(
+						curr_block <
+							pte_block
+								.saturating_add(staking_config.initial_commitment_blocks.into()),
+						Error::<T>::CommittedBoostStakingPeriodPassed
+					);
+				},
+				None => {
+					ensure!(
+						curr_block < T::CommittedBoostFailsafeUnlockBlockNumber::get().into(),
+						Error::<T>::CommittedBoostStakingPeriodPassed
+					);
+				},
+			}
+		}
 
 		Ok((staking_details, stakable_amount))
 	}
@@ -844,11 +917,16 @@ impl<T: Config> Pallet<T> {
 					if curr_block >=
 						pte_block.saturating_add(staking_config.initial_commitment_blocks.into())
 					{
-						let max_staged_release_blocks = staking_config
-							.commitment_release_stage_blocks
-							.mul(staking_config.commitment_release_stages);
+						let max_staged_release_blocks = pte_block
+							.saturating_add(staking_config.initial_commitment_blocks.into())
+							.saturating_add(
+								staking_config
+									.commitment_release_stage_blocks
+									.mul(staking_config.commitment_release_stages)
+									.into(),
+							);
 						// We are past the Commitment Release Stage of Committed Boosting; fall back to Flexible Boosting
-						if curr_block >= max_staged_release_blocks.into() {
+						if curr_block >= max_staged_release_blocks {
 							(StakingType::FlexibleBoost, Percent::from_percent(100))
 						} else {
 							let unfreeze_stage: BlockNumberFor<T> = curr_block
@@ -918,27 +996,29 @@ impl<T: Config> Pallet<T> {
 		let mut staking_account =
 			StakingAccountLedger::<T>::get(unstaker).ok_or(Error::<T>::NotAStakingAccount)?;
 		ensure!(amount <= staking_account.active, Error::<T>::InsufficientStakingBalance);
-
-		if staking_account.staking_type == StakingType::CommittedBoost {
-			ensure!(
+		ensure!(
+			staking_account.staking_type != StakingType::CommittedBoost ||
 				amount <= Self::get_unfrozen_staked_balance(&staking_account),
-				Error::<T>::InsufficientUnfrozenStakingBalance
-			)
-		}
+			Error::<T>::InsufficientUnfrozenStakingBalance
+		);
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
 		Self::set_staking_account(unstaker, &staking_account);
 
-		let staking_type = staking_account.staking_type;
-		if staking_type == StakingType::FlexibleBoost {
-			let era = CurrentEraInfo::<T>::get().era_index;
-			Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
-			let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
-			CurrentEraProviderBoostTotal::<T>::set(
-				reward_pool_total.saturating_sub(actual_unstaked_amount),
-			);
+		match staking_account.staking_type {
+			StakingType::FlexibleBoost | StakingType::CommittedBoost => {
+				let era = CurrentEraInfo::<T>::get().era_index;
+				Self::upsert_boost_history(unstaker, era, actual_unstaked_amount, false)?;
+				let reward_pool_total = CurrentEraProviderBoostTotal::<T>::get();
+				CurrentEraProviderBoostTotal::<T>::set(
+					reward_pool_total.saturating_sub(actual_unstaked_amount),
+				);
+			},
+			StakingType::MaximumCapacity => {
+				// do nothing
+			},
 		}
-		Ok((actual_unstaked_amount, staking_type))
+		Ok((actual_unstaked_amount, staking_account.staking_type))
 	}
 
 	fn add_unlock_chunk(
@@ -1038,7 +1118,9 @@ impl<T: Config> Pallet<T> {
 
 		let capacity_to_withdraw = if staking_target_details.amount.eq(&amount) {
 			staking_target_details.capacity
-		} else if staking_type.eq(&StakingType::FlexibleBoost) {
+		} else if staking_type.eq(&StakingType::FlexibleBoost) ||
+			staking_type.eq(&StakingType::CommittedBoost)
+		{
 			Perbill::from_rational(amount, staking_target_details.amount)
 				.mul_ceil(staking_target_details.capacity)
 		} else {
