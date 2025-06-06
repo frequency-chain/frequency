@@ -854,7 +854,6 @@ impl<T: Config> Pallet<T> {
 							);
 						// We are past the Commitment Release Stage of Committed Boosting; fall back to Flexible Boosting
 						if curr_block >= max_staged_release_blocks {
-							println!("Committed Boosting program ended");
 							(StakingType::FlexibleBoost, Perbill::from_percent(100))
 						} else {
 							let unfreeze_stage: BlockNumberFor<T> = curr_block
