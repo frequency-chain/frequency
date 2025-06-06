@@ -30,7 +30,9 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
+	traits::{
+		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup, Zero,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
@@ -628,9 +630,16 @@ impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
 			StakingType::CommittedBoost => StakingConfig {
 				// TODO: TBD
 				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: 365 * DAYS,      // 1 year
+				commitment_release_stages: 26,              // 1 year
+				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(3_833) }, // 0.3833% or 0.003833 per RewardEra
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(3_833), // 0.3833% or 0.003833 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
 		}
 	}
 }

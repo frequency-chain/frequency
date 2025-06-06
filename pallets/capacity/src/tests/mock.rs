@@ -1,15 +1,16 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config,
+	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
+	RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
 	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::weights;
+use common_runtime::{constants::DAYS, weights};
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -18,10 +19,10 @@ use frame_support::{
 		ConstU16, ConstU32, ConstU64,
 	},
 };
-use frame_system::{EnsureRoot, EnsureSigned};
+use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup, Zero},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
 
@@ -177,10 +178,18 @@ pub struct TestStakingConfigProvider;
 impl StakingConfigProvider for TestStakingConfigProvider {
 	fn get(staking_type: StakingType) -> StakingConfig {
 		match staking_type {
-			StakingType::CommittedBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(8_000) },
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) }, // 0.38% or 0.0038 per RewardEra
+			StakingType::CommittedBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: 365 * DAYS,      // 1 year
+				commitment_release_stages: 26,              // 1 year
+				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
 		}
 	}
 }
@@ -189,6 +198,8 @@ impl StakingConfigProvider for TestStakingConfigProvider {
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 }
+
+pub const COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: u32 = 1000;
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -215,7 +226,8 @@ impl Config for Test {
 	type RewardPoolChunkLength = ConstU32<3>;
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
-	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
+	type CommittedBoostFailsafeUnlockBlockNumber =
+		ConstU32<COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER>;
 	type StakingConfigProvider = TestStakingConfigProvider;
 }
 
@@ -225,6 +237,10 @@ fn initialize_reward_pool() {
 	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
+}
+
+pub fn set_pte_block<T: Config>(block_number: Option<BlockNumberFor<T>>) {
+	PrecipitatingEventBlockNumber::<T>::set(block_number);
 }
 
 pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {

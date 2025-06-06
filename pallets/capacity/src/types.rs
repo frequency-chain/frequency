@@ -16,7 +16,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 
 /// How much, as a percentage of staked token, to boost a targeted Provider when staking.
-/// this value should be between 0 and 100
+/// This value should be between 0 and 100
 pub const STAKED_PERCENTAGE_TO_BOOST: u32 = 50;
 
 /// The type used for storing information about staking details.
@@ -228,8 +228,8 @@ pub fn unlock_chunks_reap_thawed<T: Config>(
 }
 #[cfg(any(feature = "runtime-benchmarks", test))]
 #[allow(clippy::unwrap_used)]
-/// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
-/// returns true on success, false on failure (?)
+/// Set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
+/// Returns true on success, false on failure (?)
 /// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
 pub fn unlock_chunks_from_vec<T: Config>(chunks: &[(u32, u32)]) -> UnlockChunkList<T> {
 	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
@@ -267,7 +267,7 @@ where
 
 /// A chunk of Reward Pool history items consists of a BoundedBTreeMap,
 /// RewardEra is the key and the total stake for the RewardPool is the value.
-/// the map has up to T::RewardPoolChunkLength items, however, the chunk storing the current era
+/// The map has up to T::RewardPoolChunkLength items; however, the chunk storing the current era
 /// has only that one.
 #[derive(PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, MaxEncodedLen)]
 #[scale_info(skip_type_params(T))]

@@ -7,6 +7,7 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
+use common_runtime::constants::DAYS;
 pub use common_runtime::{
 	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
 	weights::rocksdb_weights::constants::RocksDbWeight,
@@ -22,7 +23,7 @@ use pallet_capacity::CapacityLedger;
 use pallet_transaction_payment::FungibleAdapter;
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
+	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion, Zero},
 	AccountId32, BuildStorage, Perbill, Permill,
 };
 
@@ -214,10 +215,18 @@ pub struct TestStakingConfigProvider;
 impl StakingConfigProvider for TestStakingConfigProvider {
 	fn get(staking_type: StakingType) -> StakingConfig {
 		match staking_type {
-			StakingType::CommittedBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(8_000) },
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost =>
-				StakingConfig { reward_percent_cap: Permill::from_parts(3_800) }, // 0.38% or 0.0038 per RewardEra
+			StakingType::CommittedBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: 365 * DAYS,      // 1 year
+				commitment_release_stages: 26,              // 1 year
+				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
 		}
 	}
 }
