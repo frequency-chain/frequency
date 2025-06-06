@@ -1065,6 +1065,14 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	/// Calculates a unstakable amount from a staked account
+	pub fn get_unstakable_amount_for(staker: &T::AccountId) -> BalanceOf<T> {
+		match StakingAccountLedger::<T>::get(staker) {
+			None => Zero::zero(),
+			Some(details) => Self::get_unfrozen_staked_balance(&details),
+		}
+	}
+
 	pub(crate) fn do_withdraw_unstaked(
 		staker: &T::AccountId,
 	) -> Result<BalanceOf<T>, DispatchError> {

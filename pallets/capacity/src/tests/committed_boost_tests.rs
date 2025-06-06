@@ -351,3 +351,58 @@ fn committed_boost_unstake_should_unstake_all_amount_after_pte_expiration() {
 		);
 	});
 }
+
+#[test]
+fn committed_boost_get_unstakable_amount_for_should_return_zero_before_pte() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		let unstakable = Capacity::get_unstakable_amount_for(&account);
+
+		assert_eq!(unstakable, 0);
+	});
+}
+
+#[test]
+fn committed_boost_get_unstakable_amount_for_should_return_zero_in_committment_stage() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let pte_block: BlockNumberFor<Test> = 500u32.into();
+		let cfg = <Test as crate::Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(pte_block + 1);
+		assert_ok!(Capacity::set_pte_via_governance(RawOrigin::Root.into(), pte_block,));
+		System::set_block_number(pte_block + cfg.initial_commitment_blocks - 1);
+		let unstakable = Capacity::get_unstakable_amount_for(&account);
+
+		assert_eq!(unstakable, 0);
+	});
+}
+
+#[test]
+fn committed_boost_get_unstakable_amount_for_should_return_all_after_pte_expiration() {
+	new_test_ext().execute_with(|| {
+		let account = 600;
+		let target: MessageSourceId = 1;
+		let amount = 200;
+		let expiration_block: u32 =
+			<Test as crate::Config>::CommittedBoostFailsafeUnlockBlockNumber::get();
+		register_provider(target, String::from("Foo"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(account), target, amount));
+
+		System::set_block_number(expiration_block + 1);
+
+		let unstakable = Capacity::get_unstakable_amount_for(&account);
+
+		assert_eq!(amount, unstakable);
+	});
+}
