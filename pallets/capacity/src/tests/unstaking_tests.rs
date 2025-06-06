@@ -6,7 +6,7 @@ use crate::{
 	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::FlexibleBoost,
 	UnlockChunk, UnstakeUnlocks,
 };
-use common_primitives::{capacity::StakingType::CommittedBoost, msa::MessageSourceId};
+use common_primitives::msa::MessageSourceId;
 use frame_support::{
 	assert_noop, assert_ok,
 	traits::{fungible::InspectFreeze, Get},
