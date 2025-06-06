@@ -6,13 +6,15 @@ import {
   createProviderKeysAndId,
   DOLLARS,
   generateAddKeyPayload,
+  generateAuthorizedKeyPayload,
   signPayloadSr25519,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { ethereumAddressToKeyringPair, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { H160 } from '@polkadot/types/interfaces';
 
 const fundingSource = getFundingSource(import.meta.url);
 
