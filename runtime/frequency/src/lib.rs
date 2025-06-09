@@ -82,7 +82,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
 	genesis_builder_helper::{build_state, get_preset},
-	pallet_prelude::DispatchResultWithPostInfo,
+	pallet_prelude::{DispatchResultWithPostInfo, PhantomData},
 	parameter_types,
 	traits::{
 		fungible::HoldConsideration,
@@ -98,12 +98,12 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
+	pallet_prelude::BlockNumberFor,
 	EnsureRoot, EnsureSigned,
 };
 
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
-
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -623,16 +623,18 @@ parameter_types! {
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
 
 /// Configuration definitions for Staking types
-pub struct FrequencyStakingConfigProvider<Runtime>;
+pub struct FrequencyStakingConfigProvider<Runtime> {
+	_marker: PhantomData<Runtime>,
+}
 impl<T: frame_system::Config> StakingConfigProvider<T> for FrequencyStakingConfigProvider<T> {
 	fn get(staking_type: StakingType) -> StakingConfig<T> {
 		match staking_type {
 			StakingType::CommittedBoost => StakingConfig::<T> {
 				// TODO: TBD
 				reward_percent_cap: Permill::from_parts(8_000),
-				initial_commitment_blocks: 365 * DAYS,      // 1 year
-				commitment_release_stages: 26,              // 1 year
-				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
+				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS), // 1 year
+				commitment_release_stages: 52,                                    // 2 years (2 weeks * 52)
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
 			},
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(3_833), // 0.3833% or 0.003833 per RewardEra
