@@ -670,7 +670,7 @@ impl pallet_capacity::Config for Runtime {
 	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;
 	type PteGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
-		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 2, 3>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 4, 5>,
 	>;
 	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
 	type StakingConfigProvider = FreqeuncyStakingConfigProvider;
