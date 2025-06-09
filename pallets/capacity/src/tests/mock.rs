@@ -3,7 +3,7 @@ use crate as pallet_capacity;
 use crate::{
 	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, InitialBoostingCommitments,
 	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
-	RewardPoolHistoryChunk, StakingDetails, STAKED_PERCENTAGE_TO_BOOST,
+	RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
 	capacity::{StakingConfig, StakingConfigProvider, StakingType},
@@ -25,6 +25,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup, Zero},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
+use std::marker::PhantomData;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -160,21 +161,12 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 
 	// use the pallet version of the era calculation.
 	fn era_staking_reward(
-		staker: &<Test as frame_system::Config>::AccountId, // staker account
-		staking_details: &StakingDetails<Test>,             // staking details
 		amount_staked: Self::Balance,
 		total_staked: Self::Balance,
 		reward_pool_size: Self::Balance,
 		staking_type: StakingType,
 	) -> Self::Balance {
-		Capacity::era_staking_reward(
-			staker,
-			staking_details,
-			amount_staked,
-			total_staked,
-			reward_pool_size,
-			staking_type,
-		)
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size, staking_type)
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
@@ -183,9 +175,10 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 }
 
 /// Test configuration
-pub struct TestStakingConfigProvider<T> {
-	// Not sure why this is needed here & not in the main Runtime...
-	_marker: std::marker::PhantomData<T>,
+pub struct TestStakingConfigProvider<Test> {
+	// Strange that Rust gives a compiler error here if we don't use the type in the struct,
+	// but it doesn't error in the actual Runtime...
+	_marker: PhantomData<Test>,
 }
 impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProvider<T> {
 	fn get(staking_type: StakingType) -> StakingConfig<T> {
@@ -193,7 +186,7 @@ impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProv
 			StakingType::CommittedBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(8_000),
 				initial_commitment_blocks: BlockNumberFor::<T>::from(DAYS)
-					.mul(BlockNumberFor::<T>::from(356u32)), // 1 year
+					.mul(BlockNumberFor::<T>::from(365u32)), // 1 year
 				commitment_release_stages: 26, // 1 year
 				commitment_release_stage_blocks: BlockNumberFor::<T>::from(DAYS)
 					.mul(BlockNumberFor::<T>::from(14u32)), // 2 weeks

@@ -26,8 +26,10 @@ fn era_staking_reward_implementation() {
 
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
-		let staking_detail =
-			StakingDetails { active: Default::default(), staking_type: StakingType::FlexibleBoost };
+		let staking_detail = StakingDetails::<Test> {
+			active: Default::default(),
+			staking_type: StakingType::FlexibleBoost,
+		};
 		let test_cases: Vec<TestCase> = vec![
 			TestCase {
 				total_staked: 1_000_000,
@@ -69,8 +71,6 @@ fn era_staking_reward_implementation() {
 		for tc in test_cases {
 			assert_eq!(
 				Capacity::era_staking_reward(
-					&account,
-					&staking_detail,
 					tc.amount_staked,
 					tc.total_staked,
 					tc.reward_pool,
