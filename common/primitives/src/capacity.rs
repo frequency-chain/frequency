@@ -1,5 +1,6 @@
-use crate::{msa::MessageSourceId, node::BlockNumber};
+use crate::msa::MessageSourceId;
 use frame_support::traits::tokens::Balance;
+use frame_system::pallet_prelude::BlockNumberFor;
 use scale_info::TypeInfo;
 use sp_core::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, RuntimeDebug};
 use sp_runtime::{DispatchError, Permill};
@@ -42,7 +43,7 @@ pub enum StakingType {
 	Clone, Copy, Debug, Decode, Encode, TypeInfo, Eq, MaxEncodedLen, PartialEq, PartialOrd,
 )]
 /// The phase of Committed Boosting at a given block number
-pub enum CommittmentPhase {
+pub enum CommitmentPhase {
 	/// The PTE block has not been set, nor has the failsafe block been exceeded
 	PreCommitment,
 	/// The PTE block has been set, but the initial commitment period has not yet elapsed
@@ -57,11 +58,11 @@ pub enum CommittmentPhase {
 
 // A trait defining the attributes for calculating freeze/release and reward values
 /// associated with a particular `StakingType`
-pub trait StakingConfigProvider {
+pub trait StakingConfigProvider<T: frame_system::Config> {
 	/// Scalar type for representing balance of an account.
 	// type Balance: Balance;
 	/// returns the configuration for the stake type
-	fn get(staking_type: StakingType) -> StakingConfig;
+	fn get(staking_type: StakingType) -> StakingConfig<T>;
 }
 
 /// A blanket implementation
@@ -132,13 +133,13 @@ pub struct UnclaimedRewardInfo<Balance, BlockNumber> {
 }
 
 /// Staking configuration details
-pub struct StakingConfig {
+pub struct StakingConfig<T: frame_system::Config> {
 	/// the percentage cap per era of an individual Provider Boost reward
 	pub reward_percent_cap: Permill,
 	/// the number of blocks a stake is initially frozen for
-	pub initial_commitment_blocks: BlockNumber,
+	pub initial_commitment_blocks: BlockNumberFor<T>,
 	/// the length in blocks of a commitment release stage
-	pub commitment_release_stage_blocks: BlockNumber,
+	pub commitment_release_stage_blocks: BlockNumberFor<T>,
 	/// the number of release stages that must elapse before the entire commitment can be released
 	pub commitment_release_stages: u32,
 }

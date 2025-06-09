@@ -84,16 +84,15 @@ fn amount_releasable_after_failsafe_block_should_be_one_hundred() {
 }
 
 #[test]
-fn amount_releasable_at_end_of_staged_release_should_be_one_hundred() {
+fn amount_releasable_at_end_of_staged_release_should_be_total_initial_amount() {
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
 		let staking_account =
 			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
 
-		// Indicate we are in the initiai-commit phase
 		set_pte_block::<Test>(Some(1));
 		let staking_config = <Test as Config>::StakingConfigProvider::get(CommittedBoost);
-		let block_number = 1 +
+		let block_number = 2 +
 			staking_config.initial_commitment_blocks +
 			(staking_config.commitment_release_stage_blocks *
 				staking_config.commitment_release_stages);
@@ -105,7 +104,7 @@ fn amount_releasable_at_end_of_staged_release_should_be_one_hundred() {
 				&staking_account,
 				&<Test as Config>::StakingConfigProvider::get(CommittedBoost),
 			);
-		assert_eq!(staking_type, FlexibleBoost);
+		assert_eq!(staking_type, CommittedBoost);
 		assert_eq!(amount_releasable, staking_account.active);
 	})
 }
@@ -118,7 +117,6 @@ fn amount_releasable_during_staged_release_should_be_consistent_if_always_unstak
 			StakingDetails { active: 1_000u64, staking_type: StakingType::CommittedBoost };
 		let initial_commitment = staking_account.active;
 
-		// Indicate we are in the initial-commit phase
 		set_pte_block::<Test>(Some(1));
 		set_initial_commitment::<Test>(&account, Some(initial_commitment));
 		let staking_config = <Test as Config>::StakingConfigProvider::get(CommittedBoost);

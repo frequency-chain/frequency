@@ -183,17 +183,22 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 }
 
 /// Test configuration
-pub struct TestStakingConfigProvider;
-impl StakingConfigProvider for TestStakingConfigProvider {
-	fn get(staking_type: StakingType) -> StakingConfig {
+pub struct TestStakingConfigProvider<T> {
+	// Not sure why this is needed here & not in the main Runtime...
+	_marker: std::marker::PhantomData<T>,
+}
+impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
 		match staking_type {
-			StakingType::CommittedBoost => StakingConfig {
+			StakingType::CommittedBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(8_000),
-				initial_commitment_blocks: 365 * DAYS,      // 1 year
-				commitment_release_stages: 26,              // 1 year
-				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
+				initial_commitment_blocks: BlockNumberFor::<T>::from(DAYS)
+					.mul(BlockNumberFor::<T>::from(356u32)), // 1 year
+				commitment_release_stages: 26, // 1 year
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(DAYS)
+					.mul(BlockNumberFor::<T>::from(14u32)), // 2 weeks
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
 				initial_commitment_blocks: Zero::zero(),
 				commitment_release_stages: Zero::zero(),
@@ -237,7 +242,7 @@ impl Config for Test {
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 	type CommittedBoostFailsafeUnlockBlockNumber =
 		ConstU32<COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER>;
-	type StakingConfigProvider = TestStakingConfigProvider;
+	type StakingConfigProvider = TestStakingConfigProvider<Self>;
 }
 
 fn initialize_reward_pool() {

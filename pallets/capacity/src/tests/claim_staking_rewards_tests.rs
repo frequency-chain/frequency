@@ -1,3 +1,4 @@
+use crate as pallet_capacity;
 use crate::{
 	tests::{
 		mock::{
@@ -7,10 +8,12 @@ use crate::{
 	},
 	CurrentEraInfo, Error, Event,
 	Event::ProviderBoostRewardClaimed,
-	MessageSourceId, ProviderBoostHistories,
-	StakingType::*,
+	MessageSourceId, ProviderBoostHistories, StakingConfigProvider,
 };
+use common_primitives::capacity::StakingType;
+use core::ops::Mul;
 use frame_support::{assert_noop, assert_ok};
+use pallet_capacity::Config;
 
 #[test]
 fn claim_staking_rewards_leaves_one_history_item_for_current_era() {
@@ -19,7 +22,7 @@ fn claim_staking_rewards_leaves_one_history_item_for_current_era() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, FlexibleBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 		run_to_block(31);
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 
@@ -37,7 +40,7 @@ fn claim_staking_rewards_allows_unstake() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, FlexibleBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 		run_to_block(31);
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(account), target, 100u64),
@@ -49,18 +52,24 @@ fn claim_staking_rewards_allows_unstake() {
 }
 
 #[test]
-fn claim_staking_rewards_mints_and_transfers_expected_total() {
+fn claim_flexible_boosting_rewards_mints_and_transfers_expected_total() {
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
+		let staking_config =
+			<Test as Config>::StakingConfigProvider::get(StakingType::FlexibleBoost);
 
-		setup_provider(&account, &target, &amount, FlexibleBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 		run_to_block(31);
 		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		System::assert_last_event(
-			Event::<Test>::ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
+			Event::<Test>::ProviderBoostRewardClaimed {
+				account,
+				reward_amount: staking_config.reward_percent_cap.mul(amount) * 2,
+			}
+			.into(),
 		);
 
 		// should have 2 era's worth of payouts: 4 each for eras 1, 2
@@ -83,6 +92,46 @@ fn claim_staking_rewards_mints_and_transfers_expected_total() {
 }
 
 #[test]
+fn claim_committed_boosting_rewards_mints_and_transfers_expected_total() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 1_000u64;
+		let staking_config =
+			<Test as Config>::StakingConfigProvider::get(StakingType::CommittedBoost);
+
+		setup_provider(&account, &target, &amount, StakingType::CommittedBoost);
+		run_to_block(31);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 3u32);
+		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
+		System::assert_last_event(
+			Event::<Test>::ProviderBoostRewardClaimed {
+				account,
+				reward_amount: staking_config.reward_percent_cap.mul(amount) * 2u64,
+			}
+			.into(),
+		);
+
+		// should have 2 era's worth of payouts: 4 each for eras 1, 2
+		assert_eq!(get_balance::<Test>(&account), 10_016u64);
+
+		// the reward value is unlocked
+		assert_transferable::<Test>(&account, 16u64);
+
+		run_to_block(41);
+		assert_eq!(CurrentEraInfo::<Test>::get().era_index, 4u32);
+		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
+		// rewards available for one more era
+		System::assert_last_event(
+			ProviderBoostRewardClaimed { account, reward_amount: 8u64 }.into(),
+		);
+		// should have 4 for eras 1-3
+		assert_eq!(get_balance::<Test>(&account), 10_024u64);
+		assert_transferable::<Test>(&account, 24u64);
+	})
+}
+
+#[test]
 fn claim_staking_rewards_has_expected_total_when_other_stakers() {
 	new_test_ext().execute_with(|| {
 		let account = 10_000u64;
@@ -91,7 +140,7 @@ fn claim_staking_rewards_has_expected_total_when_other_stakers() {
 
 		let other_staker = 600_u64;
 		let other_amount = 300_u64;
-		setup_provider(&other_staker, &target, &other_amount, FlexibleBoost);
+		setup_provider(&other_staker, &target, &other_amount, StakingType::FlexibleBoost);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 		run_to_block(31); // 4
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
@@ -105,7 +154,7 @@ fn claim_staking_rewards_has_expected_total_if_amount_should_be_capped() {
 		let account = 10_000u64;
 		let target: MessageSourceId = 10;
 		let amount = 9_900u64;
-		setup_provider(&account, &target, &amount, FlexibleBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 		run_to_block(31);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
 		assert_eq!(get_balance::<Test>(&account), 10_076u64); // cap is 0.38%,*2 = 76, rounded
@@ -120,7 +169,7 @@ fn claim_staking_rewards_fails_if_no_available_rewards() {
 		let target: MessageSourceId = 10;
 		let amount = 1_000u64;
 
-		setup_provider(&account, &target, &amount, FlexibleBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 		// Unclaimed rewards should have zero length b/c it's still Era 1.
 		// Nothing will be in history
 		assert_noop!(
@@ -148,7 +197,7 @@ fn claim_staking_rewards_fails_if_stake_maximized() {
 			Error::<Test>::NotAProviderBoostAccount
 		);
 
-		setup_provider(&account, &target, &amount, MaximumCapacity);
+		setup_provider(&account, &target, &amount, StakingType::MaximumCapacity);
 
 		assert_noop!(
 			Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)),

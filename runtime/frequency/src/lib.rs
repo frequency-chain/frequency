@@ -614,27 +614,27 @@ impl pallet_msa::Config for Runtime {
 parameter_types! {
 	/// The maximum number of eras over which one can claim rewards
 	pub const ProviderBoostHistoryLimit : u32 = 30;
-	/// The number of chunks of Reward Pool history we expect to store
+	/// The number of Reward Pool history chunks we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
-	/// Max differece between PTE and current block number
+	/// Max difference between PTE and current block number
 	pub const MaxPteDifferenceFromCurrentBlock: u32 = 60 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
 
 /// Configuration definitions for Staking types
-pub struct FreqeuncyStakingConfigProvider;
-impl StakingConfigProvider for FreqeuncyStakingConfigProvider {
-	fn get(staking_type: StakingType) -> StakingConfig {
+pub struct FrequencyStakingConfigProvider<Runtime>;
+impl<T: frame_system::Config> StakingConfigProvider<T> for FrequencyStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
 		match staking_type {
-			StakingType::CommittedBoost => StakingConfig {
+			StakingType::CommittedBoost => StakingConfig::<T> {
 				// TODO: TBD
 				reward_percent_cap: Permill::from_parts(8_000),
 				initial_commitment_blocks: 365 * DAYS,      // 1 year
 				commitment_release_stages: 26,              // 1 year
 				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(3_833), // 0.3833% or 0.003833 per RewardEra
 				initial_commitment_blocks: Zero::zero(),
 				commitment_release_stages: Zero::zero(),
@@ -673,7 +673,7 @@ impl pallet_capacity::Config for Runtime {
 		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 4, 5>,
 	>;
 	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
-	type StakingConfigProvider = FreqeuncyStakingConfigProvider;
+	type StakingConfigProvider = FrequencyStakingConfigProvider<Self>;
 }
 
 impl pallet_schemas::Config for Runtime {

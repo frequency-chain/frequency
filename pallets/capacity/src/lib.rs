@@ -195,7 +195,7 @@ pub mod pallet {
 		type PteGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// Provides the configurations for each staking type
-		type StakingConfigProvider: StakingConfigProvider;
+		type StakingConfigProvider: StakingConfigProvider<Self>;
 	}
 
 	/// Storage for keeping a ledger of staked token amounts for accounts.
@@ -786,7 +786,7 @@ impl<T: Config> Pallet<T> {
 					ensure!(
 						curr_block <
 							pte_block
-								.saturating_add(staking_config.initial_commitment_blocks.into()),
+								.saturating_add(staking_config.initial_commitment_blocks),
 						Error::<T>::CommittedBoostStakingPeriodPassed
 					);
 				},
@@ -915,33 +915,32 @@ impl<T: Config> Pallet<T> {
 	/// Get the phase of Committed Boosting at the indicated block
 	fn get_committed_boosting_phase(
 		block_number: BlockNumberFor<T>,
-		staking_config: &StakingConfig,
-	) -> CommittmentPhase {
+		staking_config: &StakingConfig<T>,
+	) -> CommitmentPhase {
 		let commitment_phase = if let Some(pte_block) = PrecipitatingEventBlockNumber::<T>::get() {
-			let initial_commitment_block =
-				pte_block.saturating_add(staking_config.initial_commitment_blocks.into());
+			let initial_commitment_block: BlockNumberFor<T> =
+				pte_block.saturating_add(staking_config.initial_commitment_blocks);
 			// We are past the PreCommitment phase
 			if block_number >= initial_commitment_block {
-				let max_staged_release_blocks = initial_commitment_block.saturating_add(
+				let max_staged_release_blocks: BlockNumberFor<T> = initial_commitment_block.saturating_add(
 					staking_config
 						.commitment_release_stage_blocks
-						.mul(staking_config.commitment_release_stages)
-						.into(),
+						.mul(staking_config.commitment_release_stages.into()),
 				);
 				if block_number >=
 					initial_commitment_block.saturating_add(max_staged_release_blocks)
 				{
-					CommittmentPhase::RewardProgramEnded
+					CommitmentPhase::RewardProgramEnded
 				} else {
-					CommittmentPhase::StagedRelease
+					CommitmentPhase::StagedRelease
 				}
 			} else {
-				CommittmentPhase::InitialCommitment
+				CommitmentPhase::InitialCommitment
 			}
 		} else if block_number >= T::CommittedBoostFailsafeUnlockBlockNumber::get().into() {
-			CommittmentPhase::Failsafe
+			CommitmentPhase::Failsafe
 		} else {
-			CommittmentPhase::PreCommitment
+			CommitmentPhase::PreCommitment
 		};
 
 		commitment_phase
@@ -950,7 +949,7 @@ impl<T: Config> Pallet<T> {
 	fn get_staking_type_and_releasable_amount_in_force(
 		staking_account: &T::AccountId,
 		staking_details: &StakingDetails<T>,
-		staking_config: &StakingConfig,
+		staking_config: &StakingConfig<T>,
 	) -> (StakingType, BalanceOf<T>) {
 		let StakingDetails { active: current_balance, staking_type: current_staking_type } =
 			staking_details;
@@ -958,11 +957,11 @@ impl<T: Config> Pallet<T> {
 		match current_staking_type {
 			StakingType::CommittedBoost =>
 				match Self::get_committed_boosting_phase(curr_block, staking_config) {
-					CommittmentPhase::PreCommitment | CommittmentPhase::InitialCommitment =>
+					CommitmentPhase::PreCommitment | CommitmentPhase::InitialCommitment =>
 						(*current_staking_type, Zero::zero()),
-					CommittmentPhase::RewardProgramEnded | CommittmentPhase::Failsafe =>
+					CommitmentPhase::RewardProgramEnded | CommitmentPhase::Failsafe =>
 						(StakingType::FlexibleBoost, *current_balance),
-					CommittmentPhase::StagedRelease => {
+					CommitmentPhase::StagedRelease => {
 						let pte_block =
 							PrecipitatingEventBlockNumber::<T>::get().unwrap_or_default();
 						let initial_commitment: BalanceOf<T> =
@@ -970,12 +969,10 @@ impl<T: Config> Pallet<T> {
 								.unwrap_or(*current_balance);
 						let unfreeze_stage: u32 = curr_block
 							.saturating_sub(pte_block)
-							.saturating_sub(staking_config.initial_commitment_blocks.into())
-							.checked_div(&staking_config.commitment_release_stage_blocks.into())
+							.saturating_sub(staking_config.initial_commitment_blocks)
+							.checked_div(&staking_config.commitment_release_stage_blocks)
 							.unwrap_or(Zero::zero())
 							.saturated_into::<u32>();
-
-						let num_unfreeze_stages: u32 = staking_config.commitment_release_stages;
 
 						let cumulative_releasable_stake: BalanceOf<T> = initial_commitment
 							.mul(unfreeze_stage.saturating_add(One::one()).into())
