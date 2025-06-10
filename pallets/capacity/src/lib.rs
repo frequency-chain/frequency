@@ -1031,7 +1031,7 @@ impl<T: Config> Pallet<T> {
 			staking_account.staking_type != StakingType::CommittedBoost ||
 				amount <=
 					Self::get_releasable_amount(
-						&unstaker,
+						unstaker,
 						&staking_account,
 						&T::StakingConfigProvider::get(StakingType::CommittedBoost)
 					),
