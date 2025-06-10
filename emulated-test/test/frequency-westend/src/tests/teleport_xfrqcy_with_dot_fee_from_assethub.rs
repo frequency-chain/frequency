@@ -10,6 +10,10 @@ fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
 }
 
+fn asset_hub_location_as_seen_by_frequency() -> Location {
+	FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())
+}
+
 fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
 	assets
 		.into_inner()
@@ -118,6 +122,28 @@ fn assert_receiver_fee_burned_and_asset_minted(t: AssetHubToFrequencyTest) {
 	);
 }
 
+fn assert_receiver_process_fails(_t: AssetHubToFrequencyTest) {
+	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+
+	assert_expected_events!(
+		FrequencyWestend,
+		vec![
+			RuntimeEvent::PolkadotXcm(
+				pallet_xcm::Event::ProcessXcmError { origin, error, .. },
+		) => {
+				origin: *origin == asset_hub_location_as_seen_by_frequency(),
+				error: *error == XcmError::NotWithdrawable,
+			},
+			RuntimeEvent::MessageQueue(pallet_message_queue::Event::Processed { success, .. }) => {
+				success: *success == false,
+			},
+			RuntimeEvent::PolkadotXcm(
+				pallet_xcm::Event::AssetsTrapped  { .. },
+			) => {},
+		]
+	);
+}
+
 fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchResult {
 	let all_assets = t.args.assets.clone().into_inner();
 	let mut assets = all_assets.clone();
@@ -154,11 +180,12 @@ fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchRes
 }
 
 // ===========================================================================
-// ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency =========
+// ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency Success =========
 // ===========================================================================
+// Teleporting for AssetHub to Frequency fails because it checking account
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_with_dot_fee_from_assethub -- --nocapture
 #[test]
-fn teleport_xfrqcy_with_dot_fee_from_assethub() {
+fn teleport_xfrqcy_with_dot_fee_from_assethub_success() {
 	// ────────────────
 	// Test Setup
 	// ────────────────
@@ -172,6 +199,9 @@ fn teleport_xfrqcy_with_dot_fee_from_assethub() {
 	)]);
 
 	ensure_dot_asset_exists_on_frequency();
+
+	// Fund checking account
+	FrequencyWestend::fund_accounts(vec![(FrequencyCheckingAccount::get(), xrqcy_teleport_amount)]);
 	create_frequency_asset_on_ah();
 	mint_xrqcy_on_asset_hub(
 		AssetHubWestendSender::get().clone(),
@@ -200,17 +230,10 @@ fn teleport_xfrqcy_with_dot_fee_from_assethub() {
 
 	assert_eq!(sender_xrqcy_on_assethub_before, 200_000_000u128);
 
-	let sender_dot_on_assethub_before = AssetHubWestend::execute_with(|| {
-		type Balances = <AssetHubWestend as AssetHubWestendPallet>::Balances;
-		<Balances as Inspect<_>>::balance(&sender)
-	});
+	let sender_dot_on_assethub_before = assethub_balance_of(&sender);
 	assert_eq!(sender_dot_on_assethub_before, 4_196_000_000_000u128);
 
-	let receiver_xrqcy_on_frequency_before = FrequencyWestend::execute_with(|| {
-		type Balances = <FrequencyWestend as FrequencyWestendPallet>::Balances;
-		<Balances as Inspect<_>>::balance(&receiver)
-	});
-
+	let receiver_xrqcy_on_frequency_before = frequency_balance_of(&receiver);
 	assert_eq!(receiver_xrqcy_on_frequency_before, 4_096_000_000u128);
 
 	// ─────────────────────────────
@@ -227,6 +250,78 @@ fn teleport_xfrqcy_with_dot_fee_from_assethub() {
 
 	test.set_assertion::<AssetHubWestend>(assert_sender_assets_burned_correctly);
 	test.set_assertion::<FrequencyWestend>(assert_receiver_fee_burned_and_asset_minted);
+	test.set_dispatchable::<AssetHubWestend>(execute_xcm_asset_hub_to_frequency);
+	test.assert();
+}
+
+// ===========================================================================
+// ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency Fails=========
+// ===========================================================================
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_with_dot_fee_from_assethub::teleport_xfrqcy_with_dot_fee_from_assethub_fails -- --nocapture
+#[test]
+fn teleport_xfrqcy_with_dot_fee_from_assethub_fails() {
+	// ────────────────
+	// Test Setup
+	// ────────────────
+	let dot_fee_amount: Balance = AssetHubExistentialDeposit::get() * 1000; // ONE_DOT =  1_000_000_000_000
+	let xrqcy_teleport_amount = FrequencyExistentialDeposit::get() * 100; // ONE_XRQCY = 100_000_000
+	let frequency_location_on_asset_hub = frequency_location_as_seen_by_asset_hub();
+
+	AssetHubWestend::fund_accounts(vec![(
+		AssetHubWestendSender::get(),
+		AssetHubExistentialDeposit::get() * 100,
+	)]);
+
+	ensure_dot_asset_exists_on_frequency();
+
+	create_frequency_asset_on_ah();
+	mint_xrqcy_on_asset_hub(
+		AssetHubWestendSender::get().clone(),
+		(xrqcy_teleport_amount * 2).clone(),
+	);
+
+	let sender = AssetHubWestendSender::get();
+	let receiver = FrequencyWestendReceiver::get();
+	let destination = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
+
+	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_teleport_amount).into();
+	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
+
+	// ────────────────────────────────
+	//  Pre-dispatch State Snapshot
+	// ────────────────────────────────
+	let sender_dot_on_frequency_before =
+		foreign_balance_on!(FrequencyWestend, Parent.into(), &sender);
+	assert_eq!(sender_dot_on_frequency_before, 0u128);
+
+	let sender_xrqcy_on_assethub_before = foreign_balance_on!(
+		AssetHubWestend,
+		frequency_location_on_asset_hub.clone(),
+		&sender.clone()
+	);
+
+	assert_eq!(sender_xrqcy_on_assethub_before, 200_000_000u128);
+
+	let sender_dot_on_assethub_before = assethub_balance_of(&sender);
+	assert_eq!(sender_dot_on_assethub_before, 4_196_000_000_000u128);
+
+	let receiver_xrqcy_on_frequency_before = frequency_balance_of(&receiver);
+	assert_eq!(receiver_xrqcy_on_frequency_before, 4_096_000_000u128);
+
+	// ─────────────────────────────
+	// Build Test Context
+	// ─────────────────────────────
+	let mut test = build_assethub_to_frequency_test(
+		sender.clone(),
+		receiver.clone(),
+		destination.clone(),
+		xrqcy_teleport_amount,
+		assets,
+		fee_asset_item,
+	);
+
+	test.set_assertion::<AssetHubWestend>(assert_sender_assets_burned_correctly);
+	test.set_assertion::<FrequencyWestend>(assert_receiver_process_fails);
 	test.set_dispatchable::<AssetHubWestend>(execute_xcm_asset_hub_to_frequency);
 	test.assert();
 }
