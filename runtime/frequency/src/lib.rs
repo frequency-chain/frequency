@@ -19,7 +19,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm;
-// use pallet_assets::BenchmarkHelper;
+
 #[cfg(feature = "frequency-bridging")]
 use xcm::{
 	parameters::{
@@ -32,6 +32,9 @@ use xcm::{
 
 #[cfg(test)]
 mod migration_tests;
+
+#[cfg(test)]
+mod foreign_assets_tests;
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
@@ -896,6 +899,70 @@ impl EnsureOrigin<RuntimeOrigin> for EnsureTimeReleaseOrigin {
 	}
 }
 
+/// Custom origin for foreign asset creation that allows both root and council members
+#[cfg(feature = "frequency-bridging")]
+pub struct ForeignAssetCreateOrigin;
+
+/// Implementation of `TryOrigin` for XCM origin conversion.
+///
+/// This implementation converts XCM origins to local `AccountId`s based on the following priority:
+///
+/// 1. **Root Origin**: If the origin has root privileges, returns the Treasury account ID
+/// 2. **Council Member**: If the origin is a signed account that is a member of the collective
+///    (Instance1), returns that account ID
+///    Based on how the `pallet_collective` checks membership:
+///    https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/collective/src/lib.rs#L653
+///    EnsureMember does not work because it uses a RawOrigin type, which is not the same as RuntimeOrigin.
+/// 3. **Fallback**: Returns an error with the original origin if neither condition is met
+///
+/// # Type Parameters
+///
+/// * `Success` - The `AccountId` type representing a successfully converted origin
+///
+/// # Methods
+///
+/// * `try_origin` - Attempts to convert a `RuntimeOrigin` to an `AccountId` based on privileges
+/// * `try_successful_origin` - Benchmark helper that returns a root origin for testing
+///
+/// # Returns
+///
+/// * `Ok(AccountId)` - Successfully converted origin to an account ID
+/// * `Err(RuntimeOrigin)` - Failed to convert, returns the original origin
+#[cfg(feature = "frequency-bridging")]
+impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, cumulus_primitives_core::Location>
+	for ForeignAssetCreateOrigin
+{
+	type Success = AccountId;
+
+	fn try_origin(
+		o: RuntimeOrigin,
+		_location: &cumulus_primitives_core::Location,
+	) -> Result<Self::Success, RuntimeOrigin> {
+		// Root: return a default AccountId or error
+		if let Ok(()) =
+			<EnsureRoot<AccountId> as EnsureOrigin<RuntimeOrigin>>::try_origin(o.clone())
+		{
+			return Ok(Treasury::account_id());
+		}
+		// Try council member - manually check membership like pallet_collective does
+		if let Ok(who) = frame_system::ensure_signed(o.clone()) {
+			let members =
+				pallet_collective::Members::<Runtime, pallet_collective::Instance1>::get();
+			if members.contains(&who) {
+				return Ok(who);
+			}
+		}
+		Err(o)
+	}
+
+	#[cfg(feature = "runtime-benchmarks")]
+	fn try_successful_origin(
+		_location: &cumulus_primitives_core::Location,
+	) -> Result<RuntimeOrigin, ()> {
+		Ok(RuntimeOrigin::root())
+	}
+}
+
 // See https://paritytech.github.io/substrate/master/pallet_vesting/index.html for
 // the descriptions of these configs.
 impl pallet_time_release::Config for Runtime {
@@ -1556,13 +1623,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetIdParameter = ForeignAssetsAssetId;
 	type Currency = Balances;
 
-	// This is to allow any other remote location to create foreign assets. Used in tests, not
-	// recommended on real chains.
-	// type CreateOrigin =
-	// 	ForeignCreators<Everything, LocationToAccountId, AccountId, xcm::latest::Location>;
-	// Use EnsureSignedBy to specify a single account allowed to create assets.
-	// The Success type of EnsureSignedBy is AccountId, matching the trait bound.
-	type CreateOrigin = EnsureSigned<AccountId>;
+	type CreateOrigin = ForeignAssetCreateOrigin;
 	type ForceOrigin = EnsureRoot<AccountId>;
 
 	type AssetDeposit = ForeignAssetsAssetDeposit;

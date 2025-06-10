@@ -9,6 +9,8 @@ mod teleport_xfrqcy_to_assethub_with_dot_fee;
 
 mod teleport_xfrqcy_with_dot_fee_from_assethub;
 
+mod foreign_assets_permissions;
+
 mod utils;
 
 #[macro_export]
