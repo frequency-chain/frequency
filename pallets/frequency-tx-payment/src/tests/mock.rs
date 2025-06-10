@@ -211,17 +211,19 @@ impl pallet_transaction_payment::Config for Test {
 }
 
 /// Test configuration
-pub struct TestStakingConfigProvider;
-impl StakingConfigProvider for TestStakingConfigProvider {
-	fn get(staking_type: StakingType) -> StakingConfig {
+pub struct TestStakingConfigProvider<Test> {
+	_marker: PhantomData<Test>,
+}
+impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
 		match staking_type {
-			StakingType::CommittedBoost => StakingConfig {
+			StakingType::CommittedBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(8_000),
-				initial_commitment_blocks: 365 * DAYS,      // 1 year
+				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS),      // 1 year
 				commitment_release_stages: 26,              // 1 year
-				commitment_release_stage_blocks: 14 * DAYS, // 2 weeks
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
 			},
-			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig {
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
 				initial_commitment_blocks: Zero::zero(),
 				commitment_release_stages: Zero::zero(),
@@ -266,7 +268,7 @@ impl pallet_capacity::Config for Test {
 	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
 	type PteGovernanceOrigin = EnsureRoot<AccountId>;
 	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
-	type StakingConfigProvider = TestStakingConfigProvider;
+	type StakingConfigProvider = TestStakingConfigProvider<Self>;
 }
 
 use crate::types::GetAddKeyData;
