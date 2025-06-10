@@ -1,6 +1,5 @@
+use crate::{xcm::parameters::RootLocation, TreasuryAccount};
 use staging_xcm_builder::{SendXcmFeeToAccount, XcmFeeManagerFromComponents};
-use crate::xcm::parameters::RootLocation;
-use crate::TreasuryAccount;
 
 use super::AssetTransactors;
 use frame_support::traits::Equals;

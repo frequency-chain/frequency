@@ -50,18 +50,6 @@ pub fn create_frequency_asset_on_ah() {
 	});
 }
 
-// pub fn mint_dot_on_frequency(
-// 	account: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-// 	amount: Balance,
-// ) {
-// 	FrequencyWestend::execute_with(|| {
-// 		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-// 		let dot_asset_id = Parent.into();
-
-// 		let _ = <ForeignAssets as FungiblesMutate<_>>::mint_into(dot_asset_id, &account, amount);
-// 	});
-// }
-
 pub fn mint_dot_on_frequency(
 	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
 	amount_to_mint: Balance,

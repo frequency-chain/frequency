@@ -6,9 +6,9 @@ use crate::{
 use staging_xcm_builder::{EnsureXcmOrigin, FrameTransactionalProcessor};
 
 use crate::xcm::{
-	AssetTransactors, Barrier, LocalOriginToLocation, LocationToAccountId, MaxAssetsIntoHolding,
-	Trader, TrustedReserves, TrustedTeleporters, UniversalLocation, Weigher,
-	XcmOriginToTransactDispatchOrigin, XcmRouter, FeeManager,
+	AssetTransactors, Barrier, FeeManager, LocalOriginToLocation, LocationToAccountId,
+	MaxAssetsIntoHolding, Trader, TrustedReserves, TrustedTeleporters, UniversalLocation, Weigher,
+	XcmOriginToTransactDispatchOrigin, XcmRouter,
 };
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -26,7 +26,7 @@ pub use common_runtime::fee::WeightToFee;
 
 use frame_system::EnsureRoot;
 
-use xcm_executor::{XcmExecutor};
+use xcm_executor::XcmExecutor;
 
 parameter_types! {
 	pub CheckingAccount: AccountId = PolkadotXcm::check_account();

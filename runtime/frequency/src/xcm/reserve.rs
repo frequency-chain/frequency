@@ -1,13 +1,12 @@
-use crate::xcm::parameters::{AssetHubLocation, RelayLocation, NativeToken};
+use crate::xcm::parameters::{AssetHubLocation, NativeToken, RelayLocation};
 
 use frame_support::{parameter_types, traits::ContainsPair};
 use parachains_common::xcm_config::ConcreteAssetFromSystem;
 use staging_xcm::latest::prelude::*;
 use staging_xcm_builder::NativeAsset;
 
-
 parameter_types! {
-	pub ExceptAsset: (Location, AssetId) = (AssetHubLocation::get(), NativeToken::get()); 
+	pub ExceptAsset: (Location, AssetId) = (AssetHubLocation::get(), NativeToken::get());
 }
 /// Checks whether the asset originates from a given prefix location
 pub struct AssetFromExcept<T>(core::marker::PhantomData<T>);

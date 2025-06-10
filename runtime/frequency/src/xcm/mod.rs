@@ -13,8 +13,8 @@ pub mod teleporter;
 pub mod trader;
 pub mod weigher;
 
+pub use fees::FeeManager;
 pub use xcm_config::*;
-pub use fees::{FeeManager};
 
 pub use asset_transactor::{AssetTransactors, Checking, CheckingAccount};
 pub use barrier::Barrier;
