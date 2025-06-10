@@ -14,7 +14,7 @@ pub mod weigher;
 
 pub use xcm_config::*;
 
-pub use asset_transactor::AssetTransactors;
+pub use asset_transactor::{AssetTransactors, Checking, CheckingAccount};
 pub use barrier::Barrier;
 pub use location_converter::{
 	LocalOriginToLocation, LocationToAccountId, XcmOriginToTransactDispatchOrigin,
