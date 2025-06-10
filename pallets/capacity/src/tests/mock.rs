@@ -184,7 +184,7 @@ impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProv
 			StakingType::CommittedBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(8_000),
 				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS), // 1 year
-				commitment_release_stages: 26, // 1 year
+				commitment_release_stages: 26,                                    // 1 year
 				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
 			},
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {

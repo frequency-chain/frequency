@@ -321,7 +321,7 @@ fn unstake_errors_amount_to_unstake_exceeds_committed_boosting_amount_released()
 		set_pte_block::<Test>(Some(1));
 		register_provider(target, String::from("WithdrawUnst"));
 		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(booster), target, amount));
-		
+
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(booster), target, 1),
 			Error::<Test>::InsufficientUnfrozenStakingBalance
