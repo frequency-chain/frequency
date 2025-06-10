@@ -3663,6 +3663,8 @@ dependencies = [
  "pallet-message-queue",
  "pallet-xcm",
  "parachains-common",
+ "parity-scale-codec",
+ "polkadot-runtime-parachains",
  "sp-io",
  "sp-runtime",
  "staging-xcm",
@@ -12987,6 +12989,7 @@ dependencies = [
  "asset-hub-westend-emulated-chain",
  "emulated-integration-tests-common",
  "frequency-emulated-chain",
+ "polkadot-runtime-parachains",
  "westend-emulated-chain",
 ]
 

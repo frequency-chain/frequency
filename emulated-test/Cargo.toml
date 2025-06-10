@@ -65,4 +65,6 @@ xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/par
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 staging-xcm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+polkadot-runtime-parachains = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+codec = { version = "3.7.4", default-features = false, package = "parity-scale-codec" }
 

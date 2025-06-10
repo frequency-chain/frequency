@@ -5,11 +5,10 @@ mod imports {
 		sp_runtime::DispatchResult,
 		traits::{
 			fungible::Inspect,
-			fungibles::{Inspect as FungiblesInspect, Mutate as FungiblesMutate},
+			fungibles::{Inspect as FungiblesInspect},
 		},
 		BoundedVec,
 	};
-	pub use staging_xcm_builder::{DescribeTerminus, HashedDescription};
 
 	pub use staging_xcm::{
 		latest::AssetTransferFilter,
@@ -37,7 +36,8 @@ mod imports {
 				xcm::CheckingAccount as FrequencyCheckingAccount,
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
-			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet, TreasuryAccount as FrequencyTreasuryAccount,
+			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
+			TreasuryAccount as FrequencyTreasuryAccount,
 		},
 		westend_emulated_chain::{genesis::ED as WESTEND_ED, WestendRelayPallet as WestendPallet},
 		AssetHubWestendPara as AssetHubWestend,
