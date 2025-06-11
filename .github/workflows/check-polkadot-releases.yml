@@ -39,7 +39,7 @@ jobs:
           cat ${{env.RELEASE_TRACK_FILENAME}}
       - name: Commit Latest Release Version
         id: commit-updated-release
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@3cc016cfc892e0844046da36fc68da4e525e081f
         with:
           commit_message: "Record new Polkadot release version"
           commit_user_name: Frequency CI [bot]
