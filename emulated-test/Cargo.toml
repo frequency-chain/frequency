@@ -64,4 +64,5 @@ westend-system-emulated-network = { path = "../../networks/westend" }
 xcm-executor = { package = "staging-xcm-executor", git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+staging-xcm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 

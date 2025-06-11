@@ -1,4 +1,4 @@
-pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId};
+pub use frequency_runtime::{self, xcm::RelayNetwork as FrequencyRelayNetworkId, TreasuryAccount};
 
 mod genesis;
 pub use genesis::{genesis, FrequencyAssetOwner, FrequencySudoAccount, ED, PARA_ID};
@@ -27,6 +27,7 @@ decl_test_parachains! {
 			PolkadotXcm: frequency_runtime::PolkadotXcm,
 			ForeignAssets: frequency_runtime::ForeignAssets,
 			Balances: frequency_runtime::Balances,
+			Sudo: frequency_runtime::Sudo,
 		}
 	},
 }
