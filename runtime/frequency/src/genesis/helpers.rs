@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use cumulus_primitives_core::ParaId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
@@ -55,6 +56,7 @@ type AccountPublic = <Signature as Verify>::Signer;
 pub fn build_genesis(
 	invulnerables: Vec<(AccountId, AuraId)>,
 	candidacy_bond: Balance,
+	sudo_key: Option<AccountId>,
 	endowed_accounts: Vec<(AccountId, Balance)>,
 	session_keys: Vec<(AccountId, AccountId, SessionKeys)>,
 	council_members: Vec<AccountId>,
@@ -80,7 +82,7 @@ pub fn build_genesis(
 		parachain_system: Default::default(),
 		sudo: crate::SudoConfig {
 			// Assign network admin rights.
-			key: Some(get_account_id_from_seed::<sp_core::sr25519::Public>("Alice")),
+			key: sudo_key,
 		},
 		schemas: crate::pallet_schemas::GenesisConfig {
 			initial_schemas: schemas,
