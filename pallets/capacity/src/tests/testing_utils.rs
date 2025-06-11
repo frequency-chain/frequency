@@ -86,11 +86,26 @@ pub fn setup_provider(
 	let provider_name = String::from("Cst-") + target.to_string().as_str();
 	register_provider(*target, provider_name);
 	if amount.gt(&0u64) {
-		if staking_type == StakingType::MaximumCapacity {
-			assert_ok!(Capacity::stake(RuntimeOrigin::signed(*staker), *target, *amount,));
-		} else {
-			assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(*staker), *target, *amount));
+		match staking_type {
+			StakingType::MaximumCapacity => {
+				assert_ok!(Capacity::stake(RuntimeOrigin::signed(*staker), *target, *amount,));
+			},
+			StakingType::FlexibleBoost => {
+				assert_ok!(Capacity::provider_boost(
+					RuntimeOrigin::signed(*staker),
+					*target,
+					*amount
+				));
+			},
+			StakingType::CommittedBoost => {
+				assert_ok!(Capacity::committed_boost(
+					RuntimeOrigin::signed(*staker),
+					*target,
+					*amount
+				));
+			},
 		}
+
 		let target = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 		assert_eq!(target.amount, *amount);
 		let account_staking_type = StakingAccountLedger::<Test>::get(staker).unwrap().staking_type;
@@ -98,7 +113,7 @@ pub fn setup_provider(
 	}
 }
 
-// Currently the reward pool is a constant, however it could change in the future.
+// Currently, the reward pool is a constant; however, it could change in the future.
 pub fn set_era_and_reward_pool(era_index: u32, started_at: u32, total_staked_token: u64) {
 	let era_info = RewardEraInfo { era_index, started_at };
 	CurrentEraInfo::<Test>::set(era_info);

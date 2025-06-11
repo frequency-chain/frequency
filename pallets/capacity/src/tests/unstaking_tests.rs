@@ -3,8 +3,7 @@ use crate as pallet_capacity;
 use crate::{
 	CapacityDetails, CapacityLedger, CurrentEpoch, CurrentEraProviderBoostTotal, FreezeReason,
 	ProviderBoostHistories, ProviderBoostHistory, StakingAccountLedger, StakingDetails,
-	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::ProviderBoost,
-	UnlockChunk, UnstakeUnlocks,
+	StakingTargetDetails, StakingTargetLedger, StakingType, UnlockChunk, UnstakeUnlocks,
 };
 use common_primitives::msa::MessageSourceId;
 use frame_support::{
@@ -313,6 +312,24 @@ fn unstake_errors_amount_to_unstake_exceeds_amount_staked() {
 }
 
 #[test]
+fn unstake_errors_amount_to_unstake_exceeds_committed_boosting_amount_released() {
+	new_test_ext().execute_with(|| {
+		let booster = 600;
+		let target = 1;
+		let amount = 20;
+
+		set_pte_block::<Test>(Some(1));
+		register_provider(target, String::from("WithdrawUnst"));
+		assert_ok!(Capacity::committed_boost(RuntimeOrigin::signed(booster), target, amount));
+
+		assert_noop!(
+			Capacity::unstake(RuntimeOrigin::signed(booster), target, 1),
+			Error::<Test>::InsufficientUnfrozenStakingBalance
+		);
+	})
+}
+
+#[test]
 fn unstake_errors_not_a_staking_account() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;
@@ -569,7 +586,7 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		let amount = 1_000u64;
 
 		// staking 1k as of block 1, era 1
-		setup_provider(&account, &target, &amount, ProviderBoost);
+		setup_provider(&account, &target, &amount, StakingType::FlexibleBoost);
 
 		// staking 2k as of block 11, era 2
 		run_to_block(11);

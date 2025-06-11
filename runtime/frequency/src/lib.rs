@@ -30,11 +30,14 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
+	traits::{
+		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup, Zero,
+	},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
 };
 
+use common_primitives::capacity::{StakingConfig, StakingConfigProvider, StakingType};
 use pallet_collective::Members;
 
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
@@ -79,7 +82,7 @@ use frame_support::{
 	construct_runtime,
 	dispatch::{DispatchClass, GetDispatchInfo, Pays},
 	genesis_builder_helper::{build_state, get_preset},
-	pallet_prelude::DispatchResultWithPostInfo,
+	pallet_prelude::{DispatchResultWithPostInfo, PhantomData},
 	parameter_types,
 	traits::{
 		fungible::HoldConsideration,
@@ -95,12 +98,12 @@ use frame_support::{
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
+	pallet_prelude::BlockNumberFor,
 	EnsureRoot, EnsureSigned,
 };
 
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
-
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
 
@@ -454,7 +457,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 163,
+	spec_version: 164,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -468,7 +471,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 163,
+	spec_version: 164,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -611,11 +614,37 @@ impl pallet_msa::Config for Runtime {
 parameter_types! {
 	/// The maximum number of eras over which one can claim rewards
 	pub const ProviderBoostHistoryLimit : u32 = 30;
-	/// The number of chunks of Reward Pool history we expect to store
+	/// The number of Reward Pool history chunks we expect to store
 	pub const RewardPoolChunkLength: u32 = 5;
+	/// Max difference between PTE and current block number
+	pub const MaxPteDifferenceFromCurrentBlock: u32 = 60 * DAYS;
 }
 // RewardPoolChunkLength MUST be a divisor of ProviderBoostHistoryLimit
 const_assert!(ProviderBoostHistoryLimit::get() % RewardPoolChunkLength::get() == 0);
+
+/// Configuration definitions for Staking types
+pub struct FrequencyStakingConfigProvider<Runtime> {
+	_marker: PhantomData<Runtime>,
+}
+impl<T: frame_system::Config> StakingConfigProvider<T> for FrequencyStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
+		match staking_type {
+			StakingType::CommittedBoost => StakingConfig::<T> {
+				// TODO: TBD
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS), // 1 year
+				commitment_release_stages: 52,                                    // 2 years (2 weeks * 52)
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
+				reward_percent_cap: Permill::from_parts(3_833), // 0.3833% or 0.003833 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
+		}
+	}
+}
 
 impl pallet_capacity::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
@@ -638,9 +667,15 @@ impl pallet_capacity::Config for Runtime {
 	type MaxRetargetsPerRewardEra = ConstU32<2>;
 	// Value determined by desired inflation rate limits for chosen economic model
 	type RewardPoolPerEra = ConstU128<{ currency::CENTS.saturating_mul(153_424_650u128) }>;
-	type RewardPercentCap = CapacityRewardCap;
 	// Must evenly divide ProviderBoostHistoryLimit
 	type RewardPoolChunkLength = RewardPoolChunkLength;
+	type MaxPteDifferenceFromCurrentBlock = MaxPteDifferenceFromCurrentBlock;
+	type PteGovernanceOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionMoreThan<AccountId, CouncilCollective, 4, 5>,
+	>;
+	type CommittedBoostFailsafeUnlockBlockNumber = CommittedBoostFailsafeUnlockBlockNumber;
+	type StakingConfigProvider = FrequencyStakingConfigProvider<Self>;
 }
 
 impl pallet_schemas::Config for Runtime {
@@ -1743,8 +1778,12 @@ sp_api::impl_runtime_apis! {
 				Ok(rewards) => rewards.into_inner(),
 				Err(_) => Vec::new(),
 			}
-
 		}
+
+		fn get_unstakable_eligible_amount(who: AccountId) -> Balance {
+			Capacity::get_unstakable_amount_for(&who)
+		}
+
 	}
 
 	#[cfg(feature = "try-runtime")]

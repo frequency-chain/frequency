@@ -2,32 +2,30 @@ use crate as pallet_frequency_tx_payment;
 use crate::*;
 
 use common_primitives::{
+	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	msa::MessageSourceId,
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use frame_system::EnsureSigned;
-use pallet_transaction_payment::FungibleAdapter;
-use sp_core::{ConstU8, H256};
-use sp_runtime::{
-	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion},
-	AccountId32, BuildStorage, Perbill, Permill,
-};
-
-use frame_support::{
-	parameter_types,
-	traits::{ConstU16, ConstU64},
-	weights::WeightToFee as WeightToFeeTrait,
-};
-
-use pallet_capacity::CapacityLedger;
-
+use common_runtime::constants::DAYS;
 pub use common_runtime::{
 	constants::{MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO},
 	weights::rocksdb_weights::constants::RocksDbWeight,
 };
-
-use frame_support::weights::Weight;
+use frame_support::{
+	pallet_prelude::Weight,
+	parameter_types,
+	traits::{ConstU16, ConstU64},
+	weights::WeightToFee as WeightToFeeTrait,
+};
+use frame_system::{EnsureRoot, EnsureSigned};
+use pallet_capacity::CapacityLedger;
+use pallet_transaction_payment::FungibleAdapter;
+use sp_core::{ConstU8, H256};
+use sp_runtime::{
+	traits::{BlakeTwo256, Convert, IdentityLookup, SaturatedConversion, Zero},
+	AccountId32, BuildStorage, Perbill, Permill,
+};
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -212,13 +210,35 @@ impl pallet_transaction_payment::Config for Test {
 	type WeightInfo = ();
 }
 
+/// Test configuration
+pub struct TestStakingConfigProvider<Test> {
+	_marker: PhantomData<Test>,
+}
+impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
+		match staking_type {
+			StakingType::CommittedBoost => StakingConfig::<T> {
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS), // 1 year
+				commitment_release_stages: 26,                                    // 1 year
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
+				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
+		}
+	}
+}
+
 // so the value can be used by create_capacity_for below, without having to pass it a Config.
 pub const TEST_TOKEN_PER_CAPACITY: u32 = 10;
 
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(TEST_TOKEN_PER_CAPACITY);
-	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
 
 impl pallet_capacity::Config for Test {
@@ -244,8 +264,11 @@ impl pallet_capacity::Config for Test {
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolPerEra = ConstU64<10_000>;
-	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<2>;
+	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
+	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber = ConstU32<1000>;
+	type StakingConfigProvider = TestStakingConfigProvider<Self>;
 }
 
 use crate::types::GetAddKeyData;

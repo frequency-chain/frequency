@@ -1,14 +1,16 @@
 use crate as pallet_capacity;
 
 use crate::{
-	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, ProviderBoostRewardPools,
-	ProviderBoostRewardsProvider, RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
+	tests::testing_utils::set_era_and_reward_pool, BalanceOf, Config, InitialBoostingCommitments,
+	PrecipitatingEventBlockNumber, ProviderBoostRewardPools, ProviderBoostRewardsProvider,
+	RewardPoolHistoryChunk, STAKED_PERCENTAGE_TO_BOOST,
 };
 use common_primitives::{
+	capacity::{StakingConfig, StakingConfigProvider, StakingType},
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
-use common_runtime::weights;
+use common_runtime::{constants::DAYS, weights};
 use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
@@ -17,12 +19,13 @@ use frame_support::{
 		ConstU16, ConstU32, ConstU64,
 	},
 };
-use frame_system::EnsureSigned;
+use frame_system::{pallet_prelude::BlockNumberFor, EnsureRoot, EnsureSigned};
 use sp_core::{ConstU8, H256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
+	traits::{BlakeTwo256, Convert, Get, IdentityLookup, Zero},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
+use std::marker::PhantomData;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -161,8 +164,9 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 		amount_staked: Self::Balance,
 		total_staked: Self::Balance,
 		reward_pool_size: Self::Balance,
+		staking_type: StakingType,
 	) -> Self::Balance {
-		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size)
+		Capacity::era_staking_reward(amount_staked, total_staked, reward_pool_size, staking_type)
 	}
 
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
@@ -170,11 +174,35 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 	}
 }
 
+/// Test configuration
+pub struct TestStakingConfigProvider<Test> {
+	_marker: PhantomData<Test>,
+}
+impl<T: frame_system::Config> StakingConfigProvider<T> for TestStakingConfigProvider<T> {
+	fn get(staking_type: StakingType) -> StakingConfig<T> {
+		match staking_type {
+			StakingType::CommittedBoost => StakingConfig::<T> {
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: BlockNumberFor::<T>::from(365 * DAYS), // 1 year
+				commitment_release_stages: 26,                                    // 1 year
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(14 * DAYS), // 2 weeks
+			},
+			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
+				reward_percent_cap: Permill::from_parts(3_800), // 0.38% or 0.0038 per RewardEra
+				initial_commitment_blocks: Zero::zero(),
+				commitment_release_stages: Zero::zero(),
+				commitment_release_stage_blocks: Zero::zero(),
+			},
+		}
+	}
+}
+
 // Needs parameter_types! for the Perbill
 parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
-	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
+
+pub const COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER: u32 = 1000;
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
@@ -198,8 +226,12 @@ impl Config for Test {
 	type RewardsProvider = Capacity;
 	type MaxRetargetsPerRewardEra = ConstU32<5>;
 	type RewardPoolPerEra = ConstU64<10_000>;
-	type RewardPercentCap = TestRewardCap;
 	type RewardPoolChunkLength = ConstU32<3>;
+	type MaxPteDifferenceFromCurrentBlock = ConstU32<100>;
+	type PteGovernanceOrigin = EnsureRoot<AccountId>;
+	type CommittedBoostFailsafeUnlockBlockNumber =
+		ConstU32<COMMITTED_BOOST_FAILSAFE_UNLOCK_BLOCK_NUMBER>;
+	type StakingConfigProvider = TestStakingConfigProvider<Self>;
 }
 
 fn initialize_reward_pool() {
@@ -208,6 +240,14 @@ fn initialize_reward_pool() {
 	for i in 0u32..chunks {
 		ProviderBoostRewardPools::<Test>::insert(i, RewardPoolHistoryChunk::<Test>::new())
 	}
+}
+
+pub fn set_pte_block<T: Config>(block_number: Option<BlockNumberFor<T>>) {
+	PrecipitatingEventBlockNumber::<T>::set(block_number);
+}
+
+pub fn set_initial_commitment<T: Config>(account: &T::AccountId, amount: Option<BalanceOf<T>>) {
+	InitialBoostingCommitments::<T>::set(account, amount);
 }
 
 pub fn get_balance<T: Config>(who: &T::AccountId) -> BalanceOf<T> {
