@@ -3,10 +3,7 @@ mod imports {
 	pub use frame_support::{
 		assert_ok,
 		sp_runtime::DispatchResult,
-		traits::{
-			fungible::Inspect,
-			fungibles::{Inspect as FungiblesInspect, Mutate as FungiblesMutate},
-		},
+		traits::{fungible::Inspect, fungibles::Inspect as FungiblesInspect},
 		BoundedVec,
 	};
 
@@ -32,8 +29,12 @@ mod imports {
 			AssetHubWestendParaPallet as AssetHubWestendPallet,
 		},
 		frequency_emulated_chain::{
-			frequency_runtime::ExistentialDeposit as FrequencyExistentialDeposit,
+			frequency_runtime::{
+				xcm::CheckingAccount as FrequencyCheckingAccount,
+				ExistentialDeposit as FrequencyExistentialDeposit,
+			},
 			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
+			TreasuryAccount as FrequencyTreasuryAccount,
 		},
 		westend_emulated_chain::{genesis::ED as WESTEND_ED, WestendRelayPallet as WestendPallet},
 		AssetHubWestendPara as AssetHubWestend,
@@ -65,6 +66,18 @@ mod imports {
 			<Balances as Inspect<_>>::balance(who)
 		})
 	}
+}
+
+#[macro_export]
+macro_rules! foreign_balance_on {
+	( $chain:ident, $id:expr, $who:expr ) => {
+		emulated_integration_tests_common::impls::paste::paste! {
+			<$chain>::execute_with(|| {
+				type ForeignAssets = <$chain as [<$chain Pallet>]>::ForeignAssets;
+				<ForeignAssets as FungiblesInspect<_>>::balance($id, $who)
+			})
+		}
+	};
 }
 
 #[cfg(test)]

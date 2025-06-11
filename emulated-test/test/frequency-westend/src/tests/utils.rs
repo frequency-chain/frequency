@@ -10,7 +10,7 @@ pub fn ensure_dot_asset_exists_on_frequency() {
 			sudo_origin,
 			Parent.into(),
 			FrequencyAssetOwner::get().into(),
-			false,
+			true,
 			1u128.into(),
 		);
 
@@ -51,14 +51,36 @@ pub fn create_frequency_asset_on_ah() {
 }
 
 pub fn mint_dot_on_frequency(
-	account: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	amount: Balance,
+	beneficiary: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
+	amount_to_mint: Balance,
 ) {
-	FrequencyWestend::execute_with(|| {
-		type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
-		let dot_asset_id = Parent.into();
+	type ForeignAssets = <FrequencyWestend as FrequencyWestendPallet>::ForeignAssets;
+	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
+	let dot_location_as_seen_by_frequency: Location = Parent.into();
 
-		let _ = <ForeignAssets as FungiblesMutate<_>>::mint_into(dot_asset_id, &account, amount);
+	FrequencyWestend::execute_with(|| {
+		let signed_origin =
+			<FrequencyWestend as Chain>::RuntimeOrigin::signed(FrequencyAssetOwner::get());
+
+		assert_ok!(ForeignAssets::mint(
+			signed_origin,
+			dot_location_as_seen_by_frequency.clone().into(),
+			beneficiary.clone().into(),
+			amount_to_mint
+		));
+
+		assert_expected_events!(
+			FrequencyWestend,
+			vec![
+				RuntimeEvent::ForeignAssets(
+					pallet_assets::Event::Issued { asset_id, owner, amount }
+				) => {
+					asset_id: *asset_id == dot_location_as_seen_by_frequency.clone().into(),
+					owner: *owner == beneficiary.clone().into(),
+					amount: *amount == amount_to_mint,
+				},
+			]
+		);
 	});
 }
 

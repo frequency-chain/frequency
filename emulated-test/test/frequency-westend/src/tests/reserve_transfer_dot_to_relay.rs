@@ -82,7 +82,7 @@ pub fn fund_sov_frequency_on_westend(amount: Balance) {
 // =========================================================================
 // ========= Reserve Transfers - DOT Asset - Frequency<>Relay ===========
 // =========================================================================
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_from_frequency_to_relay -p frequency-westend-integration-tests -- --nocapture
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::reserve_transfer_dot_to_relay -- --nocapture
 /// Tests reserve transfer of DOT from Frequency to Relay (Westend).
 /// Ensures sovereign account on relay is debited and receiver is credited.
 #[test]
@@ -114,6 +114,14 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 
 	let dot_location = WestendLocation::get();
 
+	let treasury_account_balance_before = foreign_balance_on!(
+		FrequencyWestend,
+		dot_location.clone(),
+		&FrequencyTreasuryAccount::get()
+	);
+
+	assert_eq!(treasury_account_balance_before, 0u128);
+
 	let sender_assets_before = foreign_balance_on!(FrequencyWestend, dot_location.clone(), &sender);
 
 	let receiver_balance_before = test.receiver.balance;
@@ -122,6 +130,13 @@ fn reserve_transfer_dot_from_frequency_to_relay() {
 	test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_reserve_transfer_assets);
 	test.assert();
+
+	let treasury_account_balance_after = foreign_balance_on!(
+		FrequencyWestend,
+		dot_location.clone(),
+		&FrequencyTreasuryAccount::get()
+	);
+	assert!(treasury_account_balance_after > 0u128, "Treasury account should have been credited");
 
 	let sender_assets_after = foreign_balance_on!(FrequencyWestend, dot_location, &sender);
 
