@@ -15,6 +15,12 @@ Currently, the token to Capacity ratio is 50:1.
 For example, for a 5 token stake, a Provider would receive 0.1 Capacity.
 Staking and unstaking affect available Capacity immediately.
 
+#### Different Staking types
+- **MaximumCapacity**: Staking account targets Providers for maximum capacity only and there are no token rewards.
+- **CommittedBoost**: Defines a mechanism for locking tokens that is both time-sensitive and event-driven, with immutable thawing behavior. Due to tokens being locked
+for a certain period to incentivize users we try to allow higher APR on token rewards.
+- **FlexibleBoost**: Staking account targets Providers and splits reward between Capacity to the Provider and token for the account holder.
+
 ### Capacity Epoch
 
 A Capacity Epoch is a period consisting of a specific number of blocks, during which a Provider's utilization of network Capacity is capped at the amount of generated Capacity targeted to that Provider.
