@@ -243,8 +243,7 @@ jobs:
           cargo install --force --locked cargo-deny@0.17.0
           cargo generate-lockfile
       - name: Run Cargo Deny
-        # TODO: Remove NIGHTLY once we upgrade to Rust 1.85+
-        run: cargo +${{env.NIGHTLY_TOOLCHAIN}} deny check --hide-inclusion-graph -c deny.toml
+        run: cargo deny check --hide-inclusion-graph -c deny.toml
 
   verify-rust-code-format:
     needs: changes
