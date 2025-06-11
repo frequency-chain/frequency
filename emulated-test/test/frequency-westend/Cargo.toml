@@ -13,6 +13,7 @@ emulated-integration-tests-common = { workspace = true }
 frame-support = { workspace = true }
 pallet-balances = { workspace = true }
 pallet-message-queue = { workspace = true }
+polkadot-runtime-parachains = { workspace = true }
 pallet-xcm = { workspace = true }
 parachains-common = { workspace = true }
 sp-runtime = { workspace = true }
@@ -23,3 +24,4 @@ staging-xcm = { workspace = true }
 staging-xcm-builder = { workspace = true }
 pallet-assets = { workspace = true }
 sp-io = { workspace = true }
+codec = { workspace = true }
