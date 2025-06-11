@@ -1,11 +1,20 @@
-use crate::{tests::mock::*, types::EMPTY_FUNCTION, CheckFreeExtrinsicUse, ValidityError};
+use crate::{
+	tests::mock::*, types::EMPTY_FUNCTION, AuthorizedKeyData, CheckFreeExtrinsicUse, Config,
+	ValidityError,
+};
+use common_primitives::{
+	msa::H160,
+	signatures::{AccountAddressMapper, EthereumAddressMapper},
+};
 use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	assert_err, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	pallet_prelude::InvalidTransaction,
+	traits::Currency,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
+use sp_runtime::MultiSignature;
 #[allow(deprecated)]
 use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity};
 
@@ -48,6 +57,31 @@ fn assert_revoke_delegation_by_provider_err(
 	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
 		&provider_account.into(),
 		call_revoke_delegation,
+		&info,
+		len,
+	);
+	assert_err!(result, expected_err);
+}
+
+#[allow(deprecated)]
+fn assert_withdraw_msa_token_err(
+	expected_err: InvalidTransaction,
+	origin_key: Public,
+	msa_owner_public_key: Public,
+	msa_owner_proof: MultiSignature,
+	authorization_payload: AuthorizedKeyData<Test>,
+) {
+	let call_withdraw_msa_token: &<Test as frame_system::Config>::RuntimeCall =
+		&RuntimeCall::Msa(MsaCall::withdraw_tokens {
+			msa_owner_public_key: msa_owner_public_key.into(),
+			msa_owner_proof,
+			authorization_payload,
+		});
+	let info = DispatchInfo::default();
+	let len = 0_usize;
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+		&origin_key.into(),
+		call_withdraw_msa_token,
 		&info,
 		len,
 	);
@@ -447,4 +481,273 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_by_non_owne
 			ValidityError::NotKeyOwner,
 		)
 	})
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_caller_key_does_not_match_payload() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let (other_key_pair, _) = sr25519::Pair::generate();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&other_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	});
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_payload_signature_is_invalid() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let (other_key_pair, _) = sr25519::Pair::generate();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&other_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	});
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_proof_is_expired() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+
+		// The current block is 1, therefore setting the proof expiration to 1 should cause
+		// the extrinsic to fail because the proof has expired.
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			Some(1),
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	});
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_proof_is_not_yet_valid() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+
+		// The current block is 1, therefore setting the proof expiration to the max mortality period
+		// should cause the extrinsic to fail
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			Some(Msa::mortality_block_limit(1)),
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	});
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_origin_is_an_msa_control_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (_, origin_key_pair) = create_account();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::IneligibleOrigin as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	});
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_msa_key_is_not_an_msa_control_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id + 1,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	})
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_msa_key_does_not_control_msa_in_payload() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let (other_key_pair, _) = sr25519::Pair::generate();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&other_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8),
+			origin_key_pair.public(),
+			other_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	})
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_msa_does_not_have_a_balance() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::InsufficientBalanceToWithdraw as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature,
+			payload,
+		);
+	})
+}
+
+#[test]
+fn signed_ext_validate_fails_when_withdraw_tokens_duplicate_signature_submitted() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		let transfer_amount = 10_000_000;
+
+		// Fund MSA
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+
+		assert_ok!(Msa::withdraw_tokens(
+			RuntimeOrigin::signed(origin_key_pair.public().into()),
+			owner_key_pair.public().into(),
+			msa_signature.clone(),
+			payload.clone()
+		));
+
+		assert_withdraw_msa_token_err(
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8),
+			origin_key_pair.public(),
+			owner_key_pair.public(),
+			msa_signature.clone(),
+			payload.clone(),
+		);
+	})
+}
+
+#[test]
+fn signed_ext_validate_passes_when_withdraw_tokens_balance_is_sufficient() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+
+		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+		);
+
+		let transfer_amount = 10_000_000;
+
+		// Fund MSA
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+
+		let call_withdraw_msa_token: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::withdraw_tokens {
+				msa_owner_public_key: owner_key_pair.public().into(),
+				msa_owner_proof: msa_signature,
+				authorization_payload: payload,
+			});
+		let info = DispatchInfo::default();
+		let len = 0_usize;
+		#[allow(deprecated)]
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
+			&origin_key_pair.public().into(),
+			call_withdraw_msa_token,
+			&info,
+			len,
+		);
+		assert_ok!(result);
+	});
 }

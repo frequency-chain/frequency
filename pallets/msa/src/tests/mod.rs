@@ -3,6 +3,7 @@ pub mod mock;
 mod creation_tests;
 mod delegation_tests;
 mod governance_tests;
+mod msa_token_tests;
 mod offchain_tests;
 mod other_tests;
 mod public_key_tests;

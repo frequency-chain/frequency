@@ -209,3 +209,7 @@ inherits = "release"
 strip = false
 codegen-units = 16
 lto = false
+
+[patch.crates-io]
+base64ct = { git = "https://github.com/RustCrypto/formats.git", tag = "base64ct/v1.7.2", package = "base64ct" }
+

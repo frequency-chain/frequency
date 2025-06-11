@@ -119,6 +119,17 @@ export interface AddKeyData {
   newPublicKey: HexString;
 }
 
+export interface AuthorizedKeyData {
+  // type discriminator
+  type: 'AuthorizedKeyData';
+  // uint64 type MessageSourceId
+  msaId: string;
+  // uint32 type payload expiration block number
+  expiration: number;
+  // hex encoded public key to be signed
+  authorizedPublicKey: HexString;
+}
+
 export interface AddProvider {
   // type discriminator
   type: 'AddProvider';
@@ -137,7 +148,10 @@ export type SupportedPayload =
   | PasskeyPublicKey
   | ClaimHandlePayload
   | AddKeyData
+  | AuthorizedKeyData
   | AddProvider;
+
+export type NormalizedSupportedPayload = Omit<SupportedPayload, 'type'>;
 
 export interface EipDomainPayload {
   name: string;
@@ -145,3 +159,5 @@ export interface EipDomainPayload {
   chainId: HexString;
   verifyingContract: HexString;
 }
+
+export type SupportedPayloadTypes = SupportedPayload['type'];
