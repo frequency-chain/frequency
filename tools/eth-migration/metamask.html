@@ -331,6 +331,51 @@
 				alert("Signature: " + signature)
 			});
 
+			document.getElementById('authorized_key_payload')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"AuthorizedKeyData": [
+							{
+								"name": "msaId",
+								"type": "uint64"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+							{
+								"name": "authorizedPublicKey",
+								"type": "address"
+							},
+						],
+					},
+					"primaryType": "AuthorizedKeyData",
+					"domain": karma_request_domain,
+					"message": {
+						"msaId": 12876327,
+						"expiration": 100,
+						"authorizedPublicKey": '0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9',
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
 			document.getElementById('add_provider_request')?.addEventListener("click", async function () {
 				const signature_request = {
 					"types": {
@@ -391,5 +436,6 @@
 <br><br>
 <button id="add_key_request">AddKey Sign</button>
 <button id="add_provider_request">AddProvider Sign</button>
+<button id="authorized_key_payload">AuthorizedKeyData Sign</button>
 </body>
 </html>

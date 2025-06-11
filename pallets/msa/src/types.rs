@@ -21,7 +21,8 @@ use sp_core::U256;
 /// Dispatch Empty
 pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 
-/// A type definition for the payload of adding an MSA key - `pallet_msa::add_public_key_to_msa`
+/// A type definition for the payload for the following operation:
+/// -  Adding an MSA key - `pallet_msa::add_public_key_to_msa`
 #[derive(
 	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
 )]
@@ -29,7 +30,7 @@ pub const EMPTY_FUNCTION: fn(MessageSourceId) -> DispatchResult = |_| Ok(());
 pub struct AddKeyData<T: Config> {
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
-	/// The block number at which the signed proof for add_public_key_to_msa expires.
+	/// The block number at which a signed proof of this payload expires.
 	pub expiration: BlockNumberFor<T>,
 	/// The public key to be added.
 	pub new_public_key: T::AccountId,
@@ -51,6 +52,55 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let converted_public_key = T::ConvertIntoAccountId32::convert(self.new_public_key.clone());
+		let mut zero_prefixed_address = [0u8; 32];
+		zero_prefixed_address[12..]
+			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key).0);
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_owner_msa_id,
+				&coded_expiration,
+				&zero_prefixed_address,
+			]
+			.concat(),
+		);
+		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
+}
+
+/// A type definition for the payload for authorizing a public key for the following operations:
+/// -  Authorizing a token withdrawal to an address associated with a public key - `pallet_msa::withdraw_tokens`
+#[derive(
+	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
+#[scale_info(skip_type_params(T))]
+pub struct AuthorizedKeyData<T: Config> {
+	/// Message Source Account identifier
+	pub msa_id: MessageSourceId,
+	/// The block number at which a signed proof of this payload expires.
+	pub expiration: BlockNumberFor<T>,
+	/// The public key to be added that is authorized as the target of the current operation
+	pub authorized_public_key: T::AccountId,
+}
+
+impl<T: Config> EIP712Encode for AuthorizedKeyData<T> {
+	fn encode_eip_712(&self) -> Box<[u8]> {
+		lazy_static! {
+			// get prefix and domain separator
+			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
+				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
+
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"AuthorizedKeyData(uint64 msaId,uint32 expiration,address authorizedPublicKey)",
+			);
+		}
+		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let converted_public_key =
+			T::ConvertIntoAccountId32::convert(self.authorized_public_key.clone());
 		let mut zero_prefixed_address = [0u8; 32];
 		zero_prefixed_address[12..]
 			.copy_from_slice(&EthereumAddressMapper::to_ethereum_address(converted_public_key).0);

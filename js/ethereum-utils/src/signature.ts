@@ -1,5 +1,6 @@
 import {
   AddKeyData,
+  AuthorizedKeyData,
   AddProvider,
   ChainType,
   ClaimHandlePayload,
@@ -14,14 +15,17 @@ import {
   DeleteItemizedAction,
   ItemizedAction,
   EipDomainPayload,
+  NormalizedSupportedPayload,
+  SupportedPayloadTypes,
 } from './payloads';
 import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils';
 import { reverseUnifiedAddressToEthereumAddress } from './address';
-import { ethers, TypedDataField } from 'ethers';
+import { ethers } from 'ethers';
 import { u8aToHex } from '@polkadot/util';
 import {
   ADD_KEY_DATA_DEFINITION,
   ADD_PROVIDER_DEFINITION,
+  AUTHORIZED_KEY_DATA_DEFINITION,
   CLAIM_HANDLE_PAYLOAD_DEFINITION,
   EIP712_DOMAIN_DEFAULT,
   EIP712_DOMAIN_DEFINITION,
@@ -29,6 +33,7 @@ import {
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PASSKEY_PUBLIC_KEY_DEFINITION,
+  SupportedPayloadDefinitions,
 } from './signature.definitions';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -74,8 +79,8 @@ export function verifyEip712Signature(
   return recoveredAddress.toLowerCase() === ethereumAddress.toLowerCase();
 }
 
-function normalizePayload(payload: SupportedPayload): Record<string, any> {
-  const clonedPayload = Object.assign({}, payload);
+function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload {
+  const clonedPayload: typeof payload = Object.assign({}, payload);
   switch (clonedPayload.type) {
     case 'PaginatedUpsertSignaturePayloadV2':
     case 'PaginatedDeleteSignaturePayloadV2':
@@ -93,6 +98,16 @@ function normalizePayload(payload: SupportedPayload): Record<string, any> {
       clonedPayload.newPublicKey = clonedPayload.newPublicKey.toLowerCase() as HexString;
       break;
 
+    case 'AuthorizedKeyData':
+      // convert to 20 bytes ethereum address for signature
+      if (clonedPayload.authorizedPublicKey.length !== 42) {
+        clonedPayload.authorizedPublicKey = reverseUnifiedAddressToEthereumAddress(
+          (payload as AuthorizedKeyData).authorizedPublicKey
+        );
+      }
+      clonedPayload.authorizedPublicKey = clonedPayload.authorizedPublicKey.toLowerCase() as HexString;
+      break;
+
     default:
       throw new Error(`Unsupported payload type: ${JSON.stringify(payload)}`);
   }
@@ -103,14 +118,15 @@ function normalizePayload(payload: SupportedPayload): Record<string, any> {
   return payloadWithoutType;
 }
 
-function getTypesFor(payloadType: string): Record<string, TypedDataField[]> {
-  const PAYLOAD_TYPE_DEFINITIONS: Record<string, Record<string, TypedDataField[]>> = {
+function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
+  const PAYLOAD_TYPE_DEFINITIONS: Record<string, SupportedPayloadDefinitions> = {
     PaginatedUpsertSignaturePayloadV2: PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
     PaginatedDeleteSignaturePayloadV2: PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
     ItemizedSignaturePayloadV2: ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
     PasskeyPublicKey: PASSKEY_PUBLIC_KEY_DEFINITION,
     ClaimHandlePayload: CLAIM_HANDLE_PAYLOAD_DEFINITION,
     AddKeyData: ADD_KEY_DATA_DEFINITION,
+    AuthorizedKeyData: AUTHORIZED_KEY_DATA_DEFINITION,
     AddProvider: ADD_PROVIDER_DEFINITION,
   };
 
@@ -146,6 +162,32 @@ export function createAddKeyData(
     msaId: parsedMsaId,
     expiration: expirationBlock,
     newPublicKey: parsedNewPublicKey,
+  };
+}
+
+/**
+ * Build an AuthorizedKeyData payload for signature.
+ *
+ * @param msaId                  MSA ID (uint64) to add the key
+ * @param authorizedPublicKey    32 bytes public key to authorize in hex or Uint8Array
+ * @param expirationBlock        Block number after which this payload is invalid
+ */
+export function createAuthorizedKeyData(
+  msaId: string | bigint,
+  newPublicKey: HexString | Uint8Array,
+  expirationBlock: number
+): AuthorizedKeyData {
+  const parsedMsaId: string = typeof msaId === 'string' ? msaId : `${msaId}`;
+  const parsedNewPublicKey: HexString = typeof newPublicKey === 'object' ? u8aToHex(newPublicKey) : newPublicKey;
+
+  assert(isValidUint64String(parsedMsaId), 'msaId should be a valid uint64');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+  assert(isHexString(parsedNewPublicKey), 'newPublicKey should be valid hex');
+  return {
+    type: 'AuthorizedKeyData',
+    msaId: parsedMsaId,
+    expiration: expirationBlock,
+    authorizedPublicKey: parsedNewPublicKey,
   };
 }
 
@@ -329,6 +371,25 @@ export function getEip712BrowserRequestAddKeyData(
 }
 
 /**
+ * Returns the EIP-712 browser request for a AuthorizedKeyData for signing.
+ *
+ * @param msaId           MSA ID (uint64) to add the key
+ * @param authorizedPublicKey    32 bytes public key to add in hex or Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestAuthorizedKeyData(
+  msaId: string | bigint,
+  authorizedPublicKey: HexString | Uint8Array,
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createAuthorizedKeyData(msaId, authorizedPublicKey, expirationBlock);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(AUTHORIZED_KEY_DATA_DEFINITION, message.type, domain, normalized);
+}
+
+/**
  * Returns the EIP-712 browser request for a AddProvider for signing.
  *
  * @param authorizedMsaId MSA ID (uint64) that will be granted provider rights
@@ -444,7 +505,12 @@ export function getEip712BrowserRequestPasskeyPublicKey(
   return createEip712Payload(PASSKEY_PUBLIC_KEY_DEFINITION, message.type, domain, normalized);
 }
 
-function createEip712Payload(typeDefinition: any, primaryType: any, domain: EipDomainPayload, message: any): unknown {
+function createEip712Payload(
+  typeDefinition: SupportedPayloadDefinitions,
+  primaryType: SupportedPayloadTypes,
+  domain: EipDomainPayload,
+  message: NormalizedSupportedPayload
+): unknown {
   return {
     types: {
       ...EIP712_DOMAIN_DEFINITION,
