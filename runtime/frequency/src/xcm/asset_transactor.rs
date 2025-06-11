@@ -45,8 +45,7 @@ pub type ForeignAssetsAdapter = FungiblesAdapter<
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,
-	// We do not allow teleportation of foreign assets. We only allow the reserve-based
-	// transfer of USDT, USDC and DOT.
+	// We do not allow teleportation of foreign assets
 	NoChecking,
 	CheckingAccount,
 >;
