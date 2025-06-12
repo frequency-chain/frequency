@@ -344,6 +344,12 @@ test:
 test-bridging:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,frequency-bridging
 
+# Test foreign assets permissions specifically
+.PHONY: test-foreign-assets-unit
+
+test-foreign-assets-unit:
+	cargo test --features runtime-benchmarks,frequency-lint-check,frequency-bridging -p frequency-runtime foreign_assets_tests 
+
 e2e-tests:
 	./scripts/run_e2e_tests.sh
 
