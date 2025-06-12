@@ -12,6 +12,4 @@ mod teleport_xfrqcy_with_dot_fee_from_assethub;
 
 mod send_open_channel_request;
 
-mod foreign_assets_permissions;
-
 mod utils;

@@ -938,16 +938,13 @@ impl frame_support::traits::EnsureOriginWithArg<RuntimeOrigin, cumulus_primitive
 		o: RuntimeOrigin,
 		_location: &cumulus_primitives_core::Location,
 	) -> Result<Self::Success, RuntimeOrigin> {
-		// Root: return a default AccountId or error
 		if let Ok(()) =
 			<EnsureRoot<AccountId> as EnsureOrigin<RuntimeOrigin>>::try_origin(o.clone())
 		{
 			return Ok(Treasury::account_id());
 		}
-		// Try council member - manually check membership like pallet_collective does
 		if let Ok(who) = frame_system::ensure_signed(o.clone()) {
-			let members =
-				pallet_collective::Members::<Runtime, pallet_collective::Instance1>::get();
+			let members = pallet_collective::Members::<Runtime, CouncilCollective>::get();
 			if members.contains(&who) {
 				return Ok(who);
 			}

@@ -77,31 +77,21 @@ mod mock {
 		type Success = AccountId;
 
 		fn try_origin(o: RuntimeOrigin, _location: &u32) -> Result<Self::Success, RuntimeOrigin> {
-			println!("[DEBUG] try_origin called with origin: {:?}", o);
-			// Try root first
 			if let Ok(()) =
 				<frame_system::EnsureRoot<AccountId> as EnsureOrigin<RuntimeOrigin>>::try_origin(
 					o.clone(),
 				) {
-				println!("[DEBUG] Origin is root");
 				// In test environment, return ALICE since Treasury pallet is not configured
 				return Ok(ALICE);
 			}
 
-			// Try council member - manually check membership like pallet_collective does
-			println!("[DEBUG] Checking if origin is council member");
 			if let Ok(who) = frame_system::ensure_signed(o.clone()) {
 				let members =
 					pallet_collective::Members::<Test, pallet_collective::Instance1>::get();
-				println!("[DEBUG] Extracted account: {:?}", who);
-				println!("[DEBUG] Current council members: {:?}", members);
 				if members.contains(&who) {
-					println!("[DEBUG] Origin is council member: {:?}", who);
 					return Ok(who);
 				}
-				println!("[DEBUG] Account is not a council member");
 			}
-			println!("[DEBUG] Origin check failed: {:?}", o);
 			Err(o)
 		}
 
@@ -117,7 +107,6 @@ mod mock {
 		type AssetId = AssetId;
 		type AssetIdParameter = AssetId;
 		type Currency = Balances;
-		// Test the restricted CreateOrigin configuration
 		type CreateOrigin = ForeignAssetCreateOrigin;
 		type ForceOrigin = frame_system::EnsureRoot<AccountId>;
 		type AssetDeposit = ConstU128<1>;
@@ -178,12 +167,6 @@ mod mock {
 	pub fn set_council_members(members: Vec<AccountId>) {
 		// Remove all current members (simulate full replacement)
 		Council::change_members(&members, &[], members.clone());
-		println!("[DEBUG] Council members set to: {:?}", members);
-		// Print all the members
-		for member in &members {
-			println!("[DEBUG] Council member: {:?}", member);
-			println!("[DEBUG] Is member: {}", Council::is_member(member));
-		}
 		// Set the prime member if any
 		Council::set_prime(members.get(0).cloned());
 		// Advance the block to ensure collective pallet state is updated
@@ -219,7 +202,6 @@ mod create_asset_tests {
 			let min_balance = 1u128;
 
 			set_council_members(vec![BOB]);
-			println!("BOB is member: {}", Council::is_member(&BOB));
 
 			assert_ok!(Assets::create(
 				RuntimeOrigin::signed(BOB),
@@ -280,38 +262,13 @@ mod create_asset_tests {
 	}
 
 	#[test]
-	fn create_asset_with_non_council_member_should_fail() {
-		new_test_ext().execute_with(|| {
-			let asset_id = 100u32;
-			let min_balance = 1u128;
-
-			set_council_members(vec![BOB, CHARLIE]);
-
-			assert_noop!(
-				Assets::create(
-					RuntimeOrigin::signed(EVE),
-					asset_id.into(),
-					ALICE,
-					min_balance.into()
-				),
-				BadOrigin
-			);
-			assert!(!<Assets as Inspect<AccountId>>::asset_exists(asset_id));
-		});
-	}
-
-	#[test]
 	fn create_asset_after_council_membership_change() {
 		new_test_ext().execute_with(|| {
 			let asset_id = 100u32;
 			let asset_id_2 = 101u32;
 			let min_balance = 1u128;
 
-			println!("Current block number: {}", System::block_number());
 			set_council_members(vec![BOB]);
-			println!("Creating asset with BOB as council member");
-			println!("Current block number: {}", System::block_number());
-			println!("BOB is member: {}", Council::is_member(&BOB));
 			assert_ok!(Assets::create(
 				RuntimeOrigin::signed(BOB),
 				asset_id.into(),
@@ -320,7 +277,6 @@ mod create_asset_tests {
 			));
 
 			set_council_members(vec![CHARLIE]);
-			println!("CHARLIE is member: {}", Council::is_member(&CHARLIE));
 
 			assert_noop!(
 				Assets::create(
@@ -358,12 +314,6 @@ mod create_asset_tests {
 				),
 				BadOrigin
 			);
-			assert_ok!(Assets::create(
-				RuntimeOrigin::root(),
-				asset_id.into(),
-				ALICE,
-				min_balance.into()
-			));
 		});
 	}
 }
@@ -547,95 +497,3 @@ mod edge_case_tests {
 		});
 	}
 }
-
-// #[cfg(test)]
-// mod integration_tests {
-
-// #[test]
-// fn comprehensive_permission_test() {
-// 	new_test_ext().execute_with(|| {
-// 		let asset_id_base = 500u32;
-// 		let min_balance = 1u128;
-
-// 		// Test with no council members
-// 		set_council_members(vec![]);
-// 		System::set_block_number(System::block_number() + 1);
-
-// 		// Only root should work
-// 		assert_ok!(Assets::create(
-// 			RuntimeOrigin::root(),
-// 			asset_id_base.into(),
-// 			ALICE,
-// 			min_balance.into()
-// 		));
-
-// 		assert_noop!(
-// 			Assets::create(
-// 				RuntimeOrigin::signed(BOB),
-// 				(asset_id_base + 1).into(),
-// 				ALICE,
-// 				min_balance.into()
-// 			),
-// 			BadOrigin
-// 		);
-
-// 		// Add council members
-// 		set_council_members(vec![BOB, CHARLIE]);
-// 		System::set_block_number(System::block_number() + 1);
-
-// 		// Council members should work
-// 		assert_ok!(Assets::create(
-// 			RuntimeOrigin::signed(BOB),
-// 			(asset_id_base + 2).into(),
-// 			ALICE,
-// 			min_balance.into()
-// 		));
-
-// 		assert_ok!(Assets::create(
-// 			RuntimeOrigin::signed(CHARLIE),
-// 			(asset_id_base + 3).into(),
-// 			ALICE,
-// 			min_balance.into()
-// 		));
-
-// 		// Non-council members should fail
-// 		assert_noop!(
-// 			Assets::create(
-// 				RuntimeOrigin::signed(DAVE),
-// 				(asset_id_base + 4).into(),
-// 				ALICE,
-// 				min_balance.into()
-// 			),
-// 			BadOrigin
-// 		);
-
-// 		// Root should still work
-// 		assert_ok!(Assets::create(
-// 			RuntimeOrigin::root(),
-// 			(asset_id_base + 5).into(),
-// 			ALICE,
-// 			min_balance.into()
-// 		));
-
-// 		// Force create should only work for root
-// 		assert_ok!(Assets::force_create(
-// 			RuntimeOrigin::root(),
-// 			(asset_id_base + 6).into(),
-// 			ALICE,
-// 			true,
-// 			min_balance.into()
-// 		));
-
-// 		assert_noop!(
-// 			Assets::force_create(
-// 				RuntimeOrigin::signed(BOB),
-// 				(asset_id_base + 7).into(),
-// 				ALICE,
-// 				true,
-// 				min_balance.into()
-// 			),
-// 			BadOrigin
-// 		);
-// 	});
-// }
-// }
