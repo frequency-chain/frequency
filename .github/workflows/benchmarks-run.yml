@@ -107,7 +107,7 @@ jobs:
 
       - name: Commit Updated Weights
         id: commit-updated-weights
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403
+        uses: stefanzweifel/git-auto-commit-action@778341af668090896ca464160c2def5d1d1a3eb0
         with:
           commit_message: "Update weights"
           file_pattern: "pallets/**/*.rs runtime/common/src/weights/*"
