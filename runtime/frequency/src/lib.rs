@@ -635,7 +635,7 @@ impl<T: frame_system::Config> StakingConfigProvider<T> for FrequencyStakingConfi
 		match staking_type {
 			StakingType::CommittedBoost =>
 				StakingConfig::<T> {
-					// TODO: TBD
+					// TODO: TBD by leadership
 					reward_percent_cap: Permill::from_parts(8_000),
 					initial_commitment_blocks: BlockNumberFor::<T>::from(
 						prod_or_testnet_or_local!(365 * DAYS, 365 * DAYS, 1 * DAYS),
