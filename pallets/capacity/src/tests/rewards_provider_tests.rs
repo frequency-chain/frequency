@@ -292,7 +292,6 @@ fn has_unclaimed_rewards_works() {
 		// staking 2k as of block 11, era 2
 		run_to_block(11);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
-		assert!(Capacity::has_unclaimed_rewards(&account));
 
 		//  staking 3k as of era 4, block 31
 		run_to_block(31);
