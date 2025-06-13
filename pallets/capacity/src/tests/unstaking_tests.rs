@@ -571,11 +571,9 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		// staking 1k as of block 1, era 1
 		setup_provider(&account, &target, &amount, ProviderBoost);
 
-		// staking 2k as of block 11, era 2
 		run_to_block(11);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
-		//  staking 3k as of era 4, block 31
 		run_to_block(31);
 
 		assert_noop!(
@@ -583,4 +581,25 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 			Error::<Test>::MustFirstClaimRewards
 		);
 	})
+}
+
+#[test]
+fn can_unstake_twice_in_same_era_after_claiming_rewards_2295() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 3_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+
+		run_to_block(11);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+		
+		run_to_block(31);
+		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
+		
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
+	})	
 }
