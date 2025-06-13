@@ -22,8 +22,9 @@ async function fundAccountAmount(dest: KeyringPair): Promise<{ dest: KeyringPair
   console.log(
     'Checking Funding: ',
     getUnifiedAddress(dest).toString(),
-    'Free Balance',
-    accountInfo.data.free.toHuman()
+    `Free Balance`,
+    accountInfo.data.free.toHuman(),
+    dest?.meta?.name || ''
   );
   const freeBalance = accountInfo.data.free.toBigInt();
 

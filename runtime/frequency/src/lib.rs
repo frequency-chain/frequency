@@ -633,18 +633,23 @@ pub struct FrequencyStakingConfigProvider<Runtime> {
 impl<T: frame_system::Config> StakingConfigProvider<T> for FrequencyStakingConfigProvider<T> {
 	fn get(staking_type: StakingType) -> StakingConfig<T> {
 		match staking_type {
-			StakingType::CommittedBoost =>
-				StakingConfig::<T> {
-					// TODO: TBD by leadership
-					reward_percent_cap: Permill::from_parts(8_000),
-					initial_commitment_blocks: BlockNumberFor::<T>::from(
-						prod_or_testnet_or_local!(365 * DAYS, 365 * DAYS, 1 * DAYS),
-					), // 1 year
-					commitment_release_stages: prod_or_testnet_or_local!(52, 52, 48), // 2 years (2 weeks * 52)
-					commitment_release_stage_blocks: BlockNumberFor::<T>::from(
-						prod_or_testnet_or_local!(14 * DAYS, 14 * DAYS, 1 * HOURS),
-					), // 2 weeks
-				},
+			StakingType::CommittedBoost => StakingConfig::<T> {
+				// TODO: mainnet values TBD
+				reward_percent_cap: Permill::from_parts(8_000),
+				initial_commitment_blocks: BlockNumberFor::<T>::from(prod_or_testnet_or_local!(
+					365 * DAYS, // prod
+					365 * DAYS, // testnet
+					10          // local
+				)), // 1 year
+				commitment_release_stages: prod_or_testnet_or_local!(52, 52, 4), // 2 years (2 weeks * 52)
+				commitment_release_stage_blocks: BlockNumberFor::<T>::from(
+					prod_or_testnet_or_local!(
+						14 * DAYS, // prod (2 weeks)
+						14 * DAYS, // testnet (2 weeks)
+						10         // local
+					),
+				), // 2 weeks
+			},
 			StakingType::MaximumCapacity | StakingType::FlexibleBoost => StakingConfig::<T> {
 				reward_percent_cap: Permill::from_parts(3_833), // 0.3833% or 0.003833 per RewardEra
 				initial_commitment_blocks: Zero::zero(),

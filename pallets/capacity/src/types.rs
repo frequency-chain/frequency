@@ -414,7 +414,8 @@ impl<T: Config> ProviderBoostHistory<T> {
 		Some(self.count())
 	}
 
-	/// A wrapper for the key/value retrieval of the BoundedBTreeMap.
+	/// A wrapper for the key/value retrieval of the BoundedBTreeMap (only used in tests)
+	#[cfg(test)]
 	pub(crate) fn get_entry_for_era(&self, reward_era: &RewardEra) -> Option<&BalanceOf<T>> {
 		self.0.get(reward_era)
 	}
@@ -461,6 +462,11 @@ impl<T: Config> ProviderBoostHistory<T> {
 			return *last_value;
 		};
 		Zero::zero()
+	}
+
+	/// Returns the earliest RewardEra in the BoundedBTreeMap, or None if the map is empty.
+	pub fn get_earliest_reward_era(&self) -> Option<&RewardEra> {
+		self.0.first_key_value().map(|(key, _value)| key)
 	}
 
 	fn is_full(&self) -> bool {

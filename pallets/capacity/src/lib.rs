@@ -534,7 +534,6 @@ pub mod pallet {
 			let unstaker = ensure_signed(origin)?;
 
 			ensure!(requested_amount > Zero::zero(), Error::<T>::UnstakedAmountIsZero);
-
 			ensure!(!Self::has_unclaimed_rewards(&unstaker), Error::<T>::MustFirstClaimRewards);
 
 			let (actual_amount, staking_type) =
@@ -950,19 +949,20 @@ impl<T: Config> Pallet<T> {
 		staking_account: &T::AccountId,
 		staking_details: &StakingDetails<T>,
 	) -> BalanceOf<T> {
-		let StakingDetails { active: current_balance, staking_type } = staking_details;
+		let StakingDetails { active: current_staked_balance, staking_type } = staking_details;
 		let current_staking_type = Self::get_staking_type_in_force(*staking_type);
 		let curr_block = frame_system::Pallet::<T>::block_number();
 
 		match current_staking_type {
 			StakingType::CommittedBoost => match Self::get_committed_boosting_phase(curr_block) {
 				CommitmentPhase::PreCommitment | CommitmentPhase::InitialCommitment => Zero::zero(),
-				CommitmentPhase::RewardProgramEnded | CommitmentPhase::Failsafe => *current_balance,
+				CommitmentPhase::RewardProgramEnded | CommitmentPhase::Failsafe =>
+					*current_staked_balance,
 				CommitmentPhase::StagedRelease => {
 					let staking_config = T::StakingConfigProvider::get(*staking_type);
 					let initial_commitment: BalanceOf<T> =
 						InitialBoostingCommitments::<T>::try_get(staking_account.clone())
-							.unwrap_or(*current_balance);
+							.unwrap_or(*current_staked_balance);
 					let unfreeze_stage: u32 = curr_block
 						.saturating_sub(
 							PrecipitatingEventBlockNumber::<T>::get().unwrap_or_default(),
@@ -982,14 +982,14 @@ impl<T: Config> Pallet<T> {
 							.mul(unfreeze_stage.saturating_add(One::one()).into()),
 					};
 
-					let total_released_to_date = initial_commitment - *current_balance;
+					let total_released_to_date = initial_commitment - *current_staked_balance;
 
 					cumulative_releasable_stake.saturating_sub(total_released_to_date)
 				},
 			},
 			// Only Commited Boosting has token lockup requirements; tokens staked with other staking types
 			// are always 100% releasable.
-			_ => *current_balance,
+			_ => *current_staked_balance,
 		}
 	}
 
@@ -1015,6 +1015,13 @@ impl<T: Config> Pallet<T> {
 				amount <= Self::get_releasable_amount(unstaker, &staking_account,),
 			Error::<T>::InsufficientUnfrozenStakingBalance
 		);
+
+		// Make sure we set the initial stake amount before we decrease the active stake
+		if staking_account.staking_type == StakingType::CommittedBoost &&
+			None == InitialBoostingCommitments::<T>::get(&unstaker)
+		{
+			InitialBoostingCommitments::<T>::set(&unstaker, Some(staking_account.active));
+		}
 
 		let actual_unstaked_amount = staking_account.withdraw(amount)?;
 		Self::set_staking_account(unstaker, &staking_account);
@@ -1288,22 +1295,17 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
 		let current_era = CurrentEraInfo::<T>::get().era_index;
 		match ProviderBoostHistories::<T>::get(account) {
-			Some(provider_boost_history) => {
-				match provider_boost_history.count() {
-					0usize => false,
-					1usize => {
-						// if there is just one era entry and:
-						// it's for the previous era, it means we've already paid out rewards for that era, or they just staked in the last era.
-						// or if it's for the current era, they only just started staking.
-						provider_boost_history
-							.get_entry_for_era(&current_era.saturating_sub(1u32))
-							.is_none() && provider_boost_history
-							.get_entry_for_era(&current_era)
-							.is_none()
-					},
-					_ => true,
-				}
-			},
+			Some(provider_boost_history) =>
+			// We can ignore any entries for the current or prior era, since:
+			//   - if it's for the previous era, it means we've already paid out rewards for that era,
+			//     or they just staked in that era & hence aren't eligible for rewards yet.
+			//   - if it's for the current era, then they've only just started staking
+			// If there are any entries for eras earlier than one prior to the current era, then there
+			// are unclaimed rewards.
+				match provider_boost_history.get_earliest_reward_era() {
+					Some(era) if era < &current_era.saturating_sub(1u32) => true,
+					_ => false,
+				},
 			None => false,
 		} // 1r
 	}

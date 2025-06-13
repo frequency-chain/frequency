@@ -435,10 +435,15 @@ export async function createMsaAndProvider(
   const { eventMap } = await ExtrinsicHelper.executeUtilityBatchAll(keys, [
     createMsaOp.extrinsic(),
     createProviderOp.extrinsic(),
-  ]).signAndSend(undefined, undefined, waitForInBlock);
+  ])
+    .signAndSend(undefined, undefined, waitForInBlock)
+    .catch((err) => {
+      console.error('Error creating provider: ', err);
+      return { eventMap: {} };
+    });
 
   const providerCreatedEvent = eventMap['msa.ProviderCreated'];
-  if (ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
+  if (providerCreatedEvent && ExtrinsicHelper.api.events.msa.ProviderCreated.is(providerCreatedEvent)) {
     return providerCreatedEvent.data.providerId;
   }
   return Promise.reject('Did not create provider with msa.ProviderCreated event');
@@ -479,7 +484,31 @@ export async function boostProvider(
 ): Promise<void> {
   const stakeOp = ExtrinsicHelper.providerBoost(keys, providerId, tokensToStake);
   const { target: stakeEvent } = await stakeOp.fundAndSend(source);
-  assert.notEqual(stakeEvent, undefined, 'stakeToProvider: should have returned Stake event');
+  assert.notEqual(stakeEvent, undefined, 'providerBoost: should have returned ProviderBoosted event');
+  if (stakeEvent) {
+    const stakedCapacity = stakeEvent.data.capacity;
+
+    const expectedCapacity = tokensToStake / getTokenPerCapacity() / BOOST_ADJUSTMENT;
+
+    assert.equal(
+      stakedCapacity,
+      expectedCapacity,
+      `stakeToProvider: expected ${expectedCapacity}, got ${stakedCapacity}`
+    );
+  } else {
+    return Promise.reject('stakeToProvider: stakeEvent should be capacity.Staked event');
+  }
+}
+
+export async function committedBoostProvider(
+  source: KeyringPair,
+  keys: KeyringPair,
+  providerId: u64,
+  tokensToStake: bigint
+): Promise<void> {
+  const stakeOp = ExtrinsicHelper.committedBoost(keys, providerId, tokensToStake);
+  const { target: stakeEvent } = await stakeOp.fundAndSend(source);
+  assert.notEqual(stakeEvent, undefined, 'committedBoost: should have returned StakedV2 event');
   if (stakeEvent) {
     const stakedCapacity = stakeEvent.data.capacity;
 

@@ -40,16 +40,19 @@ export interface AddKeyData {
   expiration?: any;
   newPublicKey?: any;
 }
+
 export interface AuthorizedKeyData {
   msaId: u64;
   expiration?: number | any;
   authorizedPublicKey: KeyringPair['publicKey'];
 }
+
 export interface AddProviderPayload {
   authorizedMsaId?: u64;
   schemaIds?: u16[];
   expiration?: any;
 }
+
 export interface ItemizedSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -57,12 +60,14 @@ export interface ItemizedSignaturePayload {
   expiration?: any;
   actions?: any;
 }
+
 export interface ItemizedSignaturePayloadV2 {
   schemaId?: u16;
   targetHash?: u32;
   expiration?: any;
   actions?: any;
 }
+
 export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -71,6 +76,7 @@ export interface PaginatedUpsertSignaturePayload {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedUpsertSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
@@ -78,6 +84,7 @@ export interface PaginatedUpsertSignaturePayloadV2 {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedDeleteSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -85,6 +92,7 @@ export interface PaginatedDeleteSignaturePayload {
   targetHash?: u32;
   expiration?: any;
 }
+
 export interface PaginatedDeleteSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
@@ -168,6 +176,7 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
+
 export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
   target?: ParsedEvent<C, N>;
   eventMap: EventMap;
@@ -288,7 +297,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
       this.getEstimatedTxFee(),
       ExtrinsicHelper.getAccountInfo(this.keys),
     ]);
-    const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
+    const freeBalance = BigInt(accountInfo.data.free.toString()) - getExistentialDeposit();
     if (amount > freeBalance) {
       await assert.doesNotReject(
         ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend(undefined, undefined, false)
@@ -827,11 +836,27 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static committedBoost(keys: KeyringPair, target: any, amount: any) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.capacity.committedBoost(target, amount),
+      keys,
+      ExtrinsicHelper.api.events.capacity.StakedV2
+    );
+  }
+
   public static changeStakingTarget(keys: KeyringPair, from: any, to: any, amount: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.capacity.changeStakingTarget(from, to, amount),
       keys,
       ExtrinsicHelper.api.events.capacity.StakingTargetChanged
+    );
+  }
+
+  public static claimRewards(keys: KeyringPair) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.capacity.claimStakingRewards(),
+      keys,
+      ExtrinsicHelper.api.events.capacity.ProviderBoostRewardClaimed
     );
   }
 
