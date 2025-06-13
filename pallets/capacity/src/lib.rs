@@ -1042,14 +1042,14 @@ impl<T: Config> Pallet<T> {
 	pub(crate) fn has_unclaimed_rewards(account: &T::AccountId) -> bool {
 		let current_era = CurrentEraInfo::<T>::get().era_index;
 		match ProviderBoostHistories::<T>::get(account) {
+			// We can ignore any entries for the current or prior era, since:
+			//   - if it's for the previous era, it means we've already paid out rewards for that era,
+			//     or they just staked in that era & hence aren't eligible for rewards yet.
+			//   - if it's for the current era, then they've only just started staking
+			// If there are any entries for eras earlier than one prior to the current era, then there
+			// are unclaimed rewards.
 			Some(provider_boost_history) =>
-				// We can ignore any entries for the current or prior era, since:
-				//   - if it's for the previous era, it means we've already paid out rewards for that era,
-				//     or they just staked in that era & hence aren't eligible for rewards yet.
-				//   - if it's for the current era, then they've only just started staking
-				// If there are any entries for eras earlier than one prior to the current era, then there
-				// are unclaimed rewards.
-				matches!(provider_boost_history.get_earliest_reward_era(), 
+				matches!(provider_boost_history.get_earliest_reward_era(),
 						 Some(era) if era < &current_era.saturating_sub(1u32)),
 			None => false,
 		}
