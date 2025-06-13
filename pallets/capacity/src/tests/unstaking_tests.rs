@@ -595,11 +595,11 @@ fn can_unstake_twice_in_same_era_after_claiming_rewards_2295() {
 
 		run_to_block(11);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
-		
+
 		run_to_block(31);
 		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
-		
+
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
 		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
-	})	
+	})
 }
