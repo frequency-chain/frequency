@@ -64,7 +64,7 @@ pub fn setup_provider_stake<T: Config>(
 
 	let mut staking_account = StakingDetails::<T>::default();
 	if is_provider_boost {
-		staking_account.staking_type = ProviderBoost;
+		staking_account.staking_type = FlexibleBoost;
 	}
 	let mut target_details = StakingTargetDetails::<BalanceOf<T>>::default();
 	let mut capacity_details =
@@ -330,6 +330,47 @@ mod benchmarks {
 			Event::<T>::ProviderBoostRewardClaimed {
 				account: caller.clone(),
 				reward_amount: unclaimed_rewards,
+			}
+			.into(),
+		);
+		Ok(())
+	}
+
+	#[benchmark]
+	fn set_pte_via_governance() -> Result<(), BenchmarkError> {
+		#[extrinsic_call]
+		set_pte_via_governance(RawOrigin::Root, 1u32.into());
+
+		ensure!(
+			PrecipitatingEventBlockNumber::<T>::get() == Some(1u32.into()),
+			"PTE should be set"
+		);
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn committed_boost() -> Result<(), BenchmarkError> {
+		let caller: T::AccountId =
+			create_funded_account::<T>("committedboostaccount", SEED, 260u32);
+		let boost_amount: BalanceOf<T> = T::MinimumStakingAmount::get().saturating_add(1u32.into());
+		let capacity: BalanceOf<T> =
+			Capacity::<T>::capacity_generated(<T>::RewardsProvider::capacity_boost(boost_amount));
+		let target = 1;
+
+		set_era_and_reward_pool_at_block::<T>(1u32, 1u32.into(), 1_000u32.into());
+		register_provider::<T>(target, "Foo");
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(caller.clone()), target, boost_amount);
+
+		assert_last_event::<T>(
+			Event::<T>::StakedV2 {
+				account: caller,
+				amount: boost_amount,
+				target,
+				capacity,
+				staking_type: StakingType::CommittedBoost,
 			}
 			.into(),
 		);
