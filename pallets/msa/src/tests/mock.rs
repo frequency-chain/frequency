@@ -1,11 +1,11 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider};
+use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData};
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
 use common_runtime::constants::DAYS;
 use frame_support::{
 	assert_ok, parameter_types,
-	traits::{ConstU16, ConstU32, EitherOfDiverse, OnFinalize, OnInitialize},
+	traits::{ConstU16, ConstU32, ConstU64, EitherOfDiverse, OnFinalize, OnInitialize},
 	weights::Weight,
 };
 use frame_system::EnsureRoot;
@@ -38,6 +38,7 @@ frame_support::construct_runtime!(
 	pub enum Test
 	{
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
+		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>},
 		Schemas: pallet_schemas::{Pallet, Call, Storage, Event<T>},
 		Council: pallet_collective::<Instance1>::{Pallet, Call, Config<T,I>, Storage, Event<T>, Origin<T>},
@@ -97,7 +98,7 @@ impl frame_system::Config for Test {
 	type BlockHashCount = ConstU32<250>;
 	type Version = ();
 	type PalletInfo = PalletInfo;
-	type AccountData = ();
+	type AccountData = pallet_balances::AccountData<u64>;
 	type OnNewAccount = ();
 	type OnKilledAccount = ();
 	type SystemWeightInfo = ();
@@ -110,6 +111,23 @@ impl frame_system::Config for Test {
 	type PostInherents = ();
 	type PostTransactions = ();
 	type ExtensionsWeightInfo = ();
+}
+
+impl pallet_balances::Config for Test {
+	type MaxReserves = ();
+	type ReserveIdentifier = [u8; 8];
+	type MaxLocks = ConstU32<10>;
+	type Balance = u64;
+	type RuntimeEvent = RuntimeEvent;
+	type DustRemoval = ();
+	type ExistentialDeposit = ConstU64<1>;
+	type AccountStore = System;
+	type WeightInfo = ();
+	type FreezeIdentifier = RuntimeFreezeReason;
+	type MaxFreezes = ConstU32<2>;
+	type RuntimeHoldReason = ();
+	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
 }
 
 impl pallet_schemas::Config for Test {
@@ -215,6 +233,7 @@ impl pallet_msa::Config for Test {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+	type Currency = pallet_balances::Pallet<Self>;
 }
 
 pub fn set_max_signature_stored(max: u32) {
@@ -359,6 +378,27 @@ pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 		Vec::from(name)
 	));
 	(provider_msa_id, provider_account)
+}
+
+pub fn generate_and_sign_authorized_key_payload(
+	msa_id: MessageSourceId,
+	msa_owner_keys: &sr25519::Pair,
+	authorized_public_key: &sr25519::Pair,
+	expiration: Option<BlockNumber>,
+) -> (AuthorizedKeyData<Test>, Vec<u8>, MultiSignature) {
+	let payload = AuthorizedKeyData::<Test> {
+		msa_id,
+		expiration: match expiration {
+			Some(block_number) => block_number,
+			None => 10,
+		},
+		authorized_public_key: authorized_public_key.public().into(),
+	};
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
+
+	(payload, encoded_payload, signature)
 }
 
 pub fn generate_test_signature() -> MultiSignature {

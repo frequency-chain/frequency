@@ -2,7 +2,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-// Make the WASM binary available.
+extern crate alloc;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking; // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -135,7 +138,6 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -621,7 +623,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 164,
+	spec_version: 165,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -635,7 +637,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 164,
+	spec_version: 165,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -796,6 +798,8 @@ impl pallet_msa::Config for Runtime {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+	// The Currency type for managing MSA token balances
+	type Currency = Balances;
 }
 
 parameter_types! {
