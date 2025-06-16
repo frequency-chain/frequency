@@ -468,12 +468,6 @@ fn calling_payment_api_with_a_lower_version_works() {
 }
 
 #[test]
-fn runtime_apis_are_populated() {
-	use crate::RUNTIME_API_VERSIONS;
-	assert!(RUNTIME_API_VERSIONS.len() > 0);
-}
-
-#[test]
 fn test_default_fee_per_second() {
 	use crate::{polkadot_xcm_fee::default_fee_per_second, WEIGHT_REF_TIME_PER_SECOND};
 

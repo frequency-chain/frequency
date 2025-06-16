@@ -912,8 +912,8 @@ pub struct ForeignAssetCreateOrigin;
 /// This implementation converts XCM origins to local `AccountId`s based on the following priority:
 ///
 /// 1. **Root Origin**: If the origin has root privileges, returns the Treasury account ID
-/// 2. **Council Member**: If the origin is a signed account that is a member of the collective
-///    (Instance1), returns that account ID
+/// 2. **Council Member**: If the origin is a signed account that is a member of the collective,
+///    returns that account ID
 ///    Based on how the `pallet_collective` checks membership:
 ///    https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/collective/src/lib.rs#L653
 ///    EnsureMember does not work because it uses a RawOrigin type, which is not the same as RuntimeOrigin.
@@ -1006,10 +1006,6 @@ impl pallet_authorship::Config for Runtime {
 	type EventHandler = (CollatorSelection,);
 }
 
-parameter_types! {
-	pub const ExistentialDeposit: u128 = EXISTENTIAL_DEPOSIT;
-}
-
 impl pallet_balances::Config for Runtime {
 	type MaxLocks = BalancesMaxLocks;
 	/// The type for recording an account's balance.
@@ -1017,7 +1013,7 @@ impl pallet_balances::Config for Runtime {
 	/// The ubiquitous event type.
 	type RuntimeEvent = RuntimeEvent;
 	type DustRemoval = ();
-	type ExistentialDeposit = ExistentialDeposit;
+	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
 	type AccountStore = System;
 	type WeightInfo = weights::pallet_balances::SubstrateWeight<Runtime>;
 	type MaxReserves = BalancesMaxReserves;
@@ -1670,7 +1666,8 @@ construct_runtime!(
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
 		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
+		ParachainSystem: cumulus_pallet_parachain_system::{
+			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
@@ -1739,10 +1736,6 @@ construct_runtime!(
 		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 76,
 	}
 );
-
-#[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
@@ -2250,5 +2243,47 @@ sp_api::impl_runtime_apis! {
 		> {
 			PolkadotXcm::is_authorized_alias(origin, target)
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use frame_support::traits::WhitelistedStorageKeys;
+	use sp_core::hexdisplay::HexDisplay;
+	use std::collections::HashSet;
+
+	#[test]
+	fn check_whitelist() {
+		let whitelist: HashSet<String> = dbg!(AllPalletsWithSystem::whitelisted_storage_keys()
+			.iter()
+			.map(|e| HexDisplay::from(&e.key).to_string())
+			.collect());
+
+		// Block Number
+		assert!(
+			whitelist.contains("26aa394eea5630e07c48ae0c9558cef702a5c1b19ab7a04f536c519aca4983ac")
+		);
+		// Total Issuance
+		assert!(
+			whitelist.contains("c2261276cc9d1f8598ea4b6a74b15c2f57c875e4cff74148e4628f264b974c80")
+		);
+		// Execution Phase
+		assert!(
+			whitelist.contains("26aa394eea5630e07c48ae0c9558cef7ff553b5a9862a516939d82b3d3d8661a")
+		);
+		// Event Count
+		assert!(
+			whitelist.contains("26aa394eea5630e07c48ae0c9558cef70a98fdbe9ce6c55837576c60c7af3850")
+		);
+		// System Events
+		assert!(
+			whitelist.contains("26aa394eea5630e07c48ae0c9558cef780d41e5e16056765bc8461851072c9d7")
+		);
+	}
+
+	#[test]
+	fn runtime_apis_are_populated() {
+		assert!(RUNTIME_API_VERSIONS.len() > 0);
 	}
 }
