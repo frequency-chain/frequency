@@ -69,6 +69,9 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 	}
 }
 
+/// Type discriminator for AuthorizedKeyData
+pub const AUTHORIZED_KEY_PAYLOAD_DISCRIMINATOR: &[u8; 17] = b"AuthorizedKeyData";
+
 /// A type definition for the payload for authorizing a public key for the following operations:
 /// -  Authorizing a token withdrawal to an address associated with a public key - `pallet_msa::withdraw_tokens`
 #[derive(
@@ -76,6 +79,8 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 )]
 #[scale_info(skip_type_params(T))]
 pub struct AuthorizedKeyData<T: Config> {
+	/// type discriminator, because otherwise this struct has the same SCALE encoding as `AddKeyData`
+	pub discriminant: [u8; 17],
 	/// Message Source Account identifier
 	pub msa_id: MessageSourceId,
 	/// The block number at which a signed proof of this payload expires.
