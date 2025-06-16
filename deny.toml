@@ -101,6 +101,7 @@ allow = [
   "ISC",
   "GPL-3.0",
   "GPL-3.0 WITH Classpath-exception-2.0",
+  "OpenSSL",
   "Zlib",
   "Unicode-3.0",
   "CDLA-Permissive-2.0",
