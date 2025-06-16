@@ -64,7 +64,7 @@ fn withdraw_tokens_payload_and_signature<T: Config>(
 	let new_keys = SignerId::generate_pair(None);
 	let public_key = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
 	let withdraw_tokens_payload = AuthorizedKeyData::<T> {
-		discriminant: AUTHORIZED_KEY_PAYLOAD_DISCRIMINATOR.clone(),
+		discriminant: *AUTHORIZED_KEY_PAYLOAD_DISCRIMINATOR,
 		msa_id,
 		expiration: 10u32.into(),
 		authorized_public_key: public_key,
