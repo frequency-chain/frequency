@@ -82,7 +82,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::AUTHORIZED_KEY_PAYLOAD_DISCRIMINATOR;
+use crate::types::PayloadTypeDiscriminator;
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -2011,7 +2011,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 		);
 
 		ensure!(
-			&authorization_payload.discriminant == AUTHORIZED_KEY_PAYLOAD_DISCRIMINATOR,
+			authorization_payload.discriminant == PayloadTypeDiscriminator::AuthorizedKeyData,
 			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
 		);
 		ensure!(

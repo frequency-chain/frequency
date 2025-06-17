@@ -1,6 +1,7 @@
 use crate::{
-	tests::mock::*, types::EMPTY_FUNCTION, AuthorizedKeyData, CheckFreeExtrinsicUse, Config,
-	ValidityError,
+	tests::mock::*,
+	types::{PayloadTypeDiscriminator, EMPTY_FUNCTION},
+	AuthorizedKeyData, CheckFreeExtrinsicUse, Config, ValidityError,
 };
 use common_primitives::{
 	msa::H160,
@@ -514,14 +515,12 @@ fn signed_ext_validate_fails_when_withdraw_tokens_payload_has_wrong_type_discrim
 		let (msa_id, owner_key_pair) = create_account();
 		let (origin_key_pair, _) = sr25519::Pair::generate();
 
-		const BAD_DISCRIMIMINANT: &[u8; 17] = b"NotAuthorizedKeyD";
-
 		let (payload, msa_signature) = generate_and_sign_authorized_key_payload(
 			msa_id,
 			&owner_key_pair,
 			&origin_key_pair,
 			None,
-			Some(BAD_DISCRIMIMINANT),
+			Some(PayloadTypeDiscriminator::Unknown),
 		);
 
 		assert_withdraw_msa_token_err(

@@ -194,7 +194,7 @@ describe('MSAs Holding Tokens', function () {
       const { discriminant, ...badPayload } = defaultPayload;
       // Generate AddKeyData instead of AuthorizedKeyData (missing discriminator)
       const payload = await generateAddKeyPayload(badPayload);
-      const signingPayload = ExtrinsicHelper.api.registry.createType('PalletMsaAuthorizedKeyData', payload);
+      const signingPayload = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
       const ownerSig = signPayload(msaKeys, signingPayload);
       const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload as AuthorizedKeyData);
       await assert.rejects(op.signAndSend('current'), {
