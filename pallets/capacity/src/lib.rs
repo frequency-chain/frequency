@@ -835,13 +835,13 @@ impl<T: Config> Pallet<T> {
 			return Zero::zero();
 		}
 
-		let unthawed_balance = unlock_chunks_total::<T>(&unlocks);
+		let unthawed_unstaked_balance = unlock_chunks_total::<T>(&unlocks);
 		let freezable_balance = T::Currency::balance_freezable(staker);
 		let current_staking_balance =
 			StakingAccountLedger::<T>::get(staker).unwrap_or_default().active;
 		let stakable_amount = freezable_balance
 			.saturating_sub(current_staking_balance)
-			.saturating_sub(unthawed_balance)
+			.saturating_sub(unthawed_unstaked_balance)
 			.saturating_sub(T::MinimumTokenBalance::get());
 		if stakable_amount >= proposed_amount {
 			proposed_amount
