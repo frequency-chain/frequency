@@ -28,7 +28,6 @@
 )]
 
 use core::ops::Mul;
-
 use frame_support::{
 	ensure,
 	traits::{
@@ -831,11 +830,18 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
+		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
+		if !thawed_unlock_chunks_total::<T>(&unlocks, CurrentEpoch::<T>::get()).is_zero() {
+			return Zero::zero();
+		}
+
+		let unthawed_balance = unlock_chunks_total::<T>(&unlocks);
 		let freezable_balance = T::Currency::balance_freezable(staker);
 		let current_staking_balance =
 			StakingAccountLedger::<T>::get(staker).unwrap_or_default().active;
 		let stakable_amount = freezable_balance
 			.saturating_sub(current_staking_balance)
+			.saturating_sub(unthawed_balance)
 			.saturating_sub(T::MinimumTokenBalance::get());
 		if stakable_amount >= proposed_amount {
 			proposed_amount
@@ -1115,6 +1121,15 @@ impl<T: Config> Pallet<T> {
 			}
 		} // 1r * up to ProviderBoostHistoryLimit-1, if they staked every RewardEra.
 		Ok(unclaimed_rewards)
+	}
+
+	/// Get the total balance of tokens that have been unstaked & have thawed but have not been withdrawn
+	pub fn get_thawed_unstaked_amount(account: &T::AccountId) -> BalanceOf<T> {
+		let current_epoch = CurrentEpoch::<T>::get();
+		thawed_unlock_chunks_total::<T>(
+			&UnstakeUnlocks::<T>::get(account).unwrap_or_default(),
+			current_epoch,
+		)
 	}
 
 	// Returns the block number for the end of the provided era. Assumes `era` is at least this

@@ -1,7 +1,8 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason, StakingAccountLedger,
-	StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	CapacityDetails, CapacityLedger, Config, EpochLength, Error, Event, FreezeReason,
+	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	UnstakeUnlocks,
 };
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
 use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
@@ -464,5 +465,61 @@ fn impl_deposit_errors_target_capacity_not_found() {
 			Capacity::deposit(target_msa_id, amount, capacity),
 			Error::<Test>::TargetCapacityNotFound
 		);
+	});
+}
+
+#[test]
+fn cannot_stake_thawed_or_frozen_tokens() {
+	new_test_ext().execute_with(|| {
+		// provider_boost and then unstake, before the thaw period check if you can boost again.
+		// if you can boost again, see if you can call withdraw_thawed_token
+		let staker = 600;
+		let target: MessageSourceId = 1;
+		let amount = 500; // ensure >> half
+		let epoch_length = 3;
+
+		register_provider(target, String::from("Foo"));
+		EpochLength::<Test>::set(epoch_length);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, amount));
+
+		// run to next RewardEra and unstake entire amount
+		system_run_to_block(11);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, amount));
+
+		// restake in same block
+		// a stake of any type should fail
+		assert_noop!(
+			Capacity::provider_boost(RuntimeOrigin::signed(staker), target, amount),
+			Error::<Test>::BalanceTooLowtoStake,
+		);
+
+		assert_eq!(UnstakeUnlocks::<Test>::get(staker).unwrap_or_default().len(), 1);
+
+		// wait for thaw (2 epochs in test)
+		let blocks_to_thaw: u32 = epoch_length * 2u32;
+		run_to_block(12u32 + blocks_to_thaw * 3);
+
+		// should still not be able to stake until thawed tokens are withdrawn
+		assert_noop!(
+			Capacity::provider_boost(RuntimeOrigin::signed(staker), target, amount),
+			Error::<Test>::BalanceTooLowtoStake,
+		);
+
+		// withdraw unlocked token succeeds...
+		assert_ok!(Capacity::withdraw_unstaked(RuntimeOrigin::signed(staker)));
+
+		// check transferable balance
+		assert_transferable::<Test>(&staker, amount);
+
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&staker,
+			),
+			0u64
+		);
+
+		// should be able to stake now that tokens are unlocked
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, amount));
 	});
 }
