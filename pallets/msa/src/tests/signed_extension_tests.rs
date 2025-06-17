@@ -509,7 +509,7 @@ fn signed_ext_validate_fails_when_withdraw_tokens_caller_key_does_not_match_payl
 }
 
 #[test]
-fn signed_ext_validate_fails_when_withdraw_tokens_payload_payload_is_has_wrong_type_discriminant() {
+fn signed_ext_validate_fails_when_withdraw_tokens_payload_has_wrong_type_discriminant() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, owner_key_pair) = create_account();
 		let (origin_key_pair, _) = sr25519::Pair::generate();
