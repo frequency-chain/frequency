@@ -17,9 +17,11 @@ import {
   EipDomainPayload,
   NormalizedSupportedPayload,
   SupportedPayloadTypes,
-} from './payloads';
-import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils';
-import { reverseUnifiedAddressToEthereumAddress } from './address';
+  SiwfSignedRequestPayload,
+  SiwfLoginRequestPayload,
+} from './payloads.js';
+import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils.js';
+import { reverseUnifiedAddressToEthereumAddress } from './address.js';
 import { ethers } from 'ethers';
 import { u8aToHex } from '@polkadot/util';
 import {
@@ -33,8 +35,10 @@ import {
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PASSKEY_PUBLIC_KEY_DEFINITION,
+  SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION,
+  SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
-} from './signature.definitions';
+} from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
 
@@ -88,6 +92,7 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
     case 'PasskeyPublicKey':
     case 'ClaimHandlePayload':
     case 'AddProvider':
+    case 'SiwfLoginRequestPayload':
       break;
 
     case 'AddKeyData':
@@ -108,6 +113,11 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
       clonedPayload.authorizedPublicKey = clonedPayload.authorizedPublicKey.toLowerCase() as HexString;
       break;
 
+    case 'SiwfSignedRequest':
+      if (clonedPayload.userIdentifierAdminUrl == null) {
+        clonedPayload.userIdentifierAdminUrl = '';
+      }
+      break;
     default:
       throw new Error(`Unsupported payload type: ${JSON.stringify(payload)}`);
   }
@@ -128,6 +138,10 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
     AddKeyData: ADD_KEY_DATA_DEFINITION,
     AuthorizedKeyData: AUTHORIZED_KEY_DATA_DEFINITION,
     AddProvider: ADD_PROVIDER_DEFINITION,
+
+    // offchain signatures
+    SiwfSignedRequest: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
+    SiwfLoginRequestPayload: SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION,
   };
 
   const definition = PAYLOAD_TYPE_DEFINITIONS[payloadType];
@@ -352,6 +366,42 @@ export function createPaginatedUpsertSignaturePayloadV2(
 }
 
 /**
+ * Build an SiwfSignedRequest payload for signature.
+ *
+ * @param callback        Callback URL for login
+ * @param permissions       One or more schema IDs (uint16) the provider may use
+ * @param userIdentifierAdminUrl Only used for custom integration situations.
+ */
+export function createSiwfSignedRequest(
+  callback: string,
+  permissions: number[],
+  userIdentifierAdminUrl?: string
+): SiwfSignedRequestPayload {
+  permissions.forEach((schemaId) => {
+    assert(isValidUint16(schemaId), 'permission should be a valid uint16');
+  });
+
+  return {
+    type: 'SiwfSignedRequest',
+    callback: callback,
+    permissions,
+    userIdentifierAdminUrl,
+  };
+}
+
+/**
+ * Build an SiwfLoginRequestPayload payload for signature.
+ *
+ * @param message        login message
+ */
+export function createSiwfLoginRequestPayload(message: string): SiwfLoginRequestPayload {
+  return {
+    type: 'SiwfLoginRequestPayload',
+    message,
+  };
+}
+
+/**
  * Returns the EIP-712 browser request for a AddKeyData for signing.
  *
  * @param msaId           MSA ID (uint64) to add the key
@@ -503,6 +553,40 @@ export function getEip712BrowserRequestPasskeyPublicKey(
   const message = createPasskeyPublicKey(publicKey);
   const normalized = normalizePayload(message);
   return createEip712Payload(PASSKEY_PUBLIC_KEY_DEFINITION, message.type, domain, normalized);
+}
+
+/**
+ * Returns the EIP-712 browser request for a SiwfSignedRequestPayload for signing.
+ *
+ * @param callback        Callback URL for login
+ * @param permissions       One or more schema IDs (uint16) the provider may use
+ * @param userIdentifierAdminUrl Only used for custom integration situations.
+ * @param domain
+ */
+export function getEip712BrowserRequestSiwfSignedRequestPayload(
+  callback: string,
+  permissions: number[],
+  userIdentifierAdminUrl?: string,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const message = createSiwfSignedRequest(callback, permissions, userIdentifierAdminUrl);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION, message.type, domain, normalized);
+}
+
+/**
+ * Returns the EIP-712 browser request for a SiwfLoginRequestPayload for signing.
+ *
+ * @param message        login message
+ * @param domain
+ */
+export function getEip712BrowserRequestSiwfLoginRequestPayload(
+  message: string,
+  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+): unknown {
+  const msg = createSiwfLoginRequestPayload(message);
+  const normalized = normalizePayload(msg);
+  return createEip712Payload(SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION, msg.type, domain, normalized);
 }
 
 function createEip712Payload(

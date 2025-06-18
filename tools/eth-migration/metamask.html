@@ -421,6 +421,94 @@
 				alert("Signature: " + signature)
 			});
 
+			document.getElementById('siwf_signed_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"SiwfSignedRequest": [
+							{
+								"name": 'callback',
+								"type": 'string',
+							},
+							{
+								"name": 'permissions',
+								"type": 'uint16[]',
+							},
+							{
+								"name": 'userIdentifierAdminUrl',
+								"type": 'string',
+							},
+						],
+					},
+					"primaryType": "SiwfSignedRequest",
+					"domain": karma_request_domain,
+					"message": {
+						"callback": 'https://localhost:44181',
+						"permissions": [2,4,5,6,7,8],
+						"userIdentifierAdminUrl": '',
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
+			document.getElementById('siwf_login_request')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"SiwfLoginRequestPayload": [
+							{
+								"name": 'message',
+								"type": 'string',
+							},
+						],
+					},
+					"primaryType": "SiwfLoginRequestPayload",
+					"domain": karma_request_domain,
+					"message": {
+						"message": 'your-app.com wants you to sign in with your Frequency account:\n' +
+							'f6akufkq9Lex6rT8RCEDRuoZQRgo5pWiRzeo81nmKNGWGNJdJ\n' +
+							'\n' +
+							'\n' +
+							'\n' +
+							'URI: https://your-app.com/signin/callback\n' +
+							'Nonce: N6rLwqyz34oUxJEXJ\n' +
+							'Issued At: 2024-10-29T19:17:27.077Z\n' +
+							'Expiration Time: 2060-03-05T23:23:03.041Z',
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
 		}
 		main()
 	</script>
@@ -437,5 +525,8 @@
 <button id="add_key_request">AddKey Sign</button>
 <button id="add_provider_request">AddProvider Sign</button>
 <button id="authorized_key_payload">AuthorizedKeyData Sign</button>
+<br><br>
+<button id="siwf_signed_request">SiwfSignedRequest Sign</button>
+<button id="siwf_login_request">SiwfLoginRequest Sign</button>
 </body>
 </html>

@@ -12,6 +12,8 @@ import {
   signEip712,
   HexString,
   verifyEip712Signature,
+  createSiwfSignedRequest,
+  createSiwfLoginRequestPayload,
 } from '../src';
 
 describe('Signature related tests', function () {
@@ -241,6 +243,48 @@ describe('Signature related tests', function () {
       const expected = {
         Ecdsa:
           '0xbafaf5e21695a502b2d356b4558da35245aa1be7161f01a5f0224fbfdf85b5c52898fc495ab1ca9b68c3b07e23d31a5fe1686165344b22bc14201f293d54f36b1b',
+      };
+
+      assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
+    });
+
+    it('should create a valid signature for SiwfSignedRequest', async function () {
+      const payload1 = createSiwfSignedRequest('https://localhost:44181', [2, 4, 5, 6, 7, 8]);
+      const signature = await signEip712(secretKey, payload1);
+
+      const expected = {
+        Ecdsa:
+          '0x68b18a8da75fcbddd62d53916173d636129b219f703aa4edb3b0dea51d61c0da606624f69012485d9b361cb0ddd3370f8e3c0b1b80249ddcca8300df1daa0f111c',
+      };
+
+      assert.deepEqual(signature, expected);
+      assert(
+        verifyEip712Signature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1),
+        'should verify'
+      );
+    });
+
+    it('should create a valid signature for SiwfLoginRequestPayload', async function () {
+      const payload1 = createSiwfLoginRequestPayload(
+        'your-app.com wants you to sign in with your Frequency account:\n' +
+          'f6akufkq9Lex6rT8RCEDRuoZQRgo5pWiRzeo81nmKNGWGNJdJ\n' +
+          '\n' +
+          '\n' +
+          '\n' +
+          'URI: https://your-app.com/signin/callback\n' +
+          'Nonce: N6rLwqyz34oUxJEXJ\n' +
+          'Issued At: 2024-10-29T19:17:27.077Z\n' +
+          'Expiration Time: 2060-03-05T23:23:03.041Z'
+      );
+      const signature = await signEip712(secretKey, payload1);
+
+      const expected = {
+        Ecdsa:
+          '0x4b428bc8cfce1469fab3196a4271033851c5e604b16a5945c117df35147709476767f118d9d75909a867346dd56f7d1539be1ae69b3b28aaa4ad790689ceb6fa1c',
       };
 
       assert.deepEqual(signature, expected);
