@@ -139,21 +139,30 @@ If the original wallet provider becomes unavailable or the user loses access to 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant RP as Recovery Provider
+    participant RP as Recovery Provider  
     participant F as Frequency
 
     Note over U,F: Account Recovery via Recovery Provider
     U->>RP: Request recovery with email and recovery code
-    RP->>F: Validate recovery key (H' = SHA-256(email || code_submitted || global salt))
-    F->>RP: Check if H' matches any MSA recovery hash
-    alt Match found
+    RP->>F: Validate recovery (email, recovery_code)
+    F->>RP: Return validation result
+    
+    alt Recovery hash not found
+        RP->>U: Recovery failed (invalid email or code)
+    else Recovery hash matches
         RP->>U: Email verification challenge (OTP)
         U->>RP: Submit OTP from email
-        RP->>F: Generate new control key for MSA
-        F->>RP: Add new control key to MSA
-        RP->>U: Return new control key and MSA ID
-    else No match found
-        RP->>U: Recovery failed (invalid email or code)
+        RP->>RP: Validate OTP
+        
+        alt OTP invalid
+            RP->>U: Recovery failed (invalid OTP)
+        else OTP valid
+            RP->>F: Retrieve MSA ID by recovery hash
+            F->>RP: Return MSA ID
+            RP->>F: Generate and add new control key to MSA
+            F->>RP: Confirm key added
+            RP->>U: Return new control key and MSA ID
+        end
     end
 ```
 
@@ -170,10 +179,9 @@ The provider likely presents a form for the user to input these. At this point, 
 
 #### 2. On-Chain Validation (Recovery Key)
 
-The recovery provider uses the submitted email+key to validate against the blockchain:
+The recovery provider uses the submitted email + recovery code to validate against the blockchain:
 
-- It computes the hash or encryption as was done initially. For example, it computes H' = SHA-256(email || code_submitted || global_salt).
-- It then looks up on the blockchain if any MSA record has a matching recovery hash H'. This can be done via a chain query. We assume the Frequency runtime provides a storage lookup like getMsaByRecoveryHash(H') -> msa_id (for efficiency), or the provider can scan their index of chain data. Because of the cryptographic strength of H’, a match should correspond to the correct user’s MSA ID.
+- It submits the recovery data to the blockchain and determine if any MSA record has a matching recovery hash. This can be done via an extrinsic `verify_recover_code(email, recovery_code)` as the hash is computed on-chain.
 - If no match is found, the recovery provider knows the provided key is invalid (or not current). Recovery is refused in that case (the provider will inform the user that the key or email is incorrect).
 - If a match is found, the provider obtains the MSA ID associated with that recovery hash. Let’s call this `target_msa`.
 
@@ -203,7 +211,7 @@ This design recommends giving the user the option, but in either case, a public 
 The recovery provider now submits a special Recovery extrinsic to the Frequency blockchain. This transaction does two main things atomically:
 
  1. Invalidate Old Recovery Key: It marks the stored recovery key for `target_msa` as used. This can be done by clearing the hash or flagging it so it cannot be reused. (For example, the extrinsic could set the recovery hash storage to 0 or remove that entry for the MSA.)
- 2. Add New Control Key: It adds the new public key to the list of control keys for `target_msa`. Frequency allows multiple control keys per MSA, so the chain will allow a recovery provider to add a new public key. The user must delegate this authority to the recovery provider. In this hash design, an elegant solution is: the extrinsic call could include the plaintext recovery secret (or its hash) as a parameter; the runtime hashes it and verifies it matches the stored hash for that MSA ￼. This way, the provider proves on-chain that it indeed has the secret. To avoid exposing the secret in plaintext on-chain, the extrinsic could take H’ (the hash) as input instead. But since H’ is stored and public, an attacker provider could try to reuse it; thus requiring the actual secret or a signature is safer. Another approach is having the provider sign the transaction with its own key (proving it’s authorized) and relying on off-chain enforcement of email verification (since governance oversight exists). For maximal security, we can do: recoverAccount(msa_id, recovery_code, new_pubkey) → runtime computes hash of (email||secret) and checks match & provider authorization. This ensures only a correct recovery_code unlocks the addition.
+ 2. Add New Control Key: It adds the new public key to the list of control keys for `target_msa`. Frequency allows multiple control keys per MSA, so the chain will allow a recovery provider to add a new public key. The user must delegate this authority to the recovery provider. In this hash design, an elegant solution is: the extrinsic call could include the plaintext recovery code (or its hash) as a parameter; the runtime hashes it and verifies it matches the stored hash for that MSA. This way, the provider proves on-chain that it indeed has the secret. To avoid exposing the secret in plaintext on-chain, the extrinsic could take H’ (the hash) as input instead. But since H’ is stored and public, an attacker provider could try to reuse it; thus requiring the actual secret or a signature is safer. Another approach is having the provider sign the transaction with its own key (proving it’s authorized) and relying on off-chain enforcement of email verification (since governance oversight exists). For maximal security, we can do: recoverAccount(msa_id, recovery_code, new_pubkey) → runtime computes hash of (email||secret) and checks match & provider authorization. This ensures only a correct recovery_code unlocks the addition.
 
 If all conditions are satisfied, the blockchain will append the new control public key to the user’s MSA. The MSA now has a fresh key that the user can use to authenticate. The old key (if the provider was custodial or lost) can optionally be removed by the user later (Frequency requires at least one control key at all times, so the new key is added before removing any old keys). In many cases, the original key might effectively be dead (since the provider that held it is gone), so just leaving it and adding a new one is fine, or the provider could call a RemoveKey if such exists. But removal might require user action once they log in with the new key.
 
@@ -218,7 +226,7 @@ At this point, the user can use a wallet (possibly the recovery provider’s int
 
 Additionally, the governance or Frequency network can record that “Recovery Provider X performed recovery for MSA Y at time Z.” Providers are trusted, but such events may be monitored to ensure no provider is abusing the system. If a provider is found adding keys without proper user requests, governance can revoke their recovery role. This provides an accountability layer.
 
-### 3. Post-Recovery: Re-Issuing Recovery Key
+### 7. Post-Recovery: Re-Issuing Recovery Key
 
 After a successful recovery, if the user continues with a new wallet/provider, they may want to set up a new recovery key for future safety (since the old one was consumed). The flow would essentially be the same as during account creation:
 
@@ -296,6 +304,41 @@ pub type RecoveryCode = [u8; 16];
 
 /// RecoveryHash is a 32-byte hash of the user’s email, recovery code and global salt.
 pub type RecoveryHash = [u8; 32];
+
+/// New Events for the Recovery System
+/// These events are emitted by the MSA pallet to indicate successful operations related to recovery keys.
+#[pallet::event]
+#[pallet::generate_deposit(pub(super) fn deposit_event)]
+pub enum Event<T: Config> {
+    /// A new MSA was created with a recovery key
+    MsaCreatedWithRecovery {
+        who: T::AccountId,
+        msa_id: MsaId,
+        recovery_code: String, // UUIDv4 formatted string
+    },
+    /// A recovery key was added to an existing MSA
+    RecoveryCodeAdded {
+        who: T::AccountId,
+        msa_id: MsaId,
+        recovery_code: String, // UUIDv4 formatted string
+    },
+    /// A recovery key was verified successfully
+    RecoveryCodeVerified {
+        who: T::AccountId,
+        msa_id: MsaId,
+    },
+    /// An account was recovered with a new control key
+    AccountRecovered {
+        who: T::AccountId,
+        msa_id: MsaId,
+        new_control_key: T::PublicKey, // New control key added to the MSA
+    },
+    /// A recovery key was invalidated after use
+    RecoveryCodeInvalidated {
+        who: T::AccountId,
+        msa_id: MsaId,
+    },
+}
 ```
 
 ### Storage Structures
@@ -312,11 +355,10 @@ pub type RecoveryHashToMsaId<T: Config> = StorageMap<_, Blake2_128Concat, Recove
 
 |Name/Description|Caller|Payment|Key Events|Runtime Added|
 |---|---|---|---|---|
-|`add_public_key_to_msa`<br />Add MSA control key| MSA Control Key or Provider with Signature | Capacity or Tokens | [`PublicKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyAdded)| 1|
-| `create_sponsored_account_with_delegation`<br />Create new MSA via Provider with a Delegation | Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`DelegationGranted`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.DelegationGranted) | 1|
-| `create_msa_for_email`<br />Create MSA with email and recovery code| Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`RecoveryKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyAdded)| 166|
-| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryKeyInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyInvalidated) | 166|
-| `verify_recovery_key`<br />Verify recovery key against stored hash| Recovery Provider| Capacity or Tokens | [`RecoveryKeyVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyVerified)| 166|
+| `create_msa_for_email`<br />Create MSA with email and recovery code| Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`RecoveryCodeAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeAdded)| 166|
+| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryCodeInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeInvalidated) | 166|
+| `verify_recovery_code`<br />Verify recovery key against stored hash| Recovery Provider| Capacity or Tokens | [`RecoveryCodeVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeVerified)| 166|
+| `add_recovery_key`<br />Add a new recovery key to an existing MSA| Provider| Capacity or Tokens | [`RecoveryCodeAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeAdded)| 166|
 
 ### Create MSA for Email
 
@@ -380,7 +422,8 @@ pub fn format_recovery_code_as_uuid(recovery_code: &RecoveryCode) -> String {
 This extrinsic is used by the recovery provider to verify a user’s recovery key against the stored hash. It checks if the provided email and recovery code match any existing MSA.
 
 ```rust
-pub fn verify_recovery_key(
+// Pseudo-code for verifying a recovery code and email
+pub fn verify_recovery_code(
     origin: OriginFor<T>,
     email: Vec<u8>,
     recovery_code: Vec<u8>,
@@ -388,14 +431,10 @@ pub fn verify_recovery_key(
     let who = ensure_signed(origin)?;
     let recovery_hash = hash_recovery_code(&email, &recovery_code);
 
-    // Check if the recovery hash matches any MSA
-    let msa_id = MsaRegistry::<T>::iter()
-        .find(|(_, data)| data.recovery_hash == recovery_hash)
-        .map(|(id, _)| id);
-
-    match msa_id {
-        Some(id) => {
-            Self::deposit_event(Event::RecoveryKeyVerified(who, id));
+    // Look up MSA ID using the recovery hash
+    match RecoveryHashToMsaId::<T>::get(&recovery_hash) {
+        Some(msa_id) => {
+            Self::deposit_event(Event::RecoveryKeyVerified { who, msa_id });
             Ok(())
         },
         None => Err(Error::<T>::RecoveryKeyNotFound.into()),
@@ -408,27 +447,57 @@ pub fn verify_recovery_key(
 This extrinsic is called by the recovery provider after verifying the user’s email and recovery code. It adds a new control key to the MSA and invalidates the old recovery key.
 
 ```rust
+// Pseudo-code for recovering an account with a new control key
 pub fn recover_account(
     origin: OriginFor<T>,
-    msa_id: MsaId,
+    email: Vec<u8>,
+    recovery_code: Vec<u8>,
     new_control_key: Vec<u8>,
 ) -> DispatchResult {
     let who = ensure_signed(origin)?;
+    let recovery_hash = hash_recovery_code(&email, &recovery_code);
 
-    // Ensure the MSA exists
-    ensure!(MsaRegistry::<T>::contains_key(msa_id), Error::<T>::MsaNotFound);
+    // Verify the recovery hash exists and get the MSA ID
+    let msa_id = RecoveryHashToMsaId::<T>::get(&recovery_hash)
+        .ok_or(Error::<T>::RecoveryKeyNotFound)?;
 
-    // Invalidate the old recovery key
-    MsaRegistry::<T>::mutate(msa_id, |data| {
-        data.recovery_hash = vec![]; // Clear the recovery hash
-    });
+    // Invalidate the old recovery key by removing it from storage
+    RecoveryHashToMsaId::<T>::remove(&recovery_hash);
 
-    // Add the new control key
-    MsaRegistry::<T>::mutate(msa_id, |data| {
-        data.control_keys.push(new_control_key);
-    });
+    // Add the new control key to the MSA
+    // Note: This would integrate with existing MSA pallet functionality
+    T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
-    Self::deposit_event(Event::AccountRecovered(who, msa_id));
+    Self::deposit_event(Event::AccountRecovered { who, msa_id });
+    Self::deposit_event(Event::RecoveryKeyInvalidated { msa_id });
+    
+    Ok(())
+}
+```
+
+### Add Recovery Key
+
+This extrinsic allows a provider to add a new recovery key to an existing MSA. It can be used during account creation or later to update the recovery key.
+
+```rust
+// Pseudo-code for adding a recovery key to an existing MSA
+pub fn add_recovery_key(
+    origin: OriginFor<T>,
+    msa_id: MsaId,
+    recovery_code: Vec<u8>,
+) -> DispatchResult {
+    let who = ensure_signed(origin)?;
+    
+    // Generate the recovery hash from the email and recovery code
+    let email = T::EmailProvider::get_email_for_msa(msa_id)
+        .ok_or(Error::<T>::MsaNotFound)?;
+    let recovery_hash = hash_recovery_code(&email, &recovery_code);
+
+    // Store the recovery hash with the MSA ID
+    RecoveryHashToMsaId::<T>::insert(recovery_hash, msa_id);
+
+    Self::deposit_event(Event::RecoveryCodeAdded { who, msa_id, recovery_code: format_recovery_code_as_uuid(&recovery_code) });
+    
     Ok(())
 }
 ```
