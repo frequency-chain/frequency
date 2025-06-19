@@ -77,8 +77,8 @@ When a user first creates an account (MSA) through a wallet provider, the provid
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant App as Pulse
-    participant EW as Turnkey
+    participant App as Provider App
+    participant EW as Provider Wallet
     participant SDK as Frequency SDK
     participant B as App Backend
     participant G as Gateway API
@@ -86,11 +86,11 @@ sequenceDiagram
 
     Note over U,F: Account Creation
     U->>App: Enter Email
-    App->>EW: Initiate Turnkey Account Creation
+    App->>EW: Initiate Provider Wallet Account Creation
     EW->>U: Send OTP email
     U->>App: Enter OTP
     App->>EW: Submit OTP
-    EW->>App: Confirm Turnkey ID and address
+    EW->>App: Confirm Provider Wallet ID and address
     App->>U: Request handle and delegations
     U->>App: Enter handle and confirm delegations
     App->>EW: Create second wallet for Frequency Control Key (secp256k1)
