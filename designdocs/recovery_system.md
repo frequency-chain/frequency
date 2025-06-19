@@ -1,6 +1,6 @@
 # Secure Recovery Key System Design for Frequency MSA
 
-## Introduction
+## Context and Scope
 
 When a Frequency blockchain user’s wallet provider becomes unavailable, recovering control of their on-chain identity (Message Source Account, MSA) is critical. This document designs a secure recovery key system that lets users regain access to their MSA ID through governance-approved recovery providers. It outlines the cryptographic scheme, end-to-end workflows, security rationale, and implementation considerations. The goal is a robust recovery process that preserves decentralization and user security, even if the original wallet or provider is lost.
 
@@ -285,139 +285,152 @@ In summary, the system meets the security requirements by layering cryptographic
 - The email check ensures the user’s physical identity is tied to the request.
 - Governance oversight ensures providers operate within strict guidelines.
 
-## Example Implementation (Node.js/NestJS)
+## On Chain Structure
 
-Below is a simplified example of how one might implement core parts of this system in Node.js/TypeScript (e.g. within a NestJS service). This includes generating the recovery code, verifying it, and constructing the on-chain transaction to add a new control key.
+### Primitives
 
-```typescript
-// Pseudocode/Example for recovery key generation and verification
+```rust
+/// RecoveryCode is a UUIDv4
+/// This is a 16-byte value, typically represented as a string in the format "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx".
+pub type RecoveryCode = [u8; 16];
 
-import *as crypto from 'crypto';
-// You might use a library like bip39 for real mnemonic generation:
-import* as bip39 from 'bip39';
+/// RecoveryHash is a 32-byte hash of the user’s email, recovery code and global salt.
+pub type RecoveryHash = [u8; 32];
+```
 
-class RecoveryService {
-  // 1. Generate a recovery key for a new user
-  generateRecoveryKey(userEmail: string): { recoveryPhrase: string, recoveryHash: string } {
-    // Generate 128-bit entropy
-    const entropy = crypto.randomBytes(16); // 16 bytes = 128 bits
-    const mnemonic = bip39.entropyToMnemonic(entropy.toString('hex'));
-    // Use BIP-39 to get a 12-word phrase from entropy
-    // (Alternatively, use crypto.randomUUID() for a UUID string)
+### Storage Structures
 
-    // Derive hash (store on-chain) combining email and mnemonic
-    const data = userEmail + ':' + mnemonic;
-    const hash = crypto.createHash('sha256').update(data).digest('hex'); 
-    // For stronger security, use a KDF:
-    // e.g., use crypto.pbkdf2Sync(data, salt, iterations, 32, 'sha256') to derive 32-byte key and take hex.
+```rust
+/// Storage type for a recovery hash record to MSA information
+/// - Key: RecoveryHash (32-byte hash of email + recovery code + global salt)
+/// - Value: ['MessageSourceId']
+#[pallet::storage]
+pub type RecoveryHashToMsaId<T: Config> = StorageMap<_, Blake2_128Concat, RecoveryHash, MsaId, OptionQuery>;
+```
+
+## Required Extrinsics
+
+|Name/Description|Caller|Payment|Key Events|Runtime Added|
+|---|---|---|---|---|
+|`add_public_key_to_msa`<br />Add MSA control key| MSA Control Key or Provider with Signature | Capacity or Tokens | [`PublicKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyAdded)| 1|
+| `create_sponsored_account_with_delegation`<br />Create new MSA via Provider with a Delegation | Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`DelegationGranted`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.DelegationGranted) | 1|
+| `create_msa_for_email`<br />Create MSA with email and recovery code| Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`RecoveryKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyAdded)| 166|
+| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryKeyInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyInvalidated) | 166|
+| `verify_recovery_key`<br />Verify recovery key against stored hash| Recovery Provider| Capacity or Tokens | [`RecoveryKeyVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryKeyVerified)| 166|
+
+### Create MSA for Email
+
+This extrinsic is used during account creation to register a new MSA with an associated recovery code. It combines the user’s email and the generated recovery key, storing the hash on-chain.
+
+```rust
+// Pseudo-code for creating an MSA with a recovery code
+pub fn create_msa_for_email(
+    origin: OriginFor<T>,
+    email: Vec<u8>,
+) -> DispatchResult {
+    let who = ensure_signed(origin)?;
+    let msa_id = MsaId::generate();
     
-    return { recoveryPhrase: mnemonic, recoveryHash: hash };
-  }
+    // Generate UUIDv4 on-chain
+    let recovery_code = generate_recovery_code()?;
+    let recovery_hash = hash_recovery_code(&email, &recovery_code);
 
-  // 2. Verify a submitted recovery key (during recovery)
-  verifyRecoveryKey(submittedEmail: string, submittedPhrase: string, onChainHash: string): boolean {
-    const data = submittedEmail + ':' + submittedPhrase;
-    const hash = crypto.createHash('sha256').update(data).digest('hex');
-    return hash === onChainHash;
-  }
+    // Store only the hash
+    RecoveryHashToMsaId::<T>::insert(recovery_hash, msa_id);
+
+    // Return the recovery code formatted as UUIDv4
+    let recovery_uuid = format_recovery_code_as_uuid(&recovery_code);
+    
+    Self::deposit_event(Event::MsaCreatedWithRecovery { 
+        who, 
+        msa_id, 
+        recovery_code: recovery_uuid,
+    });
+    
+    Ok(())
 }
 
-// Usage example:
-const recoverySvc = new RecoveryService();
-// On account creation:
-const { recoveryPhrase, recoveryHash } = recoverySvc.generateRecoveryKey(userEmail);
-console.log(`New recovery phrase for user: ${recoveryPhrase}`);
-// -> Store `recoveryHash` on-chain in the user's MSA record (via blockchain API)
+fn generate_recovery_code<T: Config>() -> Result<RecoveryCode, DispatchError> {
+    let random_seed = T::Randomness::random(b"recovery_code").0;
+    let mut recovery_code = [0u8; 16];
+    recovery_code.copy_from_slice(&random_seed[..16]);
+    
+    // Set version bits for UUIDv4
+    recovery_code[6] = (recovery_code[6] & 0x0f) | 0x40; // Version 4
+    recovery_code[8] = (recovery_code[8] & 0x3f) | 0x80; // Variant bits
+    
+    Ok(recovery_code)
+}
 
-// On recovery attempt:
-if (recoverySvc.verifyRecoveryKey(userEmail, userSubmittedPhrase, storedHash)) {
-    console.log('Recovery key is valid! Proceed with email OTP...');
-} else {
-    throw new Error('Invalid recovery key or email.');
+// Helper function to format RecoveryCode as UUIDv4 string for display
+pub fn format_recovery_code_as_uuid(recovery_code: &RecoveryCode) -> String {
+    format!(
+        "{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
+        recovery_code[0], recovery_code[1], recovery_code[2], recovery_code[3],
+        recovery_code[4], recovery_code[5],
+        recovery_code[6], recovery_code[7],
+        recovery_code[8], recovery_code[9],
+        recovery_code[10], recovery_code[11], recovery_code[12], recovery_code[13], recovery_code[14], recovery_code[15]
+    )
 }
 ```
 
-In a NestJS context, this logic might reside in a provider service (e.g. AccountRecoveryService) and be used by a controller handling HTTP requests from users.
+### Verify Recovery Key
 
-Generating a New Control Key: We can use Polkadot.js API to generate a key pair and submit the extrinsic:
+This extrinsic is used by the recovery provider to verify a user’s recovery key against the stored hash. It checks if the provided email and recovery code match any existing MSA.
 
-```typescript
-import { Keyring, ApiPromise, WsProvider } from '@polkadot/api';
+```rust
+pub fn verify_recovery_key(
+    origin: OriginFor<T>,
+    email: Vec<u8>,
+    recovery_code: Vec<u8>,
+) -> DispatchResult {
+    let who = ensure_signed(origin)?;
+    let recovery_hash = hash_recovery_code(&email, &recovery_code);
 
-// Suppose we've already connected to the chain:
-const api = await ApiPromise.create({ provider: new WsProvider('wss://frequency-network') });
+    // Check if the recovery hash matches any MSA
+    let msa_id = MsaRegistry::<T>::iter()
+        .find(|(_, data)| data.recovery_hash == recovery_hash)
+        .map(|(id, _)| id);
 
-// Recovery provider's account (assumes we have mnemonic or keypair)
-const keyring = new Keyring({ type: 'sr25519' });
-const providerAccount = keyring.addFromUri(process.env.RECOVERY_PROVIDER_MNEMONIC);
-
-// Generating a new user key pair (sr25519)
-const newUserKey = keyring.addFromUri(Keyring.generateMnemonic());
-const newPublicKey = newUserKey.publicKey;  // bytes
-
-// Construct extrinsic for recovery
-const msaId = 1234; // obtained after verifying recovery hash
-// In practice, the extrinsic might be something like:
-// api.tx.recovery.recoverAccount(msaId, userEmail, userRecoveryPhrase, '0x<newPubKey>')
-
-const extrinsic = api.tx.msa.addKeyToMsa(msaId, newPublicKey);
-// If recovery requires special call, e.g., api.tx.recovery.recoverAccount(msaId, newPublicKey, proof), use that.
-
-// Sign and send the extrinsic with the provider's key
-await extrinsic.signAndSend(providerAccount, ({ status, events }) => {
-  if (status.isInBlock) {
-    console.log(`Recovery transaction included in block ${status.asInBlock}`);
-  }
-  events.forEach(({ event }) => {
-    if (event.section === 'msa' && event.method === 'KeyAdded') {
-      console.log('New control key successfully added to MSA.');
+    match msa_id {
+        Some(id) => {
+            Self::deposit_event(Event::RecoveryKeyVerified(who, id));
+            Ok(())
+        },
+        None => Err(Error::<T>::RecoveryKeyNotFound.into()),
     }
-  });
-});
+}
 ```
 
-In this snippet, `api.tx.msa.addKeyToMsa` represents the Frequency chain call to add a control key. In reality, Frequency might have a different module or extrinsic for recovery – this is illustrative. We would replace it with the actual recovery extrinsic that checks the recovery hash (if implemented as such).
+### Recover Account
 
-Email Verification Flow (NestJS): The NestJS application for the recovery provider could use a mailer module to send the OTP. For example:
+This extrinsic is called by the recovery provider after verifying the user’s email and recovery code. It adds a new control key to the MSA and invalidates the old recovery key.
 
-```typescript
-// Pseudocode for sending verification email
-import { MailerService } from '@nestjs-modules/mailer';
+```rust
+pub fn recover_account(
+    origin: OriginFor<T>,
+    msa_id: MsaId,
+    new_control_key: Vec<u8>,
+) -> DispatchResult {
+    let who = ensure_signed(origin)?;
 
-const otpCode = generateRandomCode(); // e.g., 6-digit string
-await mailerService.sendMail({
-  to: userEmail,
-  subject: 'Frequency Account Recovery Code',
-  template: './recovery-code', // e.g., e-mail template
-  context: { code: otpCode }    // template variable
-});
-// Save otpCode in a short-lived store (e.g., in-memory cache or DB with TTL)
-// associated with the recovery session, to verify when the user submits it.
+    // Ensure the MSA exists
+    ensure!(MsaRegistry::<T>::contains_key(msa_id), Error::<T>::MsaNotFound);
+
+    // Invalidate the old recovery key
+    MsaRegistry::<T>::mutate(msa_id, |data| {
+        data.recovery_hash = vec![]; // Clear the recovery hash
+    });
+
+    // Add the new control key
+    MsaRegistry::<T>::mutate(msa_id, |data| {
+        data.control_keys.push(new_control_key);
+    });
+
+    Self::deposit_event(Event::AccountRecovered(who, msa_id));
+    Ok(())
+}
 ```
 
-The user would then provide the OTP via an API call, which the NestJS controller would verify against the stored code. If valid, proceed to call the blockchain extrinsic as shown.
-
-Note: Proper error handling, edge cases, and security (rate limiting, sanitization) are needed around these snippets. Also, the actual integration with Frequency’s chain may involve using their SDK or runtime calls for hashing on-chain.
-
-For instance, if the chain expects the hash of email+secret computed using the runtime’s hashing algorithm (which might be Blake2b or similar for Substrate), the provider should use the same algorithm to ensure consistency. The example above uses SHA-256 for conceptual simplicity, but in implementation we’d match whatever the chain uses (perhaps Frequency would define the hash method for recovery data).
-
-References to Standards:
- • The use of PBKDF2 in BlockSurvey’s recovery was chosen for wide support ￼; similarly, our use of standard crypto APIs in Node ensures interoperability and auditability.
- • The Argon2id recommendation from OWASP ￼ could be applied by using an Argon2 library in Node (e.g., argon2 package) for the hashing step. For example: argon2.hash(email + secret, { type: argon2.argon2id, memoryCost: 2**17, timeCost: 4, parallelism: 1 }) – this would produce a hash string we store on-chain, maximizing brute force resistance.
- • The BIP-39 library ensures the mnemonic conforms to the standard wordlist and checksum ￼, making it user-friendly and consistent with crypto best practices for backup phrases.
-
-By adhering to these practices and using well-tested libraries, the implementation will be robust and secure.
-
-Conclusion
-
-This design provides a secure, user-friendly, and governed method to recover lost accounts on Frequency. It balances decentralization (users ultimately hold their recovery secrets and new keys) with practical user experience (email-based verification is something users are familiar with). All components – from the cryptography (SHA-256/Argon2, AES, BIP-39) to the process logic (OTP verification, one-time use keys) – follow industry best practices and standards ￼ ￼.
-
-By implementing this system, Frequency can give users peace of mind that even if a wallet provider disappears, their on-chain identity is not lost forever. Instead, a secure recovery pathway exists, guarded by both cryptographic locks and real-world checks. This furthers Frequency’s mission of user sovereignty and resiliency, ensuring the longevity and trustworthiness of the ecosystem.
-
-Sources:
-
- 1. Frequency Network Documentation – Control Keys & Identity Management ￼ ￼
- 2. BIP-39 Standard Explanation – Ledger Academy ￼ ￼ (entropy and mnemonic security)
- 3. BlockSurvey Engineering Blog – Magic Recovery Code approach ￼ ￼ ￼ ￼
- 4. OWASP Cheat Sheet – Password Storage (Argon2id recommendation, hashing vs encryption) ￼ ￼
- 5. StackOverflow – Best practices for verification codes ￼ (secure email link vs code)
+## RPCs
