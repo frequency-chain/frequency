@@ -467,20 +467,7 @@
 			});
 
 			document.getElementById('siwf_login_request')?.addEventListener("click", async function () {
-				const signature_request = {
-					"types": {
-						...eip712domain_type_definition,
-						"SiwfLoginRequestPayload": [
-							{
-								"name": 'message',
-								"type": 'string',
-							},
-						],
-					},
-					"primaryType": "SiwfLoginRequestPayload",
-					"domain": karma_request_domain,
-					"message": {
-						"message": 'your-app.com wants you to sign in with your Frequency account:\n' +
+				const message = 'your-app.com wants you to sign in with your Frequency account:\n' +
 							'f6akufkq9Lex6rT8RCEDRuoZQRgo5pWiRzeo81nmKNGWGNJdJ\n' +
 							'\n' +
 							'\n' +
@@ -488,25 +475,16 @@
 							'URI: https://your-app.com/signin/callback\n' +
 							'Nonce: N6rLwqyz34oUxJEXJ\n' +
 							'Issued At: 2024-10-29T19:17:27.077Z\n' +
-							'Expiration Time: 2060-03-05T23:23:03.041Z',
-					}
-				}
-				console.log(JSON.stringify({
-					"method": "eth_signTypedData_v4",
-					"params": [
-						accounts[0],
-						signature_request
-					]
-				},null, 2));
+							'Expiration Time: 2060-03-05T23:23:03.041Z';
 				let signature = await window.ethereum.request({
-					"method": "eth_signTypedData_v4",
+					"method": "personal_sign",
 					"params": [
 						accounts[0],
-						signature_request
+						message
 					]
 				})
 				console.log(signature);
-				alert("Signature: " + signature)
+				alert("EIP-191 Signature: " + signature)
 			});
 
 		}

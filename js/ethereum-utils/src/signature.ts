@@ -19,6 +19,7 @@ import {
   SupportedPayloadTypes,
   SiwfSignedRequestPayload,
   SiwfLoginRequestPayload,
+  SignatureType,
 } from './payloads.js';
 import { assert, isHexString, isValidUint16, isValidUint32, isValidUint64String } from './utils.js';
 import { reverseUnifiedAddressToEthereumAddress } from './address.js';
@@ -35,7 +36,6 @@ import {
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PASSKEY_PUBLIC_KEY_DEFINITION,
-  SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION,
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
 } from './signature.definitions.js';
@@ -43,43 +43,69 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
 
 /**
- * Signing EIP-712 compatible signature for payload
+ * Signing EIP-712 or ERC-191 compatible signature based on payload
  * @param secretKey
  * @param payload
  * @param chain
  */
-export async function signEip712(
+export async function sign(
   secretKey: HexString,
   payload: SupportedPayload,
   chain: ChainType = 'Mainnet-Frequency'
 ): Promise<EcdsaSignature> {
-  const types = getTypesFor(payload.type);
+  const signatureType = getSignatureType(payload.type);
   const normalizedPayload = normalizePayload(payload);
   const wallet = new ethers.Wallet(secretKey);
-  // TODO: use correct chainID for different networks
-  // TODO: use correct contract address for different payloads
-  const signature = await wallet.signTypedData(EIP712_DOMAIN_DEFAULT, types, normalizedPayload);
+  let signature;
+  switch (signatureType) {
+    case 'EIP-712':
+      // TODO: use correct chainID for different networks
+      // TODO: use correct contract address for different payloads
+      signature = await wallet.signTypedData(EIP712_DOMAIN_DEFAULT, getTypesFor(payload.type), normalizedPayload);
+      break;
+    case 'EIP-191':
+      signature = await wallet.signMessage((payload as SiwfLoginRequestPayload).message);
+      break;
+    default:
+      throw new Error(`Unsupported signature type : ${signatureType}`);
+  }
+
   return { Ecdsa: signature } as EcdsaSignature;
 }
 
 /**
- * Verify EIP-712 signatures
+ * Verify EIP-712 and ERC-191 signatures based on payload
  * @param ethereumAddress
  * @param signature
  * @param payload
  * @param chain
  */
-export function verifyEip712Signature(
+export function verifySignature(
   ethereumAddress: HexString,
   signature: HexString,
   payload: SupportedPayload,
   chain: ChainType = 'Mainnet-Frequency'
 ): boolean {
-  const types = getTypesFor(payload.type);
+  const signatureType = getSignatureType(payload.type);
   const normalizedPayload = normalizePayload(payload);
-  // TODO: use correct chainID for different networks
-  // TODO: use correct contract address for different payloads
-  const recoveredAddress = ethers.verifyTypedData(EIP712_DOMAIN_DEFAULT, types, normalizedPayload, signature);
+  let recoveredAddress;
+  switch (signatureType) {
+    case 'EIP-712':
+      // TODO: use correct chainID for different networks
+      // TODO: use correct contract address for different payloads
+      recoveredAddress = ethers.verifyTypedData(
+        EIP712_DOMAIN_DEFAULT,
+        getTypesFor(payload.type),
+        normalizedPayload,
+        signature
+      );
+      break;
+    case 'EIP-191':
+      recoveredAddress = ethers.verifyMessage((payload as SiwfLoginRequestPayload).message, signature);
+      break;
+    default:
+      throw new Error(`Unsupported signature type : ${signatureType}`);
+  }
   return recoveredAddress.toLowerCase() === ethereumAddress.toLowerCase();
 }
 
@@ -141,7 +167,6 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
 
     // offchain signatures
     SiwfSignedRequest: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
-    SiwfLoginRequestPayload: SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION,
   };
 
   const definition = PAYLOAD_TYPE_DEFINITIONS[payloadType];
@@ -151,6 +176,14 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
   }
 
   return definition;
+}
+
+function getSignatureType(payloadType: string): SignatureType {
+  if (payloadType === 'SiwfLoginRequestPayload') {
+    return 'EIP-191';
+  } else {
+    return 'EIP-712';
+  }
 }
 
 /**
@@ -572,21 +605,6 @@ export function getEip712BrowserRequestSiwfSignedRequestPayload(
   const message = createSiwfSignedRequest(callback, permissions, userIdentifierAdminUrl);
   const normalized = normalizePayload(message);
   return createEip712Payload(SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION, message.type, domain, normalized);
-}
-
-/**
- * Returns the EIP-712 browser request for a SiwfLoginRequestPayload for signing.
- *
- * @param message        login message
- * @param domain
- */
-export function getEip712BrowserRequestSiwfLoginRequestPayload(
-  message: string,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
-): unknown {
-  const msg = createSiwfLoginRequestPayload(message);
-  const normalized = normalizePayload(msg);
-  return createEip712Payload(SIWF_LOGIN_REQUEST_PAYLOAD_DEFINITION, msg.type, domain, normalized);
 }
 
 function createEip712Payload(

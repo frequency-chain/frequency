@@ -181,3 +181,5 @@ export interface EipDomainPayload {
 }
 
 export type SupportedPayloadTypes = SupportedPayload['type'];
+
+export type SignatureType = 'EIP-712' | 'EIP-191';

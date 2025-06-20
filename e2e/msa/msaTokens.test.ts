@@ -7,7 +7,7 @@ import {
   ethereumAddressToKeyringPair,
   getUnifiedAddress,
   getUnifiedPublicKey,
-  signEip712,
+  sign,
 } from '@frequency-chain/ethereum-utils';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
@@ -61,7 +61,7 @@ async function generateSignedAuthorizedKeyPayload(keys: KeyringPair, payload: Au
     u8aToHex(payload.authorizedPublicKey),
     payload.expiration
   );
-  const ownerSig = await signEip712(
+  const ownerSig = await sign(
     u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(keys)).secretKey),
     signingPayload
   );
