@@ -29,6 +29,7 @@ pub use pallet_msa::Call as MsaCall;
 #[cfg(feature = "runtime-benchmarks")]
 use pallet_collective::ProposalCount;
 
+use crate::types::PayloadTypeDiscriminator;
 use common_primitives::node::AccountId;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
@@ -385,8 +386,10 @@ pub fn generate_and_sign_authorized_key_payload(
 	msa_owner_keys: &sr25519::Pair,
 	authorized_public_key: &sr25519::Pair,
 	expiration: Option<BlockNumber>,
-) -> (AuthorizedKeyData<Test>, Vec<u8>, MultiSignature) {
+	discriminant: Option<PayloadTypeDiscriminator>,
+) -> (AuthorizedKeyData<Test>, MultiSignature) {
 	let payload = AuthorizedKeyData::<Test> {
+		discriminant: discriminant.unwrap_or_else(|| PayloadTypeDiscriminator::AuthorizedKeyData),
 		msa_id,
 		expiration: match expiration {
 			Some(block_number) => block_number,
@@ -398,7 +401,7 @@ pub fn generate_and_sign_authorized_key_payload(
 	let encoded_payload = wrap_binary_data(payload.encode());
 	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
 
-	(payload, encoded_payload, signature)
+	(payload, signature)
 }
 
 pub fn generate_test_signature() -> MultiSignature {

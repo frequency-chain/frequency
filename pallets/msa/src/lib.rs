@@ -82,6 +82,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
+use crate::types::PayloadTypeDiscriminator;
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -1994,7 +1995,7 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 	/// `[ValidityError::MsaOwnershipInvalidSignature]` - payload verification failed (bad signature, duplicate signature, invalid payload, payload/signature mismatch)
 	/// `[ValidityError::IneligibleOrigin]` - transaction origin is an MSA control key
 	/// `[ValidityError::InsufficientBalanceToWithdraw]` - MSA balance is zero
-	/// `[ValidityError::InvalidMsaKey]` - signingg MSA control key does not match MSA ID in payload
+	/// `[ValidityError::InvalidMsaKey]` - signing MSA control key does not match MSA ID in payload
 	///
 	pub fn validate_msa_token_withdrawal(
 		receiver_account_id: &T::AccountId,
@@ -2009,6 +2010,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 			InvalidTransaction::Custom(ValidityError::NotKeyOwner as u8)
 		);
 
+		ensure!(
+			authorization_payload.discriminant == PayloadTypeDiscriminator::AuthorizedKeyData,
+			InvalidTransaction::Custom(ValidityError::MsaOwnershipInvalidSignature as u8)
+		);
 		ensure!(
 			Pallet::<T>::verify_signature(
 				msa_owner_proof,

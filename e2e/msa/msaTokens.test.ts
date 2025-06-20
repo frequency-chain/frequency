@@ -19,11 +19,12 @@ import {
   createAndFundKeypair,
   createKeys,
   DOLLARS,
+  generateAddKeyPayload,
   generateAuthorizedKeyPayload,
   getEthereumKeyPairFromUnifiedAddress,
+  signPayload,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
-import { Codec } from '@polkadot/types/types';
 
 const fundingSource = getFundingSource(import.meta.url);
 const TRANSFER_AMOUNT = 1n * DOLLARS;
@@ -168,6 +169,7 @@ describe('MSAs Holding Tokens', function () {
 
       // Default payload making it easier to test `withdrawTokens`
       defaultPayload = {
+        discriminant: 'AuthorizedKeyData',
         msaId,
         authorizedPublicKey: getUnifiedPublicKey(secondaryKey),
       };
@@ -185,6 +187,20 @@ describe('MSAs Holding Tokens', function () {
         name: 'RpcError',
         code: 1010,
         data: 'Custom error: 5', // NotKeyOwner,
+      });
+    });
+
+    it('should fail if signed payload is not actually an AuthorizedKeyData (MsaOwnershipInvalidSignature)', async function () {
+      const { discriminant, ...badPayload } = defaultPayload;
+      // Generate AddKeyData instead of AuthorizedKeyData (missing discriminator)
+      const payload = await generateAddKeyPayload(badPayload);
+      const signingPayload = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+      const ownerSig = signPayload(msaKeys, signingPayload);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload as AuthorizedKeyData);
+      await assert.rejects(op.signAndSend('current'), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 8', // MsaOwnershipInvalidSignature
       });
     });
 

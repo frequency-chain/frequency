@@ -114,6 +114,7 @@ describe('MSA Key management: delete keys and retire', function () {
     // Withdraw tokens from MSA account
     const receiverKeys = createKeys('receiver keys');
     const payload = await generateAuthorizedKeyPayload({
+      discriminant: 'AuthorizedKeyData',
       msaId,
       authorizedPublicKey: getUnifiedPublicKey(receiverKeys),
     });
