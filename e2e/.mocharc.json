@@ -4,7 +4,7 @@
   "extension": ["ts"],
   "parallel": true,
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
-  "import": "tsx/esm",
+  "import": "tsx",
   "spec": ["./{,!(node_modules|load-tests)/**}/*.test.ts"],
   "timeout": 20000
 }

@@ -2,7 +2,7 @@ import { H160 } from '@polkadot/types/interfaces';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { encodeAddress, ethereumEncode } from '@polkadot/util-crypto';
 import { hexToU8a, u8aToHex } from '@polkadot/util';
-import { Address20MultiAddress, EthereumKeyPair, HexString } from './payloads';
+import { Address20MultiAddress, EthereumKeyPair, HexString } from './payloads.js';
 import { ethers } from 'ethers';
 import { Keyring } from '@polkadot/api';
 import { Keypair } from '@polkadot/util-crypto/types';

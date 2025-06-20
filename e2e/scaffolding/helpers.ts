@@ -3,7 +3,7 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { u16, u32, u64, Option, Bytes } from '@polkadot/types';
 import type { FrameSystemAccountInfo, PalletCapacityCapacityDetails } from '@polkadot/types/lookup';
 import { Codec } from '@polkadot/types/types';
-import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
+import { hexToU8a, u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { mnemonicGenerate } from '@polkadot/util-crypto';
 import {
   verbose,
@@ -39,10 +39,9 @@ import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedS
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
-import { ethers } from 'ethers';
+import { ethers, keccak256 } from 'ethers';
 import { secp256k1PairFromSeed } from '@polkadot/util-crypto/secp256k1/pair/fromSeed';
 import { Keypair } from '@polkadot/util-crypto/types';
-import { keccak256 } from '@polkadot/wasm-crypto';
 
 export interface Account {
   uri: string;
@@ -247,7 +246,7 @@ export function createKeys(name: string = 'first pair', keyType: KeypairType = '
   let keyringPair;
   if (keyType === 'ethereum') {
     // since we don't have access to the secret key from inside the KeyringPair
-    const keypair = secp256k1PairFromSeed(keccak256(Buffer.from(mnemonic, 'utf8')));
+    const keypair = secp256k1PairFromSeed(hexToU8a(keccak256(Buffer.from(mnemonic, 'utf8'))));
     keyringPair = keyring.addFromPair(keypair, {}, keyType);
     ethereumKeys.set(getUnifiedAddress(keyringPair), keypair);
   } else {

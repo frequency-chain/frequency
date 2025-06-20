@@ -1,4 +1,4 @@
-import { HexString } from './payloads';
+import { HexString } from './payloads.js';
 
 /**
  * Validate that a number is a valid uint16 (0 to 65535)
