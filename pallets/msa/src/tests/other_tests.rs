@@ -32,6 +32,7 @@ use pretty_assertions::assert_eq;
 use sp_core::bytes::from_hex;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 extern crate alloc;
+use crate::types::PayloadTypeDiscriminator;
 use alloc::vec;
 
 pub fn assert_revoke_delegation_by_delegator_no_effect(
@@ -825,6 +826,7 @@ fn ethereum_eip712_signatures_for_authorized_key_should_work() {
 	new_test_ext().execute_with(|| {
 		let address = EthereumAddressMapper::to_account_id(&from_hex("0x7A23F8D62589aB9651722C7F4a0E998D7d3Ef2A9").unwrap_or_default());
 		let payload: AuthorizedKeyData<Test> = AuthorizedKeyData {
+			discriminant: PayloadTypeDiscriminator::AuthorizedKeyData,
 			msa_id: 12876327,
 			expiration: 100,
 			authorized_public_key: address.into(),
