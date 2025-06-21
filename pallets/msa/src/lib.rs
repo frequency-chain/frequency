@@ -139,6 +139,11 @@ pub mod pallet {
 		/// The origin that is allowed to create providers via governance
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// The origin that is allowed to approve recovery providers
+		type RecoveryProviderApprovalOrigin: EnsureOrigin<
+			<Self as frame_system::Config>::RuntimeOrigin,
+		>;
+
 		/// The runtime call dispatch type.
 		type Proposal: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
@@ -177,6 +182,13 @@ pub mod pallet {
 		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
+
+	/// Storage type for approved recovery providers
+	/// - Key: Provider MSA Id
+	/// - Value: [`bool`]
+	#[pallet::storage]
+	pub type RecoveryProviders<T: Config> =
+		StorageMap<_, Twox64Concat, ProviderId, bool, OptionQuery>;
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
@@ -301,6 +313,16 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
+		},
+		/// A recovery provider has been approved.
+		RecoveryProviderApproved {
+			/// The provider account ID
+			provider_id: ProviderId,
+		},
+		/// A recovery provider has been removed.
+		RecoveryProviderRemoved {
+			/// The provider account ID
+			provider_id: ProviderId,
 		},
 	}
 
@@ -981,10 +1003,76 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Approves a recovery provider via governance.
+		/// Only governance can approve recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderApproved`]
+		///
+		/// # Errors
+		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to approve recovery providers.
+		///
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::approve_recovery_provider())]
+		pub fn approve_recovery_provider(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+		) -> DispatchResult {
+			T::RecoveryProviderApprovalOrigin::ensure_origin(origin)?;
+
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+
+			RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
+
+			Self::deposit_event(Event::RecoveryProviderApproved {
+				provider_id: ProviderId(provider_msa_id),
+			});
+
+			Ok(())
+		}
+
+		/// Removes a recovery provider via governance.
+		/// Only governance can remove recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderRemoved`]
+		///
+		/// # Errors
+		///
+		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to remove recovery providers.
+		///
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::remove_recovery_provider())]
+		pub fn remove_recovery_provider(
+			origin: OriginFor<T>,
+			provider: ProviderId,
+		) -> DispatchResult {
+			T::RecoveryProviderApprovalOrigin::ensure_origin(origin)?;
+
+			RecoveryProviders::<T>::remove(provider);
+			Self::deposit_event(Event::RecoveryProviderRemoved { provider_id: provider });
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Check if a recovery provider is approved
+	///
+	/// # Arguments
+	/// * `provider`: The provider to check
+	///
+	/// # Returns
+	/// * [`bool`] - True if the provider is approved, false otherwise
+	pub fn is_approved_recovery_provider(provider: &ProviderId) -> bool {
+		RecoveryProviders::<T>::get(provider).unwrap_or(false)
+	}
+
 	/// Create the account for the `key`
 	///
 	/// # Errors
