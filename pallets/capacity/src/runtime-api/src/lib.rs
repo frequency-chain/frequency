@@ -29,7 +29,7 @@ sp_api::decl_runtime_apis! {
 	/// Runtime Version for Capacity
 	/// - MUST be incremented if anything changes
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(1)]
+	#[api_version(2)]
 	/// Runtime APIs for [Capacity](../pallet_capacity/index.html)
 	pub trait CapacityRuntimeApi<AccountId, Balance, BlockNumber> where
 		AccountId: Codec + MaybeDisplay,
@@ -39,5 +39,10 @@ sp_api::decl_runtime_apis! {
 		// state_call method: CapacityRuntimeApi_list_unclaimed_rewards
 		/// Get the list of unclaimed rewards information for each eligible Reward Era.
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>>;
+
+		// state_call method: CapacityRuntimeApi_get_thawed_balance
+		/// Get the unstaked, thawed balance of the given account.
+		fn get_thawed_balance(who: AccountId) -> Balance;
 	}
+
 }
