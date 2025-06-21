@@ -456,7 +456,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 166,
+	spec_version: 167,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -470,7 +470,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 166,
+	spec_version: 167,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -603,6 +603,14 @@ impl pallet_msa::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to approve recovery providers
+	#[cfg(feature = "frequency")]
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	#[cfg(not(feature = "frequency"))]
+	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,

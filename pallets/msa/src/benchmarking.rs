@@ -421,6 +421,40 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn remove_recovery_provider() -> Result<(), BenchmarkError> {
+		let account = create_account::<T>("account", 0);
+		let (provider_msa_id, _provider_public_key) =
+			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(account), ProviderId(provider_msa_id));
+
+		assert!(RecoveryProviders::<T>::get(ProviderId(provider_msa_id)).is_none());
+
+		Ok(())
+	}
+
+	#[benchmark]
+	fn approve_recovery_provider() -> Result<(), BenchmarkError> {
+		let account = create_account::<T>("account", 0);
+		let (provider_msa_id, provider_public_key) =
+			Msa::<T>::create_account(account.clone(), EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("Foo")));
+
+		assert!(ProviderToRegistryEntry::<T>::get(ProviderId(provider_msa_id)).is_some());
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(account), provider_public_key);
+
+		assert!(RecoveryProviders::<T>::get(ProviderId(provider_msa_id)).is_some());
+
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),
