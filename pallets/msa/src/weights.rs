@@ -46,6 +46,8 @@ pub trait WeightInfo {
 	fn propose_to_be_provider() -> Weight;
 	fn reindex_offchain() -> Weight;
 	fn withdraw_tokens() -> Weight;
+	fn approve_recovery_provider() -> Weight;
+	fn remove_recovery_provider() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -254,6 +256,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(5_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
+
+	fn approve_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_833_000 picoseconds.
+		Weight::from_parts(6_182_000, 0)
+	}
+
+	fn remove_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_833_000 picoseconds.
+		Weight::from_parts(6_182_000, 0)
+	}
 }
 
 // For backwards compatibility and tests.
@@ -460,6 +478,22 @@ impl WeightInfo for () {
 		Weight::from_parts(88_177_000, 6691)
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
+	}
+
+	fn approve_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_833_000 picoseconds.
+		Weight::from_parts(6_182_000, 0)
+	}
+
+	fn remove_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 5_833_000 picoseconds.
+		Weight::from_parts(6_182_000, 0)
 	}
 }
 

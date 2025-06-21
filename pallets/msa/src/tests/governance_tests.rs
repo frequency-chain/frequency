@@ -6,7 +6,8 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
 
-use crate::{tests::mock::*, Error};
+use crate::{tests::mock::*, Error, Event};
+use sp_runtime::DispatchError::BadOrigin;
 
 #[test]
 fn create_provider_via_governance_happy_path() {
@@ -131,5 +132,98 @@ fn propose_to_be_provider_long_name_should_fail() {
 		);
 
 		assert_noop!(proposal_res, Error::<Test>::ExceedsMaxProviderNameSize);
+	})
+}
+
+#[test]
+fn approve_recovery_provider_happy_path() {
+	new_test_ext().execute_with(|| {
+		let provider = test_public(1);
+
+		// Approve recovery provider via governance
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider.clone()
+		));
+
+		assert!(Msa::is_approved_recovery_provider(&provider));
+
+		System::assert_last_event(Event::RecoveryProviderApproved { provider }.into());
+	})
+}
+
+#[test]
+fn remove_recovery_provider_happy_path() {
+	new_test_ext().execute_with(|| {
+		let provider = test_public(1);
+
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider.clone()
+		));
+
+		assert!(Msa::is_approved_recovery_provider(&provider));
+
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider.clone()
+		));
+
+		assert!(!Msa::is_approved_recovery_provider(&provider));
+
+		System::assert_last_event(Event::RecoveryProviderRemoved { provider }.into());
+	})
+}
+
+#[test]
+fn approve_recovery_provider_unauthorized_should_fail() {
+	new_test_ext().execute_with(|| {
+		let provider = test_public(1);
+
+		assert_noop!(
+			Msa::approve_recovery_provider(
+				RuntimeOrigin::signed(provider.clone()),
+				provider.clone()
+			),
+			BadOrigin
+		);
+
+		assert!(!Msa::is_approved_recovery_provider(&provider));
+	})
+}
+
+#[test]
+fn remove_recovery_provider_unauthorized_should_fail() {
+	new_test_ext().execute_with(|| {
+		let provider = test_public(1);
+
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider.clone()
+		));
+
+		assert_noop!(
+			Msa::remove_recovery_provider(
+				RuntimeOrigin::signed(provider.clone()),
+				provider.clone()
+			),
+			BadOrigin
+		);
+
+		assert!(Msa::is_approved_recovery_provider(&provider));
+	})
+}
+
+#[test]
+fn remove_nonexistent_recovery_provider_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let provider = test_public(1);
+
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			provider.clone()
+		));
+
+		System::assert_last_event(Event::RecoveryProviderRemoved { provider }.into());
 	})
 }

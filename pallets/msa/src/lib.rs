@@ -178,6 +178,18 @@ pub mod pallet {
 		OptionQuery,
 	>;
 
+	/// Storage type for approved recovery providers
+	/// - Key: Provider MSA Id
+	/// - Value: [`bool`]
+	#[pallet::storage]
+	pub type RecoveryProviders<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::AccountId,
+		bool,
+		OptionQuery,
+	>;
+
 	/// Provider registration information
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
@@ -301,6 +313,16 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
+		},
+		/// A recovery provider has been approved.
+		RecoveryProviderApproved {
+			/// The provider account ID
+			provider: T::AccountId,
+		},
+		/// A recovery provider has been removed.
+		RecoveryProviderRemoved {
+			/// The provider account ID
+			provider: T::AccountId,
 		},
 	}
 
@@ -981,10 +1003,66 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Approves a recovery provider via governance.
+		/// Only governance can approve recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderApproved`]
+		///
+		/// # Errors
+		/// * [`Error::NotGovernanceOrigin`] - Caller is not authorized to approve recovery providers.
+		///
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::approve_recovery_provider())]
+		pub fn approve_recovery_provider(
+			origin: OriginFor<T>,
+			provider: T::AccountId,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+
+			RecoveryProviders::<T>::insert(&provider, true);
+			Self::deposit_event(Event::RecoveryProviderApproved { provider });
+			Ok(())
+		}
+
+		/// Removes a recovery provider via governance.
+		/// Only governance can remove recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderRemoved`]
+		///
+		/// # Errors
+		///
+		/// * [`Error::NotGovernanceOrigin`] - Caller is not authorized to remove recovery providers.
+		///
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::remove_recovery_provider())]
+		pub fn remove_recovery_provider(
+			origin: OriginFor<T>,
+			provider: T::AccountId,
+		) -> DispatchResult {
+			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
+
+			RecoveryProviders::<T>::remove(&provider);
+			Self::deposit_event(Event::RecoveryProviderRemoved { provider });
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Check if a recovery provider is approved
+	///
+	/// # Arguments
+	/// * `provider`: The provider to check
+	///
+	/// # Returns
+	/// * [`bool`] - True if the provider is approved, false otherwise
+	pub fn is_approved_recovery_provider(provider: &T::AccountId) -> bool {
+		RecoveryProviders::<T>::get(provider).unwrap_or(false)
+	}
+
 	/// Create the account for the `key`
 	///
 	/// # Errors
