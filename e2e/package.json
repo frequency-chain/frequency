@@ -28,7 +28,7 @@
     "@polkadot-api/merkleize-metadata": "^1.1.18",
     "@polkadot/api": "16.2.1",
     "@polkadot/types": "16.2.1",
-    "@polkadot/util": "13.5.1",
+    "@polkadot/util": "13.5.2",
     "ethers": "^6.14.4",
     "helia": "^5.4.2",
     "multiformats": "^13.3.7",
