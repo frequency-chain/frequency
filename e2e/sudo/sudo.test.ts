@@ -26,10 +26,10 @@ describe('Sudo required', function () {
   let fundingSource: KeyringPair;
   let schemaName: string;
 
-  before(function () {
+  before(async function () {
     if (isTestnet()) this.skip();
     sudoKey = getSudo().keys;
-    fundingSource = getFundingSource(import.meta.url);
+    fundingSource = await getFundingSource(import.meta.url);
     schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
   });
 

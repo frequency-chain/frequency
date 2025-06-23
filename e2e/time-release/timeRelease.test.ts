@@ -7,12 +7,13 @@ import { getFundingSource } from '../scaffolding/funding';
 
 const DOLLARS: number = 100000000; // 100_000_000
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('TimeRelease', function () {
   let vesterKeys: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     vesterKeys = await createAndFundKeypair(fundingSource, 50_000_000n);
   });
 

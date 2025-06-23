@@ -17,7 +17,7 @@ import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedS
 import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Signature Required Itemized', function () {
   let itemizedSchemaId: SchemaId;
@@ -31,6 +31,7 @@ describe('📗 Stateful Pallet Storage Signature Required Itemized', function ()
   let itemizedActionsSignedPayload;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     [
       // Create a provider. This provider will NOT be granted delegations;
       // methods requiring a payload signature do not require a delegation

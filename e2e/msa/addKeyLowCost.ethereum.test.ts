@@ -17,16 +17,17 @@ import assert from 'assert';
 import { getFundingSource } from '../scaffolding/funding';
 import { u64 } from '@polkadot/types';
 import { MessageSourceId } from '@frequency-chain/api-augment/interfaces';
-import { createAddKeyData, signEip712 } from '@frequency-chain/ethereum-utils';
+import { createAddKeyData, sign } from '@frequency-chain/ethereum-utils';
 import { u8aToHex } from '@polkadot/util';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('adding an Ethereum key for low cost', function () {
   let providerKeys;
   let providerMsaId;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     providerKeys = await createKeys('KeyAdder');
     providerMsaId = await createMsaAndProvider(fundingSource, providerKeys, 'KeyAdder', 10n * CENTS);
     await stakeToProvider(fundingSource, fundingSource, providerMsaId, 6n * DOLLARS);
@@ -70,7 +71,7 @@ describe('adding an Ethereum key for low cost', function () {
       u8aToHex(addKeyPayload.newPublicKey),
       addKeyPayload.expiration
     );
-    const ecdsaSignature = await signEip712(ethereumSecretKey, eip712AddKeyData);
+    const ecdsaSignature = await sign(ethereumSecretKey, eip712AddKeyData);
 
     return { addKeyPayload, delegatorSig: delegatorSrSignature, newSig: ecdsaSignature };
   }

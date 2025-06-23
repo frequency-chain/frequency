@@ -141,6 +141,24 @@ export interface AddProvider {
   expiration: number;
 }
 
+export interface SiwfSignedRequestPayload {
+  // type discriminator
+  type: 'SiwfSignedRequestPayload';
+  // callback url
+  callback: string;
+  // uint16[] type schema ids
+  permissions: number[];
+  // Only used for custom integration situations.
+  userIdentifierAdminUrl?: string;
+}
+
+export interface SiwfLoginRequestPayload {
+  // type discriminator
+  type: 'SiwfLoginRequestPayload';
+  // message url
+  message: string;
+}
+
 export type SupportedPayload =
   | PaginatedUpsertSignaturePayloadV2
   | PaginatedDeleteSignaturePayloadV2
@@ -149,7 +167,9 @@ export type SupportedPayload =
   | ClaimHandlePayload
   | AddKeyData
   | AuthorizedKeyData
-  | AddProvider;
+  | AddProvider
+  | SiwfSignedRequestPayload
+  | SiwfLoginRequestPayload;
 
 export type NormalizedSupportedPayload = Omit<SupportedPayload, 'type'>;
 
@@ -161,3 +181,5 @@ export interface EipDomainPayload {
 }
 
 export type SupportedPayloadTypes = SupportedPayload['type'];
+
+export type SignatureType = 'EIP-712' | 'EIP-191';

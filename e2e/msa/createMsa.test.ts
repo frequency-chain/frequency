@@ -5,12 +5,13 @@ import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Create Accounts', function () {
   let keys: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
   });
 
