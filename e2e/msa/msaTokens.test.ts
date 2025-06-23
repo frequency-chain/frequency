@@ -26,7 +26,7 @@ import {
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 const TRANSFER_AMOUNT = 1n * DOLLARS;
 
 /**
@@ -79,6 +79,7 @@ describe('MSAs Holding Tokens', function () {
   let ethAddress20: H160;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     ethAddress20 = ExtrinsicHelper.apiPromise.createType('H160', hexToU8a(CHECKSUMMED_ETH_ADDR_1234));
     ethKeys = ethereumAddressToKeyringPair(ethAddress20);
   });

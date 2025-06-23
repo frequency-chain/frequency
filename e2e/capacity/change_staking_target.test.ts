@@ -10,11 +10,16 @@ import {
   DOLLARS,
   createProviderKeysAndId,
 } from '../scaffolding/helpers';
+import { KeyringPair } from '@polkadot/keyring/types';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity: change_staking_target', function () {
   const tokenMinStake: bigint = 1n * CENTS;
+
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
 
   it('successfully stake tokens to a provider', async function () {
     const providerBalance = 2n * DOLLARS;

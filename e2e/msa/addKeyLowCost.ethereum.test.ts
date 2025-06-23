@@ -20,13 +20,14 @@ import { MessageSourceId } from '@frequency-chain/api-augment/interfaces';
 import { createAddKeyData, sign } from '@frequency-chain/ethereum-utils';
 import { u8aToHex } from '@polkadot/util';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('adding an Ethereum key for low cost', function () {
   let providerKeys;
   let providerMsaId;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     providerKeys = await createKeys('KeyAdder');
     providerMsaId = await createMsaAndProvider(fundingSource, providerKeys, 'KeyAdder', 10n * CENTS);
     await stakeToProvider(fundingSource, fundingSource, providerMsaId, 6n * DOLLARS);

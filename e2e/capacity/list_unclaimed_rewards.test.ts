@@ -14,10 +14,14 @@ import { isTestnet } from '../scaffolding/env';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity: list_unclaimed_rewards', function () {
   const providerBalance = 2n * DOLLARS;
+
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
 
   const setUpForBoosting = async (boosterName: string, providerName: string): Promise<[number, KeyringPair]> => {
     const booster = await createAndFundKeypair(fundingSource, 5n * DOLLARS, boosterName);

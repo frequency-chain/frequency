@@ -16,7 +16,7 @@ import {
 import { SchemaGrantResponse } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Delegation Scenario Tests: Revocation', function () {
   let keys: KeyringPair;
@@ -29,6 +29,7 @@ describe('Delegation Scenario Tests: Revocation', function () {
   let msaId: u64;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Fund all the different keys
     [keys, revokeKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(
       fundingSource,

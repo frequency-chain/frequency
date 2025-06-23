@@ -13,9 +13,13 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { createPassKeyAndSignAccount, createPassKeyCall, createPasskeyPayload } from '../scaffolding/P256';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Passkey Pallet Ethereum Tests', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('passkey ethereum tests', function () {
     let fundedSr25519Keys: KeyringPair;
     let fundedEthereumKeys: KeyringPair;

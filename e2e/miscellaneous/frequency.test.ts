@@ -8,9 +8,13 @@ import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Frequency', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('setup', function () {
     let keypairA: KeyringPair;
     let keypairB: KeyringPair;

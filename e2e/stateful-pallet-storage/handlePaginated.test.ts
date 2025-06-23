@@ -19,7 +19,7 @@ import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
 const badSchemaId = 65_534;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Paginated', function () {
   let schemaId: SchemaId;
@@ -31,6 +31,7 @@ describe('📗 Stateful Pallet Storage Paginated', function () {
   let badMsaId: u64;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     [
       // Create a provider for the MSA, the provider will be used to grant delegation
       [providerKeys, providerId],
