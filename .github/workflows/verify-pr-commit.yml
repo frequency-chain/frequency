@@ -7,17 +7,14 @@ on:
   pull_request:
     branches:
       - main
-<<<<<<< HEAD
       - "**-development" # Feature Branches should suffix with -development
+      - "*-development" # Feature Branches should suffix with -development
+      - "feat/eth-bridging-development" # This feature branch isn't matching the above pattern??
       - hotfix/**
 # Set default permissions as restrictive
 permissions:
   contents: read
   packages: read
-=======
-      - "*-development" # Feature Branches should suffix with -development
-      - "feat/eth-bridging-development" # This feature branch isn't matching the above pattern??
->>>>>>> 77a54067f (Feat/add xcm runtime apis (#2407))
 env:
   BIN_DIR_DEBUG: target/debug
   PR_LABEL_METADATA_CHANGED: metadata-changed
