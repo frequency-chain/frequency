@@ -182,13 +182,8 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`bool`]
 	#[pallet::storage]
-	pub type RecoveryProviders<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		ProviderId,
-		bool,
-		OptionQuery,
-	>;
+	pub type RecoveryProviders<T: Config> =
+		StorageMap<_, Twox64Concat, ProviderId, bool, OptionQuery>;
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
@@ -1022,11 +1017,16 @@ pub mod pallet {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ensure!(Self::is_registered_provider(provider_msa_id), Error::<T>::ProviderNotRegistered);
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
 
 			RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
-	
-			Self::deposit_event(Event::RecoveryProviderApproved { provider_id: ProviderId(provider_msa_id) });
+
+			Self::deposit_event(Event::RecoveryProviderApproved {
+				provider_id: ProviderId(provider_msa_id),
+			});
 
 			Ok(())
 		}
