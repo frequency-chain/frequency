@@ -2,19 +2,19 @@
 
 ## Context and Scope
 
-When a Frequency blockchain user’s wallet provider becomes unavailable, recovering control of their on-chain identity (Message Source Account, MSA) is critical. This document designs a secure recovery key system that lets users regain access to their MSA ID through governance-approved recovery providers. It outlines the cryptographic scheme, end-to-end workflows, security rationale, and implementation considerations. The goal is a robust recovery process that preserves decentralization and user security, even if the original wallet or provider is lost.
+When a Frequency blockchain user’s wallet provider becomes unavailable, recovering control of their on-chain identity (Message Source Account, MSA) is critical. This document designs a secure account recovery system that lets users regain access to their MSA ID through governance-approved recovery providers. It outlines the cryptographic scheme, end-to-end workflows, security rationale, and implementation considerations. The goal is a robust recovery process that preserves decentralization and user security, even if the original wallet or provider is lost.
 
 ## Key Requirements
 
 ### Functional Requirements
 
-1. Recovery Key Generation: On MSA creation, the wallet provider collects the user’s email and generates a recovery key using a reversible combination of the email with a random salt/seed (e.g. a BIP-39 seed phrase). The resulting key (or a cryptographic derivative) is securely stored on-chain (encrypted or hashed) to allow future recovery.
+1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s preferred contact method and generates a Recovery Secret using a reversible combination of the email with a random salt/seed (e.g. a BIP-39 seed phrase). The resulting key (or a cryptographic derivative) is securely stored on-chain (encrypted or hashed) to allow future recovery.
 
-2. Single Active Key: Only one recovery key exists per user at any time. If a recovery key is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new recovery key for future use, but duplicate or old keys cannot remain active simultaneously.
+2. Single Active Key: A maximum of one Recovery Secret exists per user at any time. If a Recovery Secret is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new Recovery Secret for future use, but duplicate or old keys cannot remain active simultaneously.
 
-3. Governance-Approved Providers: Recovery operations are performed by special recovery providers that are approved via on-chain governance (listed in a registry). When a user needs account recovery, they contact one of these trusted providers and submit their recovery key along with their email address.
+3. Governance-Approved Providers: Recovery operations are performed by special recovery providers that are approved via on-chain governance (listed in a registry). When a user needs account recovery, they contact one of these providers trusted to do the email verification and submit their recovery secret along with their preferred contact information.
 
-4. Validation by Provider: The recovery provider must validate two things off-chain: (a) the submitted recovery key (in combination with the email) matches the on-chain record for some MSA ID (proving the key is valid for that account), and (b) the provided email is truly controlled by the user (via a secure email verification challenge). Only if both checks pass is recovery authorized.
+4. Validation by Provider: The recovery provider must validate two things off-chain: (a) the submitted Recovery Secret (in combination with the email) matches the on-chain record for some MSA ID (proving the key is valid for that account), and (b) the provided email is truly controlled by the user (via a secure email verification challenge). Only if both checks pass is recovery authorized.
 
 5. On-Chain Key Addition: After successful validation, the recovery provider generates a new control key for the user (typically a new key pair) and uses a blockchain transaction to associate this new key with the user’s MSA ID on-chain. This effectively restores user control. The old compromised or inaccessible key can be removed or left unused; the new key will have full control of the MSA.
 
@@ -22,19 +22,19 @@ When a Frequency blockchain user’s wallet provider becomes unavailable, recove
 
 ### Security Requirements
 
-1. High Entropy & Cryptographic Strength: The recovery key generation scheme must provide sufficient entropy and cryptographic strength to resist guessing or brute-force attacks. The reversible combination (email + salt/seed) should yield an unpredictable secret with at least 128-bit security.
+1. High Entropy & Cryptographic Strength: The Recovery Secret generation scheme must provide sufficient entropy and cryptographic strength to resist guessing or brute-force attacks. The reversible combination (email + salt/seed) should yield an unpredictable secret with at least 128-bit security.
 
-2. Secure Email Verification: The email-based authentication step must be implemented securely to avoid vulnerabilities. The system should ensure that possession of the email account is verified via robust methods (e.g. time-bound one-time codes or magic links) without exposing the recovery key or other secrets. No sensitive data is sent via email; only random verification tokens are.
+2. Secure Email Verification: The email-based authentication step must be implemented securely to avoid vulnerabilities. The system should ensure that possession of the email account is verified via robust methods (e.g. time-bound one-time codes or magic links) without exposing the Recovery Secret or other secrets. No sensitive data is sent via email; only random verification tokens are.
 
-3. Brute Force Resistance: Recovery keys (as stored on-chain) must be resistant to brute force and offline attacks. An attacker who obtains the on-chain hash should not be able to feasibly crack it to derive the email or recovery code. The design should incorporate strong cryptographic hashing or encryption to protect against precomputation and exhaustive search.
+3. Brute Force Resistance: Recovery Hashes (as stored on-chain) must be resistant to brute force and offline attacks. An attacker who obtains the on-chain hash should not be able to feasibly crack it to derive the email or recovery code. The design should incorporate strong cryptographic hashing or encryption to protect against precomputation and exhaustive search.
 
 The following sections detail the cryptographic design meeting these requirements, the recovery workflows (with sequence diagrams), security analysis, and an example implementation snippet.
 
 ## Cryptographic Design & Rationale
 
-### Recovery Key Composition
+### Recovery Secret Composition
 
-Each user’s recovery key is derived from a combination of their email address and a random secret. This design proposes using a BIP-39 mnemonic seed phrase (12 or 24 words) or a UUIDv4 as the random secret component due to their high entropy and user-friendliness. A 12-word BIP-39 phrase encodes 128 bits of entropy, which is ~3.4 x 10^38 possibilities – effectively impossible to brute force (UUIDv4 is ~5.3 x 10^36). For even greater security, a 24-word phrase (256-bit) can be used.
+Each user’s Recovery Secret is derived from a combination of their email address and a random secret. This design proposes using a BIP-39 mnemonic seed phrase (12 or 24 words) or a UUIDv4 as the random secret component due to their high entropy and user-friendliness. A 12-word BIP-39 phrase encodes 128 bits of entropy, which is ~3.4 x 10^38 possibilities – effectively impossible to brute force (UUIDv4 is ~5.3 x 10^36). For even greater security, a 24-word phrase (256-bit) can be used.
 
 ### Key Generation (Email + Salt/Seed)
 
@@ -53,26 +53,26 @@ This design uses a modern hash or Key Derivation Function (KDF) to protect the r
 
 ### On-Chain Storage
 
-The resulting recovery key hash (or encrypted blob) is stored in the Frequency blockchain’s state, associated with the user’s MSA ID. This could be in a dedicated Recovery Key Registry mapping MSA ID -> recovery_hash (or cipher). Alternatively, it can be stored as a field in the MSA’s on-chain record. Only the hashed/encrypted form is stored – the plaintext email or seed are never exposed on-chain, preserving privacy. Even if an attacker scans the chain state, they see only a random 256-bit value per account, not an email or any directly usable key.
+The resulting Recovery Secret hash (or encrypted blob) is stored in the Frequency blockchain’s state, associated with the user’s MSA ID. This could be in a dedicated Recovery Secret Registry mapping MSA ID -> recovery_hash (or cipher). Alternatively, it can be stored as a field in the MSA’s on-chain record. Only the hashed/encrypted form is stored – the plaintext email or seed are never exposed on-chain, preserving privacy. Even if an attacker scans the chain state, they see only a random 256-bit value per account, not an email or any directly usable key.
 
-### Recovery Key Distribution to User
+### Recovery Secret Distribution to User
 
-After generation, the plaintext recovery code is given to the user to hold. The provider must instruct the user to safely back up this recovery key, similar to how one would back up a wallet mnemonic. If possible, it should not be emailed or transmitted insecurely; ideally it’s shown in-app for the user to write down, or delivered via an end-to-end encrypted channel. The user’s email is only used for verification later, not for sending the secret itself. This ensures that possession of the recovery key is limited to the user (something they have), complementing the email verification (something they control). This two-factor approach is still secure if the recovery code is sent via email, as long as the email verification step is robust. It is however, more secure to avoid sending the recovery key via email entirely.
+After generation, the plaintext recovery code is given to the user to hold. The provider must instruct the user to safely back up this Recovery Secret, similar to how one would back up a wallet mnemonic. If possible, it should not be emailed or transmitted insecurely; ideally it’s shown in-app for the user to write down, or delivered via an end-to-end encrypted channel. The user’s email is only used for verification later, not for sending the secret itself. This ensures that possession of the Recovery Secret is limited to the user (something they have), complementing the email verification (something they control). This two-factor approach is still secure if the recovery code is sent via email, as long as the email verification step is robust. It is however, more secure to avoid sending the Recovery Secret via email entirely.
 
 ### Entropy and Security
 
-By using a cryptographically secure random secret of ~128+ bits, we ensure the recovery key cannot be guessed or enumerated by attackers. A 128-bit key has 2^128 possibilities, which is beyond computational reach. For context, a 12-word BIP-39 phrase provides ~128 bits of security, and 24 words ~256 bits. In practice, 128-bit is considered secure for the foreseeable future, meeting [NIST’s](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-131Ar2.pdf]) recommended minimum of ~112-bit security strength for new systems, and aligning with 128-bit standards for encryption and hashing going forward. This high entropy addresses the security requirement for brute force resistance.
+By using a cryptographically secure random secret of ~128+ bits, we ensure the Recovery Secret cannot be guessed or enumerated by attackers. A 128-bit key has 2^128 possibilities, which is beyond computational reach. For context, a 12-word BIP-39 phrase provides ~128 bits of security, and 24 words ~256 bits. In practice, 128-bit is considered secure for the foreseeable future, meeting [NIST’s](https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-131Ar2.pdf]) recommended minimum of ~112-bit security strength for new systems, and aligning with 128-bit standards for encryption and hashing going forward. This high entropy addresses the security requirement for brute force resistance.
 
 ### One-time Use & Rotation
 
-The on-chain design allows single-use recovery keys. The chain will enforce that only one recovery key entry exists per MSA. If a recovery key is ever used in the recovery process, the act of recovery will trigger its invalidation (removal). To implement this, the recovery extrinsic (described later) will clear the stored hash or mark it as used. This prevents re-play: an attacker can’t re-use an old recovery key to perform a second recovery on the same account. If the user wants to regain a recovery option after using it, they (with their newly recovered access) can register a fresh recovery key with a provider. This fulfills the requirement that “the previous recovery code becomes invalid” after use.
-Secure Recovery Key System Design for Frequency MSA
+The on-chain design allows single-use Recovery Secrets. The chain will enforce that only one Recovery Secret entry exists per MSA. If a Recovery Secret is ever used in the recovery process, the act of recovery will trigger its invalidation (removal). To implement this, the recovery extrinsic (described later) will clear the stored hash or mark it as used. This prevents re-play: an attacker can’t re-use an old Recovery Secret to perform a second recovery on the same account. If the user wants to regain a recovery option after using it, they (with their newly recovered access) can register a fresh Recovery Secret with a provider. This fulfills the requirement that “the previous recovery code becomes invalid” after use.
+Secure Recovery Secret System Design for Frequency MSA
 
 ## System Workflow
 
-### 1. Account Creation & Recovery Key Issuance
+### 1. Account Creation & Recovery Secret Issuance
 
-When a user first creates an account (MSA) through a wallet provider, the provider will ask the blockchain to generate and register a recovery key for that user as part of the setup. The sequence diagram below illustrates this process:
+When a user first creates an account (MSA) through a wallet provider, the provider will ask the blockchain to generate and register a Recovery Secret for that user as part of the setup. The sequence diagram below illustrates this process:
 
 ```mermaid
 sequenceDiagram
@@ -120,13 +120,13 @@ sequenceDiagram
     G->>U: (Async) Send Frequency intro/recovery email including recovery code
 ```
 
-#### Sequence diagram – Account creation and recovery key setup
+#### Sequence diagram – Account creation and Recovery Secret setup
 
 1. User Account Creation: The user signs up with a wallet/app (the provider) and provides their email address as part of registration. The provider creates a new MSA on the Frequency blockchain for the user. During this on-chain account creation, the user’s initial control key (public key) is linked to the MSA (this may be a key managed by the provider).
 
-2. Recovery Key Generation: The blockchain generates a random secret (e.g. a 128-bit entropy value). For example, it may call a secure random generator to get 16 bytes and then encode as a 12-word BIP-39 phrase for usability, or a UUIDv4 code. This secret is combined with the user’s email (e.g. by hashing as described in the Cryptographic Design) to produce the recovery hash record. The blockchain implements the hash option, e.g. it computes H = SHA-256(email || recovery_code || global salt).
+2. Recovery Secret Generation: The blockchain generates a random secret (e.g. a 128-bit entropy value). For example, it may call a secure random generator to get 16 bytes and then encode as a 12-word BIP-39 phrase for usability, or a UUIDv4 code. This secret is combined with the user’s email (e.g. by hashing as described in the Cryptographic Design) to produce the recovery hash record. The blockchain implements the hash option, e.g. it computes H = SHA-256(email || recovery_code || global salt).
 
-3. On-Chain Storage: The blockchain stores the recovery hash record (H) as part of the MSA creation extrinsic or a separate call right after. The blockchain will store H in association with that MSA ID. If this is part of the creation, the “Create MSA” call would include the hashed recovery key as an attribute. The chain may also stake the provider’s identity to ensure only authorized providers can do this (since only a registered provider should write recovery keys, protecting users from malicious data injection).
+3. On-Chain Storage: The blockchain stores the recovery hash record (H) as part of the MSA creation extrinsic or a separate call right after. The blockchain will store H in association with that MSA ID. If this is part of the creation, the “Create MSA” call would include the hashed Recovery Secret as an attribute. The chain may also stake the provider’s identity to ensure only authorized providers can do this (since only a registered provider should write Recovery Secrets, protecting users from malicious data injection).
 
 4. User Receives Recovery Code: Once the MSA is successfully created and the recovery hash stored, the provider delivers the actual recovery code to the user. Typically, the wallet UI would display the 12-word phrase or UUID code and prompt the user to save it. For security, the provider does not send this over email (to avoid having the secret in the inbox). The user is instructed: “Save this recovery phrase offline. It will allow you to recover your account if needed.” This two-factor approach is still secure if the recovery code is sent via email, as long as the email verification step is robust. It is however, more secure to avoid sending the recovery code via email entirely.
 
@@ -177,7 +177,7 @@ The user contacts a Recovery Provider (a third-party service listed on-chain as 
   
 The provider likely presents a form for the user to input these. At this point, the provider does not yet know the user’s MSA ID or whether the data is valid – that will be determined next.
 
-#### 2. On-Chain Validation (Recovery Key)
+#### 2. On-Chain Validation (Recovery Secret)
 
 The recovery provider uses the submitted email + recovery code to validate against the blockchain:
 
@@ -210,7 +210,7 @@ This design recommends giving the user the option, but in either case, a public 
 
 The recovery provider now submits a special Recovery extrinsic to the Frequency blockchain. This transaction does two main things atomically:
 
- 1. Invalidate Old Recovery Key: It marks the stored recovery key for `target_msa` as used. This can be done by clearing the hash or flagging it so it cannot be reused. (For example, the extrinsic could set the recovery hash storage to 0 or remove that entry for the MSA.)
+ 1. Invalidate Old Recovery Secret: It marks the stored Recovery Secret for `target_msa` as used. This can be done by clearing the hash or flagging it so it cannot be reused. (For example, the extrinsic could set the recovery hash storage to 0 or remove that entry for the MSA.)
  2. Add New Control Key: It adds the new public key to the list of control keys for `target_msa`. Frequency allows multiple control keys per MSA, so the chain will allow a recovery provider to add a new public key. The user must delegate this authority to the recovery provider. In this hash design, an elegant solution is: the extrinsic call could include the plaintext recovery code (or its hash) as a parameter; the runtime hashes it and verifies it matches the stored hash for that MSA. This way, the provider proves on-chain that it indeed has the secret. To avoid exposing the secret in plaintext on-chain, the extrinsic could take H’ (the hash) as input instead. But since H’ is stored and public, an attacker provider could try to reuse it; thus requiring the actual secret or a signature is safer. Another approach is having the provider sign the transaction with its own key (proving it’s authorized) and relying on off-chain enforcement of email verification (since governance oversight exists). For maximal security, we can do: recoverAccount(msa_id, recovery_code, new_pubkey) → runtime computes hash of (email||secret) and checks match & provider authorization. This ensures only a correct recovery_code unlocks the addition.
 
 If all conditions are satisfied, the blockchain will append the new control public key to the user’s MSA. The MSA now has a fresh key that the user can use to authenticate. The old key (if the provider was custodial or lost) can optionally be removed by the user later (Frequency requires at least one control key at all times, so the new key is added before removing any old keys). In many cases, the original key might effectively be dead (since the provider that held it is gone), so just leaving it and adding a new one is fine, or the provider could call a RemoveKey if such exists. But removal might require user action once they log in with the new key.
@@ -226,20 +226,20 @@ At this point, the user can use a wallet (possibly the recovery provider’s int
 
 Additionally, the governance or Frequency network can record that “Recovery Provider X performed recovery for MSA Y at time Z.” Providers are trusted, but such events may be monitored to ensure no provider is abusing the system. If a provider is found adding keys without proper user requests, governance can revoke their recovery role. This provides an accountability layer.
 
-### 7. Post-Recovery: Re-Issuing Recovery Key
+### 7. Post-Recovery: Re-Issuing Recovery Secret
 
-After a successful recovery, if the user continues with a new wallet/provider, they may want to set up a new recovery key for future safety (since the old one was consumed). The flow would essentially be the same as during account creation:
+After a successful recovery, if the user continues with a new wallet/provider, they may want to set up a new Recovery Secret for future safety (since the old one was consumed). The flow would essentially be the same as during account creation:
 
 - The user’s new provider (or the recovery provider, if it doubles as a wallet provider) can generate a new secret, hash it with the user’s (same) email, and update the on-chain record. The chain will accept it because the previous one was invalidated. The new recovery_hash replaces the old.
 - This ensures the user isn’t left without a recovery option going forward. It’s an optional step but recommended. The user should be informed that they have a new recovery code and the old one will no longer work (consistent with the one-at-a-time rule).
 
-If the user chooses not to set a new recovery key, that’s also acceptable (maybe they prefer not to trust any provider and will manage their keys on their own). The system does not force a new recovery key issuance; it simply allows it.
+If the user chooses not to set a new Recovery Secret, that’s also acceptable (maybe they prefer not to trust any provider and will manage their keys on their own). The system does not force a new Recovery Secret issuance; it simply allows it.
 
 ## Security Considerations
 
 ### Cryptographic Strength
 
-The chosen scheme ensures that an attacker can’t derive any useful info from the on-chain recovery data. The hash (or ciphertext) stored on-chain is computationally infeasible to invert. For instance, if SHA-256 is used, it provides 256-bit preimage resistance. Even if an attacker somehow guessed the user’s email (which might be known or could be guessed from off-chain clues), they would still have to guess the 128+ bit secret to find a hash collision. With proper random generation, the probability of success is essentially zero. Using a strong KDF (Argon2id/PBKDF2) further hardens this by increasing the cost per guess. This means brute forcing one account’s recovery key would require on the order of 2^128 hash operations, which is completely impractical. Also, each user has a unique salt/secret so an attack cannot be amortized across multiple accounts.
+The chosen scheme ensures that an attacker can’t derive any useful info from the on-chain recovery data. The hash (or ciphertext) stored on-chain is computationally infeasible to invert. For instance, if SHA-256 is used, it provides 256-bit preimage resistance. Even if an attacker somehow guessed the user’s email (which might be known or could be guessed from off-chain clues), they would still have to guess the 128+ bit secret to find a hash collision. With proper random generation, the probability of success is essentially zero. Using a strong KDF (Argon2id/PBKDF2) further hardens this by increasing the cost per guess. This means brute forcing one account’s Recovery Secret would require on the order of 2^128 hash operations, which is completely impractical. Also, each user has a unique salt/secret so an attack cannot be amortized across multiple accounts.
 
 ### Email Verification Security
 
@@ -247,7 +247,7 @@ Relying on email brings in the security of the email system. To mitigate email-r
 
 - The verification emails should not contain any sensitive link that directly performs actions when clicked. We use an OTP code approach to ensure the user manually confirms their identity on the provider’s site, reducing the chance of a phishing email tricking them.
 - The code/token sent should be sufficiently long (at least 6-8 random digits or an alphanumeric string) to avoid guessing. It should expire quickly and become invalid after one use.
-- The provider must use TLS and other best practices when sending the email (to prevent interception), though email by nature isn’t fully secure end-to-end. This is why the code is one-time and short-lived – even if intercepted, it’s only useful briefly and only if the attacker also has the recovery key.
+- The provider must use TLS and other best practices when sending the email (to prevent interception), though email by nature isn’t fully secure end-to-end. This is why the code is one-time and short-lived – even if intercepted, it’s only useful briefly and only if the attacker also has the Recovery Secret.
 - Users should be advised to keep their email account secure (2FA on email, etc.), since if an attacker compromises their email and somehow finds the recovery phrase, that could enable unauthorized recovery. This essentially parallels password reset security on traditional platforms – email is the fallback, so it must be protected.
 
 ### Provider Trust and Governance
@@ -261,7 +261,7 @@ Recovery providers are semi-trusted entities. They are given the power to initia
 
 ### One-time Key Use Enforcement
 
-The contract that the recovery key is one-time is enforced by design:
+The contract that the Recovery Secret is one-time is enforced by design:
 
 - The chain will not allow a second use of the same recovery hash. After it’s cleared, if someone tried to reuse the same secret, the lookup would fail (no match).
 - If an attacker somehow eavesdropped on the secret during a legitimate recovery (which should be very hard if TLS is used), trying to use it again would not work because it’s already consumed.
@@ -269,15 +269,15 @@ The contract that the recovery key is one-time is enforced by design:
 
 ### Defense Against Guessing Attacks
 
-Could an attacker attempt to guess recovery keys by trying many emails and seeds? The worst-case scenario would be an attacker who knows a user’s email and attempts to brute force the seed phrase. Because the seed is 12 random words, the search space is astronomically large (2^128 or the UUID is 2^112). Even using a powerful hash cracking rig, this is not feasible. As an additional safeguard, the blockchain or providers could rate-limit recovery attempts (e.g. a provider might refuse too many failed submissions from the same IP or email). On-chain, if someone attempted to spam the recovery extrinsic with random secrets, they’d have to pay transaction fees each time, providing an economic disincentive.
+Could an attacker attempt to guess Recovery Secrets by trying many emails and seeds? The worst-case scenario would be an attacker who knows a user’s email and attempts to brute force the seed phrase. Because the seed is 12 random words, the search space is astronomically large (2^128 or the UUID is 2^112). Even using a powerful hash cracking rig, this is not feasible. As an additional safeguard, the blockchain or providers could rate-limit recovery attempts (e.g. a provider might refuse too many failed submissions from the same IP or email). On-chain, if someone attempted to spam the recovery extrinsic with random secrets, they’d have to pay transaction fees each time, providing an economic disincentive.
 
 ### Privacy
 
-Storing a hashed recovery key on-chain does not reveal the user’s email or any personal data in plaintext. The email is indirectly included in the hash but cannot be extracted from it. An observer cannot tell even if two accounts used the same email, because each hash will differ due to the random secret component (and potentially explicit salting). The providers handling email and recovery know the email (the user provides it), so users entrust that info to the provider just as they did to the original wallet provider. All providers should have privacy policies in place, and because they are likely regulated entities (due to governance approval), misuse of personal data is less likely. Nevertheless, minimizing on-chain exposure of email is a deliberate choice.
+Storing a hashed Recovery Secret on-chain does not reveal the user’s email or any personal data in plaintext. The email is indirectly included in the hash but cannot be extracted from it. An observer cannot tell even if two accounts used the same email, because each hash will differ due to the random secret component (and potentially explicit salting). The providers handling email and recovery know the email (the user provides it), so users entrust that info to the provider just as they did to the original wallet provider. All providers should have privacy policies in place, and because they are likely regulated entities (due to governance approval), misuse of personal data is less likely. Nevertheless, minimizing on-chain exposure of email is a deliberate choice.
 
 ### Comparison with Social Recovery
 
-An alternative approach often discussed in blockchain identity is social recovery (where multiple guardians approve account recovery). This design is an email-based recovery key, which is more akin to a traditional account recovery method but executed with blockchain immutability. This design prefers to maximize user convenience (most users understand email verification) while still maintaining cryptographic security. It does introduce a semi-centralized element (the recovery providers), but this is mitigated by the governance control and the fact that the user’s recovery code is still a user-held secret. In essence, the providers cannot recover an account unless the user cooperates and provides the recovery code (or unless the provider colludes with someone who has stolen the recovery code and email – which is highly unlikely without user negligence).
+An alternative approach often discussed in blockchain identity is social recovery (where multiple guardians approve account recovery). This design is an email-based Recovery Secret, which is more akin to a traditional account recovery method but executed with blockchain immutability. This design prefers to maximize user convenience (most users understand email verification) while still maintaining cryptographic security. It does introduce a semi-centralized element (the recovery providers), but this is mitigated by the governance control and the fact that the user’s recovery code is still a user-held secret. In essence, the providers cannot recover an account unless the user cooperates and provides the recovery code (or unless the provider colludes with someone who has stolen the recovery code and email – which is highly unlikely without user negligence).
 
 ### Denial-of-Service Considerations
 
@@ -306,23 +306,23 @@ pub type RecoveryCode = [u8; 16];
 pub type RecoveryHash = [u8; 32];
 
 /// New Events for the Recovery System
-/// These events are emitted by the MSA pallet to indicate successful operations related to recovery keys.
+/// These events are emitted by the MSA pallet to indicate successful operations related to Recovery Secrets.
 #[pallet::event]
 #[pallet::generate_deposit(pub(super) fn deposit_event)]
 pub enum Event<T: Config> {
-    /// A new MSA was created with a recovery key
+    /// A new MSA was created with a Recovery Secret
     MsaCreatedWithRecovery {
         who: T::AccountId,
         msa_id: MsaId,
         recovery_code: String, // UUIDv4 formatted string
     },
-    /// A recovery key was added to an existing MSA
+    /// A Recovery Secret was added to an existing MSA
     RecoveryCodeAdded {
         who: T::AccountId,
         msa_id: MsaId,
         recovery_code: String, // UUIDv4 formatted string
     },
-    /// A recovery key was verified successfully
+    /// A Recovery Secret was verified successfully
     RecoveryCodeVerified {
         who: T::AccountId,
         msa_id: MsaId,
@@ -333,7 +333,7 @@ pub enum Event<T: Config> {
         msa_id: MsaId,
         new_control_key: T::PublicKey, // New control key added to the MSA
     },
-    /// A recovery key was invalidated after use
+    /// A Recovery Secret was invalidated after use
     RecoveryCodeInvalidated {
         who: T::AccountId,
         msa_id: MsaId,
@@ -348,7 +348,7 @@ pub enum Event<T: Config> {
 /// - Key: RecoveryHash (32-byte hash of email + recovery code + global salt)
 /// - Value: ['MessageSourceId']
 #[pallet::storage]
-pub type RecoveryHashToMsaId<T: Config> = StorageMap<_, Blake2_128Concat, RecoveryHash, MsaId, OptionQuery>;
+pub type MsaIdToRecoveryHash<T: Config> = StorageMap<_, Twox64Concat, MsaId, RecoveryHash>;
 ```
 
 ## Required Extrinsics
@@ -357,12 +357,12 @@ pub type RecoveryHashToMsaId<T: Config> = StorageMap<_, Blake2_128Concat, Recove
 |---|---|---|---|---|
 | `create_msa_for_email`<br />Create MSA with email and recovery code| Provider| Capacity or Tokens | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated), [`RecoveryCodeAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeAdded)| 166|
 | `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryCodeInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeInvalidated) | 166|
-| `verify_recovery_code`<br />Verify recovery key against stored hash| Recovery Provider| Capacity or Tokens | [`RecoveryCodeVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeVerified)| 166|
-| `add_recovery_key`<br />Add a new recovery key to an existing MSA| Provider| Capacity or Tokens | [`RecoveryCodeAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeAdded)| 166|
+| `verify_recovery_code`<br />Verify Recovery Secret against stored hash| Recovery Provider| Capacity or Tokens | [`RecoveryCodeVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeVerified)| 166|
+| `add_recovery_key`<br />Add a new Recovery Secret to an existing MSA| Provider| Capacity or Tokens | [`RecoveryCodeAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCodeAdded)| 166|
 
 ### Create MSA for Email
 
-This extrinsic is used during account creation to register a new MSA with an associated recovery code. It combines the user’s email and the generated recovery key, storing the hash on-chain.
+This extrinsic is used during account creation to register a new MSA with an associated recovery code. It combines the user’s email and the generated Recovery Secret, storing the hash on-chain.
 
 ```rust
 // Pseudo-code for creating an MSA with a recovery code
@@ -417,9 +417,9 @@ pub fn format_recovery_code_as_uuid(recovery_code: &RecoveryCode) -> String {
 }
 ```
 
-### Verify Recovery Key
+### Verify Recovery Secret
 
-This extrinsic is used by the recovery provider to verify a user’s recovery key against the stored hash. It checks if the provided email and recovery code match any existing MSA.
+This extrinsic is used by the recovery provider to verify a user’s Recovery Secret against the stored hash. It checks if the provided email and recovery code match any existing MSA.
 
 ```rust
 // Pseudo-code for verifying a recovery code and email
@@ -444,7 +444,7 @@ pub fn verify_recovery_code(
 
 ### Recover Account
 
-This extrinsic is called by the recovery provider after verifying the user’s email and recovery code. It adds a new control key to the MSA and invalidates the old recovery key.
+This extrinsic is called by the recovery provider after verifying the user’s email and recovery code. It adds a new control key to the MSA and invalidates the old Recovery Secret.
 
 ```rust
 // Pseudo-code for recovering an account with a new control key
@@ -461,7 +461,7 @@ pub fn recover_account(
     let msa_id = RecoveryHashToMsaId::<T>::get(&recovery_hash)
         .ok_or(Error::<T>::RecoveryKeyNotFound)?;
 
-    // Invalidate the old recovery key by removing it from storage
+    // Invalidate the old Recovery Secret by removing it from storage
     RecoveryHashToMsaId::<T>::remove(&recovery_hash);
 
     // Add the new control key to the MSA
@@ -475,19 +475,34 @@ pub fn recover_account(
 }
 ```
 
-### Add Recovery Key
+### Add Recovery Secret
 
-This extrinsic allows a provider to add a new recovery key to an existing MSA. It can be used during account creation or later to update the recovery key.
+This extrinsic allows a provider to add a new Recovery Secret to an existing MSA. It can be used during account creation or later to update the Recovery Secret.
 
 ```rust
-// Pseudo-code for adding a recovery key to an existing MSA
+// Pseudo-code for adding a Recovery Secret to an existing MSA
 pub fn add_recovery_key(
     origin: OriginFor<T>,
-    msa_id: MsaId,
-    recovery_code: Vec<u8>,
+    msa_owner_key: T::AccountId,
+    proof: MultiSignature,
+    payload: AddRecoveryKeyPayload<T>,
 ) -> DispatchResult {
-    let who = ensure_signed(origin)?;
+    ensure_signed(origin)?;
     
+    // Recover the MSA ID from the msa_owner_key
+    let msa_id = ensure_valid_msa_key(&msa_owner_key);
+    // Validate the proof and payload
+
+    // Store the new RecoveryHash
+    RecoveryHashToMsaId::<T>::insert(payload.recovery_hash, msa_id);
+    Self::deposit_event(Event::RecoveryCodeAdded {
+      who: msa_owner_key,
+      msa_id,
+    });
+
+    Ok(())
+    }
+
     // Generate the recovery hash from the email and recovery code
     let email = T::EmailProvider::get_email_for_msa(msa_id)
         .ok_or(Error::<T>::MsaNotFound)?;
