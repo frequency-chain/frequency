@@ -66,7 +66,6 @@ async function devSudoActions() {
 }
 
 export async function mochaGlobalSetup(context) {
-  console.log('globalHooks.ts mochaGlobalSetup');
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize(providerUrl);
   await fundAccountsToDefault(await Promise.all(getAllTestFiles().map(getFundingSource)));

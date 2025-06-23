@@ -175,7 +175,7 @@ export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
 };
 
 export const SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION = {
-  SiwfSignedRequest: [
+  SiwfSignedRequestPayload: [
     {
       name: 'callback',
       type: 'string',

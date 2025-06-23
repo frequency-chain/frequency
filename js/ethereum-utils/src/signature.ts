@@ -139,7 +139,7 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
       clonedPayload.authorizedPublicKey = clonedPayload.authorizedPublicKey.toLowerCase() as HexString;
       break;
 
-    case 'SiwfSignedRequest':
+    case 'SiwfSignedRequestPayload':
       if (clonedPayload.userIdentifierAdminUrl == null) {
         clonedPayload.userIdentifierAdminUrl = '';
       }
@@ -166,7 +166,7 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
     AddProvider: ADD_PROVIDER_DEFINITION,
 
     // offchain signatures
-    SiwfSignedRequest: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
+    SiwfSignedRequestPayload: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   };
 
   const definition = PAYLOAD_TYPE_DEFINITIONS[payloadType];
@@ -181,9 +181,8 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
 function getSignatureType(payloadType: string): SignatureType {
   if (payloadType === 'SiwfLoginRequestPayload') {
     return 'EIP-191';
-  } else {
-    return 'EIP-712';
   }
+  return 'EIP-712';
 }
 
 /**
@@ -399,13 +398,13 @@ export function createPaginatedUpsertSignaturePayloadV2(
 }
 
 /**
- * Build an SiwfSignedRequest payload for signature.
+ * Build an SiwfSignedRequestPayload payload for signature.
  *
  * @param callback        Callback URL for login
  * @param permissions       One or more schema IDs (uint16) the provider may use
  * @param userIdentifierAdminUrl Only used for custom integration situations.
  */
-export function createSiwfSignedRequest(
+export function createSiwfSignedRequestPayload(
   callback: string,
   permissions: number[],
   userIdentifierAdminUrl?: string
@@ -415,7 +414,7 @@ export function createSiwfSignedRequest(
   });
 
   return {
-    type: 'SiwfSignedRequest',
+    type: 'SiwfSignedRequestPayload',
     callback: callback,
     permissions,
     userIdentifierAdminUrl,
@@ -602,7 +601,7 @@ export function getEip712BrowserRequestSiwfSignedRequestPayload(
   userIdentifierAdminUrl?: string,
   domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
 ): unknown {
-  const message = createSiwfSignedRequest(callback, permissions, userIdentifierAdminUrl);
+  const message = createSiwfSignedRequestPayload(callback, permissions, userIdentifierAdminUrl);
   const normalized = normalizePayload(message);
   return createEip712Payload(SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION, message.type, domain, normalized);
 }

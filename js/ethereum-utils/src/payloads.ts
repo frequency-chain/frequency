@@ -143,7 +143,7 @@ export interface AddProvider {
 
 export interface SiwfSignedRequestPayload {
   // type discriminator
-  type: 'SiwfSignedRequest';
+  type: 'SiwfSignedRequestPayload';
   // callback url
   callback: string;
   // uint16[] type schema ids

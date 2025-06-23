@@ -425,7 +425,7 @@
 				const signature_request = {
 					"types": {
 						...eip712domain_type_definition,
-						"SiwfSignedRequest": [
+						"SiwfSignedRequestPayload": [
 							{
 								"name": 'callback',
 								"type": 'string',
@@ -440,7 +440,7 @@
 							},
 						],
 					},
-					"primaryType": "SiwfSignedRequest",
+					"primaryType": "SiwfSignedRequestPayload",
 					"domain": karma_request_domain,
 					"message": {
 						"callback": 'https://localhost:44181',
@@ -504,7 +504,7 @@
 <button id="add_provider_request">AddProvider Sign</button>
 <button id="authorized_key_payload">AuthorizedKeyData Sign</button>
 <br><br>
-<button id="siwf_signed_request">SiwfSignedRequest Sign</button>
+<button id="siwf_signed_request">SiwfSignedRequestPayload Sign</button>
 <button id="siwf_login_request">SiwfLoginRequest Sign</button>
 </body>
 </html>

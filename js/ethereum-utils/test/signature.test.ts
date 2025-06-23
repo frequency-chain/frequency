@@ -12,8 +12,8 @@ import {
   sign,
   HexString,
   verifySignature,
-  createSiwfSignedRequest,
   createSiwfLoginRequestPayload,
+  createSiwfSignedRequestPayload,
 } from '../src';
 
 describe('Signature related tests', function () {
@@ -231,13 +231,13 @@ describe('Signature related tests', function () {
       assert(verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1), 'should verify');
     });
 
-    it('should create a valid signature for SiwfSignedRequest', async function () {
-      const payload1 = createSiwfSignedRequest('https://localhost:44181', [2, 4, 5, 6, 7, 8]);
+    it('should create a valid signature for SiwfSignedRequestPayload', async function () {
+      const payload1 = createSiwfSignedRequestPayload('https://localhost:44181', [2, 4, 5, 6, 7, 8]);
       const signature = await sign(secretKey, payload1);
 
       const expected = {
         Ecdsa:
-          '0x68b18a8da75fcbddd62d53916173d636129b219f703aa4edb3b0dea51d61c0da606624f69012485d9b361cb0ddd3370f8e3c0b1b80249ddcca8300df1daa0f111c',
+          '0x3e04422d8231c1c2a70e31ef20869c52a4508e3d606750c35a118d67e81694f113a78c184f68f6b7d3a88136170e5693ad584dca6ed2a409b85ed0eec43e028b1c',
       };
 
       assert.deepEqual(signature, expected);
