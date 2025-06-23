@@ -11,7 +11,7 @@ import { u16 } from '@polkadot/types';
 import { ipfsCid } from './ipfs';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 const ipfs_payload_data = 'This is a test of Frequency.';
 const ipfs_payload_len = ipfs_payload_data.length + 1;
 
@@ -25,6 +25,7 @@ describe('Add Offchain Message', function () {
   let starting_block: number;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     starting_block = (await ExtrinsicHelper.apiPromise.rpc.chain.getHeader()).number.toNumber();
 
     const cid = await ipfsCid(ipfs_payload_data, './e2e_test.txt');

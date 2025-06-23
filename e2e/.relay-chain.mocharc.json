@@ -3,6 +3,6 @@
   "fullTrace": true,
   "extension": ["ts"],
   "require": ["scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],
-  "import": "tsx",
+  "import": "tsx/esm",
   "timeout": 300000
 }

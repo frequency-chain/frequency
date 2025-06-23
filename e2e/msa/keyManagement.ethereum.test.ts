@@ -18,9 +18,13 @@ import { createAddKeyData, getUnifiedAddress, getUnifiedPublicKey, sign } from '
 import { u8aToHex } from '@polkadot/util';
 
 const maxU64 = 18_446_744_073_709_551_615n;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('MSA Key management Ethereum', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('addPublicKeyToMsa Ethereum', function () {
     let keys: KeyringPair;
     let msaId: u64;

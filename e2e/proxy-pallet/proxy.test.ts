@@ -8,9 +8,13 @@ import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const DOLLARS = 100000000n; // 100_000_000
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Proxy', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('Basic Any Proxy Successes', function () {
     let stashKeys: KeyringPair;
     let proxyKeys: KeyringPair;

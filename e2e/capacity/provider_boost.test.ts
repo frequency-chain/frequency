@@ -1,5 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
+import { KeyringPair } from '@polkadot/keyring/types';
 import { getFundingSource } from '../scaffolding/funding';
 import {
   createKeys,
@@ -11,11 +12,15 @@ import {
   stakeToProvider,
 } from '../scaffolding/helpers';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 const tokenMinStake: bigint = 1n * CENTS;
 
 describe('Capacity: provider_boost extrinsic', function () {
   const providerBalance = 2n * DOLLARS;
+
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
 
   it('An account can do a simple provider boost call', async function () {
     const stakeKeys = createKeys('booster');

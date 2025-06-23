@@ -1,12 +1,14 @@
 import '@frequency-chain/api-augment';
 import { Keyring } from '@polkadot/api';
+import { cryptoWaitReady } from '@polkadot/util-crypto';
 import { isTestnet } from './env';
 
 const coreFundingSourcesSeed = 'salt glare message absent guess transfer oblige refuse keen current lunar pilot';
 const keyring = new Keyring({ type: 'sr25519' });
 
 // Get the correct key for this Funding Source
-export function getFundingSource(name: string) {
+export async function getFundingSource(name: string) {
+  await cryptoWaitReady();
   // Check if we are getting a full path, and if we are, chop it off
   // Every derived path should be either be a full path or relative to the e2e root
   const derivedPath = (name.includes('/e2e/') ? name.replace(/.*\/e2e\//, '') : name).replaceAll('/', '-');
@@ -15,7 +17,7 @@ export function getFundingSource(name: string) {
     throw new Error('Asked for a non-funded source');
   }
   try {
-    return keyring.addFromUri(`${coreFundingSourcesSeed}//${derivedPath}`, { name: derivedPath }, 'sr25519');
+    return keyring.createFromUri(`${coreFundingSourcesSeed}//${derivedPath}`, { name: derivedPath }, 'sr25519');
   } catch (e) {
     console.error('Failed to build funding source: ', { derivedPath });
     throw e;

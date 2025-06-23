@@ -13,6 +13,7 @@ import { providerUrl } from './env';
 
 export const mochaHooks = {
   async beforeAll() {
+    console.log('rootHooks.ts beforeAll');
     try {
       await cryptoWaitReady();
       await ExtrinsicHelper.initialize(providerUrl);

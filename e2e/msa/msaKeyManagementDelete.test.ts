@@ -16,7 +16,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { ethereumAddressToKeyringPair, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { H160 } from '@polkadot/types/interfaces';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('MSA Key management: delete keys and retire', function () {
   let keys: KeyringPair;
@@ -25,6 +25,7 @@ describe('MSA Key management: delete keys and retire', function () {
   let msaAccountId: H160;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Generates a msa with two control keys
     // Fund all the different keys
     [keys, secondaryKey] = await createAndFundKeypairs(fundingSource, ['keys', 'secondaryKey'], 2n * DOLLARS);
