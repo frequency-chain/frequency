@@ -13,13 +13,14 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('#createSchema', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 50_000_000n);
     accountWithNoFunds = createKeys();
   });

@@ -10,7 +10,7 @@ import { getBlockNumber } from '../scaffolding/helpers';
 import { hasRelayChain } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 const expirationOffset = hasRelayChain() ? 4 : 100;
 
 describe('Handles: Claim and Retire Alt', function () {
@@ -18,6 +18,7 @@ describe('Handles: Claim and Retire Alt', function () {
   let msaOwnerKeys: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Create a MSA for the delegator
     [msaId, msaOwnerKeys] = await createMsa(fundingSource, 50n * CENTS);
     assert.notEqual(msaOwnerKeys, undefined, 'setup should populate delegator_key');

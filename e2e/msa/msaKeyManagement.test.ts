@@ -18,9 +18,13 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const maxU64 = 18_446_744_073_709_551_615n;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('MSA Key management', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('addPublicKeyToMsa', function () {
     let keys: KeyringPair;
     let msaId: u64;

@@ -20,7 +20,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Signature Required Paginated', function () {
   let paginatedSchemaId: SchemaId;
@@ -32,6 +32,7 @@ describe('📗 Stateful Pallet Storage Signature Required Paginated', function (
   let delegatorKeys: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     [
       // Create a provider. This provider will NOT be granted delegations;
       // methods requiring a payload signature do not require a delegation
