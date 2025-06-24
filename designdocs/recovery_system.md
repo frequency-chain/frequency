@@ -317,22 +317,46 @@ pub type RecoverySecret = [u8; 32];
 /// RecoveryHash is a 32-byte hash computed with multiple hashes from the Recovery Secret and the user’s Authentication Contact.
 pub type RecoveryHash = [u8; 32];
 
+// Payload for adding a Recovery Hash to an existing MSA
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct AddRecoverySecretData<T: Config> {
+    /// The hash of the user's Authentication Contact
+    pub contact_hash: Vec<u8>,
+    /// The hash of (Recovery Secret || Authentication Contact)
+    pub secret_hash: Vec<u8>,
+    /// The block number at which a signed proof of this payload expires
+    pub expiration:  BlockNumberFor<T>,
+}
+
+/// Authentication Contact types supported by the recovery system
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub enum AuthenticationContactType {
+    /// Email address contact type
+    Email = 0x01,
+    /// Phone number contact type (E.164 format)
+    PhoneNumber = 0x02,
+    /// Future extension for other contact types
+    /// Could include social media handles, attestation-based contacts, etc.
+}
+
+/// Authentication Contact structure with type-safe encoding
+/// Format: [type_byte] + [contact_data_bytes]
+/// Example: 0x01 + utf8_to_bytes("user@example.com")
+#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
+pub struct AuthenticationContact {
+    pub contact_type: AuthenticationContactType,
+    pub contact_data: Vec<u8>,
+}
+
 /// New Events for the Recovery System
 /// These events are emitted by the MSA pallet to indicate successful operations related to Recovery Secrets.
 #[pallet::event]
 #[pallet::generate_deposit(pub(super) fn deposit_event)]
 pub enum Event<T: Config> {
-    /// A new MSA was created with a Recovery Secret
-    MsaCreatedWithRecovery {
-        who: T::AccountId,
-        msa_id: MsaId,
-        recovery_secret: String, // Hexadecimal formatted string
-    },
     /// A Recovery Secret was added to an existing MSA
     RecoverySecretAdded {
         who: T::AccountId,
         msa_id: MsaId,
-        recovery_secret: String, // Hexadecimal formatted string
     },
     /// A Recovery Secret was verified successfully
     RecoverySecretVerified {
@@ -367,25 +391,15 @@ pub type MsaIdToRecoveryHash<T: Config> = StorageMap<_, Twox64Concat, MsaId, Rec
 
 |Name/Description|Caller|Payment|Key Events|Runtime Added|
 |---|---|---|---|---|
-| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoverySecretInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoverySecretInvalidated) | 166|
-| `verify_recovery_secret`<br />Verify Recovery Secret against stored hash| Recovery Provider| Capacity or Tokens | [`RecoverySecretVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoverySecretVerified)| 166|
 | `add_recovery_secret`<br />Add a new Recovery Secret to an existing MSA| Provider| Capacity or Tokens | [`RecoverySecretAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoverySecretAdded)| 166|
+| `verify_recovery_secret`<br />Verify Recovery Secret against stored hash| Recovery Provider| Capacity or Tokens | [`RecoverySecretVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoverySecretVerified)| 166|
+| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoverySecretInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoverySecretInvalidated) | 166|
 
 ### Add Recovery Secret
 
 This extrinsic allows a provider to add a new Recovery Hash to an existing MSA. It can be used during account creation or later to update the Recovery Hash.
 
 ```rust
-// Payload for adding a Recovery Hash to an existing MSA
-#[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct AddRecoverySecretPayload<T: Config> {
-    pub recovery_hash: RecoveryHash, // The new Recovery Hash to be added
-    pub email: Vec<u8>, // The user’s email address used for recovery
-    pub recovery_code: Vec<u8>, // The recovery code provided by the user
-}
-/// This payload is used to add a new Recovery Hash to an existing MSA.
-/// It contains the Recovery Hash, the user’s email address, and the recovery code.
-
 // Pseudo-code for adding a Recovery Hash to an existing MSA
 pub fn add_recovery_secret(
     origin: OriginFor<T>,
@@ -503,5 +517,62 @@ pub fn recover_account(
 }
 ```
 
+#### Implementation Helpers
+
+```rust
+impl AuthenticationContact {
+    /// Create a new email-based authentication contact
+    pub fn email(email: &str) -> Self {
+        Self {
+            contact_type: AuthenticationContactType::Email,
+            contact_data: email.to_lowercase().as_bytes().to_vec(),
+        }
+    }
+    
+    /// Create a new phone number-based authentication contact
+    /// Phone number should be in E.164 format (e.g., "+1234567890")
+    pub fn phone_number(phone: &str) -> Self {
+        Self {
+            contact_type: AuthenticationContactType::PhoneNumber,
+            contact_data: phone.as_bytes().to_vec(),
+        }
+    }
+    
+    /// Encode the authentication contact as bytes for hashing
+    /// Format: [type_byte] + [contact_data_bytes]
+    pub fn to_bytes(&self) -> Vec<u8> {
+        let mut result = Vec::new();
+        result.push(self.contact_type.clone() as u8);
+        result.extend_from_slice(&self.contact_data);
+        result
+    }
+    
+    /// Decode authentication contact from bytes
+    pub fn from_bytes(bytes: &[u8]) -> Result<Self, &'static str> {
+        if bytes.is_empty() {
+            return Err("Empty authentication contact bytes");
+        }
+        
+        let contact_type = match bytes[0] {
+            0x01 => AuthenticationContactType::Email,
+            0x02 => AuthenticationContactType::PhoneNumber,
+            _ => return Err("Unknown authentication contact type"),
+        };
+        
+        let contact_data = bytes[1..].to_vec();
+        
+        Ok(Self {
+            contact_type,
+            contact_data,
+        })
+    }
+    
+    /// Get the contact as a string (for display purposes)
+    pub fn as_string(&self) -> Result<String, std::str::Utf8Error> {
+        String::from_utf8(self.contact_data.clone())
+            .map_err(|e| std::str::Utf8Error::from(e.utf8_error()))
+    }
+}
+```
 
 ## RPCs
