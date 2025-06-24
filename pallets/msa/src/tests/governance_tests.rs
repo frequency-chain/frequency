@@ -1,3 +1,4 @@
+use common_primitives::msa::ProviderId;
 use frame_support::{assert_noop, assert_ok, traits::ChangeMembers};
 
 use pallet_collective::ProposalOf;
@@ -6,7 +7,8 @@ use sp_weights::Weight;
 use pretty_assertions::assert_eq;
 use sp_core::{Encode, Pair};
 
-use crate::{tests::mock::*, Error};
+use crate::{tests::mock::*, Error, Event};
+use sp_runtime::DispatchError::BadOrigin;
 
 #[test]
 fn create_provider_via_governance_happy_path() {
@@ -131,5 +133,108 @@ fn propose_to_be_provider_long_name_should_fail() {
 		);
 
 		assert_noop!(proposal_res, Error::<Test>::ExceedsMaxProviderNameSize);
+	})
+}
+
+#[test]
+fn approve_recovery_provider_happy_path() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+
+		// Approve recovery provider via governance
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.public().into()
+		));
+
+		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+
+		System::assert_last_event(
+			Event::RecoveryProviderApproved { provider_id: ProviderId(new_msa_id) }.into(),
+		);
+	})
+}
+
+#[test]
+fn remove_recovery_provider_happy_path() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.public().into()
+		));
+
+		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			ProviderId(new_msa_id)
+		));
+
+		assert!(!Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+
+		System::assert_last_event(
+			Event::RecoveryProviderRemoved { provider_id: ProviderId(new_msa_id) }.into(),
+		);
+	})
+}
+
+#[test]
+fn approve_recovery_provider_unauthorized_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_noop!(
+			Msa::approve_recovery_provider(
+				RuntimeOrigin::signed(key_pair.public().into()),
+				key_pair.public().into()
+			),
+			BadOrigin
+		);
+
+		assert!(!Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+	})
+}
+
+#[test]
+fn remove_recovery_provider_unauthorized_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.public().into()
+		));
+
+		assert_noop!(
+			Msa::remove_recovery_provider(
+				RuntimeOrigin::signed(key_pair.public().into()),
+				ProviderId(new_msa_id)
+			),
+			BadOrigin
+		);
+
+		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+	})
+}
+
+#[test]
+fn remove_nonexistent_recovery_provider_should_succeed() {
+	new_test_ext().execute_with(|| {
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			ProviderId(1u64)
+		));
+
+		System::assert_last_event(
+			Event::RecoveryProviderRemoved { provider_id: ProviderId(1u64) }.into(),
+		);
 	})
 }
