@@ -8,7 +8,7 @@ When a Frequency blockchain user’s wallet provider becomes unavailable, recove
 
 ### Functional Requirements
 
-1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a Recovery Secret using a reversible combination of the Authentication Contact with a random salt/seed. The Recovery Hash (RH) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RH is securely stored on-chain to allow future recovery.
+1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a Recovery Secret using the Authentication Contact to seed a random 32 byte hexadecimal value. The Recovery Hash (RH) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RH is securely stored on-chain to allow future recovery.
 
 2. Single Active Recovery Hash: A maximum of one Recovery Hash exists per user at any time. If a Recovery Hash is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new Recovery Secret for future use, but duplicate or old hashes cannot remain active simultaneously.
 
@@ -52,19 +52,22 @@ Each user’s Recovery Secret is derived from a combination of their Authenticat
 
 ### Recovery Hash Generation
 
-The blockchain combines the user’s Authentication Contact with a random seed in a reversible but secure way.
+The blockchain combines the user’s Authentication Contact with the Recovery Secret, in the form of the Recovery Intermediary Hashes to preserve secrecy, in a secure way.
 
 Implementation: Deterministic Hash (One-Way): Compute a cryptographic hash
 
+#### Recovery Intermediary Hashes
+
 - H(s) = keccak256(Recovery Secret)
 - H(sc) = keccak256(Recovery Secret || Authentication Contact)  
-- RH = keccak256(H(s) || H(sc)) and store RH on-chain.
 
-In this scheme, reversibility means that given the correct Authentication Contact and Recovery Secret, one can recompute RH (Recovery Hash) and match the on-chain value – thus verifying the combination. This is effectively a commitment to the Authentication Contact + Recovery Secret. The user’s Recovery Secret is not stored on-chain, only the Recovery Hash, so it cannot be directly recovered by anyone. The hash approach is simple: any Recovery Provider can later hash the user’s provided Authentication Contact + Recovery Seed and check against the on-chain record for a match.
+#### Final Recovery Hash
+
+- RH = keccak256(H(s) || H(sc))
+
+In this scheme, given the correct Authentication Contact and Recovery Secret, Recovery Providers can recompute the Recovery Hash (RH) and match the on-chain RH value to verify the combination. This is effectively a commitment to the Authentication Contact + Recovery Secret. The user’s Recovery Secret is not stored on-chain, only the Recovery Hash, so it cannot be directly recovered by anyone.
 
 Note: The Authentication Contact is typically the user’s email address, but could also be a phone number or other identifier. The hash ensures that even if the Authentication Contact is known, the Recovery Secret remains secure. The Authentication Contact must be normalized (e.g. lowercased for emails, whitespace removed, etc., or convert to [E.164](https://en.wikipedia.org/wiki/E.164) format for phone numbers) before hashing to ensure consistent results.
-
-Hashing the recovery data means the chain can later verify a recovery attempt by recomputing a hash, without needing to store any encryption keys. Hash storage is also aligned with security best practices. The only data needed for recovery is a successful hash match, rather than extracting plaintext.
 
 ### Hash Algorithm
 
