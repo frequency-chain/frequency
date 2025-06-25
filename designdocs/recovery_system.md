@@ -79,11 +79,12 @@ This design uses a keccak256 hash function for the Recovery Commitment (RC) due 
 
 ```rust
 // Pseudocode for computing the Recovery Commitment from the Recovery Intermediary Hashes
-// The function accepts the hash(recovery secret), and the hash(recovery secret + authentication contact) as inputs
-fn compute_recovery_commitment(hashed_recovery_secret: [u8; 32], hashed_secret_and_contact: [u8; 32]) -> [u8; 32] {
+// The function accepts the Recovery Intermediary Hash A: hash(recovery secret),
+//                  and the Recovery Intermediary Hash B: hash(recovery secret + authentication contact)
+fn compute_recovery_commitment(recovery_intermediary_a: [u8; 32], recovery_intermediary_b: [u8; 32]) -> [u8; 32] {
     let mut hasher = Keccak256::new();
-    hasher.update(hashed_recovery_secret);
-    hasher.update(hashed_secret_and_contact);
+    hasher.update(recovery_intermediary_a);
+    hasher.update(recovery_intermediary_b);
     hasher.finalize().into()
 }
 ```
@@ -324,13 +325,13 @@ In summary, the system meets the security requirements by layering cryptographic
 pub type RecoveryCommitment = [u8; 32];
 
 /// This payload needs to be signed by the MSA owner to add a Recovery Commitment
-pub struct CommitmentHashPayload<T: Config> {
+pub struct RecoveryCommitmentPayload<T: Config> {
     pub recovery_commitment: RecoveryCommitment,
     /// The block number at which a signed proof of this payload expires
     pub expiration: BlockNumberFor<T>,
 }
 
-// Payload for adding a Recovery Commitment to an existing MSA
+// Payload for verifying a Recovery Commitment for an existing MSA
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct IntermediaryHashesPayload<T: Config> {
     /// The hash of (Recovery Secret)
@@ -398,6 +399,13 @@ pub enum Event<T: Config> {
 /// - Value: RecoveryCommitment
 #[pallet::storage]
 pub type MsaIdToRecoveryCommitment<T: Config> = StorageMap<_, Twox64Concat, MsaId, RecoveryCommitment>;
+
+// TODO: Explore efficiency for this storage and if we can avoid double indexing
+/// Storage type for a Recovery Commitment to MsaId mapping
+/// - Key: RecoveryCommitment
+/// - Value: MsaId
+#[pallet::storage]
+pub type RecoveryCommitmentToMsaId<T: Config> = StorageMap<_, Twox64Concat, RecoveryCommitment, MsaId>;
 ```
 
 ## Required Extrinsics
@@ -418,7 +426,7 @@ pub fn add_recovery_commitment(
     origin: OriginFor<T>,
     msa_owner_key: T::AccountId,
     proof: MultiSignature,
-    payload: IntermediaryHashesPayload,
+    payload: RecoveryCommitmentPayload,
 ) -> DispatchResult {
     let provider_key = ensure_signed(origin)?;
 
@@ -434,11 +442,8 @@ pub fn add_recovery_commitment(
     // Recover the MSA ID from the msa_owner_key
     let msa_id = ensure_valid_msa_key(&msa_owner_key);
 
-    // Compute the Recovery Commitment from the provided payload
-    let recovery_commitment = hash_recovery_code(&payload.intermediary_hash_a, &payload.intermediary_hash_b);
-
     // Store the new RecoveryCommitment
-    MsaIdToRecoveryCommitment::<T>::insert(msa_id, recovery_commitment);
+    MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
     Self::deposit_event(Event::RecoveryCommitmentAdded {
       who: msa_owner_key,
       msa_id,
@@ -455,16 +460,22 @@ This extrinsic is used by the Recovery Provider to verify if a user’s Recovery
 ```rust
 // Pseudo-code for verifying the Recovery Intermediary Hashes
 pub fn verify_intermediary_hashes(
-    origin: OriginFor<T>,
-    msa_owner_key: T::AccountId,
-    proof: MultiSignature,
     payload: IntermediaryHashesPayload,
 ) -> DispatchResult {
-    ensure_signed(origin)?;
+    let who = ensure_signed(origin)?;
+    
+    // Verify that the Recovery Provider is a registered Recovery Provider
+    ensure!(
+        T::RecoveryProviderRegistry::is_recovery_provider(&who),
+        Error::<T>::NotAuthorizedRecoveryProvider
+    );
 
-    let msa_id = ensure_valid_msa_key(&msa_owner_key);
+    let recovery_commitment = hash_recovery_secret(payload.intermediary_hash_a, payload.intermediary_hash_b);
 
-    let recovery_commitment = hash_recovery_secret(payload.contact_hash, payload.secret_hash);
+    // TODO: How do we find the MSA ID from the hashes?
+    // Is a double index required, or is there another method?
+    let msa_id = RecoveryCommitmentToMsaId::<T>::get(&recovery_commitment)
+        .ok_or(Error::<T>::RecoveryCommitmentNotFound)?;
 
     // Look up the Recovery Commitment in storage
     match MsaIdToRecoveryCommitment::<T>::get(&msa_id) {
@@ -485,12 +496,18 @@ This extrinsic is called by the Recovery Provider after verifying the user’s R
 // Pseudo-code for recovering an account with a new control key
 pub fn recover_account(
     origin: OriginFor<T>,
-    email: Vec<u8>,
-    recovery_code: Vec<u8>,
     new_control_key: Vec<u8>,
+    payload: IntermediaryHashesPayload,
 ) -> DispatchResult {
     let who = ensure_signed(origin)?;
-    let recovery_commitment = hash_recovery_code(&email, &recovery_code);
+
+    // Verify that the Recovery Provider is a registered Recovery Provider
+    ensure!(
+        T::RecoveryProviderRegistry::is_recovery_provider(&who),
+        Error::<T>::NotAuthorizedRecoveryProvider
+    );
+
+    let recovery_commitment = hash_recovery_secret(payload.intermediary_hash_a, payload.intermediary_hash_b);
 
     // Verify the recovery commitment exists and get the MSA ID
     let msa_id = RecoveryCommitmentToMsaId::<T>::get(&recovery_commitment)
@@ -498,14 +515,14 @@ pub fn recover_account(
 
     // Invalidate the old Recovery Commitment by removing it from storage
     RecoveryCommitmentToMsaId::<T>::remove(&recovery_commitment);
+    MsaIdToRecoveryCommitment::<T>::remove(&msa_id);
+    Self::deposit_event(Event::RecoveryCommitmentInvalidated { msa_id });
 
     // Add the new control key to the MSA
     // Note: This would integrate with existing MSA pallet functionality
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
     Self::deposit_event(Event::AccountRecovered { who, msa_id });
-    Self::deposit_event(Event::RecoveryCommitmentInvalidated { msa_id });
-
     Ok(())
 }
 ```
