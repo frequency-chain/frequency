@@ -8,13 +8,13 @@ When a Frequency blockchain user’s wallet provider becomes unavailable, recove
 
 ### Functional Requirements
 
-1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a Recovery Secret using the Authentication Contact to seed a random 32 byte hexadecimal value. The Recovery Hash (RH) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RH is securely stored on-chain to allow future recovery.
+1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a Recovery Secret using the Authentication Contact to seed a random 32 byte hexadecimal value. The Recovery Commitment (RC) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RC is securely stored on-chain to allow future recovery.
 
-2. Single Active Recovery Hash: A maximum of one Recovery Hash exists per user at any time. If a Recovery Hash is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new Recovery Secret for future use, but duplicate or old hashes cannot remain active simultaneously.
+2. Single Active Recovery Commitment: A maximum of one Recovery Commitment exists per user at any time. If a Recovery Commitment is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new Recovery Secret for future use, but duplicate or old commitments cannot remain active simultaneously.
 
 3. Governance-Approved Providers: Recovery operations are performed by special Recovery Providers that are approved via on-chain governance (listed in a registry). When a user needs account recovery, they contact one of these providers trusted to do the Contact Verification and submit their Recovery Secret along with their Authentication Contact information.
 
-4. Validation by Recovery Provider: The Recovery Provider must validate two things off-chain: (a) the submitted Recovery Secret (in combination with the Authentication Contact information) matches the on-chain Recovery Hash for some MSA ID (proving the key is valid for that account), and (b) the provided Authentication Contact is truly controlled by the user (e.g. via a secure email verification challenge). Only if both checks pass is recovery authorized.
+4. Validation by Recovery Provider: The Recovery Provider must validate two things off-chain: (a) the submitted Recovery Secret (in combination with the Authentication Contact information) matches the on-chain Recovery Commitment for some MSA ID (proving the key is valid for that account), and (b) the provided Authentication Contact is truly controlled by the user (e.g. via a secure email verification challenge). Only if both checks pass is recovery authorized.
 
 5. On-Chain Key Addition: After successful validation, the Recovery Provider accepts or generates a new Control Key for the user (typically a new key pair) and uses a blockchain transaction to associate this new Control Key with the user’s MSA ID on-chain. This effectively restores user control. The old compromised or inaccessible key can be removed or left unused; the new key will have full control of the MSA.
 
@@ -26,7 +26,7 @@ When a Frequency blockchain user’s wallet provider becomes unavailable, recove
 
 2. Secure Authentication Verification: The authentication step must be implemented securely to avoid vulnerabilities. The system should ensure that possession of the Authentication Contact account is verified via robust methods (e.g. time-bound one-time password (OTP) codes or magic links) without exposing the Recovery Secret or other secrets. No sensitive data is sent via email; only random verification tokens are.
 
-3. Brute Force Resistance: Recovery Hashes (as stored on-chain) must be resistant to brute force and offline attacks. An attacker who obtains the on-chain hash should not be able to feasibly crack it to derive the Authentication Contact or Recovery Secret. The design should incorporate strong cryptographic hashing or encryption to protect against precomputation and exhaustive search.
+3. Brute Force Resistance: Recovery Commitments (as stored on-chain) must be resistant to brute force and offline attacks. An attacker who obtains the on-chain commitment should not be able to feasibly crack it to derive the Authentication Contact or Recovery Secret. The design should incorporate strong cryptographic hashing or encryption to protect against precomputation and exhaustive search.
 
 The following sections detail the cryptographic design meeting these requirements, the recovery workflows (with sequence diagrams), security analysis, and recommended data structures and example implementations.
 
@@ -36,7 +36,7 @@ The following sections detail the cryptographic design meeting these requirement
 - **Control Key**: The cryptographic key that allows the user to control their MSA. It is used for signing transactions and messages on the Frequency blockchain.
 - **Recovery Secret**: A 32 byte hexadecimal secret derived from the user’s Authentication Contact and a random seed, used to recover access to the MSA.
 - **Recovery Provider**: A third-party service approved by Frequency governance to perform account recovery operations.
-- **Recovery Hash**: A cryptographic hash derived from the Recovery Secret and Authentication Contact, stored on-chain to allow recovery.
+- **Recovery Commitment**: A cryptographic commitment derived from the Recovery Secret and Authentication Contact, stored on-chain to allow recovery.
 - **Control Key**: A cryptographic key that allows the user to control their MSA. It can be a public key used for signing transactions or messages on the Frequency blockchain.
 - **Governance**: The on-chain mechanism that approves and manages recovery providers, ensuring they follow the protocol rules and security standards.
 - **Authentication Contact**: The user’s chosen method for receiving recovery-related communications, typically an email address or phone number.
@@ -50,36 +50,40 @@ The following sections detail the cryptographic design meeting these requirement
 
 Each user’s Recovery Secret is derived from a combination of their Authentication Contact and a random secret. This design proposes using a 32 byte random hexadecimal value as the random secret component due to creating high entropy and user-friendliness.
 
-### Recovery Hash Generation
+### Recovery Commitment Generation
 
-The blockchain combines the user’s Authentication Contact with the Recovery Secret, in the form of the Recovery Intermediary Hashes to preserve secrecy, in a secure way.
+The blockchain combines the user’s Recovery Secret with the Authentication Contact, in the form of the Recovery Intermediary Hashes to preserve secrecy, in a secure way.
 
 Implementation: Deterministic Hash (One-Way): Compute a cryptographic hash
+
+Note: Here `+` denotes concatenation of byte arrays.
 
 #### Recovery Intermediary Hashes
 
 - H(s) = keccak256(Recovery Secret)
-- H(sc) = keccak256(Recovery Secret || Authentication Contact)  
+- H(sc) = keccak256(Recovery Secret + Authentication Contact)  
 
-#### Final Recovery Hash
+#### Final Recovery Commitment (RC)
 
-- RH = keccak256(H(s) || H(sc))
+- RC = keccak256(H(s) + H(sc))
 
-In this scheme, given the correct Authentication Contact and Recovery Secret, Recovery Providers can recompute the Recovery Hash (RH) and match the on-chain RH value to verify the combination. This is effectively a commitment to the Authentication Contact + Recovery Secret. The user’s Recovery Secret is not stored on-chain, only the Recovery Hash, so it cannot be directly recovered by anyone.
+In this scheme, given the correct Recovery Secret and Authentication Contact, Recovery Providers can recompute the Recovery Commitment (RC) and match the on-chain RC value to verify the combination. This is effectively a commitment to the Recovery Secret + Authentication Contact. The user’s Recovery Secret is not stored on-chain, only the Recovery Commitment, so it cannot be directly recovered by anyone.
 
 Note: The Authentication Contact is typically the user’s email address, but could also be a phone number or other identifier. The hash ensures that even if the Authentication Contact is known, the Recovery Secret remains secure. The Authentication Contact must be normalized (e.g. lowercased for emails, whitespace removed, etc., or convert to [E.164](https://en.wikipedia.org/wiki/E.164) format for phone numbers) before hashing to ensure consistent results.
 
+TODO: Specify the email normalization process and any other specific requirements for the Authentication Contact format.
+
 ### Hash Algorithm
 
-This design uses a keccak256 hash function for the Recovery Hash (RH) due to its widespread use in blockchain applications and its security properties. The hash is computed as follows:
+This design uses a keccak256 hash function for the Recovery Commitment (RC) due to its widespread use in blockchain applications and its security properties. The hash is computed as follows:
 
 ```rust
-// Pseudocode for computing the Recovery Hash from the Intermediate Hashes
-// The function accepts the hash(recovery secret), and the hash(authentication contact || recovery secret)
-fn compute_recovery_hash(hash_recovery_secret: [u8; 32], hash_contact_secret: [u8; 32]) -> [u8; 32] {
+// Pseudocode for computing the Recovery Commitment from the Recovery Intermediary Hashes
+// The function accepts the hash(recovery secret), and the hash(recovery secret + authentication contact) as inputs
+fn compute_recovery_commitment(hashed_recovery_secret: [u8; 32], hashed_secret_and_contact: [u8; 32]) -> [u8; 32] {
     let mut hasher = Keccak256::new();
-    hasher.update(hash_recovery_secret);
-    hasher.update(hash_contact_secret);
+    hasher.update(hashed_recovery_secret);
+    hasher.update(hashed_secret_and_contact);
     hasher.finalize().into()
 }
 ```
@@ -156,11 +160,11 @@ sequenceDiagram
 
 2. Recovery Secret Generation: The blockchain generates a random secret (e.g. a 256-bit entropy value). It will call a secure random generator to get 32 bytes and then encode as a hexadecimal phrase.
 
-3. On-Chain Storage: The blockchain stores the Recovery Hash (RH) using the extrinsic, `add_recovery_hash`, as part of the MSA creation process. The blockchain will store RH in association with that MSA ID.
+3. On-Chain Storage: The blockchain stores the Recovery Commitment (RC) using the extrinsic, `add_recovery_commitment`, as part of the MSA creation process. The blockchain will store RC in association with that MSA ID.
 
-4. User Receives Recovery Secret: Once the MSA is successfully created and the Recovery Hash stored, the provider delivers the actual Recovery Secret to the user.
+4. User Receives Recovery Secret: Once the MSA is successfully created and the Recovery Commitment stored, the provider delivers the actual Recovery Secret to the user.
 
-5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Hash (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The blockchain and provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
+5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Commitment (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The blockchain and provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
 
 ### 2. Account Recovery Process
 
@@ -176,10 +180,10 @@ sequenceDiagram
     U->>RP: Request Recovery with Authentication Contact and Recovery Secret
     RP->>F: Validate Recovery (Recovery Intermediary Hashes)
     F->>RP: Return validation result
-    
-    alt Recovery Hash not found
+
+    alt Recovery Commitment not found
         RP->>U: RECOVERY FAILED: (Invalid Recovery Intermediary Hashes)
-    else Recovery Hash matches 
+    else Recovery Commitment matches
         RP->>U: Contact Verification challenge (e.g. OTP)
         U->>RP: Submit OTP from Authentication Contact
         RP->>RP: Validate OTP
@@ -187,7 +191,7 @@ sequenceDiagram
         alt OTP invalid
             RP->>U: RECOVERY FAILED: (Invalid OTP)
         else OTP valid
-            RP->>F: Retrieve MSA ID by Recovery Hash
+            RP->>F: Retrieve MSA ID by Recovery Commitment
             F->>RP: Return MSA ID
             RP->>F: Register new Control Key to MSA
             F->>RP: Confirm key added
@@ -209,9 +213,9 @@ sequenceDiagram
 
     The Recovery Provider uses the submitted Authentication Contact + Recovery Secret to validate against the blockchain:
 
-    - It submits the Recovery Intermediary Hashes to the blockchain and determines if any MSA record has a matching Recovery Hash. This can be done via an extrinsic `verify_recover_hashes(hash_auth_contact, hash_contact_secret)`.
+    - It submits the Recovery Intermediary Hashes to the blockchain and determines if any MSA record has a matching Recovery Commitment. This can be done via an extrinsic `verify_recover_hashes(hash_auth_contact, hash_contact_secret)`.
     - If no match is found, the Recovery Provider knows the provided secret is invalid. Recovery is refused and the Recovery Provider will inform the user that the key or Authentication Contact is incorrect.
-    - If a match is found, the Recovery Provider obtains the MSA ID associated with that Recovery Hash.
+    - If a match is found, the Recovery Provider obtains the MSA ID associated with that Recovery Commitment.
 
 3. Off-Chain Validation (Authentication Contact Ownership)
 
@@ -233,7 +237,7 @@ sequenceDiagram
 
     The Recovery Provider now submits a special Recovery extrinsic to the Frequency blockchain. This transaction does two main things atomically:
 
-    - Invalidate Old Recovery Hash: It clears the hash so it cannot be reused.
+    - Invalidate Old Recovery Commitment: It clears the commitment so it cannot be reused.
     - Add New Control Key: It adds the new Control Key to the MsaId.
 
 6. Completion and User Notification
@@ -251,7 +255,7 @@ sequenceDiagram
 
     After a successful recovery, if the user continues with a new wallet/provider, they may want to set up a new Recovery Secret for future safety (since the old one was consumed). The flow would essentially be the same as during account creation:
 
-    - The user’s new provider (or the recovery provider, if it doubles as a wallet provider) can generate a new secret, and update the on-chain record. The chain will accept it because the previous one was invalidated. The new Recovery Hash replaces the old.
+    - The user’s new provider (or the recovery provider, if it doubles as a wallet provider) can generate a new secret, and update the on-chain record. The chain will accept it because the previous one was invalidated. The new Recovery Commitment replaces the old.
     - This ensures the user isn’t left without a recovery option going forward. It’s an optional step but recommended. The user should be informed that they have a new Recovery Secret and the old one will no longer work.
 
     If the user chooses not to set a new Recovery Secret, that’s also acceptable. The system does not force a new Recovery Secret issuance; it simply allows it.
@@ -285,7 +289,7 @@ Recovery Providers are semi-trusted entities. They are given the power to initia
 
 The contract that the Recovery Secret is one-time is enforced by design:
 
-- The chain will not allow a second use of the same Recovery Hash. After it’s cleared, if someone tried to reuse the same secret, the lookup would fail (no match).
+- The chain will not allow a second use of the same Recovery Commitment. After it’s cleared, if someone tried to reuse the same secret, the lookup would fail (no match).
 - If an attacker somehow eavesdropped on the secret during a legitimate recovery, trying to use it again would not work because it’s already consumed.
 - Users are also advised: once you use your Recovery Secret, consider it spent. If for any reason they suspect it was observed, they should treat it like a password that has been changed.
 
@@ -295,7 +299,7 @@ Could an attacker attempt to guess Recovery Secrets by trying many emails and se
 
 ### Privacy
 
-Storing the Recovery Hash on-chain does not reveal the user’s Authentication Contact or any personal data in plaintext. The Authentication Contact is indirectly included in the hash but cannot be extracted from it. An observer cannot tell even if two accounts used the same Authentication Contact, because each hash will differ due to the random secret component. The Recovery Providers handling Authentication Contacts and recovery know the Authentication Contact, so users entrust that info to the Recovery Provider just as they did to the original provider. All providers should have privacy policies in place, misuse of personal data is less likely. Nevertheless, minimizing on-chain exposure of Authentication Contacts is a deliberate choice.
+Storing the Recovery Commitment on-chain does not reveal the user’s Authentication Contact or any personal data in plaintext. The Authentication Contact is indirectly included in the hash but cannot be extracted from it. An observer cannot tell even if two accounts used the same Authentication Contact, because each hash will differ due to the random secret component. The Recovery Providers handling Authentication Contacts and recovery know the Authentication Contact, so users entrust that info to the Recovery Provider just as they did to the original provider. All providers should have privacy policies in place, misuse of personal data is less likely. Nevertheless, minimizing on-chain exposure of Authentication Contacts is a deliberate choice.
 
 ### Denial-of-Service Considerations
 
@@ -316,16 +320,23 @@ In summary, the system meets the security requirements by layering cryptographic
 ### Primitives
 
 ```rust
-/// RecoveryHash is a 32-byte hash computed from the Recovery Intermediary Hashes.
-pub type RecoveryHash = [u8; 32];
+/// RecoveryCommitment is a 32-byte hash computed from the Recovery Intermediary Hashes.
+pub type RecoveryCommitment = [u8; 32];
 
-// Payload for adding a Recovery Hash to an existing MSA
+/// This payload needs to be signed by the MSA owner to add a Recovery Commitment
+pub struct CommitmentHashPayload<T: Config> {
+    pub recovery_commitment: RecoveryCommitment,
+    /// The block number at which a signed proof of this payload expires
+    pub expiration: BlockNumberFor<T>,
+}
+
+// Payload for adding a Recovery Commitment to an existing MSA
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
-pub struct RecoveryHashesPayload<T: Config> {
-    /// The hash of the user's Authentication Contact
-    pub contact_hash: Vec<u8>,
-    /// The hash of (Recovery Secret || Authentication Contact)
-    pub secret_hash: Vec<u8>,
+pub struct IntermediaryHashesPayload<T: Config> {
+    /// The hash of (Recovery Secret)
+    pub intermediary_hash_a: Vec<u8>,
+    /// The hash of (Recovery Secret + Authentication Contact)
+    pub intermediary_hash_b: Vec<u8>,
     /// The block number at which a signed proof of this payload expires
     pub expiration:  BlockNumberFor<T>,
 }
@@ -343,7 +354,7 @@ pub enum AuthenticationContactType {
 
 /// Authentication Contact structure with type-safe encoding
 /// Format: [type_byte] + [contact_data_bytes]
-/// Example: 0x01 + utf8_to_bytes("user@example.com")
+/// Example: 0x00 + utf8_to_bytes("user@example.com")
 #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug, TypeInfo)]
 pub struct AuthenticationContact {
     pub contact_type: AuthenticationContactType,
@@ -355,13 +366,13 @@ pub struct AuthenticationContact {
 #[pallet::event]
 #[pallet::generate_deposit(pub(super) fn deposit_event)]
 pub enum Event<T: Config> {
-    /// A Recovery Hash was added to an existing MSA
-    RecoveryHashAdded {
+    /// A Recovery Commitment was added to an existing MSA
+    RecoveryCommitmentAdded {
         who: T::AccountId,
         msa_id: MsaId,
     },
     /// Recovery Intermediary Hashes were verified successfully
-    RecoveryHashesVerified {
+    RecoveryCommitmentVerified {
         who: T::AccountId,
         msa_id: MsaId,
     },
@@ -371,8 +382,8 @@ pub enum Event<T: Config> {
         msa_id: MsaId,
         new_control_key: T::PublicKey, // New control key added to the MSA
     },
-    /// A Recovery Hash was invalidated after use or removal
-    RecoveryHashInvalidated {
+    /// A Recovery Commitment was invalidated after use or removal
+    RecoveryCommitmentInvalidated {
         who: T::AccountId,
         msa_id: MsaId,
     },
@@ -382,32 +393,32 @@ pub enum Event<T: Config> {
 ### Storage Structures
 
 ```rust
-/// Storage type for a MsaID to Recovery Hash information
+/// Storage type for a MsaID to Recovery Commitment information
 /// - Key: MsaId
-/// - Value: RecoveryHash
+/// - Value: RecoveryCommitment
 #[pallet::storage]
-pub type MsaIdToRecoveryHash<T: Config> = StorageMap<_, Twox64Concat, MsaId, RecoveryHash>;
+pub type MsaIdToRecoveryCommitment<T: Config> = StorageMap<_, Twox64Concat, MsaId, RecoveryCommitment>;
 ```
 
 ## Required Extrinsics
 
 |Name/Description|Caller|Payment|Key Events|Runtime Added|
 |---|---|---|---|---|
-| `add_recovery_hash`<br />Add a new Recovery Hash to an existing MSA| Provider| Capacity or Tokens | [`RecoveryHashAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryHashAdded)| 166|
-| `verify_recovery_hashes`<br />Verify Recovery Intermediary Hashes against stored Recovery Hash| Recovery Provider| Capacity or Tokens | [`RecoveryHashesVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryHashesVerified)| 166|
-| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryHashInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryHashInvalidated) | 166|
+| `add_recovery_commitment`<br />Add a new Recovery Commitment to an existing MSA| Provider| Capacity or Tokens | [`RecoveryCommitmentAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentAdded)| 166|
+| `verify_intermediary_hashes`<br />Verify Recovery Intermediary Hashes against stored Recovery Commitment| Recovery Provider| Capacity or Tokens | [`RecoveryCommitmentVerified`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentVerified)| 166|
+| `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryCommitmentInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentInvalidated) | 166|
 
-### Add Recovery Hash
+### Add Recovery Commitment
 
-This extrinsic allows a provider to add a new Recovery Hash to an existing MSA. It can be used during account creation or later to update the Recovery Hash.
+This extrinsic allows a provider to add a new Recovery Commitment to an existing MSA. It can be used during account creation or later to update the Recovery Commitment.
 
 ```rust
-// Pseudo-code for adding a Recovery Hash to an existing MSA
-pub fn add_recovery_hash(
+// Pseudo-code for adding a Recovery Commitment to an existing MSA
+pub fn add_recovery_commitment(
     origin: OriginFor<T>,
     msa_owner_key: T::AccountId,
     proof: MultiSignature,
-    payload: RecoveryHashesPayload,
+    payload: IntermediaryHashesPayload,
 ) -> DispatchResult {
     let provider_key = ensure_signed(origin)?;
 
@@ -423,18 +434,12 @@ pub fn add_recovery_hash(
     // Recover the MSA ID from the msa_owner_key
     let msa_id = ensure_valid_msa_key(&msa_owner_key);
 
-    // Verify that the Recovery Provider is a registered Recovery Provider
-    ensure!(
-        T::RecoveryProviderRegistry::is_recovery_provider(&provider_key),
-        Error::<T>::NotAuthorizedRecoveryProvider
-    );
+    // Compute the Recovery Commitment from the provided payload
+    let recovery_commitment = hash_recovery_code(&payload.intermediary_hash_a, &payload.intermediary_hash_b);
 
-    // Compute the Recovery Hash from the provided payload
-    let recovery_hash = hash_recovery_code(&payload.contact_hash, &payload.secret_hash);
-
-    // Store the new RecoveryHash
-    MsaIdToRecoveryHash::<T>::insert(msa_id, recovery_hash);
-    Self::deposit_event(Event::RecoveryHashAdded {
+    // Store the new RecoveryCommitment
+    MsaIdToRecoveryCommitment::<T>::insert(msa_id, recovery_commitment);
+    Self::deposit_event(Event::RecoveryCommitmentAdded {
       who: msa_owner_key,
       msa_id,
     });
@@ -443,38 +448,38 @@ pub fn add_recovery_hash(
 }
 ```
 
-### Verify Recovery Hashes
+### Verify Intermediary Hashes
 
 This extrinsic is used by the Recovery Provider to verify if a user’s Recovery Intermediary Hashes compute a match to any existing MSA.
 
 ```rust
 // Pseudo-code for verifying the Recovery Intermediary Hashes
-pub fn verify_recovery_hashes(
+pub fn verify_intermediary_hashes(
     origin: OriginFor<T>,
     msa_owner_key: T::AccountId,
     proof: MultiSignature,
-    payload: RecoveryHashesPayload,
+    payload: IntermediaryHashesPayload,
 ) -> DispatchResult {
     ensure_signed(origin)?;
 
     let msa_id = ensure_valid_msa_key(&msa_owner_key);
 
-    let recovery_hash = hash_recovery_secret(payload.contact_hash, payload.secret_hash);
+    let recovery_commitment = hash_recovery_secret(payload.contact_hash, payload.secret_hash);
 
-    // Look up the Recovery Hash in storage
-    match MsaIdToRecoveryHash::<T>::get(&msa_id) {
-        Some(recovery_hash) if recovery_hash == recovery_hash => {
-            Self::deposit_event(Event::RecoveryHashesVerified { who, msa_id });
+    // Look up the Recovery Commitment in storage
+    match MsaIdToRecoveryCommitment::<T>::get(&msa_id) {
+        Some(recovery_commitment) if recovery_commitment == recovery_commitment => {
+            Self::deposit_event(Event::RecoveryCommitmentVerified { who, msa_id });
             Ok(())
         },
-        None => Err(Error::<T>::RecoveryHashNotFound.into()),
+        None => Err(Error::<T>::RecoveryCommitmentNotFound.into()),
     }
 }
 ```
 
 ### Recover Account
 
-This extrinsic is called by the Recovery Provider after verifying the user’s Recovery Intermediary Hashes. It adds a new Control Key to the MSA and invalidates the old Recovery Hash.
+This extrinsic is called by the Recovery Provider after verifying the user’s Recovery Intermediary Hashes. It adds a new Control Key to the MSA and invalidates the old Recovery Commitment.
 
 ```rust
 // Pseudo-code for recovering an account with a new control key
@@ -485,21 +490,21 @@ pub fn recover_account(
     new_control_key: Vec<u8>,
 ) -> DispatchResult {
     let who = ensure_signed(origin)?;
-    let recovery_hash = hash_recovery_code(&email, &recovery_code);
+    let recovery_commitment = hash_recovery_code(&email, &recovery_code);
 
-    // Verify the recovery hash exists and get the MSA ID
-    let msa_id = RecoveryHashToMsaId::<T>::get(&recovery_hash)
-        .ok_or(Error::<T>::RecoveryHashNotFound)?;
+    // Verify the recovery commitment exists and get the MSA ID
+    let msa_id = RecoveryCommitmentToMsaId::<T>::get(&recovery_commitment)
+        .ok_or(Error::<T>::RecoveryCommitmentNotFound)?;
 
-    // Invalidate the old Recovery Hash by removing it from storage
-    RecoveryHashToMsaId::<T>::remove(&recovery_hash);
+    // Invalidate the old Recovery Commitment by removing it from storage
+    RecoveryCommitmentToMsaId::<T>::remove(&recovery_commitment);
 
     // Add the new control key to the MSA
     // Note: This would integrate with existing MSA pallet functionality
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
     Self::deposit_event(Event::AccountRecovered { who, msa_id });
-    Self::deposit_event(Event::RecoveryHashInvalidated { msa_id });
+    Self::deposit_event(Event::RecoveryCommitmentInvalidated { msa_id });
 
     Ok(())
 }
