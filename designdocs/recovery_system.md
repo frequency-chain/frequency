@@ -39,7 +39,6 @@ The following sections detail the cryptographic design meeting these requirement
 - **Recovery Secret**: A 32 byte hexadecimal secret derived from the user’s Authentication Contact and a random seed, used to recover access to the MSA.
 - **Recovery Provider**: A third-party service approved by Frequency governance to perform account recovery operations.
 - **Recovery Commitment**: A cryptographic commitment derived from the Recovery Secret and Authentication Contact, stored on-chain to allow recovery.
-- **Control Key**: A cryptographic key that allows the user to control their MSA. It can be a public key used for signing transactions or messages on the Frequency blockchain.
 - **Governance**: The on-chain mechanism that approves and manages recovery providers, ensuring they follow the protocol rules and security standards.
 - **Authentication Contact**: The user’s chosen method for receiving recovery-related communications, typically an email address or phone number.
 - **Contact Verification**: The process of confirming the user’s Authentication Contact method for recovery communications.
