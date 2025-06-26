@@ -27,6 +27,11 @@ Support for generating and validating the hashes needed to use the Recovery Syst
 
 - `npm install @frequency-chain/recovery-sdk`
 
+### React Native
+
+To use this with React Native, you will need to shim `crypto.getRandomValues`.
+[`react-native-get-random-values`](https://github.com/LinusU/react-native-get-random-values) is suggested.
+
 ## Usage
 
 | Method | Description |
