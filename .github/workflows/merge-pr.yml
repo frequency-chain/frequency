@@ -50,6 +50,78 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
 
+  publish-js-ethereum-utils-rc:
+    name: Build JS Ethereum utils
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.5
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/ethereum-utils/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: js/ethereum-utils
+      - name: Build
+        run: npm run build
+        working-directory: js/ethereum-utils
+        env:
+          FULL_SHA: ${{github.sha}}
+      - name: Version Package
+        env:
+          FULL_SHA: ${{github.sha}}
+        working-directory: js/ethereum-utils/dist
+        shell: bash
+        run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version
+      - name: Publish on NPM @next
+        run: npm publish --tag next --access public
+        working-directory: js/ethereum-utils/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
+  publish-js-schemas-rc:
+    name: Build JS Schemas
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/schemas/package-lock.json
+      - name: Install
+        run: npm ci
+        working-directory: js/schemas
+      - name: Build
+        run: npm run build
+        working-directory: js/schemas
+        env:
+          FULL_SHA: ${{github.sha}}
+      - name: Version Package
+        env:
+          FULL_SHA: ${{github.sha}}
+        working-directory: js/schemas/dist
+        shell: bash
+        run: npm version --new-version "v0.0.0-${FULL_SHA:0:6}" --no-git-tag-version
+      - name: Publish on NPM @next
+        run: npm publish --tag next --access public
+        working-directory: js/schemas/dist
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NODE_AUTH_TOKEN}}
+
   publish-js-recovery-sdk-rc:
     name: Build JS Recovery SDK
     runs-on: ubuntu-24.04
