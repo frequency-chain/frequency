@@ -21,6 +21,12 @@ fn test_weights_are_stable() {
 			),
 			("grant_delegation", SubstrateWeight::<Test>::grant_delegation(100), 810962313, 14946),
 			(
+				"add_recovery_commitment",
+				SubstrateWeight::<Test>::add_recovery_commitment(),
+				696457000,
+				6691,
+			),
+			(
 				"add_onchain_message",
 				SubstrateWeight::<Test>::add_onchain_message(100),
 				437712930,

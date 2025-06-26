@@ -1041,12 +1041,6 @@ pub mod pallet {
 			// Recover the MSA ID from the msa_owner_key
 			let msa_id = Self::ensure_valid_msa_key(&msa_owner_key)?;
 
-			// TODO: Does the Provider need to specify the MSA ID in the payload?
-			// The Provider should know the MSA ID and the owner key, but is there any value in
-			// having the chain verify this?
-			// Ensure the payload msa_id matches the MSA ID of the owner key
-			ensure!(payload.msa_id == msa_id, Error::<T>::NotMsaOwner);
-
 			// Store the new RecoveryCommitment
 			MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
 			Self::deposit_event(Event::RecoveryCommitmentAdded { who: msa_owner_key, msa_id });

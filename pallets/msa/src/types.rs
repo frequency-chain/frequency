@@ -192,12 +192,10 @@ impl AddProvider {
 )]
 #[scale_info(skip_type_params(T))]
 pub struct RecoveryCommitmentPayload<T: Config> {
-	/// Message Source Account identifier
-	pub msa_id: MessageSourceId,
-	/// The block number at which a signed proof of this payload expires.
-	pub expiration: BlockNumberFor<T>,
 	/// The Recovery Commitment (32 bytes)
 	pub recovery_commitment: [u8; 32],
+	/// The block number at which a signed proof of this payload expires.
+	pub expiration: BlockNumberFor<T>,
 }
 
 // TODO: Is this necessary?
@@ -213,17 +211,10 @@ impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
 				b"RecoveryCommitmentPayload(uint64 msaId,uint32 expiration,bytes32 recoveryCommitment)",
 			);
 		}
-		let coded_msa_id = to_abi_compatible_number(self.msa_id);
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let message = sp_io::hashing::keccak_256(
-			&[
-				MAIN_TYPE_HASH.as_slice(),
-				&coded_msa_id,
-				&coded_expiration,
-				&self.recovery_commitment,
-			]
-			.concat(),
+			&[MAIN_TYPE_HASH.as_slice(), &coded_expiration, &self.recovery_commitment].concat(),
 		);
 		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
 		combined.into_boxed_slice()
