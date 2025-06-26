@@ -376,7 +376,7 @@ fn check_ethereum_signature<L: Lazy<[u8]>>(
 }
 
 /// returns the ethereum encoded prefix and domain separator for EIP-712 signatures
-pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> {
+pub fn get_eip712_encoding_prefix(verifier_contract_address: &str, chain_id: u32) -> Box<[u8]> {
 	lazy_static! {
 		// domain separator
 		static ref DOMAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
@@ -385,9 +385,8 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 
 		static ref DOMAIN_NAME: [u8; 32] = sp_io::hashing::keccak_256(b"Frequency");
 		static ref DOMAIN_VERSION: [u8; 32] = sp_io::hashing::keccak_256(b"1");
-		// TODO: USE correct chain ids for different networks
-		static ref CHAIN_ID: [u8; 32] = to_abi_compatible_number(420420420u32);
 	}
+	let compatible_chain_id: [u8; 32] = to_abi_compatible_number(chain_id);
 	let verifier_contract: [u8; 20] = from_hex(verifier_contract_address)
 		.unwrap_or_default()
 		.try_into()
@@ -404,7 +403,7 @@ pub fn get_eip712_encoding_prefix(verifier_contract_address: &str) -> Box<[u8]> 
 			DOMAIN_TYPE_HASH.as_slice(),
 			DOMAIN_NAME.as_slice(),
 			DOMAIN_VERSION.as_slice(),
-			CHAIN_ID.as_slice(),
+			compatible_chain_id.as_slice(),
 			&zero_prefixed_verifier_contract,
 		]
 		.concat(),
@@ -481,7 +480,7 @@ mod tests {
 	#[test]
 	fn ethereum_eip712_signatures_for_claim_handle_payload_should_work() {
 		let payload = ClaimHandlePayload { base_handle: b"Alice".to_vec(), expiration: 100u32 };
-		let encoded_payload = payload.encode_eip_712();
+		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x832d1f6870118f5fc6e3cc314152b87dc452bd607581f16b1e39142b553260f8397e80c9f7733aecf1bd46d4e84ad333c648e387b069fa93b4b1ca4fa0fd406b1c").expect("Should convert");

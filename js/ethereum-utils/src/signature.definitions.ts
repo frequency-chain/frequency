@@ -21,8 +21,16 @@ export const EIP712_DOMAIN_DEFINITION = {
   ],
 };
 
-// using pallet_revive test chain ID for now.
-export const EIP712_DOMAIN_DEFAULT: EipDomainPayload = {
+// using 2091 for mainnet
+export const EIP712_DOMAIN_MAINNET_DEFAULT: EipDomainPayload = {
+  name: 'Frequency',
+  version: '1',
+  chainId: '0x082B',
+  verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+};
+
+// using pallet_revive test chain ID for testnet/dev
+export const EIP712_DOMAIN_TESTNET: EipDomainPayload = {
   name: 'Frequency',
   version: '1',
   chainId: '0x190f1b44',

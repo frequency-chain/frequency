@@ -71,7 +71,7 @@ describe('adding an Ethereum key for low cost', function () {
       u8aToHex(addKeyPayload.newPublicKey),
       addKeyPayload.expiration
     );
-    const ecdsaSignature = await sign(ethereumSecretKey, eip712AddKeyData);
+    const ecdsaSignature = await sign(ethereumSecretKey, eip712AddKeyData, 'Dev');
 
     return { addKeyPayload, delegatorSig: delegatorSrSignature, newSig: ecdsaSignature };
   }

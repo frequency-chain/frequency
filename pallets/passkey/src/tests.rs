@@ -565,7 +565,7 @@ fn passkey_public_key_scale_and_eip712_compatibility_guard() {
 fn ethereum_eip712_signatures_for_passkey_publickey_should_work() {
 	new_test_ext().execute_with(|| {
 		let payload = PasskeyPublicKey (from_hex("0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026").unwrap().try_into().unwrap());
-		let encoded_payload = payload.encode_eip_712();
+		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0xbafaf5e21695a502b2d356b4558da35245aa1be7161f01a5f0224fbfdf85b5c52898fc495ab1ca9b68c3b07e23d31a5fe1686165344b22bc14201f293d54f36b1b").expect("Should convert");

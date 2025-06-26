@@ -63,7 +63,8 @@ async function generateSignedAuthorizedKeyPayload(keys: KeyringPair, payload: Au
   );
   const ownerSig = await sign(
     u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(keys)).secretKey),
-    signingPayload
+    signingPayload,
+    'Dev'
   );
 
   return {
