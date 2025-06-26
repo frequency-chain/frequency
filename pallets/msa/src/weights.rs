@@ -46,6 +46,7 @@ pub trait WeightInfo {
 	fn propose_to_be_provider() -> Weight;
 	fn reindex_offchain() -> Weight;
 	fn withdraw_tokens() -> Weight;
+	fn add_recovery_commitment() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -246,6 +247,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Storage: `System::Account` (r:2 w:2)
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn withdraw_tokens() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1229`
+		//  Estimated: `6691`
+		// Minimum execution time: 83_233_000 picoseconds.
+		Weight::from_parts(88_177_000, 6691)
+			.saturating_add(T::DbWeight::get().reads(5_u64))
+			.saturating_add(T::DbWeight::get().writes(5_u64))
+	}
+	// TODO: VERIFY THIS WEIGHT
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	fn add_recovery_commitment() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `1229`
 		//  Estimated: `6691`
@@ -461,6 +478,22 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(5_u64))
 			.saturating_add(RocksDbWeight::get().writes(5_u64))
 	}
+	// TODO: VERIFY THIS WEIGHT
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `System::Account` (r:2 w:2)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
+	fn add_recovery_commitment() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1229`
+		//  Estimated: `6691`
+		// Minimum execution time: 83_233_000 picoseconds.
+		Weight::from_parts(88_177_000, 6691)
+			.saturating_add(RocksDbWeight::get().reads(5_u64))
+			.saturating_add(RocksDbWeight::get().writes(5_u64))
+	}
 }
 
 
@@ -620,6 +653,18 @@ mod tests {
 	}
 	#[test]
 	fn test_withdraw_tokens() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 6691
+		);
+	}
+	#[test]
+	fn test_add_recovery_commitment() {
 		assert!(
 			BlockWeights::get()
 				.per_class
