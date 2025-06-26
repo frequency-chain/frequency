@@ -154,7 +154,7 @@ sequenceDiagram
     G->>B: Return handle
     B->>App: Return handle
     App->>U: Show confirmed handle
-    G->>U: (Async) Send Frequency intro/recovery email including recovery code
+    B->>U: (Async) Send Frequency intro/recovery email including recovery code
 ```
 
 #### Sequence diagram – Account creation and Recovery Secret setup
