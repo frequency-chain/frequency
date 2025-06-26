@@ -3,6 +3,8 @@ import { bytesToHex, randomBytes, concatBytes, hexToBytes, utf8ToBytes } from '@
 import { ContactType } from './types.js';
 import { standardizeContact } from './standardize.js';
 
+export * from './types.js';
+
 /**
  * Generates a new Recovery Secret for a user
  *
