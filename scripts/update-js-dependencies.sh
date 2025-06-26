@@ -17,6 +17,13 @@ npx npm-check-updates -u
 npm i
 cd ../..
 
+echo "Updating js/recovery-sdk"
+cd js/recovery-sdk
+rm package-lock.json
+npx npm-check-updates -u
+npm i
+cd ../..
+
 echo "Updating js/ethereum-utils"
 cd js/ethereum-utils
 rm package-lock.json
