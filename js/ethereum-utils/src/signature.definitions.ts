@@ -22,7 +22,7 @@ export const EIP712_DOMAIN_DEFINITION = {
 };
 
 // using 2091 for mainnet
-export const EIP712_DOMAIN_MAINNET_DEFAULT: EipDomainPayload = {
+export const EIP712_DOMAIN_MAINNET: EipDomainPayload = {
   name: 'Frequency',
   version: '1',
   chainId: '0x082B',
