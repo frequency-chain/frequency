@@ -72,5 +72,5 @@ pub trait UtilityProvider<Origin, RuntimeCall> {
 /// Trait that must be implemented to be able to encode the payload to eip-712 compatible signatures
 pub trait EIP712Encode {
 	/// encodes the type without hashing it
-	fn encode_eip_712(&self) -> Box<[u8]>;
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]>;
 }

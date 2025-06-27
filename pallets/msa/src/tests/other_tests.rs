@@ -800,7 +800,7 @@ fn ethereum_eip712_signatures_for_add_key_should_work() {
 			expiration: 100,
 			new_public_key: address.into(),
 		};
-		let encoded_payload = payload.encode_eip_712();
+		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c").expect("Should convert");
@@ -831,7 +831,7 @@ fn ethereum_eip712_signatures_for_authorized_key_should_work() {
 			expiration: 100,
 			authorized_public_key: address.into(),
 		};
-		let encoded_payload = payload.encode_eip_712();
+		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x9dec03e5c93e2b9619cc8fd77383a8fc38d4aa3dc20fa26be436d386acb380260e2a82e677b71f28adc7cc63b60855ccc481057307a1b05dbb2f5af19c66b5461c").expect("Should convert");
@@ -860,7 +860,7 @@ fn ethereum_eip712_signatures_for_add_provider_should_work() {
 			schema_ids: vec![2,4,5,6,7,8],
 			expiration: 100,
 		};
-		let encoded_payload = payload.encode_eip_712();
+		let encoded_payload = payload.encode_eip_712(420420420u32);
 
 		// following signature is generated via Metamask using the same input to check compatibility
 		let signature_raw = from_hex("0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c").expect("Should convert");

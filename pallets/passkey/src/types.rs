@@ -39,20 +39,19 @@ pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<256>>;
 pub struct PasskeyPublicKey(pub [u8; 33]);
 
 impl EIP712Encode for PasskeyPublicKey {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"PasskeyPublicKey(bytes publicKey)");
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_public_key = sp_io::hashing::keccak_256(self.0.as_slice());
 		let message =
 			sp_io::hashing::keccak_256(&[MAIN_TYPE_HASH.as_slice(), &coded_public_key].concat());
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
