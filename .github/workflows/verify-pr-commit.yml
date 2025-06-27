@@ -566,6 +566,44 @@ jobs:
           path: js/schemas/dist/frequency-chain-schemas-0.0.0.tgz
           if-no-files-found: error
 
+  verify-js-recovery-sdk:
+    name: Verify JS Recovery SDK
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          cache-dependency-path: js/recovery-sdk/package-lock.json
+      - name: Install Latest Versions
+        run: npm install
+        working-directory: js/recovery-sdk
+      - name: Lint
+        run: npm run lint
+        working-directory: js/recovery-sdk
+      - name: Test
+        run: npm test
+        working-directory: js/recovery-sdk
+      - name: Build
+        run: npm run build
+        working-directory: js/recovery-sdk
+      - name: Publish Dry Run
+        run: npm publish --dry-run
+        working-directory: js/recovery-sdk/dist
+      - name: Generate npm tarball
+        run: npm pack
+        working-directory: js/recovery-sdk/dist
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-recovery-sdk-${{github.run_id}}
+          path: js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz
+          if-no-files-found: error
+
   verify-node-docker-images:
     needs: build-binaries
     name: Verify Node Docker Images

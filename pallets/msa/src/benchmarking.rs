@@ -1,9 +1,12 @@
 #![allow(clippy::unwrap_used)]
 use super::*;
 
-use crate::types::EMPTY_FUNCTION;
 #[allow(unused)]
 use crate::Pallet as Msa;
+use crate::{
+	types::{RecoveryCommitmentPayload, EMPTY_FUNCTION},
+	MsaIdToRecoveryCommitment,
+};
 use common_primitives::utils::wrap_binary_data;
 use frame_benchmarking::{account, v2::*};
 use frame_support::{assert_ok, traits::fungible::Inspect};
@@ -418,6 +421,33 @@ mod benchmarks {
 		);
 
 		assert_eq!(T::Currency::balance(&msa_account_id), Zero::zero());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn add_recovery_commitment() -> Result<(), BenchmarkError> {
+		prep_signature_registry::<T>();
+
+		let (msa_public_key, msa_key_pair, msa_id) = create_msa_account_and_keys::<T>();
+		let provider_caller: T::AccountId = whitelisted_caller();
+
+		// Create a recovery commitment
+		let recovery_commitment = [1u8; 32];
+		let expiration = 10u32.into();
+
+		// Create the payload
+		let payload = RecoveryCommitmentPayload::<T> { recovery_commitment, expiration };
+
+		// Sign the payload with the MSA owner key
+		let encoded_payload = wrap_binary_data(payload.encode());
+		let signature =
+			MultiSignature::Sr25519(msa_key_pair.sign(&encoded_payload).unwrap().into());
+
+		#[extrinsic_call]
+		_(RawOrigin::Signed(provider_caller), msa_public_key.clone(), signature, payload);
+
+		// Verify the commitment was stored
+		assert!(MsaIdToRecoveryCommitment::<T>::get(msa_id).is_some());
 		Ok(())
 	}
 

@@ -7,6 +7,7 @@ mod msa_token_tests;
 mod offchain_tests;
 mod other_tests;
 mod public_key_tests;
+mod recovery_tests;
 mod replay_tests;
 mod retirement_tests;
 mod schema_permission_tests;
