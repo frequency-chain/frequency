@@ -150,6 +150,24 @@ export async function generateAuthorizedKeyPayload(
   };
 }
 
+export interface RecoveryCommitmentData {
+  recoveryCommitment: Uint8Array;
+  expiration?: number;
+}
+
+export async function generateRecoveryCommitmentPayload(
+  payloadInputs: RecoveryCommitmentData,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<RecoveryCommitmentData> {
+  const { expiration, ...payload } = payloadInputs;
+
+  return {
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
+    ...payload,
+  };
+}
+
 export async function generateItemizedSignaturePayload(
   payloadInputs: ItemizedSignaturePayloadV2,
   expirationOffset: number = 100,
