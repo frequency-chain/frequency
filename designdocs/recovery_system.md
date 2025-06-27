@@ -362,6 +362,7 @@ pub enum Event<T: Config> {
     RecoveryCommitmentAdded {
         who: T::AccountId,
         msa_id: MsaId,
+        recovery_commitment: RecoveryCommitment,
     },
     /// An account was recovered with a new control key
     AccountRecovered {

@@ -28,8 +28,12 @@ fn add_recovery_commitment_with_valid_data_should_succeed() {
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
 		// Verify event was emitted
 		System::assert_last_event(
-			Event::RecoveryCommitmentAdded { who: msa_owner_key_pair.public().into(), msa_id }
-				.into(),
+			Event::RecoveryCommitmentAdded {
+				who: msa_owner_key_pair.public().into(),
+				msa_id,
+				recovery_commitment,
+			}
+			.into(),
 		);
 	});
 }
@@ -170,8 +174,12 @@ fn add_recovery_commitment_updates_existing_commitment() {
 
 		// Verify event was emitted for the second commitment
 		System::assert_last_event(
-			Event::RecoveryCommitmentAdded { who: msa_owner_key_pair.public().into(), msa_id }
-				.into(),
+			Event::RecoveryCommitmentAdded {
+				who: msa_owner_key_pair.public().into(),
+				msa_id,
+				recovery_commitment: second_commitment,
+			}
+			.into(),
 		);
 	});
 }

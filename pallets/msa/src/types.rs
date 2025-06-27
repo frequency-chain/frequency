@@ -185,6 +185,10 @@ impl AddProvider {
 	}
 }
 
+/// A type definition for the Recovery Commitment data for the following operation:
+/// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment
+pub type RecoveryCommitment = [u8; 32]; // 32 bytes for the recovery commitment
+
 /// A type definition for the payload for the Recovery Commitment operation:
 /// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment`
 #[derive(
@@ -193,7 +197,7 @@ impl AddProvider {
 #[scale_info(skip_type_params(T))]
 pub struct RecoveryCommitmentPayload<T: Config> {
 	/// The Recovery Commitment (32 bytes)
-	pub recovery_commitment: [u8; 32],
+	pub recovery_commitment: RecoveryCommitment,
 	/// The block number at which a signed proof of this payload expires.
 	pub expiration: BlockNumberFor<T>,
 }

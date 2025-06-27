@@ -76,7 +76,7 @@ use sp_runtime::{
 
 pub use pallet::*;
 pub use types::{
-	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas,
+	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
 	RecoveryCommitmentPayload, EMPTY_FUNCTION,
 };
 pub use weights::*;
@@ -317,6 +317,9 @@ pub mod pallet {
 
 			/// The MSA id for the Event
 			msa_id: MessageSourceId,
+
+			/// The Recovery Commitment that was added
+			recovery_commitment: RecoveryCommitment,
 		},
 	}
 
@@ -1043,7 +1046,11 @@ pub mod pallet {
 
 			// Store the new RecoveryCommitment
 			MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
-			Self::deposit_event(Event::RecoveryCommitmentAdded { who: msa_owner_key, msa_id });
+			Self::deposit_event(Event::RecoveryCommitmentAdded {
+				who: msa_owner_key,
+				msa_id,
+				recovery_commitment: payload.recovery_commitment,
+			});
 
 			Ok(())
 		}
