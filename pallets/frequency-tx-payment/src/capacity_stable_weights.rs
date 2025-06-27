@@ -132,24 +132,22 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
-	/// Storage: Msa PayloadSignatureRegistryList (r:2 w:2)
-	/// Proof: Msa PayloadSignatureRegistryList (max_values: Some(50000), max_size: Some(144), added: 2124, mode: MaxEncodedLen)
-	/// Storage: Msa PayloadSignatureRegistryPointer (r:1 w:1)
-	/// Proof: Msa PayloadSignatureRegistryPointer (max_values: Some(1), max_size: Some(140), added: 635, mode: MaxEncodedLen)
-	/// Storage: Msa PublicKeyToMsaId (r:1 w:0)
-	/// Proof: Msa PublicKeyToMsaId (max_values: None, max_size: Some(48), added: 2523, mode: MaxEncodedLen)
-	/// Storage: Msa MsaIdToDisplayName (r:1 w:1)
-	/// Proof: Msa MsaIdToDisplayName (max_values: None, max_size: Some(57), added: 2532, mode: MaxEncodedLen)
-	/// Storage: Msa RecoveryCommitmentIdentifierToRecoveryCommitment (r:1 w:1)
-	/// Proof: Msa RecoveryCommitmentIdentifierToRecoveryCommitment (max_values: None, max_size: Some(66), added: 2541, mode: MaxEncodedLen)
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::MsaIdToRecoveryCommitment` (r:0 w:1)
+	/// Proof: `Msa::MsaIdToRecoveryCommitment` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
 	fn add_recovery_commitment() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1229`
-		//  Estimated: `6691`
-		// Minimum execution time: 83_233_000 picoseconds.
-		Weight::from_parts(88_177_000, 6691)
-			.saturating_add(T::DbWeight::get().reads(5_u64))
-			.saturating_add(T::DbWeight::get().writes(5_u64))
+		//  Measured:  `1117`
+		//  Estimated: `5733`
+		// Minimum execution time: 122_469_000 picoseconds.
+		Weight::from_parts(125_273_000, 5733)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
 	/// Storage: Schemas Schemas (r:1 w:0)
 	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)

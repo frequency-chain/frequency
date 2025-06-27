@@ -23,8 +23,8 @@ fn test_weights_are_stable() {
 			(
 				"add_recovery_commitment",
 				SubstrateWeight::<Test>::add_recovery_commitment(),
-				696457000,
-				6691,
+				611897000,
+				5733,
 			),
 			(
 				"add_onchain_message",

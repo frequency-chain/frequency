@@ -198,7 +198,6 @@ pub struct RecoveryCommitmentPayload<T: Config> {
 	pub expiration: BlockNumberFor<T>,
 }
 
-// TODO: Is this necessary?
 impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
 	fn encode_eip_712(&self) -> Box<[u8]> {
 		lazy_static! {
