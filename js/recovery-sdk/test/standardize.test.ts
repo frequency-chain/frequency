@@ -8,6 +8,11 @@ describe('standardizeContact', function () {
     assert.equal(contact, 'lowercase-no-dots@lowercase.co.uk');
   });
 
+  it('should trim all the whitespace in the email username and domain', function () {
+    const contact = standardizeContact(ContactType.EMAIL, '   a   @   b.com  ');
+    assert.equal(contact, 'a@b.com');
+  });
+
   it('should be able to successfully standardize a basic US phone', function () {
     const contact = standardizeContact(ContactType.PHONE, '1-800-8675309');
     assert.equal(contact, '+18008675309');
