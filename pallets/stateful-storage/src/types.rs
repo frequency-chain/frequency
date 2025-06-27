@@ -131,12 +131,8 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 }
 
 impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV2(uint16 schemaId,uint32 targetHash,uint32 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)");
@@ -149,6 +145,9 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 
 			static ref EMPTY_BYTES_HASH: [u8; 32] = sp_io::hashing::keccak_256([].as_slice());
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_schema_id = to_abi_compatible_number(self.schema_id);
 		let coded_target_hash = to_abi_compatible_number(self.target_hash);
 		let expiration: U256 = self.expiration.into();
@@ -190,7 +189,7 @@ impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -230,16 +229,15 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 }
 
 impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration,bytes payload)");
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_schema_id = to_abi_compatible_number(self.schema_id);
 		let coded_page_id = to_abi_compatible_number(self.page_id);
 		let coded_target_hash = to_abi_compatible_number(self.target_hash);
@@ -257,7 +255,7 @@ impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -294,16 +292,15 @@ pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 }
 
 impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] =
 				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration)");
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_schema_id = to_abi_compatible_number(self.schema_id);
 		let coded_page_id = to_abi_compatible_number(self.page_id);
 		let coded_target_hash = to_abi_compatible_number(self.target_hash);
@@ -319,7 +316,7 @@ impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
 			]
 			.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }

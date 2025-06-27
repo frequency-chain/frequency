@@ -30,7 +30,7 @@ import {
   ADD_PROVIDER_DEFINITION,
   AUTHORIZED_KEY_DATA_DEFINITION,
   CLAIM_HANDLE_PAYLOAD_DEFINITION,
-  EIP712_DOMAIN_DEFAULT,
+  EIP712_DOMAIN_MAINNET,
   EIP712_DOMAIN_DEFINITION,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
@@ -38,6 +38,7 @@ import {
   PASSKEY_PUBLIC_KEY_DEFINITION,
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
+  EIP712_DOMAIN_TESTNET,
 } from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -48,20 +49,19 @@ import { Signer, SignerResult } from '@polkadot/types/types';
  * @param payload
  * @param chain
  */
-export async function sign(
-  secretKey: HexString,
-  payload: SupportedPayload,
-  chain: ChainType = 'Mainnet-Frequency'
-): Promise<EcdsaSignature> {
+export async function sign(secretKey: HexString, payload: SupportedPayload, chain: ChainType): Promise<EcdsaSignature> {
   const signatureType = getSignatureType(payload.type);
   const normalizedPayload = normalizePayload(payload);
   const wallet = new ethers.Wallet(secretKey);
   let signature;
   switch (signatureType) {
     case 'EIP-712':
-      // TODO: use correct chainID for different networks
       // TODO: use correct contract address for different payloads
-      signature = await wallet.signTypedData(EIP712_DOMAIN_DEFAULT, getTypesFor(payload.type), normalizedPayload);
+      signature = await wallet.signTypedData(
+        chain === 'Mainnet-Frequency' ? EIP712_DOMAIN_MAINNET : EIP712_DOMAIN_TESTNET,
+        getTypesFor(payload.type),
+        normalizedPayload
+      );
       break;
     case 'EIP-191':
       signature = await wallet.signMessage((payload as SiwfLoginRequestPayload).message);
@@ -84,17 +84,16 @@ export function verifySignature(
   ethereumAddress: HexString,
   signature: HexString,
   payload: SupportedPayload,
-  chain: ChainType = 'Mainnet-Frequency'
+  chain: ChainType
 ): boolean {
   const signatureType = getSignatureType(payload.type);
   const normalizedPayload = normalizePayload(payload);
   let recoveredAddress;
   switch (signatureType) {
     case 'EIP-712':
-      // TODO: use correct chainID for different networks
       // TODO: use correct contract address for different payloads
       recoveredAddress = ethers.verifyTypedData(
-        EIP712_DOMAIN_DEFAULT,
+        chain === 'Mainnet-Frequency' ? EIP712_DOMAIN_MAINNET : EIP712_DOMAIN_TESTNET,
         getTypesFor(payload.type),
         normalizedPayload,
         signature
@@ -445,7 +444,7 @@ export function getEip712BrowserRequestAddKeyData(
   msaId: string | bigint,
   newPublicKey: HexString | Uint8Array,
   expirationBlock: number,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createAddKeyData(msaId, newPublicKey, expirationBlock);
   const normalized = normalizePayload(message);
@@ -464,7 +463,7 @@ export function getEip712BrowserRequestAuthorizedKeyData(
   msaId: string | bigint,
   authorizedPublicKey: HexString | Uint8Array,
   expirationBlock: number,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createAuthorizedKeyData(msaId, authorizedPublicKey, expirationBlock);
   const normalized = normalizePayload(message);
@@ -483,7 +482,7 @@ export function getEip712BrowserRequestAddProvider(
   authorizedMsaId: string | bigint,
   schemaIds: number[],
   expirationBlock: number,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
   const normalized = normalizePayload(message);
@@ -506,7 +505,7 @@ export function getEip712BrowserRequestPaginatedUpsertSignaturePayloadV2(
   targetHash: number,
   expiration: number,
   payload: HexString | Uint8Array,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createPaginatedUpsertSignaturePayloadV2(schemaId, pageId, targetHash, expiration, payload);
   const normalized = normalizePayload(message);
@@ -527,7 +526,7 @@ export function getEip712BrowserRequestPaginatedDeleteSignaturePayloadV2(
   pageId: number,
   targetHash: number,
   expiration: number,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createPaginatedDeleteSignaturePayloadV2(schemaId, pageId, targetHash, expiration);
   const normalized = normalizePayload(message);
@@ -548,7 +547,7 @@ export function getEip712BrowserRequestItemizedSignaturePayloadV2(
   targetHash: number,
   expiration: number,
   actions: ItemizedAction[],
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createItemizedSignaturePayloadV2(schemaId, targetHash, expiration, actions);
   const normalized = normalizePayload(message);
@@ -565,7 +564,7 @@ export function getEip712BrowserRequestItemizedSignaturePayloadV2(
 export function getEip712BrowserRequestClaimHandlePayload(
   handle: string,
   expirationBlock: number,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createClaimHandlePayload(handle, expirationBlock);
   const normalized = normalizePayload(message);
@@ -580,7 +579,7 @@ export function getEip712BrowserRequestClaimHandlePayload(
  */
 export function getEip712BrowserRequestPasskeyPublicKey(
   publicKey: HexString | Uint8Array,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createPasskeyPublicKey(publicKey);
   const normalized = normalizePayload(message);
@@ -599,7 +598,7 @@ export function getEip712BrowserRequestSiwfSignedRequestPayload(
   callback: string,
   permissions: number[],
   userIdentifierAdminUrl?: string,
-  domain: EipDomainPayload = EIP712_DOMAIN_DEFAULT
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
   const message = createSiwfSignedRequestPayload(callback, permissions, userIdentifierAdminUrl);
   const normalized = normalizePayload(message);

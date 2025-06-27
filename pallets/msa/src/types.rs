@@ -37,17 +37,16 @@ pub struct AddKeyData<T: Config> {
 }
 
 impl<T: Config> EIP712Encode for AddKeyData<T> {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
 				b"AddKeyData(uint64 msaId,uint32 expiration,address newPublicKey)",
 			);
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
@@ -64,7 +63,7 @@ impl<T: Config> EIP712Encode for AddKeyData<T> {
 			]
 			.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -98,17 +97,16 @@ pub struct AuthorizedKeyData<T: Config> {
 }
 
 impl<T: Config> EIP712Encode for AuthorizedKeyData<T> {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
 				b"AuthorizedKeyData(uint64 msaId,uint32 expiration,address authorizedPublicKey)",
 			);
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_owner_msa_id = to_abi_compatible_number(self.msa_id);
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
@@ -126,7 +124,7 @@ impl<T: Config> EIP712Encode for AuthorizedKeyData<T> {
 			]
 			.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
@@ -144,17 +142,16 @@ pub struct AddProvider {
 }
 
 impl EIP712Encode for AddProvider {
-	fn encode_eip_712(&self) -> Box<[u8]> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-			// get prefix and domain separator
-			static ref PREFIX_DOMAIN_SEPARATOR: Box<[u8]> =
-				get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc");
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
 				b"AddProvider(uint64 authorizedMsaId,uint16[] schemaIds,uint32 expiration)"
 			);
 		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
 		let coded_authorized_msa_id = to_abi_compatible_number(self.authorized_msa_id);
 		let schema_ids: Vec<u8> = self
 			.schema_ids
@@ -167,7 +164,7 @@ impl EIP712Encode for AddProvider {
 			&[MAIN_TYPE_HASH.as_slice(), &coded_authorized_msa_id, &schema_ids, &coded_expiration]
 				.concat(),
 		);
-		let combined = [PREFIX_DOMAIN_SEPARATOR.as_ref(), &message].concat();
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()
 	}
 }
