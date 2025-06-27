@@ -9,8 +9,7 @@ import { ContactType } from './types.js';
  * @returns standardized email string
  */
 function standardizeEmail(email: string): string {
-  const [user, domain] = email.toLowerCase().split('@');
-  return user.replaceAll('.', '').trim() + '@' + domain.trim();
+  return email.toLowerCase().trim();
 }
 
 /**

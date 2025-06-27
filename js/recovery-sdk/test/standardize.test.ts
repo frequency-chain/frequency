@@ -4,12 +4,12 @@ import { ContactType } from '../src/types.js';
 
 describe('standardizeContact', function () {
   it('should be able to successfully standardize an email', function () {
-    const contact = standardizeContact(ContactType.EMAIL, 'LoWERcase-no-d.o.t.s@LOWERCASE.Co.uK');
-    assert.equal(contact, 'lowercase-no-dots@lowercase.co.uk');
+    const contact = standardizeContact(ContactType.EMAIL, 'LoWERcase.it@LOWERCASE.Co.uK');
+    assert.equal(contact, 'lowercase.it@lowercase.co.uk');
   });
 
-  it('should trim all the whitespace in the email username and domain', function () {
-    const contact = standardizeContact(ContactType.EMAIL, '   a   @   b.com  ');
+  it('should trim the email', function () {
+    const contact = standardizeContact(ContactType.EMAIL, '   a@b.com  ');
     assert.equal(contact, 'a@b.com');
   });
 
