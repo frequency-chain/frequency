@@ -210,4 +210,6 @@ codegen-units = 16
 lto = false
 
 [patch.crates-io]
+# Force the sub-dependency version until Rust 1.85 is used. Then remove and allow to update to v1.8.0+
+# Also remove RustCrypto from the deny.toml
 base64ct = { git = "https://github.com/RustCrypto/formats.git", tag = "base64ct/v1.7.2", package = "base64ct" }
