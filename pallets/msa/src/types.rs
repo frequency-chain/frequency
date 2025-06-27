@@ -78,6 +78,8 @@ pub enum PayloadTypeDiscriminator {
 	Unknown,
 	/// AuthorizedKeyData discriminator
 	AuthorizedKeyData,
+	/// RecoverCommitmentPayload discriminator
+	RecoveryCommitmentPayload,
 }
 
 /// A type definition for the payload for authorizing a public key for the following operations:
@@ -196,6 +198,8 @@ pub type RecoveryCommitment = [u8; 32]; // 32 bytes for the recovery commitment
 )]
 #[scale_info(skip_type_params(T))]
 pub struct RecoveryCommitmentPayload<T: Config> {
+	/// type discriminator
+	pub discriminant: PayloadTypeDiscriminator,
 	/// The Recovery Commitment (32 bytes)
 	pub recovery_commitment: RecoveryCommitment,
 	/// The block number at which a signed proof of this payload expires.

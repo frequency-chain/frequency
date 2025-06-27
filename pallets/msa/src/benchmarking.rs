@@ -436,8 +436,11 @@ mod benchmarks {
 		let expiration = 10u32.into();
 
 		// Create the payload
-		let payload = RecoveryCommitmentPayload::<T> { recovery_commitment, expiration };
-
+		let payload = RecoveryCommitmentPayload::<T> {
+			discriminant: PayloadTypeDiscriminator::RecoveryCommitmentPayload,
+			recovery_commitment,
+			expiration,
+		};
 		// Sign the payload with the MSA owner key
 		let encoded_payload = wrap_binary_data(payload.encode());
 		let signature =
