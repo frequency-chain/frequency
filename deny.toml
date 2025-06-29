@@ -74,7 +74,8 @@ ignore = [
   { id = "RUSTSEC-2024-0384", reason = "This is an inner dependency that would get updated when libp2p v0.51.4 and wasm-timer v0.2.5 are updated to a newer version"},
   { id = "RUSTSEC-2024-0436", reason = "Unmaintained sub-dependency: paste, pending updates to dependencies."},
   { id = "RUSTSEC-2023-0091", reason = "'Users prior to 10.0.0 are unaffected', according to the advisory; we are on 8.0.1"},
-  { id = "RUSTSEC-2024-0438", reason = "Windows only"}
+  { id = "RUSTSEC-2024-0438", reason = "Windows only"},
+  { id = "RUSTSEC-2024-0442", reason = "Substrate dependency"}
 ]
 # If this is true, then cargo deny will use the git executable to fetch advisory database.
 # If this is false, then it uses a built-in git library.
@@ -246,7 +247,7 @@ allow-git = []
 
 [sources.allow-org]
 # 1 or more github.com organizations to allow git sources for
-github = ["paritytech"]
+github = ["paritytech", "RustCrypto"]
 # 1 or more gitlab.com organizations to allow git sources for
 # gitlab = [""]
 # 1 or more bitbucket.org organizations to allow git sources for

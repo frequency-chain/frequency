@@ -23,7 +23,7 @@ delete rootPackage['devDependencies'];
 rootPackage['main'] = './cjs/index.js';
 rootPackage['module'] = './esm/index.js';
 rootPackage['types'] = 'index.d.ts';
-(rootPackage['exports'] = {
+((rootPackage['exports'] = {
   '.': {
     types: './index.d.ts',
     require: './cjs/index.js',
@@ -38,7 +38,7 @@ rootPackage['types'] = 'index.d.ts';
     (err) => {
       if (err) throw new Error(err);
     }
-  );
+  ));
 
 // Write out a simple type override for the esm side of things
 fs.writeFileSync(

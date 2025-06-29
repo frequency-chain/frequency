@@ -10,7 +10,6 @@ version = "0.0.0"
 
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
-derive_more = { workspace = true }
 futures = { workspace = true, features = ["thread-pool"] }
 hex-literal = { workspace = true }
 log = { workspace = true }
