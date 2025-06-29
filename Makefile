@@ -8,9 +8,16 @@ all: build
 clean:
 	cargo clean
 
-.PHONY: start start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
+.PHONY: start start-bridging start-bridging-westend start-bridging-westend-local start-frequency start-frequency-docker start-manual start-interval start-interval-short start-with-offchain start-frequency-with-offchain start-manual-with-offchain start-interval-with-offchain
 start:
 	./scripts/init.sh start-frequency-instant
+
+start-bridging-westend-local:
+	./scripts/init.sh start-bridging-westend-local
+
+start-bridging-westend:
+	./scripts/init.sh start-bridging-westend
+	# TODO: Add testnet support
 
 start-paseo-relay:
 	./scripts/init.sh start-paseo-relay-chain
@@ -109,6 +116,12 @@ specs-frequency-paseo-local-debug:
 
 specs-frequency-paseo-local-release:
 	./scripts/generate_specs.sh 2000 frequency-paseo-local release
+
+specs-frequency-westend-local-release:
+	./scripts/generate_specs.sh 2000 frequency-westend-local release
+
+specs-frequency-westend-release:
+	./scripts/generate_specs.sh 2313 frequency-westend release
 
 .PHONY: format
 format:
@@ -244,7 +257,11 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check check-no-relay check-local check-testnet check-mainnet
+.PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
+# Add a target to run all checks to check that all existing features work with the addition of 'frequency-bridging'
+# which is an add-on feature and not mutually exclusive with the other features.
+check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging
+
 check:
 	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
 
@@ -260,11 +277,27 @@ check-testnet:
 check-mainnet:
 	SKIP_WASM_BUILD= cargo check --features frequency
 
+check-bridging:
+	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-testnet,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
+
+check-bridging-westend:
+	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
+
+check-bridging-local:
+	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+
+
 .PHONY: js
 js:
 	./scripts/generate_js_definitions.sh
 
-.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-mainnet build-testnet-release build-mainnet-release
+.PHONY: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-bridging-westend-local build-all
+
+build-all: build build-benchmarks build-no-relay build-local build-testnet build-westend build-mainnet build-testnet-release build-westend-release build-mainnet-release build-bridging-mainnet build-bridging-westend build-bridging-westend-local
+
 build:
 	cargo build --features frequency-no-relay
 
@@ -280,18 +313,36 @@ build-local:
 build-testnet:
 	cargo build --features frequency-testnet
 
+build-westend:
+	cargo build --features frequency-westend
+
 build-mainnet:
 	cargo build --features frequency
 
 build-testnet-release:
 	cargo build --locked --features frequency-testnet --release
 
+build-westend-release:
+	cargo build --locked --features frequency-westend --release
+
 build-mainnet-release:
 	cargo build --locked --features  frequency --release
+
+build-bridging-mainnet:
+	cargo build --features frequency,frequency-bridging
+
+build-bridging-westend:
+	cargo build --features frequency-westend,frequency-bridging --release
+
+build-bridging-westend-local:
+	cargo build --features frequency-local,frequency-bridging --release
 
 .PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
+
+test-bridging:
+	cargo test --workspace --features runtime-benchmarks,frequency-lint-check,frequency-bridging
 
 e2e-tests:
 	./scripts/run_e2e_tests.sh
@@ -322,29 +373,55 @@ check-try-runtime-installed:
 try-runtime-create-snapshot-paseo-testnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://0.rpc.testnet.amplica.io:443 testnet-paseo-all-pallets.state
 
+try-runtime-create-snapshot-westend-testnet: check-try-runtime-installed
+	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
+		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
+		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
+		exit 1; \
+	fi
+	try-runtime create-snapshot --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY) testnet-paseo-all-pallets.state
+
 # mainnet snapshot takes as many as 24 hours to complete
 try-runtime-create-snapshot-mainnet: check-try-runtime-installed
 	try-runtime create-snapshot --uri wss://1.rpc.frequency.xyz:443 mainnet-all-pallets.state
 
 try-runtime-upgrade-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://0.rpc.testnet.amplica.io:443
 
 try-runtime-upgrade-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 live --uri wss://1.rpc.frequency.xyz:443
 
 try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path testnet-paseo-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path testnet-paseo-all-pallets.state
 
 try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path mainnet-all-pallets.state
 
 try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+
+try-runtime-check-migrations-westend-testnet: check-try-runtime-installed
+	@if [ -z "$(ONFINALITY_APIKEY)" ]; then \
+		echo "Error: ONFINALITY_APIKEY environment variable is not set. Please set it before running this target."; \
+		echo "Example: ONFINALITY_APIKEY=your-api-key-here make try-runtime-check-migrations-westend-testnet"; \
+		exit 1; \
+	fi
+	cargo build --release --features frequency-westend,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://node-7330371704012918784.nv.onfinality.io/ws?apikey=$(ONFINALITY_APIKEY)
+
+try-runtime-check-migrations-local: check-try-runtime-installed
+	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="pre-and-post" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+
+try-runtime-check-migrations-none-local: check-try-runtime-installed
+	cargo build --features frequency-local,frequency-bridging,try-runtime -q --locked && \
+	try-runtime --runtime ./target/debug/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --checks="none" --disable-spec-version-check --disable-mbm-checks --no-weight-warnings live --uri ws://localhost:9944
+
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
 POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'branch[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/branch *= *"\(.*\)"/\1/' | head -n 1)
