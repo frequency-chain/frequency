@@ -16,6 +16,9 @@ pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
 pub const TOKEN_DECIMALS: u8 = 8;
 
+// Chain ID used for Ethereum signatures
+pub const CHAIN_ID: u32 = prod_or_testnet_or_local!(2091u32, 420420420u32, 420420420u32);
+
 /// The maximum number of schema grants allowed per delegation
 pub type MaxSchemaGrants = ConstU32<30>;
 

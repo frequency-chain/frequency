@@ -2,6 +2,7 @@ use common_primitives::{node, signatures::UnifiedSignature, utils::wrap_binary_d
 use node::EIP712Encode;
 use sp_runtime::{traits::Verify, AccountId32, MultiSignature};
 extern crate alloc;
+use crate::constants::CHAIN_ID;
 use sp_core::Encode;
 
 pub fn check_signature<P>(signature: &MultiSignature, signer: AccountId32, payload: &P) -> bool
@@ -18,7 +19,7 @@ where
 
 	match unified_signature {
 		// we don't need to check the wrapped bytes for ethereum signatures but we need to check EIP-712 ones
-		UnifiedSignature::Ecdsa(_) => verify_signature(&payload.encode_eip_712()),
+		UnifiedSignature::Ecdsa(_) => verify_signature(&payload.encode_eip_712(CHAIN_ID)),
 		_ => {
 			let wrapped_payload = wrap_binary_data(scale_encoded);
 			verify_signature(&wrapped_payload)
@@ -37,7 +38,7 @@ mod tests {
 	pub struct TestArrayWrapper(pub [u8; 12]);
 
 	impl EIP712Encode for TestArrayWrapper {
-		fn encode_eip_712(&self) -> Box<[u8]> {
+		fn encode_eip_712(&self, _chain_id: u32) -> Box<[u8]> {
 			// not used in test but required to be implemented
 			Vec::new().into_boxed_slice()
 		}
