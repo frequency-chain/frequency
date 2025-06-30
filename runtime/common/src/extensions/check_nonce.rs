@@ -24,13 +24,16 @@ use frame_support::{
 	sp_runtime,
 };
 use scale_info::TypeInfo;
-#[allow(deprecated)]
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
+	traits::{
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, TransactionExtension,
+		ValidateResult,
+	},
 	transaction_validity::{
-		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidityError,
 		ValidTransaction,
 	},
+	Weight,
 };
 extern crate alloc;
 use alloc::vec;
@@ -65,30 +68,76 @@ impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config> SignedExtension for CheckNonce<T>
+impl<T: Config> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckNonce";
+	type Implicit = ();
+	type Val = ();
+	type Pre = ();
 
-	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		// TODO: benchmark this
+		Weight::zero()
 	}
 
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
+	fn validate(
+		&self,
+		origin: <T as Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> Result<(), TransactionValidityError> {
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		// Only check for signed origin
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), (), origin));
+		};
+
+		let account = frame_system::Account::<T>::get(&who);
+		if self.0 < account.nonce {
+			return Err(InvalidTransaction::Stale.into());
+		}
+
+		let provides = vec![Encode::encode(&(who, self.0))];
+		let requires = if account.nonce < self.0 {
+			vec![Encode::encode(&(who, self.0 - One::one()))]
+		} else {
+			vec![]
+		};
+
+		Ok((
+			ValidTransaction {
+				priority: 0,
+				requires,
+				provides,
+				longevity: TransactionLongevity::MAX,
+				propagate: true,
+			},
+			(),
+			origin,
+		))
+	}
+
+	fn prepare(
+		self,
+		_val: Self::Val,
+		origin: &<T::RuntimeCall as Dispatchable>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
 		// Get TOKEN account from "who" key
-		let mut account = frame_system::Account::<T>::get(who);
+		// Only check for signed origin
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok(());
+		};
+
+		let mut account = frame_system::Account::<T>::get(&who);
 
 		// The default account (no account) has a nonce of 0.
 		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
@@ -113,38 +162,9 @@ where
 		// Only create or update the token account if the caller is paying or
 		// account already exists
 		if info.pays_fee == Pays::Yes || existing_account {
-			frame_system::Account::<T>::insert(who, account);
+			frame_system::Account::<T>::insert(&who, account);
 		}
 
 		Ok(())
-	}
-
-	fn validate(
-		&self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> TransactionValidity {
-		// check index
-		let account = frame_system::Account::<T>::get(who);
-		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into();
-		}
-
-		let provides = vec![Encode::encode(&(who, self.0))];
-		let requires = if account.nonce < self.0 {
-			vec![Encode::encode(&(who, self.0 - One::one()))]
-		} else {
-			vec![]
-		};
-
-		Ok(ValidTransaction {
-			priority: 0,
-			requires,
-			provides,
-			longevity: TransactionLongevity::MAX,
-			propagate: true,
-		})
 	}
 }
