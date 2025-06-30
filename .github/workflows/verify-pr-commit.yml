@@ -444,7 +444,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: js/api-augment/package-lock.json
       - name: Install Latest Versions
@@ -501,7 +501,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: js/ethereum-utils/package-lock.json
       - name: Install Latest Versions
@@ -539,7 +539,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: js/schemas/package-lock.json
       - name: Install Latest Versions
@@ -900,7 +900,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: e2e/package-lock.json
       - name: Install Built api-augment and ethereum-utils and recovery-sdk
@@ -912,6 +912,11 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: e2e
+      - name: E2E Frequency Node Health Check
+        env:
+          Frequency_RPC_PORT: 9944
+        # Simple 20 second 3x health check. If they all fail, then something is up.
+        run: ./scripts/healthcheck.sh || (sleep 10 && ./scripts/healthcheck.sh) || (sleep 10 && ./scripts/healthcheck.sh)
       - name: Run E2E Tests
         working-directory: e2e
         env:
