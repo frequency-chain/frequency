@@ -868,6 +868,11 @@ jobs:
       - name: Lint
         run: npm run lint
         working-directory: e2e
+      - name: E2E Frequency Node Health Check
+        env:
+          Frequency_RPC_PORT: 9944
+        # Simple 20 second 3x health check. If they all fail, then something is up.
+        run: ./scripts/healthcheck.sh || (sleep 10 && ./scripts/healthcheck.sh) || (sleep 10 && ./scripts/healthcheck.sh)
       - name: Run E2E Tests
         working-directory: e2e
         env:
