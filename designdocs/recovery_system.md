@@ -39,7 +39,6 @@ The following sections detail the cryptographic design meeting these requirement
 - **Recovery Secret**: A 32 byte hexadecimal secret derived from the user’s Authentication Contact and a random seed, used to recover access to the MSA.
 - **Recovery Provider**: A third-party service approved by Frequency governance to perform account recovery operations.
 - **Recovery Commitment**: A cryptographic commitment derived from the Recovery Secret and Authentication Contact, stored on-chain to allow recovery.
-- **Control Key**: A cryptographic key that allows the user to control their MSA. It can be a public key used for signing transactions or messages on the Frequency blockchain.
 - **Governance**: The on-chain mechanism that approves and manages recovery providers, ensuring they follow the protocol rules and security standards.
 - **Authentication Contact**: The user’s chosen method for receiving recovery-related communications, typically an email address or phone number.
 - **Contact Verification**: The process of confirming the user’s Authentication Contact method for recovery communications.
@@ -161,13 +160,13 @@ sequenceDiagram
 
 1. User Account Creation: The user signs up with a wallet/app (the provider) and provides their Authentication Contact as part of registration. The provider creates a new MSA on the Frequency blockchain for the user. During this on-chain account creation, the user’s initial Control Key (public key) is linked to the MSA (this may be a key managed by the provider).
 
-2. Recovery Secret Generation: The Recovery Provider generates a random secret (e.g. a 256-bit entropy value). It will call a secure random generator to get 32 bytes and then encode as a hexadecimal phrase.
+2. Recovery Secret Generation: The MSA creating Provider generates a random secret (e.g. a 256-bit entropy value). It will call a secure random generator to get 32 bytes and then encode as a hexadecimal phrase.
 
 3. On-Chain Storage: The blockchain stores the Recovery Commitment (RC) using the extrinsic, `add_recovery_commitment`, as part of the MSA creation process. The blockchain will store RC in association with that MSA ID.
 
 4. User Receives Recovery Secret: Once the MSA is successfully created and the Recovery Commitment stored, the provider delivers the actual Recovery Secret to the user.
 
-5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Commitment (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
+5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Commitment (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The Provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
 
 ### 2. Account Recovery Process
 
