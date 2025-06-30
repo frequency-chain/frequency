@@ -58,16 +58,16 @@ The blockchain combines the user’s Recovery Secret with the Authentication Con
 
 Implementation: Deterministic Hash (One-Way): Compute a cryptographic hash
 
-Note: Here `+` denotes concatenation of byte arrays.
+Note: Here `||` denotes concatenation of byte arrays.
 
 #### Recovery Intermediary Hashes
 
 - H(s) = keccak256(Recovery Secret)
-- H(sc) = keccak256(Recovery Secret + Authentication Contact)  
+- H(sc) = keccak256(Recovery Secret || Authentication Contact)  
 
 #### Final Recovery Commitment (RC)
 
-- RC = keccak256(H(s) + H(sc))
+- RC = keccak256(H(s) || H(sc))
 
 In this scheme, given the correct Recovery Secret and Authentication Contact, Recovery Providers can recompute the Recovery Commitment (RC) and match the on-chain RC value to verify the combination. This is effectively a commitment to the Recovery Secret + Authentication Contact. The user’s Recovery Secret is not stored on-chain, only the Recovery Commitment, so it cannot be directly recovered by anyone.
 
@@ -161,13 +161,13 @@ sequenceDiagram
 
 1. User Account Creation: The user signs up with a wallet/app (the provider) and provides their Authentication Contact as part of registration. The provider creates a new MSA on the Frequency blockchain for the user. During this on-chain account creation, the user’s initial Control Key (public key) is linked to the MSA (this may be a key managed by the provider).
 
-2. Recovery Secret Generation: The blockchain generates a random secret (e.g. a 256-bit entropy value). It will call a secure random generator to get 32 bytes and then encode as a hexadecimal phrase.
+2. Recovery Secret Generation: The Recovery Provider generates a random secret (e.g. a 256-bit entropy value). It will call a secure random generator to get 32 bytes and then encode as a hexadecimal phrase.
 
 3. On-Chain Storage: The blockchain stores the Recovery Commitment (RC) using the extrinsic, `add_recovery_commitment`, as part of the MSA creation process. The blockchain will store RC in association with that MSA ID.
 
 4. User Receives Recovery Secret: Once the MSA is successfully created and the Recovery Commitment stored, the provider delivers the actual Recovery Secret to the user.
 
-5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Commitment (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The blockchain and provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
+5. After account creation, the chain holds: (a) the user’s MSA ID and control key, and (b) the Recovery Commitment (bound to that MSA). The user holds: (a) their Authentication Contact, and (b) the Recovery Secret. The provider may discard the Recovery Secret (it’s not needed by the provider anymore), keeping only the hash on-chain. The user’s responsibility is to keep the Recovery Secret safe and not share it.
 
 ### 2. Account Recovery Process
 
@@ -232,7 +232,7 @@ sequenceDiagram
     The Recovery Provider registers a new Control Key for the MSA. There are two approaches:
 
     - User-specified key: If the user is somewhat technical, they might generate a new key pair on their own device (e.g. via a wallet app) and only give the public key to the Recovery Provider. This is ideal for security, as the private key never leaves the user. The Recovery Provider would ask “Please paste a new public key to add to your account.” However, this requires the user to know how to create a key pair, which may not be user-friendly in an emergency.
-    - Provider-generated key: The Recovery Provider can create a new key pair on behalf of the user. For instance, it generates a new Ed25519, Sr25519, or Ethereum key (compatible with Frequency). The Recovery Provider may then securely transmit the private key, or Provider Approved Login Credentials to the user after the on-chain update. This approach is simpler for the user but requires trust that the Recovery Provider deletes its copy. In practice the Recovery Provider could generate a mnemonic and show it to the user over a secure TLS connection for them to copy, minimizing its own storage of the key.
+    - Provider-generated key: The Recovery Provider can create a new key pair on behalf of the user. For instance, it generates a new Sr25519 or Ethereum key (compatible with Frequency). The Recovery Provider may then securely transmit the private key, or Provider Approved Login Credentials to the user after the on-chain update. This approach is simpler for the user but requires trust that the Recovery Provider deletes its copy. In practice the Recovery Provider could generate a mnemonic and show it to the user over a secure TLS connection for them to copy, minimizing its own storage of the key.
 
     This design recommends giving the user the option, but in either case, a public key for the new control key is decided at this step.
 
@@ -284,15 +284,15 @@ Relying on Authentication Contact methods brings in the security of the underlyi
 
 Recovery Providers are semi-trusted entities. They are given the power to initiate account changes (adding keys), so they must be constrained and monitored:
 
-- Only providers explicitly approved by Frequency governance can register as Recovery Providers. This likely involves background checks or staking a bond. The list of authorized providers is stored on-chain.
-- Recovery Providers must authenticate themselves when calling the recovery extrinsic. This might be inherent (the extrinsic origin is signed by the Recovery Provider’s account, which the runtime checks against the approved list).
+- Only providers explicitly approved by Frequency governance can register as Recovery Providers. The list of authorized providers is stored on-chain.
+- Recovery Providers must authenticate themselves when calling the recovery extrinsic. This is inherent, the extrinsic origin is signed by the Recovery Provider’s account, which the runtime checks against the approved list.
 - Misconduct by a Recovery Provider (e.g. recovering accounts without permission, or failing to verify identity properly) would be detectable through user reports. The governance committee could then remove that Recovery Provider from the approved list, and possibly even revert malicious changes if community consensus deems it necessary
 
 ### One-time Key Use Enforcement
 
 The contract that the Recovery Secret is one-time is enforced by design:
 
-- The chain will not allow a second use of the same Recovery Commitment. After it’s cleared, if someone tried to reuse the same secret, the lookup would fail (no match).
+- The chain will not allow a second use of the same Recovery Commitment. After it’s removed, if someone tried to reuse the same secret, the lookup would fail (no match).
 - If an attacker somehow eavesdropped on the secret during a legitimate recovery, trying to use it again would not work because it’s already consumed.
 - Users are also advised: once you use your Recovery Secret, consider it spent. If for any reason they suspect it was observed, they should treat it like a password that has been changed.
 
@@ -421,7 +421,16 @@ pub fn add_recovery_commitment(
     // Recover the MSA ID from the msa_owner_key
     let msa_id = ensure_valid_msa_key(&msa_owner_key);
 
-    // Store the new RecoveryCommitment
+    // If a Recovery Commitment already exists, we should emit a RecoveryCommitmentInvalidated event
+    if let Some(existing_commitment) = MsaIdToRecoveryCommitment::<T>::get(&msa_id) {
+        Self::deposit_event(Event::RecoveryCommitmentInvalidated {
+            who: msa_owner_key.clone(),
+            msa_id,
+        });
+    }
+
+    // Always store the RecoveryCommitment, as there can only be one per MSA,
+    // and the latest one added will be the active one.
     MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
     Self::deposit_event(Event::RecoveryCommitmentAdded {
       who: msa_owner_key,
@@ -464,12 +473,14 @@ pub fn recover_account(
 
     // Invalidate the old Recovery Commitment by removing it from storage
     MsaIdToRecoveryCommitment::<T>::remove(&maybe_msa_id);
-    Self::deposit_event(Event::RecoveryCommitmentInvalidated { msa_id: maybe_msa_id });
+    Self::deposit_event(Event::RecoveryCommitmentInvalidated { who, msa_id: maybe_msa_id });
 
     // Add the new control key to the MSA
     // Note: This would integrate with existing MSA pallet functionality
     // The RP may first have to acquire the proper delegations from the user or this operation may fail
     // Required delegation operations omitted for brevity
+    // TODO: Do we know which provider added the MSA by this event?
+    //       Is this event sufficient to track the Recovery Provider?
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
     Self::deposit_event(Event::AccountRecovered { who, msa_id });
