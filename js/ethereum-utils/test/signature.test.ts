@@ -14,6 +14,8 @@ import {
   verifySignature,
   createSiwfLoginRequestPayload,
   createSiwfSignedRequestPayload,
+  createRecoveryCommitmentPayload,
+  EcdsaSignature,
 } from '../src';
 
 describe('Signature related tests', function () {
@@ -46,6 +48,27 @@ describe('Signature related tests', function () {
 
       assert.deepEqual(payload1, expected);
       assert.deepEqual(payload2, expected);
+    });
+
+    it('should create valid createRecoveryCommitmentPayload payloads', function () {
+      // SET UP
+      const recoveryCommitment = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+
+      const expected = {
+        type: 'RecoveryCommitmentPayload',
+        recoveryCommitment,
+        expiration: 90,
+      };
+
+      // ACT
+      const payload1 = createRecoveryCommitmentPayload(
+        'RecoveryCommitmentPayload',
+        new Uint8Array(Buffer.from(recoveryCommitment.slice(2), 'hex')),
+        90
+      );
+
+      // ASSERT
+      assert.deepEqual(payload1, expected);
     });
 
     it('should create valid createClaimHandlePayload payloads', function () {
@@ -125,6 +148,7 @@ describe('Signature related tests', function () {
 
   describe('EIP-712 Signing tests', function () {
     const secretKey: HexString = '0x5fb92d6e98884f76de468fa3f6278f8807c48bebc13595d45af5bdc4da702133';
+    const ethereumAddress: HexString = '0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac';
 
     it('should create a valid signature for PaginatedUpsertSignaturePayloadV2', async function () {
       const payload1 = createPaginatedUpsertSignaturePayloadV2(
@@ -137,32 +161,26 @@ describe('Signature related tests', function () {
 
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0xbb182602012c1489a6b98af9d867d7c2c0ef111a1a20653a028e49d4ec60e2a64e4983270c6d9de76eaed3283a3f34a5829920e057b77bed6861b2616c22be381b',
+          '0xbb182602012c1489a6b98af9d867d7c2c0ef111a1a20653a028e49d4ec60e2a64e4983270c6d9de76eaed3283a3f34a5829920e057b77bed6861b2616c22be381b' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for PaginatedDeleteSignaturePayloadV2', async function () {
       const payload1 = createPaginatedDeleteSignaturePayloadV2(10, 5, 1982672367, 100);
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0xd6f327427488e9f03bda92113a9d1c2e881bc3e8d1d6a065b727c154733983b3059ad4fa5cf28cdf1aae9e0faa3fde6427f92686cf55c3a12180610cb3effe371b',
+          '0xd6f327427488e9f03bda92113a9d1c2e881bc3e8d1d6a065b727c154733983b3059ad4fa5cf28cdf1aae9e0faa3fde6427f92686cf55c3a12180610cb3effe371b' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for ItemizedSignaturePayloadV2', async function () {
@@ -172,16 +190,13 @@ describe('Signature related tests', function () {
       const payload1 = createItemizedSignaturePayloadV2(10, 1982672367, 100, actions);
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0xc6c38093c57cd605ca5adfe5d538be89c7bbea4309c797078ed23fe4bb6ad8cb245ae12b19bb9c9b8c084b356b02f6f09f7e107c262c1aff0714a681bc3af5b51b',
+          '0xc6c38093c57cd605ca5adfe5d538be89c7bbea4309c797078ed23fe4bb6ad8cb245ae12b19bb9c9b8c084b356b02f6f09f7e107c262c1aff0714a681bc3af5b51b' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for AddKeyData', async function () {
@@ -192,80 +207,84 @@ describe('Signature related tests', function () {
       );
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c',
+          '0x7fb9df5e7f51875509456fe24de92c256c4dcaaaeb952fe36bb30f79c8cc3bbf2f988fa1c55efb6bf20825e98de5cc1ac0bdcf036ad1e0f9ee969a729540ff8d1c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for AddProvider', async function () {
       const payload1 = createAddProvider(12876327n, [2, 4, 5, 6, 7, 8], 100);
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c',
+          '0x34ed5cc291815bdc7d95b418b341bbd3d9ca82c284d5f22d8016c27bb9d4eef8507cdb169a40e69dc5d7ee8ff0bff29fa0d8fc4e73cad6fc9bf1bf076f8e0a741c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
+    });
+
+    it('should create a valid signature for RecoveryCommitmentPayload', async function () {
+      const recoveryCommitment = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+      const payload1 = createRecoveryCommitmentPayload(
+        'RecoveryCommitmentPayload',
+        new Uint8Array(Buffer.from(recoveryCommitment.slice(2), 'hex')),
+        100
       );
+      const signature = await sign(secretKey, payload1, 'Dev');
+      console.log('signature', signature);
+
+      const expected: EcdsaSignature = {
+        Ecdsa:
+          '0x79f5292af8ae7a6bae2017024b1766d1543fd6da9877d1a58380b81c4e4c68820d6edc56302417b18c0ecf61c39c19d3ad40f8a5e8c3d674941b4f5834095fbe1c' as HexString,
+      };
+
+      assert.deepEqual(signature, expected);
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for ClaimHandlePayload', async function () {
       const payload1 = createClaimHandlePayload('Alice', 100);
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0x832d1f6870118f5fc6e3cc314152b87dc452bd607581f16b1e39142b553260f8397e80c9f7733aecf1bd46d4e84ad333c648e387b069fa93b4b1ca4fa0fd406b1c',
+          '0x832d1f6870118f5fc6e3cc314152b87dc452bd607581f16b1e39142b553260f8397e80c9f7733aecf1bd46d4e84ad333c648e387b069fa93b4b1ca4fa0fd406b1c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for PasskeyPublicKey', async function () {
       const payload1 = createPasskeyPublicKey('0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026');
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0xbafaf5e21695a502b2d356b4558da35245aa1be7161f01a5f0224fbfdf85b5c52898fc495ab1ca9b68c3b07e23d31a5fe1686165344b22bc14201f293d54f36b1b',
+          '0xbafaf5e21695a502b2d356b4558da35245aa1be7161f01a5f0224fbfdf85b5c52898fc495ab1ca9b68c3b07e23d31a5fe1686165344b22bc14201f293d54f36b1b' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for SiwfSignedRequestPayload', async function () {
       const payload1 = createSiwfSignedRequestPayload('https://localhost:44181', [2, 4, 5, 6, 7, 8]);
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0x3e04422d8231c1c2a70e31ef20869c52a4508e3d606750c35a118d67e81694f113a78c184f68f6b7d3a88136170e5693ad584dca6ed2a409b85ed0eec43e028b1c',
+          '0x3e04422d8231c1c2a70e31ef20869c52a4508e3d606750c35a118d67e81694f113a78c184f68f6b7d3a88136170e5693ad584dca6ed2a409b85ed0eec43e028b1c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
 
     it('should create a valid signature for SiwfLoginRequestPayload', async function () {
@@ -282,16 +301,13 @@ describe('Signature related tests', function () {
       );
       const signature = await sign(secretKey, payload1, 'Dev');
 
-      const expected = {
+      const expected: EcdsaSignature = {
         Ecdsa:
-          '0x40e5e91a04efd1aec7d7cc25e45bcae2cdb43ee76673bee790d7aef0be0d7e072e59901679708f7db273a29ff9decca8c2d467badf2926b94e2a29dfd31f83931b',
+          '0x40e5e91a04efd1aec7d7cc25e45bcae2cdb43ee76673bee790d7aef0be0d7e072e59901679708f7db273a29ff9decca8c2d467badf2926b94e2a29dfd31f83931b' as HexString,
       };
 
       assert.deepEqual(signature, expected);
-      assert(
-        verifySignature('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566cac', expected.Ecdsa, payload1, 'Dev'),
-        'should verify'
-      );
+      assert(verifySignature(ethereumAddress, expected.Ecdsa, payload1, 'Dev'), 'should verify');
     });
   });
 });

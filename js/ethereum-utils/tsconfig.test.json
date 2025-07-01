@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "display": "Test Configuration",
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["mocha", "node"],
+    "noEmit": true
+  },
+  "include": ["test/**/*.ts", "src/**/*.ts"],
+  "exclude": ["node_modules/**", "dist/**"]
+}

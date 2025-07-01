@@ -16,6 +16,7 @@ import {
   ItemizedAction,
   EipDomainPayload,
   NormalizedSupportedPayload,
+  RecoveryCommitmentPayload,
   SupportedPayloadTypes,
   SiwfSignedRequestPayload,
   SiwfLoginRequestPayload,
@@ -39,6 +40,7 @@ import {
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
   EIP712_DOMAIN_TESTNET,
+  RECOVERY_COMMITMENT_DATA_DEFINITION,
 } from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -117,6 +119,7 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
     case 'PasskeyPublicKey':
     case 'ClaimHandlePayload':
     case 'AddProvider':
+    case 'RecoveryCommitmentPayload':
     case 'SiwfLoginRequestPayload':
       break;
 
@@ -163,6 +166,7 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
     AddKeyData: ADD_KEY_DATA_DEFINITION,
     AuthorizedKeyData: AUTHORIZED_KEY_DATA_DEFINITION,
     AddProvider: ADD_PROVIDER_DEFINITION,
+    RecoveryCommitmentPayload: RECOVERY_COMMITMENT_DATA_DEFINITION,
 
     // offchain signatures
     SiwfSignedRequestPayload: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
@@ -258,6 +262,27 @@ export function createAddProvider(
     type: 'AddProvider',
     authorizedMsaId: authorizedMsaId.toString(),
     schemaIds,
+    expiration: expirationBlock,
+  };
+}
+
+/**
+ * Build a RecoveryCommitmentPayload for signature.
+ *
+ * @param recoveryCommitment The recovery commitment data as a Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createRecoveryCommitmentPayload(
+  type: 'RecoveryCommitmentPayload',
+  recoveryCommitment: Uint8Array,
+  expirationBlock: number
+): RecoveryCommitmentPayload {
+  assert(recoveryCommitment.length > 0, 'recoveryCommitment should be a valid Uint8Array');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+
+  return {
+    type: 'RecoveryCommitmentPayload',
+    recoveryCommitment: u8aToHex(recoveryCommitment),
     expiration: expirationBlock,
   };
 }

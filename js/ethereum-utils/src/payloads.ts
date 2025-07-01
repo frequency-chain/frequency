@@ -141,6 +141,15 @@ export interface AddProvider {
   expiration: number;
 }
 
+export interface RecoveryCommitmentPayload {
+  // type discriminator
+  type: 'RecoveryCommitmentPayload';
+  // bytes type recovery commitment
+  recoveryCommitment: HexString;
+  // uint32 type payload expiration block number
+  expiration: number;
+}
+
 export interface SiwfSignedRequestPayload {
   // type discriminator
   type: 'SiwfSignedRequestPayload';
@@ -168,6 +177,7 @@ export type SupportedPayload =
   | AddKeyData
   | AuthorizedKeyData
   | AddProvider
+  | RecoveryCommitmentPayload
   | SiwfSignedRequestPayload
   | SiwfLoginRequestPayload;
 
