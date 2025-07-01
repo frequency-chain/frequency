@@ -92,7 +92,7 @@ export const RECOVERY_COMMITMENT_PAYLOAD_DEFINITION = {
   RecoveryCommitmentPayload: [
     {
       name: 'recoveryCommitment',
-      type: 'bytes',
+      type: 'string',
     },
     {
       name: 'expiration',
