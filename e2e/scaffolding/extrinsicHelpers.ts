@@ -104,7 +104,7 @@ export interface PaginatedDeleteSignaturePayloadV2 {
 export interface RecoveryCommitmentData {
   discriminant: 'RecoveryCommitmentPayload';
   recoveryCommitment: Uint8Array;
-  expiration?: number;
+  expiration?: any;
 }
 
 export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
