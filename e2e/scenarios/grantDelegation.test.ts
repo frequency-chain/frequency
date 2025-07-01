@@ -13,7 +13,7 @@ import {
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Delegation Scenario Tests', function () {
   let keys: KeyringPair;
@@ -30,6 +30,7 @@ describe('Delegation Scenario Tests', function () {
   let thirdMsaId: u64;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Fund all the different keys
     [keys, otherMsaKeys, thirdMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(
       fundingSource,

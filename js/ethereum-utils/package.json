@@ -27,26 +27,26 @@
   "author": "frequency-chain",
   "license": "Apache-2.0",
   "dependencies": {
-    "@polkadot/api": "^16.2.1",
-    "@polkadot/util": "13.5.1",
+    "@polkadot/api": "^16.2.2",
+    "@polkadot/util": "13.5.2",
     "ethers": "^6.14.4"
   },
   "devDependencies": {
-    "@eslint/js": "^9.28.0",
-    "@rollup/plugin-commonjs": "^28.0.3",
+    "@eslint/js": "^9.30.0",
+    "@rollup/plugin-commonjs": "^28.0.6",
     "@rollup/plugin-node-resolve": "^16.0.1",
-    "@rollup/plugin-typescript": "^12.1.2",
+    "@rollup/plugin-typescript": "^12.1.4",
     "@types/mocha": "^10.0.10",
-    "eslint": "^9.28.0",
+    "eslint": "^9.30.0",
     "eslint-plugin-mocha": "^11.1.0",
-    "mocha": "11.6.0",
-    "prettier": "^3.5.3",
-    "rollup": "^4.43.0",
-    "tsx": "~4.19.0",
+    "mocha": "11.7.1",
+    "prettier": "^3.6.2",
+    "rollup": "^4.44.1",
+    "tsx": "^4.20.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.34.0"
+    "typescript-eslint": "^8.35.0"
   },
   "optionalDependencies": {
-    "@rollup/rollup-linux-x64-gnu": "^4.43.0"
+    "@rollup/rollup-linux-x64-gnu": "^4.44.1"
   }
 }

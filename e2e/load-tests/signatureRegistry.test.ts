@@ -90,12 +90,12 @@ async function checkKeys(startingNumber: number, keysToTest: KeyringPair[]) {
 async function generateMsas(count: number = 1): Promise<GeneratedMsa[]> {
   // Make sure we are not on an edge
   const createBlockEvery = count === 300 ? 290 : 300;
-  const fundingSource = getFundingSource(import.meta.url);
+  const fundingSource = await getFundingSource(import.meta.url);
 
   // Create and fund the control keys
   const controlKeyPromises: Promise<KeyringPair>[] = [];
   let devAccountNonce = await getNonce(fundingSource);
-  const ed = await getExistentialDeposit();
+  const ed = getExistentialDeposit();
   for (let i = 0; i < count; i++) {
     controlKeyPromises.push(createAndFundKeypair(fundingSource, 100n * 10n * ed, undefined, devAccountNonce++));
     if (i > 0 && i % createBlockEvery === 0) await createBlock(100);

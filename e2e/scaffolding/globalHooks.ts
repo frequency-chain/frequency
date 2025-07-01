@@ -68,7 +68,7 @@ async function devSudoActions() {
 export async function mochaGlobalSetup(context) {
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize(providerUrl);
-  await fundAccountsToDefault(getAllTestFiles().map(getFundingSource));
+  await fundAccountsToDefault(await Promise.all(getAllTestFiles().map(getFundingSource)));
 
   // Sudo is only when not on Testnet
   if (isDev()) await devSudoActions();

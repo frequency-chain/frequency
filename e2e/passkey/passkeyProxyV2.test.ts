@@ -9,9 +9,13 @@ import { createPassKeyAndSignAccount, createPassKeyCallV2, createPasskeyPayloadV
 import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Passkey Pallet Proxy V2 Tests', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('proxy basic tests', function () {
     let fundedKeys: KeyringPair;
     let receiverKeys: KeyringPair;

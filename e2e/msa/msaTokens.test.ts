@@ -7,7 +7,7 @@ import {
   ethereumAddressToKeyringPair,
   getUnifiedAddress,
   getUnifiedPublicKey,
-  signEip712,
+  sign,
 } from '@frequency-chain/ethereum-utils';
 import { getFundingSource } from '../scaffolding/funding';
 import { H160 } from '@polkadot/types/interfaces';
@@ -19,13 +19,14 @@ import {
   createAndFundKeypair,
   createKeys,
   DOLLARS,
+  generateAddKeyPayload,
   generateAuthorizedKeyPayload,
   getEthereumKeyPairFromUnifiedAddress,
+  signPayload,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
-import { Codec } from '@polkadot/types/types';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 const TRANSFER_AMOUNT = 1n * DOLLARS;
 
 /**
@@ -60,9 +61,10 @@ async function generateSignedAuthorizedKeyPayload(keys: KeyringPair, payload: Au
     u8aToHex(payload.authorizedPublicKey),
     payload.expiration
   );
-  const ownerSig = await signEip712(
+  const ownerSig = await sign(
     u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(keys)).secretKey),
-    signingPayload
+    signingPayload,
+    'Dev'
   );
 
   return {
@@ -78,6 +80,7 @@ describe('MSAs Holding Tokens', function () {
   let ethAddress20: H160;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     ethAddress20 = ExtrinsicHelper.apiPromise.createType('H160', hexToU8a(CHECKSUMMED_ETH_ADDR_1234));
     ethKeys = ethereumAddressToKeyringPair(ethAddress20);
   });
@@ -168,6 +171,7 @@ describe('MSAs Holding Tokens', function () {
 
       // Default payload making it easier to test `withdrawTokens`
       defaultPayload = {
+        discriminant: 'AuthorizedKeyData',
         msaId,
         authorizedPublicKey: getUnifiedPublicKey(secondaryKey),
       };
@@ -185,6 +189,20 @@ describe('MSAs Holding Tokens', function () {
         name: 'RpcError',
         code: 1010,
         data: 'Custom error: 5', // NotKeyOwner,
+      });
+    });
+
+    it('should fail if signed payload is not actually an AuthorizedKeyData (MsaOwnershipInvalidSignature)', async function () {
+      const { discriminant, ...badPayload } = defaultPayload;
+      // Generate AddKeyData instead of AuthorizedKeyData (missing discriminator)
+      const payload = await generateAddKeyPayload(badPayload);
+      const signingPayload = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+      const ownerSig = signPayload(msaKeys, signingPayload);
+      const op = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload as AuthorizedKeyData);
+      await assert.rejects(op.signAndSend('current'), {
+        name: 'RpcError',
+        code: 1010,
+        data: 'Custom error: 8', // MsaOwnershipInvalidSignature
       });
     });
 

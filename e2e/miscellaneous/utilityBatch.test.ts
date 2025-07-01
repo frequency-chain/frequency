@@ -6,11 +6,15 @@ import { ApiTypes, SubmittableExtrinsic } from '@polkadot/api/types';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Utility Batch Filtering', function () {
   let sender: KeyringPair;
   let recipient: KeyringPair;
+
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
 
   beforeEach(async function () {
     sender = await createAndFundKeypair(fundingSource, 5n * DOLLARS, 'utility-sender');

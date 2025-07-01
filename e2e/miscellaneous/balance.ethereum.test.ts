@@ -6,9 +6,13 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Balance transfer ethereum', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('setup', function () {
     let senderSr25519Keys: KeyringPair;
     let senderEthereumKeys: KeyringPair;

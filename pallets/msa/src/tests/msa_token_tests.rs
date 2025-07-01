@@ -26,10 +26,11 @@ fn it_succeeds_when_balance_is_sufficient() {
 		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
 		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
 
-		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+		let (payload, msa_signature) = generate_and_sign_authorized_key_payload(
 			msa_id,
 			&owner_key_pair,
 			&origin_key_pair,
+			None,
 			None,
 		);
 
@@ -73,10 +74,11 @@ fn it_fails_when_duplicate_signature_submitted() {
 		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
 		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
 
-		let (payload, _, msa_signature) = generate_and_sign_authorized_key_payload(
+		let (payload, msa_signature) = generate_and_sign_authorized_key_payload(
 			msa_id,
 			&owner_key_pair,
 			&origin_key_pair,
+			None,
 			None,
 		);
 

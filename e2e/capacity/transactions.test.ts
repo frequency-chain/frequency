@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddKeyData, EventMap, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import {
@@ -39,7 +39,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity Transactions', function () {
   describe('pay_with_capacity', function () {
@@ -48,6 +48,7 @@ describe('Capacity Transactions', function () {
       const amountStaked = 3n * DOLLARS;
 
       before(async function () {
+        fundingSource = await getFundingSource(import.meta.url);
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
         schemaId = await getOrCreateGraphChangeSchema(fundingSource);
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');

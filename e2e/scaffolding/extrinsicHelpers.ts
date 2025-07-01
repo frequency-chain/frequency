@@ -40,16 +40,20 @@ export interface AddKeyData {
   expiration?: any;
   newPublicKey?: any;
 }
+
 export interface AuthorizedKeyData {
+  discriminant: 'AuthorizedKeyData';
   msaId: u64;
   expiration?: number | any;
   authorizedPublicKey: KeyringPair['publicKey'];
 }
+
 export interface AddProviderPayload {
   authorizedMsaId?: u64;
   schemaIds?: u16[];
   expiration?: any;
 }
+
 export interface ItemizedSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -57,12 +61,14 @@ export interface ItemizedSignaturePayload {
   expiration?: any;
   actions?: any;
 }
+
 export interface ItemizedSignaturePayloadV2 {
   schemaId?: u16;
   targetHash?: u32;
   expiration?: any;
   actions?: any;
 }
+
 export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -71,6 +77,7 @@ export interface PaginatedUpsertSignaturePayload {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedUpsertSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
@@ -78,6 +85,7 @@ export interface PaginatedUpsertSignaturePayloadV2 {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedDeleteSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -85,6 +93,7 @@ export interface PaginatedDeleteSignaturePayload {
   targetHash?: u32;
   expiration?: any;
 }
+
 export interface PaginatedDeleteSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
@@ -168,6 +177,7 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
+
 export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
   target?: ParsedEvent<C, N>;
   eventMap: EventMap;

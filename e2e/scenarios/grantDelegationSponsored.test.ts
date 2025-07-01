@@ -12,7 +12,7 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', function () {
   let keys: KeyringPair;
@@ -29,6 +29,7 @@ describe('Delegation Scenario Tests createSponsoredAccountWithDelegation', funct
   let defaultPayload: AddProviderPayload;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Fund all the different keys
     [noMsaKeys, sponsorKeys, keys, otherMsaKeys, providerKeys, otherProviderKeys] = await createAndFundKeypairs(
       fundingSource,

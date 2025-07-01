@@ -13,7 +13,7 @@ import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex } from '@polkadot/util';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 // This is skipped as it requires the e2e tests to be run
 // against a Frequency build that has the metadata-hash feature
@@ -25,6 +25,7 @@ describe.skip('Check Metadata Hash', function () {
   let accountWithNoFunds: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 10_000_000n);
     accountWithNoFunds = createKeys();
   });

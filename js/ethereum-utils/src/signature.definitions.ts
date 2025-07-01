@@ -1,4 +1,4 @@
-import { EipDomainPayload } from './payloads';
+import { EipDomainPayload } from './payloads.js';
 
 export const EIP712_DOMAIN_DEFINITION = {
   EIP712Domain: [
@@ -21,8 +21,16 @@ export const EIP712_DOMAIN_DEFINITION = {
   ],
 };
 
-// using pallet_revive test chain ID for now.
-export const EIP712_DOMAIN_DEFAULT: EipDomainPayload = {
+// using 2091 for mainnet
+export const EIP712_DOMAIN_MAINNET: EipDomainPayload = {
+  name: 'Frequency',
+  version: '1',
+  chainId: '0x082B',
+  verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+};
+
+// using pallet_revive test chain ID for testnet/dev
+export const EIP712_DOMAIN_TESTNET: EipDomainPayload = {
   name: 'Frequency',
   version: '1',
   chainId: '0x190f1b44',
@@ -174,6 +182,23 @@ export const ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2 = {
   ],
 };
 
+export const SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION = {
+  SiwfSignedRequestPayload: [
+    {
+      name: 'callback',
+      type: 'string',
+    },
+    {
+      name: 'permissions',
+      type: 'uint16[]',
+    },
+    {
+      name: 'userIdentifierAdminUrl',
+      type: 'string',
+    },
+  ],
+};
+
 const PAYLOAD_DEFINITIONS = [
   ADD_PROVIDER_DEFINITION,
   ADD_KEY_DATA_DEFINITION,
@@ -183,6 +208,7 @@ const PAYLOAD_DEFINITIONS = [
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
 ];
 
 export type SupportedPayloadDefinitions = (typeof PAYLOAD_DEFINITIONS)[number];

@@ -25,7 +25,7 @@ import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
 const capacityMin: bigint = tokenMinStake / 50n;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity Staking Tests', function () {
   // The frozen balance is initialized and tracked throughout the staking end to end tests
@@ -41,6 +41,7 @@ describe('Capacity Staking Tests', function () {
     let stakeProviderId: u64;
 
     before(async function () {
+      fundingSource = await getFundingSource(import.meta.url);
       stakeKeys = createKeys('StakeKeys');
       stakeProviderId = await createMsaAndProvider(fundingSource, stakeKeys, 'StakeProvider', accountBalance);
     });
