@@ -28,7 +28,7 @@ This html is to help us test EIP-712 signatures using Metamask wallet.
 To serve this html you can follow the following steps:
 
 1. `npm install -g serve`
-2. `cd tool/migrations`
+2. `cd tools/eth-migration`
 3. `serve`
 4. Open http://localhost:3000/metamask.html in the browser
 

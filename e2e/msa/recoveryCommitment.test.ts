@@ -4,7 +4,7 @@ import { createRecoveryCommitmentPayload, getUnifiedAddress, getUnifiedPublicKey
 import { ContactType, generateRecoverySecret, getRecoveryCommitment } from '@frequency-chain/recovery-sdk';
 import assert from 'assert';
 import { KeyringPair } from '@polkadot/keyring/types';
-import { ExtrinsicHelper, RecoveryCommitmentData } from '../scaffolding/extrinsicHelpers';
+import { ExtrinsicHelper, RecoveryCommitmentPayload } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import {
   createAndFundKeypairs,
@@ -27,14 +27,14 @@ describe('Recovery Commitment Testing', function () {
   let keys: KeyringPair;
   let msaId: u64;
   let secondaryKey: KeyringPair;
-  let payload: RecoveryCommitmentData;
+  let payload: RecoveryCommitmentPayload;
   let ownerSig: Sr25519Signature;
   let badSig: Sr25519Signature;
   const recoverySecret = generateRecoverySecret();
   const testEmail = 'test@example.com';
   const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
   const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
-  const recoveryCommitmentData: RecoveryCommitmentData = {
+  const recoveryCommitmentData: RecoveryCommitmentPayload = {
     discriminant: 'RecoveryCommitmentPayload',
     recoveryCommitment,
   };
@@ -87,12 +87,12 @@ describe('Recovery Commitment Testing', function () {
 
       const ethereumSecretKey = u8aToHex(ethereumKeyPair.secretKey);
 
-      const eip712RecoveryCommitmentData = createRecoveryCommitmentPayload(
+      const eip712RecoveryCommitmentPayload = createRecoveryCommitmentPayload(
         'RecoveryCommitmentPayload',
         recoveryCommitment,
         payload.expiration
       );
-      const ecdsaSignature = await sign(ethereumSecretKey, eip712RecoveryCommitmentData, 'Dev');
+      const ecdsaSignature = await sign(ethereumSecretKey, eip712RecoveryCommitmentPayload, 'Dev');
 
       const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(keyEth, ecdsaSignature, payload);
 

@@ -101,7 +101,7 @@ export interface PaginatedDeleteSignaturePayloadV2 {
   expiration?: any;
 }
 
-export interface RecoveryCommitmentData {
+export interface RecoveryCommitmentPayload {
   discriminant: 'RecoveryCommitmentPayload';
   recoveryCommitment: Uint8Array;
   expiration?: any;
@@ -554,7 +554,7 @@ export class ExtrinsicHelper {
   public static addRecoveryCommitment(
     msaOwnerKey: KeyringPair,
     proof: MultiSignatureType,
-    payload: RecoveryCommitmentData
+    payload: RecoveryCommitmentPayload
   ) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.addRecoveryCommitment(getUnifiedAddress(msaOwnerKey), proof, payload),
