@@ -102,6 +102,7 @@ export interface PaginatedDeleteSignaturePayloadV2 {
 }
 
 export interface RecoveryCommitmentData {
+  discriminant: 'RecoveryCommitmentPayload';
   recoveryCommitment: Uint8Array;
   expiration?: number;
 }

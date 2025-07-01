@@ -327,6 +327,7 @@ pub type RecoveryCommitment = [u8; 32];
 
 /// This payload needs to be signed by the MSA owner to add a Recovery Commitment
 pub struct RecoveryCommitmentPayload<T: Config> {
+    discriminant: 'RecoveryCommitmentPayload',
     pub recovery_commitment: RecoveryCommitment,
     /// The block number at which a signed proof of this payload expires
     pub expiration: BlockNumberFor<T>,
@@ -366,6 +367,7 @@ pub enum Event<T: Config> {
     /// An account was recovered with a new control key
     AccountRecovered {
         who: T::AccountId,
+        recovery_provider_id: MsaId,
         msa_id: MsaId,
         new_control_key: T::PublicKey, // New control key added to the MSA
     },

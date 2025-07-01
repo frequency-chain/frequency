@@ -31,8 +31,8 @@ describe('Recovery Commitment Testing', function () {
   const testEmail = 'test@example.com';
   const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
   const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
-  // const expiration = (await getBlockNumber()) + 10;
   const recoveryCommitmentData: RecoveryCommitmentData = {
+    discriminant: 'RecoveryCommitmentPayload',
     recoveryCommitment,
   };
   let recoveryCommitmentPayload: Codec;

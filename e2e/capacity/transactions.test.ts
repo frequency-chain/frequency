@@ -158,6 +158,7 @@ describe('Capacity Transactions', function () {
 
           const expiration = (await getBlockNumber()) + 10;
           const recoveryCommitmentData: RecoveryCommitmentData = {
+            discriminant: 'RecoveryCommitmentPayload',
             recoveryCommitment,
             expiration,
           };
