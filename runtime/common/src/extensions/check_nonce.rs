@@ -21,19 +21,19 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},
-	sp_runtime,
+	sp_runtime, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, TransactionExtension,
-		ValidateResult,
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, PostDispatchInfoOf,
+		TransactionExtension, ValidateResult,
 	},
 	transaction_validity::{
 		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidityError,
 		ValidTransaction,
 	},
-	Weight,
+	DispatchResult, Weight,
 };
 extern crate alloc;
 use alloc::vec;
@@ -68,6 +68,26 @@ impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	}
 }
 
+/// Transaction operations from `validate` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val<T: Config> {
+	/// Account and its nonce to check for.
+	CheckNonce((T::AccountId, T::Nonce)),
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+/// Transaction operations from `prepare` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// No nonce check was performed
+	NonceChecked,
+	/// Weight to refund.
+	Refund(Weight),
+}
+
 impl<T: Config> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
@@ -75,18 +95,18 @@ where
 {
 	const IDENTIFIER: &'static str = "CheckNonce";
 	type Implicit = ();
-	type Val = ();
-	type Pre = ();
+	type Val = Val<T>;
+	type Pre = Pre;
 
 	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
-		// TODO: benchmark this
+		// TODO: benchmark this or get pre-computed weights?
 		Weight::zero()
 	}
 
 	fn validate(
 		&self,
 		origin: <T as Config>::RuntimeOrigin,
-		_call: &T::RuntimeCall,
+		call: &T::RuntimeCall,
 		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
 		_self_implicit: Self::Implicit,
@@ -95,7 +115,7 @@ where
 	) -> ValidateResult<Self::Val, T::RuntimeCall> {
 		// Only check for signed origin
 		let Some(who) = origin.as_system_origin_signer() else {
-			return Ok((ValidTransaction::default(), (), origin));
+			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
 		};
 
 		let account = frame_system::Account::<T>::get(&who);
@@ -118,31 +138,31 @@ where
 				longevity: TransactionLongevity::MAX,
 				propagate: true,
 			},
-			(),
+			Val::CheckNonce((who.clone(), account.nonce)),
 			origin,
 		))
 	}
 
 	fn prepare(
 		self,
-		_val: Self::Val,
-		origin: &<T::RuntimeCall as Dispatchable>::RuntimeOrigin,
+		val: Self::Val,
+		_origin: &<T::RuntimeCall as Dispatchable>::RuntimeOrigin,
 		_call: &T::RuntimeCall,
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		// Get TOKEN account from "who" key
-		// Only check for signed origin
-		let Some(who) = origin.as_system_origin_signer() else {
-			return Ok(());
+		let (who, mut nonce) = match val {
+			Val::CheckNonce((who, nonce)) => (who, nonce),
+			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
 		};
 
-		let mut account = frame_system::Account::<T>::get(&who);
+		let account: frame_system::AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData> =
+			frame_system::Account::<T>::get(&who);
 
 		// The default account (no account) has a nonce of 0.
 		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if self.0 != account.nonce {
-			return Err(if self.0 < account.nonce {
+		if nonce != account.nonce {
+			return Err(if nonce < account.nonce {
 				InvalidTransaction::Stale
 			} else {
 				InvalidTransaction::Future
@@ -157,7 +177,7 @@ where
 			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
 
 		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
+		nonce += T::Nonce::one();
 
 		// Only create or update the token account if the caller is paying or
 		// account already exists
@@ -165,6 +185,19 @@ where
 			frame_system::Account::<T>::insert(&who, account);
 		}
 
-		Ok(())
+		Ok(Pre::NonceChecked)
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::NonceChecked => Ok(Weight::zero()),
+			Pre::Refund(weight) => Ok(weight),
+		}
 	}
 }
