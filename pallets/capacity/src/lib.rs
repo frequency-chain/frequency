@@ -831,11 +831,9 @@ impl<T: Config> Pallet<T> {
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
 		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
-		if !thawed_unlock_chunks_total::<T>(&unlocks, CurrentEpoch::<T>::get()).is_zero() {
-			return Zero::zero();
-		}
 
-		let unthawed_unstaked_balance = unlock_chunks_total::<T>(&unlocks);
+		let unthawed_unstaked_balance =
+			unthawed_unlock_chunks_total::<T>(&unlocks, CurrentEpoch::<T>::get());
 		let freezable_balance = T::Currency::balance_freezable(staker);
 		let current_staking_balance =
 			StakingAccountLedger::<T>::get(staker).unwrap_or_default().active;
@@ -1126,7 +1124,7 @@ impl<T: Config> Pallet<T> {
 	/// Get the total balance of tokens that have been unstaked & have thawed but have not been withdrawn
 	pub fn get_thawed_unstaked_amount(account: &T::AccountId) -> BalanceOf<T> {
 		let current_epoch = CurrentEpoch::<T>::get();
-		thawed_unlock_chunks_total::<T>(
+		unthawed_unlock_chunks_total::<T>(
 			&UnstakeUnlocks::<T>::get(account).unwrap_or_default(),
 			current_epoch,
 		)

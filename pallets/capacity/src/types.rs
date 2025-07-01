@@ -221,14 +221,14 @@ pub fn unlock_chunks_total<T: Config>(unlock_chunks: &UnlockChunkList<T>) -> Bal
 }
 
 /// Computes and returns the total held in an UnlockChunkList that
-/// is thawed as of the indicated epoch.
-pub fn thawed_unlock_chunks_total<T: Config>(
+/// is unthawed as of the indicated epoch.
+pub fn unthawed_unlock_chunks_total<T: Config>(
 	unlock_chunks: &UnlockChunkList<T>,
 	current_epoch: <T>::EpochNumber,
 ) -> BalanceOf<T> {
 	unlock_chunks
 		.iter()
-		.filter(|chunk| chunk.thaw_at.le(&current_epoch))
+		.filter(|chunk| chunk.thaw_at.gt(&current_epoch))
 		.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
 }
 
