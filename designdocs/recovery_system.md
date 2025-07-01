@@ -482,7 +482,7 @@ pub fn recover_account(
     //       Is this event sufficient to track the Recovery Provider?
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
-    Self::deposit_event(Event::AccountRecovered { who, msa_id });
+    Self::deposit_event(Event::AccountRecovered { who, msa_id, recovery_commitment });
     Ok(())
 }
 ```

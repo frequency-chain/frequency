@@ -2,7 +2,7 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, RecoveryCommitmentData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
 import { generateRecoverySecret, getRecoveryCommitment, ContactType } from '@frequency-chain/recovery-sdk';
@@ -34,7 +34,6 @@ import {
   getTestHandle,
   assertHasMessage,
   createMsa,
-  RecoveryCommitmentData,
   generateRecoveryCommitmentPayload,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
@@ -158,17 +157,17 @@ describe('Capacity Transactions', function () {
           const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
 
           const expiration = (await getBlockNumber()) + 10;
-          const recoveryPayload: RecoveryCommitmentData = {
+          const recoveryCommitmentData: RecoveryCommitmentData = {
             recoveryCommitment,
             expiration,
           };
 
-          const payload = await generateRecoveryCommitmentPayload(recoveryPayload);
-          const recoveryCommitmentData = ExtrinsicHelper.api.registry.createType(
+          const payload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentPayload = ExtrinsicHelper.api.registry.createType(
             'PalletMsaRecoveryCommitmentPayload',
             payload
           );
-          const signature = signPayloadSr25519(capacityKeys, recoveryCommitmentData);
+          const signature = signPayloadSr25519(capacityKeys, recoveryCommitmentPayload);
           const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(capacityKeys, signature, payload);
 
           const { eventMap } = await addRecoveryCommitmentOp.payWithCapacity();
