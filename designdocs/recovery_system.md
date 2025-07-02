@@ -49,7 +49,7 @@ The following sections detail the cryptographic design meeting these requirement
 
 ### Recovery Secret Composition
 
-Each user’s Recovery Secret is derived from a combination of their Authentication Contact and a random secret. This design proposes using a 32 byte random hexadecimal value as the random secret component due to creating high entropy and user-friendliness.
+This design proposes using a 32 byte random hexadecimal value as the random secret component due to creating high entropy and user-friendliness.
 
 ### Recovery Commitment Generation
 
