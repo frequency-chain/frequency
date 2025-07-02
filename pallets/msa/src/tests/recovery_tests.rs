@@ -1,9 +1,7 @@
 use frame_support::{assert_noop, assert_ok};
 use sp_core::{sr25519, Pair};
 
-use crate::{
-	tests::mock::*, Error, Event, MsaIdToRecoveryCommitment,
-};
+use crate::{tests::mock::*, Error, Event, MsaIdToRecoveryCommitment};
 
 #[test]
 fn add_recovery_commitment_with_valid_data_should_succeed() {
