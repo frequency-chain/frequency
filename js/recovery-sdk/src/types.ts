@@ -11,3 +11,8 @@ export enum ContactType {
    */
   PHONE = '0x01',
 }
+
+/**
+ * Identifies a 0x-prefixed base16 string
+ */
+export type HexString = `0x${string}`;

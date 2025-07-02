@@ -1,6 +1,6 @@
 import { keccak_256 } from '@noble/hashes/sha3';
 import { bytesToHex, randomBytes, concatBytes, hexToBytes, utf8ToBytes } from '@noble/hashes/utils';
-import { ContactType } from './types.js';
+import { ContactType, HexString } from './types.js';
 import { standardizeContact } from './standardize.js';
 
 export * from './types.js';
@@ -30,11 +30,11 @@ export function getIntermediaryHashes(
   recoverySecret: string,
   contactType: ContactType,
   contact: string
-): { a: string; b: string } {
+): { a: HexString; b: HexString } {
   const { a, b } = getIntermediaryHashesAsUint8Array(recoverySecret, contactType, contact);
   return {
-    a: '0x' + bytesToHex(a),
-    b: '0x' + bytesToHex(b),
+    a: `0x${bytesToHex(a)}`,
+    b: `0x${bytesToHex(b)}`,
   };
 }
 
@@ -60,10 +60,10 @@ function getIntermediaryHashesAsUint8Array(
  * @param contact The raw contact string
  * @returns the hex string of the Recovery Commitment
  */
-export function getRecoveryCommitment(recoverySecret: string, contactType: ContactType, contact: string): string {
+export function getRecoveryCommitment(recoverySecret: string, contactType: ContactType, contact: string): HexString {
   const { a, b } = getIntermediaryHashesAsUint8Array(recoverySecret, contactType, contact);
 
-  return '0x' + bytesToHex(keccak_256(concatBytes(a, b)));
+  return `0x${bytesToHex(keccak_256(concatBytes(a, b)))}`;
 }
 
 /**
@@ -73,8 +73,8 @@ export function getRecoveryCommitment(recoverySecret: string, contactType: Conta
  * @param bHash B hash, H(s + c)
  * @returns the hex string of the Recovery Commitment
  */
-export function getRecoveryCommitmentFromIntermediary(aHash: string, bHash: string): string {
+export function getRecoveryCommitmentFromIntermediary(aHash: string, bHash: string): HexString {
   const a = hexToBytes(aHash.replace('0x', ''));
   const b = hexToBytes(bHash.replace('0x', ''));
-  return '0x' + bytesToHex(keccak_256(concatBytes(a, b)));
+  return `0x${bytesToHex(keccak_256(concatBytes(a, b)))}`;
 }
