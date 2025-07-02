@@ -8,7 +8,7 @@ When a Frequency blockchain user’s wallet provider becomes unavailable, recove
 
 ### Functional Requirements
 
-1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a Recovery Secret using the Authentication Contact to seed a random 32 byte hexadecimal value. The Recovery Commitment (RC) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RC is securely stored on-chain to allow future recovery.
+1. Recovery Secret Generation: On MSA creation, the wallet provider collects the user’s Authentication Contact method and generates a new random Recovery Secret. The Recovery Commitment (RC) is computed from the [Recovery Intermediary Hashes](#glossary-of-terms) and the resulting RC is securely stored on-chain to allow future recovery.
 
 2. Single Active Recovery Commitment: A maximum of one Recovery Commitment exists per user at any time. If a Recovery Commitment is ever used (consumed) during account recovery, it is invalidated on-chain. The user or new provider may then issue a new Recovery Secret for future use, but duplicate or old commitments cannot remain active simultaneously.
 
@@ -36,7 +36,7 @@ The following sections detail the cryptographic design meeting these requirement
 
 - **MSA**: Message Source Account, the user’s on-chain identity.
 - **Control Key**: The cryptographic key that allows the user to control their MSA. It is used for signing transactions and messages on the Frequency blockchain.
-- **Recovery Secret**: A 32 byte hexadecimal secret derived from the user’s Authentication Contact and a random seed, used to recover access to the MSA.
+- **Recovery Secret**: A random 32 byte hexadecimal secret, used to recover access to the MSA with the user’s Authentication Contact.
 - **Recovery Provider**: A third-party service approved by Frequency governance to perform account recovery operations.
 - **Recovery Commitment**: A cryptographic commitment derived from the Recovery Secret and Authentication Contact, stored on-chain to allow recovery.
 - **Governance**: The on-chain mechanism that approves and manages recovery providers, ensuring they follow the protocol rules and security standards.
@@ -62,7 +62,7 @@ Note: Here `||` denotes concatenation of byte arrays.
 #### Recovery Intermediary Hashes
 
 - H(s) = keccak256(Recovery Secret)
-- H(sc) = keccak256(Recovery Secret || Authentication Contact)  
+- H(sc) = keccak256(Recovery Secret || Authentication Contact)
 
 #### Final Recovery Commitment (RC)
 
@@ -175,14 +175,14 @@ If the original wallet provider becomes unavailable or the user loses access to 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant RP as Recovery Provider  
+    participant RP as Recovery Provider
     participant F as Frequency
 
     Note over U,F: Account Recovery via Recovery Provider
     U->>RP: Request Recovery with Recovery Secret and Authentication Contact
     RP->>RP: Compute Recovery Commitment from Recovery Intermediary Hashes
     RP->>RP: Check Off-Chain Index for Recovery Commitment and Retrieve MSA ID
-    
+
     alt Recovery Commitment Not Found In Index
         RP->>U: RECOVERY FAILED: (Invalid Recovery Secret or Authentication Contact)
     else Recovery Commitment Found In Index
@@ -190,7 +190,7 @@ sequenceDiagram
         RP->>U: Contact Verification Challenge (e.g. OTP)
         U->>RP: Submit OTP from Authentication Contact
         RP->>RP: Validate OTP
-        
+
         alt OTP INVALID
             RP->>U: RECOVERY FAILED: (Invalid OTP)
         else OTP VALID
@@ -309,7 +309,7 @@ The system should be robust against DoS attacks. For example, an attacker might 
 
 ### Entropy of Email as Factor
 
-Emails can sometimes be guessed or enumerated (many people use common domains, etc.), which is why the random seed is critical. Including the email in the hash does personalize the hash but isn’t relied upon for secrecy. The email’s main role is for the provider to confirm identity. We ensure that even if an attacker knows the target email, they still gain nothing without the recovery code. Conversely, if they somehow got the recovery code, without access to the email the recovery would fail. This dual requirement provides a balanced security.
+Emails can sometimes be guessed or enumerated (many people use common domains, etc.), which is why hashing the contact with the random secret value is critical. Including the email in the hash does personalize the hash but isn’t relied upon for secrecy. The email’s main role is for the provider to confirm identity. We ensure that even if an attacker knows the target email, they still gain nothing without the recovery code. Conversely, if they somehow got the recovery code, without access to the email the recovery would fail. This dual requirement provides a balanced security.
 
 In summary, the system meets the security requirements by layering cryptographic protections and real-world identity verification. It is designed such that no single point of failure (neither just an email, nor just a recovery code, nor a rogue provider) can compromise an account alone:
 
@@ -418,7 +418,7 @@ pub fn add_recovery_commitment(
 
     // Register the signature to prevent replay attacks
     Self::register_signature(&proof, payload.expiration.into());
-    
+
     // Recover the MSA ID from the msa_owner_key
     let msa_id = ensure_valid_msa_key(&msa_owner_key);
 
