@@ -230,7 +230,7 @@ describe('Signature related tests', function () {
     });
 
     it('should create a valid signature for RecoveryCommitmentPayload', async function () {
-      const recoveryCommitment = '0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef';
+      const recoveryCommitment = '0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3';
       const payload1 = createRecoveryCommitmentPayload(
         'RecoveryCommitmentPayload',
         new Uint8Array(Buffer.from(recoveryCommitment.slice(2), 'hex')),
@@ -241,7 +241,7 @@ describe('Signature related tests', function () {
 
       const expected: EcdsaSignature = {
         Ecdsa:
-          '0x806e6f78ee6254f54fe1a79e0afa8e95727719524f63dded20f82fee186f374436f62d224e65e4cd537cb8633103e73770d068acfff6c5051f441713a36ef87d1c' as HexString,
+          '0xec395998e074fa907021e4c50b95123f47ea6a1f7ae4af9cfa5baeaa3f5600285fbfba27129fb9615c0e1441962aba09a55ff8ad85efccee66a9895ce223cb181c' as HexString,
       };
 
       assert.deepEqual(signature, expected);
