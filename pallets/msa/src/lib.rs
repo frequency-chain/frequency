@@ -68,10 +68,10 @@ use sp_io::hashing::keccak_256;
 #[allow(unused)]
 use sp_runtime::{
 	traits::{
-		BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf, Dispatchable,
-		SignedExtension, TransactionExtension, ValidateResult, Zero,
+		AsSystemOriginSigner, BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable,
+		PostDispatchInfoOf, TransactionExtension, ValidateResult, Zero,
 	},
-	ArithmeticError, DispatchError, MultiSignature,
+	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
 
 pub use pallet::*;
@@ -2112,30 +2112,35 @@ impl<T: Config + Send + Sync> core::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
+/// The info passed between the validate and prepare steps for the `CheckFreeExtrinsicUse` extension.
+pub enum Val {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+/// The info passed between the prepare and post-dispatch steps for the `CheckFreeExtrinsicUse` extension.
+pub enum Pre {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+impl<T: Config + Send + Sync> TransactionExtension<T::RuntimeCall> for CheckFreeExtrinsicUse<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";
+	type Implicit = ();
+	type Val = Val;
+	type Pre = Pre;
 
-	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
-		Ok(())
-	}
-
-	#[allow(deprecated)]
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
-		len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		self.validate(who, call, info, len).map(|_| ())
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		// Todo benchmark this weight
+		Weight::zero()
 	}
 
 	/// Frequently called by the transaction queue to validate all free MSA extrinsics:
@@ -2153,33 +2158,66 @@ where
 	/// call: The pallet extrinsic being called
 	/// unused: _info, _len
 	///
-	#[allow(deprecated)]
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		match call.is_sub_type() {
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
+		};
+		let validity = match call.is_sub_type() {
 			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
+				Self::validate_delegation_by_provider(&who, delegator),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
+				Self::validate_delegation_by_delegator(&who, provider_msa_id),
 			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
-			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
+				Self::validate_key_delete(&who, public_key_to_delete),
+			Some(Call::retire_msa { .. }) => Self::ensure_msa_can_retire(&who),
 			Some(Call::withdraw_tokens {
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
-			}) => CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
-				who,
+			}) => Self::validate_msa_token_withdrawal(
+				&who,
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
 			),
 			_ => Ok(Default::default()),
+		};
+		validity.map(|v| (v, Val::Valid, origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		match val {
+			Val::Valid => Ok(Pre::Valid),
+			Val::Refund(w) => Ok(Pre::Refund(w)),
+		}
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::Valid => Ok(Weight::zero()),
+			Pre::Refund(w) => Ok(w),
 		}
 	}
 }
