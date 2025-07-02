@@ -368,6 +368,7 @@ pub enum Event<T: Config> {
     AccountRecovered {
         who: T::AccountId,
         recovery_provider_id: MsaId,
+        recovery_commitment: RecoveryCommitment,
         msa_id: MsaId,
         new_control_key: T::PublicKey, // New control key added to the MSA
     },
@@ -482,7 +483,13 @@ pub fn recover_account(
     // Required delegation operations omitted for brevity
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
-    Self::deposit_event(Event::AccountRecovered { who, msa_id, recovery_commitment, recovery_provider_id });
+    Self::deposit_event(Event::AccountRecovered {
+        who,
+        recovery_provider_id,
+        recovery_commitment,
+        msa_id,
+        new_control_key
+    });
     Ok(())
 }
 ```
