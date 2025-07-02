@@ -110,10 +110,10 @@ describe('Address tests', function () {
     it('should properly handle ethereum key type', function () {
       const ethPublicKey = '0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f';
       const ethPair = createMockKeyringPair('ethereum', hexToU8a(ethPublicKey));
-      const unifiedAddress = '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ';
+      const unifiedPublicKey = '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ';
 
       const result = getUnifiedAddress(ethPair);
-      assert.deepEqual(result, unifiedAddress);
+      assert.deepEqual(result, unifiedPublicKey);
     });
   });
 
