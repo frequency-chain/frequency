@@ -887,7 +887,7 @@ fn ethereum_eip712_signatures_for_recovery_commitment_should_work() {
 		let payload: RecoveryCommitmentPayload<Test> = RecoveryCommitmentPayload {
 			discriminant:  PayloadTypeDiscriminator::RecoveryCommitmentPayload,
 			recovery_commitment: from_hex("0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3").expect("Should convert").try_into().unwrap(),
-			expiration: 100u32.into(),
+			expiration: 100u32,
 		};
 		let encoded_payload = payload.encode_eip_712(420420420u32);
 

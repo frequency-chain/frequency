@@ -232,7 +232,7 @@ describe('Signature related tests', function () {
 
       const expected: EcdsaSignature = {
         Ecdsa:
-          '0xec395998e074fa907021e4c50b95123f47ea6a1f7ae4af9cfa5baeaa3f5600285fbfba27129fb9615c0e1441962aba09a55ff8ad85efccee66a9895ce223cb181c' as HexString,
+          '0xcd09601593bfb635fb455a6bb9eab438fa03374a0ddd5e93710ff8042d6a3a33499ce0ad1c818a338c1b59af3c705ae226460d3aa905bdd21dbbc044577bfc5d1c' as HexString,
       };
 
       assert.deepEqual(signature, expected);

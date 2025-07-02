@@ -144,7 +144,7 @@ export interface AddProvider {
 export interface RecoveryCommitmentPayload {
   // type discriminator
   type: 'RecoveryCommitmentPayload';
-  // bytes type recovery commitment
+  // HexString type recovery commitment
   recoveryCommitment: HexString;
   // uint32 type payload expiration block number
   expiration: number;

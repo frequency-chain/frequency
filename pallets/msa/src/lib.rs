@@ -1030,7 +1030,7 @@ pub mod pallet {
 			proof: MultiSignature,
 			payload: RecoveryCommitmentPayload<T>,
 		) -> DispatchResult {
-			let _provider_key = ensure_signed(origin)?;
+			let _origin_key = ensure_signed(origin)?;
 
 			// Verify that the MsaId owner has signed the payload
 			ensure!(
