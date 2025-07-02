@@ -151,10 +151,7 @@ describe('Capacity Transactions', function () {
 
           // Generate Recovery Commitment using the Recovery SDK with test email contact
           const testEmail = 'test@example.com';
-          const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
-
-          // Convert hex string to Uint8Array for the payload
-          const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
 
           const expiration = (await getBlockNumber()) + 10;
           const recoveryCommitmentData: RecoveryCommitmentPayload = {
