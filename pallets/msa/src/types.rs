@@ -206,19 +206,19 @@ pub struct RecoveryCommitmentPayload<T: Config> {
 impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
 	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
 		lazy_static! {
-
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"RecoveryCommitmentPayload(bytes32 recoveryCommitment,uint32 expiration)",
+				b"RecoveryCommitmentPayload(bytes recoveryCommitment,uint32 expiration)",
 			);
 		}
 		// get prefix and domain separator
 		let prefix_domain_separator: Box<[u8]> =
 			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let hashed_recovery = sp_io::hashing::keccak_256(&self.recovery_commitment);
 		let expiration: U256 = self.expiration.into();
 		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
 		let message = sp_io::hashing::keccak_256(
-			&[MAIN_TYPE_HASH.as_slice(), &coded_expiration, &self.recovery_commitment].concat(),
+			&[MAIN_TYPE_HASH.as_slice(), hashed_recovery.as_slice(), &coded_expiration].concat(),
 		);
 		let combined = [prefix_domain_separator.as_ref(), &message].concat();
 		combined.into_boxed_slice()

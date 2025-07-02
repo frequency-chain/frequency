@@ -33,15 +33,11 @@ describe('Recovery Commitment Testing', function () {
   const recoverySecret = generateRecoverySecret();
   const testEmail = 'test@example.com';
   // REMOVE: Use the secret from ethereum-utils for consistency in tests
-  // const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
-  const recoveryCommitmentHex = "0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3";
+  const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+  // const recoveryCommitmentHex = "0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3";
   // const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
   console.log('recoveryCommitment:', recoveryCommitmentHex);
-  const recoveryCommitmentData = {
-    discriminant: 'RecoveryCommitmentPayload',
-    recoveryCommitment: recoveryCommitmentHex,
-    expiration: 100,
-  };
+  let recoveryCommitmentData: RecoveryCommitmentPayload;
   let recoveryCommitmentPayload: Codec;
 
   before(async function () {
@@ -53,6 +49,10 @@ describe('Recovery Commitment Testing', function () {
     assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
     msaId = target!.data.msaId;
     // Pass the explicit expiration to the payload generator to ensure consistency
+    recoveryCommitmentData = {
+      discriminant: 'RecoveryCommitmentPayload',
+      recoveryCommitment: recoveryCommitmentHex,
+    };
     payload = await generateRecoveryCommitmentPayload({ ...recoveryCommitmentData });
     recoveryCommitmentPayload = ExtrinsicHelper.api.registry.createType(
       'PalletMsaRecoveryCommitmentPayload',
