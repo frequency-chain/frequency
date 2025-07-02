@@ -61,10 +61,7 @@ describe('Signature related tests', function () {
       };
 
       // ACT
-      const payload1 = createRecoveryCommitmentPayload(
-        recoveryCommitment,
-        90
-      );
+      const payload1 = createRecoveryCommitmentPayload(recoveryCommitment, 90);
 
       // ASSERT
       assert.deepEqual(payload1, expected);
@@ -230,10 +227,7 @@ describe('Signature related tests', function () {
 
     it('should create a valid signature for RecoveryCommitmentPayload', async function () {
       const recoveryCommitment = '0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3';
-      const payload1 = createRecoveryCommitmentPayload(
-        recoveryCommitment,
-        100
-      );
+      const payload1 = createRecoveryCommitmentPayload(recoveryCommitment, 100);
       const signature = await sign(secretKey, payload1, 'Dev');
 
       const expected: EcdsaSignature = {
