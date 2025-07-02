@@ -97,6 +97,40 @@ fn add_recovery_commitment_with_nonexistent_msa_should_fail() {
 }
 
 #[test]
+fn add_recovery_commitment_with_not_yet_valid_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		System::set_block_number(11_122);
+		let mortality_block = 11_323;
+
+		// Create an MSA account
+		let (msa_id, msa_owner_key_pair) = create_account();
+
+		// Create recovery commitment payload with not yet valid signature
+		let recovery_commitment = [1u8; 32];
+
+		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
+			&msa_owner_key_pair,
+			recovery_commitment,
+			mortality_block
+		);
+
+		// Execute the extrinsic and expect failure
+		assert_noop!(
+			Msa::add_recovery_commitment(
+				test_origin_signed(2),              // provider_key origin
+				msa_owner_key_pair.public().into(), // msa_owner_key
+				signature,
+				payload
+			),
+			Error::<Test>::ProofNotYetValid
+		);
+
+		// Verify storage was not updated
+		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), None);
+	});
+}
+
+#[test]
 fn add_recovery_commitment_with_expired_payload_should_fail() {
 	new_test_ext().execute_with(|| {
 		// Create an MSA account
