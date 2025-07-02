@@ -1,6 +1,18 @@
 import { parsePhoneNumberFromString } from 'libphonenumber-js/min';
 import { ContactType } from './types.js';
 
+// Via https://shramko.dev/snippets/is-email-valid-regex
+function isValidEmail(email: string): boolean {
+  // [RFC 5321] https://datatracker.ietf.org/doc/html/rfc5321
+  const MAX_EMAIL_LENGTH = 254;
+  const isInvalidInput = !email || email.length === 0 || email.length > MAX_EMAIL_LENGTH;
+
+  if (isInvalidInput) return false;
+
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+}
+
 /**
  * Cleans up the email by lowercasing and removing periods in the username
  * Does NOT validate the email
@@ -9,7 +21,9 @@ import { ContactType } from './types.js';
  * @returns standardized email string
  */
 function standardizeEmail(email: string): string {
-  return email.toLowerCase().trim();
+  const cleanEmail = email.toLowerCase().trim();
+  if (!isValidEmail(cleanEmail)) throw new Error('Unable to parse email contact method');
+  return cleanEmail;
 }
 
 /**
@@ -20,7 +34,7 @@ function standardizeEmail(email: string): string {
  */
 function standardizePhone(phone: string): string {
   const parsed = parsePhoneNumberFromString(phone, 'US');
-  if (!parsed) throw new Error('Unable to parse contact method');
+  if (!parsed) throw new Error('Unable to parse phone contact method');
   return parsed.format('E.164');
 }
 
