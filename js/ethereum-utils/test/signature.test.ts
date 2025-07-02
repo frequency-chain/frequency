@@ -62,8 +62,7 @@ describe('Signature related tests', function () {
 
       // ACT
       const payload1 = createRecoveryCommitmentPayload(
-        'RecoveryCommitmentPayload',
-        new Uint8Array(Buffer.from(recoveryCommitment.slice(2), 'hex')),
+        recoveryCommitment,
         90
       );
 
@@ -232,12 +231,10 @@ describe('Signature related tests', function () {
     it('should create a valid signature for RecoveryCommitmentPayload', async function () {
       const recoveryCommitment = '0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3';
       const payload1 = createRecoveryCommitmentPayload(
-        'RecoveryCommitmentPayload',
-        new Uint8Array(Buffer.from(recoveryCommitment.slice(2), 'hex')),
+        recoveryCommitment,
         100
       );
       const signature = await sign(secretKey, payload1, 'Dev');
-      console.log('signature', signature);
 
       const expected: EcdsaSignature = {
         Ecdsa:

@@ -32,11 +32,15 @@ describe('Recovery Commitment Testing', function () {
   let badSig: Sr25519Signature;
   const recoverySecret = generateRecoverySecret();
   const testEmail = 'test@example.com';
-  const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
-  const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
-  const recoveryCommitmentData: RecoveryCommitmentPayload = {
+  // REMOVE: Use the secret from ethereum-utils for consistency in tests
+  // const recoveryCommitmentHex = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+  const recoveryCommitmentHex = "0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3";
+  // const recoveryCommitment = new Uint8Array(Buffer.from(recoveryCommitmentHex.slice(2), 'hex'));
+  console.log('recoveryCommitment:', recoveryCommitmentHex);
+  const recoveryCommitmentData = {
     discriminant: 'RecoveryCommitmentPayload',
-    recoveryCommitment,
+    recoveryCommitment: recoveryCommitmentHex,
+    expiration: 100,
   };
   let recoveryCommitmentPayload: Codec;
 
@@ -69,32 +73,34 @@ describe('Recovery Commitment Testing', function () {
 
     it('should successfully add an Ethereum signed recovery commitment', async function () {
       // SET UP
-      const keyEth = await createKeys('Eth2', 'ethereum');
-      console.log('keyEth:', keyEth);
-      const unifiedAddress = getUnifiedAddress(keyEth);
+      const ethereumKeyringPair = await createKeys('Ethereum', 'ethereum');
+      const unifiedAddress = getUnifiedAddress(ethereumKeyringPair);
       console.log('unifiedAddress:', unifiedAddress);
       const ethereumKeyPair = getEthereumKeyPairFromUnifiedAddress(unifiedAddress);
+      const ethereumSecretKey = u8aToHex( getEthereumKeyPairFromUnifiedAddress(unifiedAddress).secretKey);
       console.log('ethereumKeyPair:', ethereumKeyPair);
+      console.log('ethereumSecretKey:', ethereumSecretKey);
 
       if (!ethereumKeyPair || !ethereumKeyPair.secretKey) {
         throw new Error('Ethereum keypair or secret key is not defined');
       }
 
       // Fund the Ethereum key and create an MSA for it
-      await ExtrinsicHelper.transferFunds(fundingSource, keyEth, 2n * DOLLARS).signAndSend();
-      const { target: msaCreationTarget } = await ExtrinsicHelper.createMsa(keyEth).signAndSend();
+      await ExtrinsicHelper.transferFunds(fundingSource, ethereumKeyringPair, 2n * DOLLARS).signAndSend();
+      const { target: msaCreationTarget } = await ExtrinsicHelper.createMsa(ethereumKeyringPair).signAndSend();
       assert.notEqual(msaCreationTarget?.data.msaId, undefined, 'MSA Id not in expected event');
+      console.log('MSA Id:', msaCreationTarget!.data.msaId);
 
-      const ethereumSecretKey = u8aToHex(ethereumKeyPair.secretKey);
 
       const eip712RecoveryCommitmentPayload = createRecoveryCommitmentPayload(
-        'RecoveryCommitmentPayload',
-        recoveryCommitment,
+        recoveryCommitmentHex,
         payload.expiration
       );
+      console.log('recoveryCommitmentPayload:', eip712RecoveryCommitmentPayload);
       const ecdsaSignature = await sign(ethereumSecretKey, eip712RecoveryCommitmentPayload, 'Dev');
+      console.log('ecdsaSignature:', ecdsaSignature);
 
-      const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(keyEth, ecdsaSignature, payload);
+      const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(ethereumKeyringPair, ecdsaSignature, payload);
 
       // ACT
       const { eventMap } = await addRecoveryCommitmentOp.fundAndSend(fundingSource, false);

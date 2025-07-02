@@ -209,7 +209,7 @@ impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
 
 			// signed payload
 			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
-				b"RecoveryCommitmentPayload(uint64 msaId,uint32 expiration,bytes32 recoveryCommitment)",
+				b"RecoveryCommitmentPayload(bytes32 recoveryCommitment,uint32 expiration)",
 			);
 		}
 		// get prefix and domain separator

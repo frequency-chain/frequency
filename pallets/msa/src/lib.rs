@@ -250,7 +250,7 @@ pub mod pallet {
 	/// - Value: Recovery Commitment (32 bytes)
 	#[pallet::storage]
 	pub type MsaIdToRecoveryCommitment<T: Config> =
-		StorageMap<_, Twox64Concat, MessageSourceId, [u8; 32], OptionQuery>;
+		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]

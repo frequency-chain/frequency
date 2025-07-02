@@ -159,8 +159,8 @@ export async function generateRecoveryCommitmentPayload(
   const { expiration, ...payload } = payloadInputs;
 
   return {
-    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
   };
 }
 

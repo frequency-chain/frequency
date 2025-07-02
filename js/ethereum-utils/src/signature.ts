@@ -269,20 +269,19 @@ export function createAddProvider(
 /**
  * Build a RecoveryCommitmentPayload for signature.
  *
- * @param recoveryCommitment The recovery commitment data as a Uint8Array
+ * @param recoveryCommitment The recovery commitment data as a HexString
  * @param expirationBlock Block number after which this payload is invalid
  */
 export function createRecoveryCommitmentPayload(
-  type: 'RecoveryCommitmentPayload',
-  recoveryCommitment: Uint8Array,
+  recoveryCommitment: HexString,
   expirationBlock: number
 ): RecoveryCommitmentPayload {
-  assert(recoveryCommitment.length > 0, 'recoveryCommitment should be a valid Uint8Array');
+  assert(isHexString(recoveryCommitment), 'recoveryCommitment should be a valid hex string');
   assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
 
   return {
     type: 'RecoveryCommitmentPayload',
-    recoveryCommitment: u8aToHex(recoveryCommitment),
+    recoveryCommitment: recoveryCommitment,
     expiration: expirationBlock,
   };
 }
@@ -522,11 +521,11 @@ export function getEip712BrowserRequestAddProvider(
  * @param domain
  */
 export function getEip712BrowserRequestRecoveryCommitmentPayload(
-  recoveryCommitment: Uint8Array,
+  recoveryCommitment: HexString,
   expirationBlock: number,
   domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
 ): unknown {
-  const message = createRecoveryCommitmentPayload('RecoveryCommitmentPayload', recoveryCommitment, expirationBlock);
+  const message = createRecoveryCommitmentPayload(recoveryCommitment, expirationBlock);
   const normalized = normalizePayload(message);
   return createEip712Payload(RECOVERY_COMMITMENT_PAYLOAD_DEFINITION, message.type, domain, normalized);
 }
