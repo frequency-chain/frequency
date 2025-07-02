@@ -26,11 +26,13 @@ use scale_info::TypeInfo;
 #[allow(deprecated)]
 use sp_runtime::{
 	traits::{
-		DispatchInfoOf, Dispatchable, PostDispatchInfoOf, SignedExtension, TransactionExtension,
-		Zero,
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, RefundWeight,
+		TransactionExtension, Zero,
 	},
-	transaction_validity::{TransactionValidity, TransactionValidityError},
-	FixedPointOperand, Saturating,
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidityError, ValidTransaction,
+	},
+	DispatchResult, FixedPointOperand, Saturating,
 };
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
@@ -489,7 +491,7 @@ where
 				owner_account_id,
 				new_account_id,
 				msa_id,
-			)
+			);
 		}
 		false
 	}
@@ -527,110 +529,129 @@ impl<T: Config> core::fmt::Debug for ChargeFrqTransactionPayment<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config> SignedExtension for ChargeFrqTransactionPayment<T>
+/// The info passed between the validate and prepare steps for the `ChargeFrqTransactionPayment` extension.
+pub enum Val<T: Config> {
+	Charge { tip: BalanceOf<T>, who: T::AccountId, fee: BalanceOf<T> },
+	NoCharge,
+}
+
+/// The info passed between the prepare and post-dispatch steps for the `ChargeFrqTransactionPayment` extension.
+pub enum Pre<T: Config> {
+	Charge {
+		tip: BalanceOf<T>,
+		who: T::AccountId,
+		initial_payment: InitialPayment<T>,
+		weight: Weight,
+	},
+	NoCharge {
+		refund: Weight,
+	},
+}
+
+impl<T: Config> TransactionExtension<<T as frame_system::Config>::RuntimeCall>
+	for ChargeFrqTransactionPayment<T>
 where
 	<T as frame_system::Config>::RuntimeCall:
 		IsSubType<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-
 	BalanceOf<T>: Send
 		+ Sync
 		+ FixedPointOperand
 		+ From<u64>
 		+ IsType<ChargeCapacityBalanceOf<T>>
 		+ IsType<CapacityBalanceOf<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
 	const IDENTIFIER: &'static str = "ChargeTransactionPayment";
-	type AccountId = T::AccountId;
-	type Call = <T as frame_system::Config>::RuntimeCall;
-	type AdditionalSigned = ();
-	#[allow(deprecated)]
-	type Pre = (
-		// tip
-		BalanceOf<T>,
-		Self::AccountId,
-		InitialPayment<T>,
-	);
+	type Implicit = ();
+	type Val = Val<T>;
+	type Pre = Pre<T>;
 
-	/// Construct any additional data that should be in the signed payload of the transaction. Can
-	/// also perform any pre-signature-verification checks and return an error if needed.
-	fn additional_signed(&self) -> Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
+		// TODO: Benchmark this
+		Weight::zero()
 	}
 
-	/// Frequently called by the transaction queue to validate all extrinsics:
-	#[allow(deprecated)]
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
-	) -> TransactionValidity {
-		let fee = self.dryrun_withdraw_fee(who, call, info, len)?;
-
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> sp_runtime::traits::ValidateResult<Self::Val, <T as frame_system::Config>::RuntimeCall> {
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((
+				sp_runtime::transaction_validity::ValidTransaction::default(),
+				Val::NoCharge,
+				origin,
+			));
+		};
+		let fee = self.dryrun_withdraw_fee(&who, call, info, len)?;
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info,
 			len,
 			self.tip(call),
 			fee,
 		);
-
-		Ok(ValidTransaction { priority, ..Default::default() })
+		let val = Val::Charge { tip: self.tip(call), who: who.clone(), fee };
+		let validity = ValidTransaction { priority, ..Default::default() };
+		Ok((validity, val, origin))
 	}
 
-	/// Do any pre-flight stuff for a signed transaction.
-	#[allow(deprecated)]
-	fn pre_dispatch(
+	fn prepare(
 		self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		call: &<T as frame_system::Config>::RuntimeCall,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		let (_fee, initial_payment) = self.withdraw_fee(who, call, info, len)?;
-
-		Ok((self.tip(call), who.clone(), initial_payment))
+		match val {
+			Val::Charge { tip, who, .. } => {
+				let (_fee, initial_payment) = self.withdraw_fee(&who, call, info, len)?;
+				Ok(Pre::Charge { tip, who, initial_payment, weight: self.weight(call) })
+			},
+			Val::NoCharge => Ok(Pre::NoCharge { refund: self.weight(call) }),
+		}
 	}
 
-	/// Do any post-flight stuff for an extrinsic.
-	#[allow(deprecated)]
-	fn post_dispatch(
-		maybe_pre: Option<Self::Pre>,
-		info: &DispatchInfoOf<Self::Call>,
-		post_info: &PostDispatchInfoOf<Self::Call>,
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
+		post_info: &PostDispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
 		len: usize,
 		result: &DispatchResult,
-	) -> Result<(), TransactionValidityError> {
-		if let Some((tip, who, initial_payment)) = maybe_pre {
-			match initial_payment {
-				// If this is a Token transaction, passthrough
-				InitialPayment::Token(already_withdrawn) => {
-					// post_dispatch_details eliminated the Option from the first param.
-					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
-					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
-					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-                        pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
-                        info,
-                        post_info,
-                        len,
-                        result,
-                    )?;
-				},
-				// If it's capacity, do nothing
-				InitialPayment::Capacity => {
-					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
-				},
-				// If it's a free txn, do nothing
-				InitialPayment::Free => {
-					// `actual_fee` should be zero here for any signed extrinsic. It would be
-					// non-zero here in case of unsigned extrinsics as they don't pay fees but
-					// `compute_actual_fee` is not aware of them. In both cases it's fine to just
-					// move ahead without adjusting the fee, though, so we do nothing.
-					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-				},
-			}
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::Charge { tip, who, initial_payment, weight } => {
+				match initial_payment {
+					InitialPayment::Token(already_withdrawn) => {
+						let actual_ext_weight = Weight::zero(); // You may want to use a more precise weight function
+						let unspent_weight = weight.saturating_sub(actual_ext_weight);
+						let mut actual_post_info = *post_info;
+						actual_post_info.refund(unspent_weight);
+						pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+							pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
+							info,
+							&actual_post_info,
+							len,
+							result,
+						)?;
+						Ok(unspent_weight)
+					},
+					InitialPayment::Capacity => {
+						debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
+						Ok(weight)
+					},
+					InitialPayment::Free => {
+						debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
+						Ok(weight)
+					},
+				}
+			},
+			Pre::NoCharge { refund } => Ok(refund),
 		}
-		Ok(())
 	}
 }
