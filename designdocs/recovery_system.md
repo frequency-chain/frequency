@@ -480,11 +480,9 @@ pub fn recover_account(
     // Note: This would integrate with existing MSA pallet functionality
     // The RP may first have to acquire the proper delegations from the user or this operation may fail
     // Required delegation operations omitted for brevity
-    // TODO: Do we know which provider added the MSA by this event?
-    //       Is this event sufficient to track the Recovery Provider?
     T::MsaPallet::add_public_key_to_msa(who.clone(), msa_id, new_control_key)?;
 
-    Self::deposit_event(Event::AccountRecovered { who, msa_id, recovery_commitment });
+    Self::deposit_event(Event::AccountRecovered { who, msa_id, recovery_commitment, recovery_provider_id });
     Ok(())
 }
 ```
