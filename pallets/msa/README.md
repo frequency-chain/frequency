@@ -24,6 +24,14 @@ Each MSA Id has a unique 20-byte address associated with it. This address can be
 Address = keccak256(0xD9 + <MSA Id as 8-byte big-endian bytes> + keccak256(b"MSA Generated"))[12..]
 ```
 
+### Recovery System
+
+MSA ownership is able to be recovered via a previously set Recovery Commitment.
+This recovery requires the user have access to the Recovery Secret as well as the contact method used which together are able to derive the hash tree that builds the Recovery Commitment hash.
+The user must use an governance authorized Recovery Provider to perform the recovery.
+
+No PII is exposed to the chain in the adding of a Recovery Commitment or the Recovery of an MSA.
+
 ### Actions
 
 The MSA pallet provides for:
@@ -31,6 +39,7 @@ The MSA pallet provides for:
 - Creating, reading, updating, and deleting operations for MSAs.
 - Managing delegation relationships for MSAs.
 - Managing keys associated with MSAs.
+- Managing the recovery system for MSAs.
 
 ## Interactions
 
@@ -39,6 +48,7 @@ The MSA pallet provides for:
 | Name/Description                                                                              | Caller                                     | Payment            | Key Events                                                                                                                                                                                                                                       | Runtime Added |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
 | `add_public_key_to_msa`<br />Add MSA control key                                              | MSA Control Key or Provider with Signature | Capacity or Tokens | [`PublicKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyAdded)                                                                                                                         | 1             |
+| `add_recovery_commitment`<br />Add a new Recovery Commitment to an existing MSA               | Provider                                   | Capacity or Tokens | [`RecoveryCommitmentAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentAdded)                                                                                                       | 168           |
 | `create`<br />Create new MSA                                                                  | Token Account                              | Tokens             | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated)                                                                                                                                 | 1             |
 | `create_provider`<br />Convert an MSA into a Provider                                         | Testnet: Provider or Mainnet: Governance   | Tokens             | [`ProviderCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.ProviderCreated)                                                                                                                       | 1             |
 | `create_provider_via_governance`<br />Convert an MSA into a Provider                          | Frequency Council                          | Tokens             | [`ProviderCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.ProviderCreated)                                                                                                                       | 12            |
@@ -61,6 +71,7 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa/pallet/st
 | Get Current Maximum MSA Id        | Returns the maximum MSA Id in existence                                                                           | `currentMsaIdentifierMaximum`      | 1             |
 | Get Current Delegator to Provider | Returns the current relationship between the specified Delegator and specified Provider at the given block number | `delegatorAndProviderToDelegation` | 1             |
 | Get Public Key Count for MSA Id   | Returns the number of public keys for the given MSA Id                                                            | `publicKeyCountforMsaId`           | 1             |
+| Get Recovery Commitment           | Returns the Recovery Commitment for a given MSA Id                                                                | `MsaIdToRecoveryCommitment`        | 168           |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa/pallet/storage_types/index.html) for additional state queries and details.
 
