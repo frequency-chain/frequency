@@ -73,7 +73,7 @@ Note: May be restricted based on node settings and configuration.
 | Check Delegations             | Test a list of MSAs to see if they have delegated to the provider MSA      | [`checkDelegations`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.check_delegations                )                    | v1.0.0+      |
 | Delegation Schema Grants      | Fetch the list of Schema Ids that a delegator has granted to a provider    | [`grantedSchemaIdsByMsaId`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_granted_schemas_by_msa_id)                 | v1.0.0+      |
 | Get Control Keys by MSA Id\*  | Fetch the list of current control keys for an MSA from the off-chain index | [`getKeysByMsaId`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_keys_by_msa_id)                                     | v1.10.0+     |
-| Get All Delegations by MSA Id | Retreives all delegations and schemas, active and inactive, for an MSA ID  | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_all_granted_delegations_by_msa_id) | v1.13.0+     |
+| Get All Delegations by MSA Id | Retrieves all delegations and schemas, active and inactive, for an MSA ID  | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_all_granted_delegations_by_msa_id) | v1.13.0+     |
 
 \* Must be enabled with off-chain indexing
 
