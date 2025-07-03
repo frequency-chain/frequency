@@ -12,9 +12,13 @@ import {
   DOLLARS,
   generateRecoveryCommitmentPayload,
   assertEvent,
+  createKeys,
+  getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
+import { createRecoveryCommitmentPayload, getUnifiedAddress, HexString, sign } from '@frequency-chain/ethereum-utils';
+import { u8aToHex } from '@polkadot/util';
 
 let fundingSource: KeyringPair;
 
@@ -72,6 +76,41 @@ describe('Recovery Commitment Testing', function () {
 
       const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(keys, badSig, payload);
       await assert.rejects(addRecoveryCommitmentOp.fundAndSend(fundingSource, false), { name: 'InvalidSignature' });
+    });
+
+    it('should successfully add an Ethereum signed recovery commitment', async function () {
+      // SET UP
+      const ethereumKeyringPair = createKeys('Ethereum', 'ethereum');
+      const unifiedAddress = getUnifiedAddress(ethereumKeyringPair);
+      const ethereumKeyPair = getEthereumKeyPairFromUnifiedAddress(unifiedAddress);
+      const ethereumSecretKey = u8aToHex(getEthereumKeyPairFromUnifiedAddress(unifiedAddress).secretKey);
+
+      if (!ethereumKeyPair || !ethereumKeyPair.secretKey) {
+        throw new Error('Ethereum keypair or secret key is not defined');
+      }
+
+      // Fund the Ethereum key and create an MSA for it
+      await ExtrinsicHelper.transferFunds(fundingSource, ethereumKeyringPair, 2n * DOLLARS).signAndSend();
+      const { target: msaCreationTarget } = await ExtrinsicHelper.createMsa(ethereumKeyringPair).signAndSend();
+      assert.notEqual(msaCreationTarget?.data.msaId, undefined, 'MSA Id not in expected event');
+
+      const eip712RecoveryCommitmentPayload = createRecoveryCommitmentPayload(
+        recoveryCommitment as HexString,
+        payload.expiration
+      );
+      const ecdsaSignature = await sign(ethereumSecretKey, eip712RecoveryCommitmentPayload, 'Dev');
+      const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(
+        ethereumKeyringPair,
+        ecdsaSignature,
+        payload
+      );
+
+      // ACT
+      const { eventMap } = await addRecoveryCommitmentOp.fundAndSend(fundingSource, false);
+
+      // ASSERT
+      assertEvent(eventMap, 'system.ExtrinsicSuccess');
+      assertEvent(eventMap, 'msa.RecoveryCommitmentAdded');
     });
   });
 });
