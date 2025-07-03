@@ -26,7 +26,7 @@ use scale_info::TypeInfo;
 #[allow(deprecated)]
 use sp_runtime::{
 	traits::{
-		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, RefundWeight,
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
 		TransactionExtension, Zero,
 	},
 	transaction_validity::{
@@ -435,14 +435,12 @@ where
 		who: &T::AccountId,
 		call: &<T as frame_system::Config>::RuntimeCall,
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		len: usize,
+		fee: BalanceOf<T>,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
 		match call.is_sub_type() {
-			Some(Call::pay_with_capacity { call }) =>
-				self.withdraw_capacity_fee(who, &vec![*call.clone()], len),
-			Some(Call::pay_with_capacity_batch_all { calls }) =>
-				self.withdraw_capacity_fee(who, calls, len),
-			_ => self.withdraw_token_fee(who, call, info, len, self.tip(call)),
+			Some(Call::pay_with_capacity { .. }) => self.withdraw_capacity_fee(who, fee),
+			Some(Call::pay_with_capacity_batch_all { .. }) => self.withdraw_capacity_fee(who, fee),
+			_ => self.withdraw_token_fee(who, call, info, fee, self.tip(call)),
 		}
 	}
 
@@ -450,24 +448,8 @@ where
 	fn withdraw_capacity_fee(
 		&self,
 		key: &T::AccountId,
-		calls: &Vec<<T as Config>::RuntimeCall>,
-		len: usize,
+		capacity_fee: BalanceOf<T>,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let mut calls_weight_sum = Weight::zero();
-		let mut subsidized_calls_weight_sum = Weight::zero();
-
-		for call in calls {
-			let call_weight = T::CapacityCalls::get_stable_weight(call)
-				.ok_or(ChargeFrqTransactionPaymentError::CallIsNotCapacityEligible.into())?;
-			calls_weight_sum = calls_weight_sum.saturating_add(call_weight);
-
-			if self.call_is_adding_eligible_key_to_msa(call) {
-				subsidized_calls_weight_sum =
-					subsidized_calls_weight_sum.saturating_add(call_weight);
-			}
-		}
-		let capacity_fee = Pallet::<T>::compute_capacity_fee(len as u32, calls_weight_sum)
-			.saturating_sub(Self::subsidized_calls_reduction(len, subsidized_calls_weight_sum));
 		let fee = T::OnChargeCapacityTransaction::withdraw_fee(key, capacity_fee.into())?;
 
 		Ok((fee.into(), InitialPayment::Capacity))
@@ -502,10 +484,9 @@ where
 		who: &T::AccountId,
 		call: &<T as frame_system::Config>::RuntimeCall,
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		len: usize,
+		fee: BalanceOf<T>,
 		tip: BalanceOf<T>,
 	) -> Result<(BalanceOf<T>, InitialPayment<T>), TransactionValidityError> {
-		let fee = pallet_transaction_payment::Pallet::<T>::compute_fee(len as u32, info, tip);
 		if fee.is_zero() {
 			return Ok((fee, InitialPayment::Free));
 		}
@@ -537,15 +518,8 @@ pub enum Val<T: Config> {
 
 /// The info passed between the prepare and post-dispatch steps for the `ChargeFrqTransactionPayment` extension.
 pub enum Pre<T: Config> {
-	Charge {
-		tip: BalanceOf<T>,
-		who: T::AccountId,
-		initial_payment: InitialPayment<T>,
-		weight: Weight,
-	},
-	NoCharge {
-		refund: Weight,
-	},
+	Charge { tip: BalanceOf<T>, who: T::AccountId, initial_payment: InitialPayment<T> },
+	NoCharge { refund: Weight },
 }
 
 impl<T: Config> TransactionExtension<<T as frame_system::Config>::RuntimeCall>
@@ -606,12 +580,12 @@ where
 		_origin: &<T as frame_system::Config>::RuntimeOrigin,
 		call: &<T as frame_system::Config>::RuntimeCall,
 		info: &DispatchInfoOf<<T as frame_system::Config>::RuntimeCall>,
-		len: usize,
+		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
 		match val {
-			Val::Charge { tip, who, .. } => {
-				let (_fee, initial_payment) = self.withdraw_fee(&who, call, info, len)?;
-				Ok(Pre::Charge { tip, who, initial_payment, weight: self.weight(call) })
+			Val::Charge { tip, who, fee } => {
+				let (_fee, initial_payment) = self.withdraw_fee(&who, call, info, fee)?;
+				Ok(Pre::Charge { tip, who, initial_payment })
 			},
 			Val::NoCharge => Ok(Pre::NoCharge { refund: self.weight(call) }),
 		}
@@ -625,31 +599,25 @@ where
 		result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
 		match pre {
-			Pre::Charge { tip, who, initial_payment, weight } => {
-				match initial_payment {
-					InitialPayment::Token(already_withdrawn) => {
-						let actual_ext_weight = Weight::zero(); // You may want to use a more precise weight function
-						let unspent_weight = weight.saturating_sub(actual_ext_weight);
-						let mut actual_post_info = *post_info;
-						actual_post_info.refund(unspent_weight);
-						pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-							pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
-							info,
-							&actual_post_info,
-							len,
-							result,
-						)?;
-						Ok(unspent_weight)
-					},
-					InitialPayment::Capacity => {
-						debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
-						Ok(weight)
-					},
-					InitialPayment::Free => {
-						debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-						Ok(weight)
-					},
-				}
+			Pre::Charge { tip, who, initial_payment } => match initial_payment {
+				InitialPayment::Token(already_withdrawn) => {
+					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+                        pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
+                        info,
+                        post_info,
+                        len,
+                        result,
+                    )?;
+					Ok(Weight::zero())
+				},
+				InitialPayment::Capacity => {
+					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
+					Ok(Weight::zero())
+				},
+				InitialPayment::Free => {
+					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
+					Ok(Weight::zero())
+				},
 			},
 			Pre::NoCharge { refund } => Ok(refund),
 		}
