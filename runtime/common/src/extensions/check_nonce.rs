@@ -21,16 +21,19 @@ use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},
-	sp_runtime,
+	sp_runtime, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
-#[allow(deprecated)]
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
+	traits::{
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, PostDispatchInfoOf,
+		TransactionExtension, ValidateResult,
+	},
 	transaction_validity::{
-		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidityError,
 		ValidTransaction,
 	},
+	DispatchResult, Weight,
 };
 extern crate alloc;
 use alloc::vec;
@@ -65,35 +68,103 @@ impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config> SignedExtension for CheckNonce<T>
+/// Transaction operations from `validate` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val<T: Config> {
+	/// Account and its nonce to check for.
+	CheckNonce((T::AccountId, T::Nonce)),
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+/// Transaction operations from `prepare` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// No nonce check was performed
+	NonceChecked,
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+impl<T: Config> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckNonce";
+	type Implicit = ();
+	type Val = Val<T>;
+	type Pre = Pre;
 
-	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		// TODO: benchmark this or get pre-computed weights?
+		Weight::zero()
 	}
 
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
+	fn validate(
+		&self,
+		origin: <T as Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> Result<(), TransactionValidityError> {
-		// Get TOKEN account from "who" key
-		let mut account = frame_system::Account::<T>::get(who);
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		// Only check for signed origin
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
+		};
+
+		let account = frame_system::Account::<T>::get(&who);
+		if self.0 < account.nonce {
+			return Err(InvalidTransaction::Stale.into());
+		}
+
+		let provides = vec![Encode::encode(&(who, self.0))];
+		let requires = if account.nonce < self.0 {
+			vec![Encode::encode(&(who, self.0 - One::one()))]
+		} else {
+			vec![]
+		};
+
+		Ok((
+			ValidTransaction {
+				priority: 0,
+				requires,
+				provides,
+				longevity: TransactionLongevity::MAX,
+				propagate: true,
+			},
+			Val::CheckNonce((who.clone(), account.nonce)),
+			origin,
+		))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T::RuntimeCall as Dispatchable>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		let (who, nonce) = match val {
+			Val::CheckNonce((who, nonce)) => (who, nonce),
+			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
+		};
+
+		let mut account: frame_system::AccountInfo<
+			<T as Config>::Nonce,
+			<T as Config>::AccountData,
+		> = frame_system::Account::<T>::get(&who);
 
 		// The default account (no account) has a nonce of 0.
 		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if self.0 != account.nonce {
-			return Err(if self.0 < account.nonce {
+		if nonce != account.nonce {
+			return Err(if nonce < account.nonce {
 				InvalidTransaction::Stale
 			} else {
 				InvalidTransaction::Future
@@ -116,35 +187,19 @@ where
 			frame_system::Account::<T>::insert(who, account);
 		}
 
-		Ok(())
+		Ok(Pre::NonceChecked)
 	}
 
-	fn validate(
-		&self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		// check index
-		let account = frame_system::Account::<T>::get(who);
-		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into();
+		_result: &DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::NonceChecked => Ok(Weight::zero()),
+			Pre::Refund(weight) => Ok(weight),
 		}
-
-		let provides = vec![Encode::encode(&(who, self.0))];
-		let requires = if account.nonce < self.0 {
-			vec![Encode::encode(&(who, self.0 - One::one()))]
-		} else {
-			vec![]
-		};
-
-		Ok(ValidTransaction {
-			priority: 0,
-			requires,
-			provides,
-			longevity: TransactionLongevity::MAX,
-			propagate: true,
-		})
 	}
 }

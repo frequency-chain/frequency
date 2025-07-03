@@ -9,15 +9,13 @@ use common_primitives::{
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
-	assert_err, assert_ok,
+	assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	pallet_prelude::InvalidTransaction,
+	pallet_prelude::{InvalidTransaction, TransactionSource, TransactionValidityError},
 	traits::Currency,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
-use sp_runtime::MultiSignature;
-#[allow(deprecated)]
-use sp_runtime::{traits::SignedExtension, transaction_validity::TransactionValidity};
+use sp_runtime::{traits::DispatchTransaction, MultiSignature};
 
 // Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
 // for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
@@ -31,18 +29,19 @@ fn assert_validate_key_delete_fails(
 	let call_delete_msa_public_key: &<Test as frame_system::Config>::RuntimeCall =
 		&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete });
 
-	let expected_err: TransactionValidity =
-		InvalidTransaction::Custom(expected_err_enum as u8).into();
-
-	assert_eq!(
-		CheckFreeExtrinsicUse::<Test>::new().validate(
-			caller_key,
-			call_delete_msa_public_key,
-			&DispatchInfo::default(),
-			0_usize,
-		),
-		expected_err
+	let expected_err =
+		TransactionValidityError::Invalid(InvalidTransaction::Custom(expected_err_enum as u8));
+	let validation_result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+		RuntimeOrigin::signed(caller_key.clone()).into(),
+		call_delete_msa_public_key,
+		&DispatchInfo::default(),
+		0_usize,
+		TransactionSource::External,
+		0,
 	);
+	assert!(validation_result.is_err());
+	let result = validation_result.unwrap_err();
+	assert_eq!(result, expected_err);
 }
 
 #[allow(deprecated)]
@@ -55,13 +54,22 @@ fn assert_revoke_delegation_by_provider_err(
 		&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider { delegator: delegator_msa_id });
 	let info = DispatchInfo::default();
 	let len = 0_usize;
-	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-		&provider_account.into(),
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+		RuntimeOrigin::signed(provider_account.into()).into(),
 		call_revoke_delegation,
 		&info,
 		len,
+		TransactionSource::External,
+		0,
 	);
-	assert_err!(result, expected_err);
+	assert!(result.is_err());
+	let resulting_err = result.unwrap_err();
+	match resulting_err {
+		TransactionValidityError::Invalid(err) => {
+			assert_eq!(err, expected_err);
+		},
+		_ => assert!(false, "Expected InvalidTransaction error"),
+	}
 }
 
 #[allow(deprecated)]
@@ -80,19 +88,27 @@ fn assert_withdraw_msa_token_err(
 		});
 	let info = DispatchInfo::default();
 	let len = 0_usize;
-	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-		&origin_key.into(),
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+		RuntimeOrigin::signed(origin_key.into()).into(),
 		call_withdraw_msa_token,
 		&info,
 		len,
+		TransactionSource::External,
+		0,
 	);
-	assert_err!(result, expected_err);
+	assert!(result.is_err());
+	let resulting_err = result.unwrap_err();
+	match resulting_err {
+		TransactionValidityError::Invalid(err) => {
+			assert_eq!(err, expected_err);
+		},
+		_ => assert!(false, "Expected InvalidTransaction error"),
+	}
 }
 
 /// Assert that revoking an MSA delegation passes the signed extension CheckFreeExtrinsicUse
 /// validation when a valid delegation exists.
 #[test]
-#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_delegator_success() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
@@ -100,11 +116,13 @@ fn signed_extension_revoke_delegation_by_delegator_success() {
 			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&delegator_account.into(),
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(delegator_account.into()).into(),
 			call_revoke_delegation,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert_ok!(result);
 	});
@@ -113,7 +131,6 @@ fn signed_extension_revoke_delegation_by_delegator_success() {
 /// Assert that revoking an MSA delegation fails the signed extension CheckFreeExtrinsicUse
 /// validation when no valid delegation exists.
 #[test]
-#[allow(deprecated)]
 fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, delegator_account) = create_provider_msa_and_delegator();
@@ -121,11 +138,13 @@ fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&delegator_account.into(),
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(delegator_account.into()).into(),
 			call_revoke_delegation,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert_ok!(result);
 		assert_ok!(Msa::revoke_delegation_by_delegator(
@@ -138,18 +157,19 @@ fn signed_extension_fails_when_revoke_delegation_by_delegator_called_twice() {
 			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&delegator_account.into(),
+		let result_revoked = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(delegator_account.into()).into(),
 			call_revoke_delegation,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert!(result_revoked.is_err());
 	});
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_success() {
 	new_test_ext().execute_with(|| {
 		let (delegator_msa_id, provider_account) = create_delegator_msa_and_provider();
@@ -159,18 +179,19 @@ fn signed_extension_revoke_delegation_by_provider_success() {
 			});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&provider_account.into(),
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(provider_account.into()).into(),
 			call_revoke_delegation,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert_ok!(result);
 	})
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegator_msa() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
@@ -183,7 +204,6 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegator_msa() 
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 	new_test_ext().execute_with(|| {
 		let (provider_pair, _) = sr25519::Pair::generate();
@@ -197,7 +217,6 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_provider_msa() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 	new_test_ext().execute_with(|| {
 		let (_, provider_pair) = create_account();
@@ -212,24 +231,24 @@ fn signed_extension_revoke_delegation_by_provider_fails_when_no_delegation() {
 /// Assert that a call that is not one of the matches passes the signed extension
 /// CheckFreeExtrinsicUse validation.
 #[test]
-#[allow(deprecated)]
 fn signed_extension_validation_valid_for_other_extrinsics() {
 	let random_call_should_pass: &<Test as frame_system::Config>::RuntimeCall =
 		&RuntimeCall::Msa(MsaCall::create {});
 	let info = DispatchInfo::default();
 	let len = 0_usize;
-	let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-		&test_public(1),
+	let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+		RuntimeOrigin::signed(test_public(1)).into(),
 		random_call_should_pass,
 		&info,
 		len,
+		TransactionSource::External,
+		0,
 	);
 	assert_ok!(result);
 }
 
 // Assert that check nonce validation does not create a token account for delete_msa_public_key call.
 #[test]
-#[allow(deprecated)]
 fn signed_ext_check_nonce_delete_msa_public_key() {
 	new_test_ext().execute_with(|| {
 		// Generate a key pair for MSA account
@@ -247,11 +266,12 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 		// Call delete_msa_public_key() using the Alice account
 		let who = test_public(1);
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&who,
+		assert_ok!(CheckNonce::<Test>(0).validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
 			call_delete_msa_public_key,
 			&info,
-			len
+			len,
+			0
 		));
 
 		// Did the call create a token account?
@@ -272,7 +292,6 @@ fn signed_ext_check_nonce_delete_msa_public_key() {
 
 // Assert that check nonce validation does not create a token account for revoke_delegation_by_delegator call.
 #[test]
-#[allow(deprecated)]
 fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, _) = create_provider_msa_and_delegator();
@@ -288,11 +307,12 @@ fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 
 		// Call revoke_delegation_by_delegator() using the Alice account
 		let who = test_public(1);
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&who,
+		assert_ok!(CheckNonce::<Test>(0).validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
 			call_revoke_delegation_by_delegator,
 			&info,
-			len
+			len,
+			0
 		));
 
 		// Did the call create a token account?
@@ -313,7 +333,6 @@ fn signed_ext_check_nonce_revoke_delegation_by_delegator() {
 
 // Assert that check nonce validation does create a token account for a paying call.
 #[test]
-#[allow(deprecated)]
 fn signed_ext_check_nonce_creates_token_account_if_paying() {
 	new_test_ext().execute_with(|| {
 		//  Test that a  "pays" extrinsic creates a token account
@@ -326,11 +345,12 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 		let pays_call_should_pass_info = pays_call_should_pass.get_dispatch_info();
 
 		// Call create() using the Alice account
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&who,
+		assert_ok!(CheckNonce::<Test>(0).validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
 			pays_call_should_pass,
 			&pays_call_should_pass_info,
-			len
+			len,
+			0
 		));
 
 		// Did the call create a token account?
@@ -349,7 +369,6 @@ fn signed_ext_check_nonce_creates_token_account_if_paying() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_transactions() {
 	new_test_ext().execute_with(|| {
 		// arrange
@@ -363,11 +382,12 @@ fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_trans
 		frame_system::Account::<Test>::insert(who.clone(), account);
 
 		// act
-		assert_ok!(CheckNonce::<Test>(0).pre_dispatch(
-			&who.clone(),
+		assert_ok!(CheckNonce::<Test>(0).validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
 			free_call,
 			&free_call_info,
-			len
+			len,
+			0
 		));
 
 		// assert
@@ -377,7 +397,6 @@ fn signed_ext_check_nonce_increases_nonce_for_an_existing_account_for_free_trans
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_validation_delete_msa_public_key_success() {
 	new_test_ext().execute_with(|| {
 		let (msa_id, original_key_pair) = create_account();
@@ -396,27 +415,30 @@ fn signed_extension_validation_delete_msa_public_key_success() {
 
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
-			&new_key,
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(new_key.clone()).into(),
 			call_delete_msa_public_key,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		));
 
 		// validate other direction
 		let call_delete_msa_public_key2: &<Test as frame_system::Config>::RuntimeCall =
 			&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: new_key });
-		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
-			&original_key,
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(original_key.clone()).into(),
 			call_delete_msa_public_key2,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		));
 	});
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 	new_test_ext().execute_with(|| {
 		let (owner_msa_id, owner_key_pair) = create_account();
@@ -431,11 +453,13 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 			});
 
 		// check that it's okay to delete the original key
-		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate(
-			&new_key,
+		assert_ok!(CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(new_key.clone()).into(),
 			call_delete_msa_public_key,
 			&DispatchInfo::default(),
 			0_usize,
+			TransactionSource::External,
+			0,
 		));
 
 		// new key deletes the old key
@@ -453,7 +477,6 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_twice() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_on_only_key() {
 	new_test_ext().execute_with(|| {
 		let (_, original_pair) = create_account();
@@ -468,7 +491,6 @@ fn signed_extension_validate_fails_when_delete_msa_public_key_called_on_only_key
 }
 
 #[test]
-#[allow(deprecated)]
 fn signed_extension_validate_fails_when_delete_msa_public_key_called_by_non_owner() {
 	new_test_ext().execute_with(|| {
 		let (_, original_pair) = create_account();
@@ -777,11 +799,13 @@ fn signed_ext_validate_passes_when_withdraw_tokens_balance_is_sufficient() {
 		let info = DispatchInfo::default();
 		let len = 0_usize;
 		#[allow(deprecated)]
-		let result = CheckFreeExtrinsicUse::<Test>::new().validate(
-			&origin_key_pair.public().into(),
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(origin_key_pair.public().into()).into(),
 			call_withdraw_msa_token,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert_ok!(result);
 	});

@@ -1,8 +1,7 @@
 use crate::{handles_signed_extension::HandlesSignedExtension, tests::mock::*};
-use frame_support::{assert_ok, dispatch::DispatchInfo};
+use frame_support::{assert_ok, dispatch::DispatchInfo, pallet_prelude::TransactionSource};
 use sp_core::{sr25519, Pair};
-#[allow(deprecated)]
-use sp_runtime::traits::SignedExtension;
+use sp_runtime::traits::DispatchTransaction;
 
 /// Assert that retiring a handle passes the signed extension HandlesSignedExtension
 #[test]
@@ -29,12 +28,13 @@ fn signed_extension_retire_handle_success() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		#[allow(deprecated)]
-		let result = HandlesSignedExtension::<Test>::new().validate(
-			&alice.public().into(),
+		let result = HandlesSignedExtension::<Test>::new().validate_only(
+			RuntimeOrigin::signed(alice.public().into()).into(),
 			call_retire_handle,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert_ok!(result);
 	});
@@ -42,7 +42,6 @@ fn signed_extension_retire_handle_success() {
 
 /// Assert that retiring a handle w/o existing one fails the signed extension HandlesSignedExtension
 #[test]
-#[allow(deprecated)]
 fn signed_extension_retire_handle_failure() {
 	new_test_ext().execute_with(|| {
 		let alice = sr25519::Pair::from_seed(&[0; 32]);
@@ -52,18 +51,19 @@ fn signed_extension_retire_handle_failure() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = HandlesSignedExtension::<Test>::new().validate(
-			&alice.public().into(),
+		let result = HandlesSignedExtension::<Test>::new().validate_only(
+			RuntimeOrigin::signed(alice.public().into()).into(),
 			call_retire_handle,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert!(result.is_err());
 	});
 }
 
 #[test]
-#[allow(deprecated)]
 fn test_early_retirement_should_fail() {
 	new_test_ext().execute_with(|| {
 		let base_handle_str = "test1";
@@ -87,11 +87,13 @@ fn test_early_retirement_should_fail() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let result = HandlesSignedExtension::<Test>::new().validate(
-			&alice.public().into(),
+		let result = HandlesSignedExtension::<Test>::new().validate_only(
+			RuntimeOrigin::signed(alice.public().into()).into(),
 			call_retire_handle,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert!(result.is_err());
 	});
