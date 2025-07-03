@@ -16,6 +16,7 @@ import {
   ItemizedAction,
   EipDomainPayload,
   NormalizedSupportedPayload,
+  RecoveryCommitmentPayload,
   SupportedPayloadTypes,
   SiwfSignedRequestPayload,
   SiwfLoginRequestPayload,
@@ -39,6 +40,7 @@ import {
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
   EIP712_DOMAIN_TESTNET,
+  RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
 } from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -117,6 +119,7 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
     case 'PasskeyPublicKey':
     case 'ClaimHandlePayload':
     case 'AddProvider':
+    case 'RecoveryCommitmentPayload':
     case 'SiwfLoginRequestPayload':
       break;
 
@@ -163,6 +166,7 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
     AddKeyData: ADD_KEY_DATA_DEFINITION,
     AuthorizedKeyData: AUTHORIZED_KEY_DATA_DEFINITION,
     AddProvider: ADD_PROVIDER_DEFINITION,
+    RecoveryCommitmentPayload: RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
 
     // offchain signatures
     SiwfSignedRequestPayload: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
@@ -258,6 +262,26 @@ export function createAddProvider(
     type: 'AddProvider',
     authorizedMsaId: authorizedMsaId.toString(),
     schemaIds,
+    expiration: expirationBlock,
+  };
+}
+
+/**
+ * Build a RecoveryCommitmentPayload for signature.
+ *
+ * @param recoveryCommitment The recovery commitment data as a HexString
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createRecoveryCommitmentPayload(
+  recoveryCommitment: HexString,
+  expirationBlock: number
+): RecoveryCommitmentPayload {
+  assert(isHexString(recoveryCommitment), 'recoveryCommitment should be a valid hex string');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+
+  return {
+    type: 'RecoveryCommitmentPayload',
+    recoveryCommitment: recoveryCommitment,
     expiration: expirationBlock,
   };
 }
@@ -487,6 +511,23 @@ export function getEip712BrowserRequestAddProvider(
   const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
   const normalized = normalizePayload(message);
   return createEip712Payload(ADD_PROVIDER_DEFINITION, message.type, domain, normalized);
+}
+
+/**
+ * Returns the EIP-712 browser request for a RecoveryCommitmentPayload for signing.
+ *
+ * @param recoveryCommitment The recovery commitment data as a Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestRecoveryCommitmentPayload(
+  recoveryCommitment: HexString,
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
+): unknown {
+  const message = createRecoveryCommitmentPayload(recoveryCommitment, expirationBlock);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(RECOVERY_COMMITMENT_PAYLOAD_DEFINITION, message.type, domain, normalized);
 }
 
 /**

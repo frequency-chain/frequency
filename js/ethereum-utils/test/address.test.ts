@@ -44,14 +44,34 @@ describe('Address tests', function () {
     assert.equal(result, ss58);
   });
 
+  // Helper function to create a mock KeyringPair for testing
+  function createMockKeyringPair(type: string, publicKey: Uint8Array, address?: string): any {
+    return {
+      type,
+      publicKey,
+      address: address || u8aToHex(publicKey),
+      addressRaw: publicKey,
+      meta: {},
+      isLocked: false,
+      lock: () => {},
+      unlock: () => {},
+      derive: () => {},
+      sign: () => new Uint8Array(64),
+      verify: () => false,
+      vrfSign: () => new Uint8Array(96),
+      vrfVerify: () => false,
+      toJson: () => ({}),
+      setMeta: () => {},
+      publicKeys: [publicKey],
+      secretKey: new Uint8Array(32),
+    };
+  }
+
   describe('getUnifiedPublicKey ', function () {
     it('should return the original publicKey for sr25519 and ed25519', function () {
       // Arrange
       const originalPublicKey = new Uint8Array(32).fill(3); // Dummy public key
-      const ed25519Pair = {
-        type: 'ed25519',
-        publicKey: originalPublicKey,
-      };
+      const ed25519Pair = createMockKeyringPair('ed25519', originalPublicKey);
 
       // Act
       const result = getUnifiedPublicKey(ed25519Pair);
@@ -60,10 +80,7 @@ describe('Address tests', function () {
       assert.equal(result, originalPublicKey);
 
       // Also test with sr25519 type
-      const sr25519Pair = {
-        type: 'sr25519',
-        publicKey: originalPublicKey,
-      };
+      const sr25519Pair = createMockKeyringPair('sr25519', originalPublicKey);
 
       const result2 = getUnifiedPublicKey(sr25519Pair);
       assert.equal(result2, originalPublicKey);
@@ -71,10 +88,7 @@ describe('Address tests', function () {
 
     it('should throw an error for ecdsa key type', function () {
       // Arrange
-      const ecdsaPair = {
-        type: 'ecdsa',
-        publicKey: new Uint8Array(32).fill(2),
-      };
+      const ecdsaPair = createMockKeyringPair('ecdsa', new Uint8Array(32).fill(2));
 
       // Act & Assert
       assert.throws(() => {
@@ -84,10 +98,7 @@ describe('Address tests', function () {
 
     it('should properly handle ethereum key type', function () {
       const ethPublicKey = '0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f';
-      const ethPair = {
-        type: 'ethereum',
-        publicKey: hexToU8a(ethPublicKey),
-      };
+      const ethPair = createMockKeyringPair('ethereum', hexToU8a(ethPublicKey));
       const unifiedPublicKey = hexToU8a('0xf24FF3a9CF04c71Dbc94D0b566f7A27B94566caceeeeeeeeeeeeeeeeeeeeeeee');
 
       const result = getUnifiedPublicKey(ethPair);
@@ -98,10 +109,7 @@ describe('Address tests', function () {
   describe('getUnifiedAddress ', function () {
     it('should properly handle ethereum key type', function () {
       const ethPublicKey = '0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f';
-      const ethPair = {
-        type: 'ethereum',
-        publicKey: hexToU8a(ethPublicKey),
-      };
+      const ethPair = createMockKeyringPair('ethereum', hexToU8a(ethPublicKey));
       const unifiedPublicKey = '5HYRCKHYJN9z5xUtfFkyMj4JUhsAwWyvuU8vKB1FcnYTf9ZQ';
 
       const result = getUnifiedAddress(ethPair);

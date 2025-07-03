@@ -23,6 +23,7 @@
   "dependencies": {
     "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
     "@frequency-chain/ethereum-utils": "file:../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz",
+    "@frequency-chain/recovery-sdk": "file:../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz",
     "@helia/unixfs": "^5.0.3",
     "@noble/curves": "^1.9.2",
     "@polkadot-api/merkleize-metadata": "^1.1.18",

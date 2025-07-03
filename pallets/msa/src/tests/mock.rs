@@ -1,4 +1,7 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData};
+use crate::{
+	self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData, RecoveryCommitment,
+	RecoveryCommitmentPayload,
+};
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
@@ -234,6 +237,11 @@ impl pallet_msa::Config for Test {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
 	type Currency = pallet_balances::Pallet<Self>;
 }
 
@@ -418,4 +426,21 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
+}
+
+pub fn generate_and_sign_recovery_commitment_payload(
+	msa_owner_keys: &sr25519::Pair,
+	recovery_commitment: RecoveryCommitment,
+	expiration: BlockNumber,
+) -> (RecoveryCommitmentPayload<Test>, MultiSignature) {
+	let payload = RecoveryCommitmentPayload::<Test> {
+		discriminant: PayloadTypeDiscriminator::RecoveryCommitmentPayload,
+		recovery_commitment,
+		expiration,
+	};
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
+
+	(payload, signature)
 }

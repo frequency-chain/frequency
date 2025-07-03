@@ -88,6 +88,19 @@ export const AUTHORIZED_KEY_DATA_DEFINITION = {
   ],
 };
 
+export const RECOVERY_COMMITMENT_PAYLOAD_DEFINITION = {
+  RecoveryCommitmentPayload: [
+    {
+      name: 'recoveryCommitment',
+      type: 'bytes',
+    },
+    {
+      name: 'expiration',
+      type: 'uint32',
+    },
+  ],
+};
+
 export const CLAIM_HANDLE_PAYLOAD_DEFINITION = {
   ClaimHandlePayload: [
     {
@@ -207,6 +220,7 @@ const PAYLOAD_DEFINITIONS = [
   PASSKEY_PUBLIC_KEY_DEFINITION,
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
 ];

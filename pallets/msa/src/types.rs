@@ -77,6 +77,8 @@ pub enum PayloadTypeDiscriminator {
 	Unknown,
 	/// AuthorizedKeyData discriminator
 	AuthorizedKeyData,
+	/// RecoverCommitmentPayload discriminator
+	RecoveryCommitmentPayload,
 }
 
 /// A type definition for the payload for authorizing a public key for the following operations:
@@ -179,6 +181,47 @@ impl AddProvider {
 		let schema_ids = schema_ids.unwrap_or_default();
 
 		Self { authorized_msa_id, schema_ids, expiration }
+	}
+}
+
+/// A type definition for the Recovery Commitment data for the following operation:
+/// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment
+pub type RecoveryCommitment = [u8; 32]; // 32 bytes for the recovery commitment
+
+/// A type definition for the payload for the Recovery Commitment operation:
+/// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment`
+#[derive(
+	TypeInfo, RuntimeDebugNoBound, Clone, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
+#[scale_info(skip_type_params(T))]
+pub struct RecoveryCommitmentPayload<T: Config> {
+	/// type discriminator
+	pub discriminant: PayloadTypeDiscriminator,
+	/// The Recovery Commitment (32 bytes)
+	pub recovery_commitment: RecoveryCommitment,
+	/// The block number at which a signed proof of this payload expires.
+	pub expiration: BlockNumberFor<T>,
+}
+
+impl<T: Config> EIP712Encode for RecoveryCommitmentPayload<T> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] = sp_io::hashing::keccak_256(
+				b"RecoveryCommitmentPayload(bytes recoveryCommitment,uint32 expiration)",
+			);
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let hashed_recovery = sp_io::hashing::keccak_256(&self.recovery_commitment);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let message = sp_io::hashing::keccak_256(
+			&[MAIN_TYPE_HASH.as_slice(), hashed_recovery.as_slice(), &coded_expiration].concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
 	}
 }
 
