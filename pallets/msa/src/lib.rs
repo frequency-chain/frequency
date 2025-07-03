@@ -76,7 +76,8 @@ use sp_runtime::{
 
 pub use pallet::*;
 pub use types::{
-	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, EMPTY_FUNCTION,
+	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
+	RecoveryCommitmentPayload, EMPTY_FUNCTION,
 };
 pub use weights::*;
 
@@ -256,6 +257,13 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
+	/// Storage type for mapping MSA IDs to their Recovery Commitments
+	/// - Key: MessageSourceId
+	/// - Value: Recovery Commitment (32 bytes)
+	#[pallet::storage]
+	pub type MsaIdToRecoveryCommitment<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -313,6 +321,17 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
+		},
+		/// A Recovery Commitment was added to an MSA
+		RecoveryCommitmentAdded {
+			/// The MSA owner key that added the commitment
+			who: T::AccountId,
+
+			/// The MSA id for the Event
+			msa_id: MessageSourceId,
+
+			/// The Recovery Commitment that was added
+			recovery_commitment: RecoveryCommitment,
 		},
 		/// A recovery provider has been approved.
 		RecoveryProviderApproved {
@@ -1000,6 +1019,60 @@ pub mod pallet {
 				Preservation::Expendable,
 			);
 			ensure!(result.is_ok(), Error::<T>::UnexpectedTokenTransferError);
+
+			Ok(())
+		}
+
+		/// Adds a Recovery Commitment to an MSA. The Recovery Commitment is a cryptographic commitment
+		/// that can be used later in a recovery process to prove ownership or authorization.
+		///
+		/// This function allows the owner of an MSA to create a Recovery Commitment hash that is stored
+		/// on-chain. The commitment must be signed by the MSA owner to prove authorization.
+		///
+		/// # Remarks
+		/// * The `origin` can be any signed account but the `msa_owner_key` must be the actual owner
+		/// * Signatures should be over the [`RecoveryCommitmentPayload`] struct
+		/// * The Recovery Commitment is stored as a hash mapping from MSA ID to commitment value
+		///
+		/// # Events
+		/// * [`Event::RecoveryCommitmentAdded`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidSignature`] - `proof` verification fails; `msa_owner_key` must have signed `payload`
+		/// * [`Error::NoKeyExists`] - there is no MSA for `msa_owner_key`
+		/// * [`Error::ProofNotYetValid`] - `payload` expiration is too far in the future
+		/// * [`Error::ProofHasExpired`] - `payload` expiration is in the past
+		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
+		///
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::add_recovery_commitment())]
+		pub fn add_recovery_commitment(
+			origin: OriginFor<T>,
+			msa_owner_key: T::AccountId,
+			proof: MultiSignature,
+			payload: RecoveryCommitmentPayload<T>,
+		) -> DispatchResult {
+			let _origin_key = ensure_signed(origin)?;
+
+			// Verify that the MsaId owner has signed the payload
+			ensure!(
+				Self::verify_signature(&proof, &msa_owner_key, &payload),
+				Error::<T>::InvalidSignature
+			);
+
+			// Register the signature to prevent replay attacks
+			Self::register_signature(&proof, payload.expiration)?;
+
+			// Recover the MSA ID from the msa_owner_key
+			let msa_id = Self::ensure_valid_msa_key(&msa_owner_key)?;
+
+			// Store the new RecoveryCommitment
+			MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
+			Self::deposit_event(Event::RecoveryCommitmentAdded {
+				who: msa_owner_key,
+				msa_id,
+				recovery_commitment: payload.recovery_commitment,
+			});
 
 			Ok(())
 		}

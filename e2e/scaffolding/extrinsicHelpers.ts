@@ -101,6 +101,12 @@ export interface PaginatedDeleteSignaturePayloadV2 {
   expiration?: any;
 }
 
+export interface RecoveryCommitmentPayload {
+  discriminant: 'RecoveryCommitmentPayload';
+  recoveryCommitment: any;
+  expiration?: any;
+}
+
 export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
   return e?.name === 'RpcError';
 }
@@ -543,6 +549,18 @@ export class ExtrinsicHelper {
 
   public static retireMsa(keys: KeyringPair) {
     return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.retireMsa(), keys, ExtrinsicHelper.api.events.msa.MsaRetired);
+  }
+
+  public static addRecoveryCommitment(
+    msaOwnerKey: KeyringPair,
+    proof: MultiSignatureType,
+    payload: RecoveryCommitmentPayload
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.addRecoveryCommitment(getUnifiedAddress(msaOwnerKey), proof, payload),
+      msaOwnerKey,
+      ExtrinsicHelper.api.events.msa.RecoveryCommitmentAdded
+    );
   }
 
   public static createProvider(keys: KeyringPair, providerName: string) {

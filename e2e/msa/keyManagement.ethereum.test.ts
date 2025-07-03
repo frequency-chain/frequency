@@ -142,11 +142,13 @@ describe('MSA Key management Ethereum', function () {
       );
       ownerSig = await sign(
         u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)).secretKey),
-        signingPayload
+        signingPayload,
+        'Dev'
       );
       newSig = await sign(
         u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)).secretKey),
-        signingPayload
+        signingPayload,
+        'Dev'
       );
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
       const { target: event } = await op.fundAndSend(fundingSource);

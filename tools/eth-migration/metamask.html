@@ -331,6 +331,46 @@
 				alert("Signature: " + signature)
 			});
 
+			document.getElementById('recovery_commitment_payload')?.addEventListener("click", async function () {
+				const signature_request = {
+					"types": {
+						...eip712domain_type_definition,
+						"RecoveryCommitmentPayload": [
+							{
+								"name": "recoveryCommitment",
+								"type": "bytes"
+							},
+							{
+								"name": "expiration",
+								"type": "uint32"
+							},
+						],
+					},
+					"primaryType": "RecoveryCommitmentPayload",
+					"domain": karma_request_domain,
+					"message": {
+						"recoveryCommitment": "0x5c06ce60a2a1245fabdd1c11bfbf55246836d2c6fefac2c634837e3359d0dbb3",
+						"expiration": 100,
+					}
+				}
+				console.log(JSON.stringify({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				},null, 2));
+				let signature = await window.ethereum.request({
+					"method": "eth_signTypedData_v4",
+					"params": [
+						accounts[0],
+						signature_request
+					]
+				})
+				console.log(signature);
+				alert("Signature: " + signature)
+			});
+
 			document.getElementById('authorized_key_payload')?.addEventListener("click", async function () {
 				const signature_request = {
 					"types": {
@@ -503,6 +543,8 @@
 <button id="add_key_request">AddKey Sign</button>
 <button id="add_provider_request">AddProvider Sign</button>
 <button id="authorized_key_payload">AuthorizedKeyData Sign</button>
+<br><br>
+<button id="recovery_commitment_payload">RecoveryCommitmentPayload Sign</button>
 <br><br>
 <button id="siwf_signed_request">SiwfSignedRequestPayload Sign</button>
 <button id="siwf_login_request">SiwfLoginRequest Sign</button>

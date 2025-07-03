@@ -347,7 +347,7 @@ try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
-POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'branch[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/branch *= *"\(.*\)"/\1/' | head -n 1)
+POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'tag[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/tag *= *"polkadot-\(.*\)"/\1/' | head -n 1)
 
 .PHONY: version
 version:

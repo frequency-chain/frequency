@@ -21,8 +21,16 @@ export const EIP712_DOMAIN_DEFINITION = {
   ],
 };
 
-// using pallet_revive test chain ID for now.
-export const EIP712_DOMAIN_DEFAULT: EipDomainPayload = {
+// using 2091 for mainnet
+export const EIP712_DOMAIN_MAINNET: EipDomainPayload = {
+  name: 'Frequency',
+  version: '1',
+  chainId: '0x082B',
+  verifyingContract: '0xCcCCccccCCCCcCCCCCCcCcCccCcCCCcCcccccccC',
+};
+
+// using pallet_revive test chain ID for testnet/dev
+export const EIP712_DOMAIN_TESTNET: EipDomainPayload = {
   name: 'Frequency',
   version: '1',
   chainId: '0x190f1b44',
@@ -76,6 +84,19 @@ export const AUTHORIZED_KEY_DATA_DEFINITION = {
     {
       name: 'authorizedPublicKey',
       type: 'address',
+    },
+  ],
+};
+
+export const RECOVERY_COMMITMENT_PAYLOAD_DEFINITION = {
+  RecoveryCommitmentPayload: [
+    {
+      name: 'recoveryCommitment',
+      type: 'bytes',
+    },
+    {
+      name: 'expiration',
+      type: 'uint32',
     },
   ],
 };
@@ -199,6 +220,7 @@ const PAYLOAD_DEFINITIONS = [
   PASSKEY_PUBLIC_KEY_DEFINITION,
   PAGINATED_DELETE_SIGNATURE_PAYLOAD_DEFINITION_V2,
   PAGINATED_UPSERT_SIGNATURE_PAYLOAD_DEFINITION_V2,
+  RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
   ITEMIZED_SIGNATURE_PAYLOAD_DEFINITION_V2,
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
 ];

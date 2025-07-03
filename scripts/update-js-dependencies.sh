@@ -17,6 +17,13 @@ npx npm-check-updates -u
 npm i
 cd ../..
 
+echo "Updating js/recovery-sdk"
+cd js/recovery-sdk
+rm package-lock.json
+npx npm-check-updates -u
+npm i
+cd ../..
+
 echo "Updating js/ethereum-utils"
 cd js/ethereum-utils
 rm package-lock.json
@@ -31,7 +38,7 @@ echo "Updating e2e"
 cd e2e
 rm package-lock.json
 npx npm-check-updates -u
-npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz
+npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz ../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz
 cd ..
 
 echo "Updating tools/state-copy"
