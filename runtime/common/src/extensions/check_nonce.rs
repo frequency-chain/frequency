@@ -151,13 +151,15 @@ where
 		info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
 	) -> Result<Self::Pre, TransactionValidityError> {
-		let (who, mut nonce) = match val {
+		let (who, nonce) = match val {
 			Val::CheckNonce((who, nonce)) => (who, nonce),
 			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
 		};
 
-		let account: frame_system::AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData> =
-			frame_system::Account::<T>::get(&who);
+		let mut account: frame_system::AccountInfo<
+			<T as Config>::Nonce,
+			<T as Config>::AccountData,
+		> = frame_system::Account::<T>::get(&who);
 
 		// The default account (no account) has a nonce of 0.
 		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
@@ -177,11 +179,12 @@ where
 			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
 
 		// Increment account nonce by 1
-		nonce += T::Nonce::one();
+		account.nonce += T::Nonce::one();
+
 		// Only create or update the token account if the caller is paying or
 		// account already exists
 		if info.pays_fee == Pays::Yes || existing_account {
-			frame_system::Account::<T>::insert(&who, account);
+			frame_system::Account::<T>::insert(who, account);
 		}
 
 		Ok(Pre::NonceChecked)
