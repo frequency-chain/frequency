@@ -2113,6 +2113,7 @@ impl<T: Config + Send + Sync> core::fmt::Debug for CheckFreeExtrinsicUse<T> {
 }
 
 /// The info passed between the validate and prepare steps for the `CheckFreeExtrinsicUse` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Val {
 	/// Valid transaction, no weight refund.
 	Valid,
@@ -2121,6 +2122,7 @@ pub enum Val {
 }
 
 /// The info passed between the prepare and post-dispatch steps for the `CheckFreeExtrinsicUse` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Pre {
 	/// Valid transaction, no weight refund.
 	Valid,

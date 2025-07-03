@@ -6,7 +6,10 @@ use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo,
 use frame_system::RawOrigin;
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
-use sp_runtime::{testing::TestXt, transaction_validity::TransactionValidityError, MultiSignature};
+use sp_runtime::{
+	testing::TestXt, traits::DispatchTransaction, transaction_validity::TransactionValidityError,
+	MultiSignature,
+};
 
 use pallet_balances::Call as BalancesCall;
 use pallet_capacity::CapacityLedger;
@@ -31,11 +34,13 @@ fn transaction_payment_validate_is_succesful() {
 				DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
 
-			assert_ok!(ChargeFrqTransactionPayment::<Test>::from(0u64).validate(
-				&account_id,
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::validate_and_prepare(
+				ChargeFrqTransactionPayment::<Test>::from(0u64),
+				Some(account_id).into(),
 				balances_call,
 				&dispatch_info,
 				len,
+				0,
 			));
 		});
 }
@@ -56,16 +61,18 @@ fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 			let dispatch_info =
 				DispatchInfo { call_weight: Weight::from_parts(5, 0), ..Default::default() };
 			let len = 10;
-
-			assert_noop!(
-				ChargeFrqTransactionPayment::<Test>::from(0u64).validate(
-					&account_id,
-					balances_call,
-					&dispatch_info,
-					len,
-				),
-				TransactionValidityError::Invalid(InvalidTransaction::Payment)
+			let tx_validation_result = ChargeFrqTransactionPayment::<Test>::validate_only(
+				&ChargeFrqTransactionPayment::<Test>::from(0u64),
+				Some(account_id).into(),
+				balances_call,
+				&dispatch_info,
+				len,
+				TransactionSource::External,
+				0,
 			);
+			assert!(tx_validation_result.is_err());
+			let err = tx_validation_result.unwrap_err();
+			assert_eq!(err, TransactionValidityError::Invalid(InvalidTransaction::Payment));
 		});
 }
 
@@ -89,7 +96,13 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 			assert_eq!(Balances::free_balance(1), 100);
 
 			let pre = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.pre_dispatch(&account_id, balances_call, &dispatch_info, len)
+				.validate_and_prepare(
+					Some(account_id).into(),
+					balances_call,
+					&dispatch_info,
+					len,
+					0,
+				)
 				.unwrap();
 
 			// account_balance = free_balance - base_weight(5)
@@ -100,8 +113,8 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 			let post_info: PostDispatchInfo =
 				PostDispatchInfo { actual_weight: None, pays_fee: Default::default() };
 
-			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch(
-				Some(pre),
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+				pre.0,
 				&dispatch_info,
 				&post_info,
 				len,
@@ -133,7 +146,13 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 			assert_eq!(Balances::free_balance(1), 100);
 
 			let pre = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.pre_dispatch(&account_id, balances_call, &dispatch_info, len)
+				.validate_and_prepare(
+					Some(account_id).into(),
+					balances_call,
+					&dispatch_info,
+					len,
+					0,
+				)
 				.unwrap();
 
 			// account_balance = free_balance - base_weight(5)
@@ -146,8 +165,8 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 				pays_fee: Default::default(),
 			};
 
-			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch(
-				Some(pre),
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+				pre.0,
 				&dispatch_info,
 				&post_info,
 				len,
@@ -188,7 +207,13 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			assert_eq!(Capacity::balance(1), 1_000_000_000);
 
 			let pre = ChargeFrqTransactionPayment::<Test>::from(0u64)
-				.pre_dispatch(&account_id, balances_call, &dispatch_info, len)
+				.validate_and_prepare(
+					Some(account_id).into(),
+					balances_call,
+					&dispatch_info,
+					len,
+					0,
+				)
 				.unwrap();
 
 			// Token account Balance is not effected
@@ -202,8 +227,8 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 			let post_info: PostDispatchInfo =
 				PostDispatchInfo { actual_weight: None, pays_fee: Default::default() };
 
-			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch(
-				Some(pre),
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+				pre.0,
 				&dispatch_info,
 				&post_info,
 				len,

@@ -530,12 +530,14 @@ impl<T: Config> core::fmt::Debug for ChargeFrqTransactionPayment<T> {
 }
 
 /// The info passed between the validate and prepare steps for the `ChargeFrqTransactionPayment` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Val<T: Config> {
 	Charge { tip: BalanceOf<T>, who: T::AccountId, fee: BalanceOf<T> },
 	NoCharge,
 }
 
 /// The info passed between the prepare and post-dispatch steps for the `ChargeFrqTransactionPayment` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Pre<T: Config> {
 	Charge { tip: BalanceOf<T>, who: T::AccountId, initial_payment: InitialPayment<T> },
 	NoCharge { refund: Weight },
