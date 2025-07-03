@@ -178,7 +178,6 @@ where
 
 		// Increment account nonce by 1
 		nonce += T::Nonce::one();
-
 		// Only create or update the token account if the caller is paying or
 		// account already exists
 		if info.pays_fee == Pays::Yes || existing_account {

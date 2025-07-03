@@ -18,7 +18,6 @@ use pallet_msa::{AddKeyData, Call as MsaCall};
 use sp_core::{sr25519, Pair, H256};
 
 #[test]
-#[allow(deprecated)]
 fn transaction_payment_validate_is_succesful() {
 	let balance_factor = 10;
 
@@ -46,7 +45,6 @@ fn transaction_payment_validate_is_succesful() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 	let balance_factor = 1;
 
@@ -77,7 +75,6 @@ fn transaction_payment_validate_errors_when_balance_is_cannot_pay_for_fee() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succesful() {
 	let balance_factor = 10;
 
@@ -127,7 +124,6 @@ fn transaction_payment_with_token_and_no_overcharge_post_dispatch_refund_is_succ
 }
 
 #[test]
-#[allow(deprecated)]
 fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 	let balance_factor = 10;
 
@@ -182,7 +178,6 @@ fn transaction_payment_with_token_and_post_dispatch_refund_is_succesful() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_succesful() {
 	let balance_factor = 100_000_000;
 
@@ -241,7 +236,6 @@ fn transaction_payment_with_capacity_and_no_overcharge_post_dispatch_refund_is_s
 }
 
 #[test]
-#[allow(deprecated)]
 fn pay_with_capacity_happy_path() {
 	let balance_factor = 10;
 
@@ -261,7 +255,6 @@ fn pay_with_capacity_happy_path() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn pay_with_capacity_errors_with_call_error() {
 	let balance_factor = 10;
 
@@ -284,7 +277,6 @@ fn pay_with_capacity_errors_with_call_error() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn pay_with_capacity_returns_weight_of_child_call() {
 	let create_msa_call = Box::new(RuntimeCall::Msa(MsaCall::<Test>::create {}));
 	let create_msa_dispatch_info = create_msa_call.get_dispatch_info();
@@ -301,7 +293,6 @@ fn pay_with_capacity_returns_weight_of_child_call() {
 }
 
 #[test]
-#[allow(deprecated)]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tuple_with_fee_and_enum(
 ) {
 	let balance_factor = 100_000_000;
@@ -339,7 +330,6 @@ fn charge_frq_transaction_payment_withdraw_fee_for_capacity_batch_tx_returns_tup
 }
 
 #[test]
-#[allow(deprecated)]
 fn charge_frq_transaction_payment_withdraw_fee_for_capacity_tx_returns_tupple_with_fee_and_enum() {
 	let balance_factor = 100_000_000;
 
