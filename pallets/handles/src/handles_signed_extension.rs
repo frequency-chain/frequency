@@ -4,7 +4,7 @@ use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
 	dispatch::DispatchInfo, ensure, pallet_prelude::ValidTransaction, traits::IsSubType,
-	unsigned::UnknownTransaction,
+	unsigned::UnknownTransaction, RuntimeDebugNoBound,
 };
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
@@ -86,6 +86,7 @@ pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 }
 
 /// The info passed between the validate and prepare steps for the `HandlesSignedExtension` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Val {
 	/// Valid transaction, no weight refund.
 	Valid,
@@ -94,6 +95,7 @@ pub enum Val {
 }
 
 /// The info passed between the prepare and post-dispatch steps for the `HandlesSignedExtension` extension.
+#[derive(RuntimeDebugNoBound)]
 pub enum Pre {
 	/// Valid transaction, no weight refund.
 	Valid,
