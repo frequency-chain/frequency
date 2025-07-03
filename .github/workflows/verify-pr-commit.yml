@@ -577,7 +577,7 @@ jobs:
       - name: Set up NodeJs
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
           cache-dependency-path: js/recovery-sdk/package-lock.json
       - name: Install Latest Versions
