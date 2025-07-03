@@ -1086,7 +1086,7 @@ pub mod pallet {
 		/// # Errors
 		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to approve recovery providers.
 		///
-		#[pallet::call_index(15)]
+		#[pallet::call_index(16)]
 		#[pallet::weight(T::WeightInfo::approve_recovery_provider())]
 		pub fn approve_recovery_provider(
 			origin: OriginFor<T>,
@@ -1119,7 +1119,7 @@ pub mod pallet {
 		///
 		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to remove recovery providers.
 		///
-		#[pallet::call_index(16)]
+		#[pallet::call_index(17)]
 		#[pallet::weight(T::WeightInfo::remove_recovery_provider())]
 		pub fn remove_recovery_provider(
 			origin: OriginFor<T>,
