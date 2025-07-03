@@ -11,7 +11,7 @@ export default tseslint.config(
   ...tseslint.configs.strict,
   ...tseslint.configs.stylistic,
   {
-	  ignores: ['dist/', 'scripts/'],
+    ignores: ['dist/', 'scripts/'],
   },
   {
     linterOptions: {
@@ -23,7 +23,7 @@ export default tseslint.config(
     languageOptions: {
       parserOptions: {
         projectService: {
-          allowDefaultProject: ['eslint.config.mjs', 'rollup.config.mjs'],
+          allowDefaultProject: ['eslint.config.mjs', 'test/*.ts'],
           defaultProject: './tsconfig.eslint.json',
         },
       },
@@ -44,7 +44,7 @@ export default tseslint.config(
       'id-length': [
         'error',
         {
-          exceptionPatterns: ['[i-k]', 'e', 'c', 'x', 'y', 'r', 's', 'v'],
+          exceptionPatterns: ['a', 'b', '[i-k]', 'e', 'c', 'x', 'y', 'r', 's', 'v'],
           properties: 'never',
         },
       ],
