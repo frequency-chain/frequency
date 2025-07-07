@@ -118,7 +118,7 @@ where
 			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
 		};
 
-		let (valid_transaction, account_nonce) = validate_nonce::<T>(&who, self.0)?;
+		let (valid_transaction, account_nonce) = validate_nonce::<T>(who, self.0)?;
 
 		Ok((valid_transaction, Val::CheckNonce((who.clone(), account_nonce)), origin))
 	}
