@@ -1098,6 +1098,11 @@ pub mod pallet {
 				Error::<T>::ProviderNotRegistered
 			);
 
+			// If the provider is already approved, do nothing
+			if Self::is_approved_recovery_provider(&ProviderId(provider_msa_id)) {
+				return Ok(());
+			}
+
 			RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
 
 			Self::deposit_event(Event::RecoveryProviderApproved {
@@ -1429,11 +1434,7 @@ impl<T: Config> Pallet<T> {
 	/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 	/// only piece of metadata we are recording is provider name.
 	///
-	/// # Events
-	/// * [`Event::ProviderCreated`]
-	///
 	/// # Errors
-	/// * [`Error::NoKeyExists`] - account does not have an MSA
 	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///

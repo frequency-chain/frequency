@@ -137,7 +137,7 @@ fn propose_to_be_provider_long_name_should_fail() {
 }
 
 #[test]
-fn approve_recovery_provider_happy_path() {
+fn approve_and_remove_recovery_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
 
@@ -154,22 +154,6 @@ fn approve_recovery_provider_happy_path() {
 		System::assert_last_event(
 			Event::RecoveryProviderApproved { provider_id: ProviderId(new_msa_id) }.into(),
 		);
-	})
-}
-
-#[test]
-fn remove_recovery_provider_happy_path() {
-	new_test_ext().execute_with(|| {
-		let (new_msa_id, key_pair) = create_account();
-
-		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
-
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			key_pair.public().into()
-		));
-
-		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
 
 		assert_ok!(Msa::remove_recovery_provider(
 			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
@@ -181,6 +165,45 @@ fn remove_recovery_provider_happy_path() {
 		System::assert_last_event(
 			Event::RecoveryProviderRemoved { provider_id: ProviderId(new_msa_id) }.into(),
 		);
+	})
+}
+
+#[test]
+fn approve_recovery_provider_already_approved_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let (new_msa_id, key_pair) = create_account();
+
+		assert_ok!(Msa::create_provider_for(new_msa_id.into(), Vec::from("provider_name")));
+
+		// No events are emitted from `create_provider_for`
+		assert!(System::events().is_empty());
+
+		// Approve recovery provider via governance
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.public().into()
+		));
+
+		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
+
+		System::assert_last_event(
+			Event::RecoveryProviderApproved { provider_id: ProviderId(new_msa_id) }.into(),
+		);
+
+		System::reset_events();
+		assert!(System::events().is_empty());
+
+		// Approve the same provider again, should succeed without changing state or emitting a new event
+		assert_ok!(Msa::approve_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			key_pair.public().into()
+		));
+
+		// Verify no events were emitted for the duplicate approval
+		assert!(System::events().is_empty());
+
+		// Ensure the provider is still approved
+		assert!(Msa::is_approved_recovery_provider(&ProviderId(new_msa_id)));
 	})
 }
 
