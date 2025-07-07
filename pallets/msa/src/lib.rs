@@ -141,9 +141,7 @@ pub mod pallet {
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The origin that is allowed to approve recovery providers
-		type RecoveryProviderApprovalOrigin: EnsureOrigin<
-			<Self as frame_system::Config>::RuntimeOrigin,
-		>;
+		type RecoveryProviderApprovalOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
 		/// The runtime call dispatch type.
 		type Proposal: Parameter
