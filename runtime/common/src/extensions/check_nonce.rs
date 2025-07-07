@@ -163,7 +163,7 @@ pub fn prepare_nonce<T: Config>(
 	pays_fee: Pays,
 ) -> Result<(), TransactionValidityError> {
 	let mut account: frame_system::AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData> =
-		frame_system::Account::<T>::get(&who);
+		frame_system::Account::<T>::get(who);
 	// The default account (no account) has a nonce of 0.
 	// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
 	if nonce != account.nonce {
@@ -197,7 +197,7 @@ pub fn validate_nonce<T: Config>(
 	who: &T::AccountId,
 	nonce: T::Nonce,
 ) -> Result<(ValidTransaction, T::Nonce), TransactionValidityError> {
-	let account = frame_system::Account::<T>::get(&who);
+	let account = frame_system::Account::<T>::get(who);
 
 	if nonce < account.nonce {
 		return Err(InvalidTransaction::Stale.into());
