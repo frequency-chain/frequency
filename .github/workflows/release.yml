@@ -534,6 +534,35 @@ jobs:
           path: js/schemas/dist
           if-no-files-found: error
 
+  build-js-recovery-sdk:
+    name: Build JS Recovery SDK
+    runs-on: ubuntu-24.04
+    container: ghcr.io/frequency-chain/frequency/ci-base-image:1.5.7
+    steps:
+      - name: Check Out Repo
+        uses: actions/checkout@v4
+        with:
+          ref: ${{env.RELEASE_BRANCH_NAME}}
+      - name: Set up NodeJs
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
+          cache-dependency-path: js/recovery-sdk/package-lock.json
+      - name: Install
+        run: npm install
+        working-directory: js/recovery-sdk
+      - name: Build
+        run: npm run build
+        working-directory: js/recovery-sdk
+      - name: Upload Dist Dir
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-recovery-sdk-${{github.run_id}}
+          path: js/recovery-sdk/dist
+          if-no-files-found: error
+
   test-version-matches-release:
     needs: build-binaries
     name: Test Version Matches Release
