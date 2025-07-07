@@ -118,29 +118,9 @@ where
 			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
 		};
 
-		let account = frame_system::Account::<T>::get(&who);
-		if self.0 < account.nonce {
-			return Err(InvalidTransaction::Stale.into());
-		}
+		let (valid_transaction, account_nonce) = validate_nonce::<T>(&who, self.0)?;
 
-		let provides = vec![Encode::encode(&(who, self.0))];
-		let requires = if account.nonce < self.0 {
-			vec![Encode::encode(&(who, self.0 - One::one()))]
-		} else {
-			vec![]
-		};
-
-		Ok((
-			ValidTransaction {
-				priority: 0,
-				requires,
-				provides,
-				longevity: TransactionLongevity::MAX,
-				propagate: true,
-			},
-			Val::CheckNonce((who.clone(), account.nonce)),
-			origin,
-		))
+		Ok((valid_transaction, Val::CheckNonce((who.clone(), account_nonce)), origin))
 	}
 
 	fn prepare(
@@ -156,36 +136,8 @@ where
 			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
 		};
 
-		let mut account: frame_system::AccountInfo<
-			<T as Config>::Nonce,
-			<T as Config>::AccountData,
-		> = frame_system::Account::<T>::get(&who);
-
-		// The default account (no account) has a nonce of 0.
-		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if nonce != account.nonce {
-			return Err(if nonce < account.nonce {
-				InvalidTransaction::Stale
-			} else {
-				InvalidTransaction::Future
-			}
-			.into());
-		}
-
-		// Is this an existing account?
-		// extracted from the conditions in which an account gets reaped
-		// https://github.com/paritytech/polkadot-sdk/commit/e993f884fc00f359dd8bf9c81422c5161f3447b5#diff-dff2afa7433478e36eb66a9fe319efe28cfbdf95104b30b03afa0a1c4e3239f3R1082
-		let existing_account =
-			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
-
-		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
-
-		// Only create or update the token account if the caller is paying or
-		// account already exists
-		if info.pays_fee == Pays::Yes || existing_account {
-			frame_system::Account::<T>::insert(who, account);
-		}
+		// Prepare the nonce for the account.
+		prepare_nonce::<T>(&who, nonce, info.pays_fee)?;
 
 		Ok(Pre::NonceChecked)
 	}
@@ -202,4 +154,68 @@ where
 			Pre::Refund(weight) => Ok(weight),
 		}
 	}
+}
+
+/// Helper function to prepare a nonce for a given account.
+pub fn prepare_nonce<T: Config>(
+	who: &T::AccountId,
+	nonce: T::Nonce,
+	pays_fee: Pays,
+) -> Result<(), TransactionValidityError> {
+	let mut account: frame_system::AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData> =
+		frame_system::Account::<T>::get(&who);
+	// The default account (no account) has a nonce of 0.
+	// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
+	if nonce != account.nonce {
+		return Err(if nonce < account.nonce {
+			InvalidTransaction::Stale
+		} else {
+			InvalidTransaction::Future
+		}
+		.into());
+	}
+
+	// Is this an existing account?
+	// extracted from the conditions in which an account gets reaped
+	// https://github.com/paritytech/polkadot-sdk/commit/e993f884fc00f359dd8bf9c81422c5161f3447b5#diff-dff2afa7433478e36eb66a9fe319efe28cfbdf95104b30b03afa0a1c4e3239f3R1082
+	let existing_account =
+		account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
+
+	// Increment account nonce by 1
+	account.nonce += T::Nonce::one();
+
+	// Only create or update the token account if the caller is paying or
+	// account already exists
+	if pays_fee == Pays::Yes || existing_account {
+		frame_system::Account::<T>::insert(who, account);
+	}
+	Ok(())
+}
+
+/// Helper function to validate a nonce for a given account.
+pub fn validate_nonce<T: Config>(
+	who: &T::AccountId,
+	nonce: T::Nonce,
+) -> Result<(ValidTransaction, T::Nonce), TransactionValidityError> {
+	let account = frame_system::Account::<T>::get(&who);
+
+	if nonce < account.nonce {
+		return Err(InvalidTransaction::Stale.into());
+	}
+	let provides = vec![Encode::encode(&(who.clone(), nonce))];
+	let requires = if account.nonce < nonce {
+		vec![Encode::encode(&(who.clone(), nonce - One::one()))]
+	} else {
+		vec![]
+	};
+	Ok((
+		ValidTransaction {
+			priority: 0,
+			requires,
+			provides,
+			longevity: TransactionLongevity::MAX,
+			propagate: true,
+		},
+		account.nonce,
+	))
 }

@@ -19,7 +19,10 @@
 // allowing deprecated until moving to Extrinsic V5 structure
 #![allow(deprecated)]
 use common_primitives::node::EIP712Encode;
-use common_runtime::{extensions::check_nonce::CheckNonce, signature::check_signature};
+use common_runtime::{
+	extensions::check_nonce::{prepare_nonce, validate_nonce},
+	signature::check_signature,
+};
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo, RawOrigin},
 	pallet_prelude::*,
@@ -29,10 +32,7 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::OnChargeTransaction;
 use sp_runtime::{
 	generic::Era,
-	traits::{
-		AsTransactionAuthorizedOrigin, Convert, Dispatchable, SignedExtension, TxBaseImplication,
-		Zero,
-	},
+	traits::{AsTransactionAuthorizedOrigin, Convert, Dispatchable, TxBaseImplication, Zero},
 	transaction_validity::{TransactionValidity, TransactionValidityError},
 	AccountId32, MultiSignature,
 };
@@ -278,11 +278,8 @@ where
 	pub fn validate(&self) -> TransactionValidity {
 		let who = self.0.account_id.clone();
 		let nonce = self.0.account_nonce;
-		let some_call: &<T as Config>::RuntimeCall = &self.0.call;
-		let info = &some_call.get_dispatch_info();
-
-		let passkey_nonce = CheckNonce::<T>::from(nonce);
-		passkey_nonce.validate(&who, &some_call.clone().into(), info, 0usize)
+		let (nonce_validity, _) = validate_nonce::<T>(&who, nonce)?;
+		Ok(nonce_validity)
 	}
 
 	pub fn pre_dispatch(&self) -> Result<(), TransactionValidityError> {
@@ -290,9 +287,8 @@ where
 		let nonce = self.0.account_nonce;
 		let some_call: &<T as Config>::RuntimeCall = &self.0.call;
 		let info = &some_call.get_dispatch_info();
-
-		let passkey_nonce = CheckNonce::<T>::from(nonce);
-		passkey_nonce.pre_dispatch(&who, &some_call.clone().into(), info, 0usize)
+		prepare_nonce::<T>(&who, nonce, info.pays_fee)?;
+		Ok(())
 	}
 }
 
