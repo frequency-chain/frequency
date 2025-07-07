@@ -141,7 +141,7 @@ where
 			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
 		};
 		let validity = match call.is_sub_type() {
-			Some(Call::retire_handle {}) => Self::validate_retire_handle(&who),
+			Some(Call::retire_handle {}) => Self::validate_retire_handle(who),
 			_ => Ok(Default::default()),
 		};
 		validity.map(|v| (v, Val::Valid, origin))

@@ -583,7 +583,7 @@ where
 				origin,
 			));
 		};
-		let fee = self.dryrun_withdraw_fee(&who, call, info, len)?;
+		let fee = self.dryrun_withdraw_fee(who, call, info, len)?;
 		let tip = self.tip(call);
 		let priority = pallet_transaction_payment::ChargeTransactionPayment::<T>::get_priority(
 			info, len, tip, fee,

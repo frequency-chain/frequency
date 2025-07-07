@@ -2248,18 +2248,18 @@ where
 		};
 		let validity = match call.is_sub_type() {
 			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
-				Self::validate_delegation_by_provider(&who, delegator),
+				Self::validate_delegation_by_provider(who, delegator),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
-				Self::validate_delegation_by_delegator(&who, provider_msa_id),
+				Self::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
-				Self::validate_key_delete(&who, public_key_to_delete),
-			Some(Call::retire_msa { .. }) => Self::ensure_msa_can_retire(&who),
+				Self::validate_key_delete(who, public_key_to_delete),
+			Some(Call::retire_msa { .. }) => Self::ensure_msa_can_retire(who),
 			Some(Call::withdraw_tokens {
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
 			}) => Self::validate_msa_token_withdrawal(
-				&who,
+				who,
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
