@@ -998,6 +998,7 @@ fn can_withdraw_fee_errors_for_capacity_txn_when_invalid_msa() {
 			let expected_err = TransactionValidityError::Invalid(InvalidTransaction::Custom(
 				ChargeFrqTransactionPaymentError::InvalidMsaKey as u8,
 			));
+
 			assert_dryrun_withdraw_fee_result(
 				account_id_not_associated_with_msa,
 				call,
@@ -1083,5 +1084,111 @@ fn add_public_key_to_msa_has_lower_capacity_charge_if_is_ethereum_compatible() {
 				.withdraw_fee(&owner_id, &pay_with_capacity_add_public_key_call, &dispatch_info, 10)
 				.unwrap();
 			assert!(ineligible_withdraw_fee.0.gt(&withdraw_fee.0));
+		});
+}
+
+#[test]
+fn charge_frq_post_dispatch_details_refund_weight() {
+	use crate::Pre;
+	let refund_weight = frame_support::weights::Weight::from_parts(9876, 0);
+	let result = crate::ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+		Pre::NoCharge { refund: refund_weight },
+		&DispatchInfo::default(),
+		&Default::default(),
+		0,
+		&Ok(()),
+	);
+	assert_eq!(result.unwrap(), refund_weight);
+}
+
+#[test]
+fn charge_frq_no_fee_charged_for_pays_no() {
+	ExtBuilder::default()
+		.balance_factor(10)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+			let mut info = call.get_dispatch_info();
+			info.pays_fee = frame_support::dispatch::Pays::No;
+			let len = 10;
+			let pre = ChargeFrqTransactionPayment::<Test>::from(0u64)
+				.validate_and_prepare(Some(account_id).into(), call, &info, len, 0)
+				.unwrap();
+			// No fee should be charged
+			let balance_after = Balances::free_balance(account_id);
+			assert_eq!(balance_after, 100);
+			// post_dispatch_details should not error
+			let post_info = PostDispatchInfo { actual_weight: None, pays_fee: info.pays_fee };
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+				pre.0,
+				&info,
+				&post_info,
+				len,
+				&Ok(())
+			));
+		});
+}
+
+#[test]
+fn charge_frq_tip_ignored_for_capacity_calls() {
+	ExtBuilder::default()
+		.balance_factor(100_000_000)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let tip = 12345u64;
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
+					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+						dest: 2,
+						value: 100,
+					})),
+				});
+			let info = call.get_dispatch_info();
+			let len = 10;
+			let ext = ChargeFrqTransactionPayment::<Test>::from(tip);
+			// Tip should be ignored for capacity calls
+			assert_eq!(ext.tip(call), 0u64);
+			let pre =
+				ext.validate_and_prepare(Some(account_id).into(), call, &info, len, 0).unwrap();
+			// post_dispatch_details should not error
+			let post_info = PostDispatchInfo { actual_weight: None, pays_fee: info.pays_fee };
+			assert_ok!(ChargeFrqTransactionPayment::<Test>::post_dispatch_details(
+				pre.0,
+				&info,
+				&post_info,
+				len,
+				&Ok(())
+			));
+		});
+}
+
+#[test]
+fn charge_frq_no_fee_withdrawn_on_failed_call() {
+	ExtBuilder::default()
+		.balance_factor(10)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+			let info = call.get_dispatch_info();
+			let len = 10;
+			// Set balance to minimum so fee withdrawal will fail
+			assert_ok!(Balances::force_set_balance(
+				RawOrigin::Root.into(),
+				account_id,
+				1u32.into()
+			));
+			let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+			let res = ext.validate_and_prepare(Some(account_id).into(), call, &info, len, 0);
+			assert!(res.is_err());
+			// Balance should remain unchanged
+			assert_eq!(Balances::free_balance(account_id), 1u64);
 		});
 }

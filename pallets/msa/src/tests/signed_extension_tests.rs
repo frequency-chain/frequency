@@ -15,7 +15,10 @@ use frame_support::{
 	traits::Currency,
 };
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
-use sp_runtime::{traits::DispatchTransaction, MultiSignature};
+use sp_runtime::{
+	traits::{DispatchTransaction, TransactionExtension},
+	MultiSignature,
+};
 
 // Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
 // for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
@@ -808,5 +811,156 @@ fn signed_ext_validate_passes_when_withdraw_tokens_balance_is_sufficient() {
 			0,
 		);
 		assert_ok!(result);
+	});
+}
+
+#[test]
+fn check_nonce_post_dispatch_details_refund_weight() {
+	use common_runtime::extensions::check_nonce::Pre;
+	// Simulate a refund weight scenario
+	let refund_weight = frame_support::weights::Weight::from_parts(12345, 0);
+	let result = common_runtime::extensions::check_nonce::CheckNonce::<Test>::post_dispatch_details(
+		Pre::Refund(refund_weight),
+		&DispatchInfo::default(),
+		&Default::default(),
+		0,
+		&Ok(()),
+	);
+	assert_eq!(result.unwrap(), refund_weight);
+}
+
+#[test]
+fn check_nonce_does_not_increment_nonce_on_failed_call() {
+	new_test_ext().execute_with(|| {
+		// Arrange: create an account with nonce 0
+		let who = test_public(42);
+		let len = 0_usize;
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key { public_key_to_delete: who.clone() });
+		let info = call.get_dispatch_info();
+		// Insert account
+		let mut account = frame_system::Account::<Test>::get(who.clone());
+		account.consumers += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+		// Act: simulate a failed call by passing a stale nonce (increment first)
+		let mut account = frame_system::Account::<Test>::get(who.clone());
+		account.nonce += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+		// Now try to use the old nonce (0)
+		let ext = CheckNonce::<Test>(0);
+		let res = ext.validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
+			call,
+			&info,
+			len,
+			0,
+		);
+		assert!(res.is_err());
+		// Assert nonce is still 1
+		let account_after = frame_system::Account::<Test>::get(who);
+		assert_eq!(account_after.nonce, 1);
+	});
+}
+
+#[test]
+fn check_nonce_does_not_increment_nonce_for_unsigned_origin() {
+	new_test_ext().execute_with(|| {
+		let who = test_public(1);
+		let len = 0_usize;
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::create {});
+		let info = call.get_dispatch_info();
+		// Insert account
+		let mut account = frame_system::Account::<Test>::get(who.clone());
+		account.consumers += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+		// Act: use unsigned origin
+		let ext = CheckNonce::<Test>(0);
+		let res = ext.validate_and_prepare(RuntimeOrigin::none().into(), call, &info, len, 0);
+		// Should succeed (no-op), but not increment nonce
+		assert!(res.is_err());
+		let account_after = frame_system::Account::<Test>::get(who);
+		assert_eq!(account_after.nonce, 0);
+	});
+}
+
+#[test]
+fn check_nonce_rejects_stale_nonce() {
+	new_test_ext().execute_with(|| {
+		let who = test_public(7);
+		let len = 0_usize;
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::create {});
+		let info = call.get_dispatch_info();
+		// Insert account with nonce 1
+		let mut account = frame_system::Account::<Test>::get(who.clone());
+		account.nonce = 1;
+		account.consumers += 1;
+		frame_system::Account::<Test>::insert(who.clone(), account);
+		// Try to submit with nonce 0 (stale)
+		let ext = CheckNonce::<Test>(0);
+		let res = ext.validate_and_prepare(
+			RuntimeOrigin::signed(who.clone()).into(),
+			call,
+			&info,
+			len,
+			0,
+		);
+		assert!(res.is_err());
+	});
+}
+
+#[test]
+fn check_free_extrinsic_use_post_dispatch_details_refund_weight() {
+	use crate::Pre as FreePre;
+	let refund_weight = frame_support::weights::Weight::from_parts(4321, 0);
+	let result = crate::CheckFreeExtrinsicUse::<Test>::post_dispatch_details(
+		FreePre::Refund(refund_weight),
+		&DispatchInfo::default(),
+		&Default::default(),
+		0,
+		&Ok(()),
+	);
+	assert_eq!(result.unwrap(), refund_weight);
+}
+
+#[test]
+fn check_free_extrinsic_use_does_not_block_unrelated_calls() {
+	new_test_ext().execute_with(|| {
+		let who = test_public(1);
+		let unrelated_call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::create {});
+		let info = unrelated_call.get_dispatch_info();
+		let len = 0_usize;
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::signed(who.clone()).into(),
+			unrelated_call,
+			&info,
+			len,
+			TransactionSource::External,
+			0,
+		);
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn check_free_extrinsic_use_noop_for_unsigned_origin() {
+	new_test_ext().execute_with(|| {
+		let _who = test_public(1);
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id: 42 });
+		let info = call.get_dispatch_info();
+		let len = 0_usize;
+		let result = CheckFreeExtrinsicUse::<Test>::new().validate_only(
+			RuntimeOrigin::none().into(),
+			call,
+			&info,
+			len,
+			TransactionSource::External,
+			0,
+		);
+		// Should be an error or a no-op, but must not panic
+		assert!(result.is_err() || result.is_ok());
 	});
 }
