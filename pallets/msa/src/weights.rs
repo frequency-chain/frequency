@@ -49,6 +49,7 @@ pub trait WeightInfo {
 	fn add_recovery_commitment() -> Weight;
 	fn remove_recovery_provider() -> Weight;
 	fn approve_recovery_provider() -> Weight;
+	fn recover_account() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -299,6 +300,29 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(T::DbWeight::get().reads(2_u64))
 			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:1)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::RecoveryProviders` (r:1 w:0)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::MsaIdToRecoveryCommitment` (r:1 w:1)
+	/// Proof: `Msa::MsaIdToRecoveryCommitment` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:1)
+	/// Proof: `Msa::PublicKeyCountForMsaId` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn recover_account() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1654`
+		//  Estimated: `11066`
+		// Minimum execution time: 285_000_000 picoseconds.
+		Weight::from_parts(295_000_000, 11066)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
+	}
 }
 
 // For backwards compatibility and tests.
@@ -548,6 +572,29 @@ impl WeightInfo for () {
 			.saturating_add(RocksDbWeight::get().reads(2_u64))
 			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:1)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::RecoveryProviders` (r:1 w:0)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::MsaIdToRecoveryCommitment` (r:1 w:1)
+	/// Proof: `Msa::MsaIdToRecoveryCommitment` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:1)
+	/// Proof: `Msa::PublicKeyCountForMsaId` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn recover_account() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1654`
+		//  Estimated: `11066`
+		// Minimum execution time: 285_000_000 picoseconds.
+		Weight::from_parts(295_000_000, 11066)
+			.saturating_add(RocksDbWeight::get().reads(9_u64))
+			.saturating_add(RocksDbWeight::get().writes(6_u64))
+	}
 }
 
 
@@ -739,6 +786,18 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 4008
+		);
+	}
+	#[test]
+	fn test_recover_account() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 11066
 		);
 	}
 }

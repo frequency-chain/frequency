@@ -1,6 +1,7 @@
 use crate::{
-	self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData, RecoveryCommitment,
-	RecoveryCommitmentPayload,
+	self as pallet_msa,
+	types::{RecoveryHash, EMPTY_FUNCTION},
+	AddKeyData, AddProvider, AuthorizedKeyData, RecoveryCommitment, RecoveryCommitmentPayload,
 };
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
@@ -441,6 +442,83 @@ pub fn generate_and_sign_recovery_commitment_payload(
 
 	let encoded_payload = wrap_binary_data(payload.encode());
 	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
+
+	(payload, signature)
+}
+
+// Contact type constants for recovery system (matching recovery-sdk)
+pub const CONTACT_TYPE_EMAIL: u8 = 0x00;
+pub const CONTACT_TYPE_PHONE: u8 = 0x01;
+
+/// Generate a recovery secret for testing (matching recovery-sdk format)
+/// Returns a string like "ABCD-EFGH-1234-5678-..."
+pub fn generate_test_recovery_secret() -> String {
+	use sp_core::H256;
+	let random_bytes = H256::random();
+	let hex_string = hex::encode(random_bytes.as_bytes()).to_uppercase();
+
+	// Format as groups of 4 separated by dashes
+	hex_string
+		.chars()
+		.collect::<Vec<char>>()
+		.chunks(4)
+		.map(|chunk| chunk.iter().collect::<String>())
+		.collect::<Vec<String>>()
+		.join("-")
+}
+
+/// Helper function to compute Recovery Intermediary Hashes for testing
+/// Based on the design document and recovery-sdk implementation:
+/// - H(s) = keccak256(Recovery Secret bytes)
+/// - H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
+pub fn compute_recovery_intermediary_hashes(
+	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-..."
+	contact_type: u8,      // 0x00 for Email, 0x01 for Phone
+	standardized_contact: &str,
+) -> (RecoveryHash, RecoveryHash) {
+	use sp_core::keccak_256;
+
+	// Convert recovery secret string to bytes (remove dashes and decode hex)
+	let recovery_secret_clean = recovery_secret.replace("-", "");
+	let recovery_secret_bytes =
+		hex::decode(&recovery_secret_clean).expect("Recovery secret should be valid hex");
+
+	// H(s) = keccak256(Recovery Secret bytes)
+	let intermediary_hash_a = keccak_256(&recovery_secret_bytes);
+
+	// H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
+	let mut combined = Vec::new();
+	combined.extend_from_slice(&recovery_secret_bytes);
+	combined.push(contact_type);
+	combined.extend_from_slice(standardized_contact.as_bytes());
+	let intermediary_hash_b = keccak_256(&combined);
+
+	(intermediary_hash_a, intermediary_hash_b)
+}
+
+/// Helper function to compute Recovery Commitment for testing
+/// RC = keccak256(H(s) || H(sc))
+pub fn compute_recovery_commitment_from_secret_and_contact(
+	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-..."
+	contact_type: u8,      // 0x00 for Email, 0x01 for Phone
+	standardized_contact: &str,
+) -> RecoveryCommitment {
+	let (intermediary_hash_a, intermediary_hash_b) =
+		compute_recovery_intermediary_hashes(recovery_secret, contact_type, standardized_contact);
+	Msa::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b)
+}
+
+/// Helper function to generate and sign AddKeyData payload for testing
+pub fn generate_and_sign_add_key_payload(
+	new_key_pair: &sr25519::Pair,
+	msa_id: MessageSourceId,
+	expiration: BlockNumber,
+) -> (AddKeyData<Test>, MultiSignature) {
+	let payload =
+		AddKeyData::<Test> { msa_id, expiration, new_public_key: new_key_pair.public().into() };
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = new_key_pair.sign(&encoded_payload).into();
 
 	(payload, signature)
 }

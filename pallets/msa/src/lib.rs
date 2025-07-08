@@ -83,7 +83,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::PayloadTypeDiscriminator;
+use crate::types::{PayloadTypeDiscriminator, RecoveryHash};
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -98,6 +98,8 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use crate::types::RecoveryHash;
+
 	use super::*;
 
 	#[pallet::config]
@@ -341,6 +343,22 @@ pub mod pallet {
 			/// The provider account ID
 			provider_id: ProviderId,
 		},
+		/// An account was recovered with a new control key
+		AccountRecovered {
+			/// The MSA id that was recovered
+			msa_id: MessageSourceId,
+			/// The recovery provider that performed the recovery
+			recovery_provider: ProviderId,
+			/// The new control key added to the MSA
+			new_control_key: T::AccountId,
+		},
+		/// A Recovery Commitment was invalidated after use or removal
+		RecoveryCommitmentInvalidated {
+			/// The MSA id for which the commitment was invalidated
+			msa_id: MessageSourceId,
+			/// The Recovery Commitment that was invalidated
+			recovery_commitment: RecoveryCommitment,
+		},
 	}
 
 	#[pallet::error]
@@ -437,6 +455,18 @@ pub mod pallet {
 
 		/// Fund transfer error
 		UnexpectedTokenTransferError,
+
+		/// The caller is not authorized as a recovery provider
+		NotAuthorizedRecoveryProvider,
+
+		/// The provided recovery commitment does not match the stored one
+		InvalidRecoveryCommitment,
+
+		/// No recovery commitment exists for the given MSA
+		NoRecoveryCommitment,
+
+		/// The specified MSA was not found
+		MsaNotFound,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1134,6 +1164,103 @@ pub mod pallet {
 			Self::deposit_event(Event::RecoveryProviderRemoved { provider_id: provider });
 			Ok(())
 		}
+
+		/// Recover an MSA account with a new control key.
+		/// This extrinsic is called by approved Recovery Providers after verifying
+		/// the user's Recovery Intermediary Hashes and Authentication Contact.
+		///
+		/// # Events
+		/// * [`Event::AccountRecovered`]
+		/// * [`Event::RecoveryCommitmentInvalidated`]
+		///
+		/// # Errors
+		/// * [`Error::NotAuthorizedRecoveryProvider`] - Caller is not an approved Recovery Provider.
+		/// * [`Error::ProviderNotRegistered`] - Recovery Provider is not registered.
+		/// * [`Error::NoRecoveryCommitment`] - No Recovery Commitment exists for the MSA.
+		/// * [`Error::InvalidRecoveryCommitment`] - Recovery Commitment does not match.
+		///
+		#[pallet::call_index(18)]
+		#[pallet::weight(T::WeightInfo::recover_account())]
+		pub fn recover_account(
+			origin: OriginFor<T>,
+			intermediary_hash_a: RecoveryHash,
+			intermediary_hash_b: RecoveryHash,
+			new_control_key_proof: MultiSignature,
+			add_key_payload: AddKeyData<T>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+
+			// Get the provider's MSA ID and ensure they're a registered provider
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+
+			// Ensure the provider is approved for recovery operations
+			ensure!(
+				Self::is_approved_recovery_provider(&ProviderId(provider_msa_id)),
+				Error::<T>::NotAuthorizedRecoveryProvider
+			);
+
+			// Compute the recovery commitment from the intermediary hashes
+			let recovery_commitment: RecoveryCommitment =
+				Self::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
+
+			// Get the stored recovery commitment for this MSA
+			let stored_commitment = MsaIdToRecoveryCommitment::<T>::get(add_key_payload.msa_id)
+				.ok_or(Error::<T>::NoRecoveryCommitment)?;
+
+			// Verify the computed recovery commitment matches the stored one
+			ensure!(
+				recovery_commitment == stored_commitment,
+				Error::<T>::InvalidRecoveryCommitment
+			);
+
+			// Implement the signature verification for the new control key, which is usually done by
+			// add_public_key_to_msa, but in this case we do not have the MSA owner key.
+			ensure!(
+				Self::verify_signature(
+					&new_control_key_proof,
+					&add_key_payload.new_public_key,
+					&add_key_payload
+				),
+				Error::<T>::NewKeyOwnershipInvalidSignature
+			);
+			Self::register_signature(&new_control_key_proof, add_key_payload.expiration)?;
+
+			// Add the new control key to the MSA and the offchain index
+			Self::add_key(
+				add_key_payload.msa_id,
+				&add_key_payload.new_public_key.clone(),
+				|msa_id| -> DispatchResult {
+					let event = Event::PublicKeyAdded {
+						msa_id,
+						key: add_key_payload.new_public_key.clone(),
+					};
+					offchain_index_event::<T>(Some(&event), msa_id);
+					Self::deposit_event(event);
+					Ok(())
+				},
+			)?;
+
+			// Invalidate the recovery commitment (single-use requirement)
+			MsaIdToRecoveryCommitment::<T>::remove(add_key_payload.msa_id);
+
+			// Emit events
+			Self::deposit_event(Event::AccountRecovered {
+				msa_id: add_key_payload.msa_id,
+				recovery_provider: ProviderId(provider_msa_id),
+				new_control_key: add_key_payload.new_public_key.clone(),
+			});
+
+			Self::deposit_event(Event::RecoveryCommitmentInvalidated {
+				msa_id: add_key_payload.msa_id,
+				recovery_commitment,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -1147,6 +1274,24 @@ impl<T: Config> Pallet<T> {
 	/// * [`bool`] - True if the provider is approved, false otherwise
 	pub fn is_approved_recovery_provider(provider: &ProviderId) -> bool {
 		RecoveryProviders::<T>::get(provider).unwrap_or(false)
+	}
+
+	/// Compute the Recovery Commitment from Intermediary Hashes
+	///
+	/// # Arguments
+	/// * `intermediary_hash_a`: Hash of the Recovery Secret
+	/// * `intermediary_hash_b`: Hash of the Recovery Secret + Authentication Contact
+	///
+	/// # Returns
+	/// * [`RecoveryCommitment`] - The computed Recovery Commitment
+	pub fn compute_recovery_commitment(
+		intermediary_hash_a: RecoveryHash,
+		intermediary_hash_b: RecoveryHash,
+	) -> RecoveryCommitment {
+		let mut input = Vec::with_capacity(64);
+		input.extend_from_slice(&intermediary_hash_a);
+		input.extend_from_slice(&intermediary_hash_b);
+		keccak_256(&input)
 	}
 
 	/// Create the account for the `key`
