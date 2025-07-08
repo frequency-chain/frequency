@@ -13,7 +13,9 @@
     "strict": true,
     "skipLibCheck": true,
     "target": "es2022",
-    "typeRoots": ["node_modules/@types"]
+    "typeRoots": ["node_modules/@types"],
+    "types": ["mocha", "node"]
   },
-  "exclude": ["node_modules/**", "./test/**", "./scripts/**", "**/*.test.ts", "./dist/**"]
+  "include": ["src/**/*", "test/**/*"],
+  "exclude": ["node_modules/**", "./scripts/**", "./dist/**"]
 }

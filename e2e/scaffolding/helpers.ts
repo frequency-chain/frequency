@@ -22,6 +22,7 @@ import {
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
   PaginatedUpsertSignaturePayloadV2,
+  RecoveryCommitmentPayload,
   ReleaseSchedule,
 } from './extrinsicHelpers';
 import {
@@ -147,6 +148,19 @@ export async function generateAuthorizedKeyPayload(
   return {
     expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
+  };
+}
+
+export async function generateRecoveryCommitmentPayload(
+  payloadInputs: RecoveryCommitmentPayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<RecoveryCommitmentPayload> {
+  const { expiration, ...payload } = payloadInputs;
+
+  return {
+    ...payload,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
   };
 }
 

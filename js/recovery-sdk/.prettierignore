@@ -1,0 +1,10 @@
+# package.json is formatted by package managers, so we ignore it here
+package.json
+build/*
+coverage/*
+multimodules/*
+/*.d.ts
+/*.map
+/*.js
+*.md
+eslint.config.mjs

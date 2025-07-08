@@ -76,7 +76,8 @@ use sp_runtime::{
 
 pub use pallet::*;
 pub use types::{
-	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, EMPTY_FUNCTION,
+	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
+	RecoveryCommitmentPayload, EMPTY_FUNCTION,
 };
 pub use weights::*;
 
@@ -139,6 +140,9 @@ pub mod pallet {
 		/// The origin that is allowed to create providers via governance
 		type CreateProviderViaGovernanceOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// The origin that is allowed to approve recovery providers
+		type RecoveryProviderApprovalOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		/// The runtime call dispatch type.
 		type Proposal: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
@@ -177,6 +181,13 @@ pub mod pallet {
 		Delegation<SchemaId, BlockNumberFor<T>, T::MaxSchemaGrantsPerDelegation>,
 		OptionQuery,
 	>;
+
+	/// Storage type for approved recovery providers
+	/// - Key: Provider MSA Id
+	/// - Value: [`bool`]
+	#[pallet::storage]
+	pub type RecoveryProviders<T: Config> =
+		StorageMap<_, Twox64Concat, ProviderId, bool, OptionQuery>;
 
 	/// Provider registration information
 	/// - Key: Provider MSA Id
@@ -244,6 +255,13 @@ pub mod pallet {
 	#[pallet::whitelist_storage]
 	pub(super) type OffchainIndexEventCount<T: Config> = StorageValue<_, u16, ValueQuery>;
 
+	/// Storage type for mapping MSA IDs to their Recovery Commitments
+	/// - Key: MessageSourceId
+	/// - Value: Recovery Commitment (32 bytes)
+	#[pallet::storage]
+	pub type MsaIdToRecoveryCommitment<T: Config> =
+		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
+
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
 	pub enum Event<T: Config> {
@@ -301,6 +319,27 @@ pub mod pallet {
 
 			/// The Delegator MSA Id
 			delegator_id: DelegatorId,
+		},
+		/// A Recovery Commitment was added to an MSA
+		RecoveryCommitmentAdded {
+			/// The MSA owner key that added the commitment
+			who: T::AccountId,
+
+			/// The MSA id for the Event
+			msa_id: MessageSourceId,
+
+			/// The Recovery Commitment that was added
+			recovery_commitment: RecoveryCommitment,
+		},
+		/// A recovery provider has been approved.
+		RecoveryProviderApproved {
+			/// The provider account ID
+			provider_id: ProviderId,
+		},
+		/// A recovery provider has been removed.
+		RecoveryProviderRemoved {
+			/// The provider account ID
+			provider_id: ProviderId,
 		},
 	}
 
@@ -981,10 +1020,135 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Adds a Recovery Commitment to an MSA. The Recovery Commitment is a cryptographic commitment
+		/// that can be used later in a recovery process to prove ownership or authorization.
+		///
+		/// This function allows the owner of an MSA to create a Recovery Commitment hash that is stored
+		/// on-chain. The commitment must be signed by the MSA owner to prove authorization.
+		///
+		/// # Remarks
+		/// * The `origin` can be any signed account but the `msa_owner_key` must be the actual owner
+		/// * Signatures should be over the [`RecoveryCommitmentPayload`] struct
+		/// * The Recovery Commitment is stored as a hash mapping from MSA ID to commitment value
+		///
+		/// # Events
+		/// * [`Event::RecoveryCommitmentAdded`]
+		///
+		/// # Errors
+		/// * [`Error::InvalidSignature`] - `proof` verification fails; `msa_owner_key` must have signed `payload`
+		/// * [`Error::NoKeyExists`] - there is no MSA for `msa_owner_key`
+		/// * [`Error::ProofNotYetValid`] - `payload` expiration is too far in the future
+		/// * [`Error::ProofHasExpired`] - `payload` expiration is in the past
+		/// * [`Error::SignatureAlreadySubmitted`] - signature has already been used
+		///
+		#[pallet::call_index(15)]
+		#[pallet::weight(T::WeightInfo::add_recovery_commitment())]
+		pub fn add_recovery_commitment(
+			origin: OriginFor<T>,
+			msa_owner_key: T::AccountId,
+			proof: MultiSignature,
+			payload: RecoveryCommitmentPayload<T>,
+		) -> DispatchResult {
+			let _origin_key = ensure_signed(origin)?;
+
+			// Verify that the MsaId owner has signed the payload
+			ensure!(
+				Self::verify_signature(&proof, &msa_owner_key, &payload),
+				Error::<T>::InvalidSignature
+			);
+
+			// Register the signature to prevent replay attacks
+			Self::register_signature(&proof, payload.expiration)?;
+
+			// Recover the MSA ID from the msa_owner_key
+			let msa_id = Self::ensure_valid_msa_key(&msa_owner_key)?;
+
+			// Store the new RecoveryCommitment
+			MsaIdToRecoveryCommitment::<T>::insert(msa_id, payload.recovery_commitment);
+			Self::deposit_event(Event::RecoveryCommitmentAdded {
+				who: msa_owner_key,
+				msa_id,
+				recovery_commitment: payload.recovery_commitment,
+			});
+
+			Ok(())
+		}
+
+		/// Approves a recovery provider via governance.
+		/// Only governance can approve recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderApproved`]
+		///
+		/// # Errors
+		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to approve recovery providers.
+		///
+		#[pallet::call_index(16)]
+		#[pallet::weight(T::WeightInfo::approve_recovery_provider())]
+		pub fn approve_recovery_provider(
+			origin: OriginFor<T>,
+			provider_key: T::AccountId,
+		) -> DispatchResult {
+			T::RecoveryProviderApprovalOrigin::ensure_origin(origin)?;
+
+			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			ensure!(
+				Self::is_registered_provider(provider_msa_id),
+				Error::<T>::ProviderNotRegistered
+			);
+
+			// If the provider is already approved, do nothing
+			if Self::is_approved_recovery_provider(&ProviderId(provider_msa_id)) {
+				return Ok(());
+			}
+
+			RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
+
+			Self::deposit_event(Event::RecoveryProviderApproved {
+				provider_id: ProviderId(provider_msa_id),
+			});
+
+			Ok(())
+		}
+
+		/// Removes a recovery provider via governance.
+		/// Only governance can remove recovery providers.
+		///
+		/// # Events
+		/// * [`Event::RecoveryProviderRemoved`]
+		///
+		/// # Errors
+		///
+		/// * [`DispatchError::BadOrigin`] - Caller is not authorized to remove recovery providers.
+		///
+		#[pallet::call_index(17)]
+		#[pallet::weight(T::WeightInfo::remove_recovery_provider())]
+		pub fn remove_recovery_provider(
+			origin: OriginFor<T>,
+			provider: ProviderId,
+		) -> DispatchResult {
+			T::RecoveryProviderApprovalOrigin::ensure_origin(origin)?;
+
+			RecoveryProviders::<T>::remove(provider);
+			Self::deposit_event(Event::RecoveryProviderRemoved { provider_id: provider });
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Check if a recovery provider is approved
+	///
+	/// # Arguments
+	/// * `provider`: The provider to check
+	///
+	/// # Returns
+	/// * [`bool`] - True if the provider is approved, false otherwise
+	pub fn is_approved_recovery_provider(provider: &ProviderId) -> bool {
+		RecoveryProviders::<T>::get(provider).unwrap_or(false)
+	}
+
 	/// Create the account for the `key`
 	///
 	/// # Errors
@@ -1270,11 +1434,7 @@ impl<T: Config> Pallet<T> {
 	/// Adds an association between MSA id and ProviderRegistryEntry. As of now, the
 	/// only piece of metadata we are recording is provider name.
 	///
-	/// # Events
-	/// * [`Event::ProviderCreated`]
-	///
 	/// # Errors
-	/// * [`Error::NoKeyExists`] - account does not have an MSA
 	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
@@ -1967,7 +2127,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// - Convert to AccountId
 		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
-		let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
+		let msa_account_id = T::AccountId::decode(&mut bytes).map_err(|_| {
+			log::error!("Failed to decode MSA account ID from Ethereum address");
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
+		})?;
 
 		// - Check that the MSA does not have a token balance
 		let msa_balance = T::Currency::reducible_balance(
@@ -2047,8 +2210,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// - Convert to AccountId
 		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
-		let msa_account_id = T::AccountId::decode(&mut bytes)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
+		let msa_account_id = T::AccountId::decode(&mut bytes).map_err(|_| {
+			log::error!("Failed to decode MSA account ID from Ethereum address");
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
+		})?;
 
 		// - Check that the MSA has a balance to withdraw
 		let msa_balance = T::Currency::reducible_balance(
