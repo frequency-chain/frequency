@@ -47,6 +47,8 @@ pub trait WeightInfo {
 	fn reindex_offchain() -> Weight;
 	fn withdraw_tokens() -> Weight;
 	fn add_recovery_commitment() -> Weight;
+	fn remove_recovery_provider() -> Weight;
+	fn approve_recovery_provider() -> Weight;
 }
 
 /// Weights for `pallet_msa` using the Substrate node and recommended hardware.
@@ -248,7 +250,7 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn withdraw_tokens() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1229`
+		//  Measured:  `1196`
 		//  Estimated: `6691`
 		// Minimum execution time: 82_824_000 picoseconds.
 		Weight::from_parts(86_753_000, 6691)
@@ -271,6 +273,31 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		Weight::from_parts(125_273_000, 5733)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Msa::RecoveryProviders` (r:0 w:1)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn remove_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 7_172_000 picoseconds.
+		Weight::from_parts(7_479_000, 0)
+			.saturating_add(T::DbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::RecoveryProviders` (r:0 w:1)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn approve_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `67`
+		//  Estimated: `4008`
+		// Minimum execution time: 14_207_000 picoseconds.
+		Weight::from_parts(14_629_000, 4008)
+			.saturating_add(T::DbWeight::get().reads(2_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 }
 
@@ -472,7 +499,7 @@ impl WeightInfo for () {
 	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn withdraw_tokens() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `1229`
+		//  Measured:  `1196`
 		//  Estimated: `6691`
 		// Minimum execution time: 82_824_000 picoseconds.
 		Weight::from_parts(86_753_000, 6691)
@@ -495,6 +522,31 @@ impl WeightInfo for () {
 		Weight::from_parts(125_273_000, 5733)
 			.saturating_add(RocksDbWeight::get().reads(4_u64))
 			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Msa::RecoveryProviders` (r:0 w:1)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn remove_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 7_172_000 picoseconds.
+		Weight::from_parts(7_479_000, 0)
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
+	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::RecoveryProviders` (r:0 w:1)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn approve_recovery_provider() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `67`
+		//  Estimated: `4008`
+		// Minimum execution time: 14_207_000 picoseconds.
+		Weight::from_parts(14_629_000, 4008)
+			.saturating_add(RocksDbWeight::get().reads(2_u64))
+			.saturating_add(RocksDbWeight::get().writes(1_u64))
 	}
 }
 
@@ -675,6 +727,18 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 5733
+		);
+	}
+	#[test]
+	fn test_approve_recovery_provider() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4008
 		);
 	}
 }
