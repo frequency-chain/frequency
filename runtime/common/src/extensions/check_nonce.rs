@@ -99,8 +99,7 @@ where
 	type Pre = Pre;
 
 	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
-		// TODO: benchmark this or get pre-computed weights?
-		Weight::zero()
+		<T::ExtensionsWeightInfo as frame_system::ExtensionsWeightInfo>::check_nonce()
 	}
 
 	fn validate(
