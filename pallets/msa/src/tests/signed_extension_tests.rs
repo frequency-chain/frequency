@@ -12,13 +12,16 @@ use frame_support::{
 	assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	pallet_prelude::{InvalidTransaction, TransactionSource, TransactionValidityError},
-	traits::Currency,
+	traits::{Currency, OriginTrait},
 };
+use frame_system::RawOrigin;
+use parity_scale_codec::Encode;
 use sp_core::{crypto::AccountId32, sr25519, sr25519::Public, Pair};
 use sp_runtime::{
 	traits::{DispatchTransaction, TransactionExtension},
 	MultiSignature,
 };
+use sp_weights::Weight;
 
 // Assert that CheckFreeExtrinsicUse::validate fails with `expected_err_enum`,
 // for the "delete_msa_public_key" call, given extrinsic caller = caller_key,
@@ -827,6 +830,44 @@ fn check_nonce_post_dispatch_details_refund_weight() {
 		&Ok(()),
 	);
 	assert_eq!(result.unwrap(), refund_weight);
+}
+
+#[test]
+fn check_nonce_skipped_and_refund_for_other_origins() {
+	new_test_ext().execute_with(|| {
+		let call = &RuntimeCall::System(frame_system::Call::set_heap_pages { pages: 0u64 });
+		let ext = CheckNonce::<Test>(1u64.into());
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure we test the refund.
+		assert!(info.extension_weight != Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = RawOrigin::Root.into();
+		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		assert!(origin.as_system_ref().unwrap().is_root());
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<CheckNonce<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
 }
 
 #[test]
