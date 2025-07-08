@@ -364,6 +364,16 @@ pub enum Event<T: Config> {
         msa_id: MsaId,
         recovery_commitment: RecoveryCommitment,
     },
+    /// A recovery provider has been approved.
+    RecoveryProviderApproved {
+        /// The provider account ID
+        provider_id: ProviderId,
+    },
+    /// A recovery provider has been removed.
+    RecoveryProviderRemoved {
+        /// The provider account ID
+        provider_id: ProviderId,
+    },
     /// An account was recovered with a new control key
     AccountRecovered {
         who: T::AccountId,
@@ -388,6 +398,13 @@ pub enum Event<T: Config> {
 /// - Value: RecoveryCommitment
 #[pallet::storage]
 pub type MsaIdToRecoveryCommitment<T: Config> = StorageMap<_, Twox64Concat, MsaId, RecoveryCommitment>;
+
+/// Storage type for approved recovery providers
+/// - Key: Provider MSA Id
+/// - Value: [`bool`]
+#[pallet::storage]
+pub type RecoveryProviders<T: Config> =
+    StorageMap<_, Twox64Concat, ProviderId, bool, OptionQuery>;
 ```
 
 ## Required Extrinsics
@@ -396,6 +413,8 @@ pub type MsaIdToRecoveryCommitment<T: Config> = StorageMap<_, Twox64Concat, MsaI
 |---|---|---|---|---|
 | `add_recovery_commitment`<br />Add a new Recovery Commitment to an existing MSA| Provider| Capacity or Tokens | [`RecoveryCommitmentAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentAdded)| 168|
 | `recover_account`<br />Recover MSA with new control key| Recovery Provider | Capacity or Tokens | [`AccountRecovered`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.AccountRecovered), [`RecoveryCommitmentInvalidated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentInvalidated) | 168|
+| `approve_recovery_provider`<br />Approve a Recovery Provider via governance for MSA recovery  | Frequency Council                          | Tokens             | [`RecoveryProviderApproved`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryProviderApproved)                                                                                                     | 169           |
+| `remove_recovery_provider`<br />Remove a Recovery Provider via governance for MSA recovery    | Frequency Council                          | Tokens             | [`RecoveryProviderRemoved`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryProviderRemoved)                                                                                                       | 169           |
 
 ### Add Recovery Commitment
 

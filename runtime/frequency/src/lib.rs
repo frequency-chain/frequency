@@ -603,6 +603,14 @@ impl pallet_msa::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to approve recovery providers
+	#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
+	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
