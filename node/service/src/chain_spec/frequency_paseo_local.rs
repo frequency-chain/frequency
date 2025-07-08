@@ -15,7 +15,7 @@ pub type RelayChainSpec = sc_service::GenericChainSpec<RelayChainExtensions>;
 /// Generates the Paseo-Local Relay chain spec from the json
 pub fn load_paseo_local_spec() -> RelayChainSpec {
 	RelayChainSpec::from_json_bytes(&include_bytes!("../../../../resources/paseo-local.json")[..])
-		.unwrap()
+		.expect("Failed to parse paseo-local.json chain spec")
 }
 
 /// Generates the chain spec for a local testnet
