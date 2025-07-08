@@ -19,7 +19,7 @@ use sp_runtime::{
 	DispatchError, DispatchResult, ModuleError, Weight,
 };
 
-/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
+/// The TransactionExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
 /// purpose of this is to ensure that the retire_handle extrinsic cannot be
 /// repeatedly called to flood the network.
 #[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
@@ -27,7 +27,7 @@ use sp_runtime::{
 pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 
 impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
-	/// Create new `SignedExtension`.
+	/// Create new `TransactionExtension`.
 	pub fn new() -> Self {
 		Self(core::marker::PhantomData)
 	}
@@ -114,6 +114,7 @@ where
 	type Pre = Pre;
 
 	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
 		Weight::zero()
 	}
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:

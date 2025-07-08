@@ -562,7 +562,7 @@ where
 	type Pre = Pre<T>;
 
 	fn weight(&self, _call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
-		// TODO: Benchmark this
+		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
 		Weight::zero()
 	}
 

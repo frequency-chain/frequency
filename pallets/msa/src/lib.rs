@@ -644,7 +644,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -760,7 +760,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -789,7 +789,7 @@ pub mod pallet {
 
 			// Revoke delegation relationship entry in the delegation registry by expiring it
 			// at the current block
-			// validity checks are in SignedExtension so in theory this should never error.
+			// validity checks are in TransactionExtension so in theory this should never error.
 			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					let provider_id = ProviderId(msa_id);
@@ -799,7 +799,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -836,7 +836,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
-			// check for valid MSA is in SignedExtension.
+			// check for valid MSA is in TransactionExtension.
 			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
@@ -847,7 +847,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -1881,7 +1881,7 @@ impl<T: Config> MsaKeyProvider for Pallet<T> {
 	}
 }
 
-/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
+/// The TransactionExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
 /// purpose of this is to ensure that the revoke_delegation_by_delegator extrinsic cannot be
 /// repeatedly called and flood the network.
@@ -2168,7 +2168,7 @@ pub enum ValidityError {
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
-	/// Create new `SignedExtension` to check runtime version.
+	/// Create new `TransactionExtension` to check runtime version.
 	pub fn new() -> Self {
 		Self(PhantomData)
 	}
@@ -2214,7 +2214,7 @@ where
 	type Pre = Pre;
 
 	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
-		// Todo benchmark this weight
+		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
 		Weight::zero()
 	}
 
