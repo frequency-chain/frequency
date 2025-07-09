@@ -246,3 +246,54 @@ fn handles_signed_extension_skipped_and_refund_for_other_origins() {
 		assert_eq!(post_info.actual_weight, Some(info.call_weight));
 	})
 }
+
+#[test]
+fn handles_signed_extension_charges_extension_weight_for_signed_origin() {
+	new_test_ext().execute_with(|| {
+		// Set up: claim a handle to be retired
+		let alice = sr25519::Pair::from_seed(&[0; 32]);
+		let expiration = 10;
+		let (payload, proof) =
+			get_signed_claims_payload(&alice, b"testhandle".to_vec(), expiration);
+		assert_ok!(Handles::claim_handle(
+			RuntimeOrigin::signed(alice.public().into()),
+			alice.public().into(),
+			proof,
+			payload
+		));
+		run_to_block(11);
+
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Handles(HandlesCall::retire_handle {});
+		let ext = HandlesSignedExtension::<Test>::new();
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure extension_weight is non-zero for this test (after you wire in the benchmarked value)
+		assert!(info.extension_weight != frame_support::weights::Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = RuntimeOrigin::signed(alice.public().into()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<HandlesSignedExtension<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		// The actual weight should be call_weight + extension_weight
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
