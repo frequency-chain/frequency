@@ -311,12 +311,12 @@ describe('MSAs Holding Tokens', function () {
         ethereumAddressToKeyringPair(msaAddress),
         TRANSFER_AMOUNT
       );
-      await assert.doesNotReject(op1.signAndSend(), 'MSA funding failed');
+      await assert.doesNotReject(op1.signAndSend(undefined, {}, false), 'MSA funding failed');
 
       const newPayload = { ...payload, authorizedPublicKey: getUnifiedPublicKey(keys) };
       ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, newPayload));
       const op2 = ExtrinsicHelper.withdrawTokens(keys, msaKeys, ownerSig, newPayload);
-      await assert.doesNotReject(op2.signAndSend('current'), 'token transfer transaction should have succeeded');
+      await assert.doesNotReject(op2.signAndSend(), 'token transfer transaction should have succeeded');
       // Destination account should have had balance increased
       const {
         data: { free: endingBalance },
