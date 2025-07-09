@@ -176,6 +176,7 @@ complexity = { level = "deny", priority = -1 }
 perf = { level = "deny", priority = -1 }
 suspicious = { level = "deny", priority = -1 }
 # These should stay
+unwrap_used = "deny"
 wildcard_dependencies = "deny"
 from_over_into = "allow"
 type_complexity = "allow"

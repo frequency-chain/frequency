@@ -145,6 +145,9 @@ pub mod pallet {
 		/// The origin that is allowed to approve recovery providers
 		type RecoveryProviderApprovalOrigin: EnsureOrigin<Self::RuntimeOrigin>;
 
+		/// The origin that is allowed to approve recovery providers
+		type RecoveryProviderApprovalOrigin: EnsureOrigin<Self::RuntimeOrigin>;
+
 		/// The runtime call dispatch type.
 		type Proposal: Parameter
 			+ Dispatchable<RuntimeOrigin = Self::RuntimeOrigin, PostInfo = PostDispatchInfo>
@@ -2272,7 +2275,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// - Convert to AccountId
 		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
-		let msa_account_id = T::AccountId::decode(&mut bytes).unwrap();
+		let msa_account_id = T::AccountId::decode(&mut bytes).map_err(|_| {
+			log::error!("Failed to decode MSA account ID from Ethereum address");
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
+		})?;
 
 		// - Check that the MSA does not have a token balance
 		let msa_balance = T::Currency::reducible_balance(
@@ -2352,8 +2358,10 @@ impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
 
 		// - Convert to AccountId
 		let mut bytes = &EthereumAddressMapper::to_bytes32(&msa_address.0)[..];
-		let msa_account_id = T::AccountId::decode(&mut bytes)
-			.map_err(|_| InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8))?;
+		let msa_account_id = T::AccountId::decode(&mut bytes).map_err(|_| {
+			log::error!("Failed to decode MSA account ID from Ethereum address");
+			InvalidTransaction::Custom(ValidityError::InvalidMsaKey as u8)
+		})?;
 
 		// - Check that the MSA has a balance to withdraw
 		let msa_balance = T::Currency::reducible_balance(
