@@ -3,7 +3,9 @@ use frame_support::{
 	assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	pallet_prelude::TransactionSource,
+	traits::OriginTrait,
 };
+use parity_scale_codec::Encode;
 use sp_core::{sr25519, Pair};
 use sp_runtime::traits::{DispatchTransaction, TransactionExtension};
 
@@ -205,4 +207,42 @@ fn handles_signed_extension_noop_for_unsigned_origin() {
 		// Should be an error or a no-op, but must not panic
 		assert!(result.is_err() || result.is_ok());
 	});
+}
+
+#[test]
+fn handles_signed_extension_skipped_and_refund_for_other_origins() {
+	new_test_ext().execute_with(|| {
+		let call = &RuntimeCall::Handles(HandlesCall::retire_handle {});
+		let ext = HandlesSignedExtension::<Test>::new();
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure we test the refund which is zero currently.
+		assert!(info.extension_weight == frame_support::weights::Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = frame_system::RawOrigin::Root.into();
+		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		assert!(origin.as_system_ref().unwrap().is_root());
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<HandlesSignedExtension<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
 }

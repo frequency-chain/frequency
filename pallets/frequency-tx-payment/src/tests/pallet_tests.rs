@@ -1028,6 +1028,45 @@ fn can_withdraw_fee_errors_on_token_txn_witout_enough_funds() {
 		});
 }
 
+#[test]
+fn charge_frq_transaction_payment_skipped_and_refund_for_other_origins() {
+	ExtBuilder::default().build().execute_with(|| {
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+		let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure we test the refund which is zero currently.
+		assert!(info.extension_weight == Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = RawOrigin::Root.into();
+		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		assert!(origin.as_system_ref().unwrap().is_root());
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<ChargeFrqTransactionPayment<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
+
 pub fn generate_test_signature() -> MultiSignature {
 	let (key_pair, _) = sr25519::Pair::generate();
 	let fake_data = H256::random();

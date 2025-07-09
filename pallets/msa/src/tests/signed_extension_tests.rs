@@ -1005,3 +1005,81 @@ fn check_free_extrinsic_use_noop_for_unsigned_origin() {
 		assert!(result.is_err() || result.is_ok());
 	});
 }
+
+#[test]
+fn check_nonce_charges_extension_weight_for_signed_origin() {
+	new_test_ext().execute_with(|| {
+		let who = test_public(1);
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::create {});
+		let ext = CheckNonce::<Test>(1u64.into());
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure extension_weight is non-zero for this test
+		assert!(info.extension_weight != Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = RuntimeOrigin::signed(who.clone()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<CheckNonce<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		// The actual weight should be call_weight + extension_weight
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_skipped_and_refund_for_other_origins() {
+	new_test_ext().execute_with(|| {
+		let call =
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id: 42 });
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+
+		// Ensure we test the refund which is zero currently.
+		assert!(info.extension_weight == Weight::zero());
+
+		let len = call.encoded_size();
+
+		let origin = RawOrigin::Root.into();
+		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+		assert!(origin.as_system_ref().unwrap().is_root());
+
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
