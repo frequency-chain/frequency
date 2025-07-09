@@ -470,10 +470,9 @@ pub fn generate_test_recovery_secret() -> String {
 /// Helper function to compute Recovery Intermediary Hashes for testing
 /// Based on the design document and recovery-sdk implementation:
 /// - H(s) = keccak256(Recovery Secret bytes)
-/// - H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
+/// - H(sc) = keccak256(Recovery Secret bytes || Standardized Authentication Contact)
 pub fn compute_recovery_intermediary_hashes(
-	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-..."
-	contact_type: u8,      // 0x00 for Email, 0x01 for Phone
+	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-5678-..."
 	standardized_contact: &str,
 ) -> (RecoveryHash, RecoveryHash) {
 	use sp_core::keccak_256;
@@ -484,14 +483,13 @@ pub fn compute_recovery_intermediary_hashes(
 		hex::decode(&recovery_secret_clean).expect("Recovery secret should be valid hex");
 
 	// H(s) = keccak256(Recovery Secret bytes)
-	let intermediary_hash_a = keccak_256(&recovery_secret_bytes);
+	let intermediary_hash_a: RecoveryHash = keccak_256(&recovery_secret_bytes);
 
-	// H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
+	// H(sc) = keccak256(Recovery Secret bytes || Standardized Authentication Contact)
 	let mut combined = Vec::new();
 	combined.extend_from_slice(&recovery_secret_bytes);
-	combined.push(contact_type);
 	combined.extend_from_slice(standardized_contact.as_bytes());
-	let intermediary_hash_b = keccak_256(&combined);
+	let intermediary_hash_b: RecoveryHash = keccak_256(&combined);
 
 	(intermediary_hash_a, intermediary_hash_b)
 }
@@ -499,12 +497,11 @@ pub fn compute_recovery_intermediary_hashes(
 /// Helper function to compute Recovery Commitment for testing
 /// RC = keccak256(H(s) || H(sc))
 pub fn compute_recovery_commitment_from_secret_and_contact(
-	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-..."
-	contact_type: u8,      // 0x00 for Email, 0x01 for Phone
+	recovery_secret: &str, // Formatted string like "ABCD-EF02-1234-..."
 	standardized_contact: &str,
 ) -> RecoveryCommitment {
 	let (intermediary_hash_a, intermediary_hash_b) =
-		compute_recovery_intermediary_hashes(recovery_secret, contact_type, standardized_contact);
+		compute_recovery_intermediary_hashes(recovery_secret, standardized_contact);
 	Msa::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b)
 }
 
@@ -521,4 +518,44 @@ pub fn generate_and_sign_add_key_payload(
 	let signature: MultiSignature = new_key_pair.sign(&encoded_payload).into();
 
 	(payload, signature)
+}
+
+/// Helper function to create a recovery provider and approve it
+pub fn create_and_approve_recovery_provider() -> (MessageSourceId, sr25519::Pair) {
+	let (provider_msa_id, provider_key_pair) = create_account();
+	assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("RecProv")));
+	assert_ok!(Msa::approve_recovery_provider(
+		RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+		provider_key_pair.public().into()
+	));
+	(provider_msa_id, provider_key_pair)
+}
+
+/// Helper function to setup a complete recovery scenario with commitment
+pub fn setup_recovery_with_commitment(
+	recovery_secret: &str,
+	authentication_contact: &str,
+) -> (MessageSourceId, sr25519::Pair, RecoveryCommitment) {
+	// Create an MSA account and add recovery commitment
+	let (msa_id, msa_owner_key_pair) = create_account();
+	
+	let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
+		recovery_secret,
+		authentication_contact,
+	);
+
+	let (payload, signature) = generate_and_sign_recovery_commitment_payload(
+		&msa_owner_key_pair,
+		recovery_commitment,
+		100u32,
+	);
+
+	assert_ok!(Msa::add_recovery_commitment(
+		test_origin_signed(2),
+		msa_owner_key_pair.public().into(),
+		signature,
+		payload
+	));
+
+	(msa_id, msa_owner_key_pair, recovery_commitment)
 }

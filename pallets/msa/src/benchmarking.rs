@@ -488,6 +488,105 @@ mod benchmarks {
 		Ok(())
 	}
 
+	#[benchmark]
+	fn recover_account() -> Result<(), BenchmarkError> {
+		frame_system::Pallet::<T>::set_block_number(1u32.into());
+		prep_signature_registry::<T>();
+
+		// Create an MSA account and setup recovery commitment
+		let (msa_account, msa_key_pair, msa_id) = create_msa_account_and_keys::<T>();
+		
+		// Create recovery secret and authentication contact for testing
+		let recovery_secret_hex = "ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
+		let authentication_contact = "user@example.com";
+		
+		// Compute recovery commitment from secret and contact
+		let (intermediary_hash_a, intermediary_hash_b) = {
+			use sp_core::keccak_256;
+			
+			// Convert recovery secret hex string to bytes
+			let recovery_secret_bytes = hex::decode(recovery_secret_hex).expect("Recovery secret should be valid hex");
+			
+			// H(s) = keccak256(Recovery Secret bytes)
+			let hash_a = keccak_256(&recovery_secret_bytes);
+			
+			// H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
+			let mut combined = Vec::new();
+			combined.extend_from_slice(&recovery_secret_bytes);
+			combined.extend_from_slice(authentication_contact.as_bytes());
+			let hash_b = keccak_256(&combined);
+			
+			(hash_a, hash_b)
+		};
+		
+		let recovery_commitment = Msa::<T>::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
+		let expiration = 10u32.into();
+		
+		// Create and sign recovery commitment payload
+		let recovery_payload = RecoveryCommitmentPayload::<T> {
+			discriminant: PayloadTypeDiscriminator::RecoveryCommitmentPayload,
+			recovery_commitment,
+			expiration,
+		};
+		
+		let encoded_recovery_payload = wrap_binary_data(recovery_payload.encode());
+		let recovery_signature = MultiSignature::Sr25519(
+			msa_key_pair.sign(&encoded_recovery_payload).unwrap().into()
+		);
+		
+		// Add recovery commitment to MSA
+		assert_ok!(Msa::<T>::add_recovery_commitment(
+			RawOrigin::Signed(create_account::<T>("provider", 0)).into(),
+			msa_account,
+			recovery_signature,
+			recovery_payload
+		));
+		
+		// Create and approve a recovery provider
+		let provider_account = create_account::<T>("recovery_provider", 0);
+		let (provider_msa_id, provider_public_key) = 
+			Msa::<T>::create_account(provider_account.clone(), EMPTY_FUNCTION).unwrap();
+		
+		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("RecoveryProvider")));
+		
+		// Approve the recovery provider (using Root origin for benchmark)
+		assert_ok!(Msa::<T>::approve_recovery_provider(
+			RawOrigin::Root.into(),
+			provider_public_key
+		));
+		
+		// Generate a new control key for recovery
+		let new_control_key_pair = SignerId::generate_pair(None);
+		let new_control_key = T::AccountId::decode(&mut &new_control_key_pair.encode()[..]).unwrap();
+		
+		// Create AddKeyData payload and sign it with the new control key
+		let add_key_payload = AddKeyData::<T> {
+			msa_id,
+			expiration,
+			new_public_key: new_control_key.clone(),
+		};
+		
+		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
+		let new_control_key_proof = MultiSignature::Sr25519(
+			new_control_key_pair.sign(&encoded_add_key_payload).unwrap().into()
+		);
+
+		#[extrinsic_call]
+		_(
+			RawOrigin::Signed(provider_account),
+			intermediary_hash_a,
+			intermediary_hash_b,
+			new_control_key_proof,
+			add_key_payload
+		);
+
+		// Verify the recovery was successful
+		assert!(PublicKeyToMsaId::<T>::get(&new_control_key).is_some());
+		assert!(MsaIdToRecoveryCommitment::<T>::get(msa_id).is_none());
+		
+		Ok(())
+	}
+
 	impl_benchmark_test_suite!(
 		Msa,
 		crate::tests::mock::new_test_ext_keystore(),
