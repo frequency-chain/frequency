@@ -1,5 +1,5 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, Error, MSAIdToDisplayName};
+use crate::{Call, Config, Error, MSAIdToDisplayName, WeightInfo};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
@@ -113,9 +113,12 @@ where
 	type Val = Val;
 	type Pre = Pre;
 
-	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
-		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
-		Weight::zero()
+	fn weight(&self, call: &T::RuntimeCall) -> Weight {
+		if let Some(Call::retire_handle {}) = call.is_sub_type() {
+			T::WeightInfo::validate_retire_handle_benchmark()
+		} else {
+			Weight::zero()
+		}
 	}
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
 	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]

@@ -219,7 +219,7 @@ fn handles_signed_extension_skipped_and_refund_for_other_origins() {
 		info.extension_weight = ext.weight(call);
 
 		// Ensure we test the refund which is zero currently.
-		assert!(info.extension_weight == frame_support::weights::Weight::zero());
+		assert!(info.extension_weight != frame_support::weights::Weight::zero());
 
 		let len = call.encoded_size();
 
