@@ -16,32 +16,14 @@ use crate::{
 // Common test constants
 const TEST_RECOVERY_SECRET: &str =
 	"ABCD-EF01-2345-6789-0ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678";
-
 const TEST_AUTHENTICATION_CONTACT: &str = "user@example.com";
 const TEST_EXPIRATION_BLOCK: u32 = 100;
-const TEST_PROVIDER_NAME: &[u8] = b"RecProv";
 
 #[test]
 fn add_recovery_commitment_with_valid_data_should_succeed() {
 	new_test_ext().execute_with(|| {
-		// Create an MSA account
-		let (msa_id, msa_owner_key_pair) = create_account();
-		// Create recovery commitment payload
-		let recovery_commitment: RecoveryHash = [1u8; 32];
-
-		let (payload, msa_owner_signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		// Execute the extrinsic
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),              // provider_key origin
-			msa_owner_key_pair.public().into(), // msa_owner_key
-			msa_owner_signature,
-			payload.clone()
-		));
+		let (msa_id, msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
 
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
 		// Verify event was emitted
@@ -185,23 +167,8 @@ fn add_recovery_commitment_with_expired_payload_should_fail() {
 #[test]
 fn add_recovery_commitment_updates_existing_commitment() {
 	new_test_ext().execute_with(|| {
-		// Create an MSA account
-		let (msa_id, msa_owner_key_pair) = create_account();
-		// Add first recovery commitment
-		let first_commitment: RecoveryHash = [1u8; 32];
-
-		let (first_payload, first_signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			first_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			first_signature,
-			first_payload
-		));
+		let (msa_id, msa_owner_key_pair, first_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
 
 		// Verify first commitment was stored
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(first_commitment));
@@ -301,37 +268,12 @@ fn add_recovery_commitment_unsigned_origin_should_fail() {
 #[test]
 fn recover_account_with_valid_data_should_succeed() {
 	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
 
-		// Create recovery secret and authentication contact for testing
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
+		// Create and approve a recovery provider using helper function
+		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
 
 		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
@@ -342,7 +284,10 @@ fn recover_account_with_valid_data_should_succeed() {
 
 		// Compute intermediary hashes for recovery
 		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Clear previous events
+		System::reset_events();
 
 		// Execute the recovery
 		assert_ok!(Msa::recover_account(
@@ -359,581 +304,7 @@ fn recover_account_with_valid_data_should_succeed() {
 		// Verify the recovery commitment is invalidated
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), None);
 
-		// Verify events were emitted
-		let events = System::events();
-		assert!(events.iter().any(|event| matches!(
-			&event.event,
-			RuntimeEvent::Msa(Event::AccountRecovered {
-				msa_id: recovered_msa_id,
-				new_control_key: ref recovered_key,
-				..
-			}) if *recovered_msa_id == msa_id && *recovered_key == add_key_payload.new_public_key
-		)));
-
-		assert!(events.iter().any(|event| matches!(
-			event.event,
-			RuntimeEvent::Msa(Event::RecoveryCommitmentInvalidated {
-				msa_id: invalidated_msa_id,
-				..
-			}) if invalidated_msa_id == msa_id
-		)));
-	});
-}
-
-#[test]
-fn recover_account_with_non_approved_provider_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Create recovery secret and authentication contact for testing
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create a provider but don't approve it for recovery
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("NotApproved")));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, 100u32);
-
-		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-
-		// Execute the recovery and expect failure
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::NotAuthorizedRecoveryProvider
-		);
-
-		// Verify the recovery commitment is still there
-		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
-	});
-}
-
-#[test]
-fn recover_account_with_invalid_recovery_commitment_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-		let recovery_commitment: RecoveryHash = [1u8; 32];
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Try to recover with wrong intermediary hashes
-		let wrong_intermediary_hash_a = [2u8; 32];
-		let wrong_intermediary_hash_b = [3u8; 32];
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				wrong_intermediary_hash_a,
-				wrong_intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::InvalidRecoveryCommitment
-		);
-
-		// Verify the recovery commitment is still there
-		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
-	});
-}
-
-#[test]
-fn recover_account_with_nonexistent_msa_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Try to recover a non-existent MSA
-		let fake_msa_id = 999999u64;
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, fake_msa_id, 100u32);
-
-		let fake_intermediary_hash_a = [1u8; 32];
-		let fake_intermediary_hash_b = [2u8; 32];
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				fake_intermediary_hash_a,
-				fake_intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::NoRecoveryCommitment
-		);
-	});
-}
-
-#[test]
-fn recover_account_with_no_recovery_commitment_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account without recovery commitment
-		let (msa_id, _msa_owner_key_pair) = create_account();
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, 100u32);
-
-		// Try to recover without any recovery commitment
-		let some_intermediary_hash_a = [1u8; 32];
-		let some_intermediary_hash_b = [2u8; 32];
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				some_intermediary_hash_a,
-				some_intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::NoRecoveryCommitment
-		);
-	});
-}
-
-#[test]
-fn recover_account_with_existing_control_key_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT; // Use string literal
-
-		// Compute intermediary hashes and recovery commitment
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Use the existing MSA owner key as the "new" control key
-		// Generate AddKeyData payload and signature from existing key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&msa_owner_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Execute the recovery - should fail with KeyAlreadyRegistered
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				new_key_proof,
-				add_key_payload.clone()
-			),
-			Error::<Test>::KeyAlreadyRegistered
-		);
-
-		// Verify the recovery commitment is still there since the operation failed
-		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
-	});
-}
-
-#[test]
-fn recover_account_unsigned_origin_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-
-		// Compute intermediary hashes and recovery commitment
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Try to recover with unsigned origin
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::none(),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			frame_support::error::BadOrigin
-		);
-	});
-}
-
-#[test]
-fn recover_account_double_recovery_attempt_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact for this test
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment: RecoveryHash = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Execute the first recovery - should succeed
-		assert_ok!(Msa::recover_account(
-			RuntimeOrigin::signed(provider_key_pair.public().into()),
-			intermediary_hash_a,
-			intermediary_hash_b,
-			new_key_proof,
-			add_key_payload.clone()
-		));
-
-		// Verify the recovery commitment is invalidated
-		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), None);
-
-		// Try to use the same recovery commitment again - should fail
-		let (another_new_control_key_pair, _) = sr25519::Pair::generate();
-		let (another_add_key_payload, another_new_key_proof) = generate_and_sign_add_key_payload(
-			&another_new_control_key_pair,
-			msa_id,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				another_new_key_proof,
-				another_add_key_payload
-			),
-			Error::<Test>::NoRecoveryCommitment
-		);
-	});
-}
-
-#[test]
-fn recover_account_with_non_provider_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-
-		// Compute intermediary hashes and recovery commitment
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment: RecoveryHash = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create a regular account (not a provider)
-		let (_regular_account_msa_id, regular_account_key_pair) = create_account();
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Try to recover with a non-provider account
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(regular_account_key_pair.public().into()),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::ProviderNotRegistered
-		);
-	});
-}
-
-#[test]
-fn recover_account_with_revoked_recovery_provider_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-
-		// Compute intermediary hashes and recovery commitment
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create, approve, then revoke a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Revoke the recovery provider
-		assert_ok!(Msa::remove_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			ProviderId(provider_msa_id)
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Try to recover with a revoked provider
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				intermediary_hash_a,
-				intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::NotAuthorizedRecoveryProvider
-		);
-	});
-}
-
-#[test]
-fn recover_account_events_emitted_correctly() {
-	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
-
-		// Set up recovery secret and authentication contact
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-
-		// Compute intermediary hashes and recovery commitment
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
-		);
-
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
-			TEST_EXPIRATION_BLOCK,
-		);
-
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
-		));
-
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Generate AddKeyData payload and signature from new control key
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
-
-		// Clear previous events
-		System::reset_events();
-
-		// Execute the recovery
-		assert_ok!(Msa::recover_account(
-			RuntimeOrigin::signed(provider_key_pair.public().into()),
-			intermediary_hash_a,
-			intermediary_hash_b,
-			new_key_proof,
-			add_key_payload.clone()
-		));
-
-		// Verify both events were emitted
+		// Verify all events were emitted
 		let events = System::events();
 		assert_eq!(events.len(), 3); // PublicKeyAdded, AccountRecovered, RecoveryCommitmentInvalidated
 
@@ -972,39 +343,348 @@ fn recover_account_events_emitted_correctly() {
 }
 
 #[test]
-fn recover_account_with_invalid_new_key_signature_should_fail() {
+fn recover_account_with_non_approved_provider_should_fail() {
 	new_test_ext().execute_with(|| {
-		// Create an MSA account and add recovery commitment
-		let (msa_id, msa_owner_key_pair) = create_account();
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
 
-		// Create recovery secret and authentication contact for testing
-		let recovery_secret: &str = TEST_RECOVERY_SECRET;
-		let authentication_contact = TEST_AUTHENTICATION_CONTACT;
-		let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
-			recovery_secret,
-			authentication_contact,
+		// Create a provider but don't approve it for recovery
+		let (provider_msa_id, provider_key_pair) = create_account();
+		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("NotApproved")));
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, 100u32);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Execute the recovery and expect failure
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::NotAuthorizedRecoveryProvider
 		);
 
-		let (payload, signature) = generate_and_sign_recovery_commitment_payload(
-			&msa_owner_key_pair,
-			recovery_commitment,
+		// Verify the recovery commitment is still there
+		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
+	});
+}
+
+#[test]
+fn recover_account_with_invalid_recovery_commitment_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Try to recover with wrong intermediary hashes
+		let wrong_intermediary_hash_a = [2u8; 32];
+		let wrong_intermediary_hash_b = [3u8; 32];
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				wrong_intermediary_hash_a,
+				wrong_intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::InvalidRecoveryCommitment
+		);
+
+		// Verify the recovery commitment is still there
+		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
+	});
+}
+
+#[test]
+fn recover_account_with_nonexistent_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Try to recover a non-existent MSA
+		let fake_msa_id = 999999u64;
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, fake_msa_id, 100u32);
+
+		let fake_intermediary_hash_a = [1u8; 32];
+		let fake_intermediary_hash_b = [2u8; 32];
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				fake_intermediary_hash_a,
+				fake_intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::NoRecoveryCommitment
+		);
+	});
+}
+
+#[test]
+fn recover_account_with_no_recovery_commitment_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Create an MSA account without recovery commitment
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, 100u32);
+
+		// Try to recover without any recovery commitment
+		let some_intermediary_hash_a = [1u8; 32];
+		let some_intermediary_hash_b = [2u8; 32];
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				some_intermediary_hash_a,
+				some_intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::NoRecoveryCommitment
+		);
+	});
+}
+
+#[test]
+fn recover_account_with_existing_control_key_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Use the existing MSA owner key as the "new" control key
+		// Generate AddKeyData payload and signature from existing key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&msa_owner_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Execute the recovery - should fail with KeyAlreadyRegistered
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				new_key_proof,
+				add_key_payload.clone()
+			),
+			Error::<Test>::KeyAlreadyRegistered
+		);
+
+		// Verify the recovery commitment is still there since the operation failed
+		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
+	});
+}
+
+#[test]
+fn recover_account_unsigned_origin_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Try to recover with unsigned origin
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::none(),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			frame_support::error::BadOrigin
+		);
+	});
+}
+
+#[test]
+fn recover_account_double_recovery_attempt_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Execute the first recovery - should succeed
+		assert_ok!(Msa::recover_account(
+			RuntimeOrigin::signed(provider_key_pair.public().into()),
+			intermediary_hash_a,
+			intermediary_hash_b,
+			new_key_proof,
+			add_key_payload.clone()
+		));
+
+		// Verify the recovery commitment is invalidated
+		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), None);
+
+		// Try to use the same recovery commitment again - should fail
+		let (another_new_control_key_pair, _) = sr25519::Pair::generate();
+		let (another_add_key_payload, another_new_key_proof) = generate_and_sign_add_key_payload(
+			&another_new_control_key_pair,
+			msa_id,
 			TEST_EXPIRATION_BLOCK,
 		);
 
-		assert_ok!(Msa::add_recovery_commitment(
-			test_origin_signed(2),
-			msa_owner_key_pair.public().into(),
-			signature,
-			payload
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				another_new_key_proof,
+				another_add_key_payload
+			),
+			Error::<Test>::NoRecoveryCommitment
+		);
+	});
+}
+
+#[test]
+fn recover_account_with_non_provider_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create a regular account (not a provider)
+		let (_regular_account_msa_id, regular_account_key_pair) = create_account();
+
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Try to recover with a non-provider account
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(regular_account_key_pair.public().into()),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::ProviderNotRegistered
+		);
+	});
+}
+
+#[test]
+fn recover_account_with_revoked_recovery_provider_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create, approve, then revoke a recovery provider
+		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		// Revoke the recovery provider
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			ProviderId(provider_msa_id)
 		));
 
-		// Create and approve a recovery provider
-		let (provider_msa_id, provider_key_pair) = create_account();
-		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), TEST_PROVIDER_NAME.to_vec()));
-		assert_ok!(Msa::approve_recovery_provider(
-			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
-			provider_key_pair.public().into()
-		));
+		// Generate a new control key for recovery
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload and signature from new control key
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		// Compute intermediary hashes for recovery
+		let (intermediary_hash_a, intermediary_hash_b) =
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Try to recover with a revoked provider
+		assert_noop!(
+			Msa::recover_account(
+				RuntimeOrigin::signed(provider_key_pair.public().into()),
+				intermediary_hash_a,
+				intermediary_hash_b,
+				new_key_proof,
+				add_key_payload
+			),
+			Error::<Test>::NotAuthorizedRecoveryProvider
+		);
+	});
+}
+
+#[test]
+fn recover_account_with_invalid_new_key_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Use helper function to setup complete recovery scenario
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
+			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+
+		// Create and approve a recovery provider using helper function
+		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
 
 		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
@@ -1022,7 +702,7 @@ fn recover_account_with_invalid_new_key_signature_should_fail() {
 
 		// Compute intermediary hashes for recovery
 		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(recovery_secret, authentication_contact);
+			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
 
 		// Execute the recovery with invalid signature - should fail
 		assert_noop!(
