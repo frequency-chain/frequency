@@ -1056,7 +1056,7 @@ fn check_free_extrinsic_use_skipped_and_refund_for_other_origins() {
 		info.extension_weight = ext.weight(call);
 
 		// Ensure we test the refund which is zero currently.
-		assert!(info.extension_weight == Weight::zero());
+		assert!(info.extension_weight != Weight::zero());
 
 		let len = call.encoded_size();
 
@@ -1080,6 +1080,360 @@ fn check_free_extrinsic_use_skipped_and_refund_for_other_origins() {
 		)
 		.unwrap();
 
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_delegation_by_provider(
+) {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, provider_pair) = create_account();
+		let provider_account = provider_pair.public();
+		let (delegator_msa_id, delegator_pair) = create_account();
+		let delegator_account = delegator_pair.public();
+		// Register provider
+		assert_ok!(Msa::create_provider(
+			RuntimeOrigin::signed(provider_account.into()),
+			Vec::from("Foo")
+		));
+		let (delegator_signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
+		assert_ok!(Msa::grant_delegation(
+			RuntimeOrigin::signed(provider_account.into()),
+			delegator_account.into(),
+			delegator_signature,
+			add_provider_payload
+		));
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider {
+				delegator: delegator_msa_id,
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		assert!(info.extension_weight != Weight::zero());
+		let len = call.encoded_size();
+		let origin = RuntimeOrigin::signed(provider_account.into()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_delegation_by_delegator(
+) {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, provider_pair) = create_account();
+		let provider_account = provider_pair.public();
+		let (delegator_msa_id, delegator_pair) = create_account();
+		let delegator_account = delegator_pair.public();
+		// Register provider
+		assert_ok!(Msa::create_provider(
+			RuntimeOrigin::signed(provider_account.into()),
+			Vec::from("Foo")
+		));
+		let (delegator_signature, add_provider_payload) =
+			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
+		assert_ok!(Msa::grant_delegation(
+			RuntimeOrigin::signed(provider_account.into()),
+			delegator_account.into(),
+			delegator_signature,
+			add_provider_payload
+		));
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_delegator { provider_msa_id });
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		assert!(info.extension_weight != Weight::zero());
+		let len = call.encoded_size();
+		let origin = RuntimeOrigin::signed(delegator_account.into()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_revoke_delegation_by_provider()
+{
+	new_test_ext().execute_with(|| {
+		let (delegator_msa_id, _delegator_key_pair) = create_account();
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::revoke_delegation_by_provider {
+				delegator: delegator_msa_id,
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		let len = call.encoded_size();
+		let origin = RawOrigin::Root.into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_delete_msa_public_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, original_key_pair) = create_account();
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let new_key: AccountId32 = new_key_pair.public().into();
+		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		let original_key: AccountId32 = original_key_pair.public().into();
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: new_key.clone(),
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		assert!(info.extension_weight != Weight::zero());
+		let len = call.encoded_size();
+		let origin = RuntimeOrigin::signed(original_key.clone()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_delete_msa_public_key() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _) = create_account();
+		let (new_key_pair, _) = sr25519::Pair::generate();
+		let new_key: AccountId32 = new_key_pair.public().into();
+		assert_ok!(Msa::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::delete_msa_public_key {
+				public_key_to_delete: new_key.clone(),
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		let len = call.encoded_size();
+		let origin = RawOrigin::Root.into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_retire_msa() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let key: AccountId32 = key_pair.public().into();
+		assert_ok!(Msa::create(RuntimeOrigin::signed(key.clone())));
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::retire_msa {});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		assert!(info.extension_weight != Weight::zero());
+		let len = call.encoded_size();
+		let origin = RuntimeOrigin::signed(key.clone()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_retire_msa() {
+	new_test_ext().execute_with(|| {
+		let (key_pair, _) = sr25519::Pair::generate();
+		let key: AccountId32 = key_pair.public().into();
+		assert_ok!(Msa::create(RuntimeOrigin::signed(key.clone())));
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::retire_msa {});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		let len = call.encoded_size();
+		let origin = RawOrigin::Root.into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_withdraw_tokens() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+		let (payload, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+			None,
+		);
+		let transfer_amount = 10_000_000;
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::withdraw_tokens {
+				msa_owner_public_key: owner_key_pair.public().into(),
+				msa_owner_proof: msa_signature,
+				authorization_payload: payload,
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		assert!(info.extension_weight != Weight::zero());
+		let len = call.encoded_size();
+		let origin = RuntimeOrigin::signed(origin_key_pair.public().into()).into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
+		assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+	})
+}
+
+#[test]
+fn check_free_extrinsic_use_refunds_extension_weight_for_root_origin_withdraw_tokens() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, owner_key_pair) = create_account();
+		let (origin_key_pair, _) = sr25519::Pair::generate();
+		let eth_account_id: H160 = Msa::msa_id_to_eth_address(msa_id);
+		let bytes: [u8; 32] = EthereumAddressMapper::to_bytes32(&eth_account_id.0);
+		let msa_account_id = <Test as frame_system::Config>::AccountId::from(bytes);
+		let (payload, msa_signature) = generate_and_sign_authorized_key_payload(
+			msa_id,
+			&owner_key_pair,
+			&origin_key_pair,
+			None,
+			None,
+		);
+		let transfer_amount = 10_000_000;
+		let _ = <Test as Config>::Currency::deposit_creating(&msa_account_id, transfer_amount);
+		let call: &<Test as frame_system::Config>::RuntimeCall =
+			&RuntimeCall::Msa(MsaCall::withdraw_tokens {
+				msa_owner_public_key: owner_key_pair.public().into(),
+				msa_owner_proof: msa_signature,
+				authorization_payload: payload,
+			});
+		let ext = CheckFreeExtrinsicUse::<Test>::new();
+		let mut info = call.get_dispatch_info();
+		info.extension_weight = ext.weight(call);
+		let len = call.encoded_size();
+		let origin = RawOrigin::Root.into();
+		let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let pd_res = Ok(());
+		let mut post_info = frame_support::dispatch::PostDispatchInfo {
+			actual_weight: Some(info.total_weight()),
+			pays_fee: Default::default(),
+		};
+		<CheckFreeExtrinsicUse<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+			pre,
+			&info,
+			&mut post_info,
+			len,
+			&pd_res,
+		)
+		.unwrap();
 		assert_eq!(post_info.actual_weight, Some(info.call_weight));
 	})
 }

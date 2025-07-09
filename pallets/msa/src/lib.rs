@@ -2305,26 +2305,21 @@ where
 	type Val = Val;
 	type Pre = Pre;
 
-	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
-		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
-		Weight::zero()
+	fn weight(&self, call: &T::RuntimeCall) -> Weight {
+		match call.is_sub_type() {
+			Some(Call::revoke_delegation_by_provider { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_revoke_delegation_by_provider(),
+			Some(Call::revoke_delegation_by_delegator { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_revoke_delegation_by_delegator(),
+			Some(Call::delete_msa_public_key { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_delete_msa_public_key(),
+			Some(Call::retire_msa { .. }) => T::WeightInfo::check_free_extrinsic_use_retire_msa(),
+			Some(Call::withdraw_tokens { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_withdraw_tokens(),
+			_ => Weight::zero(),
+		}
 	}
 
-	/// Frequently called by the transaction queue to validate all free MSA extrinsics:
-	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
-	/// * revoke_delegation_by_provider
-	/// * revoke_delegation_by_delegator
-	/// * delete_msa_public_key
-	/// * retire_msa
-	/// * withdraw_tokens
-	///
-	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
-	///
-	/// Arguments:
-	/// who: AccountId calling the extrinsic
-	/// call: The pallet extrinsic being called
-	/// unused: _info, _len
-	///
 	fn validate(
 		&self,
 		origin: <T as frame_system::Config>::RuntimeOrigin,
@@ -2335,8 +2330,9 @@ where
 		_inherited_implication: &impl Encode,
 		_source: TransactionSource,
 	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let weight = self.weight(call);
 		let Some(who) = origin.as_system_origin_signer() else {
-			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
+			return Ok((ValidTransaction::default(), Val::Refund(weight), origin));
 		};
 		let validity = match call.is_sub_type() {
 			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
