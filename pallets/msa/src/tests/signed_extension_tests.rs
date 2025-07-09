@@ -1139,7 +1139,7 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
-		let (delegator_msa_id, delegator_pair) = create_account();
+		let (_delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
 		// Register provider
 		assert_ok!(Msa::create_provider(
