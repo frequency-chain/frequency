@@ -116,7 +116,9 @@ fn prep_signature_registry<T: Config>() {
 	});
 }
 
-#[benchmarks]
+#[benchmarks(where
+	T: Config + Send + Sync,
+)]
 mod benchmarks {
 	use super::*;
 
@@ -485,6 +487,101 @@ mod benchmarks {
 
 		assert!(RecoveryProviders::<T>::get(ProviderId(provider_msa_id)).is_some());
 
+		Ok(())
+	}
+
+	#[benchmark]
+	fn check_free_extrinsic_use_revoke_delegation_by_provider() -> Result<(), BenchmarkError> {
+		let provider_account = create_account::<T>("provider", 0);
+		let (provider_msa_id, provider_public_key) =
+			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+
+		let delegator_account = create_account::<T>("delegator", 1);
+		let (delegator_msa_id, _) =
+			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::<T>::add_provider(
+			ProviderId(provider_msa_id),
+			DelegatorId(delegator_msa_id),
+			vec![]
+		));
+
+		#[block]
+		{
+			let _ = crate::CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(
+				&provider_public_key,
+				&delegator_msa_id,
+			);
+		}
+		Ok(())
+	}
+
+	#[benchmark]
+	fn check_free_extrinsic_use_revoke_delegation_by_delegator() -> Result<(), BenchmarkError> {
+		let provider_account = create_account::<T>("provider", 0);
+		let (provider_msa_id, _) =
+			Msa::<T>::create_account(provider_account, EMPTY_FUNCTION).unwrap();
+
+		let delegator_account = create_account::<T>("delegator", 1);
+		let (delegator_msa_id, delegator_public_key) =
+			Msa::<T>::create_account(delegator_account, EMPTY_FUNCTION).unwrap();
+
+		assert_ok!(Msa::<T>::add_provider(
+			ProviderId(provider_msa_id),
+			DelegatorId(delegator_msa_id),
+			vec![]
+		));
+
+		#[block]
+		{
+			let _ = crate::CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(
+				&delegator_public_key,
+				&provider_msa_id,
+			);
+		}
+		Ok(())
+	}
+
+	#[benchmark]
+	fn check_free_extrinsic_use_delete_msa_public_key() -> Result<(), BenchmarkError> {
+		let (original_key, _original_key_pair, msa_id) = create_msa_account_and_keys::<T>();
+		let new_keys = SignerId::generate_pair(None);
+		let new_key: T::AccountId = T::AccountId::decode(&mut &new_keys.encode()[..]).unwrap();
+		assert_ok!(Msa::<T>::add_key(msa_id, &new_key, EMPTY_FUNCTION));
+
+		#[block]
+		{
+			let _ = crate::CheckFreeExtrinsicUse::<T>::validate_key_delete(&new_key, &original_key);
+		}
+		Ok(())
+	}
+
+	#[benchmark]
+	fn check_free_extrinsic_use_retire_msa() -> Result<(), BenchmarkError> {
+		let (key, _key_pair, _msa_id) = create_msa_account_and_keys::<T>();
+		// Set up state so MSA can be retired (no provider, one key, no balance, no delegations)
+		#[block]
+		{
+			let _ = crate::CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(&key);
+		}
+		Ok(())
+	}
+
+	#[benchmark]
+	fn check_free_extrinsic_use_withdraw_tokens() -> Result<(), BenchmarkError> {
+		prep_signature_registry::<T>();
+		let (msa_public_key, msa_key_pair, msa_id) = create_msa_account_and_keys::<T>();
+		let (add_key_payload, owner_signature, new_account_id) =
+			withdraw_tokens_payload_and_signature::<T>(msa_id, msa_key_pair);
+		#[block]
+		{
+			let _ = crate::CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
+				&new_account_id,
+				&msa_public_key,
+				&owner_signature,
+				&add_key_payload,
+			);
+		}
 		Ok(())
 	}
 
