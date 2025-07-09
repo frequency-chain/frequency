@@ -42,7 +42,7 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::MSAHandleDoesNotExist`]
-	fn validate_retire_handle(delegator_key: &T::AccountId) -> TransactionValidity {
+	pub fn validate_retire_handle(delegator_key: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
 		// Validation: The delegator must already have a MSA id
