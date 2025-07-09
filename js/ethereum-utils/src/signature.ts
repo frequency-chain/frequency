@@ -318,15 +318,29 @@ export function createPasskeyPublicKey(publicKey: HexString | Uint8Array): Passk
   };
 }
 
+/**
+ * Build AddAction payload for Itemized storage.
+ *
+ * @param data The data to be persisted on the Frequency chain
+ */
 export function createItemizedAddAction(data: HexString | Uint8Array): AddItemizedAction {
   const parsedData: HexString = typeof data === 'object' ? u8aToHex(data) : data;
   assert(isHexString(parsedData), 'itemized data should be valid hex');
+  // since Metamask does not support union types, we have to include all fields and have to set the `index` value to zero
+  // even though it is not used for Add action
   return { actionType: 'Add', data, index: 0 } as AddItemizedAction;
 }
 
+/**
+ * Build DeleteAction payload for Itemized storage.
+ *
+ * @param index The index of the item that we want to remove from the Frequency chain
+ */
 export function createItemizedDeleteAction(index: number): DeleteItemizedAction {
   assert(isValidUint16(index), 'itemized index should be a valid uint16');
 
+  // since Metamask does not support union types, we have to include all fields and have to set the `data` value to 0x
+  // even though it is not used for Delete action
   return { actionType: 'Delete', data: '0x', index };
 }
 
