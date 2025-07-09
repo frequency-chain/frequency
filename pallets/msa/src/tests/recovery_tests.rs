@@ -7,10 +7,15 @@ use parity_scale_codec::Encode;
 use sp_core::{sr25519, Pair};
 use sp_runtime::MultiSignature;
 
-use crate::{tests::mock::*, types::{AddKeyData, RecoveryHash}, Error, Event, MsaIdToRecoveryCommitment};
+use crate::{
+	tests::mock::*,
+	types::{AddKeyData, RecoveryHash},
+	Error, Event, MsaIdToRecoveryCommitment,
+};
 
 // Common test constants
-const TEST_RECOVERY_SECRET: &str = "ABCD-EF01-2345-6789-0ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678";
+const TEST_RECOVERY_SECRET: &str =
+	"ABCD-EF01-2345-6789-0ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678";
 
 const TEST_AUTHENTICATION_CONTACT: &str = "user@example.com";
 const TEST_EXPIRATION_BLOCK: u32 = 100;
@@ -730,8 +735,11 @@ fn recover_account_double_recovery_attempt_should_fail() {
 
 		// Try to use the same recovery commitment again - should fail
 		let (another_new_control_key_pair, _) = sr25519::Pair::generate();
-		let (another_add_key_payload, another_new_key_proof) =
-			generate_and_sign_add_key_payload(&another_new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+		let (another_add_key_payload, another_new_key_proof) = generate_and_sign_add_key_payload(
+			&another_new_control_key_pair,
+			msa_id,
+			TEST_EXPIRATION_BLOCK,
+		);
 
 		assert_noop!(
 			Msa::recover_account(

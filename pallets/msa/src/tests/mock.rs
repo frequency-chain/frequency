@@ -538,7 +538,7 @@ pub fn setup_recovery_with_commitment(
 ) -> (MessageSourceId, sr25519::Pair, RecoveryCommitment) {
 	// Create an MSA account and add recovery commitment
 	let (msa_id, msa_owner_key_pair) = create_account();
-	
+
 	let recovery_commitment = compute_recovery_commitment_from_secret_and_contact(
 		recovery_secret,
 		authentication_contact,
