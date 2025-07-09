@@ -151,7 +151,7 @@ describe('MSA Key management Ethereum', function () {
         'Dev'
       );
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
-      const { target: event } = await op.fundAndSend(fundingSource);
+      const { target: event } = await op.fundAndSend(fundingSource, false);
       assert.notEqual(event, undefined, 'should have added public key via eip-712');
 
       // Cleanup
