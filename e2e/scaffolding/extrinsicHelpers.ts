@@ -571,7 +571,13 @@ export class ExtrinsicHelper {
     addKeyPayload: AddKeyData
   ) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.recoverAccount(intermediaryHashA, intermediaryHashB, newControlKeyProof, addKeyPayload),
+      () =>
+        ExtrinsicHelper.api.tx.msa.recoverAccount(
+          intermediaryHashA,
+          intermediaryHashB,
+          newControlKeyProof,
+          addKeyPayload
+        ),
       recoveryProviderKey,
       ExtrinsicHelper.api.events.msa.AccountRecovered
     );
