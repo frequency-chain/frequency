@@ -1081,6 +1081,9 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			&RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
 				capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
 			),
+			&RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
+			),
 			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
 			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),

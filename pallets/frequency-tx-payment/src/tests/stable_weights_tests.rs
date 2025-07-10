@@ -26,6 +26,7 @@ fn test_weights_are_stable() {
 				611897000,
 				5733,
 			),
+			("recover_account", SubstrateWeight::<Test>::recover_account(), 1041409000, 6531),
 			(
 				"add_onchain_message",
 				SubstrateWeight::<Test>::add_onchain_message(100),

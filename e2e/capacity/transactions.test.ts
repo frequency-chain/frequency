@@ -5,7 +5,12 @@ import assert from 'assert';
 import { AddKeyData, RecoveryCommitmentPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
-import { generateRecoverySecret, getRecoveryCommitment, ContactType } from '@frequency-chain/recovery-sdk';
+import {
+  generateRecoverySecret,
+  getRecoveryCommitment,
+  ContactType,
+  getIntermediaryHashes,
+} from '@frequency-chain/recovery-sdk';
 import {
   createKeys,
   createAndFundKeypair,
@@ -37,7 +42,7 @@ import {
   generateRecoveryCommitmentPayload,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
-import { getFundingSource } from '../scaffolding/funding';
+import { getFundingSource, getSudo } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -172,6 +177,70 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap, 'system.ExtrinsicSuccess');
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           assertEvent(eventMap, 'msa.RecoveryCommitmentAdded');
+        });
+
+        it('successfully pays with Capacity for eligible transaction - recoverAccount', async function () {
+          const defaultPayload: AddKeyData = {};
+          const lostKey = await createAndFundKeypair(fundingSource, 50_000_000n);
+          const recoveryKey = createKeys('RecoveryKey');
+
+          // Create an MSA to use as the lost key
+          const { eventMap: setupEventMap } = await ExtrinsicHelper.createMsa(lostKey).signAndSend();
+          assertEvent(setupEventMap, 'msa.MsaCreated');
+          const msaCreatedEvent = setupEventMap['msa.MsaCreated'];
+
+          // Store the msaId and recovery key that will be used in the recovery payload
+          defaultPayload.msaId = msaCreatedEvent.data[0] as u64;
+          defaultPayload.newPublicKey = getUnifiedPublicKey(recoveryKey);
+
+          // Generate a recovery secret using the Recovery SDK
+          const recoverySecret = generateRecoverySecret();
+          const testEmail = 'test@example.com';
+
+          // Add a recovery commitment to the lostKey MSA
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+          const expiration = (await getBlockNumber()) + 10;
+          const recoveryCommitmentData: RecoveryCommitmentPayload = {
+            discriminant: 'RecoveryCommitmentPayload',
+            recoveryCommitment,
+            expiration,
+          };
+
+          const recoveryPayload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentCodec = ExtrinsicHelper.api.registry.createType(
+            'PalletMsaRecoveryCommitmentPayload',
+            recoveryPayload
+          );
+          const recoverySignature = signPayloadSr25519(lostKey, recoveryCommitmentCodec);
+          const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(
+            lostKey,
+            recoverySignature,
+            recoveryPayload
+          );
+          await addRecoveryCommitmentOp.signAndSend();
+
+          // Create and approve a recovery provider - use the capacityKeys that already has capacity staked
+          const recoveryProviderKeys = capacityKeys;
+
+          // Approve the recovery provider (this requires sudo)
+          const sudoKey = getSudo().keys;
+          await ExtrinsicHelper.approveRecoveryProvider(sudoKey, recoveryProviderKeys).signAndSend();
+
+          // Generate the payload for adding a new control key, required for recovery
+          const payload = await generateAddKeyPayload(defaultPayload);
+          const addKeyDataCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+          const newSig = signPayloadSr25519(recoveryKey, addKeyDataCodec);
+
+          // Generate Recovery Intermediary Hashes
+          const { a, b } = getIntermediaryHashes(recoverySecret, ContactType.EMAIL, testEmail);
+
+          // Recover the account using the recovery provider
+          const recoverAccountOp = ExtrinsicHelper.recoverAccount(recoveryProviderKeys, a, b, newSig, payload);
+
+          const { eventMap } = await recoverAccountOp.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'msa.AccountRecovered');
         });
       });
 
