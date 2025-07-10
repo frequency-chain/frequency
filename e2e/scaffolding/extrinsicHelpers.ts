@@ -563,6 +563,28 @@ export class ExtrinsicHelper {
     );
   }
 
+  public static recoverAccount(
+    recoveryProviderKey: KeyringPair,
+    intermediaryHashA: string,
+    intermediaryHashB: string,
+    newControlKeyProof: MultiSignatureType,
+    addKeyPayload: AddKeyData
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.recoverAccount(intermediaryHashA, intermediaryHashB, newControlKeyProof, addKeyPayload),
+      recoveryProviderKey,
+      ExtrinsicHelper.api.events.msa.AccountRecovered
+    );
+  }
+
+  public static approveRecoveryProvider(sudoKey: KeyringPair, providerKey: KeyringPair) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.approveRecoveryProvider(getUnifiedAddress(providerKey)),
+      sudoKey,
+      ExtrinsicHelper.api.events.msa.RecoveryProviderApproved
+    );
+  }
+
   public static createProvider(keys: KeyringPair, providerName: string) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.createProvider(providerName),
