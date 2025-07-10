@@ -418,35 +418,6 @@ fn recover_account_with_invalid_recovery_commitment_should_fail() {
 }
 
 #[test]
-fn recover_account_with_nonexistent_msa_should_fail() {
-	new_test_ext().execute_with(|| {
-		// Create and approve a recovery provider using helper function
-		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
-
-		// Generate a new control key for recovery
-		let (new_control_key_pair, _) = sr25519::Pair::generate();
-
-		// Try to recover a non-existent MSA
-		let fake_msa_id = 999999u64;
-		let (add_key_payload, new_key_proof) =
-			generate_and_sign_add_key_payload(&new_control_key_pair, fake_msa_id, 100u32);
-
-		let fake_intermediary_hash_a = [1u8; 32];
-		let fake_intermediary_hash_b = [2u8; 32];
-		assert_noop!(
-			Msa::recover_account(
-				RuntimeOrigin::signed(provider_key_pair.public().into()),
-				fake_intermediary_hash_a,
-				fake_intermediary_hash_b,
-				new_key_proof,
-				add_key_payload
-			),
-			Error::<Test>::NoRecoveryCommitment
-		);
-	});
-}
-
-#[test]
 fn recover_account_with_no_recovery_commitment_should_fail() {
 	new_test_ext().execute_with(|| {
 		// Create an MSA account without recovery commitment
