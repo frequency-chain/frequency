@@ -14,16 +14,16 @@ use crate::{
 };
 
 // Common test constants
-const TEST_RECOVERY_SECRET: &str =
-	"ABCD-EF01-2345-6789-0ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678-9ABC-DEF0-1234-5678";
 const TEST_AUTHENTICATION_CONTACT: &str = "user@example.com";
 const TEST_EXPIRATION_BLOCK: u32 = 100;
 
 #[test]
 fn add_recovery_commitment_with_valid_data_should_succeed() {
 	new_test_ext().execute_with(|| {
-		let (msa_id, msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (msa_id, msa_owner_key_pair, recovery_commitment) = setup_recovery_with_commitment(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
 		// Verify event was emitted
@@ -167,8 +167,10 @@ fn add_recovery_commitment_with_expired_payload_should_fail() {
 #[test]
 fn add_recovery_commitment_updates_existing_commitment() {
 	new_test_ext().execute_with(|| {
-		let (msa_id, msa_owner_key_pair, first_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (msa_id, msa_owner_key_pair, first_commitment) = setup_recovery_with_commitment(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Verify first commitment was stored
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(first_commitment));
@@ -268,9 +270,10 @@ fn add_recovery_commitment_unsigned_origin_should_fail() {
 #[test]
 fn recover_account_with_valid_data_should_succeed() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create and approve a recovery provider using helper function
 		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -283,8 +286,10 @@ fn recover_account_with_valid_data_should_succeed() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Clear previous events
 		System::reset_events();
@@ -346,8 +351,10 @@ fn recover_account_with_valid_data_should_succeed() {
 fn recover_account_with_non_approved_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		// Use helper function to setup complete recovery scenario
-		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) = setup_recovery_with_commitment(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Create a provider but don't approve it for recovery
 		let (provider_msa_id, provider_key_pair) = create_account();
@@ -361,8 +368,10 @@ fn recover_account_with_non_approved_provider_should_fail() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, 100u32);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Execute the recovery and expect failure
 		assert_noop!(
@@ -385,8 +394,10 @@ fn recover_account_with_non_approved_provider_should_fail() {
 fn recover_account_with_invalid_recovery_commitment_should_fail() {
 	new_test_ext().execute_with(|| {
 		// Use helper function to setup complete recovery scenario
-		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (msa_id, _msa_owner_key_pair, recovery_commitment) = setup_recovery_with_commitment(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Create and approve a recovery provider using helper function
 		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -452,9 +463,10 @@ fn recover_account_with_no_recovery_commitment_should_fail() {
 #[test]
 fn recover_account_with_existing_control_key_should_fail() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create and approve a recovery provider using helper function
 		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -465,8 +477,10 @@ fn recover_account_with_existing_control_key_should_fail() {
 			generate_and_sign_add_key_payload(&msa_owner_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Execute the recovery - should fail with KeyAlreadyRegistered
 		assert_noop!(
@@ -489,8 +503,10 @@ fn recover_account_with_existing_control_key_should_fail() {
 fn recover_account_unsigned_origin_should_fail() {
 	new_test_ext().execute_with(|| {
 		// Use helper function to setup complete recovery scenario
-		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) = setup_recovery_with_commitment(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
@@ -500,8 +516,10 @@ fn recover_account_unsigned_origin_should_fail() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&generate_test_recovery_secret(),
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Try to recover with unsigned origin
 		assert_noop!(
@@ -520,9 +538,10 @@ fn recover_account_unsigned_origin_should_fail() {
 #[test]
 fn recover_account_double_recovery_attempt_should_fail() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create and approve a recovery provider using helper function
 		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -535,8 +554,10 @@ fn recover_account_double_recovery_attempt_should_fail() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Execute the first recovery - should succeed
 		assert_ok!(Msa::recover_account(
@@ -574,9 +595,10 @@ fn recover_account_double_recovery_attempt_should_fail() {
 #[test]
 fn recover_account_with_non_provider_should_fail() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create a regular account (not a provider)
 		let (_regular_account_msa_id, regular_account_key_pair) = create_account();
@@ -589,8 +611,10 @@ fn recover_account_with_non_provider_should_fail() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Try to recover with a non-provider account
 		assert_noop!(
@@ -609,9 +633,10 @@ fn recover_account_with_non_provider_should_fail() {
 #[test]
 fn recover_account_with_revoked_recovery_provider_should_fail() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create, approve, then revoke a recovery provider
 		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -630,8 +655,10 @@ fn recover_account_with_revoked_recovery_provider_should_fail() {
 			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Try to recover with a revoked provider
 		assert_noop!(
@@ -650,9 +677,10 @@ fn recover_account_with_revoked_recovery_provider_should_fail() {
 #[test]
 fn recover_account_with_invalid_new_key_signature_should_fail() {
 	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
 		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
-			setup_recovery_with_commitment(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		// Create and approve a recovery provider using helper function
 		let (_provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
@@ -672,8 +700,10 @@ fn recover_account_with_invalid_new_key_signature_should_fail() {
 		let invalid_signature: MultiSignature = fake_key_pair.sign(&encoded_payload).into();
 
 		// Compute intermediary hashes for recovery
-		let (intermediary_hash_a, intermediary_hash_b) =
-			compute_recovery_intermediary_hashes(TEST_RECOVERY_SECRET, TEST_AUTHENTICATION_CONTACT);
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
 
 		// Execute the recovery with invalid signature - should fail
 		assert_noop!(

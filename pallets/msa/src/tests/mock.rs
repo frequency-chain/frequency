@@ -446,10 +446,6 @@ pub fn generate_and_sign_recovery_commitment_payload(
 	(payload, signature)
 }
 
-// Contact type constants for recovery system (matching recovery-sdk)
-pub const CONTACT_TYPE_EMAIL: u8 = 0x00;
-pub const CONTACT_TYPE_PHONE: u8 = 0x01;
-
 /// Generate a recovery secret for testing (matching recovery-sdk format)
 /// Returns a string like "ABCD-EFGH-1234-5678-..."
 pub fn generate_test_recovery_secret() -> String {
