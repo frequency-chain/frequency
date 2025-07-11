@@ -227,7 +227,7 @@ impl pallet_capacity::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type Currency = pallet_balances::Pallet<Self>;
-	type TargetValidator = ();
+	type TargetValidator = Msa;
 	// In test, this must be >= Token:Capacity ratio since unit is plancks
 	type MinimumStakingAmount = ConstU64<10>;
 	type MinimumTokenBalance = ConstU64<10>;
@@ -264,6 +264,8 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
 			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa { .. }) =>
 				Some(Weight::from_parts(177_629_000, 18396)), // from stable_weights
+			#[cfg(feature = "runtime-benchmarks")]
+			RuntimeCall::System(frame_system::Call::remark { .. }) => Some(Weight::from_parts(0, 0)),
 			_ => None,
 		}
 	}
@@ -325,6 +327,12 @@ impl Config for Test {
 	type MsaCallFilter = MockMsaCallFilter;
 	#[cfg(feature = "runtime-benchmarks")]
 	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type CapacityBenchmarkHelper = Capacity;
+	#[cfg(feature = "runtime-benchmarks")]
+	type ProviderBenchmarkHelper = Msa;
 }
 
 pub struct ExtBuilder {

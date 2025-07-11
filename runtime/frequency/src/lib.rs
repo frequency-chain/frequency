@@ -1068,7 +1068,7 @@ pub struct GetStableWeightsBenchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 impl GetStableWeight<RuntimeCall, Weight> for GetStableWeightsBenchmarking {
 	fn get_stable_weight(_call: &RuntimeCall) -> Option<Weight> {
-		Some(Weight::from_parts(11, 0))
+		Some(Weight::from_parts(0, 0))
 	}
 
 	fn get_inner_calls(_outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
@@ -1132,6 +1132,12 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type MsaCallFilter = MsaCallFilter;
 	#[cfg(feature = "runtime-benchmarks")]
 	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type CapacityBenchmarkHelper = Capacity;
+	#[cfg(feature = "runtime-benchmarks")]
+	type ProviderBenchmarkHelper = Msa;
 }
 
 /// Configurations for passkey pallet

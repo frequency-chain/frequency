@@ -1818,6 +1818,13 @@ impl<T: Config> MsaBenchmarkHelper<T::AccountId> for Pallet<T> {
 		Self::add_key(msa_id, &key, EMPTY_FUNCTION)?;
 		Ok(())
 	}
+
+	// create a MSA for account.
+	fn create_msa(msa_id: MessageSourceId, account: T::AccountId) -> DispatchResult {
+		Self::add_key(msa_id, &account, EMPTY_FUNCTION)?;
+		let _ = Self::set_msa_identifier(msa_id);
+		Ok(())
+	}
 }
 
 #[cfg(feature = "runtime-benchmarks")]

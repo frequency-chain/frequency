@@ -30,6 +30,7 @@
 use core::ops::Mul;
 
 use frame_support::{
+	dispatch::DispatchResult,
 	ensure,
 	traits::{
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
@@ -43,13 +44,13 @@ use sp_runtime::{
 	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
 };
 
+use common_primitives::benchmarks::CapacityStakingBenchmarkHelper;
 pub use common_primitives::{
 	capacity::*,
 	msa::MessageSourceId,
 	node::{AccountId, Balance, BlockNumber},
 	utils::wrap_binary_data,
 };
-
 use frame_system::pallet_prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -1327,5 +1328,24 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
 		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
+	}
+}
+
+/// CapacityStakingBenchmarkHelper for benchmarking purposes.
+impl<T: Config> CapacityStakingBenchmarkHelper<T::AccountId> for Pallet<T> {
+	fn stake_benchmark(
+		staker: T::AccountId,
+		target: MessageSourceId,
+		amount: u32,
+	) -> DispatchResult {
+		let (mut staking_details, stakable_amount) =
+			Self::ensure_can_stake(&staker, target, amount.into(), StakingType::MaximumCapacity)?;
+		Self::increase_stake_and_issue_capacity(
+			&staker,
+			&mut staking_details,
+			target,
+			stakable_amount,
+		)?;
+		Ok(())
 	}
 }

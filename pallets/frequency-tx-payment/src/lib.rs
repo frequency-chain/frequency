@@ -37,6 +37,9 @@ use sp_runtime::{
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
 use common_primitives::{
+	benchmarks::{
+		CapacityStakingBenchmarkHelper, MsaBenchmarkHelper, RegisterProviderBenchmarkHelper,
+	},
 	capacity::{Nontransferable, Replenishable},
 	msa::MsaKeyProvider,
 	node::UtilityProvider,
@@ -179,6 +182,12 @@ pub mod pallet {
 
 		#[cfg(feature = "runtime-benchmarks")]
 		type OnChargeTransaction: OnChargeTransaction<Self>;
+		#[cfg(feature = "runtime-benchmarks")]
+		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
+		#[cfg(feature = "runtime-benchmarks")]
+		type CapacityBenchmarkHelper: CapacityStakingBenchmarkHelper<Self::AccountId>;
+		#[cfg(feature = "runtime-benchmarks")]
+		type ProviderBenchmarkHelper: RegisterProviderBenchmarkHelper;
 	}
 
 	#[pallet::event]
