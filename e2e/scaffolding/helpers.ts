@@ -139,6 +139,32 @@ export async function generateAddKeyPayload(
   };
 }
 
+/**
+ * Helper function to generate a signed add key proof.
+ * This encapsulates the common pattern of:
+ * 1. Generating the add key payload
+ * 2. Creating the PalletMsaAddKeyData codec
+ * 3. Signing the payload with Sr25519
+ *
+ * @param addKeyData - The add key data to create the payload from
+ * @param signingKey - The keypair to sign the payload with
+ * @param expirationOffset - Optional expiration offset for the payload (default: 100)
+ * @param blockNumber - Optional block number for the payload
+ * @returns Object containing the payload and signature
+ */
+export async function generateSignedAddKeyProof(
+  addKeyData: AddKeyData,
+  signingKey: KeyringPair,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<{ payload: AddKeyData; signature: Sr25519Signature }> {
+  const payload = await generateAddKeyPayload(addKeyData, expirationOffset, blockNumber);
+  const codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+  const signature = signPayloadSr25519(signingKey, codec);
+
+  return { payload, signature };
+}
+
 export async function generateAuthorizedKeyPayload(
   payloadInputs: AuthorizedKeyData,
   expirationOffset: number = 100,
