@@ -9,50 +9,45 @@ import {
 import assert from 'assert';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper, RecoveryCommitmentPayload, AddKeyData } from '../scaffolding/extrinsicHelpers';
-import { getFundingSource, getSudo } from '../scaffolding/funding';
-import { isTestnet } from '../scaffolding/env';
+import { getFundingSource } from '../scaffolding/funding';
 import {
   createAndFundKeypairs,
   signPayloadSr25519,
-  Sr25519Signature,
   DOLLARS,
   generateRecoveryCommitmentPayload,
   generateAddKeyPayload,
   assertEvent,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
-import { Codec } from '@polkadot/types/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 let fundingSource: KeyringPair;
-let sudoKey: KeyringPair;
 
 describe('Account Recovery Testing', function () {
   // Common variables used across tests
-  let recoveryProviderKeys: KeyringPair;
+  let recoveryProviderKey: KeyringPair;
   let recoveryProviderMsaId: u64;
   const testEmail = 'test@example.com';
 
   before(async function () {
-    if (isTestnet()) this.skip();
     fundingSource = await getFundingSource(import.meta.url);
-    sudoKey = getSudo().keys;
+    recoveryProviderKey = fundingSource;
 
     // Setup recovery provider MSA (this can be shared across tests)
-    [recoveryProviderKeys] = await createAndFundKeypairs(fundingSource, ['recoveryProviderKeys'], 2n * DOLLARS);
+    [recoveryProviderKey] = await createAndFundKeypairs(fundingSource, ['recoveryProviderKeys'], 2n * DOLLARS);
 
-    const { target: providerMsaTarget } = await ExtrinsicHelper.createMsa(recoveryProviderKeys).signAndSend();
+    const { target: providerMsaTarget } = await ExtrinsicHelper.createMsa(recoveryProviderKey).signAndSend();
     assert.notEqual(providerMsaTarget?.data.msaId, undefined, 'Provider MSA Id not in expected event');
     recoveryProviderMsaId = providerMsaTarget!.data.msaId;
 
     // Register the MSA as a provider first (required before approval)
-    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKeys, 'RecoveryProvider');
+    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKey, 'RecoveryProvider');
     const { eventMap: providerEventMap } = await createProviderOp.fundAndSend(fundingSource);
     assertEvent(providerEventMap, 'system.ExtrinsicSuccess');
     assertEvent(providerEventMap, 'msa.ProviderCreated');
 
     // Approve the recovery provider (direct call for development environment)
-    const approveProviderOp = ExtrinsicHelper.approveRecoveryProvider(recoveryProviderKeys, recoveryProviderKeys);
+    const approveProviderOp = ExtrinsicHelper.approveRecoveryProvider(fundingSource, recoveryProviderKey);
     const { eventMap: approveEventMap } = await approveProviderOp.fundAndSend(fundingSource);
     assertEvent(approveEventMap, 'system.ExtrinsicSuccess');
     assertEvent(approveEventMap, 'msa.RecoveryProviderApproved');
@@ -124,7 +119,7 @@ describe('Account Recovery Testing', function () {
 
       // Execute recovery
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
-        recoveryProviderKeys,
+        recoveryProviderKey,
         intermediaryHashA,
         intermediaryHashB,
         newControlKeyProof,
@@ -213,7 +208,7 @@ describe('Account Recovery Testing', function () {
 
       // Attempt recovery with wrong hashes
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
-        recoveryProviderKeys,
+        recoveryProviderKey,
         wrongHashA,
         wrongHashB,
         newControlKeyProof,
@@ -253,7 +248,7 @@ describe('Account Recovery Testing', function () {
 
       // Attempt recovery with wrong signature
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
-        recoveryProviderKeys,
+        recoveryProviderKey,
         intermediaryHashA,
         intermediaryHashB,
         wrongNewControlKeyProof,
@@ -264,8 +259,6 @@ describe('Account Recovery Testing', function () {
         name: 'NewKeyOwnershipInvalidSignature',
       });
     });
-
-    // TODO: Add Ethereum test when all required imports are available
 
     it('should fail when recovery commitment does not exist', async function () {
       // Create a new user without any recovery commitment
@@ -296,7 +289,7 @@ describe('Account Recovery Testing', function () {
       const newControlKeyProof = signPayloadSr25519(newControlKeysForTest, addKeyCodec);
 
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
-        recoveryProviderKeys,
+        recoveryProviderKey,
         dummyHashA,
         dummyHashB,
         newControlKeyProof,
@@ -360,7 +353,7 @@ describe('Account Recovery Testing', function () {
       const newControlKeyProof = signPayloadSr25519(testNewControlKeys, addKeyCodec);
 
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
-        recoveryProviderKeys,
+        recoveryProviderKey,
         intermediaryHashA,
         intermediaryHashB,
         newControlKeyProof,

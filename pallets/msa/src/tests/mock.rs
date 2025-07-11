@@ -447,7 +447,7 @@ pub fn generate_and_sign_recovery_commitment_payload(
 }
 
 /// Generate a recovery secret for testing (matching recovery-sdk format)
-/// Returns a string like "ABCD-EFGH-1234-5678-..."
+/// Returns a string like "ABCD-EF00-1234-5678-..."
 pub fn generate_test_recovery_secret() -> String {
 	use sp_core::H256;
 	let random_bytes = H256::random();

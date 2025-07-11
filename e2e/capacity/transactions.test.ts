@@ -42,7 +42,7 @@ import {
   generateRecoveryCommitmentPayload,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
-import { getFundingSource, getSudo } from '../scaffolding/funding';
+import { getFundingSource } from '../scaffolding/funding';
 import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
@@ -222,9 +222,8 @@ describe('Capacity Transactions', function () {
           // Create and approve a recovery provider - use the capacityKeys that already has capacity staked
           const recoveryProviderKeys = capacityKeys;
 
-          // Approve the recovery provider (this requires sudo)
-          const sudoKey = getSudo().keys;
-          await ExtrinsicHelper.approveRecoveryProvider(sudoKey, recoveryProviderKeys).signAndSend();
+          // Approve the recovery provider
+          await ExtrinsicHelper.approveRecoveryProvider(fundingSource, recoveryProviderKeys).signAndSend();
 
           // Generate the payload for adding a new control key, required for recovery
           const payload = await generateAddKeyPayload(defaultPayload);
