@@ -15,7 +15,7 @@ import {
   signPayloadSr25519,
   DOLLARS,
   generateRecoveryCommitmentPayload,
-  generateAddKeyPayload,
+  generateSignedAddKeyProof,
   assertEvent,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
@@ -113,9 +113,10 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const newControlKeyProof = signPayloadSr25519(newControlKeys, addKeyCodec);
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        newControlKeys
+      );
 
       // Execute recovery
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
@@ -171,9 +172,10 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const newControlKeyProof = signPayloadSr25519(newControlKeys, addKeyCodec);
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        newControlKeys
+      );
 
       // Attempt recovery with non-approved provider
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
@@ -202,9 +204,10 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const newControlKeyProof = signPayloadSr25519(newControlKeys, addKeyCodec);
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        newControlKeys
+      );
 
       // Attempt recovery with wrong hashes
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
@@ -242,9 +245,10 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(correctNewControlKeys),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const wrongNewControlKeyProof = signPayloadSr25519(wrongSigningKey, addKeyCodec);
+      const { payload: addKeyPayload, signature: wrongNewControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        wrongSigningKey
+      );
 
       // Attempt recovery with wrong signature
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
@@ -284,9 +288,10 @@ describe('Account Recovery Testing', function () {
         msaId: noCommitmentMsaId,
         newPublicKey: getUnifiedAddress(newControlKeysForTest),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const newControlKeyProof = signPayloadSr25519(newControlKeysForTest, addKeyCodec);
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        newControlKeysForTest
+      );
 
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
         recoveryProviderKey,
@@ -348,9 +353,10 @@ describe('Account Recovery Testing', function () {
         msaId: anotherMsaId, // Wrong MSA ID
         newPublicKey: getUnifiedAddress(testNewControlKeys),
       };
-      const addKeyPayload = await generateAddKeyPayload(addKeyData);
-      const addKeyCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', addKeyPayload);
-      const newControlKeyProof = signPayloadSr25519(testNewControlKeys, addKeyCodec);
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+        addKeyData,
+        testNewControlKeys
+      );
 
       const recoverAccountOp = ExtrinsicHelper.recoverAccount(
         recoveryProviderKey,
