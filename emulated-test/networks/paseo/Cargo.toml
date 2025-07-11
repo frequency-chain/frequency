@@ -1,0 +1,15 @@
+[package]
+authors = ["Frequency"]
+edition = '2021'
+homepage = "https://frequency.xyz"
+license = "Apache-2.0"
+name = 'paseo-system-emulated-network'
+publish = false
+version = "0.0.0"
+
+[dependencies]
+emulated-integration-tests-common = { workspace = true }
+paseo-emulated-chain = { workspace = true }
+# frequency-paseo-emulated-chain = { path = "../../chains/frequency-paseo" }
+# bridge-hub-paseo-emulated-chain = { workspace = true }
+# asset-hub-paseo-emulated-chain = { workspace = true }
