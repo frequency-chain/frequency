@@ -464,9 +464,6 @@ pub mod pallet {
 
 		/// No recovery commitment exists for the given MSA
 		NoRecoveryCommitment,
-
-		/// The specified MSA was not found
-		MsaNotFound,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -1208,7 +1205,7 @@ pub mod pallet {
 				Self::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
 
 			// Get the stored recovery commitment for this MSA
-			let stored_commitment = MsaIdToRecoveryCommitment::<T>::get(add_key_payload.msa_id)
+			let stored_commitment: RecoveryCommitment = MsaIdToRecoveryCommitment::<T>::get(add_key_payload.msa_id)
 				.ok_or(Error::<T>::NoRecoveryCommitment)?;
 
 			// Verify the computed recovery commitment matches the stored one

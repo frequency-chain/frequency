@@ -275,7 +275,6 @@ fn recover_account_with_valid_data_should_succeed() {
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
-		// Create and approve a recovery provider using helper function
 		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
 
 		// Generate a new control key for recovery
