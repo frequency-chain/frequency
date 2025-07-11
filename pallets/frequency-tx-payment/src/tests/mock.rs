@@ -323,6 +323,8 @@ impl Config for Test {
 	type BatchProvider = CapacityBatchProvider;
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MockMsaCallFilter;
+	#[cfg(feature = "runtime-benchmarks")]
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 }
 
 pub struct ExtBuilder {

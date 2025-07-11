@@ -176,6 +176,9 @@ pub mod pallet {
 			Self::AccountId,
 			MessageSourceId,
 		>;
+
+		#[cfg(feature = "runtime-benchmarks")]
+		type OnChargeTransaction: OnChargeTransaction<Self>;
 	}
 
 	#[pallet::event]
@@ -425,7 +428,9 @@ where
 		if fee.is_zero() {
 			return Ok(Default::default());
 		}
-		T::OnChargeTransaction::can_withdraw_fee(who, call, info, fee, tip)?;
+		<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<
+			T,
+		>>::can_withdraw_fee(who, call, info, fee, tip)?;
 		Ok(fee)
 	}
 
