@@ -1068,11 +1068,11 @@ pub struct GetStableWeightsBenchmarking;
 #[cfg(feature = "runtime-benchmarks")]
 impl GetStableWeight<RuntimeCall, Weight> for GetStableWeightsBenchmarking {
 	fn get_stable_weight(_call: &RuntimeCall) -> Option<Weight> {
-		return Weight::from_parts(1, 0).into();
+		return Some(Weight::from_parts(11, 0));
 	}
 
-	fn get_inner_calls(outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		Some(vec![outer_call])
+	fn get_inner_calls(_outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
+		Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
 	}
 }
 
