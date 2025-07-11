@@ -20,6 +20,10 @@ use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 
 mod frequency_rpc;
 
+// TODO: uncomment
+// mod eth;
+// pub use self::eth::{create_eth, EthDeps};
+
 /// A type representing all RPC extensions.
 pub type RpcExtension = jsonrpsee::RpcModule<()>;
 

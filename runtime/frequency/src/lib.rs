@@ -50,6 +50,11 @@ use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 use static_assertions::const_assert;
 
+use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
+use fp_evm::weight_per_gas;
+use pallet_evm::{AddressMapping, EnsureAddressTruncated, SubstrateBlockHashMapping};
+use sp_core::U256;
+
 use common_primitives::{
 	handles::{
 		BaseHandle, CheckHandleResponse, DisplayHandle, HandleResponse, PresumptiveSuffixesResponse,
@@ -1359,6 +1364,77 @@ impl pallet_utility::Config for Runtime {
 	type PalletsOrigin = OriginCaller;
 	type WeightInfo = weights::pallet_utility::SubstrateWeight<Runtime>;
 }
+// ------------------------- Frontier pallets -------------------------//
+// pub struct FindAuthorTruncated<F>(PhantomData<F>);
+// impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
+// 	fn find_author<'a, I>(digests: I) -> Option<H160>
+// 	where
+// 		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+// 	{
+// 		if let Some(author_index) = F::find_author(digests) {
+// 			let authority_id =
+// 				pallet_aura::Authorities::<Runtime>::get()[author_index as usize].clone();
+// 			return Some(H160::from_slice(&authority_id.to_raw_vec()[4..24]));
+// 		}
+// 		None
+// 	}
+// }
+
+pub struct EthAddressMapping;
+
+impl AddressMapping<AccountId> for EthAddressMapping {
+	fn into_account_id(address: H160) -> AccountId {
+		EthereumAddressMapper::to_account_id(&address.encode())
+	}
+}
+
+const BLOCK_GAS_LIMIT: u64 = 75_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+/// The maximum storage growth per block in bytes.
+const MAX_STORAGE_GROWTH: u64 = 400 * 1024;
+
+parameter_types! {
+	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+	pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
+	// pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, MILLISECS_PER_BLOCK), 0);
+}
+
+impl pallet_evm::Config for Runtime {
+	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
+	// type FeeCalculator = BaseFee;
+	type FeeCalculator = ();
+	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type WeightPerGas = WeightPerGas;
+	// type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type BlockHashMapping = SubstrateBlockHashMapping<Self>;
+	// type CallOrigin = EnsureAccountId20;
+	type CallOrigin = EnsureAddressTruncated;
+	// type WithdrawOrigin = EnsureAccountId20;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = EthAddressMapping;
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	// type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesType = ();
+	// type PrecompilesValue = PrecompilesValue;
+	type PrecompilesValue = ();
+	// type ChainId = EVMChainId;
+	type ChainId = ConstU64<{ CHAIN_ID as u64 }>;
+	type BlockGasLimit = BlockGasLimit;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type OnChargeTransaction = ();
+	type OnCreate = ();
+	// type FindAuthor = FindAuthorTruncated<Aura>;
+	type FindAuthor = ();
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
+	type Timestamp = Timestamp;
+	type CreateOriginFilter = ();
+	type CreateInnerOriginFilter = ();
+	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
+}
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
@@ -1419,6 +1495,9 @@ construct_runtime!(
 		FrequencyTxPayment: pallet_frequency_tx_payment::{Pallet, Call, Event<T>} = 65,
 		Handles: pallet_handles::{Pallet, Call, Storage, Event<T>} = 66,
 		Passkey: pallet_passkey::{Pallet, Call, Storage, Event<T>, ValidateUnsigned} = 67,
+
+		// Frontier
+		EVM: pallet_evm::{Pallet, Call, Storage, Event<T>} = 68,
 	}
 );
 
@@ -1454,6 +1533,7 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
+		[pallet_evm, EVM]
 	);
 }
 

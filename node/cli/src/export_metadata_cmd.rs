@@ -12,13 +12,13 @@ use std::{fmt::Debug, fs, io, path::PathBuf, str::FromStr, sync::Arc};
 #[derive(Debug, Clone, Parser)]
 pub struct ExportMetadataCmd {
 	/// Output file name or stdout if unspecified.
-	#[clap(value_parser)]
+	#[arg()]
 	pub output: Option<PathBuf>,
 
 	/// Specify starting block number.
 	///
 	/// Default is 0.
-	#[clap(long, value_name = "BLOCK")]
+	#[arg(long, value_name = "BLOCK")]
 	pub from: Option<GenericNumber>,
 
 	#[allow(missing_docs)]

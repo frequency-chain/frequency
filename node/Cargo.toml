@@ -21,6 +21,21 @@ substrate-build-script-utils = { workspace = true }
 frequency-cli = { path = "cli" }
 frequency-service = { path = "service" }
 
+# Frontier
+fc-api = { workspace = true }
+fc-cli = { workspace = true }
+fc-consensus = { workspace = true }
+fc-db = { workspace = true }
+fc-mapping-sync = { workspace = true }
+fc-rpc = { workspace = true, features = ["aura"] }
+fc-rpc-core = { workspace = true }
+fc-storage = { workspace = true }
+# fp-account = { git = "https://github.com/polkadot-evm/frontier", branch = "stable2503", default-features = false }
+fp-dynamic-fee = { workspace = true, features = ["default"] }
+fp-evm = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
+# frontier-template-runtime = { workspace = true, features = ["std"] }
+
 [features]
 std = []
 default = []

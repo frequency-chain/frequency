@@ -102,6 +102,21 @@ pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
 sp-debug-derive = { workspace = true, optional = true }
 
+# Frontier
+# fp-account = { workspace = true, features = ["serde"] }
+fp-evm = { workspace = true, default-features = false, features = ["serde"] }
+# fp-rpc = { workspace = true }
+# fp-self-contained = { workspace = true, features = ["serde"] }
+# Frontier FRAME
+# pallet-base-fee = { workspace = true }
+# pallet-dynamic-fee = { workspace = true }
+# pallet-ethereum = { workspace = true }
+pallet-evm = { workspace = true, default-features = false }
+# pallet-evm-chain-id = { workspace = true }
+# pallet-evm-precompile-modexp = { workspace = true }
+# pallet-evm-precompile-sha3fips = { workspace = true }
+# pallet-evm-precompile-simple = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -174,6 +189,20 @@ std = [
   "system-runtime-api/std",
   "substrate-wasm-builder",
   "frame-metadata-hash-extension/std",
+  	# Frontier
+	# "fp-account/std",
+	"fp-evm/std",
+	# "fp-rpc/std",
+	# "fp-self-contained/std",
+	# Frontier FRAME
+	# "pallet-base-fee/std",
+	# "pallet-dynamic-fee/std",
+	# "pallet-ethereum/std",
+	"pallet-evm/std",
+	# "pallet-evm-chain-id/std",
+	# "pallet-evm-precompile-modexp/std",
+	# "pallet-evm-precompile-sha3fips/std",
+	# "pallet-evm-precompile-simple/std",
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",
@@ -208,6 +237,8 @@ runtime-benchmarks = [
   "polkadot-runtime-common/runtime-benchmarks",
   "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
+  # "pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
