@@ -69,7 +69,6 @@ mod benchmarks {
 		{
 			assert!(ext
 				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info))
-				.unwrap()
 				.is_ok());
 		}
 	}
@@ -95,8 +94,7 @@ mod benchmarks {
 		{
 			let res = ext
 				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info));
-			log::info!("test_run result: {:?}", res);
-			assert!(res.unwrap().is_ok());
+			assert!(res.is_ok());
 		}
 	}
 
