@@ -44,7 +44,6 @@ use sp_runtime::{
 	ArithmeticError, BoundedVec, DispatchError, Perbill, Permill,
 };
 
-use common_primitives::benchmarks::CapacityStakingBenchmarkHelper;
 pub use common_primitives::{
 	capacity::*,
 	msa::MessageSourceId,
@@ -54,7 +53,9 @@ pub use common_primitives::{
 use frame_system::pallet_prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
+use common_primitives::benchmarks::{
+	CapacityStakingBenchmarkHelper, RegisterProviderBenchmarkHelper,
+};
 
 pub use pallet::*;
 pub use types::*;
