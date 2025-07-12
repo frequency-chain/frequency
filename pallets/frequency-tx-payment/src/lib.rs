@@ -36,10 +36,11 @@ use sp_runtime::{
 };
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
+#[cfg(feature = "runtime-benchmarks")]
+use common_primitives::benchmarks::{
+	CapacityStakingBenchmarkHelper, MsaBenchmarkHelper, RegisterProviderBenchmarkHelper,
+};
 use common_primitives::{
-	benchmarks::{
-		CapacityStakingBenchmarkHelper, MsaBenchmarkHelper, RegisterProviderBenchmarkHelper,
-	},
 	capacity::{Nontransferable, Replenishable},
 	msa::MsaKeyProvider,
 	node::UtilityProvider,

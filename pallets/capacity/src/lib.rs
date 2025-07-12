@@ -1333,6 +1333,7 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 }
 
 /// CapacityStakingBenchmarkHelper for benchmarking purposes.
+#[cfg(feature = "runtime-benchmarks")]
 impl<T: Config> CapacityStakingBenchmarkHelper<T::AccountId> for Pallet<T> {
 	fn stake_benchmark(
 		staker: T::AccountId,
