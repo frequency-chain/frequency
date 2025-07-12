@@ -129,8 +129,6 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-#[allow(deprecated)]
-use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
@@ -359,7 +357,6 @@ impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
 }
 
 /// The TransactionExtension to the basic transaction logic.
-#[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 	Runtime,
 	(
@@ -368,12 +365,10 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
-		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-		AsTransactionExtension<
-			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-		>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
+		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),
@@ -456,7 +451,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 169,
+	spec_version: 170,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -470,7 +465,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 169,
+	spec_version: 170,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1068,6 +1063,19 @@ use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub struct GetStableWeightsBenchmarking;
+#[cfg(feature = "runtime-benchmarks")]
+impl GetStableWeight<RuntimeCall, Weight> for GetStableWeightsBenchmarking {
+	fn get_stable_weight(_call: &RuntimeCall) -> Option<Weight> {
+		Some(Weight::from_parts(0, 0))
+	}
+
+	fn get_inner_calls(_outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
+		Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
+	}
+}
+
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
@@ -1113,12 +1121,23 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type CapacityCalls = GetStableWeightsBenchmarking;
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type CapacityCalls = CapacityEligibleCalls;
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MsaCallFilter;
+	#[cfg(feature = "runtime-benchmarks")]
+	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type MsaBenchmarkHelper = Msa;
+	#[cfg(feature = "runtime-benchmarks")]
+	type CapacityBenchmarkHelper = Capacity;
+	#[cfg(feature = "runtime-benchmarks")]
+	type ProviderBenchmarkHelper = Msa;
 }
 
 /// Configurations for passkey pallet

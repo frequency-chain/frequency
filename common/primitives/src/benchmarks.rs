@@ -24,6 +24,9 @@ pub trait MsaBenchmarkHelper<AccountId> {
 
 	/// Sets a public key to an MSA.
 	fn add_key(msa_id: MessageSourceId, key: AccountId) -> DispatchResult;
+
+	/// Create a MSA for account.
+	fn create_msa(msa_id: MessageSourceId, account: AccountId) -> DispatchResult;
 }
 
 impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
@@ -38,6 +41,11 @@ impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
 
 	/// Sets a publickey to an MSA.
 	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
+		Ok(())
+	}
+
+	/// Create a MSA for account.
+	fn create_msa(_msa_id: MessageSourceId, _account: AccountId) -> DispatchResult {
 		Ok(())
 	}
 }
@@ -78,6 +86,23 @@ pub trait RegisterProviderBenchmarkHelper {
 /// A blank implementation
 impl RegisterProviderBenchmarkHelper for () {
 	fn create(_target_id: MessageSourceId, _name: Vec<u8>) -> DispatchResult {
+		Ok(())
+	}
+}
+
+/// A trait for staking Capacity in benchmarks.
+pub trait CapacityStakingBenchmarkHelper<AccountId> {
+	/// Stakes Capacity for an MSA.
+	fn stake_benchmark(account: AccountId, target: MessageSourceId, amount: u32) -> DispatchResult;
+}
+
+impl<AccountId> CapacityStakingBenchmarkHelper<AccountId> for () {
+	/// Stakes Capacity for an MSA.
+	fn stake_benchmark(
+		_account: AccountId,
+		_target: MessageSourceId,
+		_amount: u32,
+	) -> DispatchResult {
 		Ok(())
 	}
 }
