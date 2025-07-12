@@ -204,15 +204,10 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Dispatch the given call as a sub_type of pay_with_capacity. Calls dispatched in this
 		/// fashion, if allowed, will pay with Capacity.
-		// The weight calculation is a temporary adjustment because overhead benchmarks do not account
-		// for capacity calls.  We count reads and writes for a pay_with_capacity call,
-		// then subtract one of each for regular transactions since overhead benchmarks account for these.
 		#[pallet::call_index(0)]
 		#[pallet::weight({
 		let dispatch_info = call.get_dispatch_info();
-		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
-		let total = capacity_overhead.saturating_add(dispatch_info.call_weight);
-		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(total), dispatch_info.class)
+		(< T as Config >::WeightInfo::pay_with_capacity().saturating_add(dispatch_info.call_weight), dispatch_info.class)
 		})]
 		pub fn pay_with_capacity(
 			origin: OriginFor<T>,
@@ -231,10 +226,7 @@ pub mod pallet {
 		let dispatch_weight = dispatch_infos.iter()
 				.map(|di| di.call_weight)
 				.fold(Weight::zero(), |total: Weight, weight: Weight| total.saturating_add(weight));
-
-		let capacity_overhead = Pallet::<T>::get_capacity_overhead_weight();
-		let total = capacity_overhead.saturating_add(dispatch_weight);
-		(< T as Config >::WeightInfo::pay_with_capacity_batch_all(calls.len() as u32).saturating_add(total), DispatchClass::Normal)
+		(< T as Config >::WeightInfo::pay_with_capacity_batch_all(calls.len() as u32).saturating_add(dispatch_weight), DispatchClass::Normal)
 		})]
 		pub fn pay_with_capacity_batch_all(
 			origin: OriginFor<T>,
