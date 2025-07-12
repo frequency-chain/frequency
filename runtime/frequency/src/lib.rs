@@ -1072,7 +1072,7 @@ impl GetStableWeight<RuntimeCall, Weight> for GetStableWeightsBenchmarking {
 	}
 
 	fn get_inner_calls(_outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
+		Some(vec![&_outer_call])
 	}
 }
 

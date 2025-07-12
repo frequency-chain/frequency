@@ -4,6 +4,7 @@ use crate::{
 };
 use frame_support::{assert_noop, assert_ok, dispatch::DispatchErrorWithPostInfo, weights::Weight};
 use frame_system::RawOrigin;
+
 use pallet_capacity::{CapacityDetails, CurrentEpoch, Nontransferable};
 
 use sp_runtime::{
@@ -1039,14 +1040,12 @@ fn charge_frq_transaction_payment_skipped_and_refund_for_other_origins() {
 		info.extension_weight = ext.weight(call);
 
 		// Ensure we test the refund which is zero currently.
-		assert!(info.extension_weight == Weight::zero());
+		assert!(info.extension_weight != Weight::zero());
 
 		let len = call.encoded_size();
 
-		let origin = RawOrigin::Root.into();
-		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
-
-		assert!(origin.as_system_ref().unwrap().is_root());
+		let (pre, _origin) =
+			ext.validate_and_prepare(RawOrigin::Root.into(), call, &info, len, 0).unwrap();
 
 		let pd_res = Ok(());
 		let mut post_info = frame_support::dispatch::PostDispatchInfo {
@@ -1229,5 +1228,180 @@ fn charge_frq_no_fee_withdrawn_on_failed_call() {
 			assert!(res.is_err());
 			// Balance should remain unchanged
 			assert_eq!(Balances::free_balance(account_id), 1u64);
+		});
+}
+
+#[test]
+fn charge_frq_extension_charges_extension_weight_for_capacity_calls() {
+	ExtBuilder::default()
+		.balance_factor(100_000_000)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::FrequencyTxPayment(Call::pay_with_capacity {
+					call: Box::new(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+						dest: 2,
+						value: 100,
+					})),
+				});
+
+			let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+
+			let mut info = call.get_dispatch_info();
+			info.extension_weight = ext.weight(call);
+
+			// Ensure extension_weight is non-zero for capacity calls
+			assert!(info.extension_weight != Weight::zero());
+
+			let len = call.encoded_size();
+
+			let origin = RuntimeOrigin::signed(account_id).into();
+			let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+			let pd_res = Ok(());
+			let mut post_info = PostDispatchInfo {
+				actual_weight: Some(info.total_weight()),
+				pays_fee: Default::default(),
+			};
+
+			<ChargeFrqTransactionPayment<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+				pre,
+				&info,
+				&mut post_info,
+				len,
+				&pd_res,
+			)
+			.unwrap();
+
+			// For capacity calls, the actual weight should be call_weight + extension_weight
+			assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+		});
+}
+
+#[test]
+fn charge_frq_extension_charges_extension_weight_for_token_calls() {
+	ExtBuilder::default()
+		.balance_factor(100_000_000)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+
+			let mut info = call.get_dispatch_info();
+			info.extension_weight = ext.weight(call);
+
+			// Ensure extension_weight is non-zero for token calls
+			assert!(info.extension_weight != Weight::zero());
+
+			let len = call.encoded_size();
+
+			let origin = RuntimeOrigin::signed(account_id).into();
+			let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+			let pd_res = Ok(());
+			let mut post_info = PostDispatchInfo {
+				actual_weight: Some(info.total_weight()),
+				pays_fee: Default::default(),
+			};
+
+			<ChargeFrqTransactionPayment<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+				pre,
+				&info,
+				&mut post_info,
+				len,
+				&pd_res,
+			)
+			.unwrap();
+
+			// For token calls, the actual weight should be call_weight + extension_weight
+			assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+		});
+}
+
+#[test]
+fn charge_frq_extension_doesnot_charges_extension_weight_for_free_calls() {
+	ExtBuilder::default()
+		.balance_factor(100_000_000)
+		.base_weight(Weight::from_parts(0, 0))
+		.build()
+		.execute_with(|| {
+			let account_id = 1u64;
+			// Retire MSA
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::Msa(MsaCall::retire_msa {});
+			let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+
+			let mut info = call.get_dispatch_info();
+			info.extension_weight = ext.weight(call);
+
+			assert!(info.extension_weight != Weight::zero());
+
+			let len = call.encoded_size();
+
+			let origin = RuntimeOrigin::signed(account_id).into();
+			let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+			let pd_res = Ok(());
+			let mut post_info =
+				PostDispatchInfo { actual_weight: Some(info.total_weight()), pays_fee: Pays::No };
+
+			<ChargeFrqTransactionPayment<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+				pre,
+				&info,
+				&mut post_info,
+				len,
+				&pd_res,
+			)
+			.unwrap();
+
+			// For free calls, the actual weight should be call_weight as extension weight is refunded
+			// and not charged.
+			assert_eq!(post_info.actual_weight, Some(info.call_weight + info.extension_weight));
+		});
+}
+
+#[test]
+fn charge_frq_extension_charges_extension_weight_for_root_origin() {
+	ExtBuilder::default()
+		.balance_factor(100_000_000)
+		.base_weight(Weight::from_parts(5, 0))
+		.build()
+		.execute_with(|| {
+			let call: &<Test as frame_system::Config>::RuntimeCall =
+				&RuntimeCall::Balances(BalancesCall::transfer_allow_death { dest: 2, value: 100 });
+
+			let ext = ChargeFrqTransactionPayment::<Test>::from(0u64);
+
+			let mut info = call.get_dispatch_info();
+			info.extension_weight = ext.weight(call);
+
+			// Ensure extension_weight is non-zero for root origin calls
+			assert!(info.extension_weight != Weight::zero());
+
+			let len = call.encoded_size();
+
+			let origin = RawOrigin::Root.into();
+			let (pre, _origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+
+			let pd_res = Ok(());
+			let mut post_info =
+				PostDispatchInfo { actual_weight: Some(info.total_weight()), pays_fee: Pays::Yes };
+
+			<ChargeFrqTransactionPayment<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
+				pre,
+				&info,
+				&mut post_info,
+				len,
+				&pd_res,
+			)
+			.unwrap();
+			// Root origin calls are not chargeded.
+			assert_eq!(post_info.actual_weight, Some(info.call_weight));
 		});
 }

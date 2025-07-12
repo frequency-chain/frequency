@@ -23,10 +23,9 @@ use frame_system::pallet_prelude::*;
 use pallet_transaction_payment::{FeeDetails, InclusionFee, OnChargeTransaction};
 use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
-#[allow(deprecated)]
 use sp_runtime::{
 	traits::{
-		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, RefundWeight,
 		TransactionExtension, Zero,
 	},
 	transaction_validity::{
@@ -554,7 +553,13 @@ pub enum Val<T: Config> {
 /// The info passed between the prepare and post-dispatch steps for the `ChargeFrqTransactionPayment` extension.
 #[derive(RuntimeDebugNoBound)]
 pub enum Pre<T: Config> {
-	Charge { tip: BalanceOf<T>, who: T::AccountId, initial_payment: InitialPayment<T> },
+	Charge {
+		tip: BalanceOf<T>,
+		who: T::AccountId,
+		initial_payment: InitialPayment<T>,
+		weight: Weight,
+	},
+	/// No charge was made, and the transaction is free.
 	NoCharge { refund: Weight },
 }
 
@@ -576,9 +581,21 @@ where
 	type Val = Val<T>;
 	type Pre = Pre<T>;
 
-	fn weight(&self, _call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
-		// Todo: Implement a more accurate weight calculation for the transaction and refunds.
-		Weight::zero()
+	fn weight(&self, call: &<T as frame_system::Config>::RuntimeCall) -> Weight {
+		match call.is_sub_type() {
+			Some(Call::pay_with_capacity { .. }) |
+			Some(Call::pay_with_capacity_batch_all { .. }) =>
+				<T as Config>::WeightInfo::charge_tx_payment_capacity_based(),
+			_ => {
+				// For token-based calls, check if it's a free transaction
+				let info = call.get_dispatch_info();
+				if info.pays_fee == Pays::No {
+					<T as Config>::WeightInfo::charge_tx_payment_free()
+				} else {
+					<T as Config>::WeightInfo::charge_tx_payment_token_based()
+				}
+			},
+		}
 	}
 
 	fn validate(
@@ -619,7 +636,7 @@ where
 		match val {
 			Val::Charge { tip, who, .. } => {
 				let (_fee, initial_payment) = self.withdraw_fee(&who, call, info, len)?;
-				Ok(Pre::Charge { tip, who, initial_payment })
+				Ok(Pre::Charge { tip, who, initial_payment, weight: self.weight(call) })
 			},
 			Val::NoCharge => Ok(Pre::NoCharge { refund: self.weight(call) }),
 		}
@@ -633,8 +650,13 @@ where
 		result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
 		match pre {
-			Pre::Charge { tip, who, initial_payment } => match initial_payment {
+			Pre::Charge { tip, who, initial_payment, weight } => match initial_payment {
 				InitialPayment::Token(already_withdrawn) => {
+					let actual_ext_weight =
+						<T as Config>::WeightInfo::charge_tx_payment_token_based();
+					let unspent_weight = weight.saturating_sub(actual_ext_weight);
+					let mut actual_post_info = *post_info;
+					actual_post_info.refund(unspent_weight);
 					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
                         pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
                         info,
@@ -642,15 +664,16 @@ where
                         len,
                         result,
                     )?;
-					Ok(Weight::zero())
+					Ok(unspent_weight)
 				},
 				InitialPayment::Capacity => {
 					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
+					// TODO:: Currently no refund for Capacity transactions.
 					Ok(Weight::zero())
 				},
 				InitialPayment::Free => {
 					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-					Ok(Weight::zero())
+					Ok(weight.saturating_sub(<T as Config>::WeightInfo::charge_tx_payment_free()))
 				},
 			},
 			Pre::NoCharge { refund } => Ok(refund),
