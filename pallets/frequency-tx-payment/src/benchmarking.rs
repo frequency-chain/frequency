@@ -87,9 +87,14 @@ mod benchmarks {
 		let post_info = PostDispatchInfo { actual_weight: None, pays_fee: Pays::No };
 		#[block]
 		{
-			assert!(ext
-				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info))
-				.is_ok());
+			let res = ext
+				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info));
+			match res {
+				Ok(_) => {},
+				Err(_) => {
+					assert!(false, "Transaction should not fail");
+				},
+			}
 		}
 	}
 
@@ -102,19 +107,27 @@ mod benchmarks {
 		let ext: ChargeFrqTransactionPayment<T> = ChargeFrqTransactionPayment::from(0u64.into());
 		let inner = frame_system::Call::<T>::remark { remark: alloc::vec![] };
 		let call: <T as frame_system::Config>::RuntimeCall = inner.into();
+		let extension_weight = ext.weight(&call);
 		let info = DispatchInfo {
-			call_weight: Weight::zero(),
-			extension_weight: Weight::zero(),
-			class: DispatchClass::Normal,
+			call_weight: Weight::from_parts(100, 0),
+			extension_weight,
+			class: DispatchClass::Operational,
 			pays_fee: Pays::Yes,
 		};
-		let post_info =
-			PostDispatchInfo { actual_weight: Some(Weight::from_parts(0, 0)), pays_fee: Pays::Yes };
+		let post_info = PostDispatchInfo {
+			actual_weight: Some(Weight::from_parts(10, 0)),
+			pays_fee: Pays::Yes,
+		};
 		#[block]
 		{
 			let res = ext
 				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info));
-			assert!(res.is_ok());
+			match res {
+				Ok(_) => {},
+				Err(_) => {
+					assert!(false, "Transaction should not fail");
+				},
+			}
 		}
 	}
 
@@ -138,13 +151,15 @@ mod benchmarks {
 		let ext: ChargeFrqTransactionPayment<T> = ChargeFrqTransactionPayment::from(0u64.into());
 
 		let info = DispatchInfo {
-			call_weight: Weight::from_parts(1, 0),
+			call_weight: Weight::from_parts(100, 0),
 			extension_weight: Weight::zero(),
 			class: DispatchClass::Normal,
 			pays_fee: Pays::Yes,
 		};
-		let post_info =
-			PostDispatchInfo { actual_weight: Some(Weight::from_parts(1, 0)), pays_fee: Pays::Yes };
+		let post_info = PostDispatchInfo {
+			actual_weight: Some(Weight::from_parts(10, 0)),
+			pays_fee: Pays::Yes,
+		};
 
 		#[block]
 		{
@@ -156,7 +171,12 @@ mod benchmarks {
 				0,
 				|_| Ok(post_info),
 			);
-			assert!(res.is_ok());
+			match res {
+				Ok(_) => {},
+				Err(_) => {
+					assert!(false, "Transaction should not fail");
+				},
+			}
 		}
 	}
 	impl_benchmark_test_suite!(
