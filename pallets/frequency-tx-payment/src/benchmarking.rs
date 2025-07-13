@@ -89,12 +89,8 @@ mod benchmarks {
 		{
 			let res = ext
 				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info));
-			match res {
-				Ok(_) => {},
-				Err(_) => {
-					assert!(false, "Transaction should not fail");
-				},
-			}
+			assert_ok!(res);
+			assert!(res.expect("should be ok").is_ok());
 		}
 	}
 
@@ -122,12 +118,8 @@ mod benchmarks {
 		{
 			let res = ext
 				.test_run(RawOrigin::Signed(caller).into(), &call, &info, 0, 0, |_| Ok(post_info));
-			match res {
-				Ok(_) => {},
-				Err(_) => {
-					assert!(false, "Transaction should not fail");
-				},
-			}
+			assert_ok!(res);
+			assert!(res.expect("should be ok").is_ok());
 		}
 	}
 
@@ -171,12 +163,8 @@ mod benchmarks {
 				0,
 				|_| Ok(post_info),
 			);
-			match res {
-				Ok(_) => {},
-				Err(_) => {
-					assert!(false, "Transaction should not fail");
-				},
-			}
+			assert_ok!(res);
+			assert!(res.expect("should be ok").is_ok());
 		}
 	}
 	impl_benchmark_test_suite!(
