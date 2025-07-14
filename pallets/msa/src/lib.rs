@@ -1189,10 +1189,6 @@ pub mod pallet {
 
 			// Get the provider's MSA ID and ensure they're a registered provider
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			ensure!(
-				Self::is_registered_provider(provider_msa_id),
-				Error::<T>::ProviderNotRegistered
-			);
 
 			// Ensure the provider is approved for recovery operations
 			ensure!(

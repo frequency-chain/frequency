@@ -187,7 +187,7 @@ describe('Account Recovery Testing', function () {
       );
 
       await assert.rejects(recoverAccountOp.fundAndSend(fundingSource, false), {
-        name: 'ProviderNotRegistered',
+        name: 'NotAuthorizedRecoveryProvider',
       });
     });
 

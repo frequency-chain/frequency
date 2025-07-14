@@ -624,7 +624,7 @@ fn recover_account_with_non_provider_should_fail() {
 				new_key_proof,
 				add_key_payload
 			),
-			Error::<Test>::ProviderNotRegistered
+			Error::<Test>::NotAuthorizedRecoveryProvider
 		);
 	});
 }
