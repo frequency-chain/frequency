@@ -1205,8 +1205,9 @@ pub mod pallet {
 				Self::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
 
 			// Get the stored recovery commitment for this MSA
-			let stored_commitment: RecoveryCommitment = MsaIdToRecoveryCommitment::<T>::get(add_key_payload.msa_id)
-				.ok_or(Error::<T>::NoRecoveryCommitment)?;
+			let stored_commitment: RecoveryCommitment =
+				MsaIdToRecoveryCommitment::<T>::get(add_key_payload.msa_id)
+					.ok_or(Error::<T>::NoRecoveryCommitment)?;
 
 			// Verify the computed recovery commitment matches the stored one
 			ensure!(
