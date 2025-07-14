@@ -1,5 +1,6 @@
 {
   "exit": true,
+  "fullTrace": true,
   "extension": ["ts"],
   "parallel": true,
   "require": ["scaffolding/globalHooks.ts", "scaffolding/rootHooks.ts", "scaffolding/extrinsicHelpers.ts"],

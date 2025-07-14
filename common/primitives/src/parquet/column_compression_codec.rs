@@ -1,7 +1,6 @@
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sp_std::prelude::*;
 
 /// Compression codecs: <https://github.com/apache/parquet-format/blob/master/LogicalTypes.md>
 #[derive(

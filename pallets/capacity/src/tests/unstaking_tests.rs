@@ -1,7 +1,7 @@
 use super::{mock::*, testing_utils::*};
 use crate as pallet_capacity;
 use crate::{
-	CapacityDetails, CapacityLedger, CurrentEraProviderBoostTotal, FreezeReason,
+	CapacityDetails, CapacityLedger, CurrentEpoch, CurrentEraProviderBoostTotal, FreezeReason,
 	ProviderBoostHistories, ProviderBoostHistory, StakingAccountLedger, StakingDetails,
 	StakingTargetDetails, StakingTargetLedger, StakingType, StakingType::ProviderBoost,
 	UnlockChunk, UnstakeUnlocks,
@@ -44,10 +44,7 @@ fn unstake_happy_path() {
 		assert_eq!(unlocking, expected_unlocking_chunks);
 
 		assert_eq!(
-			StakingDetails::<Test> {
-				active: BalanceOf::<Test>::from(60u64),
-				staking_type: StakingType::MaximumCapacity,
-			},
+			StakingDetails::<Test> { active: 60u64, staking_type: StakingType::MaximumCapacity },
 			staking_account_details,
 		);
 
@@ -57,10 +54,7 @@ fn unstake_happy_path() {
 
 		assert_eq!(
 			staking_target_details,
-			StakingTargetDetails::<BalanceOf<Test>> {
-				amount: BalanceOf::<Test>::from(60u32),
-				capacity: BalanceOf::<Test>::from(6u32),
-			}
+			StakingTargetDetails::<BalanceOf<Test>> { amount: 60u64, capacity: 6u64 }
 		);
 
 		// Assert that the capacity detail values for the target are decremented properly after unstaking
@@ -69,10 +63,10 @@ fn unstake_happy_path() {
 		assert_eq!(
 			capacity_details,
 			CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-				remaining_capacity: BalanceOf::<Test>::from(6u64),
-				total_tokens_staked: BalanceOf::<Test>::from(60u64),
-				total_capacity_issued: BalanceOf::<Test>::from(6u64),
-				last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32),
+				remaining_capacity: 6u64,
+				total_tokens_staked: 60u64,
+				total_capacity_issued: 6u64,
+				last_replenished_epoch: 0u32,
 			}
 		);
 
@@ -83,7 +77,7 @@ fn unstake_happy_path() {
 				account: token_account,
 				target,
 				amount: unstaking_amount,
-				capacity: BalanceOf::<Test>::from(4u64)
+				capacity: 4u64
 			}
 		);
 	});
@@ -161,17 +155,26 @@ fn unstake_errors_unstaking_amount_is_zero() {
 	});
 }
 
-fn fill_unstake_unlock_chunks(token_account: u64, target: MessageSourceId, unstaking_amount: u64) {
+fn fill_unstake_unlock_chunks(
+	token_account: u64,
+	target: MessageSourceId,
+	unstaking_amount: u64,
+	use_new_epoch: bool,
+) {
 	for _n in 0..<Test as Config>::MaxUnlockingChunks::get() {
 		assert_ok!(Capacity::unstake(
 			RuntimeOrigin::signed(token_account),
 			target,
 			unstaking_amount
 		));
+		if use_new_epoch {
+			// this would force the thaw_at to be different
+			CurrentEpoch::<Test>::set(CurrentEpoch::<Test>::get() + 1);
+		}
 	}
 }
 #[test]
-fn unstake_errors_max_unlocking_chunks_exceeded_stake() {
+fn unstake_errors_max_unlocking_chunks_exceeded_stake_with_different_epochs() {
 	new_test_ext().execute_with(|| {
 		let token_account = 200;
 		let target: MessageSourceId = 1;
@@ -182,7 +185,7 @@ fn unstake_errors_max_unlocking_chunks_exceeded_stake() {
 
 		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
 
-		fill_unstake_unlock_chunks(token_account, target, unstaking_amount);
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount, true);
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
@@ -190,6 +193,42 @@ fn unstake_errors_max_unlocking_chunks_exceeded_stake() {
 		);
 	});
 }
+
+#[test]
+fn unstake_should_work_with_more_than_max_unlocking_chunks_exceeded_in_the_same_epochs() {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 70;
+		let unstaking_amount = 10;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::stake(RuntimeOrigin::signed(token_account), target, staking_amount));
+
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount, false);
+
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			unstaking_amount
+		));
+
+		let max_unlocking: u32 = <Test as Config>::MaxUnlockingChunks::get();
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk {
+			value: unstaking_amount * (max_unlocking as u64 + 1),
+			thaw_at: 2u32,
+		}])
+		.unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(token_account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
+	});
+}
+
 #[test]
 fn unstake_errors_max_unlocking_chunks_exceeded_provider_boost() {
 	new_test_ext().execute_with(|| {
@@ -206,12 +245,52 @@ fn unstake_errors_max_unlocking_chunks_exceeded_provider_boost() {
 			staking_amount
 		));
 
-		fill_unstake_unlock_chunks(token_account, target, unstaking_amount);
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount, true);
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(token_account), target, unstaking_amount),
 			Error::<Test>::MaxUnlockingChunksExceeded
 		);
+	});
+}
+
+#[test]
+fn unstake_should_work_with_more_than_max_unlocking_chunks_exceeded_in_the_same_epochs_provider_boost(
+) {
+	new_test_ext().execute_with(|| {
+		let token_account = 200;
+		let target: MessageSourceId = 1;
+		let staking_amount = 70;
+		let unstaking_amount = 10;
+
+		register_provider(target, String::from("Test Target"));
+
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(token_account),
+			target,
+			staking_amount
+		));
+
+		fill_unstake_unlock_chunks(token_account, target, unstaking_amount, false);
+
+		assert_ok!(Capacity::unstake(
+			RuntimeOrigin::signed(token_account),
+			target,
+			unstaking_amount
+		));
+
+		let max_unlocking: u32 = <Test as Config>::MaxUnlockingChunks::get();
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk {
+			value: unstaking_amount * (max_unlocking as u64 + 1),
+			thaw_at: 2u32,
+		}])
+		.unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(token_account).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
 	});
 }
 
@@ -271,8 +350,8 @@ fn unstaking_everything_reaps_staking_account() {
 		assert_eq!(20u64, Balances::balance_frozen(&FreezeReason::CapacityStaking.into(), &staker));
 
 		// it should reap the staking account right away
-		assert!(StakingAccountLedger::<Test>::get(&staker).is_none());
-		assert!(StakingAccountLedger::<Test>::get(&booster).is_none());
+		assert!(StakingAccountLedger::<Test>::get(staker).is_none());
+		assert!(StakingAccountLedger::<Test>::get(booster).is_none());
 	})
 }
 
@@ -334,7 +413,7 @@ fn unstake_maximum_does_not_change_reward_pool() {
 }
 
 #[test]
-fn unstake_fills_up_common_unlock_for_any_target() {
+fn unstake_should_increase_the_unlock_chunk_for_any_target() {
 	new_test_ext().execute_with(|| {
 		let staker = 10_000;
 
@@ -351,10 +430,15 @@ fn unstake_fills_up_common_unlock_for_any_target() {
 			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50));
 			assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target2, 50));
 		}
-		assert_noop!(
-			Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50),
-			Error::<Test>::MaxUnlockingChunksExceeded
-		);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target1, 50),);
+
+		let expected_unlocking_chunks: BoundedVec<
+			UnlockChunk<BalanceOf<Test>, <Test as Config>::EpochNumber>,
+			<Test as Config>::MaxUnlockingChunks,
+		> = BoundedVec::try_from(vec![UnlockChunk { value: 250, thaw_at: 2u32 }]).unwrap();
+
+		let unlocking = UnstakeUnlocks::<Test>::get(staker).unwrap();
+		assert_eq!(unlocking, expected_unlocking_chunks);
 	})
 }
 
@@ -385,7 +469,7 @@ fn unstake_by_a_booster_updates_provider_boost_history_with_correct_amount() {
 
 		pbh = ProviderBoostHistories::<Test>::get(staker).unwrap();
 		assert_eq!(pbh.count(), 2);
-		let entry = pbh.get_entry_for_era(&4u32.into()).unwrap();
+		let entry = pbh.get_entry_for_era(&4u32).unwrap();
 		assert_eq!(entry, &600u64);
 	})
 }
@@ -434,16 +518,16 @@ fn get_amount_staked_for_era_works() {
 	let mut staking_history: ProviderBoostHistory<Test> = ProviderBoostHistory::new();
 
 	for i in 0u32..5u32 {
-		staking_history.add_era_balance(&i.into(), &10u64);
+		staking_history.add_era_balance(&i, &10u64);
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&0u32), 10u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&4u32), 50u64);
 
-	staking_history.subtract_era_balance(&4u32.into(), &50u64);
+	staking_history.subtract_era_balance(&4u32, &50u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&5u32), 0u64);
 
 	for i in 10u32..=13u32 {
-		staking_history.add_era_balance(&i.into(), &5u64);
+		staking_history.add_era_balance(&i, &5u64);
 	}
 	assert_eq!(staking_history.get_amount_staked_for_era(&10u32), 5u64);
 	assert_eq!(staking_history.get_amount_staked_for_era(&13u32), 20u64);
@@ -487,16 +571,35 @@ fn unstake_fails_if_provider_boosted_and_have_unclaimed_rewards() {
 		// staking 1k as of block 1, era 1
 		setup_provider(&account, &target, &amount, ProviderBoost);
 
-		// staking 2k as of block 11, era 2
 		run_to_block(11);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
 
-		//  staking 3k as of era 4, block 31
 		run_to_block(31);
 
 		assert_noop!(
 			Capacity::unstake(RuntimeOrigin::signed(account), target, amount),
 			Error::<Test>::MustFirstClaimRewards
 		);
+	})
+}
+
+#[test]
+fn can_unstake_twice_in_same_era_after_claiming_rewards_2295() {
+	new_test_ext().execute_with(|| {
+		let account = 10_000u64;
+		let target: MessageSourceId = 10;
+		let amount = 3_000u64;
+
+		// staking 1k as of block 1, era 1
+		setup_provider(&account, &target, &amount, ProviderBoost);
+
+		run_to_block(11);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
+
+		run_to_block(31);
+		assert_ok!(Capacity::claim_staking_rewards(RuntimeOrigin::signed(account)));
+
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(account), target, 1000u64));
 	})
 }

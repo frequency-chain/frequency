@@ -1,6 +1,7 @@
 use core::marker::PhantomData;
 
 use common_primitives::msa::MessageSourceId;
+use core::fmt::Debug;
 use frame_support::{
 	storage::{child, child::ChildInfo, ChildTriePrefixIterator},
 	Blake2_128, Blake2_256, Hashable, StorageHasher, Twox128, Twox256,
@@ -8,7 +9,8 @@ use frame_support::{
 use parity_scale_codec::{Decode, Encode};
 use sp_core::{ConstU8, Get};
 use sp_io::hashing::twox_64;
-use sp_std::{fmt::Debug, prelude::*};
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 /// Hasher to use to hash keys to insert to storage.
 pub trait MultipartKeyStorageHasher: StorageHasher {
@@ -59,6 +61,7 @@ pub trait MultipartKey<H: MultipartKeyStorageHasher>: MultipartStorageKeyPart {
 	fn hash(&self) -> Vec<u8>;
 	fn hash_prefix_only(&self) -> Vec<u8>;
 
+	#[allow(dead_code)]
 	fn decode(hash: &[u8]) -> Result<Self, parity_scale_codec::Error> {
 		let mut key_material = H::reverse(hash, Self::Arity::get());
 		<Self as Decode>::decode(&mut key_material)
@@ -108,11 +111,7 @@ impl<H: MultipartKeyStorageHasher, T1: MultipartStorageKeyPart> MultipartKey<H> 
 
 	fn hash_prefix_only(&self) -> Vec<u8> {
 		let encoded_1 = self.0.encode();
-		<H as StorageHasher>::hash(&encoded_1)
-			.as_ref()
-			.iter()
-			.cloned()
-			.collect::<Vec<_>>()
+		<H as StorageHasher>::hash(&encoded_1).as_ref().to_vec()
 	}
 }
 

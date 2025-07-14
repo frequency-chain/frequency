@@ -15,11 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-03-06 (Y/M/D)
-//! HOSTNAME: `ip-10-173-4-22`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 47.0.0
+//! DATE: 2025-04-18 (Y/M/D)
+//! HOSTNAME: `ip-10-173-0-75`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
-//! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency Development (No Relay)`
+//! SHORT-NAME: `block`, LONG-NAME: `BlockExecution`, RUNTIME: `Frequency`
 //! WARMUPS: `10`, REPEAT: `100`
 //! WEIGHT-PATH: `runtime/common/src/weights`
 //! WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
@@ -28,7 +28,6 @@
 //   ./scripts/../target/release/frequency
 //   benchmark
 //   overhead
-//   --wasm-execution=compiled
 //   --weight-path=runtime/common/src/weights
 //   --chain=dev
 //   --warmup=10
@@ -39,21 +38,21 @@ use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
 
 parameter_types! {
-	/// Time to execute an empty block.
+	/// Weight of executing an empty block.
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 359_012, 470_541
-	///   Average:  369_317
-	///   Median:   364_297
-	///   Std-Dev:  14700.58
+	///   Min, Max: 359_330, 402_837
+	///   Average:  374_140
+	///   Median:   372_254
+	///   Std-Dev:  10375.83
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 430_840
-	///   95th: 389_243
-	///   75th: 371_769
+	///   99th: 400_428
+	///   95th: 390_508
+	///   75th: 382_154
 	pub const BlockExecutionWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(369_317), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(374_140), 0);
 }
 
 #[cfg(test)]

@@ -190,13 +190,13 @@ pub fn get_schema_data_map<'a>(
 /// let schema_fingerprint = avro::fingerprint_raw_schema(raw_schema);
 /// assert!(schema_fingerprint.is_ok());
 /// ```
-pub fn validate_raw_avro_schema(json_schema: &Vec<u8>) -> Result<(), AvroError> {
-	match String::from_utf8(json_schema.clone()) {
+pub fn validate_raw_avro_schema(json_schema: &[u8]) -> Result<(), AvroError> {
+	match String::from_utf8(json_schema.to_owned()) {
 		Err(_e) => Err(AvroError::InvalidSchema("Invalid schema".to_string())),
 		Ok(avro_schema) => {
 			let schema_fingerprint = fingerprint_raw_schema(&avro_schema);
 			if schema_fingerprint.is_err() {
-				return Err(AvroError::InvalidSchema("Invalid schema".to_string()))
+				return Err(AvroError::InvalidSchema("Invalid schema".to_string()));
 			}
 			Ok(())
 		},

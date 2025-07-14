@@ -45,11 +45,13 @@ use handles_utils::{
 #[cfg(test)]
 mod tests;
 
+use alloc::vec::Vec;
 #[cfg(feature = "runtime-benchmarks")]
 use common_primitives::benchmarks::MsaBenchmarkHelper;
 use common_primitives::{
 	handles::*,
 	msa::{MessageSourceId, MsaLookup, MsaValidator},
+	node::EIP712Encode,
 };
 use frame_support::{dispatch::DispatchResult, ensure, pallet_prelude::*, traits::Get};
 use frame_system::pallet_prelude::*;
@@ -57,7 +59,6 @@ use numtoa::*;
 pub use pallet::*;
 use sp_core::crypto::AccountId32;
 use sp_runtime::{traits::Convert, DispatchError, MultiSignature};
-use sp_std::{prelude::*, vec::Vec};
 
 pub mod handles_signed_extension;
 
@@ -278,11 +279,14 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::InvalidSignature`]
-		pub fn verify_signed_payload(
+		pub fn verify_signed_payload<P>(
 			signature: &MultiSignature,
 			signer: &T::AccountId,
-			payload: Vec<u8>,
-		) -> DispatchResult {
+			payload: &P,
+		) -> DispatchResult
+		where
+			P: Encode + EIP712Encode,
+		{
 			let key = T::ConvertIntoAccountId32::convert(signer.clone());
 
 			ensure!(check_signature(signature, key, payload), Error::<T>::InvalidSignature);
@@ -329,7 +333,7 @@ pub mod pallet {
 			let mut lazy_suffix_sequence = generate_unique_suffixes(
 				T::HandleSuffixMin::get(),
 				T::HandleSuffixMax::get(),
-				&canonical_base,
+				canonical_base,
 			);
 			match lazy_suffix_sequence.nth(cursor) {
 				Some(suffix) => Ok(suffix),
@@ -386,7 +390,7 @@ pub mod pallet {
 			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, &payload)?;
 
 			let display_handle = Self::do_claim_handle(msa_id, payload)?;
 
@@ -472,7 +476,7 @@ pub mod pallet {
 			Self::verify_signature_mortality(payload.expiration)?;
 
 			// Validation: Verify the payload was signed
-			Self::verify_signed_payload(&proof, &msa_owner_key, payload.encode())?;
+			Self::verify_signed_payload(&proof, &msa_owner_key, &payload)?;
 
 			// Get existing handle to retire
 			MSAIdToDisplayName::<T>::get(msa_id).ok_or(Error::<T>::MSAHandleDoesNotExist)?;
@@ -541,7 +545,7 @@ pub mod pallet {
 
 			// Convert base handle into a canonical base
 			let (canonical_handle_str, canonical_base) =
-				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+				Self::get_canonical_string_vec_from_base_handle(base_handle_str);
 
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())
@@ -587,17 +591,16 @@ pub mod pallet {
 			let valid = Self::validate_handle(base_handle.to_vec());
 
 			if !valid {
-				return CheckHandleResponse {
-					base_handle: base_handle.into(),
-					..Default::default()
-				};
+				return CheckHandleResponse { base_handle, ..Default::default() };
 			}
 
 			let base_handle_str = core::str::from_utf8(&base_handle).unwrap_or_default();
 
+			let base_handle_trimmed = trim_and_collapse_whitespace(base_handle_str);
+
 			// Convert base handle into a canonical base
 			let (_canonical_handle_str, canonical_base) =
-				Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
+				Self::get_canonical_string_vec_from_base_handle(base_handle_str);
 
 			let suffix_index =
 				Self::get_next_suffix_index_for_canonical_handle(canonical_base.clone())
@@ -606,7 +609,7 @@ pub mod pallet {
 			let suffixes_available = suffix_index < T::HandleSuffixMax::get();
 
 			CheckHandleResponse {
-				base_handle: base_handle.into(),
+				base_handle: base_handle_trimmed.into(),
 				suffix_index,
 				suffixes_available,
 				valid,
@@ -704,7 +707,7 @@ pub mod pallet {
 
 			// Validation: `BaseHandle` character length must be within range
 			ensure!(
-				len >= HANDLE_CHARS_MIN && len <= HANDLE_CHARS_MAX,
+				(HANDLE_CHARS_MIN..=HANDLE_CHARS_MAX).contains(&len),
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
@@ -722,11 +725,11 @@ pub mod pallet {
 		fn validate_canonical_handle(canonical_base_handle_str: &str) -> DispatchResult {
 			// Validation: The handle must consist of characters not containing reserved words or blocked characters
 			ensure!(
-				consists_of_supported_unicode_character_sets(&canonical_base_handle_str),
+				consists_of_supported_unicode_character_sets(canonical_base_handle_str),
 				Error::<T>::HandleDoesNotConsistOfSupportedCharacterSets
 			);
 			ensure!(
-				!is_reserved_canonical_handle(&canonical_base_handle_str),
+				!is_reserved_canonical_handle(canonical_base_handle_str),
 				Error::<T>::HandleIsNotAllowed
 			);
 
@@ -734,7 +737,7 @@ pub mod pallet {
 
 			// Validation: `Canonical` character length must be within range
 			ensure!(
-				len >= HANDLE_CHARS_MIN && len <= HANDLE_CHARS_MAX,
+				(HANDLE_CHARS_MIN..=HANDLE_CHARS_MAX).contains(&len),
 				Error::<T>::InvalidHandleCharacterLength
 			);
 
@@ -802,23 +805,23 @@ pub mod pallet {
 		/// # Returns
 		/// * true if it is valid or false if invalid
 		pub fn validate_handle(handle: Vec<u8>) -> bool {
-			return match Self::validate_base_handle(handle) {
+			match Self::validate_base_handle(handle) {
 				Ok(base_handle_str) => {
 					// Convert base handle into a canonical base
 					let (canonical_handle_str, _) =
 						Self::get_canonical_string_vec_from_base_handle(&base_handle_str);
 
-					return Self::validate_canonical_handle(&canonical_handle_str).is_ok();
+					Self::validate_canonical_handle(&canonical_handle_str).is_ok()
 				},
 				_ => false,
-			};
+			}
 		}
 
 		/// Converts a base handle to a canonical base.
 		fn get_canonical_string_vec_from_base_handle(
 			base_handle_str: &str,
 		) -> (String, CanonicalBase) {
-			let canonical_handle_str = convert_to_canonical(&base_handle_str);
+			let canonical_handle_str = convert_to_canonical(base_handle_str);
 			let canonical_handle_vec = canonical_handle_str.as_bytes().to_vec();
 			let canonical_base: CanonicalBase = canonical_handle_vec.try_into().unwrap_or_default();
 			(canonical_handle_str, canonical_base)

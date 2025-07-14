@@ -14,7 +14,6 @@ serde_json = { workspace = true, features = ["alloc"] }
 # Substrate
 sp-runtime = { workspace = true }
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 # Frequency related dependencies
@@ -27,6 +26,8 @@ std = [
     "frame-system/std",
     "frame-support/std",
     "common-primitives/std",
-    "sp-std/std",
     "sp-runtime/std",
 ]
+
+[lints]
+workspace = true

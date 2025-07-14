@@ -62,6 +62,9 @@ impl pallet_collective::Config<CouncilCollective> for Test {
 
 	type SetMembersOrigin = frame_system::EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxProposalWeight;
+	type DisapproveOrigin = EnsureRoot<AccountId>;
+	type KillOrigin = EnsureRoot<AccountId>;
+	type Consideration = ();
 }
 
 pub type MaxSchemaRegistrations = ConstU16<64_000>;
@@ -162,6 +165,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 pub fn new_test_ext() -> sp_io::TestExternalities {

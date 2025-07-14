@@ -12,7 +12,6 @@ version = "0.0.0"
 clap = { workspace = true, features = ["derive"] }
 parity-scale-codec = { workspace = true }
 
-derive_more = { workspace = true }
 futures = { workspace = true }
 hex = { workspace = true, default-features = true }
 hex-literal = { workspace = true }
@@ -133,3 +132,6 @@ frequency-lint-check = [
   "frequency-testnet",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]
+
+[lints]
+workspace = true

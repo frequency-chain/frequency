@@ -18,12 +18,12 @@ parity-scale-codec = { workspace = true, features = ["derive"] }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+lazy_static = { workspace = true }
 
 scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 sp-weights = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
@@ -33,6 +33,7 @@ hex = { workspace = true, default-features = false, features = ["alloc"] }
 common-runtime = { path = "../../runtime/common", default-features = false }
 
 [dev-dependencies]
+pallet-balances = { workspace = true }
 pallet-schemas = { path = "../schemas", default-features = false }
 pallet-handles = { path = "../handles", default-features = false }
 pallet-collective = { workspace = true }
@@ -43,6 +44,8 @@ parking_lot = { workspace = true }
 
 [features]
 default = ["std"]
+frequency = []
+frequency-testnet = []
 runtime-benchmarks = [
   "frame-benchmarking/runtime-benchmarks",
   "pallet-schemas/runtime-benchmarks",
@@ -57,7 +60,6 @@ std = [
   "frame-system/std",
   "frame-benchmarking/std",
   "sp-runtime/std",
-  "sp-std/std",
   "sp-core/std",
   "pallet-schemas/std",
   "pallet-handles/std",
@@ -69,3 +71,6 @@ std = [
 ]
 try-runtime = ["frame-support/try-runtime"]
 test = []
+
+[lints]
+workspace = true

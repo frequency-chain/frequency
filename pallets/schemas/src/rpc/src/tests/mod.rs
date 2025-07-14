@@ -62,8 +62,8 @@ async fn get_schema_with_non_existent_schema_id_should_return_none() {
 		1233, // Non-existing Schema Id
 	);
 
-	assert_eq!(true, result.is_ok());
-	assert_eq!(true, result.unwrap().is_none());
+	assert!(result.is_ok());
+	assert!(result.unwrap().is_none());
 }
 
 #[tokio::test]
@@ -75,7 +75,7 @@ async fn get_schema_with_success() {
 		SUCCESSFUL_SCHEMA_ID, // Schema Id
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(1, response.schema_id);
 	assert_eq!(ModelType::AvroBinary, response.model_type);
@@ -89,7 +89,7 @@ async fn get_schema_versions_with_success() {
 
 	let result: VersionResult = api.get_versions(SUCCESSFUL_SCHEMA_NAME.to_string());
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap().unwrap();
 	assert_eq!(response.len(), 2);
 }
@@ -115,8 +115,8 @@ async fn check_schema_validity_success() {
 		None,
 	);
 
-	assert_eq!(true, result.is_ok());
-	assert_eq!(true, result.unwrap());
+	assert!(result.is_ok());
+	assert!(result.unwrap());
 }
 
 #[tokio::test]
@@ -136,5 +136,5 @@ async fn check_schema_validity_fail() {
 		None,
 	);
 
-	assert_eq!(false, result.is_ok());
+	assert!(result.is_err());
 }

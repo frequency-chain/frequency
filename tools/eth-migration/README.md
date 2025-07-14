@@ -18,3 +18,22 @@ Some scripts and tools to facilitate the key migration
 
 ### Select token keys which are also control keys
 `jq -c 'select(.msaId != 0)' tokens-keys.txt`
+
+## Get the difference between on-chain control keys and a database
+1.  fill in the DB connection string and other details
+2. `npm run db-compare`
+
+## How to serve the metamask.html
+This html is to help us test EIP-712 signatures using Metamask wallet.
+To serve this html you can follow the following steps:
+
+1. `npm install -g serve`
+2. `cd tools/eth-migration`
+3. `serve`
+4. Open http://localhost:3000/metamask.html in the browser
+
+## How to setup Metamask for testing
+1. Install Metamask extension in your browser.
+2. Follow the instructions in this [link](https://contracts.polkadot.io/work-with-a-local-node/#clone-the-polkadot-sdk-repository) to setup the pre-funded test account.
+3. Make sure the Kitchensink Node and the Eth RPC Proxy are running.
+4. Open http://localhost:3000/metamask.html in the browser where Metamask is installed.

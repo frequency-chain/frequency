@@ -10,7 +10,6 @@ version = "0.0.0"
 
 [dependencies]
 clap = { workspace = true, features = ["derive"] }
-derive_more = { workspace = true }
 futures = { workspace = true, features = ["thread-pool"] }
 hex-literal = { workspace = true }
 log = { workspace = true }
@@ -60,7 +59,7 @@ cumulus-client-cli = { workspace = true }
 cumulus-client-service = { workspace = true }
 cumulus-client-parachain-inherent = { workspace = true }
 cumulus-primitives-core = { workspace = true }
-cumulus-primitives-storage-weight-reclaim = { workspace = true }
+cumulus-pallet-weight-reclaim = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
@@ -99,3 +98,6 @@ frequency-lint-check = [
   "frequency-testnet",
   "frequency-service/frequency-lint-check",
 ]
+
+[lints]
+workspace = true

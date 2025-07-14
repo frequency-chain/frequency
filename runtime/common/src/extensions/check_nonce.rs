@@ -17,13 +17,14 @@
 // limitations under the License.
 
 use frame_system::Config;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},
 	sp_runtime,
 };
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
 	transaction_validity::{
@@ -31,7 +32,8 @@ use sp_runtime::{
 		ValidTransaction,
 	},
 };
-use sp_std::vec;
+extern crate alloc;
+use alloc::vec;
 
 /// Nonce check and increment to give replay protection for transactions.
 ///
@@ -40,7 +42,7 @@ use sp_std::vec;
 /// This extension affects `requires` and `provides` tags of validity, but DOES NOT
 /// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
 /// some kind of priority upon validating transactions.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 
@@ -51,18 +53,19 @@ impl<T: Config> CheckNonce<T> {
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
+impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "CheckNonce({})", self.0)
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
 
+#[allow(deprecated)]
 impl<T: Config> SignedExtension for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
@@ -73,7 +76,7 @@ where
 	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckNonce";
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 
@@ -95,7 +98,7 @@ where
 			} else {
 				InvalidTransaction::Future
 			}
-			.into())
+			.into());
 		}
 
 		// Is this an existing account?
@@ -126,7 +129,7 @@ where
 		// check index
 		let account = frame_system::Account::<T>::get(who);
 		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into()
+			return InvalidTransaction::Stale.into();
 		}
 
 		let provides = vec![Encode::encode(&(who, self.0))];
@@ -140,7 +143,7 @@ where
 			priority: 0,
 			requires,
 			provides,
-			longevity: TransactionLongevity::max_value(),
+			longevity: TransactionLongevity::MAX,
 			propagate: true,
 		})
 	}

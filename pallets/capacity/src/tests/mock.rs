@@ -8,6 +8,8 @@ use common_primitives::{
 	node::{AccountId, ProposalProvider},
 	schema::{SchemaId, SchemaValidator},
 };
+use common_runtime::weights;
+use core::ops::Mul;
 use frame_support::{
 	construct_runtime, parameter_types,
 	traits::{
@@ -21,7 +23,6 @@ use sp_runtime::{
 	traits::{BlakeTwo256, Convert, Get, IdentityLookup},
 	AccountId32, BuildStorage, DispatchError, Perbill, Permill,
 };
-use sp_std::ops::Mul;
 
 type Block = frame_system::mocking::MockBlockU32<Test>;
 
@@ -66,6 +67,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Test>;
 }
 
 impl pallet_balances::Config for Test {
@@ -79,9 +81,10 @@ impl pallet_balances::Config for Test {
 	type AccountStore = System;
 	type WeightInfo = ();
 	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxFreezes = ConstU32<1>;
+	type MaxFreezes = ConstU32<2>;
 	type RuntimeHoldReason = ();
 	type RuntimeFreezeReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -95,7 +98,7 @@ impl Convert<u64, AccountId> for TestAccountId {
 }
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
 		true
 	}
 
@@ -138,8 +141,10 @@ impl pallet_msa::Config for Test {
 	type Proposal = RuntimeCall;
 	type ProposalProvider = CouncilProposalProvider;
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
+	type RecoveryProviderApprovalOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
+	type Currency = pallet_balances::Pallet<Self>;
 }
 
 // not used yet
@@ -150,7 +155,7 @@ impl ProviderBoostRewardsProvider<Test> for TestRewardsProvider {
 
 	// To reflect new economic model behavior of having a constant RewardPool amount.
 	fn reward_pool_size(_total_staked: Self::Balance) -> Self::Balance {
-		10_000u64.into()
+		10_000u64
 	}
 
 	// use the pallet version of the era calculation.
@@ -172,7 +177,7 @@ parameter_types! {
 	pub const TestCapacityPerToken: Perbill = Perbill::from_percent(10);
 	pub const TestRewardCap: Permill = Permill::from_parts(3_800); // 0.38% or 0.0038 per RewardEra
 }
-impl pallet_capacity::Config for Test {
+impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type RuntimeFreezeReason = RuntimeFreezeReason;
@@ -228,6 +233,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			(600, 600),
 			(10_000, 10_000),
 		],
+		..Default::default()
 	}
 	.assimilate_storage(&mut t)
 	.unwrap();

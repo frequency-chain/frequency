@@ -45,13 +45,14 @@ frame_support::construct_runtime!(
 		}
 );
 
+#[allow(dead_code)]
 pub struct BlockWeights;
 impl Get<frame_system::limits::BlockWeights> for BlockWeights {
 	fn get() -> frame_system::limits::BlockWeights {
 		frame_system::limits::BlockWeights::builder()
 			.base_block(Weight::zero())
 			.for_class(DispatchClass::all(), |weights| {
-				weights.base_extrinsic = ExtrinsicBaseWeight::get().into();
+				weights.base_extrinsic = ExtrinsicBaseWeight::get();
 			})
 			.for_class(DispatchClass::non_mandatory(), |weights| {
 				weights.max_total = Some(NORMAL_DISPATCH_RATIO * MAXIMUM_BLOCK_WEIGHT);
@@ -90,6 +91,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_balances::Config for Test {
@@ -106,6 +108,7 @@ impl pallet_balances::Config for Test {
 	type RuntimeFreezeReason = ();
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
@@ -113,14 +116,20 @@ pub type MaximumCapacityBatchLength = ConstU8<10>;
 
 pub struct TestAccountId;
 impl Convert<u64, AccountId> for TestAccountId {
-	fn convert(_x: u64) -> AccountId32 {
+	fn convert(x: u64) -> AccountId32 {
+		// force this key to be an ethereum-compatible key
+		if x == 999 {
+			let eth = sp_core::bytes::from_hex("0x9999999999999999999999999999999999999999")
+				.expect("should return a Vec<u8>");
+			return EthereumAddressMapper::to_account_id(&eth);
+		}
 		AccountId32::new([1u8; 32])
 	}
 }
 
 pub struct Schemas;
 impl SchemaValidator<SchemaId> for Schemas {
-	fn are_all_schema_ids_valid(_schema_id: &Vec<SchemaId>) -> bool {
+	fn are_all_schema_ids_valid(_schema_id: &[SchemaId]) -> bool {
 		true
 	}
 
@@ -165,7 +174,9 @@ impl pallet_msa::Config for Test {
 	type ProposalProvider = CouncilProposalProvider;
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
+	type RecoveryProviderApprovalOrigin = EnsureSigned<u64>;
 	type MaxSignaturesStored = ConstU32<8000>;
+	type Currency = pallet_balances::Pallet<Self>;
 }
 
 // Needs parameter_types! for the impls below
@@ -200,6 +211,7 @@ impl pallet_transaction_payment::Config for Test {
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = ConstU8<5>;
+	type WeightInfo = ();
 }
 
 // so the value can be used by create_capacity_for below, without having to pass it a Config.
@@ -238,6 +250,8 @@ impl pallet_capacity::Config for Test {
 	type RewardPoolChunkLength = ConstU32<2>;
 }
 
+use crate::types::GetAddKeyData;
+use common_primitives::signatures::{AccountAddressMapper, EthereumAddressMapper};
 use pallet_balances::Call as BalancesCall;
 
 pub struct TestCapacityCalls;
@@ -248,12 +262,14 @@ impl GetStableWeight<RuntimeCall, Weight> for TestCapacityCalls {
 			RuntimeCall::Balances(BalancesCall::transfer_allow_death { .. }) =>
 				Some(Weight::from_parts(11, 0)),
 			RuntimeCall::Msa(pallet_msa::Call::create { .. }) => Some(Weight::from_parts(12, 0)),
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa { .. }) =>
+				Some(Weight::from_parts(177_629_000, 18396)), // from stable_weights
 			_ => None,
 		}
 	}
 
 	fn get_inner_calls(_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		return Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})]);
+		Some(vec![&RuntimeCall::Msa(pallet_msa::Call::create {})])
 	}
 }
 
@@ -272,6 +288,30 @@ impl pallet_utility::Config for Test {
 	type WeightInfo = ();
 }
 
+pub struct MockMsaCallFilter;
+impl GetAddKeyData<<Test as frame_system::Config>::RuntimeCall, u64, MessageSourceId>
+	for MockMsaCallFilter
+{
+	// Always returns same account ID and msa.
+	fn get_add_key_data(
+		call: &<Test as frame_system::Config>::RuntimeCall,
+	) -> Option<(u64, u64, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(pallet_msa::Call::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => Some((
+				msa_owner_public_key.clone(),
+				add_key_payload.new_public_key,
+				add_key_payload.msa_id,
+			)),
+			_ => None,
+		}
+	}
+}
+
 impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
@@ -281,6 +321,8 @@ impl Config for Test {
 	type OnChargeCapacityTransaction = payment::CapacityAdapter<Balances, Msa>;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type BatchProvider = CapacityBatchProvider;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MockMsaCallFilter;
 }
 
 pub struct ExtBuilder {
@@ -335,6 +377,7 @@ impl ExtBuilder {
 			} else {
 				vec![]
 			},
+			..Default::default()
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();
@@ -360,7 +403,7 @@ impl ExtBuilder {
 			});
 		});
 
-		t.into()
+		t
 	}
 }
 

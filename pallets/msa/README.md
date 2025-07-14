@@ -17,6 +17,21 @@ All users on Frequency must have an MSA in order to:
 Once a user creates an MSA, they are assigned an MSA Id, a unique number the time of creation with one or more keys attached for control.
 (A control key may only be attached to ONE MSA at any single point in time.)
 
+#### MSA Id and Addresses
+
+Each MSA Id has a unique 20-byte address associated with it. This address can be queried using an MSA pallet runtime call, or computed using the following algorithm:
+```ignore
+Address = keccak256(0xD9 + <MSA Id as 8-byte big-endian bytes> + keccak256(b"MSA Generated"))[12..]
+```
+
+### Recovery System
+
+MSA ownership is able to be recovered via a previously set Recovery Commitment.
+This recovery requires the user have access to the Recovery Secret as well as the contact method used which together are able to derive the hash tree that builds the Recovery Commitment hash.
+The user must use an governance authorized Recovery Provider to perform the recovery.
+
+No PII is exposed to the chain in the adding of a Recovery Commitment or the Recovery of an MSA.
+
 ### Actions
 
 The MSA pallet provides for:
@@ -24,6 +39,7 @@ The MSA pallet provides for:
 - Creating, reading, updating, and deleting operations for MSAs.
 - Managing delegation relationships for MSAs.
 - Managing keys associated with MSAs.
+- Managing the recovery system for MSAs.
 
 ## Interactions
 
@@ -32,6 +48,8 @@ The MSA pallet provides for:
 | Name/Description                                                                              | Caller                                     | Payment            | Key Events                                                                                                                                                                                                                                       | Runtime Added |
 | --------------------------------------------------------------------------------------------- | ------------------------------------------ | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------- |
 | `add_public_key_to_msa`<br />Add MSA control key                                              | MSA Control Key or Provider with Signature | Capacity or Tokens | [`PublicKeyAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyAdded)                                                                                                                         | 1             |
+| `add_recovery_commitment`<br />Add a new Recovery Commitment to an existing MSA               | Provider                                   | Capacity or Tokens | [`RecoveryCommitmentAdded`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryCommitmentAdded)                                                                                                       | 168           |
+| `approve_recovery_provider`<br />Approve a Recovery Provider via governance for MSA recovery  | Frequency Council                          | Tokens             | [`RecoveryProviderApproved`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryProviderApproved)                                                                                                     | 169           |
 | `create`<br />Create new MSA                                                                  | Token Account                              | Tokens             | [`MsaCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaCreated)                                                                                                                                 | 1             |
 | `create_provider`<br />Convert an MSA into a Provider                                         | Testnet: Provider or Mainnet: Governance   | Tokens             | [`ProviderCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.ProviderCreated)                                                                                                                       | 1             |
 | `create_provider_via_governance`<br />Convert an MSA into a Provider                          | Frequency Council                          | Tokens             | [`ProviderCreated`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.ProviderCreated)                                                                                                                       | 12            |
@@ -39,9 +57,11 @@ The MSA pallet provides for:
 | `delete_msa_public_key`<br />Remove MSA control key                                           | Delegator                                  | Free               | [`PublicKeyDeleted`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyDeleted)                                                                                                                     | 1             |
 | `grant_delegation`<br />Create or alter a delegation                                          | Provider with Signature                    | Capacity           | [`DelegationGranted`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.DelegationGranted)                                                                                                                   | 1             |
 | `propose_to_be_provider`<br />Request the council to convert an MSA to a Provider             | Token Account                              | Tokens             | [`Proposed`](https://paritytech.github.io/polkadot-sdk/master/pallet_collective/pallet/enum.Event.html#variant.Proposed)                                                                                                                         | 12            |
+| `remove_recovery_provider`<br />Remove a Recovery Provider via governance for MSA recovery    | Frequency Council                          | Tokens             | [`RecoveryProviderRemoved`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.RecoveryProviderRemoved)                                                                                                       | 169           |
 | `retire_msa`<br />Remove all keys and mark the MSA as retired                                 | Delegator                                  | Free               | [`PublicKeyDeleted`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.PublicKeyDeleted), [`MsaRetired`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.MsaRetired)   | 18            |
 | `revoke_delegation_by_delegator`<br />Remove delegation                                       | Delegator                                  | Free               | [`DelegationRevoked`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.DelegationRevoked)                                                                                                                   | 1             |
 | `revoke_delegation_by_provider`<br />Remove delegation                                        | Provider                                   | Free               | [`DelegationRevoked`](https://frequency-chain.github.io/frequency/pallet_msa/pallet/enum.Event.html#variant.DelegationRevoked)                                                                                                                   | 1             |
+| `withdraw_tokens`<br />Withdraw all tokens from an MSA                                        | Token Account                              | Tokens             | [`Transfer`](https://paritytech.github.io/polkadot-sdk/master/pallet_balances/pallet/enum.Event.html#variant.Transfer)  | 158          |
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa/pallet/struct.Pallet.html) for more details.
 
@@ -53,6 +73,8 @@ See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa/pallet/st
 | Get Current Maximum MSA Id        | Returns the maximum MSA Id in existence                                                                           | `currentMsaIdentifierMaximum`      | 1             |
 | Get Current Delegator to Provider | Returns the current relationship between the specified Delegator and specified Provider at the given block number | `delegatorAndProviderToDelegation` | 1             |
 | Get Public Key Count for MSA Id   | Returns the number of public keys for the given MSA Id                                                            | `publicKeyCountforMsaId`           | 1             |
+| Get Recovery Commitment           | Returns the Recovery Commitment for a given MSA Id                                                                | `MsaIdToRecoveryCommitment`        | 168           |
+| Get Approved Recovery Providers   | Returns the Approved Recovery Provider Status (bool) for a given ProviderId                                       | `RecoveryProviders`                | 169           |
 
 See the [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa/pallet/storage_types/index.html) for additional state queries and details.
 
@@ -65,8 +87,18 @@ Note: May be restricted based on node settings and configuration.
 | Check Delegations             | Test a list of MSAs to see if they have delegated to the provider MSA      | [`checkDelegations`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.check_delegations                )                    | v1.0.0+      |
 | Delegation Schema Grants      | Fetch the list of Schema Ids that a delegator has granted to a provider    | [`grantedSchemaIdsByMsaId`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_granted_schemas_by_msa_id)                 | v1.0.0+      |
 | Get Control Keys by MSA Id\*  | Fetch the list of current control keys for an MSA from the off-chain index | [`getKeysByMsaId`](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_keys_by_msa_id)                                     | v1.10.0+     |
-| Get All Delegations by MSA Id | Retreives all delegations and schemas, active and inactive, for an MSA ID  | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_all_granted_delegations_by_msa_id) | v1.13.0+     |
+| Get All Delegations by MSA Id | Retrieves all delegations and schemas, active and inactive, for an MSA ID  | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html#tymethod.get_all_granted_delegations_by_msa_id) | v1.13.0+     |
 
 \* Must be enabled with off-chain indexing
 
 See [Rust Docs](https://frequency-chain.github.io/frequency/pallet_msa_rpc/trait.MsaApiServer.html) for more details.
+
+### Runtime API
+
+| Name | Description | Call | Runtime Added | MSA Runtime API Version Added |
+| ------------------------------------- | -------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ | ------------------------- |
+| Has Delegation                        | Check to see if a delegation existed between the given delegator and provider at a given block | ['hasDelegation'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.has_delegation) | 1 | 1 |
+| Get Granted Schemas by MSA ID         | Get the list of schema permission grants (if any) that exist in any delegation between the delegator and provider. | ['getGrantedSchemasByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_granted_schemas_by_msa_id) | 1 | 1 |
+| Get All Granted Delegations by MSA ID | Get the list of all delegated providers with schema permission grants (if any) that exist in any delegation between the delegator and provider. | ['getAllGrantedDelegationsByMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_all_granted_delegations_by_msa_id) | 83 | 2 |
+| Get Ethereum Address for MSA ID       | Get the Ethereum address of the given MSA. | ['getEthereumAddressForMsaId'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.get_ethereum_address_for_msa_id) | 156 | 3 |
+| Validate Ethereum Address for MSA ID  | Validate if the given Ethereum address is associated with the given MSA. | ['validateEthAddressForMsa'](https://frequency-chain.github.io/frequency/pallet_msa_runtime_api/trait.MsaRuntimeApi.html#method.validate_eth_address_for_msa) | 156 | 3 |

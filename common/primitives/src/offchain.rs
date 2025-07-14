@@ -5,7 +5,9 @@ use parity_scale_codec::Decode;
 use sp_externalities::ExternalitiesExt;
 use sp_runtime::offchain::storage::{StorageRetrievalError, StorageValueRef};
 use sp_runtime_interface::runtime_interface;
-use sp_std::{fmt::Debug, vec, vec::Vec};
+extern crate alloc;
+use alloc::vec::Vec;
+use core::fmt::Debug;
 
 #[cfg(feature = "std")]
 sp_externalities::decl_extension! {
@@ -33,12 +35,12 @@ pub const MSA_ACCOUNT_STORAGE_NAME_PREFIX: &[u8; 16] = b"Msa::ofw::keys::";
 /// msa account lock name
 pub fn get_msa_account_lock_name(msa_id: MessageSourceId) -> Vec<u8> {
 	let mut buff = [0u8; 30];
-	vec![MSA_ACCOUNT_LOCK_NAME_PREFIX, msa_id.numtoa(10, &mut buff)].concat()
+	[MSA_ACCOUNT_LOCK_NAME_PREFIX, msa_id.numtoa(10, &mut buff)].concat()
 }
 /// msa account storage key name
 pub fn get_msa_account_storage_key_name(msa_id: MessageSourceId) -> Vec<u8> {
 	let mut buff = [0u8; 30];
-	vec![MSA_ACCOUNT_STORAGE_NAME_PREFIX, msa_id.numtoa(10, &mut buff)].concat()
+	[MSA_ACCOUNT_STORAGE_NAME_PREFIX, msa_id.numtoa(10, &mut buff)].concat()
 }
 
 /// Locks the execution of the function

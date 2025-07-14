@@ -9,7 +9,8 @@ use pretty_assertions::{assert_eq, assert_ne, assert_str_eq};
 use rand::Rng;
 use serde::Serialize;
 use sp_core::ConstU32;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 #[derive(Serialize)]
 #[allow(non_snake_case)]
@@ -43,11 +44,9 @@ fn populate_messages(
 		// Just stick Itemized & Paginated here for coverage; we don't use them for Messages
 		PayloadLocation::OnChain | PayloadLocation::Itemized | PayloadLocation::Paginated =>
 			generate_payload(1, None),
-		PayloadLocation::IPFS => (
-			multibase::decode(sp_std::str::from_utf8(cid).unwrap()).unwrap().1,
-			IPFS_PAYLOAD_LENGTH,
-		)
-			.encode(),
+		PayloadLocation::IPFS =>
+			(multibase::decode(core::str::from_utf8(cid).unwrap()).unwrap().1, IPFS_PAYLOAD_LENGTH)
+				.encode(),
 	};
 
 	let mut counter = 0;
@@ -73,12 +72,12 @@ fn populate_messages(
 /// * `content_len` - Length of content string to generate
 fn generate_payload(num_items: u8, content_len: Option<u8>) -> Vec<u8> {
 	let mut result_str = String::new();
-	let size = content_len.unwrap_or_else(|| 3);
-	let mut rng = rand::thread_rng();
+	let size = content_len.unwrap_or(3);
+	let mut rng = rand::rng();
 
 	for _ in 0..num_items {
 		let payload = serde_json::to_string(&Payload {
-			fromId: rng.gen(),
+			fromId: rng.random(),
 			content: (0..size).map(|_| "X").collect::<String>(),
 		})
 		.unwrap();
@@ -289,7 +288,7 @@ fn get_messages_by_schema_with_ipfs_payload_location_should_fail_bad_schema() {
 	new_test_ext().execute_with(|| {
 		let bad_message: Message<MessagesMaxPayloadSizeBytes> = Message {
 			payload: BoundedVec::try_from(
-				vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].to_vec(),
+				[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16].to_vec(),
 			)
 			.unwrap(),
 			msa_id: Some(0),

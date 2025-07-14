@@ -2,12 +2,18 @@ use crate::msa::MessageSourceId;
 #[cfg(feature = "std")]
 use crate::utils::*;
 use frame_support::BoundedVec;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
 use sp_core::ConstU32;
-use sp_std::vec::Vec;
+extern crate alloc;
+use crate::{
+	node::EIP712Encode, signatures::get_eip712_encoding_prefix, utils::to_abi_compatible_number,
+};
+use alloc::{boxed::Box, vec::Vec};
+use lazy_static::lazy_static;
+use sp_core::U256;
 
 /// The minimum base and canonical handle (not including suffix or delimiter) length in characters
 pub const HANDLE_CHARS_MIN: u32 = 3;
@@ -42,7 +48,7 @@ pub type SuffixRangeType = u16;
 pub type SequenceIndex = u16;
 
 /// Claim handle payload
-#[derive(TypeInfo, Clone, Debug, Decode, Encode, PartialEq, Eq)]
+#[derive(TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
 pub struct ClaimHandlePayload<BlockNumber> {
 	/// The desired base handle
 	pub base_handle: Vec<u8>,
@@ -54,6 +60,30 @@ impl<BlockNumber> ClaimHandlePayload<BlockNumber> {
 	/// Create a new ClaimHandlePayload
 	pub fn new(base_handle: Vec<u8>, expiration: BlockNumber) -> Self {
 		ClaimHandlePayload { base_handle, expiration }
+	}
+}
+
+impl<BlockNumber> EIP712Encode for ClaimHandlePayload<BlockNumber>
+where
+	BlockNumber: Into<U256> + TryFrom<U256> + Copy,
+{
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ClaimHandlePayload(string handle,uint32 expiration)");
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_handle = sp_io::hashing::keccak_256(self.base_handle.as_ref());
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let message = sp_io::hashing::keccak_256(
+			&[MAIN_TYPE_HASH.as_slice(), &coded_handle, &coded_expiration].concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
 	}
 }
 

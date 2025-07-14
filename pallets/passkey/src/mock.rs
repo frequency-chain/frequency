@@ -81,6 +81,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 impl pallet_transaction_payment::Config for Test {
@@ -90,6 +91,7 @@ impl pallet_transaction_payment::Config for Test {
 	type LengthToFee = TransactionByteFee;
 	type FeeMultiplierUpdate = ();
 	type OperationalFeeMultiplier = ConstU8<5>;
+	type WeightInfo = ();
 }
 
 impl pallet_passkey::Config for Test {
@@ -116,6 +118,7 @@ impl pallet_balances::Config for Test {
 	type RuntimeFreezeReason = ();
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = ();
+	type DoneSlashHandler = ();
 }
 
 pub struct MockPasskeyCallFilter;
@@ -142,7 +145,8 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
-	use sp_std::sync::Arc;
+	extern crate alloc;
+	use alloc::sync::Arc;
 
 	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);

@@ -1,17 +1,18 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair } from '../scaffolding/helpers';
+import { assertExtrinsicSucceededAndFeesPaid, CENTS, createAndFundKeypair } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Create Accounts', function () {
   let keys: KeyringPair;
 
   before(async function () {
-    keys = await createAndFundKeypair(fundingSource, 50_000_000n);
+    fundingSource = await getFundingSource(import.meta.url);
+    keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
   });
 
   describe('createMsa', function () {
@@ -25,12 +26,7 @@ describe('Create Accounts', function () {
         'should have returned an ExtrinsicSuccess event'
       );
       assert.notEqual(msaCreatedEvent, undefined, 'should have returned  an MsaCreated event');
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
-
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(msaCreatedEvent?.data.msaId, undefined, 'Failed to get the msaId from the event');
     });
 

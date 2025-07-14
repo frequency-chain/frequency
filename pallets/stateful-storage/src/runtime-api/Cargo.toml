@@ -11,7 +11,6 @@ edition = "2021"
 
 [dependencies]
 # Substrate
-sp-std = { workspace = true }
 sp-api = { workspace = true }
 frame-support = { workspace = true }
 sp-runtime = { workspace = true }
@@ -26,3 +25,6 @@ std = [
   'common-primitives/std',
   'sp-runtime/std',
 ]
+
+[lints]
+workspace = true

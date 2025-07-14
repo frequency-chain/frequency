@@ -52,7 +52,7 @@ fn grant_permissions_for_schemas_errors_when_exceeds_max_schema_grants() {
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
-		let additional_grants = (2..32 as u16).collect::<Vec<_>>();
+		let additional_grants = (2..32_u16).collect::<Vec<_>>();
 		let result = Msa::grant_permissions_for_schemas(delegator, provider, additional_grants);
 
 		assert_noop!(result, Error::<Test>::ExceedsMaxSchemaGrantsPerDelegation);
@@ -176,7 +176,7 @@ fn revoke_permissions_for_schema_success() {
 			<Test as Config>::MaxSchemaGrantsPerDelegation,
 		>::new();
 
-		expected.try_insert(1, 1u32.into()).expect("testing expected");
+		expected.try_insert(1, 1u32).expect("testing expected");
 
 		assert_eq!(delegation_relationship.schema_permissions, expected);
 	});
@@ -205,7 +205,7 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 
 		assert_ok!(Msa::add_provider(provider, delegator, schema_grants));
 
-		let additional_grants = (3..32 as u16).collect::<Vec<_>>();
+		let additional_grants = (3..32_u16).collect::<Vec<_>>();
 		let result = Msa::revoke_permissions_for_schemas(delegator, provider, additional_grants);
 
 		assert_noop!(result, Error::<Test>::SchemaNotGranted);
@@ -213,7 +213,7 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 		let result = DelegatorAndProviderToDelegation::<Test>::get(delegator, provider);
 
 		let mut expected = Delegation {
-			revoked_at: 0u32.into(),
+			revoked_at: 0u32,
 			schema_permissions: BoundedBTreeMap::<
 				SchemaId,
 				BlockNumberFor<Test>,
@@ -221,15 +221,9 @@ fn revoke_permissions_for_schemas_errors_when_schema_does_not_exist_in_list_of_s
 			>::new(),
 		};
 
-		expected
-			.schema_permissions
-			.try_insert(1, 0u32.into())
-			.expect("testing expected");
+		expected.schema_permissions.try_insert(1, 0u32).expect("testing expected");
 
-		expected
-			.schema_permissions
-			.try_insert(2, 0u32.into())
-			.expect("testing expected");
+		expected.schema_permissions.try_insert(2, 0u32).expect("testing expected");
 
 		assert_eq!(result.unwrap(), expected);
 	});
@@ -259,7 +253,7 @@ fn schema_permissions_trait_impl_try_get_mut_schema_success() {
 		assert_ok!(PermittedDelegationSchemas::<Test>::try_get_mut_schema(
 			&mut delegation,
 			schema_id,
-			revoked_block_number.clone()
+			revoked_block_number
 		));
 
 		assert_eq!(delegation.schema_permissions.get(&schema_id).unwrap(), &revoked_block_number);

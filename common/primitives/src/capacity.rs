@@ -28,6 +28,9 @@ pub trait Nontransferable {
 	/// The available Capacity for an MSA.
 	fn balance(msa_id: MessageSourceId) -> Self::Balance;
 
+	/// The replenishable Capacity for an MSA (the total capacity currently issued)
+	fn replenishable_balance(msa_id: MessageSourceId) -> Self::Balance;
+
 	/// Reduce Capacity of an MSA by amount.
 	fn deduct(msa_id: MessageSourceId, capacity_amount: Self::Balance)
 		-> Result<(), DispatchError>;

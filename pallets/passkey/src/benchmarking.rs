@@ -11,11 +11,12 @@ use crate::{
 	types::*,
 };
 use common_primitives::utils::wrap_binary_data;
-use frame_benchmarking::benchmarks;
+use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use sp_core::{crypto::KeyTypeId, Encode};
 use sp_runtime::{traits::Zero, MultiSignature, RuntimeAppPublic};
-use sp_std::prelude::*;
+extern crate alloc;
+use alloc::boxed::Box;
 
 pub const TEST_KEY_TYPE_ID: KeyTypeId = KeyTypeId(*b"test");
 
@@ -32,7 +33,7 @@ fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 	let test_account_1_pk = SignerId::generate_pair(None);
 	let test_account_1_account_id =
 		T::AccountId::decode(&mut &test_account_1_pk.encode()[..]).unwrap();
-	T::Currency::set_balance(&test_account_1_account_id.clone().into(), 4_000_000_000u32.into());
+	T::Currency::set_balance(&test_account_1_account_id.clone(), 4_000_000_000u32.into());
 	let secret = p256::SecretKey::from_slice(&[
 		1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8, 1, 2, 3, 4, 5, 6, 7, 8,
 	])
@@ -55,7 +56,8 @@ fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 
 	let passkey_signature =
 		passkey_sign(&secret, &call.encode(), &client_data, &authenticator).unwrap();
-	let payload = PasskeyPayloadV2 {
+
+	PasskeyPayloadV2 {
 		passkey_public_key,
 		verifiable_passkey_signature: VerifiablePasskeySignature {
 			signature: passkey_signature,
@@ -64,31 +66,40 @@ fn generate_payload<T: Config>() -> PasskeyPayloadV2<T> {
 		},
 		account_ownership_proof: signature,
 		passkey_call: call,
-	};
-	payload
+	}
 }
 
-benchmarks! {
-	where_clause {  where
+#[benchmarks(
+	where
 		BalanceOf<T>: From<u64>,
-		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>
-	}
+		<T as frame_system::Config>::RuntimeCall: From<Call<T>> + Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
+		<T as frame_system::Config>::RuntimeOrigin: AsTransactionAuthorizedOrigin,
+)]
+mod benchmarks {
+	use super::*;
 
-	validate {
+	#[benchmark]
+	fn validate() -> Result<(), BenchmarkError> {
 		let payload = generate_payload::<T>();
-	}: {
-		assert_ok!(Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload }));
+		#[block]
+		{
+			assert_ok!(Passkey::validate_unsigned(
+				TransactionSource::InBlock,
+				&Call::proxy_v2 { payload }
+			));
+		}
+		Ok(())
 	}
 
-	pre_dispatch {
+	#[benchmark]
+	fn pre_dispatch() -> Result<(), BenchmarkError> {
 		let payload = generate_payload::<T>();
-	}: {
-		assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
+		#[block]
+		{
+			assert_ok!(Passkey::pre_dispatch(&Call::proxy_v2 { payload }));
+		}
+		Ok(())
 	}
 
-	impl_benchmark_test_suite!(
-		Passkey,
-		crate::mock::new_test_ext_keystore(),
-		crate::mock::Test
-	);
+	impl_benchmark_test_suite!(Passkey, crate::mock::new_test_ext_keystore(), crate::mock::Test);
 }

@@ -6,7 +6,8 @@ use common_primitives::{
 use frame_support::{assert_err, assert_noop, assert_ok, dispatch::DispatchResult};
 use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
-use sp_std::collections::btree_set::BTreeSet;
+extern crate alloc;
+use alloc::collections::btree_set::BTreeSet;
 
 struct TestCase<T> {
 	handle: &'static str,
@@ -394,13 +395,12 @@ fn claim_handle_with_various_spaces_should_get_correct_display_handle() {
 fn test_verify_handle_length() {
 	new_test_ext().execute_with(|| {
 		// Max bytes handle is ok
-		let handle_str: String = std::iter::repeat('*').take((HANDLE_BYTES_MAX) as usize).collect();
+		let handle_str: String = "*".repeat((HANDLE_BYTES_MAX) as usize);
 		let handle = handle_str.as_bytes().to_vec();
 		assert_ok!(Handles::verify_max_handle_byte_length(handle));
 
 		// However, max bytes handle plus 1 is not ok
-		let handle_str: String =
-			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
+		let handle_str: String = "*".repeat((HANDLE_BYTES_MAX + 1) as usize);
 		let handle = handle_str.as_bytes().to_vec();
 		assert_err!(
 			Handles::verify_max_handle_byte_length(handle),
@@ -413,14 +413,13 @@ fn test_verify_handle_length() {
 fn test_validate_handle() {
 	new_test_ext().execute_with(|| {
 		let good_handle: String = String::from("MyBonny");
-		assert_eq!(Handles::validate_handle(good_handle.as_bytes().to_vec()), true);
+		assert!(Handles::validate_handle(good_handle.as_bytes().to_vec()));
 
-		let too_long_handle: String =
-			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
-		assert_eq!(Handles::validate_handle(too_long_handle.as_bytes().to_vec()), false);
+		let too_long_handle: String = "*".repeat((HANDLE_BYTES_MAX + 1) as usize);
+		assert!(!Handles::validate_handle(too_long_handle.as_bytes().to_vec()));
 
 		let handle_with_emoji = format_args!("John{}", '\u{1F600}').to_string();
-		assert_eq!(Handles::validate_handle(handle_with_emoji.as_bytes().to_vec()), false);
+		assert!(!Handles::validate_handle(handle_with_emoji.as_bytes().to_vec()));
 	})
 }
 
@@ -439,8 +438,19 @@ fn test_check_handle() {
 			}
 		);
 
-		let too_long_handle: String =
-			std::iter::repeat('*').take((HANDLE_BYTES_MAX + 1) as usize).collect();
+		let good_whitespace_handle: String = String::from("  hel   lo  ");
+		assert_eq!(
+			Handles::check_handle(good_whitespace_handle.as_bytes().to_vec()),
+			CheckHandleResponse {
+				base_handle: "hel lo".as_bytes().to_vec(),
+				suffix_index: 0,
+				suffixes_available: true,
+				valid: true,
+				canonical_base: String::from("he110").as_bytes().to_vec(),
+			}
+		);
+
+		let too_long_handle: String = "*".repeat((HANDLE_BYTES_MAX + 1) as usize);
 		assert_eq!(
 			Handles::check_handle(too_long_handle.as_bytes().to_vec()),
 			CheckHandleResponse {

@@ -1,12 +1,11 @@
 // These run ONCE per entire test run
 import { cryptoWaitReady } from '@polkadot/util-crypto';
-import workerpool from 'workerpool';
 import { globSync } from 'glob';
 import { ExtrinsicHelper } from './extrinsicHelpers';
 import { getFundingSource, getRootFundingSource, getSudo } from './funding';
 import { TEST_EPOCH_LENGTH, drainKeys, getNonce, setEpochLength } from './helpers';
 import { isDev, providerUrl } from './env';
-import { getUnifiedAddress } from './ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import type { KeyringPair } from '@polkadot/keyring/types';
 
 const DEFAULT_AMOUNT = 100_000_000_000_000n; // 1,000,000 UNIT per source
@@ -37,10 +36,10 @@ async function fundAccountAmount(dest: KeyringPair): Promise<{ dest: KeyringPair
 
 function fundSourceTransfer(root: KeyringPair, dest: KeyringPair, amount: bigint, nonce: number) {
   try {
-    // Only transfer the ammount needed
+    // Only transfer the amount needed
     return ExtrinsicHelper.transferFunds(root, dest, amount).signAndSend(nonce);
   } catch (e) {
-    console.error('Unable to fund soruce', { dest });
+    console.error('Unable to fund source', { dest });
     throw e;
   }
 }
@@ -55,6 +54,8 @@ async function fundAccountsToDefault(dests: KeyringPair[]) {
       .filter(({ amount }) => amount > 0n)
       .map(({ amount, dest }, i) => fundSourceTransfer(root, dest, amount, nonce + i))
   );
+  // Make sure we are finalized before trying to use the funds
+  await ExtrinsicHelper.waitForFinalization();
   console.log('Root funding complete!');
 }
 
@@ -65,10 +66,9 @@ async function devSudoActions() {
 }
 
 export async function mochaGlobalSetup(context) {
-  console.log('Global Setup Start', 'Reported CPU Count: ', workerpool.cpus);
   await cryptoWaitReady();
   await ExtrinsicHelper.initialize(providerUrl);
-  await fundAccountsToDefault(getAllTestFiles().map(getFundingSource));
+  await fundAccountsToDefault(await Promise.all(getAllTestFiles().map(getFundingSource)));
 
   // Sudo is only when not on Testnet
   if (isDev()) await devSudoActions();

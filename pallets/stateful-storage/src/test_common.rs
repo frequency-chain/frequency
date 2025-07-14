@@ -16,7 +16,7 @@ pub mod constants {
 	/// Account mentioned above maps to the following msa id
 	pub const SIGNATURE_MSA_ID: MessageSourceId = 105;
 
-	/// additional unit test schemas
+	// additional unit test schemas
 
 	/// Itemized
 	pub const UNDELEGATED_ITEMIZED_APPEND_ONLY_SCHEMA: SchemaId = 102;

@@ -1,14 +1,10 @@
 import '@frequency-chain/api-augment';
+import assert from 'assert';
 import { ApiPromise, ApiRx } from '@polkadot/api';
 import { ApiTypes, AugmentedEvent, SubmittableExtrinsic, SignerOptions } from '@polkadot/api/types';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Compact, u128, u16, u32, u64, Vec, Option, Bool } from '@polkadot/types';
-import {
-  FrameSystemAccountInfo,
-  PalletTimeReleaseReleaseSchedule,
-  SpRuntimeDispatchError,
-  PalletSchedulerScheduled,
-} from '@polkadot/types/lookup';
+import { FrameSystemAccountInfo, SpRuntimeDispatchError } from '@polkadot/types/lookup';
 import { AnyJson, AnyNumber, AnyTuple, Codec, IEvent, ISubmittableResult } from '@polkadot/types/types';
 import { firstValueFrom, filter, map, pipe, tap } from 'rxjs';
 import { getBlockNumber, getExistentialDeposit, getFinalizedBlockNumber, log, MultiSignatureType } from './helpers';
@@ -29,7 +25,8 @@ import { u8aToHex } from '@polkadot/util/u8a/toHex';
 import { u8aWrapBytes } from '@polkadot/util';
 import type { AccountId32, Call, H256 } from '@polkadot/types/interfaces/runtime';
 import { hasRelayChain } from './env';
-import { getUnifiedAddress, getUnifiedPublicKey } from './ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
+import { RpcErrorInterface } from '@polkadot/rpc-provider/types';
 
 export interface ReleaseSchedule {
   start: number;
@@ -43,11 +40,20 @@ export interface AddKeyData {
   expiration?: any;
   newPublicKey?: any;
 }
+
+export interface AuthorizedKeyData {
+  discriminant: 'AuthorizedKeyData';
+  msaId: u64;
+  expiration?: number | any;
+  authorizedPublicKey: KeyringPair['publicKey'];
+}
+
 export interface AddProviderPayload {
   authorizedMsaId?: u64;
   schemaIds?: u16[];
   expiration?: any;
 }
+
 export interface ItemizedSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -55,12 +61,14 @@ export interface ItemizedSignaturePayload {
   expiration?: any;
   actions?: any;
 }
+
 export interface ItemizedSignaturePayloadV2 {
   schemaId?: u16;
   targetHash?: u32;
   expiration?: any;
   actions?: any;
 }
+
 export interface PaginatedUpsertSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -69,6 +77,7 @@ export interface PaginatedUpsertSignaturePayload {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedUpsertSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
@@ -76,6 +85,7 @@ export interface PaginatedUpsertSignaturePayloadV2 {
   expiration?: any;
   payload?: any;
 }
+
 export interface PaginatedDeleteSignaturePayload {
   msaId?: u64;
   schemaId?: u16;
@@ -83,11 +93,22 @@ export interface PaginatedDeleteSignaturePayload {
   targetHash?: u32;
   expiration?: any;
 }
+
 export interface PaginatedDeleteSignaturePayloadV2 {
   schemaId?: u16;
   pageId?: u16;
   targetHash?: u32;
   expiration?: any;
+}
+
+export interface RecoveryCommitmentPayload {
+  discriminant: 'RecoveryCommitmentPayload';
+  recoveryCommitment: any;
+  expiration?: any;
+}
+
+export function isRpcError<T = string>(e: any): e is RpcErrorInterface<T> {
+  return e?.name === 'RpcError';
 }
 
 export class EventError extends Error {
@@ -162,6 +183,7 @@ function eventKey(event: Event): string {
  */
 
 type ParsedEvent<C extends Codec[] = Codec[], N = unknown> = IEvent<C, N>;
+
 export interface ParsedEventResult<C extends Codec[] = Codec[], N = unknown> {
   target?: ParsedEvent<C, N>;
   eventMap: EventMap;
@@ -181,34 +203,44 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
   }
 
   // This uses automatic nonce management by default.
-  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}) {
+  public async signAndSend(inputNonce?: AutoNonce, options: Partial<SignerOptions> = {}, waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
 
     try {
       const op = this.extrinsic();
       // Era is 0 for tests due to issues with BirthBlock
+
       return await firstValueFrom(
         op.signAndSend(this.keys, { nonce, era: 0, ...options }).pipe(
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
+            if (result.status.isInvalid) {
+              console.error('SEND ALERT: INVALID FOUND', op.method.toHuman(), 'txHash', result.txHash.toHex());
+            }
             if (result.isError) {
-              throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status: ${result.status}`
+              );
             }
           }),
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
       );
     } catch (e) {
-      if ((e as any).name === 'RpcError' && inputNonce === 'auto') {
-        console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+      if (isRpcError(e)) {
+        if (inputNonce === 'auto') {
+          console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
+        }
+        log(`RpcError:`, { code: e.code, data: e.data });
       }
       throw e;
     }
   }
 
-  public async sudoSignAndSend() {
+  public async sudoSignAndSend(waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
@@ -216,13 +248,13 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .sudo(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
     );
   }
 
-  public async payWithCapacity(inputNonce?: AutoNonce) {
+  public async payWithCapacity(inputNonce?: AutoNonce, waitForInBlock = true) {
     const nonce = await autoNonce.auto(this.keys, inputNonce);
     // Era is 0 for tests due to issues with BirthBlock
     return await firstValueFrom(
@@ -230,12 +262,30 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         .payWithCapacity(this.extrinsic())
         .signAndSend(this.keys, { nonce, era: 0 })
         .pipe(
-          filter(({ status }) => status.isInBlock || status.isFinalized),
+          tap((result) => {
+            if (result.status.isInvalid) {
+              console.error(
+                'CAPACITY ALERT: INVALID FOUND',
+                this.extrinsic().method.toHuman(),
+                'txHash',
+                result.txHash
+              );
+            }
+            if (result.isError) {
+              throw new CallError(
+                result,
+                `Failed Transaction for ${this.event?.meta.name || 'unknown'}, status is ${result.status}`
+              );
+            }
+          }),
+          // Can comment out filter to help debug hangs
+          filter(({ status }) => (waitForInBlock && status.isInBlock) || status.isFinalized),
           this.parseResult(this.event)
         )
     );
   }
 
+  // check transaction cost difference between local+upgrade and testnet
   public getEstimatedTxFee(): Promise<bigint> {
     return firstValueFrom(
       this.extrinsic()
@@ -256,23 +306,25 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
     ]);
     const freeBalance = BigInt(accountInfo.data.free.toString()) - (await getExistentialDeposit());
     if (amount > freeBalance) {
-      await ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend();
+      await assert.doesNotReject(
+        ExtrinsicHelper.transferFunds(source, this.keys, amount).signAndSend(undefined, undefined, false)
+      );
     }
   }
 
-  public async fundAndSend(source: KeyringPair) {
+  public async fundAndSend(source: KeyringPair, waitForInBlock = true) {
     await this.fundOperation(source);
-    log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
-    return this.signAndSend();
+    log('Fund and Send', `${this.extrinsic().method.method} Fund Source: ${getUnifiedAddress(source)}`);
+    return this.signAndSend(undefined, undefined, waitForInBlock);
   }
 
-  public async fundAndSendUnsigned(source: KeyringPair) {
+  public async fundAndSendUnsigned(source: KeyringPair, willError = false) {
     await this.fundOperation(source);
     log('Fund and Send', `Fund Source: ${getUnifiedAddress(source)}`);
-    return this.sendUnsigned();
+    return this.sendUnsigned(willError);
   }
 
-  public async sendUnsigned() {
+  public async sendUnsigned(willError = false) {
     const op = this.extrinsic();
     try {
       return await firstValueFrom(
@@ -280,6 +332,9 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
           tap((result) => {
             // If we learn a transaction has an error status (this does NOT include RPC errors)
             // Then throw an error
+            if (result.status.isInvalid) {
+              console.error('UNSIGNED ALERT: INVALID FOUND', op.method.toHuman(), 'txHash', result.txHash);
+            }
             if (result.isError) {
               throw new CallError(result, `Failed Transaction for ${this.event?.meta.name || 'unknown'}`);
             }
@@ -289,8 +344,7 @@ export class Extrinsic<N = unknown, T extends ISubmittableResult = ISubmittableR
         )
       );
     } catch (e) {
-      console.error(e);
-      if ((e as any).name === 'RpcError') {
+      if ((e as any).name === 'RpcError' && !willError) {
         console.error("WARNING: Unexpected RPC Error! If it is expected, use 'current' for the nonce.");
       }
       throw e;
@@ -385,34 +439,6 @@ export class ExtrinsicHelper {
   }
 
   /** Schema Extrinsics */
-  public static createSchema(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated'
-  ) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.schemas.createSchema(JSON.stringify(model), modelType, payloadLocation),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
-  /** Schema v2 Extrinsics */
-  public static createSchemaV2(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
-    grant: ('AppendOnly' | 'SignatureRequired')[]
-  ) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.schemas.createSchemaV2(JSON.stringify(model), modelType, payloadLocation, grant),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
   public static async getOrCreateSchemaV3(
     keys: KeyringPair,
     model: any,
@@ -435,7 +461,7 @@ export class ExtrinsicHelper {
       payloadLocation,
       grant,
       schemaNme
-    ).signAndSend();
+    ).signAndSend(undefined, undefined, false);
     if (event?.data.schemaId) {
       return event.data.schemaId;
     }
@@ -459,28 +485,6 @@ export class ExtrinsicHelper {
           payloadLocation,
           grant,
           schemaNme
-        ),
-      keys,
-      ExtrinsicHelper.api.events.schemas.SchemaCreated
-    );
-  }
-
-  /** Generic Schema Extrinsics */
-  public static createSchemaWithSettingsGov(
-    keys: KeyringPair,
-    model: any,
-    modelType: 'AvroBinary' | 'Parquet',
-    payloadLocation: 'OnChain' | 'IPFS' | 'Itemized' | 'Paginated',
-    grant: 'AppendOnly' | 'SignatureRequired'
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.schemas.createSchemaViaGovernance(
-          getUnifiedPublicKey(keys),
-          JSON.stringify(model),
-          modelType,
-          payloadLocation,
-          [grant]
         ),
       keys,
       ExtrinsicHelper.api.events.schemas.SchemaCreated
@@ -547,6 +551,18 @@ export class ExtrinsicHelper {
     return new Extrinsic(() => ExtrinsicHelper.api.tx.msa.retireMsa(), keys, ExtrinsicHelper.api.events.msa.MsaRetired);
   }
 
+  public static addRecoveryCommitment(
+    msaOwnerKey: KeyringPair,
+    proof: MultiSignatureType,
+    payload: RecoveryCommitmentPayload
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.addRecoveryCommitment(getUnifiedAddress(msaOwnerKey), proof, payload),
+      msaOwnerKey,
+      ExtrinsicHelper.api.events.msa.RecoveryCommitmentAdded
+    );
+  }
+
   public static createProvider(keys: KeyringPair, providerName: string) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.createProvider(providerName),
@@ -589,14 +605,6 @@ export class ExtrinsicHelper {
   public static grantSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.msa.grantSchemaPermissions(providerMsaId, schemaIds),
-      delegatorKeys,
-      ExtrinsicHelper.api.events.msa.DelegationUpdated
-    );
-  }
-
-  public static revokeSchemaPermissions(delegatorKeys: KeyringPair, providerMsaId: any, schemaIds: any) {
-    return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.revokeSchemaPermissions(providerMsaId, schemaIds),
       delegatorKeys,
       ExtrinsicHelper.api.events.msa.DelegationUpdated
     );
@@ -665,24 +673,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static applyItemActionsWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: ItemizedSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.applyItemActionsWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.ItemizedPageUpdated
-    );
-  }
-
   public static applyItemActionsWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
@@ -701,24 +691,6 @@ export class ExtrinsicHelper {
     );
   }
 
-  public static deletePageWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: PaginatedDeleteSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.deletePageWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
-    );
-  }
-
   public static deletePageWithSignatureV2(
     delegatorKeys: KeyringPair,
     providerKeys: KeyringPair,
@@ -734,24 +706,6 @@ export class ExtrinsicHelper {
         ),
       providerKeys,
       ExtrinsicHelper.api.events.statefulStorage.PaginatedPageDeleted
-    );
-  }
-
-  public static upsertPageWithSignature(
-    delegatorKeys: KeyringPair,
-    providerKeys: KeyringPair,
-    signature: MultiSignatureType,
-    payload: PaginatedUpsertSignaturePayload
-  ) {
-    return new Extrinsic(
-      () =>
-        ExtrinsicHelper.api.tx.statefulStorage.upsertPageWithSignature(
-          getUnifiedPublicKey(delegatorKeys),
-          signature,
-          payload
-        ),
-      providerKeys,
-      ExtrinsicHelper.api.events.statefulStorage.PaginatedPageUpdated
     );
   }
 
@@ -868,6 +822,7 @@ export class ExtrinsicHelper {
       ExtrinsicHelper.api.events.capacity.EpochLengthUpdated
     );
   }
+
   public static stake(keys: KeyringPair, target: any, amount: any) {
     return new Extrinsic(
       () => ExtrinsicHelper.api.tx.capacity.stake(target, amount),
@@ -945,9 +900,9 @@ export class ExtrinsicHelper {
     const blockNumber = ofBlockNumber || (await getBlockNumber());
     let currentBlock = await getFinalizedBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 120_000 < Date.now()) {
         throw new Error(
-          `Waiting for Finalized Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting for Finalized Block took longer than 120s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait
@@ -964,9 +919,9 @@ export class ExtrinsicHelper {
     const start = Date.now();
     let currentBlock = await getBlockNumber();
     while (currentBlock < blockNumber) {
-      if (start + 48_000 < Date.now()) {
+      if (start + 120_000 < Date.now()) {
         throw new Error(
-          `Waiting to run to Block took longer than 48s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
+          `Waiting to run to Block took longer than 120s. Waiting for "${blockNumber.toString()}", Current: "${currentBlock.toString()}"`
         );
       }
       // In Testnet, just wait
@@ -1010,5 +965,28 @@ export class ExtrinsicHelper {
       keys,
       ExtrinsicHelper.api.events.passkey.TransactionExecutionSuccess
     );
+  }
+
+  public static withdrawTokens(
+    keys: KeyringPair,
+    ownerKeys: KeyringPair,
+    ownerSignature: MultiSignatureType,
+    payload: AuthorizedKeyData
+  ) {
+    return new Extrinsic(
+      () => ExtrinsicHelper.api.tx.msa.withdrawTokens(getUnifiedPublicKey(ownerKeys), ownerSignature, payload),
+      keys,
+      ExtrinsicHelper.api.events.balances.Transfer
+    );
+  }
+
+  public static getCapacityFee(chainEvents: EventMap): bigint {
+    if (
+      chainEvents['capacity.CapacityWithdrawn'] &&
+      ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
+    ) {
+      return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
+    }
+    return 0n;
   }
 }

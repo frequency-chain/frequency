@@ -1,0 +1,31 @@
+services:
+  relay_paseo_alice:
+    container_name: alice
+
+  relay_paseo_bob:
+    container_name: bob
+
+  collator_frequency:
+    container_name: frequency
+    image: frequencychain/collator-node-local:latest
+    platform: linux/x86_64
+    environment:
+      - HOST_ALICE=relay_alice
+      - HOST_BOB=relay_bob
+      - ALICE_RPC_PORT=9944
+      - BOB_RPC_PORT=9944
+    ports:
+      - "30333:30333" # p2p port
+      - "9944:9944" # ws and rpc port
+    depends_on:
+      relay_paseo_alice:
+        condition: service_healthy
+      relay_paseo_bob:
+        condition: service_healthy
+    volumes:
+      - collator_data:/data
+      - ../scripts:/frequency/scripts
+
+volumes:
+  collator_data:
+  collator_base_path:

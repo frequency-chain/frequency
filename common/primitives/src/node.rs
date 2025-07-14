@@ -4,7 +4,9 @@ pub use sp_runtime::{
 	traits::{BlakeTwo256, IdentifyAccount, Verify},
 	DispatchError, MultiAddress, MultiSignature, OpaqueExtrinsic,
 };
-use sp_std::{boxed::Box, vec::Vec};
+
+extern crate alloc;
+use alloc::{boxed::Box, vec::Vec};
 
 use crate::signatures::UnifiedSignature;
 use frame_support::dispatch::DispatchResultWithPostInfo;
@@ -65,4 +67,10 @@ pub trait ProposalProvider<AccountId, Proposal> {
 pub trait UtilityProvider<Origin, RuntimeCall> {
 	/// Passthrough into the Utility::batch_all call
 	fn batch_all(origin: Origin, calls: Vec<RuntimeCall>) -> DispatchResultWithPostInfo;
+}
+
+/// Trait that must be implemented to be able to encode the payload to eip-712 compatible signatures
+pub trait EIP712Encode {
+	/// encodes the type without hashing it
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]>;
 }

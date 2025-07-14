@@ -1,4 +1,5 @@
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 /// Mainnet Genesis Hash 0x4a587bf17a404e3572747add7aab7bbe56e805a5479c6c436f07f36fcc8d3ae1
 pub const MAINNET_GENESIS_HASH: &[u8] = &[
@@ -31,6 +32,17 @@ pub fn get_chain_type_by_genesis_hash(genesis_hash: &[u8]) -> DetectedChainType 
 		_ => DetectedChainType::Unknown,
 	}
 }
+
+/// Generic function for converting any unsigned integer to a 32-byte array compatible with ETH abi
+pub fn to_abi_compatible_number<T: Into<u128>>(value: T) -> [u8; 32] {
+	let value_u128: u128 = value.into();
+	let bytes = value_u128.to_be_bytes();
+	let start_idx = 32 - bytes.len();
+	let mut result = [0u8; 32];
+	result[start_idx..].copy_from_slice(&bytes);
+	result
+}
+
 /// Handle serializing and deserializing from `Vec<u8>` to hexadecimal
 #[cfg(feature = "std")]
 pub mod as_hex {
@@ -67,13 +79,11 @@ pub mod as_hex_option {
 	}
 
 	/// Deserializes a hexadecimal string into a `Vec<u8>`
-	pub fn deserialize<'de, D: Deserializer<'de>>(
-		deserializer: D,
-	) -> Result<Option<Vec<u8>>, D::Error>
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<u8>>, D::Error>
 	where
 		D: Deserializer<'de>,
 	{
-		impl_serde::serialize::deserialize(deserializer).map(|r| Some(r))
+		impl_serde::serialize::deserialize(deserializer).map(Some)
 	}
 }
 /// Handle serializing and deserializing from `Vec<u8>` to a UTF-8 string
@@ -83,7 +93,7 @@ pub mod as_string {
 	use serde::{ser::Error, Deserialize, Deserializer, Serialize, Serializer};
 
 	/// Serializes a `Vec<u8>` into a UTF-8 string
-	pub fn serialize<S: Serializer>(bytes: &Vec<u8>, serializer: S) -> Result<S::Ok, S::Error> {
+	pub fn serialize<S: Serializer>(bytes: &[u8], serializer: S) -> Result<S::Ok, S::Error> {
 		std::str::from_utf8(bytes)
 			.map_err(|e| S::Error::custom(format!("Debug buffer contains invalid UTF8: {}", e)))?
 			.serialize(serializer)
@@ -128,8 +138,8 @@ pub mod as_string_option {
 	}
 }
 
-const PREFIX: &'static str = "<Bytes>";
-const POSTFIX: &'static str = "</Bytes>";
+const PREFIX: &str = "<Bytes>";
+const POSTFIX: &str = "</Bytes>";
 
 /// Wraps `PREFIX` and `POSTFIX` around a `Vec<u8>`
 /// Returns `PREFIX` ++ `data` ++ `POSTFIX`
@@ -147,6 +157,7 @@ mod tests {
 	use parity_scale_codec::{Decode, Encode};
 	use scale_info::TypeInfo;
 	use serde::{Deserialize, Serialize};
+	use sp_core::U256;
 
 	#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 	#[derive(Default, Clone, Encode, Decode, PartialEq, Debug, TypeInfo, Eq)]
@@ -297,5 +308,53 @@ mod tests {
 
 		// assert
 		assert_eq!(detected, DetectedChainType::FrequencyPaseoTestNet);
+	}
+
+	#[test]
+	fn abi_compatible_number_should_work_with_different_types() {
+		// For u8
+		let u8_val: u8 = 42;
+		let coded_u8_val = to_abi_compatible_number(u8_val);
+		let u8_val: U256 = u8_val.into();
+		assert_eq!(
+			coded_u8_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u8_val)).unwrap()
+		);
+
+		// For u16
+		let u16_val: u16 = 12345;
+		let coded_u16_val = to_abi_compatible_number(u16_val);
+		let u16_val: U256 = u16_val.into();
+		assert_eq!(
+			coded_u16_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u16_val)).unwrap()
+		);
+
+		// For u32
+		let u32_val: u32 = 305419896;
+		let coded_u32_val = to_abi_compatible_number(u32_val);
+		let u32_val: U256 = u32_val.into();
+		assert_eq!(
+			coded_u32_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u32_val)).unwrap()
+		);
+
+		// For u64
+		let u64_val: u64 = 1234567890123456789;
+		let coded_u64_val = to_abi_compatible_number(u64_val);
+		let u64_val: U256 = u64_val.into();
+		assert_eq!(
+			coded_u64_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u64_val)).unwrap()
+		);
+
+		// For u128
+		let u128_val: u128 = 340282366920938463463374607431768211455; // Max u128 value
+		let coded_u128_val = to_abi_compatible_number(u128_val);
+		let u128_val: U256 = u128_val.into();
+		assert_eq!(
+			coded_u128_val.to_vec(),
+			sp_core::bytes::from_hex(&format!("0x{:064x}", u128_val)).unwrap()
+		);
 	}
 }

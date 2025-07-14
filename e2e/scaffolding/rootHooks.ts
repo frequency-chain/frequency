@@ -17,7 +17,7 @@ export const mochaHooks = {
       await cryptoWaitReady();
       await ExtrinsicHelper.initialize(providerUrl);
     } catch (e) {
-      console.error('Failed to run beforeAll root hook: ', this.test.parent.suites[0].title, e);
+      console.error('Failed to run beforeAll root hook: ', this.test.parent.suites[0].title, `${e}`);
     }
   },
   async afterAll() {
@@ -29,7 +29,7 @@ export const mochaHooks = {
       await drainFundedKeys(getRootFundingSource().keys);
       console.log('ENDING ROOT hook shutdown', testSuite);
     } catch (e) {
-      console.error('Failed to run afterAll root hook: ', testSuite, e);
+      console.error('Failed to run afterAll root hook: ', testSuite, `${e}`);
     }
   },
 };

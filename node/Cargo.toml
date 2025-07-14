@@ -42,3 +42,6 @@ frequency-lint-check = [
   "frequency-service/frequency-lint-check",
   "frequency-cli/frequency-lint-check",
 ]
+
+[lints]
+workspace = true

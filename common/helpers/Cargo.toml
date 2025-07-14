@@ -24,3 +24,6 @@ common-primitives = { path = "../primitives", default-features = false }
 [features]
 default = ['std']
 std = ['sp-runtime/std', 'sp-api/std', 'sp-io/std', 'common-primitives/std']
+
+[lints]
+workspace = true

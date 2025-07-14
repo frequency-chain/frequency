@@ -58,7 +58,7 @@ async fn get_paginated_storage_with_non_existent_schema_id_should_return_error()
 		1, 1233, // Non-existing Schema Id
 	);
 
-	assert_eq!(true, result.is_err());
+	assert!(result.is_err());
 }
 
 #[tokio::test]
@@ -71,7 +71,7 @@ async fn get_paginated_storage_with_non_existent_msa_id_should_return_error() {
 		1,
 	);
 
-	assert_eq!(true, result.is_err());
+	assert!(result.is_err());
 }
 
 #[tokio::test]
@@ -84,7 +84,7 @@ async fn get_paginated_storage_with_success() {
 		SUCCESSFUL_SCHEMA_ID, // Schema Id
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let response = result.unwrap();
 	assert_eq!(1, response.len());
 	let page = &response[0];
@@ -104,7 +104,7 @@ async fn get_itemized_storage_with_non_existent_schema_id_should_return_error() 
 		1, 1233, // Non-existing Schema Id
 	);
 
-	assert_eq!(true, result.is_err());
+	assert!(result.is_err());
 }
 
 #[tokio::test]
@@ -117,7 +117,7 @@ async fn get_itemized_storage_with_non_existent_msa_id_should_return_error() {
 		1,
 	);
 
-	assert_eq!(true, result.is_err());
+	assert!(result.is_err());
 }
 
 #[tokio::test]
@@ -130,7 +130,7 @@ async fn get_itemized_storage_with_success() {
 		SUCCESSFUL_SCHEMA_ID, // Schema Id
 	);
 
-	assert_eq!(true, result.is_ok());
+	assert!(result.is_ok());
 	let page = result.unwrap();
 	let items = page.items;
 	assert_eq!(1, items.len());

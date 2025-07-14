@@ -1,5 +1,6 @@
 use serde_json::{from_slice, Value};
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 #[derive(Debug, PartialEq)]
 pub enum SerdeError {

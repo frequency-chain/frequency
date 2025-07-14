@@ -29,12 +29,12 @@ pub fn cannot_register_too_many_signatures() {
 		let limit: u32 = <Test as Config>::MaxSignaturesStored::get().unwrap_or(0);
 		for _i in 0..limit {
 			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
+			assert_ok!(Msa::register_signature(sig, mortality_block));
 		}
 
 		let sig1 = &generate_test_signature();
 		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
+			Msa::register_signature(sig1, mortality_block),
 			Error::<Test>::SignatureRegistryLimitExceeded
 		);
 	})
@@ -46,12 +46,12 @@ pub fn stores_signature_and_increments_count() {
 		System::set_block_number(1);
 		let mortality_block: BlockNumber = 51;
 		let signature = generate_test_signature();
-		assert_ok!(Msa::register_signature(&signature, mortality_block.into()));
+		assert_ok!(Msa::register_signature(&signature, mortality_block));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature.clone(),
-				newest_expires_at: mortality_block.into(),
+				newest_expires_at: mortality_block,
 				oldest: signature.clone(),
 				count: 1,
 			}),
@@ -62,12 +62,12 @@ pub fn stores_signature_and_increments_count() {
 
 		// Expect that the newest changes
 		let signature_1 = generate_test_signature();
-		assert_ok!(Msa::register_signature(&signature_1, mortality_block.into()));
+		assert_ok!(Msa::register_signature(&signature_1, mortality_block));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature_1.clone(),
-				newest_expires_at: mortality_block.into(),
+				newest_expires_at: mortality_block,
 				oldest: signature.clone(),
 				count: 2,
 			}),
@@ -80,30 +80,30 @@ pub fn stores_signature_and_increments_count() {
 		let limit: u32 = <Test as Config>::MaxSignaturesStored::get().unwrap_or(0);
 		for _i in 2..limit {
 			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
+			assert_ok!(Msa::register_signature(sig, mortality_block));
 			newest = sig.clone();
 		}
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: newest.clone(),
-				newest_expires_at: mortality_block.into(),
+				newest_expires_at: mortality_block,
 				oldest: oldest.clone(),
 				count: limit
 			}),
 			<PayloadSignatureRegistryPointer<Test>>::get()
 		);
 
-		run_to_block((mortality_block + 1).into());
+		run_to_block(mortality_block + 1);
 
 		// Test that the next one changes the oldest signature.
 		let signature_n = generate_test_signature();
-		assert_ok!(Msa::register_signature(&signature_n, (mortality_block + 10).into()));
+		assert_ok!(Msa::register_signature(&signature_n, mortality_block + 10));
 
 		assert_eq!(
 			Some(SignatureRegistryPointer {
 				newest: signature_n.clone(),
-				newest_expires_at: (mortality_block + 10).into(),
+				newest_expires_at: (mortality_block + 10),
 				oldest: signature_1.clone(),
 				count: limit,
 			}),
@@ -121,23 +121,23 @@ pub fn clears_stale_signatures_after_mortality_limit() {
 		let limit: u32 = <Test as Config>::MaxSignaturesStored::get().unwrap_or(0);
 		for _i in 0..limit {
 			let sig = &generate_test_signature();
-			assert_ok!(Msa::register_signature(sig, mortality_block.into()));
+			assert_ok!(Msa::register_signature(sig, mortality_block));
 		}
 
-		run_to_block((mortality_block).into());
+		run_to_block(mortality_block);
 
 		// Cannot do it yet as we are at the mortality_block
 
 		let sig1 = &generate_test_signature();
 		assert_noop!(
-			Msa::register_signature(sig1, (mortality_block + 10).into()),
+			Msa::register_signature(sig1, mortality_block + 10),
 			Error::<Test>::SignatureRegistryLimitExceeded
 		);
 
-		run_to_block((mortality_block + 1).into());
+		run_to_block(mortality_block + 1);
 
 		// Now it is OK as we are +1 past the mortality_block
-		assert_ok!(Msa::register_signature(sig1, (mortality_block + 10).into()));
+		assert_ok!(Msa::register_signature(sig1, mortality_block + 10));
 	})
 }
 
@@ -149,13 +149,13 @@ pub fn cannot_register_signature_with_mortality_out_of_bounds() {
 
 		let sig1 = &generate_test_signature();
 		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
+			Msa::register_signature(sig1, mortality_block),
 			Error::<Test>::ProofNotYetValid
 		);
 
 		mortality_block = 11_122;
 		assert_noop!(
-			Msa::register_signature(sig1, mortality_block.into()),
+			Msa::register_signature(sig1, mortality_block),
 			Error::<Test>::ProofHasExpired
 		);
 	})

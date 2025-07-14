@@ -1,6 +1,6 @@
-# Frequency Parachain Node for Testnets
+# Frequency for Testnets
 
-Frequency parachain node which connects to Frequency testnets:
+Frequency node which connects to Frequency testnets:
 
 - Frequency Paseo Testnet `--chain=frequency-paseo` (Default)
 
@@ -30,6 +30,6 @@ docker run -p 9944:9944 -p 30333:30333 frequencychain/parachain-node-testnet:<ve
 
 ## Storage
 
-Remember that parachain nodes contain a full node of the relay chain as well, so plan available storage size accordingly.
+Remember that these nodes contain a full node of the relay chain as well, so plan available storage size accordingly.
 
 Using [Volumes](https://docs.docker.com/storage/volumes/) or [Bind Mounts](https://docs.docker.com/storage/bind-mounts/) is suggested to maintain the `--base-path` between restarts.

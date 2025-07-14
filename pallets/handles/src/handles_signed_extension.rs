@@ -6,8 +6,9 @@ use frame_support::{
 	dispatch::DispatchInfo, ensure, pallet_prelude::ValidTransaction, traits::IsSubType,
 	unsigned::UnknownTransaction,
 };
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
+#[allow(deprecated)]
 use sp_runtime::{
 	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
 	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
@@ -16,14 +17,14 @@ use sp_runtime::{
 /// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
 /// purpose of this is to ensure that the retire_handle extrinsic cannot be
 /// repeatedly called to flood the network.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 
 impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	/// Create new `SignedExtension`.
 	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
+		Self(core::marker::PhantomData)
 	}
 
 	/// Validates the following criteria for the retire_handle() extrinsic:
@@ -40,8 +41,8 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
 		// Validation: The delegator must already have a MSA id
-		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-			.map_err(|e| map_dispatch_error(e))?;
+		let delegator_msa_id =
+			T::MsaInfoProvider::ensure_valid_msa_key(delegator_key).map_err(map_dispatch_error)?;
 		// Validation: The MSA must already have a handle associated with it
 		let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 			.map_err(|_| UnknownTransaction::CannotLookup)?;
@@ -56,17 +57,17 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 			))
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build();
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
+impl<T: Config + Send + Sync> core::fmt::Debug for HandlesSignedExtension<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "HandlesSignedExtension<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -79,6 +80,7 @@ pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	})
 }
 
+#[allow(deprecated)]
 impl<T: Config + Send + Sync> SignedExtension for HandlesSignedExtension<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
@@ -90,11 +92,12 @@ where
 	const IDENTIFIER: &'static str = "HandlesSignedExtension";
 
 	/// Additional signed
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
 		Ok(())
 	}
 
 	/// Pre dispatch
+	#[allow(deprecated)]
 	fn pre_dispatch(
 		self,
 		who: &Self::AccountId,
@@ -108,6 +111,7 @@ where
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
 	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
 	/// * retire_handle
+	///
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
 	/// Arguments:
@@ -115,6 +119,7 @@ where
 	/// call: The pallet extrinsic being called
 	/// unused: _info, _len
 	///
+	#[allow(deprecated)]
 	fn validate(
 		&self,
 		who: &Self::AccountId,

@@ -10,9 +10,10 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, CheckedAdd, CheckedSub, Get, Saturating, Zero},
 	BoundedBTreeMap, RuntimeDebug,
 };
-
 #[cfg(any(feature = "runtime-benchmarks", test))]
-use sp_std::vec::Vec;
+extern crate alloc;
+#[cfg(any(feature = "runtime-benchmarks", test))]
+use alloc::vec::Vec;
 
 /// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 /// this value should be between 0 and 100
@@ -242,9 +243,9 @@ pub fn unlock_chunks_reap_thawed<T: Config>(
 /// set unlock chunks with (balance, thaw_at).  Does not check BoundedVec limit.
 /// returns true on success, false on failure (?)
 /// For testing and benchmarks ONLY, note possible panic via BoundedVec::try_from + unwrap
-pub fn unlock_chunks_from_vec<T: Config>(chunks: &Vec<(u32, u32)>) -> UnlockChunkList<T> {
+pub fn unlock_chunks_from_vec<T: Config>(chunks: &[(u32, u32)]) -> UnlockChunkList<T> {
 	let result: Vec<UnlockChunk<BalanceOf<T>, <T>::EpochNumber>> = chunks
-		.into_iter()
+		.iter()
 		.map(|chunk| UnlockChunk { value: chunk.0.into(), thaw_at: chunk.1.into() })
 		.collect();
 	// CAUTION
@@ -370,7 +371,7 @@ impl<T: Config> ProviderBoostHistory<T> {
 		reward_era: &RewardEra,
 		add_amount: &BalanceOf<T>,
 	) -> Option<usize> {
-		if let Some(entry) = self.0.get_mut(&reward_era) {
+		if let Some(entry) = self.0.get_mut(reward_era) {
 			// update
 			*entry = entry.saturating_add(*add_amount);
 		} else {
@@ -425,7 +426,8 @@ impl<T: Config> ProviderBoostHistory<T> {
 		Some(self.count())
 	}
 
-	/// A wrapper for the key/value retrieval of the BoundedBTreeMap.
+	/// A wrapper for the key/value retrieval of the BoundedBTreeMap (only used in tests)
+	#[cfg(test)]
 	pub(crate) fn get_entry_for_era(&self, reward_era: &RewardEra) -> Option<&BalanceOf<T>> {
 		self.0.get(reward_era)
 	}
@@ -437,9 +439,9 @@ impl<T: Config> ProviderBoostHistory<T> {
 	/// if 'reward_era' is the current era and there has been a boost or unstake.
 	pub(crate) fn get_amount_staked_for_era(&self, reward_era: &RewardEra) -> BalanceOf<T> {
 		// this gives an ordered-by-key Iterator
-		let mut bmap_iter = self.0.iter();
+		let bmap_iter = self.0.iter();
 		let mut eligible_amount: BalanceOf<T> = Zero::zero();
-		while let Some((era, balance)) = bmap_iter.next() {
+		for (era, balance) in bmap_iter {
 			if era.eq(reward_era) {
 				return *balance;
 			}
@@ -472,6 +474,11 @@ impl<T: Config> ProviderBoostHistory<T> {
 			return *last_value;
 		};
 		Zero::zero()
+	}
+
+	/// Returns the earliest RewardEra in the BoundedBTreeMap, or None if the map is empty.
+	pub fn get_earliest_reward_era(&self) -> Option<&RewardEra> {
+		self.0.first_key_value().map(|(key, _value)| key)
 	}
 
 	fn is_full(&self) -> bool {

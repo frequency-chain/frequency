@@ -11,6 +11,7 @@ import {
   generatePaginatedUpsertSignaturePayloadV2,
   getCurrentPaginatedHash,
   signPayload,
+  assertExtrinsicSucceededAndFeesPaid,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -19,7 +20,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Ethereum', function () {
   let itemizedSchemaId: SchemaId;
@@ -32,36 +33,43 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
   let ethereumDelegatorKeys: KeyringPair;
 
   before(async function () {
-    // Create a provider. This provider will NOT be granted delegations;
-    // methods requiring a payload signature do not require a delegation
-    [undelegatedProviderKeys, undelegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    fundingSource = await getFundingSource(import.meta.url);
+    // All the setup
+    [
+      // Create a provider. This provider will NOT be granted delegations;
+      // methods requiring a payload signature do not require a delegation
+      [undelegatedProviderKeys, undelegatedProviderId],
+      // Create a provider for the MSA, the provider will be used to grant delegation
+      [delegatedProviderKeys, delegatedProviderId],
+      // Create a schema for Itemized PayloadLocation
+      itemizedSchemaId,
+      // Create a schema for Paginated PayloadLocation
+      paginatedSchemaId,
+    ] = await Promise.all([
+      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'Itemized',
+        ['AppendOnly', 'SignatureRequired'],
+        'test.ItemizedSignatureRequired'
+      ),
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'Paginated',
+        ['SignatureRequired'],
+        'test.PaginatedSignatureRequired'
+      ),
+    ]);
     assert.notEqual(undelegatedProviderId, undefined, 'setup should populate undelegatedProviderId');
     assert.notEqual(undelegatedProviderKeys, undefined, 'setup should populate undelegatedProviderKeys');
 
-    // Create a provider for the MSA, the provider will be used to grant delegation
-    [delegatedProviderKeys, delegatedProviderId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
     assert.notEqual(delegatedProviderId, undefined, 'setup should populate delegatedProviderId');
     assert.notEqual(delegatedProviderKeys, undefined, 'setup should populate delegatedProviderKeys');
-
-    // Create a schema for Itemized PayloadLocation
-    itemizedSchemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
-      undelegatedProviderKeys,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'Itemized',
-      ['AppendOnly', 'SignatureRequired'],
-      'test.ItemizedSignatureRequired'
-    );
-
-    // Create a schema for Paginated PayloadLocation
-    paginatedSchemaId = await ExtrinsicHelper.getOrCreateSchemaV3(
-      undelegatedProviderKeys,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'Paginated',
-      ['SignatureRequired'],
-      'test.PaginatedSignatureRequired'
-    );
 
     // Create a MSA for the delegator
     [ethereumDelegatorKeys, msa_id] = await createDelegatorAndDelegation(
@@ -71,9 +79,10 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       delegatedProviderKeys,
       'ethereum'
     );
-    console.log('after createDelegatorAndDelegation');
     assert.notEqual(ethereumDelegatorKeys, undefined, 'setup should populate delegator_key');
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
+    // Make sure we are finalized before all the tests
+    await ExtrinsicHelper.waitForFinalization();
   });
 
   describe('Itemized With Signature Storage Tests', function () {
@@ -96,16 +105,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -137,16 +137,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         upsertPayload
       );
       const { target: pageUpdateEvent, eventMap: chainEvents1 } = await upsert_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents1['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents1['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents1);
       assert.notEqual(
         pageUpdateEvent,
         undefined,
@@ -171,16 +162,7 @@ describe('📗 Stateful Pallet Storage Ethereum', function () {
         deletePayload
       );
       const { target: pageRemove, eventMap: chainEvents2 } = await remove_result.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents2['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents2);
       assert.notEqual(pageRemove, undefined, 'should have returned a event');
 
       // no pages should exist

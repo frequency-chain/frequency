@@ -14,9 +14,9 @@ use sp_keyring::Sr25519Keyring;
 use sp_runtime::{OpaqueExtrinsic, SaturatedConversion};
 
 use pallet_balances::Call as BalancesCall;
-use pallet_msa;
 use sp_inherents::InherentDataProvider;
-use sp_timestamp;
+#[allow(deprecated)]
+use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 use std::{sync::Arc, time::Duration};
 
 /// Generates extrinsics for the `benchmark overhead` command.
@@ -86,11 +86,8 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 		let extrinsic: OpaqueExtrinsic = create_benchmark_extrinsic(
 			self.client.as_ref(),
 			acc,
-			BalancesCall::transfer_keep_alive {
-				dest: self.dest.clone().into(),
-				value: self.value.into(),
-			}
-			.into(),
+			BalancesCall::transfer_keep_alive { dest: self.dest.clone().into(), value: self.value }
+				.into(),
 			nonce,
 		)
 		.into();
@@ -116,26 +113,32 @@ pub fn create_benchmark_extrinsic(
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let extra: runtime::SignedExtra = (
-		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
-		(
-			frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
-			frame_system::CheckTxVersion::<runtime::Runtime>::new(),
-		),
-		frame_system::CheckGenesis::<runtime::Runtime>::new(),
-		frame_system::CheckEra::<runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
-			period,
-			best_block.saturated_into(),
-		)),
-		common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce),
-		frame_system::CheckWeight::<runtime::Runtime>::new(),
-		pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0),
-		pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new(),
-		pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new(),
-		frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
-		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
-	);
 
+	#[allow(deprecated)]
+	let extra: runtime::TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim::<runtime::Runtime, _>::new(
+		(
+			frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
+			(
+				frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+				frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+			),
+			frame_system::CheckGenesis::<runtime::Runtime>::new(),
+			frame_system::CheckEra::<runtime::Runtime>::from(sp_runtime::generic::Era::mortal(
+				period,
+				best_block.saturated_into(),
+			)),
+			#[allow(deprecated)]
+			AsTransactionExtension::from(common_runtime::extensions::check_nonce::CheckNonce::<runtime::Runtime>::from(nonce)),
+			#[allow(deprecated)]
+			AsTransactionExtension::from(pallet_frequency_tx_payment::ChargeFrqTransactionPayment::<runtime::Runtime>::from(0)),
+			#[allow(deprecated)]
+			AsTransactionExtension::from(pallet_msa::CheckFreeExtrinsicUse::<runtime::Runtime>::new()),
+			#[allow(deprecated)]
+			AsTransactionExtension::from(pallet_handles::handles_signed_extension::HandlesSignedExtension::<runtime::Runtime>::new()),
+			frame_metadata_hash_extension::CheckMetadataHash::<runtime::Runtime>::new(false),
+			frame_system::CheckWeight::<runtime::Runtime>::new(),
+		),
+	);
 	let raw_payload = sp_runtime::generic::SignedPayload::from_raw(
 		call.clone(),
 		extra.clone(),
@@ -144,7 +147,6 @@ pub fn create_benchmark_extrinsic(
 			(runtime::VERSION.spec_version, runtime::VERSION.transaction_version),
 			genesis_hash,
 			best_hash,
-			(),
 			(),
 			(),
 			(),
@@ -183,6 +185,7 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 			para_blocks_per_relay_epoch: 2,
 			relay_randomness_config: (),
 			additional_key_values: Some(vec![]),
+			upgrade_go_ahead: None,
 		};
 
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
