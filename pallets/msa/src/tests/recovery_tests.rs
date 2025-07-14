@@ -720,3 +720,207 @@ fn recover_account_with_invalid_new_key_signature_should_fail() {
 		assert_eq!(MsaIdToRecoveryCommitment::<Test>::get(msa_id), Some(recovery_commitment));
 	});
 }
+
+#[test]
+fn ensure_approved_recovery_provider_with_valid_provider_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		let result = Msa::ensure_approved_recovery_provider(&provider_key_pair.public().into());
+		assert_ok!(result);
+		assert_eq!(result.unwrap(), provider_msa_id);
+	});
+}
+
+#[test]
+fn ensure_approved_recovery_provider_with_non_existent_key_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (fake_key_pair, _) = sr25519::Pair::generate();
+
+		let result = Msa::ensure_approved_recovery_provider(&fake_key_pair.public().into());
+		assert_noop!(result, Error::<Test>::NoKeyExists);
+	});
+}
+
+#[test]
+fn ensure_approved_recovery_provider_with_regular_msa_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (_msa_id, key_pair) = create_account();
+
+		let result = Msa::ensure_approved_recovery_provider(&key_pair.public().into());
+		assert_noop!(result, Error::<Test>::NotAuthorizedRecoveryProvider);
+	});
+}
+
+#[test]
+fn ensure_approved_recovery_provider_with_non_approved_provider_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, provider_key_pair) = create_account();
+		assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("NotApproved")));
+
+		let result = Msa::ensure_approved_recovery_provider(&provider_key_pair.public().into());
+		assert_noop!(result, Error::<Test>::NotAuthorizedRecoveryProvider);
+	});
+}
+
+#[test]
+fn ensure_approved_recovery_provider_with_revoked_provider_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
+
+		assert_ok!(Msa::remove_recovery_provider(
+			RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+			ProviderId(provider_msa_id)
+		));
+
+		let result = Msa::ensure_approved_recovery_provider(&provider_key_pair.public().into());
+		assert_noop!(result, Error::<Test>::NotAuthorizedRecoveryProvider);
+	});
+}
+
+#[test]
+fn ensure_valid_recovery_commitment_with_valid_commitment_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
+		let (msa_id, _msa_owner_key_pair, expected_commitment) =
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
+
+		let (intermediary_hash_a, intermediary_hash_b) = compute_recovery_intermediary_hashes(
+			&test_recovery_secret,
+			TEST_AUTHENTICATION_CONTACT,
+		);
+
+		let result =
+			Msa::ensure_valid_recovery_commitment(intermediary_hash_a, intermediary_hash_b, msa_id);
+		assert_ok!(result);
+		assert_eq!(result.unwrap(), expected_commitment);
+	});
+}
+
+#[test]
+fn ensure_valid_recovery_commitment_with_no_commitment_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		let dummy_hash_a = [1u8; 32];
+		let dummy_hash_b = [2u8; 32];
+
+		let result = Msa::ensure_valid_recovery_commitment(dummy_hash_a, dummy_hash_b, msa_id);
+		assert_noop!(result, Error::<Test>::NoRecoveryCommitment);
+	});
+}
+
+#[test]
+fn ensure_valid_recovery_commitment_with_invalid_commitment_should_fail() {
+	new_test_ext().execute_with(|| {
+		let test_recovery_secret = generate_test_recovery_secret();
+		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
+			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
+
+		let wrong_intermediary_hash_a = [2u8; 32];
+		let wrong_intermediary_hash_b = [3u8; 32];
+
+		let result = Msa::ensure_valid_recovery_commitment(
+			wrong_intermediary_hash_a,
+			wrong_intermediary_hash_b,
+			msa_id,
+		);
+		assert_noop!(result, Error::<Test>::InvalidRecoveryCommitment);
+	});
+}
+
+#[test]
+fn ensure_valid_new_key_owner_with_valid_signature_should_succeed() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		let result = Msa::ensure_valid_new_key_owner(&new_key_proof, &add_key_payload);
+		assert_ok!(result);
+	});
+}
+
+#[test]
+fn ensure_valid_new_key_owner_with_invalid_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+		let (fake_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload but sign with wrong key
+		let add_key_payload = AddKeyData::<Test> {
+			msa_id,
+			expiration: TEST_EXPIRATION_BLOCK,
+			new_public_key: new_control_key_pair.public().into(),
+		};
+
+		let encoded_payload = wrap_binary_data(add_key_payload.encode());
+		let invalid_signature: MultiSignature = fake_key_pair.sign(&encoded_payload).into();
+
+		let result = Msa::ensure_valid_new_key_owner(&invalid_signature, &add_key_payload);
+		assert_noop!(result, Error::<Test>::NewKeyOwnershipInvalidSignature);
+	});
+}
+
+#[test]
+fn ensure_valid_new_key_owner_with_duplicate_signature_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, TEST_EXPIRATION_BLOCK);
+
+		let result1 = Msa::ensure_valid_new_key_owner(&new_key_proof, &add_key_payload);
+		assert_ok!(result1);
+
+		let result2 = Msa::ensure_valid_new_key_owner(&new_key_proof, &add_key_payload);
+		assert_noop!(result2, Error::<Test>::SignatureAlreadySubmitted);
+	});
+}
+
+#[test]
+fn ensure_valid_new_key_owner_with_expired_payload_should_fail() {
+	new_test_ext().execute_with(|| {
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		run_to_block(50);
+
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		// Generate AddKeyData payload with past expiration
+		let (add_key_payload, new_key_proof) = generate_and_sign_add_key_payload(
+			&new_control_key_pair,
+			msa_id,
+			10u32, // Already expired
+		);
+
+		let result = Msa::ensure_valid_new_key_owner(&new_key_proof, &add_key_payload);
+		assert_noop!(result, Error::<Test>::ProofHasExpired);
+	});
+}
+
+#[test]
+fn ensure_valid_new_key_owner_with_not_yet_valid_should_fail() {
+	new_test_ext().execute_with(|| {
+		// Set up timing such that the signature is not yet valid
+		System::set_block_number(11_122);
+		let future_block = 11_323;
+
+		let (msa_id, _msa_owner_key_pair) = create_account();
+
+		let (new_control_key_pair, _) = sr25519::Pair::generate();
+
+		let (add_key_payload, new_key_proof) =
+			generate_and_sign_add_key_payload(&new_control_key_pair, msa_id, future_block);
+
+		let result = Msa::ensure_valid_new_key_owner(&new_key_proof, &add_key_payload);
+		assert_noop!(result, Error::<Test>::ProofNotYetValid);
+	});
+}
