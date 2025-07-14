@@ -15,11 +15,15 @@ import {
   signPayloadSr25519,
   DOLLARS,
   generateRecoveryCommitmentPayload,
-  generateSignedAddKeyProof,
+  generateSignedAddKeyProofWithType,
   assertEvent,
+  createKeys,
+  getEthereumKeyPairFromUnifiedAddress,
+  generateAddKeyPayload,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
 import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
+import { u8aToHex } from '@polkadot/util';
 
 let fundingSource: KeyringPair;
 
@@ -113,7 +117,7 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         newControlKeys
       );
@@ -150,6 +154,59 @@ describe('Account Recovery Testing', function () {
       );
     });
 
+    it('should successfully recover account with EIP-712 signed new control key', async function () {
+      const { userKeys, msaId, recoverySecret } = await setupUserWithRecoveryCommitment();
+
+      const { a: intermediaryHashA, b: intermediaryHashB } = getIntermediaryHashes(
+        recoverySecret,
+        ContactType.EMAIL,
+        testEmail
+      );
+
+      const newEthereumControlKey = createKeys('newEthereumControlKey', 'ethereum');
+
+      // Create add key payload for the new Ethereum control key and sign with EIP-712 by checking type === 'ethereum'
+      const addKeyData: AddKeyData = {
+        msaId: msaId,
+        newPublicKey: getUnifiedAddress(newEthereumControlKey),
+      };
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
+        addKeyData,
+        newEthereumControlKey
+      );
+
+      // Execute recovery
+      const recoverAccountOp = ExtrinsicHelper.recoverAccount(
+        recoveryProviderKey,
+        intermediaryHashA,
+        intermediaryHashB,
+        newControlKeyProof,
+        addKeyPayload
+      );
+
+      const { eventMap } = await recoverAccountOp.fundAndSend(fundingSource, false);
+
+      // Assert success events
+      assertEvent(eventMap, 'system.ExtrinsicSuccess');
+      assertEvent(eventMap, 'msa.AccountRecovered');
+      assertEvent(eventMap, 'msa.RecoveryCommitmentInvalidated');
+
+      // Verify the AccountRecovered event contains expected data
+      const accountRecoveredEvent = eventMap['msa.AccountRecovered'];
+      assert.notEqual(accountRecoveredEvent, undefined, 'AccountRecovered event should be present');
+      assert.equal(accountRecoveredEvent.data[0].toString(), msaId.toString(), 'MSA ID should match');
+      assert.equal(
+        accountRecoveredEvent.data[1].toString(),
+        recoveryProviderMsaId.toString(),
+        'Recovery provider MSA ID should match'
+      );
+      assert.equal(
+        accountRecoveredEvent.data[2].toString(),
+        getUnifiedAddress(newEthereumControlKey),
+        'New Ethereum control key should match'
+      );
+    });
+
     it('should fail when called by non-registered provider', async function () {
       // Set up fresh user and recovery commitment for this test
       const { newControlKeys, msaId, recoverySecret } = await setupUserWithRecoveryCommitment();
@@ -172,7 +229,7 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         newControlKeys
       );
@@ -204,7 +261,7 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(newControlKeys),
       };
-      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         newControlKeys
       );
@@ -245,7 +302,7 @@ describe('Account Recovery Testing', function () {
         msaId: msaId,
         newPublicKey: getUnifiedAddress(correctNewControlKeys),
       };
-      const { payload: addKeyPayload, signature: wrongNewControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: wrongNewControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         wrongSigningKey
       );
@@ -288,7 +345,7 @@ describe('Account Recovery Testing', function () {
         msaId: noCommitmentMsaId,
         newPublicKey: getUnifiedAddress(newControlKeysForTest),
       };
-      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         newControlKeysForTest
       );
@@ -353,7 +410,7 @@ describe('Account Recovery Testing', function () {
         msaId: anotherMsaId, // Wrong MSA ID
         newPublicKey: getUnifiedAddress(testNewControlKeys),
       };
-      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProof(
+      const { payload: addKeyPayload, signature: newControlKeyProof } = await generateSignedAddKeyProofWithType(
         addKeyData,
         testNewControlKeys
       );
