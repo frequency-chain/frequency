@@ -116,6 +116,69 @@ fn prep_signature_registry<T: Config>() {
 	});
 }
 
+// Pre-populate MSA and recovery provider storage for recover_account benchmark
+fn prep_recovery_benchmark_storage<T: Config>() -> (T::AccountId, SignerId, MessageSourceId, T::AccountId, [u8; 32]) {
+	let msa_id = 1u64;
+	let provider_msa_id = 2u64;
+
+	// Pre-create MSA account directly in storage
+	let key_pair = SignerId::generate_pair(None);
+	let msa_account = T::AccountId::decode(&mut &key_pair.encode()[..])
+		.expect("Key pair should decode to AccountId");
+
+	// Populate MSA storage directly
+	PublicKeyToMsaId::<T>::insert(&msa_account, msa_id);
+	PublicKeyCountForMsaId::<T>::insert(msa_id, 1u8);
+	CurrentMsaIdentifierMaximum::<T>::put(msa_id);
+
+	// Pre-create and approve recovery provider directly in storage
+	let provider_account = create_account::<T>("recovery_provider", 0);
+
+	// Populate provider storage directly
+	PublicKeyToMsaId::<T>::insert(&provider_account, provider_msa_id);
+	PublicKeyCountForMsaId::<T>::insert(provider_msa_id, 1u8);
+
+	// Register as provider directly in storage
+	use common_primitives::msa::{ProviderId, ProviderRegistryEntry};
+	use frame_support::BoundedVec;
+	let provider_name =
+		BoundedVec::try_from(b"RecoveryPro".to_vec()).expect("Provider name should fit in bounds");
+	let entry = ProviderRegistryEntry { provider_name };
+	ProviderToRegistryEntry::<T>::insert(ProviderId(provider_msa_id), entry);
+
+	// Pre-approve as recovery provider directly in storage
+	RecoveryProviders::<T>::insert(ProviderId(provider_msa_id), true);
+
+	// Pre-populate recovery commitment directly in storage
+	let (intermediary_hash_a, intermediary_hash_b) = get_benchmark_recovery_hashes();
+	let recovery_commitment = Msa::<T>::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
+	MsaIdToRecoveryCommitment::<T>::insert(msa_id, recovery_commitment);
+
+	(msa_account, key_pair, msa_id, provider_account, recovery_commitment)
+}
+
+// Cached hash computation for recovery benchmarks
+fn get_benchmark_recovery_hashes() -> ([u8; 32], [u8; 32]) {
+	use sp_core::keccak_256;
+
+	// Pre-computed values to avoid hash operations during benchmarking
+	const RECOVERY_SECRET_HEX: &str =
+		"ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
+	const CONTACT: &str = "user@example.com";
+
+	let recovery_secret_bytes =
+		hex::decode(RECOVERY_SECRET_HEX).expect("Recovery secret should be valid hex");
+
+	let hash_a = keccak_256(&recovery_secret_bytes);
+
+	let mut combined = Vec::new();
+	combined.extend_from_slice(&recovery_secret_bytes);
+	combined.extend_from_slice(CONTACT.as_bytes());
+	let hash_b = keccak_256(&combined);
+
+	(hash_a, hash_b)
+}
+
 #[benchmarks]
 mod benchmarks {
 	use super::*;
@@ -443,8 +506,9 @@ mod benchmarks {
 		};
 		// Sign the payload with the MSA owner key
 		let encoded_payload = wrap_binary_data(payload.encode());
-		let signature =
-			MultiSignature::Sr25519(msa_key_pair.sign(&encoded_payload).unwrap().into());
+		let signature = MultiSignature::Sr25519(
+			msa_key_pair.sign(&encoded_payload).expect("Signing should succeed").into(),
+		);
 
 		#[extrinsic_call]
 		_(RawOrigin::Signed(provider_caller), msa_public_key.clone(), signature, payload);
@@ -493,82 +557,32 @@ mod benchmarks {
 		frame_system::Pallet::<T>::set_block_number(1u32.into());
 		prep_signature_registry::<T>();
 
-		// Create an MSA account and setup recovery commitment
-		let (msa_account, msa_key_pair, msa_id) = create_msa_account_and_keys::<T>();
+		// Use pre-populated storage with existing recovery commitment
+		let (_msa_account, _msa_key_pair, msa_id, provider_account, _recovery_commitment) =
+			prep_recovery_benchmark_storage::<T>();
 
-		// Create recovery secret and authentication contact for testing
-		let recovery_secret_hex =
-			"ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789ABCDEF0123456789";
-		let authentication_contact = "user@example.com";
+		// Verify the recovery commitment already exists
+		assert!(MsaIdToRecoveryCommitment::<T>::get(msa_id).is_some());
 
-		// Compute recovery commitment from secret and contact
-		let (intermediary_hash_a, intermediary_hash_b) = {
-			use sp_core::keccak_256;
-
-			// Convert recovery secret hex string to bytes
-			let recovery_secret_bytes =
-				hex::decode(recovery_secret_hex).expect("Recovery secret should be valid hex");
-
-			// H(s) = keccak256(Recovery Secret bytes)
-			let hash_a = keccak_256(&recovery_secret_bytes);
-
-			// H(sc) = keccak256(Recovery Secret bytes || Contact Type || Standardized Contact)
-			let mut combined = Vec::new();
-			combined.extend_from_slice(&recovery_secret_bytes);
-			combined.extend_from_slice(authentication_contact.as_bytes());
-			let hash_b = keccak_256(&combined);
-
-			(hash_a, hash_b)
-		};
-
-		let recovery_commitment =
-			Msa::<T>::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
-		let expiration = 10u32.into();
-
-		// Create and sign recovery commitment payload
-		let recovery_payload = RecoveryCommitmentPayload::<T> {
-			discriminant: PayloadTypeDiscriminator::RecoveryCommitmentPayload,
-			recovery_commitment,
-			expiration,
-		};
-
-		let encoded_recovery_payload = wrap_binary_data(recovery_payload.encode());
-		let recovery_signature =
-			MultiSignature::Sr25519(msa_key_pair.sign(&encoded_recovery_payload).unwrap().into());
-
-		// Add recovery commitment to MSA
-		assert_ok!(Msa::<T>::add_recovery_commitment(
-			RawOrigin::Signed(create_account::<T>("provider", 0)).into(),
-			msa_account,
-			recovery_signature,
-			recovery_payload
-		));
-
-		// Create and approve a recovery provider
-		let provider_account = create_account::<T>("recovery_provider", 0);
-		let (provider_msa_id, provider_public_key) =
-			Msa::<T>::create_account(provider_account.clone(), EMPTY_FUNCTION).unwrap();
-
-		assert_ok!(Msa::<T>::create_provider_for(provider_msa_id, Vec::from("RecoveryProvider")));
-
-		// Approve the recovery provider (using Root origin for benchmark)
-		assert_ok!(Msa::<T>::approve_recovery_provider(
-			RawOrigin::Root.into(),
-			provider_public_key
-		));
+		// Use pre-computed hash values for efficiency
+		let (intermediary_hash_a, intermediary_hash_b) = get_benchmark_recovery_hashes();
 
 		// Generate a new control key for recovery
 		let new_control_key_pair = SignerId::generate_pair(None);
-		let new_control_key =
-			T::AccountId::decode(&mut &new_control_key_pair.encode()[..]).unwrap();
+		let new_control_key = T::AccountId::decode(&mut &new_control_key_pair.encode()[..])
+			.expect("New control key pair should decode to AccountId");
 
+		let expiration = 10u32.into();
 		// Create AddKeyData payload and sign it with the new control key
 		let add_key_payload =
 			AddKeyData::<T> { msa_id, expiration, new_public_key: new_control_key.clone() };
 
 		let encoded_add_key_payload = wrap_binary_data(add_key_payload.encode());
 		let new_control_key_proof = MultiSignature::Sr25519(
-			new_control_key_pair.sign(&encoded_add_key_payload).unwrap().into(),
+			new_control_key_pair
+				.sign(&encoded_add_key_payload)
+				.expect("Signing should succeed")
+				.into(),
 		);
 
 		#[extrinsic_call]
