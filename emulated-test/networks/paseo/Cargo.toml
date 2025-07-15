@@ -8,8 +8,17 @@ publish = false
 version = "0.0.0"
 
 [dependencies]
-emulated-integration-tests-common = { workspace = true }
-paseo-emulated-chain = { workspace = true }
-# frequency-paseo-emulated-chain = { path = "../../chains/frequency-paseo" }
+# emulated-integration-tests-common = { workspace = true }
+emulated-integration-tests-common = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
+# emulated-integration-tests-common = { version = "19.0.2" }
+# paseo-emulated-chain = { workspace = true, default-features = true }
+frequency-paseo-emulated-chain = { path = "../../chains/frequency-paseo" }
 # bridge-hub-paseo-emulated-chain = { workspace = true }
 # asset-hub-paseo-emulated-chain = { workspace = true }
+
+paseo-emulated-chain = { path = "../../chains/relays/paseo", default-features = true }
+
+# [features]
+# std = []
+# runtime-benchmarks = [
+# ]

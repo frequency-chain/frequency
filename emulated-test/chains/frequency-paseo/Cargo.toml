@@ -14,7 +14,8 @@ sp-runtime = { workspace = true }
 parachains-common = { workspace = true }
 polkadot-primitives = { workspace = true }
 
-emulated-integration-tests-common = { workspace = true }
+# emulated-integration-tests-common = { workspace = true }
+emulated-integration-tests-common = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
 frequency-runtime = { path = "../../../runtime/frequency", features = [
   "frequency-testnet",
   "frequency-bridging",
