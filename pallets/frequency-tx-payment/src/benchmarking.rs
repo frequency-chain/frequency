@@ -22,23 +22,25 @@ where
 	));
 }
 
-pub fn register_specified_msa<T: Config>(account: T::AccountId)
-where
-	T: pallet_msa::Config,
-{
+pub fn register_specified_msa<T: Config + pallet_msa::Config>(account: T::AccountId) {
 	assert_ok!(pallet_msa::Pallet::<T>::create(RawOrigin::Signed(account.clone()).into()));
 }
 
-pub fn fund_msa_capacity<T: Config>(
+pub fn fund_msa_capacity<T: Config + pallet_capacity::Config>(
 	target_id: MessageSourceId,
 	account: T::AccountId,
 	amount: u32,
 ) {
-	assert_ok!(T::CapacityBenchmarkHelper::stake_benchmark(account.clone(), target_id, amount));
+	assert_ok!(pallet_capacity::Pallet::<T>::stake(
+		RawOrigin::Signed(account.clone()).into(),
+		target_id,
+		amount.into()
+	));
 }
 
 #[benchmarks(where
 	T: pallet_msa::Config,
+	T:pallet_capacity::Config,
 	T::RuntimeOrigin: AsTransactionAuthorizedOrigin,
 	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>> + From<crate::Call<T>> + From<frame_system::Call<T>>,
 BalanceOf<T>: Send

@@ -81,20 +81,3 @@ impl RegisterProviderBenchmarkHelper for () {
 		Ok(())
 	}
 }
-
-/// A trait for staking Capacity in benchmarks.
-pub trait CapacityStakingBenchmarkHelper<AccountId> {
-	/// Stakes Capacity for an MSA.
-	fn stake_benchmark(account: AccountId, target: MessageSourceId, amount: u32) -> DispatchResult;
-}
-
-impl<AccountId> CapacityStakingBenchmarkHelper<AccountId> for () {
-	/// Stakes Capacity for an MSA.
-	fn stake_benchmark(
-		_account: AccountId,
-		_target: MessageSourceId,
-		_amount: u32,
-	) -> DispatchResult {
-		Ok(())
-	}
-}

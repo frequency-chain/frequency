@@ -35,8 +35,6 @@ use sp_runtime::{
 };
 extern crate alloc;
 use alloc::{boxed::Box, vec, vec::Vec};
-#[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::CapacityStakingBenchmarkHelper;
 use common_primitives::{
 	capacity::{Nontransferable, Replenishable},
 	msa::MsaKeyProvider,
@@ -177,8 +175,6 @@ pub mod pallet {
 			Self::AccountId,
 			MessageSourceId,
 		>;
-		#[cfg(feature = "runtime-benchmarks")]
-		type CapacityBenchmarkHelper: CapacityStakingBenchmarkHelper<Self::AccountId>;
 	}
 
 	#[pallet::event]

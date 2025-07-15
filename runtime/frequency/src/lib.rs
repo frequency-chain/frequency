@@ -1117,8 +1117,6 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MsaCallFilter;
-	#[cfg(feature = "runtime-benchmarks")]
-	type CapacityBenchmarkHelper = Capacity;
 }
 
 /// Configurations for passkey pallet

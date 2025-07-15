@@ -53,9 +53,7 @@ pub use common_primitives::{
 use frame_system::pallet_prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]
-use common_primitives::benchmarks::{
-	CapacityStakingBenchmarkHelper, RegisterProviderBenchmarkHelper,
-};
+use common_primitives::benchmarks::RegisterProviderBenchmarkHelper;
 
 pub use pallet::*;
 pub use types::*;
@@ -1329,25 +1327,5 @@ impl<T: Config> ProviderBoostRewardsProvider<T> for Pallet<T> {
 	/// How much, as a percentage of staked token, to boost a targeted Provider when staking.
 	fn capacity_boost(amount: Self::Balance) -> Self::Balance {
 		Perbill::from_percent(STAKED_PERCENTAGE_TO_BOOST).mul(amount)
-	}
-}
-
-/// CapacityStakingBenchmarkHelper for benchmarking purposes.
-#[cfg(feature = "runtime-benchmarks")]
-impl<T: Config> CapacityStakingBenchmarkHelper<T::AccountId> for Pallet<T> {
-	fn stake_benchmark(
-		staker: T::AccountId,
-		target: MessageSourceId,
-		amount: u32,
-	) -> DispatchResult {
-		let (mut staking_details, stakable_amount) =
-			Self::ensure_can_stake(&staker, target, amount.into(), StakingType::MaximumCapacity)?;
-		Self::increase_stake_and_issue_capacity(
-			&staker,
-			&mut staking_details,
-			target,
-			stakable_amount,
-		)?;
-		Ok(())
 	}
 }
