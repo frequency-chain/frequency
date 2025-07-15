@@ -10,10 +10,10 @@ use sp_runtime::{
 	MultiSignature,
 };
 
-pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static str)
-where
-	T: pallet_msa::Config,
-{
+pub fn register_provider<T: Config + pallet_msa::Config>(
+	target_id: MessageSourceId,
+	name: &'static str,
+) {
 	#[allow(clippy::useless_conversion)]
 	let name = Vec::from(name).try_into().expect("error");
 	assert_ok!(pallet_msa::Pallet::<T>::create_registered_provider(
