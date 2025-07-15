@@ -1063,19 +1063,6 @@ use pallet_messages::Call as MessagesCall;
 use pallet_msa::Call as MsaCall;
 use pallet_stateful_storage::Call as StatefulStorageCall;
 
-#[cfg(feature = "runtime-benchmarks")]
-pub struct GetStableWeightsBenchmarking;
-#[cfg(feature = "runtime-benchmarks")]
-impl GetStableWeight<RuntimeCall, Weight> for GetStableWeightsBenchmarking {
-	fn get_stable_weight(_call: &RuntimeCall) -> Option<Weight> {
-		Some(Weight::from_parts(0, 0))
-	}
-
-	fn get_inner_calls(_outer_call: &RuntimeCall) -> Option<Vec<&RuntimeCall>> {
-		Some(vec![&_outer_call])
-	}
-}
-
 pub struct CapacityEligibleCalls;
 impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 	fn get_stable_weight(call: &RuntimeCall) -> Option<Weight> {
@@ -1121,9 +1108,6 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type RuntimeCall = RuntimeCall;
 	type Capacity = Capacity;
 	type WeightInfo = pallet_frequency_tx_payment::weights::SubstrateWeight<Runtime>;
-	#[cfg(feature = "runtime-benchmarks")]
-	type CapacityCalls = GetStableWeightsBenchmarking;
-	#[cfg(not(feature = "runtime-benchmarks"))]
 	type CapacityCalls = CapacityEligibleCalls;
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;

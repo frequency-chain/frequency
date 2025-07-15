@@ -1,9 +1,14 @@
 use super::*;
-use common_primitives::msa::MessageSourceId;
+use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
 use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
-use sp_runtime::traits::{AsTransactionAuthorizedOrigin, DispatchTransaction};
+use pallet_msa::AddProvider;
+use sp_core::{sr25519, Pair};
+use sp_runtime::{
+	traits::{AsTransactionAuthorizedOrigin, DispatchTransaction},
+	MultiSignature,
+};
 
 pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static str) {
 	#[allow(clippy::useless_conversion)]
@@ -24,6 +29,7 @@ pub fn fund_msa_capacity<T: Config>(
 }
 
 #[benchmarks(where
+	T: pallet_msa::Config,
 	T::RuntimeOrigin: AsTransactionAuthorizedOrigin,
 	<T as frame_system::Config>::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo> + IsSubType<Call<T>> + From<crate::Call<T>> + From<frame_system::Call<T>>,
 BalanceOf<T>: Send
@@ -33,6 +39,7 @@ BalanceOf<T>: Send
 		+ IsType<ChargeCapacityBalanceOf<T>>
 		+ IsType<CapacityBalanceOf<T>>,
 	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
+	<T as Config>::RuntimeCall: From<pallet_msa::Call<T>> + From<crate::Call<T>>,
 )]
 mod benchmarks {
 	use super::*;
@@ -125,7 +132,8 @@ mod benchmarks {
 
 	#[benchmark]
 	fn charge_tx_payment_capacity_based() {
-		let caller: T::AccountId = whitelisted_caller();
+		let pair = sr25519::Pair::from_seed(&[0u8; 32]);
+		let caller = T::AccountId::decode(&mut &pair.public().encode()[..]).unwrap();
 		<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<
 			T,
 		>>::endow_account(&caller, 8054550000u64.into());
@@ -133,11 +141,19 @@ mod benchmarks {
 		register_specified_msa::<T>(msa_id, caller.clone());
 		register_provider::<T>(msa_id, "provider1");
 		fund_msa_capacity::<T>(msa_id, caller.clone(), 2054550000u32);
-		let inner_call: <T as Config>::RuntimeCall =
-			frame_system::Call::<T>::remark { remark: vec![] }.into();
+		let expiration = 10u32;
+		let add_provider_payload = AddProvider::new(msa_id, Some(Vec::new()), expiration);
+		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
+		let proof = pair.sign(&encode_add_provider_data);
+
+		let inner_call = pallet_msa::Call::<T>::create_sponsored_account_with_delegation {
+			delegator_key: caller.clone().into(),
+			proof: MultiSignature::Sr25519(proof.into()),
+			add_provider_payload,
+		};
 
 		let pay_with_capacity_call =
-			crate::Call::<T>::pay_with_capacity { call: Box::new(inner_call) };
+			crate::Call::<T>::pay_with_capacity { call: Box::new(inner_call.into()) };
 		let runtime_call: <T as frame_system::Config>::RuntimeCall = pay_with_capacity_call.into();
 
 		let ext: ChargeFrqTransactionPayment<T> = ChargeFrqTransactionPayment::from(0u64.into());
