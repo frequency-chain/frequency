@@ -24,9 +24,6 @@ pub trait MsaBenchmarkHelper<AccountId> {
 
 	/// Sets a public key to an MSA.
 	fn add_key(msa_id: MessageSourceId, key: AccountId) -> DispatchResult;
-
-	/// Create a MSA for account.
-	fn create_msa(msa_id: MessageSourceId, account: AccountId) -> DispatchResult;
 }
 
 impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
@@ -41,11 +38,6 @@ impl<AccountId> MsaBenchmarkHelper<AccountId> for () {
 
 	/// Sets a publickey to an MSA.
 	fn add_key(_msa_id: MessageSourceId, _key: AccountId) -> DispatchResult {
-		Ok(())
-	}
-
-	/// Create a MSA for account.
-	fn create_msa(_msa_id: MessageSourceId, _account: AccountId) -> DispatchResult {
 		Ok(())
 	}
 }

@@ -1,5 +1,5 @@
 use super::*;
-use common_primitives::msa::MessageSourceId;
+use common_primitives::msa::{MessageSourceId, MsaLookup};
 use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -10,14 +10,23 @@ use sp_runtime::{
 	MultiSignature,
 };
 
-pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static str) {
+pub fn register_provider<T: Config>(target_id: MessageSourceId, name: &'static str)
+where
+	T: pallet_msa::Config,
+{
 	#[allow(clippy::useless_conversion)]
 	let name = Vec::from(name).try_into().expect("error");
-	assert_ok!(T::ProviderBenchmarkHelper::create(target_id, name));
+	assert_ok!(pallet_msa::Pallet::<T>::create_registered_provider(
+		common_primitives::msa::ProviderId(target_id),
+		name
+	));
 }
 
-pub fn register_specified_msa<T: Config>(target_id: MessageSourceId, account: T::AccountId) {
-	assert_ok!(T::MsaBenchmarkHelper::create_msa(target_id, account.clone()));
+pub fn register_specified_msa<T: Config>(account: T::AccountId)
+where
+	T: pallet_msa::Config,
+{
+	assert_ok!(pallet_msa::Pallet::<T>::create(RawOrigin::Signed(account.clone()).into()));
 }
 
 pub fn fund_msa_capacity<T: Config>(
@@ -138,8 +147,8 @@ mod benchmarks {
 		<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<
 			T,
 		>>::endow_account(&caller, 8054550000u64.into());
-		let msa_id = MessageSourceId::from(1001u32);
-		register_specified_msa::<T>(msa_id, caller.clone());
+		register_specified_msa::<T>(caller.clone());
+		let msa_id = pallet_msa::Pallet::<T>::get_msa_id(&caller).expect("MSA should exist");
 		register_provider::<T>(msa_id, "provider1");
 		fund_msa_capacity::<T>(msa_id, caller.clone(), 2054550000u32);
 		let expiration = 10u32;

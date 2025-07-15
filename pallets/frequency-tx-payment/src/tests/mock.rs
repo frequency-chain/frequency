@@ -327,11 +327,7 @@ impl Config for Test {
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MockMsaCallFilter;
 	#[cfg(feature = "runtime-benchmarks")]
-	type MsaBenchmarkHelper = Msa;
-	#[cfg(feature = "runtime-benchmarks")]
 	type CapacityBenchmarkHelper = Capacity;
-	#[cfg(feature = "runtime-benchmarks")]
-	type ProviderBenchmarkHelper = Msa;
 }
 
 pub struct ExtBuilder {
