@@ -102,6 +102,7 @@ allow = [
   "ISC",
   "GPL-3.0",
   "GPL-3.0 WITH Classpath-exception-2.0",
+  "OpenSSL",
   "Zlib",
   "Unicode-3.0",
   "CDLA-Permissive-2.0",
@@ -243,7 +244,6 @@ unknown-git = "warn"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
 # List of URLs for allowed Git repositories
 allow-git = []
-# allow-git = ["https://github.com/multiformats/rust-cid"]
 
 [sources.allow-org]
 # 1 or more github.com organizations to allow git sources for

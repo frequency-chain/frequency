@@ -184,9 +184,12 @@ impl AddProvider {
 	}
 }
 
+/// A type definition for hash types used in the MSA Recovery System.
+pub type RecoveryHash = [u8; 32]; // 32 bytes for
+
 /// A type definition for the Recovery Commitment data for the following operation:
 /// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment
-pub type RecoveryCommitment = [u8; 32]; // 32 bytes for the recovery commitment
+pub type RecoveryCommitment = RecoveryHash; // 32 bytes for the recovery commitment
 
 /// A type definition for the payload for the Recovery Commitment operation:
 /// -  Adding a Recovery Commitment - `pallet_msa::add_recovery_commitment`

@@ -123,9 +123,18 @@ specs-frequency-westend-local-release:
 specs-frequency-westend-release:
 	./scripts/generate_specs.sh 2313 frequency-westend release
 
-.PHONY: format
+.PHONY: format format-js format-all
 format:
 	cargo $(NIGHTLY) fmt
+
+format-js:
+	cd e2e && npm run format
+	cd js/api-augment && npm run format
+	cd js/ethereum-utils && npm run format
+	cd js/recovery-sdk && npm run format
+	cd js/schemas && npm run format
+
+format-all: format format-js
 
 .PHONY: lint lint-audit lint-fix lint-clippy
 lint:
