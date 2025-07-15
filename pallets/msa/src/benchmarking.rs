@@ -117,7 +117,8 @@ fn prep_signature_registry<T: Config>() {
 }
 
 // Pre-populate MSA and recovery provider storage for recover_account benchmark
-fn prep_recovery_benchmark_storage<T: Config>() -> (T::AccountId, SignerId, MessageSourceId, T::AccountId, [u8; 32]) {
+fn prep_recovery_benchmark_storage<T: Config>(
+) -> (T::AccountId, SignerId, MessageSourceId, T::AccountId, [u8; 32]) {
 	let msa_id = 1u64;
 	let provider_msa_id = 2u64;
 
@@ -151,7 +152,8 @@ fn prep_recovery_benchmark_storage<T: Config>() -> (T::AccountId, SignerId, Mess
 
 	// Pre-populate recovery commitment directly in storage
 	let (intermediary_hash_a, intermediary_hash_b) = get_benchmark_recovery_hashes();
-	let recovery_commitment = Msa::<T>::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
+	let recovery_commitment =
+		Msa::<T>::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
 	MsaIdToRecoveryCommitment::<T>::insert(msa_id, recovery_commitment);
 
 	(msa_account, key_pair, msa_id, provider_account, recovery_commitment)
