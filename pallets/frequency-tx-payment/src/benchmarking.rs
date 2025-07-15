@@ -1,5 +1,5 @@
 use super::*;
-use common_primitives::{msa::MessageSourceId, utils::wrap_binary_data};
+use common_primitives::msa::MessageSourceId;
 use frame_benchmarking::v2::*;
 use frame_support::assert_ok;
 use frame_system::RawOrigin;
@@ -143,12 +143,10 @@ mod benchmarks {
 		fund_msa_capacity::<T>(msa_id, caller.clone(), 2054550000u32);
 		let expiration = 10u32;
 		let add_provider_payload = AddProvider::new(msa_id, Some(Vec::new()), expiration);
-		let encode_add_provider_data = wrap_binary_data(add_provider_payload.encode());
-		let proof = pair.sign(&encode_add_provider_data);
-
+		let proof = MultiSignature::Sr25519([0u8; 64].into());
 		let inner_call = pallet_msa::Call::<T>::create_sponsored_account_with_delegation {
 			delegator_key: caller.clone().into(),
-			proof: MultiSignature::Sr25519(proof.into()),
+			proof,
 			add_provider_payload,
 		};
 
