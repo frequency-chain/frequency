@@ -271,13 +271,11 @@ fn add_recovery_commitment_unsigned_origin_should_fail() {
 fn recover_account_with_valid_data_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
 		let (provider_msa_id, provider_key_pair) = create_and_approve_recovery_provider();
 
-		// Generate a new control key for recovery
 		let (new_control_key_pair, _) = sr25519::Pair::generate();
 
 		// Generate AddKeyData payload and signature from new control key
@@ -349,7 +347,6 @@ fn recover_account_with_valid_data_should_succeed() {
 #[test]
 fn recover_account_with_non_approved_provider_should_fail() {
 	new_test_ext().execute_with(|| {
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) = setup_recovery_with_commitment(
 			&generate_test_recovery_secret(),
 			TEST_AUTHENTICATION_CONTACT,
@@ -392,7 +389,6 @@ fn recover_account_with_non_approved_provider_should_fail() {
 #[test]
 fn recover_account_with_invalid_recovery_commitment_should_fail() {
 	new_test_ext().execute_with(|| {
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) = setup_recovery_with_commitment(
 			&generate_test_recovery_secret(),
 			TEST_AUTHENTICATION_CONTACT,
@@ -463,7 +459,6 @@ fn recover_account_with_no_recovery_commitment_should_fail() {
 fn recover_account_with_existing_control_key_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, msa_owner_key_pair, recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
@@ -501,7 +496,6 @@ fn recover_account_with_existing_control_key_should_fail() {
 #[test]
 fn recover_account_unsigned_origin_should_fail() {
 	new_test_ext().execute_with(|| {
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) = setup_recovery_with_commitment(
 			&generate_test_recovery_secret(),
 			TEST_AUTHENTICATION_CONTACT,
@@ -538,7 +532,6 @@ fn recover_account_unsigned_origin_should_fail() {
 fn recover_account_double_recovery_attempt_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
@@ -595,7 +588,6 @@ fn recover_account_double_recovery_attempt_should_fail() {
 fn recover_account_with_non_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
@@ -633,7 +625,6 @@ fn recover_account_with_non_provider_should_fail() {
 fn recover_account_with_revoked_recovery_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, _recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
@@ -677,7 +668,6 @@ fn recover_account_with_revoked_recovery_provider_should_fail() {
 fn recover_account_with_invalid_new_key_signature_should_fail() {
 	new_test_ext().execute_with(|| {
 		let test_recovery_secret = generate_test_recovery_secret();
-		// Use helper function to setup complete recovery scenario
 		let (msa_id, _msa_owner_key_pair, recovery_commitment) =
 			setup_recovery_with_commitment(&test_recovery_secret, TEST_AUTHENTICATION_CONTACT);
 
