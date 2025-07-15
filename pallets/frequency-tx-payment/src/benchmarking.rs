@@ -133,7 +133,8 @@ mod benchmarks {
 	#[benchmark]
 	fn charge_tx_payment_capacity_based() {
 		let pair = sr25519::Pair::from_seed(&[0u8; 32]);
-		let caller = T::AccountId::decode(&mut &pair.public().encode()[..]).unwrap();
+		let caller =
+			T::AccountId::decode(&mut &pair.public().encode()[..]).expect("valid account id");
 		<<T as pallet_transaction_payment::Config>::OnChargeTransaction as OnChargeTransaction<
 			T,
 		>>::endow_account(&caller, 8054550000u64.into());
@@ -145,7 +146,7 @@ mod benchmarks {
 		let add_provider_payload = AddProvider::new(msa_id, Some(Vec::new()), expiration);
 		let proof = MultiSignature::Sr25519([0u8; 64].into());
 		let inner_call = pallet_msa::Call::<T>::create_sponsored_account_with_delegation {
-			delegator_key: caller.clone().into(),
+			delegator_key: caller.clone(),
 			proof,
 			add_provider_payload,
 		};
