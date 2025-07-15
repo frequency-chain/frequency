@@ -179,9 +179,6 @@ pub mod pallet {
 			Self::AccountId,
 			MessageSourceId,
 		>;
-
-		#[cfg(feature = "runtime-benchmarks")]
-		type OnChargeTransaction: OnChargeTransaction<Self>;
 		#[cfg(feature = "runtime-benchmarks")]
 		type MsaBenchmarkHelper: MsaBenchmarkHelper<Self::AccountId>;
 		#[cfg(feature = "runtime-benchmarks")]

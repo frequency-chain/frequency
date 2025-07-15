@@ -1131,8 +1131,6 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MsaCallFilter;
 	#[cfg(feature = "runtime-benchmarks")]
-	type OnChargeTransaction = pallet_transaction_payment::FungibleAdapter<Balances, ()>;
-	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;
 	#[cfg(feature = "runtime-benchmarks")]
 	type CapacityBenchmarkHelper = Capacity;

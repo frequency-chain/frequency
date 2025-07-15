@@ -326,8 +326,6 @@ impl Config for Test {
 	type MsaKeyProvider = Msa;
 	type MsaCallFilter = MockMsaCallFilter;
 	#[cfg(feature = "runtime-benchmarks")]
-	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
-	#[cfg(feature = "runtime-benchmarks")]
 	type MsaBenchmarkHelper = Msa;
 	#[cfg(feature = "runtime-benchmarks")]
 	type CapacityBenchmarkHelper = Capacity;
