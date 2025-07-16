@@ -854,7 +854,7 @@ fn check_nonce_skipped_and_refund_for_other_origins() {
 		let pd_res = Ok(());
 		let mut post_info = frame_support::dispatch::PostDispatchInfo {
 			actual_weight: Some(info.total_weight()),
-			pays_fee: Default::default(),
+			pays_fee: Pays::Yes,
 		};
 
 		<CheckNonce<Test> as TransactionExtension<RuntimeCall>>::post_dispatch(
