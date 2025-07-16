@@ -1,4 +1,4 @@
-#![allow(missing_docs, clippy::unwrap_used)]
+#![allow(missing_docs)]
 use common_runtime::constants::{FREQUENCY_TESTNET_TOKEN, TOKEN_DECIMALS};
 use frequency_runtime::Ss58Prefix;
 use polkadot_service::chain_spec::Extensions as RelayChainExtensions;
@@ -33,7 +33,7 @@ pub fn load_frequency_westend_spec() -> ChainSpec {
 	.with_chain_type(ChainType::Live)
 	.with_genesis_config_preset_name("frequency-westend")
 	.with_telemetry_endpoints(
-		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).unwrap(),
+		TelemetryEndpoints::new(vec![("wss://telemetry.frequency.xyz/submit/".into(), 0)]).expect("Failed to create telemetry endpoints"),
 	)
 	.build()
 }

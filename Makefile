@@ -266,37 +266,39 @@ docs:
 docker-prune:
 	./scripts/prune_all.sh
 
-.PHONY: check check-no-relay check-local check-testnet check-mainnet check-bridging
+.PHONY: check-all check check-no-relay check-local check-testnet check-mainnet check-bridging-all check-bridging-mainnet check-bridging-testnet check-bridging-westend check-bridging-local
 # Add a target to run all checks to check that all existing features work with the addition of 'frequency-bridging'
 # which is an add-on feature and not mutually exclusive with the other features.
-check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging
+check-all: check check-no-relay check-local check-testnet check-mainnet check-bridging-all
 
 check:
-	SKIP_WASM_BUILD= cargo check --features runtime-benchmarks,frequency-lint-check
+	SKIP_WASM_BUILD=1 cargo check --features runtime-benchmarks,frequency-lint-check
 
 check-no-relay:
-	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
+	SKIP_WASM_BUILD=1 cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-local
+	SKIP_WASM_BUILD=1 cargo check --features frequency-local
 
 check-testnet:
-	SKIP_WASM_BUILD= cargo check --features frequency-testnet
+	SKIP_WASM_BUILD=1 cargo check --features frequency-testnet
 
 check-mainnet:
-	SKIP_WASM_BUILD= cargo check --features frequency
+	SKIP_WASM_BUILD=1 cargo check --features frequency
 
-check-bridging:
-	SKIP_WASM_BUILD= cargo check --features frequency,frequency-bridging
-	SKIP_WASM_BUILD= cargo check --features frequency-testnet,frequency-bridging
-	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
-	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
+check-bridging-all: check-bridging-westend check-bridging-local check-bridging-testnet check-bridging-mainnet
+
+check-bridging-mainnet:
+	SKIP_WASM_BUILD=1 cargo check --features frequency,frequency-bridging
+
+check-bridging-testnet:
+	SKIP_WASM_BUILD=1 cargo check --features frequency-testnet,frequency-bridging
 
 check-bridging-westend:
-	SKIP_WASM_BUILD= cargo check --features frequency-westend,frequency-bridging
+	SKIP_WASM_BUILD=1 cargo check --features frequency-westend,frequency-bridging
 
 check-bridging-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-local,frequency-bridging
+	SKIP_WASM_BUILD=1 cargo check --features frequency-local,frequency-bridging
 
 
 .PHONY: js
@@ -349,7 +351,7 @@ build-bridging-westend:
 build-bridging-westend-local:
 	cargo build --features frequency-local,frequency-bridging --release
 
-.PHONY: test e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
+.PHONY: test test-bridging e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
 test:
 	cargo test --workspace --features runtime-benchmarks,frequency-lint-check
 
