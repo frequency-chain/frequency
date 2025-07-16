@@ -11,7 +11,7 @@ use common_runtime::extensions::check_nonce::CheckNonce;
 use frame_support::{
 	assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	pallet_prelude::{InvalidTransaction, TransactionSource, TransactionValidityError},
+	pallet_prelude::{InvalidTransaction, Pays, TransactionSource, TransactionValidityError},
 	traits::{Currency, OriginTrait},
 };
 use frame_system::RawOrigin;
