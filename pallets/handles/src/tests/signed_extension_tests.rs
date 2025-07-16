@@ -228,8 +228,9 @@ fn handles_signed_extension_skipped_and_refund_for_other_origins() {
 
 		let len = call.encoded_size();
 
-		let origin = frame_system::RawOrigin::Root.into();
-		let (pre, origin) = ext.validate_and_prepare(origin, call, &info, len, 0).unwrap();
+		let (pre, origin) = ext
+			.validate_and_prepare(frame_system::RawOrigin::Root.into(), call, &info, len, 0)
+			.unwrap();
 
 		assert!(origin.as_system_ref().unwrap().is_root());
 
