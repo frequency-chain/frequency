@@ -1001,8 +1001,10 @@ fn check_free_extrinsic_use_noop_for_unsigned_origin() {
 			TransactionSource::External,
 			0,
 		);
+		let expected_err = TransactionValidityError::Invalid(InvalidTransaction::UnknownOrigin);
 		// Should be an error or a no-op, but must not panic
-		assert!(result.is_err() || result.is_ok());
+		assert!(result.is_err());
+		assert_eq!(result.err(), Some(expected_err));
 	});
 }
 

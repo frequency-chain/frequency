@@ -7,7 +7,10 @@ use frame_support::{
 };
 use parity_scale_codec::Encode;
 use sp_core::{sr25519, Pair};
-use sp_runtime::traits::{DispatchTransaction, TransactionExtension};
+use sp_runtime::{
+	traits::{DispatchTransaction, TransactionExtension},
+	transaction_validity::{InvalidTransaction, TransactionValidityError},
+};
 
 /// Assert that retiring a handle passes the signed extension HandlesSignedExtension
 #[test]
@@ -204,8 +207,10 @@ fn handles_signed_extension_noop_for_unsigned_origin() {
 			TransactionSource::External,
 			0,
 		);
+		let expected_err = TransactionValidityError::Invalid(InvalidTransaction::UnknownOrigin);
 		// Should be an error or a no-op, but must not panic
-		assert!(result.is_err() || result.is_ok());
+		assert!(result.is_err());
+		assert_eq!(result.err(), Some(expected_err));
 	});
 }
 
