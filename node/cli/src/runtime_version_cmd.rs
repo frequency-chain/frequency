@@ -7,7 +7,7 @@ use std::{fmt::Debug, fs, io, path::PathBuf};
 #[derive(Debug, Clone, Parser)]
 pub struct ExportRuntimeVersionCmd {
 	/// Output file name or stdout if unspecified.
-	#[clap(value_parser)]
+	#[arg()]
 	pub output: Option<PathBuf>,
 
 	#[allow(missing_docs)]

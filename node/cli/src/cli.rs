@@ -50,7 +50,7 @@ pub enum Subcommand {
 
 	/// Sub-commands concerned with benchmarking.
 	/// The pallet benchmarking moved to the `pallet` sub-command.
-	#[clap(subcommand)]
+	#[command(subcommand)]
 	Benchmark(frame_benchmarking_cli::BenchmarkCmd),
 
 	/// Get current runtime spec version.
@@ -58,7 +58,7 @@ pub enum Subcommand {
 }
 
 #[derive(Debug, clap::Parser)]
-#[clap(
+#[command(
 	propagate_version = true,
 	args_conflicts_with_subcommands = true,
 	subcommand_negates_reqs = true
@@ -77,28 +77,28 @@ pub struct Cli {
 	///
 	/// The results are then printed out in the logs, and also sent as part of
 	/// telemetry, if telemetry is enabled.
-	#[clap(long)]
+	#[arg(long)]
 	pub no_hardware_benchmarks: bool,
 
 	/// Relay chain arguments
-	#[clap(raw = true)]
+	#[arg(raw = true)]
 	pub relay_chain_args: Vec<String>,
 
 	/// Instant block sealing
 	/// Blocks are triggered to be formed each time a transaction hits the validated transaction pool
 	/// Empty blocks can also be formed using the `engine_createBlock` RPC
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long, value_enum, help = "The sealing mode", default_value_t=SealingMode::Instant)]
+	#[arg(long, value_enum, help = "The sealing mode", default_value_t=SealingMode::Instant)]
 	pub sealing: SealingMode,
 
 	/// Interval in seconds for interval sealing.
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long, help = "The interval in seconds", default_value = "6", value_name = "SECONDS")]
+	#[arg(long, help = "The interval in seconds", default_value = "6", value_name = "SECONDS")]
 	pub sealing_interval: NonZeroU16,
 
 	/// Whether to create empty blocks in manual and interval sealing modes.
 	#[cfg(feature = "frequency-no-relay")]
-	#[clap(long, help = "Create empty blocks in interval sealing modes", default_value = "false")]
+	#[arg(long, help = "Create empty blocks in interval sealing modes", default_value = "false")]
 	pub sealing_create_empty_blocks: bool,
 }
 

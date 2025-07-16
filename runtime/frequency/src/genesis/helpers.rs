@@ -94,6 +94,7 @@ pub fn build_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		ethereum: Default::default(),
 	};
 
 	serde_json::json!(&genesis)
