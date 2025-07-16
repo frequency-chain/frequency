@@ -6,8 +6,8 @@ use alloc::{format, vec};
 
 use crate::{
 	AccountId, AccountIdConversion, AuraId, Balance, BalancesConfig, CollatorSelectionConfig,
-	CouncilConfig, ParachainInfoConfig, RuntimeGenesisConfig, SessionConfig,
-	SessionKeys, Signature, SystemConfig, TechnicalCommitteeConfig, Vec,
+	CouncilConfig, ParachainInfoConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys,
+	Signature, SystemConfig, TechnicalCommitteeConfig, Vec,
 };
 
 use sp_core::sr25519;

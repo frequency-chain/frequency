@@ -105,10 +105,10 @@ sp-debug-derive = { workspace = true, optional = true }
 # Frontier
 # fp-account = { workspace = true, features = ["serde"] }
 fp-evm = { workspace = true, default-features = false, features = ["serde"] }
-# fp-rpc = { workspace = true }
+fp-rpc = { workspace = true, default-features = false}
 fp-self-contained = { workspace = true, features = ["serde"] }
 # Frontier FRAME
-# pallet-base-fee = { workspace = true }
+pallet-base-fee = { workspace = true, default-features = false}
 # pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true, default-features = false }
 pallet-evm = { workspace = true, default-features = false }
@@ -192,10 +192,10 @@ std = [
   	# Frontier
 	# "fp-account/std",
 	"fp-evm/std",
-	# "fp-rpc/std",
+	"fp-rpc/std",
 	"fp-self-contained/std",
 	# Frontier FRAME
-	# "pallet-base-fee/std",
+	"pallet-base-fee/std",
 	# "pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
 	"pallet-evm/std",
