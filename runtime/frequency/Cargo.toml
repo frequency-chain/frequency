@@ -106,11 +106,11 @@ sp-debug-derive = { workspace = true, optional = true }
 # fp-account = { workspace = true, features = ["serde"] }
 fp-evm = { workspace = true, default-features = false, features = ["serde"] }
 # fp-rpc = { workspace = true }
-# fp-self-contained = { workspace = true, features = ["serde"] }
+fp-self-contained = { workspace = true, features = ["serde"] }
 # Frontier FRAME
 # pallet-base-fee = { workspace = true }
 # pallet-dynamic-fee = { workspace = true }
-# pallet-ethereum = { workspace = true }
+pallet-ethereum = { workspace = true, default-features = false }
 pallet-evm = { workspace = true, default-features = false }
 # pallet-evm-chain-id = { workspace = true }
 # pallet-evm-precompile-modexp = { workspace = true }
@@ -193,11 +193,11 @@ std = [
 	# "fp-account/std",
 	"fp-evm/std",
 	# "fp-rpc/std",
-	# "fp-self-contained/std",
+	"fp-self-contained/std",
 	# Frontier FRAME
 	# "pallet-base-fee/std",
 	# "pallet-dynamic-fee/std",
-	# "pallet-ethereum/std",
+	"pallet-ethereum/std",
 	"pallet-evm/std",
 	# "pallet-evm-chain-id/std",
 	# "pallet-evm-precompile-modexp/std",
@@ -237,7 +237,7 @@ runtime-benchmarks = [
   "polkadot-runtime-common/runtime-benchmarks",
   "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
-  # "pallet-ethereum/runtime-benchmarks",
+  "pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 ]
 try-runtime = [
@@ -275,6 +275,8 @@ try-runtime = [
   "parachain-info/try-runtime",
   "common-runtime/try-runtime",
   "sp-runtime/try-runtime",
+  "pallet-ethereum/try-runtime",
+	"pallet-evm/try-runtime",
 ]
 frequency = ["common-runtime/frequency", "pallet-msa/frequency"]
 frequency-testnet = ["common-runtime/frequency-testnet", "pallet-msa/frequency-testnet"]

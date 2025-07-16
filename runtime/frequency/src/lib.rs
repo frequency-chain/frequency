@@ -33,8 +33,11 @@ use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
 use sp_runtime::traits::Replace;
 use sp_runtime::{
 	generic, impl_opaque_keys,
-	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
-	transaction_validity::{TransactionSource, TransactionValidity},
+	traits::{
+		AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, DispatchInfoOf,
+		Dispatchable, IdentityLookup, PostDispatchInfoOf,
+	},
+	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, DispatchError,
 };
 
@@ -100,6 +103,7 @@ use frame_support::{
 	weights::{ConstantMultiplier, Weight},
 	Twox128,
 };
+use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 
 use frame_system::{
 	limits::{BlockLength, BlockWeights},
@@ -395,7 +399,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
+	fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -423,6 +427,62 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		}
 
 		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+impl fp_self_contained::SelfContainedCall for RuntimeCall {
+	type SignedInfo = H160;
+
+	fn is_self_contained(&self) -> bool {
+		match self {
+			RuntimeCall::Ethereum(call) => call.is_self_contained(),
+			_ => false,
+		}
+	}
+
+	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
+		match self {
+			RuntimeCall::Ethereum(call) => call.check_self_contained(),
+			_ => None,
+		}
+	}
+
+	fn validate_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		len: usize,
+	) -> Option<TransactionValidity> {
+		match self {
+			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn pre_dispatch_self_contained(
+		&self,
+		info: &Self::SignedInfo,
+		dispatch_info: &DispatchInfoOf<RuntimeCall>,
+		len: usize,
+	) -> Option<Result<(), TransactionValidityError>> {
+		match self {
+			RuntimeCall::Ethereum(call) =>
+				call.pre_dispatch_self_contained(info, dispatch_info, len),
+			_ => None,
+		}
+	}
+
+	fn apply_self_contained(
+		self,
+		info: Self::SignedInfo,
+	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
+		match self {
+			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) =>
+				Some(call.dispatch(RuntimeOrigin::from(
+					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+				))),
+			_ => None,
+		}
 	}
 }
 
@@ -1436,6 +1496,17 @@ impl pallet_evm::Config for Runtime {
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
 }
 
+parameter_types! {
+	pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+}
+
+impl pallet_ethereum::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self::Version>;
+	type PostLogContent = PostBlockAndTxnHashes;
+	type ExtraDataLength = ConstU32<30>;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 construct_runtime!(
 	pub enum Runtime {
@@ -1498,6 +1569,7 @@ construct_runtime!(
 
 		// Frontier
 		EVM: pallet_evm::{Pallet, Call, Storage, Event<T>} = 68,
+		Ethereum: pallet_ethereum::{Pallet, Call, Storage, Event, Origin, Config<T>} = 69,
 	}
 );
 
@@ -1533,7 +1605,8 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
-		[pallet_evm, EVM]
+		[pallet_evm, EVM],
+		[pallet_evm, Ethereum],
 	);
 }
 
@@ -1716,7 +1789,7 @@ sp_api::impl_runtime_apis! {
 
 			// if the call is wrapped in a batch, we need to get the weight of the outer call
 			// and use that to compute the fee with the inner call's stable weight(s)
-			let dispatch_weight = match &uxt.function {
+			let dispatch_weight = match &uxt.0.function {
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
 					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
@@ -1725,7 +1798,7 @@ sp_api::impl_runtime_apis! {
 					Weight::zero()
 				}
 			};
-			FrequencyTxPayment::compute_capacity_fee_details(&uxt.function, &dispatch_weight, len)
+			FrequencyTxPayment::compute_capacity_fee_details(&uxt.0.function, &dispatch_weight, len)
 		}
 	}
 

@@ -6,8 +6,8 @@ use alloc::{format, vec};
 
 use crate::{
 	AccountId, AccountIdConversion, AuraId, Balance, BalancesConfig, CollatorSelectionConfig,
-	CouncilConfig, ParachainInfoConfig, RuntimeGenesisConfig, SessionConfig, SessionKeys,
-	Signature, SystemConfig, TechnicalCommitteeConfig, Vec,
+	CouncilConfig, ParachainInfoConfig, RuntimeGenesisConfig, SessionConfig,
+	SessionKeys, Signature, SystemConfig, TechnicalCommitteeConfig, Vec,
 };
 
 use sp_core::sr25519;
@@ -94,6 +94,7 @@ pub fn build_genesis(
 			phantom: Default::default(),
 			members: technical_committee_members,
 		},
+		ethereum: Default::default(),
 	};
 
 	serde_json::json!(&genesis)
