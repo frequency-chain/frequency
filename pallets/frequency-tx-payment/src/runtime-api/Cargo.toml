@@ -14,8 +14,6 @@ parity-scale-codec = { workspace = true, features = ["derive"] }
 # Substrate
 sp-api = { workspace = true }
 frame-support = { workspace = true }
-# Frequency related dependencies
-common-primitives = { default-features = false, path = "../../../../common/primitives" }
 pallet-transaction-payment = { workspace = true }
 
 [features]
@@ -24,7 +22,6 @@ std = [
   "parity-scale-codec/std",
   "sp-api/std",
   "frame-support/std",
-  "common-primitives/std",
   "pallet-transaction-payment/std",
 ]
 

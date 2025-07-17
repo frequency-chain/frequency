@@ -31,7 +31,6 @@ pallet-multisig = { workspace = true }
 pallet-preimage = { workspace = true }
 pallet-scheduler = { workspace = true }
 pallet-session = { workspace = true }
-pallet-sudo = { workspace = true }
 pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-utility = { workspace = true }
@@ -40,8 +39,6 @@ pallet-proxy = { workspace = true }
 cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
 pallet-collator-selection = { workspace = true }
-pallet-time-release = { path = "../../pallets/time-release", default-features = false }
-pallet-treasury = { path = "../../pallets/treasury", default-features = false }
 
 [features]
 default = ["std"]
@@ -59,13 +56,10 @@ std = [
   "pallet-collator-selection/std",
   "pallet-collective/std",
   "pallet-multisig/std",
-  "pallet-time-release/std",
   "pallet-session/std",
   "pallet-balances/std",
-  "pallet-treasury/std",
   "pallet-utility/std",
   "pallet-proxy/std",
-  "pallet-sudo/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment/std",
   "pallet-scheduler/std",
@@ -87,10 +81,8 @@ try-runtime = [
   "pallet-preimage/try-runtime",
   "pallet-scheduler/try-runtime",
   "pallet-transaction-payment/try-runtime",
-  "pallet-treasury/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-proxy/try-runtime",
-  "pallet-time-release/try-runtime",
 ]
 
 [lints]
