@@ -129,8 +129,6 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-#[allow(deprecated)]
-use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
@@ -359,7 +357,6 @@ impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
 }
 
 /// The TransactionExtension to the basic transaction logic.
-#[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 	Runtime,
 	(
@@ -368,12 +365,10 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
-		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-		AsTransactionExtension<
-			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-		>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
+		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),
@@ -456,7 +451,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 170,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -470,7 +465,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 170,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,

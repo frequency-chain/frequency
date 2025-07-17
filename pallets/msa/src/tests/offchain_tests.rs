@@ -188,7 +188,7 @@ pub fn offchain_worker_should_populate_accounts_with_offchain_indexed_events() {
 			if all_none {
 				break;
 			}
-			std::thread::sleep(std::time::Duration::from_millis(20));
+			std::thread::sleep(std::time::Duration::from_millis(100));
 		}
 		assert!(all_none, "Not all accounts were removed from index in time");
 
