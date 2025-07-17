@@ -3958,6 +3958,7 @@ dependencies = [
  "sp-block-builder",
  "sp-consensus-aura",
  "sp-core",
+ "sp-debug-derive",
  "sp-genesis-builder",
  "sp-inherents",
  "sp-offchain",
