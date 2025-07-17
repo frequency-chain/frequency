@@ -411,10 +411,6 @@ try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path testnet-paseo-all-pallets.state
 
-try-runtime-use-snapshot-paseo-testnet-permissive: check-try-runtime-installed
-	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 --snap --path testnet-paseo-all-pallets.state
-
 try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime=6000 snap --path mainnet-all-pallets.state
