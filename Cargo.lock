@@ -1604,11 +1604,8 @@ name = "common-helpers"
 version = "0.0.0"
 dependencies = [
  "apache-avro",
- "common-primitives",
  "jsonrpsee",
  "sp-api",
- "sp-io",
- "sp-runtime",
  "thiserror 2.0.12",
 ]
 
@@ -1634,8 +1631,6 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "smallvec",
- "sp-api",
  "sp-core",
  "sp-externalities",
  "sp-io",
@@ -1661,11 +1656,8 @@ dependencies = [
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
- "pallet-sudo",
- "pallet-time-release",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-treasury 27.0.0",
  "pallet-utility",
  "parity-scale-codec",
  "scale-info",
@@ -2466,16 +2458,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
-]
-
-[[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.19.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
-dependencies = [
- "cumulus-primitives-core",
- "sp-inherents",
- "sp-timestamp",
 ]
 
 [[package]]
@@ -3869,7 +3851,6 @@ name = "frequency"
 version = "0.0.0"
 dependencies = [
  "frequency-cli",
- "frequency-service",
  "substrate-build-script-utils",
 ]
 
@@ -3886,7 +3867,6 @@ dependencies = [
  "cumulus-client-service",
  "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-core",
- "frame-benchmarking",
  "frame-benchmarking-cli",
  "frame-metadata-hash-extension",
  "frame-support",
@@ -3894,31 +3874,22 @@ dependencies = [
  "frequency-runtime",
  "frequency-service",
  "futures",
- "hex-literal",
  "log",
  "pallet-balances",
  "pallet-frequency-tx-payment",
  "pallet-handles",
  "pallet-msa",
- "pallet-stateful-storage",
- "pallet-transaction-payment",
  "polkadot-cli",
- "polkadot-parachain-primitives",
- "polkadot-primitives",
  "polkadot-service",
  "sc-cli",
  "sc-client-api",
- "sc-executor",
  "sc-service",
  "sc-sysinfo",
  "sc-telemetry",
- "sc-tracing",
- "serde",
  "serde_json",
  "sp-api",
  "sp-core",
  "sp-inherents",
- "sp-io",
  "sp-keyring",
  "sp-runtime",
  "sp-timestamp",
@@ -3937,7 +3908,6 @@ dependencies = [
  "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "frame-benchmarking",
  "frame-executive",
  "frame-metadata-hash-extension",
@@ -3946,8 +3916,6 @@ dependencies = [
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
- "hex",
- "hex-literal",
  "log",
  "pallet-aura",
  "pallet-authorship",
@@ -3983,12 +3951,9 @@ dependencies = [
  "pallet-treasury 27.0.0",
  "pallet-utility",
  "parity-scale-codec",
- "polkadot-parachain-primitives",
  "polkadot-runtime-common",
  "scale-info",
- "serde",
  "serde_json",
- "smallvec",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -3996,7 +3961,6 @@ dependencies = [
  "sp-debug-derive",
  "sp-genesis-builder",
  "sp-inherents",
- "sp-io",
  "sp-offchain",
  "sp-runtime",
  "sp-session",
@@ -4012,7 +3976,6 @@ dependencies = [
 name = "frequency-service"
 version = "0.0.0"
 dependencies = [
- "clap",
  "cli-opt",
  "common-helpers",
  "common-primitives",
@@ -4025,21 +3988,14 @@ dependencies = [
  "cumulus-client-network",
  "cumulus-client-service",
  "cumulus-primitives-core",
- "cumulus-relay-chain-inprocess-interface",
  "cumulus-relay-chain-interface",
- "cumulus-relay-chain-minimal-node",
- "cumulus-relay-chain-rpc-interface",
  "frame-benchmarking",
  "frame-benchmarking-cli",
- "frame-system",
  "frequency-runtime",
  "futures",
- "hex",
- "hex-literal",
  "jsonrpsee",
  "log",
  "pallet-frequency-tx-payment-rpc",
- "pallet-frequency-tx-payment-runtime-api",
  "pallet-handles-rpc",
  "pallet-handles-runtime-api",
  "pallet-messages-rpc",
@@ -4052,20 +4008,15 @@ dependencies = [
  "pallet-stateful-storage-runtime-api",
  "pallet-transaction-payment-rpc",
  "parity-scale-codec",
- "polkadot-cli",
- "polkadot-primitives",
  "polkadot-service",
  "sc-basic-authorship",
  "sc-chain-spec",
- "sc-cli",
  "sc-client-api",
  "sc-client-db",
  "sc-consensus",
  "sc-consensus-manual-seal",
  "sc-executor",
- "sc-keystore",
  "sc-network",
- "sc-network-common",
  "sc-network-sync",
  "sc-offchain",
  "sc-rpc",
@@ -4077,7 +4028,6 @@ dependencies = [
  "sc-transaction-pool-api",
  "scale-info",
  "serde",
- "serde_json",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
@@ -4086,12 +4036,8 @@ dependencies = [
  "sp-core",
  "sp-inherents",
  "sp-keystore",
- "sp-offchain",
  "sp-runtime",
- "sp-session",
  "sp-timestamp",
- "sp-transaction-pool",
- "sp-wasm-interface",
  "substrate-build-script-utils",
  "substrate-frame-rpc-system",
  "substrate-prometheus-endpoint",
@@ -7578,7 +7524,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "pallet-balances",
  "pallet-capacity",
  "pallet-msa",
@@ -7595,19 +7540,16 @@ dependencies = [
 name = "pallet-frequency-tx-payment-rpc"
 version = "0.0.0"
 dependencies = [
- "common-helpers",
  "common-primitives",
  "jsonrpsee",
  "pallet-frequency-tx-payment-runtime-api",
  "parity-scale-codec",
- "rayon",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
  "sp-core",
  "sp-rpc",
  "sp-runtime",
- "sp-weights",
  "tokio",
 ]
 
@@ -7615,7 +7557,6 @@ dependencies = [
 name = "pallet-frequency-tx-payment-runtime-api"
 version = "0.0.0"
 dependencies = [
- "common-primitives",
  "frame-support",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -7655,7 +7596,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "handles-utils",
- "log",
  "numtoa",
  "parity-scale-codec",
  "pretty_assertions",
@@ -7673,10 +7613,8 @@ version = "0.0.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
- "frame-support",
  "jsonrpsee",
  "pallet-handles-runtime-api",
- "rayon",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
@@ -7787,7 +7725,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "multibase",
  "parity-scale-codec",
  "pretty_assertions",
@@ -7821,7 +7758,6 @@ name = "pallet-messages-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
 ]
 
@@ -7929,7 +7865,6 @@ name = "pallet-msa-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "parity-scale-codec",
  "sp-api",
 ]
@@ -8069,13 +8004,11 @@ dependencies = [
  "frame-support",
  "frame-system",
  "lazy_static",
- "log",
  "p256",
  "pallet-balances",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
- "serde_json",
  "sp-core",
  "sp-io",
  "sp-keyring",
@@ -8212,7 +8145,6 @@ dependencies = [
  "sp-io",
  "sp-keyring",
  "sp-runtime",
- "sp-weights",
 ]
 
 [[package]]
@@ -8221,14 +8153,11 @@ version = "0.0.0"
 dependencies = [
  "common-helpers",
  "common-primitives",
- "frame-support",
  "jsonrpsee",
  "pallet-schemas-runtime-api",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
- "sp-core",
- "sp-rpc",
  "sp-runtime",
  "tokio",
 ]
@@ -8238,9 +8167,7 @@ name = "pallet-schemas-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
- "sp-runtime",
 ]
 
 [[package]]
@@ -8381,16 +8308,12 @@ dependencies = [
 name = "pallet-stateful-storage-rpc"
 version = "0.0.0"
 dependencies = [
- "common-helpers",
  "common-primitives",
- "frame-support",
  "jsonrpsee",
  "pallet-stateful-storage-runtime-api",
  "sc-client-api",
  "sp-api",
  "sp-blockchain",
- "sp-core",
- "sp-rpc",
  "sp-runtime",
  "tokio",
 ]
@@ -8400,7 +8323,6 @@ name = "pallet-stateful-storage-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
  "sp-runtime",
 ]
@@ -8430,7 +8352,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "pallet-balances",
  "pallet-preimage",
  "pallet-scheduler",
@@ -8526,7 +8447,6 @@ dependencies = [
 name = "pallet-treasury"
 version = "27.0.0"
 dependencies = [
- "common-primitives",
  "common-runtime",
  "docify",
  "frame-benchmarking",
@@ -14921,11 +14841,7 @@ name = "system-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
- "frame-system",
- "serde_json",
  "sp-api",
- "sp-runtime",
 ]
 
 [[package]]
