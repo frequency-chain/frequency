@@ -19,7 +19,6 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 sp-core = { workspace = true }
-log = { workspace = true, default-features = false }
 
 [dev-dependencies]
 common-runtime = { path = "../../runtime/common", default-features = false }
