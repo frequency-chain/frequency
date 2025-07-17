@@ -11,6 +11,7 @@ publish = false
 repository = "https://github.com/frequency-chain/frequency/"
 
 [dependencies]
+phf = { workspace = true, features = ["macros"] }
 oorandom = { workspace = true }
 unicode-normalization = { workspace = true }
 twox-hash = { workspace = true, features = ["digest_0_10"] }
