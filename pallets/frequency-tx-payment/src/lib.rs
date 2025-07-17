@@ -631,32 +631,24 @@ where
 		match pre {
 			Pre::Charge { tip, who, initial_payment, weight } => match initial_payment {
 				InitialPayment::Token(already_withdrawn) => {
-					let actual_ext_weight =
-						<T as Config>::WeightInfo::charge_tx_payment_token_based();
-					let unspent_weight = weight.saturating_sub(actual_ext_weight);
-					let mut actual_post_info = *post_info;
-					actual_post_info.refund(unspent_weight);
+					// post_dispatch_details eliminated the Option from the first param.
+					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
+					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
 					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
-					pallet_transaction_payment::Pre::Charge {
-						tip,
-						who,
-						imbalance: already_withdrawn,
-					},
-					info,
-					&actual_post_info,
-					len,
-					result,
-				)?;
-					Ok(unspent_weight)
+                        pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
+                        info,
+                        post_info,
+                        len,
+                        result,
+                    )?;
 				},
 				InitialPayment::Capacity => {
 					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
-					// TODO:: Currently no refund for Capacity transactions.
 					Ok(Weight::zero())
 				},
 				InitialPayment::Free => {
 					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-					Ok(weight.saturating_sub(<T as Config>::WeightInfo::charge_tx_payment_free()))
+					Ok((Weight::zero()))
 				},
 			},
 			Pre::NoCharge { refund } => Ok(refund),
