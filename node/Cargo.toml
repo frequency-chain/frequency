@@ -23,6 +23,7 @@ frequency-service = { path = "service" }
 
 [features]
 std = []
+frequency-bridging = []
 default = []
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
@@ -37,6 +38,10 @@ frequency-local = [
 frequency-testnet = [
   "frequency-service/frequency-testnet",
   "frequency-cli/frequency-testnet",
+]
+frequency-westend = [
+  "frequency-service/frequency-westend",
+  "frequency-cli/frequency-westend",
 ]
 frequency-lint-check = [
   "frequency-service/frequency-lint-check",

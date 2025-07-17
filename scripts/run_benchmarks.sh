@@ -21,6 +21,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
+  pallet_assets \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \

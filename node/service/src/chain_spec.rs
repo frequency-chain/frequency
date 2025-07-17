@@ -16,8 +16,14 @@ pub mod frequency;
 #[cfg(feature = "frequency-testnet")]
 pub mod frequency_paseo;
 
+#[cfg(feature = "frequency-westend")]
+pub mod frequency_westend;
+
 #[cfg(any(feature = "frequency-local", feature = "frequency-no-relay"))]
 pub mod frequency_paseo_local;
+
+#[cfg(feature = "frequency-bridging")]
+pub mod frequency_westend_local;
 
 #[cfg(feature = "frequency-no-relay")]
 pub mod frequency_dev;
