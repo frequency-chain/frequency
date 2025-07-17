@@ -22,7 +22,13 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 #[cfg(feature = "frequency-bridging")]
 pub mod xcm;
-// use pallet_assets::BenchmarkHelper;
+
+#[cfg(feature = "frequency-bridging")]
+use frame_support::traits::AsEnsureOriginWithArg;
+
+#[cfg(feature = "frequency-bridging")]
+use frame_system::EnsureNever;
+
 #[cfg(feature = "frequency-bridging")]
 use xcm::{
 	parameters::{
@@ -620,7 +626,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 170,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -634,7 +640,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 170,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -1574,13 +1580,7 @@ impl pallet_assets::Config for Runtime {
 	type AssetIdParameter = ForeignAssetsAssetId;
 	type Currency = Balances;
 
-	// This is to allow any other remote location to create foreign assets. Used in tests, not
-	// recommended on real chains.
-	// type CreateOrigin =
-	// 	ForeignCreators<Everything, LocationToAccountId, AccountId, xcm::latest::Location>;
-	// Use EnsureSignedBy to specify a single account allowed to create assets.
-	// The Success type of EnsureSignedBy is AccountId, matching the trait bound.
-	type CreateOrigin = EnsureSigned<AccountId>;
+	type CreateOrigin = AsEnsureOriginWithArg<EnsureNever<AccountId>>;
 	type ForceOrigin = EnsureRoot<AccountId>;
 
 	type AssetDeposit = ForeignAssetsAssetDeposit;
