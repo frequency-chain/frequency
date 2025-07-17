@@ -25,7 +25,7 @@ use parity_scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
-		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf, RefundWeight,
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
 		TransactionExtension, Zero,
 	},
 	transaction_validity::{
@@ -629,18 +629,19 @@ where
 		result: &DispatchResult,
 	) -> Result<Weight, TransactionValidityError> {
 		match pre {
-			Pre::Charge { tip, who, initial_payment, weight } => match initial_payment {
+			Pre::Charge { tip, who, initial_payment, .. } => match initial_payment {
 				InitialPayment::Token(already_withdrawn) => {
 					// post_dispatch_details eliminated the Option from the first param.
 					// TransactionExtension implementers are expected to customize Pre to separate signed from unsigned.
 					// https://github.com/paritytech/polkadot-sdk/pull/3685/files?#diff-be5f002cca427d36cd5322cc1af56544cce785482d69721b976aebf5821a78e3L875
-					pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
+					let weight = pallet_transaction_payment::ChargeTransactionPayment::<T>::post_dispatch_details(
                         pallet_transaction_payment::Pre::Charge { tip, who, imbalance: already_withdrawn },
                         info,
                         post_info,
                         len,
                         result,
                     )?;
+					Ok(weight)
 				},
 				InitialPayment::Capacity => {
 					debug_assert!(tip.is_zero(), "tip should be zero for Capacity tx.");
@@ -648,7 +649,7 @@ where
 				},
 				InitialPayment::Free => {
 					debug_assert!(tip.is_zero(), "tip should be zero if initial fee was zero.");
-					Ok((Weight::zero()))
+					Ok(Weight::zero())
 				},
 			},
 			Pre::NoCharge { refund } => Ok(refund),
