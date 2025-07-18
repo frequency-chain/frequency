@@ -193,7 +193,8 @@ fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 	let assets: Assets = vec![
 		(Parent, dot_fee_amount).into(),      // DOT - used as fee
 		(Here, xrqcy_transfer_amount).into(), // XRQCY used as main transfer asset
-	].into();
+	]
+	.into();
 	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
@@ -238,8 +239,8 @@ fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &receiver);
 
 	assert!(
-		sender_balance_of_dot_on_frequency_after <
-			sender_balance_of_dot_on_frequency_before + dot_fee_amount
+		sender_balance_of_dot_on_frequency_after
+			< sender_balance_of_dot_on_frequency_before + dot_fee_amount
 	);
 
 	assert_eq!(
