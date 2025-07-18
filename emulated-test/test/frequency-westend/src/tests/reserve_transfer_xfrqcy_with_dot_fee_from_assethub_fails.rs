@@ -5,6 +5,7 @@ use crate::{
 		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency, mint_xrqcy_on_asset_hub,
 	},
 };
+use crate::tests::utils::{build_assethub_to_frequency_test, find_fee_asset_item};
 
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
@@ -118,45 +119,6 @@ fn execute_reserve_transfer_xcm_asset_hub_to_frequency(
 	Ok(())
 }
 
-fn build_assethub_to_frequency_test(
-	sender: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	receiver: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
-	destination: Location,
-	frqcy_amount: Balance,
-	assets: Assets,
-	fee_asset_item: u32,
-) -> AssetHubToFrequencyTest {
-	let test_args = TestContext {
-		sender: sender.clone(),
-		receiver: receiver.clone(),
-		args: TestArgs::new_para(
-			destination,
-			receiver,
-			frqcy_amount,
-			assets.clone(),
-			None,
-			fee_asset_item,
-		),
-	};
-
-	AssetHubToFrequencyTest::new(test_args)
-}
-
-fn build_fee_and_value_assets(fee_dot: Balance, xrqcy_teleport_amount: Balance) -> Vec<Asset> {
-	vec![
-		(Parent, fee_dot).into(), // DOT - used as fee
-		(frequency_location_as_seen_by_asset_hub(), xrqcy_teleport_amount).into(), // XRQCY used as main transfer asset
-	]
-}
-
-fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
-	assets
-		.into_inner()
-		.iter()
-		.position(|a| a.id == fee_asset_id)
-		.expect("Fee asset not found in asset list") as u32
-}
-
 // ===========================================================================
 // ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency Success =========
 // ===========================================================================
@@ -190,7 +152,10 @@ fn reserve_transfer_xfrqcy_with_dot_fee_from_assethub_fails() {
 	let receiver = FrequencyWestendReceiver::get();
 	let destination = AssetHubWestend::sibling_location_of(FrequencyWestend::para_id());
 
-	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_teleport_amount).into();
+	let assets: Assets = vec![
+		(Parent, dot_fee_amount).into(), // DOT - used as fee
+		(frequency_location_as_seen_by_asset_hub(), xrqcy_teleport_amount).into(), // XRQCY used as main transfer asset
+	].into();
 	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
