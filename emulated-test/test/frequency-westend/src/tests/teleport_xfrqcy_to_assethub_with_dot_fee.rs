@@ -1,5 +1,3 @@
-use emulated_integration_tests_common::xcm_emulator::log;
-use sp_io::logging::log;
 use crate::{
 	foreign_balance_on,
 	imports::*,

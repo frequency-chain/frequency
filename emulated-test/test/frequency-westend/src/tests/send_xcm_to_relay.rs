@@ -2,11 +2,9 @@ use crate::{
 	foreign_balance_on,
 	imports::*,
 	tests::utils::{
-		ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency, mint_dot_on_frequency_v2,
+		ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency,
 	},
 };
-
-use emulated_integration_tests_common::xcm_emulator::ConvertLocation;
 
 fn frequency_to_relay_send_xcm(t: FrequencyToRelayTest) -> DispatchResult {
 	let assets = t.args.assets;
@@ -148,12 +146,11 @@ fn send_xcm_to_relay() {
 	);
 	assert_eq!(treasury_account_balance, 0u128);
 
-	let sender_assets_before = foreign_balance_on!(FrequencyWestend, dot_location.clone(), &sender);
+	// let sender_assets_before = foreign_balance_on!(FrequencyWestend, dot_location.clone(), &sender);
+	// let receiver_balance_before = test.receiver.balance;
 
-	let receiver_balance_before = test.receiver.balance;
-
-	// test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
-	// test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
+	test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
+	test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_send_xcm);
 	test.assert();
 
@@ -162,5 +159,5 @@ fn send_xcm_to_relay() {
 		dot_location.clone(),
 		&FrequencyTreasuryAccount::get()
 	);
-	assert!(treasury_account_balance == 0u128, "Treasury account should NOT have been credited");
+	assert_eq!(treasury_account_balance, 0u128, "Treasury account should NOT have been credited");
 }
