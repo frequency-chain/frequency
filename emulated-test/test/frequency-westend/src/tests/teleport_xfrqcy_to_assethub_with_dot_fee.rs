@@ -1,3 +1,5 @@
+use emulated_integration_tests_common::xcm_emulator::log;
+use sp_io::logging::log;
 use crate::{
 	foreign_balance_on,
 	imports::*,
@@ -9,20 +11,14 @@ use crate::{
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
 }
-
-fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
+// gets the position in the asset list of the asset that is paying the fees for a
+// transaction.
+fn get_asset_paying_fees(assets: Assets, fee_asset_id: AssetId) -> u32 {
 	assets
 		.into_inner()
 		.iter()
 		.position(|a| a.id == fee_asset_id)
 		.expect("Fee asset not found in asset list") as u32
-}
-
-fn build_fee_and_value_assets(fee_dot: Balance, native_token: Balance) -> Vec<Asset> {
-	vec![
-		(Parent, fee_dot).into(),    // DOT - used as fee
-		(Here, native_token).into(), // XRQCY used as main transfer asset
-	]
 }
 
 fn build_frequency_to_asset_hub_test(
@@ -58,7 +54,7 @@ fn execute_xcm_frequency_to_asset_hub(t: FrequencyToAssetHubTest) -> DispatchRes
 	// For now )just use half the fees locally, half on dest
 
 	// Use half of the fees to cover remote execution and the
-	// remainding to cover delivery fees
+	// remaining to cover delivery fees
 	let mut remote_execution_fee_asset: Asset =
 		fee_asset(&assets, t.args.fee_asset_item as usize).unwrap().into();
 	if let Fungible(fees_amount) = remote_execution_fee_asset.fun {
@@ -171,13 +167,12 @@ fn assert_receiver_fee_burned_and_asset_minted(t: FrequencyToAssetHubTest) {
 }
 
 // ===========================================================================
-// ======= DOT (fee) + xFRQCY (value) Transfer: Frequency → AssetHub =========
+// ======= Test that attempt to teleport AH --> Frequency fails      =========
 // ===========================================================================
-/// This test transfers xFRQCY from the Frequency parachain to AssetHub,
-/// using DOT as the fee asset for both delivery and remote execution.
-// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_to_assethub_with_dot_fee -p frequency-westend-integration-tests -- --nocapture
+/// This test attempts to transfer xFRQCY from the Frequency parachain to AssetHub
+/// without a CheckingAccount being set.
 #[test]
-fn teleport_xfrqcy_to_assethub_with_dot_fee() {
+fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 	// ────────────────
 	// Test Setup
 	// ────────────────
@@ -197,8 +192,11 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// Local fee amount(in DOT) should cover
 	// 1. delivery cost to AH
 	// 2. execution cost on AH
-	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_transfer_amount).into();
-	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
+	let assets: Assets = vec![
+		(Parent, dot_fee_amount).into(),      // DOT - used as fee
+		(Here, xrqcy_transfer_amount).into(), // XRQCY used as main transfer asset
+	].into();
+	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
 	//  Pre-dispatch State Snapshot
@@ -224,7 +222,7 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 		destination.clone(),
 		xrqcy_transfer_amount,
 		assets,
-		fee_asset_item,
+		fee_asset_index,
 	);
 
 	// ─────────────────────────────
