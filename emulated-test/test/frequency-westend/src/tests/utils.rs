@@ -12,7 +12,8 @@ pub fn ensure_dot_asset_exists_on_frequency() {
 			FrequencyAssetOwner::get().into(),
 			true,
 			1u128.into(),
-		).expect("Failed to create DOT on frequency");
+		)
+		.expect("Failed to create DOT on frequency");
 
 		assert_expected_events!(
 			FrequencyWestend,
@@ -96,7 +97,6 @@ pub fn mint_dot_on_frequency_v2(
 	});
 }
 
-
 pub fn mint_xrqcy_on_asset_hub(
 	beneficiary: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
 	amount_to_mint: Balance,
@@ -163,5 +163,3 @@ pub fn build_assethub_to_frequency_test(
 
 	AssetHubToFrequencyTest::new(test_args)
 }
-
-

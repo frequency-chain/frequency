@@ -1,3 +1,4 @@
+use crate::tests::utils::{build_assethub_to_frequency_test, find_fee_asset_item};
 use crate::{
 	foreign_balance_on,
 	imports::*,
@@ -5,7 +6,6 @@ use crate::{
 		create_frequency_asset_on_ah, ensure_dot_asset_exists_on_frequency, mint_xrqcy_on_asset_hub,
 	},
 };
-use crate::tests::utils::{build_assethub_to_frequency_test, find_fee_asset_item};
 
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())

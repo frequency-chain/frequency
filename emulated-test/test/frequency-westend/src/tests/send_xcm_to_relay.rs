@@ -1,9 +1,7 @@
 use crate::{
 	foreign_balance_on,
 	imports::*,
-	tests::utils::{
-		ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency,
-	},
+	tests::utils::{ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency},
 };
 
 fn frequency_to_relay_send_xcm(t: FrequencyToRelayTest) -> DispatchResult {
