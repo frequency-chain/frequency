@@ -1,3 +1,4 @@
+use crate::tests::utils::{build_assethub_to_frequency_test, find_fee_asset_item};
 use crate::{
 	foreign_balance_on,
 	imports::*,
@@ -14,43 +15,11 @@ fn asset_hub_location_as_seen_by_frequency() -> Location {
 	FrequencyWestend::sibling_location_of(AssetHubWestend::para_id())
 }
 
-fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
-	assets
-		.into_inner()
-		.iter()
-		.position(|a| a.id == fee_asset_id)
-		.expect("Fee asset not found in asset list") as u32
-}
-
 fn build_fee_and_value_assets(fee_dot: Balance, xrqcy_teleport_amount: Balance) -> Vec<Asset> {
 	vec![
 		(Parent, fee_dot).into(), // DOT - used as fee
 		(frequency_location_as_seen_by_asset_hub(), xrqcy_teleport_amount).into(), // XRQCY used as main transfer asset
 	]
-}
-
-fn build_assethub_to_frequency_test(
-	sender: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	receiver: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
-	destination: Location,
-	frqcy_amount: Balance,
-	assets: Assets,
-	fee_asset_item: u32,
-) -> AssetHubToFrequencyTest {
-	let test_args = TestContext {
-		sender: sender.clone(),
-		receiver: receiver.clone(),
-		args: TestArgs::new_para(
-			destination,
-			receiver,
-			frqcy_amount,
-			assets.clone(),
-			None,
-			fee_asset_item,
-		),
-	};
-
-	AssetHubToFrequencyTest::new(test_args)
 }
 
 fn assert_sender_assets_burned_correctly(t: AssetHubToFrequencyTest) {

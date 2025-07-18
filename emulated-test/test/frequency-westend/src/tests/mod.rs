@@ -8,6 +8,7 @@ mod reserve_transfer_dot_to_relay;
 mod reserve_transfer_xfrqcy_with_dot_fee_from_assethub_fails;
 mod teleport_xfrqcy_to_assethub_with_dot_fee;
 
+mod teleport_xfqcy_from_asset_hub_without_checking_fails;
 mod teleport_xfrqcy_with_dot_fee_from_assethub;
 
 mod send_xcm_to_relay;

@@ -11,6 +11,7 @@ pub const ED: Balance = frequency_runtime::EXISTENTIAL_DEPOSIT;
 
 parameter_types! {
 	pub FrequencySudoAccount: AccountId = Keyring::Alice.to_account_id();
+	// the default owner of assets on the Frequency chain
 	pub FrequencyAssetOwner: AccountId = FrequencySudoAccount::get();
 }
 
