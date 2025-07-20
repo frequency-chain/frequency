@@ -14,12 +14,7 @@ jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
 # Frequency crates
 pallet-stateful-storage-runtime-api = { path = "../runtime-api", default-features = false }
 common-primitives = { path = '../../../../common/primitives', default-features = false }
-common-helpers = { path = '../../../../common/helpers', default-features = false }
-# Substrate crates
-frame-support = { workspace = true }
-sp-core = { workspace = true }
 sp-api = { workspace = true }
-sp-rpc = { workspace = true }
 sp-runtime = { workspace = true }
 sp-blockchain = { workspace = true }
 
@@ -31,12 +26,9 @@ sc-client-api = { workspace = true }
 default = ["std"]
 std = [
   "sp-api/std",
-  "sp-core/std",
   "sp-runtime/std",
   "pallet-stateful-storage-runtime-api/std",
   "common-primitives/std",
-  "common-helpers/std",
-  "frame-support/std",
 ]
 
 [lints]

@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -51,7 +50,6 @@ std = [
   'sp-core/std',
   'sp-io/std',
   'sp-runtime/std',
-  'frame-support/std',
   'frame-system/std',
   'frame-benchmarking/std',
   'common-primitives/std',

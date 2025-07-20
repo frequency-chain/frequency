@@ -54,7 +54,9 @@ fn create_signed_claims_payload<T: Config>(
 	(handle_claims_payload, MultiSignature::Sr25519(signature.into()), acc, msa_id)
 }
 
-#[benchmarks]
+#[benchmarks(where
+	T: Config + Send + Sync,
+)]
 mod benchmarks {
 	use super::*;
 
@@ -130,6 +132,34 @@ mod benchmarks {
 
 		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
 		assert!(stored_handle.is_none());
+		Ok(())
+	}
+
+	#[benchmark]
+	fn validate_retire_handle_benchmark() -> Result<(), BenchmarkError> {
+		// Set up: claim a handle to be retired
+		let caller: T::AccountId = whitelisted_caller();
+		let delegator_account_public = SignerId::generate_pair(None);
+		let (payload, proof, key, delegator_msa_id) =
+			create_signed_claims_payload::<T>(delegator_account_public.clone(), 32);
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, caller.clone()));
+		assert_ok!(T::MsaBenchmarkHelper::add_key(delegator_msa_id, key.clone()));
+		assert_ok!(Handles::<T>::claim_handle(
+			RawOrigin::Signed(caller.clone()).into(),
+			key.clone(),
+			proof,
+			payload
+		));
+		let stored_handle = Handles::<T>::get_handle_for_msa(delegator_msa_id);
+		assert!(stored_handle.is_some());
+
+		// Set block number to after expiration
+		frame_system::Pallet::<T>::set_block_number(500u32.into());
+
+		#[block]
+		{
+			let _ = crate::handles_signed_extension::HandlesSignedExtension::<T>::validate_retire_handle(&key);
+		}
 		Ok(())
 	}
 	impl_benchmark_test_suite!(
