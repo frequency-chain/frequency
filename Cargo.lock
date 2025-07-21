@@ -788,7 +788,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65daa13722ad51e6ab1a1b9c01299142bc75135b337923cfa10e79bbbd669f00"
 dependencies = [
  "async-channel 2.5.0",
- "async-io 2.4.1",
+ "async-io 2.5.0",
  "async-lock 3.4.0",
  "async-signal",
  "async-task",
@@ -4022,7 +4022,6 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frame-try-runtime",
  "hex",
- "hex-literal",
  "log",
  "pallet-assets",
  "pallet-aura",
