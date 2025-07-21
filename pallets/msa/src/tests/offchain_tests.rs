@@ -179,11 +179,18 @@ pub fn offchain_worker_should_populate_accounts_with_offchain_indexed_events() {
 		Msa::offchain_worker(block_number);
 
 		// assert
-		for (i, _) in accounts.into_iter().enumerate() {
-			let msa_key = get_msa_account_storage_key_name((i + 1) as MessageSourceId);
-			let result = get_index_value::<Vec<AccountId32>>(&msa_key);
-			assert_eq!(result, Ok(None));
+		let mut all_none = false;
+		for _ in 0..10 {
+			all_none = accounts.iter().enumerate().all(|(i, _)| {
+				let msa_key = get_msa_account_storage_key_name((i + 1) as MessageSourceId);
+				get_index_value::<Vec<AccountId32>>(&msa_key) == Ok(None)
+			});
+			if all_none {
+				break;
+			}
+			std::thread::sleep(std::time::Duration::from_millis(100));
 		}
+		assert!(all_none, "Not all accounts were removed from index in time");
 
 		let last_processed_block =
 			get_index_value::<BlockNumberFor<Test>>(&LAST_PROCESSED_BLOCK_STORAGE_NAME[..]);

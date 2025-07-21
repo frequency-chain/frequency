@@ -68,10 +68,10 @@ use sp_io::hashing::keccak_256;
 #[allow(unused)]
 use sp_runtime::{
 	traits::{
-		BlockNumberProvider, Convert, DispatchInfoOf, DispatchOriginOf, Dispatchable,
-		SignedExtension, TransactionExtension, ValidateResult, Zero,
+		AsSystemOriginSigner, BlockNumberProvider, Convert, DispatchInfoOf, Dispatchable,
+		PostDispatchInfoOf, TransactionExtension, ValidateResult, Zero,
 	},
-	ArithmeticError, DispatchError, MultiSignature,
+	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
 
 pub use pallet::*;
@@ -83,7 +83,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::PayloadTypeDiscriminator;
+use crate::types::{PayloadTypeDiscriminator, RecoveryHash};
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -98,6 +98,8 @@ pub mod weights;
 
 #[frame_support::pallet]
 pub mod pallet {
+	use crate::types::RecoveryHash;
+
 	use super::*;
 
 	#[pallet::config]
@@ -341,6 +343,22 @@ pub mod pallet {
 			/// The provider account ID
 			provider_id: ProviderId,
 		},
+		/// An account was recovered with a new control key
+		AccountRecovered {
+			/// The MSA id that was recovered
+			msa_id: MessageSourceId,
+			/// The recovery provider that performed the recovery
+			recovery_provider: ProviderId,
+			/// The new control key added to the MSA
+			new_control_key: T::AccountId,
+		},
+		/// A Recovery Commitment was invalidated after use or removal
+		RecoveryCommitmentInvalidated {
+			/// The MSA id for which the commitment was invalidated
+			msa_id: MessageSourceId,
+			/// The Recovery Commitment that was invalidated
+			recovery_commitment: RecoveryCommitment,
+		},
 	}
 
 	#[pallet::error]
@@ -437,6 +455,15 @@ pub mod pallet {
 
 		/// Fund transfer error
 		UnexpectedTokenTransferError,
+
+		/// The caller is not authorized as a recovery provider
+		NotAuthorizedRecoveryProvider,
+
+		/// The provided recovery commitment does not match the stored one
+		InvalidRecoveryCommitment,
+
+		/// No recovery commitment exists for the given MSA
+		NoRecoveryCommitment,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -664,7 +691,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -780,7 +807,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -809,7 +836,7 @@ pub mod pallet {
 
 			// Revoke delegation relationship entry in the delegation registry by expiring it
 			// at the current block
-			// validity checks are in SignedExtension so in theory this should never error.
+			// validity checks are in TransactionExtension so in theory this should never error.
 			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					let provider_id = ProviderId(msa_id);
@@ -819,7 +846,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -856,7 +883,7 @@ pub mod pallet {
 			let who = ensure_signed(origin)?;
 
 			// Delete the last and only account key and deposit the "PublicKeyDeleted" event
-			// check for valid MSA is in SignedExtension.
+			// check for valid MSA is in TransactionExtension.
 			match PublicKeyToMsaId::<T>::get(&who) {
 				Some(msa_id) => {
 					Self::delete_key_for_msa(msa_id, &who)?;
@@ -867,7 +894,7 @@ pub mod pallet {
 				},
 				None => {
 					log::error!(
-						"SignedExtension did not catch invalid MSA for account {:?}, ",
+						"TransactionExtension did not catch invalid MSA for account {:?}, ",
 						who
 					);
 				},
@@ -1134,6 +1161,73 @@ pub mod pallet {
 			Self::deposit_event(Event::RecoveryProviderRemoved { provider_id: provider });
 			Ok(())
 		}
+
+		/// Recover an MSA account with a new control key.
+		/// This extrinsic is called by approved Recovery Providers after verifying
+		/// the user's Recovery Intermediary Hashes and Authentication Contact.
+		///
+		/// # Events
+		/// * [`Event::AccountRecovered`]
+		/// * [`Event::RecoveryCommitmentInvalidated`]
+		///
+		/// # Errors
+		/// * [`Error::NotAuthorizedRecoveryProvider`] - Caller is not an approved Recovery Provider.
+		/// * [`Error::ProviderNotRegistered`] - Recovery Provider is not registered.
+		/// * [`Error::NoRecoveryCommitment`] - No Recovery Commitment exists for the MSA.
+		/// * [`Error::InvalidRecoveryCommitment`] - Recovery Commitment does not match.
+		///
+		#[pallet::call_index(18)]
+		#[pallet::weight(T::WeightInfo::recover_account())]
+		pub fn recover_account(
+			origin: OriginFor<T>,
+			intermediary_hash_a: RecoveryHash,
+			intermediary_hash_b: RecoveryHash,
+			new_control_key_proof: MultiSignature,
+			add_key_payload: AddKeyData<T>,
+		) -> DispatchResult {
+			let provider_key = ensure_signed(origin)?;
+
+			let provider_msa_id = Self::ensure_approved_recovery_provider(&provider_key)?;
+
+			let recovery_commitment = Self::ensure_valid_recovery_commitment(
+				intermediary_hash_a,
+				intermediary_hash_b,
+				add_key_payload.msa_id,
+			)?;
+
+			Self::ensure_valid_new_key_owner(&new_control_key_proof, &add_key_payload)?;
+
+			Self::add_key(
+				add_key_payload.msa_id,
+				&add_key_payload.new_public_key.clone(),
+				|msa_id| -> DispatchResult {
+					let event = Event::PublicKeyAdded {
+						msa_id,
+						key: add_key_payload.new_public_key.clone(),
+					};
+					offchain_index_event::<T>(Some(&event), msa_id);
+					Self::deposit_event(event);
+					Ok(())
+				},
+			)?;
+
+			// Invalidate the recovery commitment (single-use requirement)
+			MsaIdToRecoveryCommitment::<T>::remove(add_key_payload.msa_id);
+
+			// Emit events
+			Self::deposit_event(Event::AccountRecovered {
+				msa_id: add_key_payload.msa_id,
+				recovery_provider: ProviderId(provider_msa_id),
+				new_control_key: add_key_payload.new_public_key.clone(),
+			});
+
+			Self::deposit_event(Event::RecoveryCommitmentInvalidated {
+				msa_id: add_key_payload.msa_id,
+				recovery_commitment,
+			});
+
+			Ok(())
+		}
 	}
 }
 
@@ -1147,6 +1241,105 @@ impl<T: Config> Pallet<T> {
 	/// * [`bool`] - True if the provider is approved, false otherwise
 	pub fn is_approved_recovery_provider(provider: &ProviderId) -> bool {
 		RecoveryProviders::<T>::get(provider).unwrap_or(false)
+	}
+
+	/// Compute the Recovery Commitment from Intermediary Hashes
+	///
+	/// # Arguments
+	/// * `intermediary_hash_a`: Hash of the Recovery Secret
+	/// * `intermediary_hash_b`: Hash of the Recovery Secret + Authentication Contact
+	///
+	/// # Returns
+	/// * [`RecoveryCommitment`] - The computed Recovery Commitment
+	pub fn compute_recovery_commitment(
+		intermediary_hash_a: RecoveryHash,
+		intermediary_hash_b: RecoveryHash,
+	) -> RecoveryCommitment {
+		let mut input = Vec::with_capacity(64);
+		input.extend_from_slice(&intermediary_hash_a);
+		input.extend_from_slice(&intermediary_hash_b);
+		keccak_256(&input)
+	}
+
+	/// Ensure that the provider is approved for recovery operations
+	///
+	/// # Arguments
+	/// * `provider_key`: The provider's account key
+	///
+	/// # Returns
+	/// * [`MessageSourceId`] - The provider's MSA ID if approved
+	///
+	/// # Errors
+	/// * [`Error::NoKeyExists`] - Provider key is not associated with an MSA
+	/// * [`Error::NotAuthorizedRecoveryProvider`] - Provider is not approved for recovery
+	fn ensure_approved_recovery_provider(
+		provider_key: &T::AccountId,
+	) -> Result<MessageSourceId, DispatchError> {
+		let provider_msa_id = Self::ensure_valid_msa_key(provider_key)?;
+
+		ensure!(
+			Self::is_approved_recovery_provider(&ProviderId(provider_msa_id)),
+			Error::<T>::NotAuthorizedRecoveryProvider
+		);
+
+		Ok(provider_msa_id)
+	}
+
+	/// Ensure that the recovery commitment is valid
+	///
+	/// # Arguments
+	/// * `intermediary_hash_a`: Hash of the Recovery Secret
+	/// * `intermediary_hash_b`: Hash of the Recovery Secret + Authentication Contact
+	/// * `msa_id`: The MSA ID to verify the commitment for
+	///
+	/// # Returns
+	/// * [`RecoveryCommitment`] - The validated recovery commitment
+	///
+	/// # Errors
+	/// * [`Error::NoRecoveryCommitment`] - No Recovery Commitment exists for the MSA
+	/// * [`Error::InvalidRecoveryCommitment`] - Recovery Commitment does not match
+	fn ensure_valid_recovery_commitment(
+		intermediary_hash_a: RecoveryHash,
+		intermediary_hash_b: RecoveryHash,
+		msa_id: MessageSourceId,
+	) -> Result<RecoveryCommitment, DispatchError> {
+		let recovery_commitment: RecoveryCommitment =
+			Self::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b);
+
+		let stored_commitment: RecoveryCommitment =
+			MsaIdToRecoveryCommitment::<T>::get(msa_id).ok_or(Error::<T>::NoRecoveryCommitment)?;
+
+		ensure!(recovery_commitment == stored_commitment, Error::<T>::InvalidRecoveryCommitment);
+
+		Ok(recovery_commitment)
+	}
+
+	/// Ensure that the new key owner signature is valid
+	///
+	/// # Arguments
+	/// * `new_control_key_proof`: Signature proof from the new control key
+	/// * `add_key_payload`: Payload containing the new key and related data
+	///
+	/// # Errors
+	/// * [`Error::NewKeyOwnershipInvalidSignature`] - Invalid signature from new key owner
+	/// * [`Error::SignatureAlreadySubmitted`] - Signature has already been used
+	fn ensure_valid_new_key_owner(
+		new_control_key_proof: &MultiSignature,
+		add_key_payload: &AddKeyData<T>,
+	) -> DispatchResult {
+		// The original MSA owner key is not available, therefore we cannot reuse the `add_public_key_to_msa` logic
+		// to verify the signatures, only the new control key signature is verified.
+		ensure!(
+			Self::verify_signature(
+				new_control_key_proof,
+				&add_key_payload.new_public_key,
+				add_key_payload
+			),
+			Error::<T>::NewKeyOwnershipInvalidSignature
+		);
+		Self::register_signature(new_control_key_proof, add_key_payload.expiration)?;
+
+		Ok(())
 	}
 
 	/// Create the account for the `key`
@@ -1968,7 +2161,7 @@ impl<T: Config> MsaKeyProvider for Pallet<T> {
 	}
 }
 
-/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
+/// The TransactionExtension trait is implemented on CheckFreeExtrinsicUse to validate that a provider
 /// has not already been revoked if the calling extrinsic is revoking a provider to an MSA. The
 /// purpose of this is to ensure that the revoke_delegation_by_delegator extrinsic cannot be
 /// repeatedly called and flood the network.
@@ -2260,7 +2453,7 @@ pub enum ValidityError {
 }
 
 impl<T: Config + Send + Sync> CheckFreeExtrinsicUse<T> {
-	/// Create new `SignedExtension` to check runtime version.
+	/// Create new `TransactionExtension` to check runtime version.
 	pub fn new() -> Self {
 		Self(PhantomData)
 	}
@@ -2277,74 +2470,110 @@ impl<T: Config + Send + Sync> core::fmt::Debug for CheckFreeExtrinsicUse<T> {
 	}
 }
 
-#[allow(deprecated)]
-impl<T: Config + Send + Sync> SignedExtension for CheckFreeExtrinsicUse<T>
+/// The info passed between the validate and prepare steps for the `CheckFreeExtrinsicUse` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+/// The info passed between the prepare and post-dispatch steps for the `CheckFreeExtrinsicUse` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+impl<T: Config + Send + Sync> TransactionExtension<T::RuntimeCall> for CheckFreeExtrinsicUse<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckFreeExtrinsicUse";
+	type Implicit = ();
+	type Val = Val;
+	type Pre = Pre;
 
-	fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, call: &T::RuntimeCall) -> Weight {
+		match call.is_sub_type() {
+			Some(Call::revoke_delegation_by_provider { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_revoke_delegation_by_provider(),
+			Some(Call::revoke_delegation_by_delegator { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_revoke_delegation_by_delegator(),
+			Some(Call::delete_msa_public_key { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_delete_msa_public_key(),
+			Some(Call::retire_msa { .. }) => T::WeightInfo::check_free_extrinsic_use_retire_msa(),
+			Some(Call::withdraw_tokens { .. }) =>
+				T::WeightInfo::check_free_extrinsic_use_withdraw_tokens(),
+			_ => Weight::zero(),
+		}
 	}
 
-	#[allow(deprecated)]
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
-		len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		self.validate(who, call, info, len).map(|_| ())
-	}
-
-	/// Frequently called by the transaction queue to validate all free MSA extrinsics:
-	/// Returns a `ValidTransaction` or wrapped [`ValidityError`]
-	/// * revoke_delegation_by_provider
-	/// * revoke_delegation_by_delegator
-	/// * delete_msa_public_key
-	/// * retire_msa
-	/// * withdraw_tokens
-	///
-	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
-	///
-	/// Arguments:
-	/// who: AccountId calling the extrinsic
-	/// call: The pallet extrinsic being called
-	/// unused: _info, _len
-	///
-	#[allow(deprecated)]
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		match call.is_sub_type() {
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		let weight = self.weight(call);
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(weight), origin));
+		};
+		let validity = match call.is_sub_type() {
 			Some(Call::revoke_delegation_by_provider { delegator, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_provider(who, delegator),
+				Self::validate_delegation_by_provider(who, delegator),
 			Some(Call::revoke_delegation_by_delegator { provider_msa_id, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_delegation_by_delegator(who, provider_msa_id),
+				Self::validate_delegation_by_delegator(who, provider_msa_id),
 			Some(Call::delete_msa_public_key { public_key_to_delete, .. }) =>
-				CheckFreeExtrinsicUse::<T>::validate_key_delete(who, public_key_to_delete),
-			Some(Call::retire_msa { .. }) => CheckFreeExtrinsicUse::<T>::ensure_msa_can_retire(who),
+				Self::validate_key_delete(who, public_key_to_delete),
+			Some(Call::retire_msa { .. }) => Self::ensure_msa_can_retire(who),
 			Some(Call::withdraw_tokens {
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
-			}) => CheckFreeExtrinsicUse::<T>::validate_msa_token_withdrawal(
+			}) => Self::validate_msa_token_withdrawal(
 				who,
 				msa_owner_public_key,
 				msa_owner_proof,
 				authorization_payload,
 			),
 			_ => Ok(Default::default()),
+		};
+		validity.map(|v| (v, Val::Valid, origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		match val {
+			Val::Valid => Ok(Pre::Valid),
+			Val::Refund(w) => Ok(Pre::Refund(w)),
+		}
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::Valid => Ok(Weight::zero()),
+			Pre::Refund(w) => Ok(w),
 		}
 	}
 }
