@@ -37,5 +37,5 @@ parameter_types! {
 	// XCM instruction weight cost
 	// pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	// pub const MaxInstructions: u32 = 100;
-	pub const MaxAssetsIntoHolding: u32 = 64;
+	pub const MaxAssetsIntoHolding: u32 = 3;
 }
