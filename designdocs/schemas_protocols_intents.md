@@ -257,7 +257,7 @@ account for schemas and intents, while maintaining runtime efficiency.
 ### 🔢 Preferred On-Chain Identifiers
 
 On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `ProtocolId` and `IntentId` rather
-than `protocol_name.intent_namd`.
+than `protocol_name.intent_name`.
 
 String identifiers such as protocol names or intent names should never be parsed on-chain. These must
 be resolved by SDKs and off-chain services (e.g., the Frequency Gateway).
