@@ -95,7 +95,6 @@ on-chain Intent to determine whether an application should be allowed access to 
 
 - `IntentId`: A unique numeric identifier for runtime efficiency
 - `ProtocolId`: Which Protocol owns this Intent
-- `IntentId`: Compact numeric ID used on-chain
 - `Name`: Human-readable name (e.g., `broadcast`)
 - `Description`: Optional developer-facing documentation
 - `Link`: Optional link to spec or docs
