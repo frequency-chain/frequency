@@ -261,7 +261,8 @@ intentionally unresolved to guide future design discussions within the developme
 - Will schema deprecation or version invalidation ever be supported, or are all published schemas permanently
   active?
 
-- This design specifically does not address the issue described in #2510
+- This design specifically does not address the issue described
+  in [#2510](https://github.com/frequency-chain/frequency/issues/2510)
 
 ### 🧭 Next Steps
 
