@@ -179,16 +179,15 @@ pub enum DelegationTarget {
 }
 
 pub struct DelegationInfo {
-    pub entity: DelegationTarget,          // NOTE, can be reduced to simply `IntentId` if delegation by Schema is deprecated
-    pub revoked_at: Option<BlockNumber>,
     pub granted_at: BlockNumber,
+    pub revoked_at: Option<BlockNumber>,
 }
 
 pub struct Delegation {
     pub revoked_at: BlockNumber,
     // NOTE: If we eliminate DelegationTarget for IntentId, we can easily restore the current implmentation's
     // BoundedBTreeMap implementation for additional runtime efficiency
-    pub delegated_targets: BoundedVec<DelegationInfo, MaxTargetsPerDelegation>,
+    pub delegated_targets: BoundedBTreeMap<DelegationTarget, DelegationInfo, MaxTargetsPerDelegation>,
 }
 
 pub type Delegations<T> = StorageDoubleMap<
@@ -347,6 +346,20 @@ intentionally unresolved to guide future design discussions within the developme
 
 - Will schema deprecation or version invalidation ever be supported, or are all published schemas permanently
   active?
+
+- This design does not address the following shortcoming in the delegation model:
+  If a user delegates to a Provider, then revokes that delegation, and subsequently adds the same delegation again, we
+  lose information about the first period delegation. Example:
+    - User A delegates Intent 1234 to Provider 'Alice' at block 100
+    - User A revokes delegation at block 200.
+        - We are able to determine that content posted by Alice on behalf of User A between blocks 100-200 is valid;
+          conversely, we know that any content posted outside the block range of 100-200 was not authorized
+    - User A re-delegates Provider Alice at block 400
+        - We are able to determine the validity of content posted by Alice on behalf of User A for blocks >= 400.
+          However, we have now lost the information about the prior validity period of blocks 100-200, and can no longer
+          recognize that content posted in that block range was authorized. (Presumably, we could still make that
+          determination if we have access to an archive node and query the storage at the block number at which the
+          content was posted...)
 
 ### 🧭 Next Steps
 
