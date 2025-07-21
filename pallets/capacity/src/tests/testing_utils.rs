@@ -1,9 +1,6 @@
 use super::mock::*;
 use frame_support::{assert_ok, traits::Hooks};
 
-#[allow(unused)]
-use sp_runtime::traits::SignedExtension;
-
 use crate::{
 	BalanceOf, CapacityDetails, Config, CurrentEraInfo, CurrentEraProviderBoostTotal, Event,
 	RewardEraInfo, StakingAccountLedger, StakingTargetLedger, StakingType,
@@ -86,13 +83,9 @@ pub fn setup_provider(
 	register_provider(*target, provider_name);
 	if amount.gt(&0u64) {
 		if staking_type == StakingType::MaximumCapacity {
-			assert_ok!(Capacity::stake(RuntimeOrigin::signed(staker.clone()), *target, *amount,));
+			assert_ok!(Capacity::stake(RuntimeOrigin::signed(*staker), *target, *amount,));
 		} else {
-			assert_ok!(Capacity::provider_boost(
-				RuntimeOrigin::signed(staker.clone()),
-				*target,
-				*amount
-			));
+			assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(*staker), *target, *amount));
 		}
 		let target = StakingTargetLedger::<Test>::get(staker, target).unwrap();
 		assert_eq!(target.amount, *amount);

@@ -24,11 +24,13 @@ import { stakeToProvider } from '../scaffolding/helpers';
 describe('Sudo required', function () {
   let sudoKey: KeyringPair;
   let fundingSource: KeyringPair;
+  let schemaName: string;
 
-  before(function () {
+  before(async function () {
     if (isTestnet()) this.skip();
     sudoKey = getSudo().keys;
-    fundingSource = getFundingSource(import.meta.url);
+    fundingSource = await getFundingSource(import.meta.url);
+    schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
   });
 
   describe('schema#setMaxSchemaModelBytes', function () {
@@ -56,7 +58,6 @@ describe('Sudo required', function () {
   describe('schema-pallet ', function () {
     it('should create schema with name using createSchemaWithSettingsGovV2', async function () {
       if (isTestnet()) this.skip();
-      const schemaName = 'e-e.sudo-' + generateSchemaPartialName(15);
       const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
@@ -82,12 +83,13 @@ describe('Sudo required', function () {
     it('should fail to create non itemized schema with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const ex = ExtrinsicHelper.createSchemaWithSettingsGov(
+      const ex = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
         'Paginated',
-        'AppendOnly'
+        'AppendOnly',
+        schemaName
       );
       await assert.rejects(ex.sudoSignAndSend(), {
         name: 'InvalidSetting',
@@ -97,12 +99,13 @@ describe('Sudo required', function () {
     it('should not fail to create itemized schema with AppendOnly settings', async function () {
       if (isTestnet()) this.skip();
 
-      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(
+      const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
         sudoKey,
         AVRO_GRAPH_CHANGE,
         'AvroBinary',
         'Itemized',
-        'AppendOnly'
+        'AppendOnly',
+        schemaName
       );
       const { target: event } = await createSchema.sudoSignAndSend();
       assert.notEqual(event, undefined);
@@ -130,12 +133,13 @@ describe('Sudo required', function () {
         assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
         // Create a schema for Itemized PayloadLocation
-        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGov(
+        const createSchema = ExtrinsicHelper.createSchemaWithSettingsGovV2(
           sudoKey,
           AVRO_CHAT_MESSAGE,
           'AvroBinary',
           'Itemized',
-          'AppendOnly'
+          'AppendOnly',
+          schemaName
         );
         const { target: event } = await createSchema.sudoSignAndSend();
         itemizedSchemaId = event!.data.schemaId;
@@ -183,8 +187,8 @@ describe('Sudo required', function () {
         });
       });
 
-      describe('Capacity should not be affected by a hold being slashed', function () {
-        it('stake should fail when overlapping tokens are on hold', async function () {
+      describe('Capacity staking is affected by a hold being slashed', function () {
+        it('stake succeeds when overlapping tokens are on hold due to a proposal', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -214,10 +218,10 @@ describe('Sudo required', function () {
 
           // Create a stake that will result in overlapping tokens being frozen
           // stake will allow only the balance not on hold to be staked
-          await assert.rejects(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
+          await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Slash the provider
-          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data.proposalIndex);
+          const slashExt = ExtrinsicHelper.rejectProposal(sudoKey, proposalEvent?.data['proposalIndex']);
           const { target: slashEvent } = await slashExt.sudoSignAndSend();
           assert.notEqual(slashEvent, undefined, 'should return a Treasury event');
 
@@ -230,7 +234,7 @@ describe('Sudo required', function () {
           );
         });
 
-        it('proposal should fail when overlapping tokens are on hold', async function () {
+        it('proposal fails when there is Capacity staking', async function () {
           const accountBalance: bigint = 122n * DOLLARS;
           const stakeBalance: bigint = 100n * DOLLARS;
           const spendBalance: bigint = 20n * DOLLARS;
@@ -248,7 +252,8 @@ describe('Sudo required', function () {
           await assert.doesNotReject(stakeToProvider(fundingSource, stakeKeys, stakeProviderId, stakeBalance));
 
           // Create a treasury proposal which will result in a hold with minimum bond = 100 DOLLARS
-          // The proposal should fail because the stakeKeys account has overlapping tokens frozen
+          // The proposal should fail because the stakeKeys account doesn't have enough
+          // transferable to cover the deposit.
           const proposalExt = ExtrinsicHelper.submitProposal(stakeKeys, spendBalance);
           await assert.rejects(proposalExt.signAndSend());
         });

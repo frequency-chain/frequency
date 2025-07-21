@@ -94,7 +94,7 @@ Note that the thaw period is measured in Epoch Periods. An Epoch Period is compo
    + AtLeast32BitUnsigned
    + Default
    + Copy
-   + sp_std::hash::Hash
+   + core::hash::Hash
    + MaxEncodedLen
    + TypeInfo;
 
@@ -603,7 +603,7 @@ A type for implementing the SignedExtension trait:
 
 /// A type that implements SignedExtension that checks to see if Capacity transaction allocated
 /// weight has been reached.
-pub struct CheckCapacityWeight<T: Config + Send + Sync>(sp_std::market::PhantomData<T>);
+pub struct CheckCapacityWeight<T: Config + Send + Sync>(core::market::PhantomData<T>);
 
 ```
 
@@ -617,7 +617,7 @@ impl<T: Config + Send + Sync> SignedExtension for CheckCapacityWeight<T>
   type AdditionalSigned = ();
   type Pre = ();
 
-  fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
+  fn additional_signed(&self) -> core::result::Result<(), TransactionValidityError> {
     Ok(())
   }
 

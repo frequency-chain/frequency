@@ -29,8 +29,6 @@ pub struct FullDeps<C, P> {
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
-	/// Whether to deny unsafe calls
-	pub deny_unsafe: DenyUnsafe,
 	/// Manual seal command sink
 	pub command_sink: Option<futures::channel::mpsc::Sender<EngineCommand<Hash>>>,
 }
@@ -75,9 +73,9 @@ where
 	use pallet_stateful_storage_rpc::{StatefulStorageApiServer, StatefulStorageHandler};
 
 	let mut module = RpcExtension::new(());
-	let FullDeps { client, pool, deny_unsafe, command_sink } = deps;
+	let FullDeps { client, pool, command_sink } = deps;
 
-	module.merge(System::new(client.clone(), pool.clone(), deny_unsafe).into_rpc())?;
+	module.merge(System::new(client.clone(), pool.clone()).into_rpc())?;
 	module.merge(TransactionPayment::new(client.clone()).into_rpc())?;
 	module.merge(MessagesHandler::new(client.clone()).into_rpc())?;
 	module.merge(SchemasHandler::new(client.clone()).into_rpc())?;

@@ -17,21 +17,26 @@
 // limitations under the License.
 
 use frame_system::Config;
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 
 use frame_support::{
 	dispatch::{DispatchInfo, Pays},
-	sp_runtime,
+	sp_runtime, RuntimeDebugNoBound,
 };
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, One, SignedExtension},
+	traits::{
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, One, PostDispatchInfoOf,
+		TransactionExtension, ValidateResult,
+	},
 	transaction_validity::{
-		InvalidTransaction, TransactionLongevity, TransactionValidity, TransactionValidityError,
+		InvalidTransaction, TransactionLongevity, TransactionSource, TransactionValidityError,
 		ValidTransaction,
 	},
+	DispatchResult, Weight,
 };
-use sp_std::vec;
+extern crate alloc;
+use alloc::vec;
 
 /// Nonce check and increment to give replay protection for transactions.
 ///
@@ -40,7 +45,7 @@ use sp_std::vec;
 /// This extension affects `requires` and `provides` tags of validity, but DOES NOT
 /// set the `priority` field. Make sure that AT LEAST one of the signed extension sets
 /// some kind of priority upon validating transactions.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct CheckNonce<T: Config>(#[codec(compact)] pub T::Nonce);
 
@@ -51,97 +56,166 @@ impl<T: Config> CheckNonce<T> {
 	}
 }
 
-impl<T: Config> sp_std::fmt::Debug for CheckNonce<T> {
+impl<T: Config> core::fmt::Debug for CheckNonce<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "CheckNonce({})", self.0)
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
 
-impl<T: Config> SignedExtension for CheckNonce<T>
+/// Transaction operations from `validate` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val<T: Config> {
+	/// Account and its nonce to check for.
+	CheckNonce((T::AccountId, T::Nonce)),
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+/// Transaction operations from `prepare` to `post_dispatch` for the `CheckNonce` extension.
+/// This is used to determine whether the transaction extension weight should be refunded or not.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// No nonce check was performed
+	NonceChecked,
+	/// Weight to refund.
+	Refund(Weight),
+}
+
+impl<T: Config> TransactionExtension<T::RuntimeCall> for CheckNonce<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo>,
+	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "CheckNonce";
+	type Implicit = ();
+	type Val = Val<T>;
+	type Pre = Pre;
 
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
-		Ok(())
-	}
-
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
-		_len: usize,
-	) -> Result<(), TransactionValidityError> {
-		// Get TOKEN account from "who" key
-		let mut account = frame_system::Account::<T>::get(who);
-
-		// The default account (no account) has a nonce of 0.
-		// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
-		if self.0 != account.nonce {
-			return Err(if self.0 < account.nonce {
-				InvalidTransaction::Stale
-			} else {
-				InvalidTransaction::Future
-			}
-			.into())
-		}
-
-		// Is this an existing account?
-		// extracted from the conditions in which an account gets reaped
-		// https://github.com/paritytech/polkadot-sdk/commit/e993f884fc00f359dd8bf9c81422c5161f3447b5#diff-dff2afa7433478e36eb66a9fe319efe28cfbdf95104b30b03afa0a1c4e3239f3R1082
-		let existing_account =
-			account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
-
-		// Increment account nonce by 1
-		account.nonce += T::Nonce::one();
-
-		// Only create or update the token account if the caller is paying or
-		// account already exists
-		if info.pays_fee == Pays::Yes || existing_account {
-			frame_system::Account::<T>::insert(who, account);
-		}
-
-		Ok(())
+	fn weight(&self, _call: &T::RuntimeCall) -> Weight {
+		<T::ExtensionsWeightInfo as frame_system::ExtensionsWeightInfo>::check_nonce()
 	}
 
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		_call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		origin: <T as Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		// check index
-		let account = frame_system::Account::<T>::get(who);
-		if self.0 < account.nonce {
-			return InvalidTransaction::Stale.into()
-		}
-
-		let provides = vec![Encode::encode(&(who, self.0))];
-		let requires = if account.nonce < self.0 {
-			vec![Encode::encode(&(who, self.0 - One::one()))]
-		} else {
-			vec![]
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl Encode,
+		_source: TransactionSource,
+	) -> ValidateResult<Self::Val, T::RuntimeCall> {
+		// Only check for signed origin
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
 		};
 
-		Ok(ValidTransaction {
+		let (valid_transaction, account_nonce) = validate_nonce::<T>(who, self.0)?;
+
+		Ok((valid_transaction, Val::CheckNonce((who.clone(), account_nonce)), origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T::RuntimeCall as Dispatchable>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		let (who, nonce) = match val {
+			Val::CheckNonce((who, nonce)) => (who, nonce),
+			Val::Refund(weight) => return Ok(Pre::Refund(weight)),
+		};
+
+		// Prepare the nonce for the account.
+		prepare_nonce::<T>(&who, nonce, info.pays_fee)?;
+
+		Ok(Pre::NonceChecked)
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &DispatchResult,
+	) -> Result<Weight, TransactionValidityError> {
+		match pre {
+			Pre::NonceChecked => Ok(Weight::zero()),
+			Pre::Refund(weight) => Ok(weight),
+		}
+	}
+}
+
+/// Helper function to prepare a nonce for a given account.
+pub fn prepare_nonce<T: Config>(
+	who: &T::AccountId,
+	nonce: T::Nonce,
+	pays_fee: Pays,
+) -> Result<(), TransactionValidityError> {
+	let mut account: frame_system::AccountInfo<<T as Config>::Nonce, <T as Config>::AccountData> =
+		frame_system::Account::<T>::get(who);
+	// The default account (no account) has a nonce of 0.
+	// If account nonce is not equal to the tx nonce (self.0), the tx is invalid.  Therefore, check if it is a stale or future tx.
+	if nonce != account.nonce {
+		return Err(if nonce < account.nonce {
+			InvalidTransaction::Stale
+		} else {
+			InvalidTransaction::Future
+		}
+		.into());
+	}
+
+	// Is this an existing account?
+	// extracted from the conditions in which an account gets reaped
+	// https://github.com/paritytech/polkadot-sdk/commit/e993f884fc00f359dd8bf9c81422c5161f3447b5#diff-dff2afa7433478e36eb66a9fe319efe28cfbdf95104b30b03afa0a1c4e3239f3R1082
+	// Relevant lines: https://github.com/paritytech/polkadot-sdk/blob/495d5a24c8078a0da1eb5e0fe8742a09f1f1bd5c/substrate/frame/system/src/lib.rs#L1642
+	let existing_account =
+		account.providers > 0 || account.consumers > 0 || account.sufficients > 0;
+
+	// Increment account nonce by 1
+	account.nonce += T::Nonce::one();
+
+	// Only create or update the token account if the caller is paying or
+	// account already exists
+	if pays_fee == Pays::Yes || existing_account {
+		frame_system::Account::<T>::insert(who, account);
+	}
+	Ok(())
+}
+
+/// Helper function to validate a nonce for a given account.
+pub fn validate_nonce<T: Config>(
+	who: &T::AccountId,
+	nonce: T::Nonce,
+) -> Result<(ValidTransaction, T::Nonce), TransactionValidityError> {
+	let account = frame_system::Account::<T>::get(who);
+
+	if nonce < account.nonce {
+		return Err(InvalidTransaction::Stale.into());
+	}
+	let provides = vec![Encode::encode(&(who.clone(), nonce))];
+	let requires = if account.nonce < nonce {
+		vec![Encode::encode(&(who.clone(), nonce - One::one()))]
+	} else {
+		vec![]
+	};
+	Ok((
+		ValidTransaction {
 			priority: 0,
 			requires,
 			provides,
-			longevity: TransactionLongevity::max_value(),
+			longevity: TransactionLongevity::MAX,
 			propagate: true,
-		})
-	}
+		},
+		account.nonce,
+	))
 }

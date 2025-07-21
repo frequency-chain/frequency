@@ -69,7 +69,7 @@ fn get_non_existing_schema_by_id_should_return_none() {
 		let res = SchemasPallet::get_schema_by_id(1);
 
 		// assert
-		assert_eq!(res.as_ref().is_none(), true);
+		assert!(res.as_ref().is_none());
 	})
 }
 
@@ -353,7 +353,7 @@ fn schema_name_try_parse_with_non_strict_invalid_names_should_fail() {
 #[test]
 fn schema_name_try_parse_with_strict_valid_names_should_succeed() {
 	new_test_ext().execute_with(|| {
-		let valid_names = vec!["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
+		let valid_names = ["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
 		let parsed_names = vec![
 			SchemaName {
 				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
@@ -381,7 +381,7 @@ fn schema_name_try_parse_with_strict_valid_names_should_succeed() {
 #[test]
 fn schema_name_try_parse_with_non_strict_valid_names_should_succeed() {
 	new_test_ext().execute_with(|| {
-		let valid_names = vec!["Abc", "a-v", "aZxcvBnmkjhgfds"];
+		let valid_names = ["Abc", "a-v", "aZxcvBnmkjhgfds"];
 		let parsed_names = vec![
 			SchemaName {
 				namespace: SchemaNamespace::try_from("abc".to_string().into_bytes()).unwrap(),
@@ -408,7 +408,7 @@ fn schema_name_try_parse_with_non_strict_valid_names_should_succeed() {
 #[test]
 fn schema_name_get_combined_name_with_valid_names_should_succeed() {
 	new_test_ext().execute_with(|| {
-		let valid_names = vec!["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
+		let valid_names = ["Abc.a", "a-v.D-D", "aZxcvBnmkjhgfds.asdfghKkloiuyTre"];
 		let results = vec!["abc.a", "a-v.d-d", "azxcvbnmkjhgfds.asdfghkkloiuytre"];
 		for (name, result) in valid_names.iter().zip(results) {
 			let payload: SchemaNamePayload =
@@ -533,7 +533,7 @@ fn create_schema_v3_happy_path() {
 			}
 			.into(),
 		);
-		assert_eq!(res.as_ref().is_some(), true);
+		assert!(res.as_ref().is_some());
 		assert_eq!(
 			versions,
 			Some(vec![SchemaVersionResponse {
@@ -766,7 +766,7 @@ fn create_schema_via_governance_v2_with_signature_required_setting_and_wrong_loc
 		let settings = vec![SchemaSetting::SignatureRequired];
 		let sender: AccountId = test_public(1);
 
-		for location in vec![PayloadLocation::OnChain, PayloadLocation::IPFS] {
+		for location in [PayloadLocation::OnChain, PayloadLocation::IPFS] {
 			// act and assert
 			assert_noop!(
 				SchemasPallet::create_schema_via_governance_v2(
@@ -924,7 +924,7 @@ fn propose_to_create_schema_v2_happy_path() {
 
 		let last_schema_id = schema_events[0];
 		let created_schema = SchemasPallet::get_schema_by_id(last_schema_id);
-		assert_eq!(created_schema.as_ref().is_some(), true);
+		assert!(created_schema.as_ref().is_some());
 		assert_eq!(created_schema.as_ref().unwrap().clone().model, serialized_fields);
 	})
 }

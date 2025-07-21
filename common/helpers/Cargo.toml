@@ -16,11 +16,11 @@ targets = ['x86_64-unknown-linux-gnu']
 apache-avro = { workspace = true, features = ["snappy"] }
 thiserror = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
-sp-runtime = { workspace = true }
 sp-api = { workspace = true }
-sp-io = { workspace = true }
-common-primitives = { path = "../primitives", default-features = false }
 
 [features]
 default = ['std']
-std = ['sp-runtime/std', 'sp-api/std', 'sp-io/std', 'common-primitives/std']
+std = ['sp-api/std']
+
+[lints]
+workspace = true

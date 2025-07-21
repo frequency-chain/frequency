@@ -11,11 +11,13 @@ edition = "2021"
 
 [dependencies]
 # Substrate
-sp-std = { workspace = true }
 sp-api = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 
 [features]
 default = ["std"]
-std = ['sp-std/std', 'sp-api/std', 'common-primitives/std']
+std = ['sp-api/std', 'common-primitives/std']
+
+[lints]
+workspace = true

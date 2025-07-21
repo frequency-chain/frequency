@@ -11,17 +11,14 @@ edition = "2021"
 
 [dependencies]
 jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
-rayon = { workspace = true }
 # Frequency crates
 pallet-handles-runtime-api = { default-features = false, path = "../runtime-api" }
 common-primitives = { default-features = false, path = "../../../../common/primitives" }
 common-helpers = { default-features = false, path = "../../../../common/helpers" }
 # Substrate crates
 sp-api = { workspace = true }
-sp-std = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
-frame-support = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
@@ -30,11 +27,12 @@ sc-client-api = { workspace = true }
 [features]
 default = ["std"]
 std = [
-  'sp-std/std',
   'sp-api/std',
   'sp-runtime/std',
-  "frame-support/std",
   'pallet-handles-runtime-api/std',
   'common-primitives/std',
   'common-helpers/std',
 ]
+
+[lints]
+workspace = true

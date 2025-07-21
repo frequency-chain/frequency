@@ -11,10 +11,10 @@ fn impl_staking_capacity_details_deposit() {
 	assert_eq!(
 		capacity_details,
 		CapacityDetails::<BalanceOf<Test>, <Test as Config>::EpochNumber> {
-			total_tokens_staked: BalanceOf::<Test>::from(10u64),
-			remaining_capacity: BalanceOf::<Test>::from(1u64),
-			total_capacity_issued: BalanceOf::<Test>::from(1u64),
-			last_replenished_epoch: <Test as Config>::EpochNumber::from(0u32)
+			total_tokens_staked: 10u64,
+			remaining_capacity: 1u64,
+			total_capacity_issued: 1u64,
+			last_replenished_epoch: 0u32
 		}
 	)
 }

@@ -15,11 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 32.0.0
-//! DATE: 2025-03-06 (Y/M/D)
-//! HOSTNAME: `ip-10-173-4-22`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
+//! THIS FILE WAS AUTO-GENERATED USING THE SUBSTRATE BENCHMARK CLI VERSION 47.2.0
+//! DATE: 2025-07-15 (Y/M/D)
+//! HOSTNAME: `ip-10-173-5-194`, CPU: `Intel(R) Xeon(R) Platinum 8375C CPU @ 2.90GHz`
 //!
-//! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency Development (No Relay)`
+//! SHORT-NAME: `extrinsic`, LONG-NAME: `ExtrinsicBase`, RUNTIME: `Frequency`
 //! WARMUPS: `10`, REPEAT: `100`
 //! WEIGHT-PATH: `runtime/common/src/weights`
 //! WEIGHT-METRIC: `Average`, WEIGHT-MUL: `1.0`, WEIGHT-ADD: `0`
@@ -28,7 +28,6 @@
 //   ./scripts/../target/release/frequency
 //   benchmark
 //   overhead
-//   --wasm-execution=compiled
 //   --weight-path=runtime/common/src/weights
 //   --chain=dev
 //   --warmup=10
@@ -39,21 +38,21 @@ use sp_core::parameter_types;
 use sp_weights::{constants::WEIGHT_REF_TIME_PER_NANOS, Weight};
 
 parameter_types! {
-	/// Time to execute a NO-OP extrinsic, for example `System::remark`.
+	/// Weight of executing a NO-OP extrinsic, for example `System::remark`.
 	/// Calculated by multiplying the *Average* with `1.0` and adding `0`.
 	///
 	/// Stats nanoseconds:
-	///   Min, Max: 86_157, 87_457
-	///   Average:  86_795
-	///   Median:   86_694
-	///   Std-Dev:  329.82
+	///   Min, Max: 97_154, 99_331
+	///   Average:  98_029
+	///   Median:   98_086
+	///   Std-Dev:  461.06
 	///
 	/// Percentiles nanoseconds:
-	///   99th: 87_418
-	///   95th: 87_251
-	///   75th: 87_124
+	///   99th: 99_250
+	///   95th: 98_727
+	///   75th: 98_318
 	pub const ExtrinsicBaseWeight: Weight =
-		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(86_795), 0);
+		Weight::from_parts(WEIGHT_REF_TIME_PER_NANOS.saturating_mul(98_029), 0);
 }
 
 #[cfg(test)]

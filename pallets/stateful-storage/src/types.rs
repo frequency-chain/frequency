@@ -1,22 +1,27 @@
 //! Types for the Stateful Storage Pallet
 use crate::Config;
+use alloc::boxed::Box;
 use common_primitives::{
-	msa::MessageSourceId,
+	node::EIP712Encode,
 	schema::SchemaId,
 	stateful_storage::{PageHash, PageId, PageNonce},
 };
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
+use lazy_static::lazy_static;
 use parity_scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 use sp_core::bounded::BoundedVec;
-use sp_std::{
+extern crate alloc;
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::{
 	cmp::*,
-	collections::btree_map::BTreeMap,
 	fmt::Debug,
 	hash::{Hash, Hasher},
-	prelude::*,
 };
+use sp_core::U256;
+
+use common_primitives::{signatures::get_eip712_encoding_prefix, utils::to_abi_compatible_number};
 use twox_hash::XxHash64;
 
 /// Migration page size
@@ -53,10 +58,12 @@ pub trait ItemizedOperations<T: Config> {
 	fn try_parse(&self, include_header: bool) -> Result<ParsedItemPage, PageError>;
 }
 /// Defines the actions that can be applied to an Itemized storage
-#[derive(Clone, Encode, Decode, Debug, TypeInfo, MaxEncodedLen, PartialEq)]
+#[derive(
+	Clone, Encode, Decode, DecodeWithMemTracking, Debug, TypeInfo, MaxEncodedLen, PartialEq,
+)]
 #[scale_info(skip_type_params(DataSize))]
 #[codec(mel_bound(DataSize: MaxEncodedLen))]
-pub enum ItemAction<DataSize: Get<u32> + Clone + sp_std::fmt::Debug + PartialEq> {
+pub enum ItemAction<DataSize: Get<u32> + Clone + core::fmt::Debug + PartialEq> {
 	/// Adding new Item into page
 	Add {
 		/// The data to add
@@ -90,35 +97,19 @@ pub enum PageError {
 	PageSizeOverflow,
 }
 
-/// Warning: This struct is `deprecated`. please use `ItemizedSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify Itemized related signatures
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct ItemizedSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
-
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-
-	/// Actions to apply to storage from possible: [`ItemAction`]
-	pub actions: BoundedVec<
-		ItemAction<<T as Config>::MaxItemizedBlobSizeBytes>,
-		<T as Config>::MaxItemizedActionsCount,
-	>,
-}
+// REMOVED ItemizedSignaturePayload
 
 /// Payload containing all necessary fields to verify Itemized related signatures
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct ItemizedSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
@@ -139,36 +130,83 @@ pub struct ItemizedSignaturePayloadV2<T: Config> {
 	>,
 }
 
-/// Warning: This struct is `deprecated`. please use `PaginatedUpsertSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct PaginatedUpsertSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
+impl<T: Config> EIP712Encode for ItemizedSignaturePayloadV2<T> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ItemizedSignaturePayloadV2(uint16 schemaId,uint32 targetHash,uint32 expiration,ItemAction[] actions)ItemAction(string actionType,bytes data,uint16 index)");
 
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
+			static ref SUB_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"ItemAction(string actionType,bytes data,uint16 index)");
 
-	/// Page id of this storage
-	#[codec(compact)]
-	pub page_id: PageId,
+			static ref ITEM_ACTION_ADD: [u8; 32] = sp_io::hashing::keccak_256(b"Add");
+			static ref ITEM_ACTION_DELETE: [u8; 32] = sp_io::hashing::keccak_256(b"Delete");
 
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
-
-	/// payload to update the page with
-	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
+			static ref EMPTY_BYTES_HASH: [u8; 32] = sp_io::hashing::keccak_256([].as_slice());
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let coded_actions = {
+			let values: Vec<u8> = self
+				.actions
+				.iter()
+				.flat_map(|a| match a {
+					ItemAction::Add { data } => sp_io::hashing::keccak_256(
+						&[
+							SUB_TYPE_HASH.as_slice(),
+							ITEM_ACTION_ADD.as_slice(),
+							&sp_io::hashing::keccak_256(data.as_slice()),
+							[0u8; 32].as_slice(),
+						]
+						.concat(),
+					),
+					ItemAction::Delete { index } => sp_io::hashing::keccak_256(
+						&[
+							SUB_TYPE_HASH.as_slice(),
+							ITEM_ACTION_DELETE.as_slice(),
+							EMPTY_BYTES_HASH.as_slice(),
+							to_abi_compatible_number(*index).as_slice(),
+						]
+						.concat(),
+					),
+				})
+				.collect();
+			sp_io::hashing::keccak_256(&values)
+		};
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_schema_id,
+				&coded_target_hash,
+				&coded_expiration,
+				&coded_actions,
+			]
+			.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
 }
 
+// REMOVED PaginatedSignaturePayload
+
 /// Payload containing all necessary fields to verify signatures to upsert a Paginated storage
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
@@ -190,33 +228,51 @@ pub struct PaginatedUpsertSignaturePayloadV2<T: Config> {
 	pub payload: BoundedVec<u8, <T as Config>::MaxPaginatedPageSizeBytes>,
 }
 
-/// Warning: This struct is `deprecated`. please use `PaginatedDeleteSignaturePayloadV2` instead
-/// Payload containing all necessary fields to verify signatures to delete a Paginated storage
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
-#[scale_info(skip_type_params(T))]
-pub struct PaginatedDeleteSignaturePayload<T: Config> {
-	/// Message Source Account identifier
-	#[codec(compact)]
-	pub msa_id: MessageSourceId,
-
-	/// Schema id of this storage
-	#[codec(compact)]
-	pub schema_id: SchemaId,
-
-	/// Page id of this storage
-	#[codec(compact)]
-	pub page_id: PageId,
-
-	/// Hash of targeted page to avoid race conditions
-	#[codec(compact)]
-	pub target_hash: PageHash,
-
-	/// The block number at which the signed proof will expire
-	pub expiration: BlockNumberFor<T>,
+impl<T: Config> EIP712Encode for PaginatedUpsertSignaturePayloadV2<T> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PaginatedUpsertSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration,bytes payload)");
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_page_id = to_abi_compatible_number(self.page_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let coded_payload = sp_io::hashing::keccak_256(self.payload.as_slice());
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_schema_id,
+				&coded_page_id,
+				&coded_target_hash,
+				&coded_expiration,
+				&coded_payload,
+			]
+			.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
 }
 
+// REMOVED PaginatedDeleteSignaturePayload
+
 /// Payload containing all necessary fields to verify signatures to delete a Paginated storage
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 	/// Schema id of this storage
@@ -233,6 +289,36 @@ pub struct PaginatedDeleteSignaturePayloadV2<T: Config> {
 
 	/// The block number at which the signed proof will expire
 	pub expiration: BlockNumberFor<T>,
+}
+
+impl<T: Config> EIP712Encode for PaginatedDeleteSignaturePayloadV2<T> {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PaginatedDeleteSignaturePayloadV2(uint16 schemaId,uint16 pageId,uint32 targetHash,uint32 expiration)");
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_schema_id = to_abi_compatible_number(self.schema_id);
+		let coded_page_id = to_abi_compatible_number(self.page_id);
+		let coded_target_hash = to_abi_compatible_number(self.target_hash);
+		let expiration: U256 = self.expiration.into();
+		let coded_expiration = to_abi_compatible_number(expiration.as_u128());
+		let message = sp_io::hashing::keccak_256(
+			&[
+				MAIN_TYPE_HASH.as_slice(),
+				&coded_schema_id,
+				&coded_page_id,
+				&coded_target_hash,
+				&coded_expiration,
+			]
+			.concat(),
+		);
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
 }
 
 /// A generic page of data which supports both Itemized and Paginated
@@ -266,7 +352,7 @@ impl<PageDataSize: Get<u32>> Page<PageDataSize> {
 	/// Retrieve the hash of the page
 	pub fn get_hash(&self) -> PageHash {
 		if self.is_empty() {
-			return PageHash::default()
+			return PageHash::default();
 		}
 		let mut hasher = XxHash64::with_seed(0);
 		self.hash(&mut hasher);
@@ -329,10 +415,10 @@ impl<T: Config> ItemizedOperations<T> for ItemizedPage<T> {
 			match action {
 				ItemAction::Delete { index } => {
 					ensure!(
-						parsed.items.contains_key(&index),
+						parsed.items.contains_key(index),
 						PageError::InvalidAction("item index is invalid")
 					);
-					parsed.items.remove(&index);
+					parsed.items.remove(index);
 				},
 				ItemAction::Add { data } => {
 					let header = ItemHeader {

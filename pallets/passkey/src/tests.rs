@@ -10,9 +10,13 @@ use crate::test_common::{
 	constants::{AUTHENTICATOR_DATA, REPLACED_CLIENT_DATA_JSON},
 	utilities::*,
 };
+use common_primitives::signatures::{UnifiedSignature, UnifiedSigner};
 use pallet_balances::Call as BalancesCall;
-use sp_core::{sr25519, sr25519::Public, Pair};
-use sp_runtime::{traits::One, DispatchError::BadOrigin};
+use sp_core::{bytes::from_hex, ecdsa, sr25519, sr25519::Public, Pair};
+use sp_runtime::{
+	traits::{IdentifyAccount, One, Verify},
+	DispatchError::BadOrigin,
+};
 
 struct TestPasskeyPayloadBuilder {
 	secret: p256::SecretKey,
@@ -35,8 +39,8 @@ impl TestPasskeyPayloadBuilder {
 			key_pair,
 			passkey_public_key: PasskeyPublicKey([0u8; 33]),
 			payload_to_sign: vec![],
-			nonce: 0u32.into(),
-			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }).into(),
+			nonce: 0u32,
+			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }),
 			invalid_passkey_signature: false,
 		}
 	}
@@ -75,7 +79,7 @@ impl TestPasskeyPayloadBuilder {
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
 			self.key_pair.public().into(),
-			amount.into()
+			amount
 		));
 		self
 	}
@@ -259,7 +263,7 @@ fn pre_dispatch_with_low_funds_should_fail() {
 }
 
 #[test]
-fn validate_unsigned_should_fee_removed_on_successful_validation() {
+fn validate_unsigned_should_not_remove_fee_on_successful_validation() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
@@ -278,6 +282,34 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 
 		// act
 		let res = Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy { payload });
+
+		// assert
+		assert!(res.is_ok());
+		let final_balance = Balances::free_balance(&account_id);
+		assert_eq!(final_balance, initial_balance);
+	});
+}
+
+#[test]
+fn pre_dispatch_should_remove_fee_on_successful_validation() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		let (payload, account_pk) = TestPasskeyPayloadBuilder::new()
+			.with_a_valid_passkey()
+			.with_passkey_as_payload()
+			.with_call(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: test_account_2_key_pair.public().into(),
+				value: 100,
+			}))
+			.with_funded_account(10000000000)
+			.build();
+
+		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
+		let initial_balance = Balances::free_balance(&account_id);
+
+		// act
+		let res = Passkey::pre_dispatch(&Call::proxy { payload });
 
 		// assert
 		assert!(res.is_ok());
@@ -307,10 +339,7 @@ fn fee_withdrawn_for_failed_call() {
 		let initial_balance = Balances::free_balance(&account_id);
 
 		// act
-		let validate_result = Passkey::validate_unsigned(
-			TransactionSource::InBlock,
-			&Call::proxy { payload: payload.clone() },
-		);
+		let validate_result = Passkey::pre_dispatch(&Call::proxy { payload: payload.clone() });
 		let extrinsic_result = Passkey::proxy(RuntimeOrigin::none(), payload);
 
 		// assert
@@ -516,5 +545,43 @@ fn pre_dispatch_with_exceeding_weight_should_fail() {
 
 		// assert
 		assert_err!(v, InvalidTransaction::ExhaustsResources);
+	});
+}
+
+#[test]
+fn passkey_public_key_scale_and_eip712_compatibility_guard() {
+	let public_key = [
+		0u8, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24,
+		25, 26, 27, 28, 29, 30, 31, 32,
+	];
+	let pass_key = PasskeyPublicKey(public_key.clone());
+
+	assert_eq!(pass_key.encode(), pass_key.inner().encode());
+	assert_eq!(pass_key.encode(), pass_key.inner());
+	assert_eq!(pass_key.encode(), public_key);
+}
+
+#[test]
+fn ethereum_eip712_signatures_for_passkey_publickey_should_work() {
+	new_test_ext().execute_with(|| {
+		let payload = PasskeyPublicKey (from_hex("0x40a6836ea489047852d3f0297f8fe8ad6779793af4e9c6274c230c207b9b825026").unwrap().try_into().unwrap());
+		let encoded_payload = payload.encode_eip_712(420420420u32);
+
+		// following signature is generated via Metamask using the same input to check compatibility
+		let signature_raw = from_hex("0xbafaf5e21695a502b2d356b4558da35245aa1be7161f01a5f0224fbfdf85b5c52898fc495ab1ca9b68c3b07e23d31a5fe1686165344b22bc14201f293d54f36b1b").expect("Should convert");
+		let unified_signature = UnifiedSignature::from(ecdsa::Signature::from_raw(
+			signature_raw.try_into().expect("should convert"),
+		));
+
+		// Non-compressed public key associated with the keypair used in Metamask
+		// 0x509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9fa213197dc0666e85529d6c9dda579c1295d61c417f01505765481e89a4016f02
+		let public_key = ecdsa::Public::from_raw(
+			from_hex("0x02509540919faacf9ab52146c9aa40db68172d83777250b28e4679176e49ccdd9f")
+				.expect("should convert")
+				.try_into()
+				.expect("invalid size"),
+		);
+		let unified_signer = UnifiedSigner::from(public_key);
+		assert!(unified_signature.verify(&encoded_payload[..], &unified_signer.into_account()));
 	});
 }

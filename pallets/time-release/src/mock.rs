@@ -12,9 +12,6 @@ use frame_system::{EnsureRoot, RawOrigin};
 use sp_core::H256;
 use sp_runtime::{traits::IdentityLookup, BuildStorage, Perbill};
 
-use pallet_preimage;
-use pallet_scheduler;
-
 use crate as pallet_time_release;
 
 pub type AccountId = u128;
@@ -48,6 +45,7 @@ impl frame_system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 type Balance = u64;
@@ -66,6 +64,7 @@ impl pallet_balances::Config for Test {
 	type MaxFreezes = ConstU32<1>;
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
+	type DoneSlashHandler = ();
 }
 
 impl pallet_preimage::Config for Test {
@@ -107,6 +106,7 @@ impl EnsureOrigin<RuntimeOrigin> for EnsureTimeReleaseOrigin {
 }
 
 impl pallet_scheduler::Config for Test {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
@@ -243,6 +243,7 @@ impl ExtBuilder {
 				(CHARLIE, CHARLIE_BALANCE),
 				(DAVE, DAVE_BALANCE),
 			],
+			..Default::default()
 		}
 		.assimilate_storage(&mut t)
 		.unwrap();

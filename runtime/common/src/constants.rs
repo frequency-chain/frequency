@@ -16,6 +16,9 @@ pub const FREQUENCY_LOCAL_TOKEN: &str = "UNIT";
 pub const FREQUENCY_TOKEN: &str = "FRQCY";
 pub const TOKEN_DECIMALS: u8 = 8;
 
+// Chain ID used for Ethereum signatures
+pub const CHAIN_ID: u32 = prod_or_testnet_or_local!(2091u32, 420420420u32, 420420420u32);
+
 /// The maximum number of schema grants allowed per delegation
 pub type MaxSchemaGrants = ConstU32<30>;
 
@@ -292,14 +295,14 @@ impl Clone for MessagesMaxPayloadSizeBytes {
 	}
 }
 
-impl sp_std::fmt::Debug for MessagesMaxPayloadSizeBytes {
+impl core::fmt::Debug for MessagesMaxPayloadSizeBytes {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "MessagesMaxPayloadSizeBytes<{:?}>", Self::get())
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -358,24 +361,21 @@ impl Clone for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl Eq for MaxItemizedBlobSizeBytes {
-	fn assert_receiver_is_total_eq(&self) {}
-}
-
 impl PartialEq for MaxItemizedBlobSizeBytes {
-	fn eq(&self, other: &Self) -> bool {
-		self == other
+	fn eq(&self, _other: &Self) -> bool {
+		// This is a constant. It is always equal to itself
+		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
+impl core::fmt::Debug for MaxItemizedBlobSizeBytes {
 	#[cfg(feature = "std")]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }

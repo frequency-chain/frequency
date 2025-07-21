@@ -41,8 +41,8 @@ fn do_retarget_happy_path() {
 		let to_amount = 300u64;
 		let to_msa: MessageSourceId = 2;
 		let staking_type = StakingType::ProviderBoost;
-		setup_provider(&staker, &from_msa, &from_amount, staking_type.clone());
-		setup_provider(&staker, &to_msa, &to_amount, staking_type.clone());
+		setup_provider(&staker, &from_msa, &from_amount, staking_type);
+		setup_provider(&staker, &to_msa, &to_amount, staking_type);
 
 		// retarget half the stake to to_msa
 		assert_ok!(Capacity::do_retarget(&staker, &from_msa, &to_msa, &to_amount));
@@ -117,7 +117,7 @@ fn assert_total_capacity(msas: Vec<MessageSourceId>, total: u64) {
 			let capacity_details: TestCapacityDetails = CapacityLedger::<Test>::get(a).unwrap();
 			capacity_details.total_capacity_issued
 		})
-		.fold(0, |a, b| a + b);
+		.sum::<u64>();
 	assert_eq!(total, sum);
 }
 
@@ -137,16 +137,8 @@ fn check_retarget_multiple_stakers() {
 
 		setup_provider(&staker_10k, &from_msa, &647u64, StakingType::ProviderBoost);
 		setup_provider(&staker_500, &to_msa, &293u64, StakingType::ProviderBoost);
-		assert_ok!(Capacity::provider_boost(
-			RuntimeOrigin::signed(staker_600.clone()),
-			from_msa,
-			479u64,
-		));
-		assert_ok!(Capacity::provider_boost(
-			RuntimeOrigin::signed(staker_400.clone()),
-			to_msa,
-			211u64,
-		));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker_600), from_msa, 479u64,));
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker_400), to_msa, 211u64,));
 
 		// 647 * .10 * .5 = 32 (rounded)
 		// 293 * .10 * .5 = 15 (rounded)

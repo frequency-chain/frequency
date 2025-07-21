@@ -2,23 +2,29 @@ import '@frequency-chain/api-augment';
 import assert from 'assert';
 import {
   createKeys,
-  createAndFundKeypair,
   generateAddKeyPayload,
-  CENTS,
   signPayload,
   MultiSignatureType,
+  DOLLARS,
+  createAndFundKeypairs,
+  getEthereumKeyPairFromUnifiedAddress,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { u64 } from '@polkadot/types';
 import { Codec } from '@polkadot/types/types';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { createAddKeyData, getUnifiedAddress, getUnifiedPublicKey, sign } from '@frequency-chain/ethereum-utils';
+import { u8aToHex } from '@polkadot/util';
 
 const maxU64 = 18_446_744_073_709_551_615n;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('MSA Key management Ethereum', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('addPublicKeyToMsa Ethereum', function () {
     let keys: KeyringPair;
     let msaId: u64;
@@ -32,12 +38,15 @@ describe('MSA Key management Ethereum', function () {
 
     before(async function () {
       // Setup an MSA with one key and a secondary funded key
-      keys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
+      [keys, secondaryKey] = await createAndFundKeypairs(
+        fundingSource,
+        ['keys', 'secondaryKey'],
+        2n * DOLLARS,
+        'ethereum'
+      );
       const { target } = await ExtrinsicHelper.createMsa(keys).signAndSend();
       assert.notEqual(target?.data.msaId, undefined, 'MSA Id not in expected event');
       msaId = target!.data.msaId;
-
-      secondaryKey = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
 
       // Default payload making it easier to test `addPublicKeyToMsa`
       defaultPayload.msaId = msaId;
@@ -112,8 +121,38 @@ describe('MSA Key management Ethereum', function () {
       ownerSig = signPayload(secondaryKey, addKeyData);
       newSig = signPayload(thirdKey, addKeyData);
       const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
-      const { target: event } = await op.fundAndSend(fundingSource);
+      const { target: event } = await op.fundAndSend(fundingSource, false);
       assert.notEqual(event, undefined, 'should have added public key');
+
+      // Cleanup
+      await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());
+    });
+
+    it('should allow using eip-712 signatures to add a new key', async function () {
+      const thirdKey = createKeys('third-key', 'ethereum');
+      const newPayload = await generateAddKeyPayload({
+        ...defaultPayload,
+        newPublicKey: getUnifiedPublicKey(thirdKey),
+      });
+
+      const signingPayload = createAddKeyData(
+        payload.msaId!.toString(),
+        u8aToHex(newPayload.newPublicKey),
+        newPayload.expiration
+      );
+      ownerSig = await sign(
+        u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(secondaryKey)).secretKey),
+        signingPayload,
+        'Dev'
+      );
+      newSig = await sign(
+        u8aToHex(getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(thirdKey)).secretKey),
+        signingPayload,
+        'Dev'
+      );
+      const op = ExtrinsicHelper.addPublicKeyToMsa(secondaryKey, ownerSig, newSig, newPayload);
+      const { target: event } = await op.fundAndSend(fundingSource, false);
+      assert.notEqual(event, undefined, 'should have added public key via eip-712');
 
       // Cleanup
       await assert.doesNotReject(ExtrinsicHelper.deletePublicKey(keys, getUnifiedPublicKey(thirdKey)).signAndSend());

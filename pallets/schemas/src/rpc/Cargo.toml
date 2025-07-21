@@ -15,14 +15,9 @@ jsonrpsee = { workspace = true, features = ["client-core", "server", "macros"] }
 pallet-schemas-runtime-api = { path = "../runtime-api", default-features = false }
 common-primitives = { path = '../../../../common/primitives', default-features = false }
 common-helpers = { path = '../../../../common/helpers', default-features = false }
-# Substrate crates
-frame-support = { workspace = true }
-sp-core = { workspace = true }
 sp-api = { workspace = true }
-sp-rpc = { workspace = true }
 sp-runtime = { workspace = true }
 sp-blockchain = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros", "time", "parking_lot"] }
@@ -31,12 +26,12 @@ sc-client-api = { workspace = true }
 [features]
 default = ["std"]
 std = [
-  "sp-std/std",
   "sp-api/std",
-  "sp-core/std",
   "sp-runtime/std",
-  "frame-support/std",
   "pallet-schemas-runtime-api/std",
   "common-primitives/std",
   "common-helpers/std",
 ]
+
+[lints]
+workspace = true

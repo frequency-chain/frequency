@@ -397,9 +397,7 @@ fn test_bad_records() {
 	let translated_schema = translate_schema.unwrap();
 	let writer = avro::get_schema_data_writer(&translated_schema);
 	assert_eq!(writer.schema(), &translated_schema);
-	let mut serialized_result = Vec::new();
-	// populated serialized_result
-	serialized_result.push(0x0);
+	let serialized_result = vec![0u8];
 	let reader_res = avro::get_schema_data_map(&serialized_result, &translated_schema);
 	assert!(reader_res.is_err());
 }

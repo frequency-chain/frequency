@@ -8,6 +8,8 @@ import {
   createProviderKeysAndId,
   getCurrentItemizedHash,
   getOrCreateAvroChatMessageItemizedSchema,
+  assertExtrinsicSucceededAndFeesPaid,
+  createAndFundKeypair,
 } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -16,7 +18,7 @@ import { MessageSourceId, SchemaId } from '@frequency-chain/api-augment/interfac
 import { Bytes, u16, u64 } from '@polkadot/types';
 import { getFundingSource } from '../scaffolding/funding';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('📗 Stateful Pallet Storage Itemized', function () {
   let schemaId_deletable: SchemaId;
@@ -28,31 +30,48 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
   let badMsaId: u64;
 
   before(async function () {
-    // Create a provider for the MSA, the provider will be used to grant delegation
-    [providerKeys, providerId] = await createProviderKeysAndId(fundingSource, 2n * DOLLARS);
+    fundingSource = await getFundingSource(import.meta.url);
+    [
+      // Create a provider for the MSA, the provider will be used to grant delegation
+      [providerKeys, providerId],
+      // Delegator Keys
+      delegatorKeys,
+      schemaId_deletable,
+      schemaId_unsupported,
+    ] = await Promise.all([
+      createProviderKeysAndId(fundingSource, 2n * DOLLARS),
+      createAndFundKeypair(fundingSource, 2n * DOLLARS),
+      getOrCreateAvroChatMessageItemizedSchema(fundingSource),
+      ExtrinsicHelper.getOrCreateSchemaV3(
+        fundingSource,
+        AVRO_CHAT_MESSAGE,
+        'AvroBinary',
+        'OnChain',
+        [],
+        'test.handleItemizedUnsupported'
+      ),
+    ]);
     assert.notEqual(providerId, undefined, 'setup should populate providerId');
     assert.notEqual(providerKeys, undefined, 'setup should populate providerKeys');
 
-    schemaId_deletable = await getOrCreateAvroChatMessageItemizedSchema(providerKeys);
-
-    schemaId_unsupported = await ExtrinsicHelper.getOrCreateSchemaV3(
-      providerKeys,
-      AVRO_CHAT_MESSAGE,
-      'AvroBinary',
-      'OnChain',
-      [],
-      'test.handleItemizedUnsupported'
-    );
-    // Create a MSA for the delegator and delegate to the provider
-    [delegatorKeys, msa_id] = await createDelegatorAndDelegation(
-      fundingSource,
-      schemaId_deletable,
-      providerId,
-      providerKeys
-    );
+    [
+      // Create a MSA for the delegator and delegate to the provider
+      [delegatorKeys, msa_id],
+      // Create an MSA that is not a provider to be used for testing failure cases
+      [badMsaId],
+    ] = await Promise.all([
+      createDelegatorAndDelegation(
+        fundingSource,
+        schemaId_deletable,
+        providerId,
+        providerKeys,
+        'sr25519',
+        delegatorKeys
+      ),
+      createMsa(fundingSource),
+    ]);
     assert.notEqual(msa_id, undefined, 'setup should populate msa_id');
-    // Create an MSA that is not a provider to be used for testing failure cases
-    [badMsaId] = await createMsa(fundingSource);
+    assert.notEqual(badMsaId, undefined, 'setup should populate badMsaId');
   });
 
   describe('Itemized Storage Tests 😊/😥', function () {
@@ -82,16 +101,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
       );
       const { target: pageUpdateEvent1, eventMap: chainEvents } =
         await itemized_add_result_1.fundAndSend(fundingSource);
-      assert.notEqual(
-        chainEvents['system.ExtrinsicSuccess'],
-        undefined,
-        'should have returned an ExtrinsicSuccess event'
-      );
-      assert.notEqual(
-        chainEvents['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assertExtrinsicSucceededAndFeesPaid(chainEvents);
       assert.notEqual(
         pageUpdateEvent1,
         undefined,
@@ -211,11 +221,7 @@ describe('📗 Stateful Pallet Storage Itemized', function () {
         undefined,
         'should have returned an ExtrinsicSuccess event'
       );
-      assert.notEqual(
-        chainEvents2['transactionPayment.TransactionFeePaid'],
-        undefined,
-        'should have returned a TransactionFeePaid event'
-      );
+      assert.notEqual(chainEvents2['balances.Withdraw'], undefined, 'should have returned a balances.Withdraw event');
       assert.notEqual(pageUpdateEvent2, undefined, 'should have returned a event');
     });
 

@@ -216,7 +216,7 @@ fn list_unclaimed_rewards_returns_correctly_for_old_single_boost() {
 		assert_eq!(rewards.get(0).unwrap().reward_era, 1u32);
 
 		for era in 1u32..=max_history {
-			let expires_at_era = era.saturating_add(max_history.into());
+			let expires_at_era = era.saturating_add(max_history);
 			let expires_at_block = Capacity::block_at_end_of_era(expires_at_era);
 			let expected_info: UnclaimedRewardInfo<BalanceOf<Test>, BlockNumberFor<Test>> =
 				UnclaimedRewardInfo {
@@ -285,16 +285,12 @@ fn has_unclaimed_rewards_works() {
 
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
-		// staking 1k as of block 1, era 1
 		setup_provider(&account, &target, &amount, ProviderBoost);
 		assert!(!Capacity::has_unclaimed_rewards(&account));
 
-		// staking 2k as of block 11, era 2
 		run_to_block(11);
 		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(account), target, amount));
-		assert!(Capacity::has_unclaimed_rewards(&account));
 
-		//  staking 3k as of era 4, block 31
 		run_to_block(31);
 		assert!(Capacity::has_unclaimed_rewards(&account));
 

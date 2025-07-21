@@ -2,7 +2,10 @@
 // `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 #![recursion_limit = "256"]
 
-// Make the WASM binary available.
+extern crate alloc;
+#[cfg(feature = "runtime-benchmarks")]
+#[macro_use]
+extern crate frame_benchmarking; // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
@@ -17,12 +20,19 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 	)
 }
 
+use alloc::borrow::Cow;
+use common_runtime::constants::currency::UNITS;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
-use cumulus_pallet_parachain_system::{RelayNumberMonotonicallyIncreases, RelaychainDataProvider};
-
+use cumulus_pallet_parachain_system::{
+	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
+};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use frame_support::traits::MapSuccess;
 use sp_core::{crypto::KeyTypeId, OpaqueMetadata};
+#[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
+use sp_runtime::traits::Replace;
 use sp_runtime::{
-	create_runtime_str, generic, impl_opaque_keys,
+	generic, impl_opaque_keys,
 	traits::{AccountIdConversion, BlakeTwo256, Block as BlockT, ConvertInto, IdentityLookup},
 	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, DispatchError,
@@ -35,7 +45,6 @@ use pallet_collective::ProposalCount;
 
 use parity_scale_codec::Encode;
 
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
@@ -47,8 +56,8 @@ use common_primitives::{
 	},
 	messages::MessageResponse,
 	msa::{
-		DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId, ProviderId,
-		SchemaGrant, SchemaGrantValidator,
+		AccountId20Response, DelegationResponse, DelegationValidator, DelegatorId, MessageSourceId,
+		ProviderId, SchemaGrant, SchemaGrantValidator, H160,
 	},
 	node::{
 		AccountId, Address, Balance, BlockNumber, Hash, Header, Index, ProposalProvider, Signature,
@@ -92,7 +101,7 @@ use frame_system::{
 	EnsureRoot, EnsureSigned,
 };
 
-use sp_std::boxed::Box;
+use alloc::{boxed::Box, vec, vec::Vec};
 
 pub use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 pub use sp_runtime::{MultiAddress, Perbill, Permill};
@@ -120,6 +129,7 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
+
 mod ethereum;
 mod genesis;
 
@@ -200,8 +210,6 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 					Self::is_utility_call_allowed(pallet_utility_call),
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) => false,
-				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 				// Everything else is allowed on Mainnet
 				_ => true,
@@ -232,8 +240,6 @@ impl BaseCallFilter {
 
 			// Block `create_provider` and `create_schema` calls from utility batch
 			RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema { .. }) |
-			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v2 { .. }) => false,
 			RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
 
 			// Block `Pays::No` calls from utility batch
@@ -331,21 +337,43 @@ impl Contains<RuntimeCall> for PasskeyCallFilter {
 	}
 }
 
-/// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
-	frame_system::CheckNonZeroSender<Runtime>,
-	// merging these types so that we can have more than 12 extensions
-	(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
-	frame_system::CheckWeight<Runtime>,
-	pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
-	pallet_msa::CheckFreeExtrinsicUse<Runtime>,
-	pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-	frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
-	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
-);
+pub struct MsaCallFilter;
+use pallet_frequency_tx_payment::types::GetAddKeyData;
+impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
+	fn get_add_key_data(call: &RuntimeCall) -> Option<(AccountId, AccountId, MessageSourceId)> {
+		match call {
+			RuntimeCall::Msa(MsaCall::add_public_key_to_msa {
+				add_key_payload,
+				new_key_owner_proof: _,
+				msa_owner_public_key,
+				msa_owner_proof: _,
+			}) => {
+				let new_key = add_key_payload.clone().new_public_key;
+				Some((msa_owner_public_key.clone(), new_key, add_key_payload.msa_id))
+			},
+			_ => None,
+		}
+	}
+}
+
+/// The TransactionExtension to the basic transaction logic.
+pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
+	Runtime,
+	(
+		frame_system::CheckNonZeroSender<Runtime>,
+		// merging these types so that we can have more than 12 extensions
+		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
+		frame_system::CheckGenesis<Runtime>,
+		frame_system::CheckEra<Runtime>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
+		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
+		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
+		frame_system::CheckWeight<Runtime>,
+	),
+>;
+
 /// A Block signed with a Justification
 pub type SignedBlock = generic::SignedBlock<Block>;
 
@@ -357,7 +385,7 @@ pub type Block = generic::Block<Header, UncheckedExtrinsic>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, TxExtension>;
 
 /// Executive: handles dispatch to the various modules.
 pub type Executive = frame_executive::Executive<
@@ -369,7 +397,7 @@ pub type Executive = frame_executive::Executive<
 	(MigratePalletsCurrentStorage<Runtime>,),
 >;
 
-pub struct MigratePalletsCurrentStorage<T>(sp_std::marker::PhantomData<T>);
+pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);
 
 impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCurrentStorage<T> {
 	fn on_runtime_upgrade() -> Weight {
@@ -420,28 +448,28 @@ impl_opaque_keys! {
 #[cfg(feature = "frequency")]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 // IMPORTANT: Remember to update spec_version in above struct too
 #[cfg(not(feature = "frequency"))]
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: create_runtime_str!("frequency-testnet"),
-	impl_name: create_runtime_str!("frequency"),
+	spec_name: Cow::Borrowed("frequency-testnet"),
+	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 145,
+	spec_version: 171,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
-	state_version: 1,
+	system_version: 1,
 };
 
 /// The version information used to identify this runtime when compiled natively.
@@ -544,6 +572,7 @@ impl frame_system::Config for Runtime {
 	type PostInherents = ();
 	/// A callback that executes in *every block* directly after all transactions were applied.
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = weights::frame_system_extensions::WeightInfo<Runtime>;
 }
 
 impl pallet_msa::Config for Runtime {
@@ -569,11 +598,21 @@ impl pallet_msa::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to approve recovery providers
+	#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
+	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+	// The Currency type for managing MSA token balances
+	type Currency = Balances;
 }
 
 parameter_types! {
@@ -642,6 +681,7 @@ pub type MaxSignatories = ConstU32<100>;
 // See https://paritytech.github.io/substrate/master/pallet_multisig/pallet/trait.Config.html for
 // the descriptions of these configs.
 impl pallet_multisig::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeCall = RuntimeCall;
 	type Currency = Balances;
@@ -649,6 +689,10 @@ impl pallet_multisig::Config for Runtime {
 	type DepositFactor = DepositFactor;
 	type MaxSignatories = MaxSignatories;
 	type WeightInfo = weights::pallet_multisig::SubstrateWeight<Runtime>;
+}
+
+impl cumulus_pallet_weight_reclaim::Config for Runtime {
+	type WeightInfo = weights::cumulus_pallet_weight_reclaim::SubstrateWeight<Runtime>;
 }
 
 /// Need this declaration method for use + type safety in benchmarks
@@ -730,16 +774,18 @@ impl pallet_balances::Config for Runtime {
 	type RuntimeHoldReason = RuntimeHoldReason;
 	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type FreezeIdentifier = RuntimeFreezeReason;
+	type DoneSlashHandler = ();
 }
 // Needs parameter_types! for the Weight type
 parameter_types! {
 	// The maximum weight that may be scheduled per block for any dispatchables of less priority than schedule::HARD_DEADLINE.
-	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(10) * RuntimeBlockWeights::get().max_block;
+	pub MaximumSchedulerWeight: Weight = Perbill::from_percent(30) * RuntimeBlockWeights::get().max_block;
 	pub MaxCollectivesProposalWeight: Weight = Perbill::from_percent(50) * RuntimeBlockWeights::get().max_block;
 }
 
 // See also https://docs.rs/pallet-scheduler/latest/pallet_scheduler/trait.Config.html
 impl pallet_scheduler::Config for Runtime {
+	type BlockNumberProvider = System;
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type PalletsOrigin = OriginCaller;
@@ -799,6 +845,15 @@ impl pallet_collective::Config<CouncilCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_council::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	type Consideration = ();
 }
 
 type TechnicalCommitteeCollective = pallet_collective::Instance2;
@@ -813,6 +868,15 @@ impl pallet_collective::Config<TechnicalCommitteeCollective> for Runtime {
 	type WeightInfo = weights::pallet_collective_technical_committee::SubstrateWeight<Runtime>;
 	type SetMembersOrigin = EnsureRoot<Self::AccountId>;
 	type MaxProposalWeight = MaxCollectivesProposalWeight;
+	type DisapproveOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+	>;
+	type KillOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, TechnicalCommitteeCollective, 2, 3>,
+	>;
+	type Consideration = ();
 }
 
 // see https://paritytech.github.io/substrate/master/pallet_democracy/pallet/trait.Config.html
@@ -903,6 +967,7 @@ impl pallet_democracy::Config for Runtime {
 parameter_types! {
 	pub TreasuryAccount: AccountId = TreasuryPalletId::get().into_account_truncating();
 	pub const PayoutSpendPeriod: BlockNumber = 30 * DAYS;
+	pub const MaxSpending : Balance = 100_000_000 * UNITS;
 }
 
 // See https://paritytech.github.io/substrate/master/pallet_treasury/index.html for
@@ -912,7 +977,7 @@ impl pallet_treasury::Config for Runtime {
 	type PalletId = TreasuryPalletId;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = weights::pallet_treasury::SubstrateWeight<Runtime>;
+	type WeightInfo = pallet_treasury::weights::SubstrateWeight<Runtime>;
 
 	/// Who approves treasury proposals?
 	/// - Root (sudo or governance)
@@ -932,7 +997,10 @@ impl pallet_treasury::Config for Runtime {
 
 	/// Spending funds outside of the proposal?
 	/// Nobody
+	#[cfg(not(feature = "runtime-benchmarks"))]
 	type SpendOrigin = frame_support::traits::NeverEnsureOrigin<Balance>;
+	#[cfg(feature = "runtime-benchmarks")]
+	type SpendOrigin = MapSuccess<EnsureSigned<AccountId>, Replace<MaxSpending>>;
 
 	/// Rejected proposals lose their bond
 	/// This takes the slashed amount and is often set to the Treasury
@@ -985,6 +1053,7 @@ impl pallet_transaction_payment::Config for Runtime {
 	type LengthToFee = ConstantMultiplier<Balance, TransactionByteFee>;
 	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Self>;
 	type OperationalFeeMultiplier = TransactionPaymentOperationalFeeMultiplier;
+	type WeightInfo = weights::pallet_transaction_payment::SubstrateWeight<Runtime>;
 }
 
 use crate::ethereum::EthereumCompatibleAccountIdLookup;
@@ -1004,18 +1073,20 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			),
 			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
 			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+			&RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
+			),
+			&RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
+			),
 			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
 			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page(payload.len() as u32)),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions_with_signature(StatefulStorage::sum_add_actions_bytes(&payload.actions))),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-			RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),
-			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::upsert_page_with_signature_v2 { payload, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::upsert_page_with_signature(payload.payload.len() as u32 )),
+            RuntimeCall::StatefulStorage(StatefulStorageCall::delete_page_with_signature_v2 { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::delete_page_with_signature()),			RuntimeCall::Handles(HandlesCall::claim_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::claim_handle(payload.base_handle.len() as u32)),
 			RuntimeCall::Handles(HandlesCall::change_handle { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::change_handle(payload.base_handle.len() as u32)),
 			_ => None,
 		}
@@ -1026,10 +1097,10 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			RuntimeCall::FrequencyTxPayment(FrequencyPaymentCall::pay_with_capacity {
 				call,
 				..
-			}) => return Some(vec![call]),
+			}) => Some(vec![call]),
 			RuntimeCall::FrequencyTxPayment(
 				FrequencyPaymentCall::pay_with_capacity_batch_all { calls, .. },
-			) => return Some(calls.iter().collect()),
+			) => Some(calls.iter().collect()),
 			_ => Some(vec![outer_call]),
 		}
 	}
@@ -1044,6 +1115,8 @@ impl pallet_frequency_tx_payment::Config for Runtime {
 	type OnChargeCapacityTransaction = pallet_frequency_tx_payment::CapacityAdapter<Balances, Msa>;
 	type BatchProvider = CapacityBatchProvider;
 	type MaximumCapacityBatchLength = MaximumCapacityBatchLength;
+	type MsaKeyProvider = Msa;
+	type MsaCallFilter = MsaCallFilter;
 }
 
 /// Configurations for passkey pallet
@@ -1085,6 +1158,7 @@ impl cumulus_pallet_parachain_system::Config for Runtime {
 	type CheckAssociatedRelayNumber = RelayNumberMonotonicallyIncreases;
 	type WeightInfo = ();
 	type ConsensusHook = ConsensusHook;
+	type SelectCore = DefaultCoreSelector<Runtime>;
 }
 
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
@@ -1112,6 +1186,7 @@ impl pallet_session::Config for Runtime {
 	// Essentially just Aura, but lets be pedantic.
 	type SessionHandler = <SessionKeys as sp_runtime::traits::OpaqueKeys>::KeyTypeIdProviders;
 	type Keys = SessionKeys;
+	type DisablingStrategy = ();
 	type WeightInfo = weights::pallet_session::SubstrateWeight<Runtime>;
 }
 
@@ -1187,6 +1262,7 @@ impl pallet_proxy::Config for Runtime {
 	type AnnouncementDepositBase = AnnouncementDepositBase;
 	type AnnouncementDepositFactor = AnnouncementDepositFactor;
 	type WeightInfo = weights::pallet_proxy::SubstrateWeight<Runtime>;
+	type BlockNumberProvider = System;
 }
 
 // End Proxy Pallet Config
@@ -1289,8 +1365,7 @@ construct_runtime!(
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
 		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 		ParachainSystem: cumulus_pallet_parachain_system::{
-			Pallet, Call, Config<T>, Storage, Inherent, Event<T>, ValidateUnsigned,
-		} = 1,
+			Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
 
@@ -1317,7 +1392,7 @@ construct_runtime!(
 		// Collator support. The order of these 4 are important and shall not change.
 		Authorship: pallet_authorship::{Pallet, Storage} = 20,
 		CollatorSelection: pallet_collator_selection::{Pallet, Call, Storage, Event<T>, Config<T>} = 21,
-		Session: pallet_session::{Pallet, Call, Storage, Event, Config<T>} = 22,
+		Session: pallet_session::{Pallet, Call, Storage, Event<T>, Config<T>} = 22,
 		Aura: pallet_aura::{Pallet, Storage, Config<T>} = 23,
 		AuraExt: cumulus_pallet_aura_ext::{Pallet, Storage, Config<T>} = 24,
 
@@ -1329,6 +1404,9 @@ construct_runtime!(
 
 		// Allowing accounts to give permission to other accounts to dispatch types of calls from their signed origin
 		Proxy: pallet_proxy = 43,
+
+		// Substrate weights
+		WeightReclaim: cumulus_pallet_weight_reclaim::{Pallet, Storage} = 50,
 
 		// Frequency related pallets
 		Msa: pallet_msa::{Pallet, Call, Storage, Event<T>} = 60,
@@ -1343,20 +1421,17 @@ construct_runtime!(
 );
 
 #[cfg(feature = "runtime-benchmarks")]
-#[macro_use]
-extern crate frame_benchmarking;
-
-#[cfg(feature = "runtime-benchmarks")]
 mod benches {
 	define_benchmarks!(
 		// Substrate
 		[frame_system, SystemBench::<Runtime>]
+		[frame_system_extensions, SystemExtensionsBench::<Runtime>]
+		[cumulus_pallet_weight_reclaim, WeightReclaim]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
 		[pallet_preimage, Preimage]
 		[pallet_democracy, Democracy]
-		[pallet_treasury, Treasury]
 		[pallet_scheduler, Scheduler]
 		[pallet_session, SessionBench::<Runtime>]
 		[pallet_timestamp, Timestamp]
@@ -1364,6 +1439,7 @@ mod benches {
 		[pallet_multisig, Multisig]
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
+		[pallet_transaction_payment, TransactionPayment]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1372,6 +1448,7 @@ mod benches {
 		[pallet_stateful_storage, StatefulStorage]
 		[pallet_handles, Handles]
 		[pallet_time_release, TimeRelease]
+		[pallet_treasury, Treasury]
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
@@ -1560,7 +1637,7 @@ sp_api::impl_runtime_apis! {
 			let dispatch_weight = match &uxt.function {
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity { .. }) |
 				RuntimeCall::FrequencyTxPayment(pallet_frequency_tx_payment::Call::pay_with_capacity_batch_all { .. }) => {
-					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).weight
+					<<Block as BlockT>::Extrinsic as GetDispatchInfo>::get_dispatch_info(&uxt).call_weight
 				},
 				_ => {
 					Weight::zero()
@@ -1601,7 +1678,7 @@ sp_api::impl_runtime_apis! {
 
 	impl system_runtime_api::AdditionalRuntimeApi<Block> for Runtime {
 		fn get_events() -> Vec<RpcEvent> {
-			System::read_events_no_consensus().into_iter().map(|e| (*e).into()).collect()
+			System::read_events_no_consensus().map(|e| (*e).into()).collect()
 		}
 	}
 
@@ -1624,10 +1701,17 @@ sp_api::impl_runtime_apis! {
 		}
 
 		fn get_all_granted_delegations_by_msa_id(delegator: DelegatorId) -> Vec<DelegationResponse<SchemaId, BlockNumber>> {
-			match Msa::get_granted_schemas_by_msa_id(delegator, None) {
-				Ok(x) => x,
-				Err(_) => vec![],
-			}
+			Msa::get_granted_schemas_by_msa_id(delegator, None).unwrap_or_default()
+		}
+
+		fn get_ethereum_address_for_msa_id(msa_id: MessageSourceId) -> AccountId20Response {
+			let account_id = Msa::msa_id_to_eth_address(msa_id);
+			let account_id_checksummed = Msa::eth_address_to_checksummed_string(&account_id);
+			AccountId20Response { account_id, account_id_checksummed }
+		}
+
+		fn validate_eth_address_for_msa(address: &H160, msa_id: MessageSourceId) -> bool {
+			Msa::validate_eth_address_for_msa(address, msa_id)
 		}
 	}
 
@@ -1665,8 +1749,8 @@ sp_api::impl_runtime_apis! {
 	impl pallet_capacity_runtime_api::CapacityRuntimeApi<Block, AccountId, Balance, BlockNumber> for Runtime {
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>> {
 			match Capacity::list_unclaimed_rewards(&who) {
-				Ok(rewards) => return rewards.into_inner(),
-				Err(_) => return Vec::new(),
+				Ok(rewards) => rewards.into_inner(),
+				Err(_) => Vec::new(),
 			}
 
 		}
@@ -1702,25 +1786,29 @@ sp_api::impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{Benchmarking, BenchmarkList};
+			use frame_benchmarking::{BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
-			return (list, storage_info)
+			(list, storage_info)
 		}
 
+		#[allow(deprecated, non_local_definitions)]
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkBatch};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
+
+			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}

@@ -1,7 +1,5 @@
 import '@frequency-chain/api-augment';
 
-import assert from 'assert';
-
 import { KeyringPair } from '@polkadot/keyring/types';
 import { merkleizeMetadata } from '@polkadot-api/merkleize-metadata';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
@@ -13,19 +11,21 @@ import {
 } from '../scaffolding/helpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8aToHex } from '@polkadot/util';
-import { getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 // This is skipped as it requires the e2e tests to be run
 // against a Frequency build that has the metadata-hash feature
 // enabled. That feature is a large increase in compile time however.
-// eslint-disable-next-line mocha/no-skipped-tests
+
+// eslint-disable-next-line mocha/no-pending-tests
 describe.skip('Check Metadata Hash', function () {
   let keys: KeyringPair;
   let accountWithNoFunds: KeyringPair;
 
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 10_000_000n);
     accountWithNoFunds = createKeys();
   });

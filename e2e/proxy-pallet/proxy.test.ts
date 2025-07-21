@@ -4,13 +4,17 @@ import { createAndFundKeypair } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const DOLLARS = 100000000n; // 100_000_000
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Proxy', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('Basic Any Proxy Successes', function () {
     let stashKeys: KeyringPair;
     let proxyKeys: KeyringPair;

@@ -3,11 +3,12 @@ use common_primitives::{handles::*, msa::MessageSourceId};
 use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::{DispatchInfo, GetDispatchInfo, Pays},
+	pallet_prelude::TransactionSource,
 };
 use numtoa::*;
 use parity_scale_codec::Decode;
 use sp_core::{sr25519, Encode, Pair};
-use sp_runtime::traits::SignedExtension;
+use sp_runtime::traits::DispatchTransaction;
 
 #[test]
 fn claim_and_retire_handle_happy_path() {
@@ -87,11 +88,13 @@ fn test_handle_early_retirement_fails() {
 			&RuntimeCall::Handles(HandlesCall::retire_handle {});
 		let info = DispatchInfo::default();
 		let len = 0_usize;
-		let early_retire_result = HandlesSignedExtension::<Test>::new().validate(
-			&alice.public().into(),
+		let early_retire_result = HandlesSignedExtension::<Test>::new().validate_only(
+			RuntimeOrigin::signed(alice.public().into()).into(),
 			call_retire_handle,
 			&info,
 			len,
+			TransactionSource::External,
+			0,
 		);
 		assert!(early_retire_result.is_err());
 

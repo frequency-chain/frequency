@@ -1,29 +1,35 @@
 //! Substrate Signed Extension for validating requests to the handles pallet
-use crate::{Call, Config, Error, MSAIdToDisplayName};
+use crate::{Call, Config, Error, MSAIdToDisplayName, WeightInfo};
 use common_primitives::msa::MsaValidator;
 use core::marker::PhantomData;
 use frame_support::{
 	dispatch::DispatchInfo, ensure, pallet_prelude::ValidTransaction, traits::IsSubType,
-	unsigned::UnknownTransaction,
+	unsigned::UnknownTransaction, RuntimeDebugNoBound,
 };
-use parity_scale_codec::{Decode, Encode};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
-	traits::{DispatchInfoOf, Dispatchable, SignedExtension},
-	transaction_validity::{InvalidTransaction, TransactionValidity, TransactionValidityError},
-	DispatchError, ModuleError,
+	traits::{
+		AsSystemOriginSigner, DispatchInfoOf, Dispatchable, PostDispatchInfoOf,
+		TransactionExtension,
+	},
+	transaction_validity::{
+		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
+	},
+	DispatchError, DispatchResult, ModuleError, Weight,
 };
-/// The SignedExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
+
+/// The TransactionExtension trait is implemented on CheckFreeExtrinsicUse to validate the request. The
 /// purpose of this is to ensure that the retire_handle extrinsic cannot be
 /// repeatedly called to flood the network.
-#[derive(Encode, Decode, Clone, Eq, PartialEq, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, Clone, Eq, PartialEq, TypeInfo)]
 #[scale_info(skip_type_params(T))]
 pub struct HandlesSignedExtension<T: Config + Send + Sync>(PhantomData<T>);
 
 impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
-	/// Create new `SignedExtension`.
+	/// Create new `TransactionExtension`.
 	pub fn new() -> Self {
-		Self(sp_std::marker::PhantomData)
+		Self(core::marker::PhantomData)
 	}
 
 	/// Validates the following criteria for the retire_handle() extrinsic:
@@ -36,12 +42,12 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 	/// # Errors (as u8 wrapped by `InvalidTransaction::Custom`)
 	/// * [`Error::InvalidMessageSourceAccount`]
 	/// * [`Error::MSAHandleDoesNotExist`]
-	fn validate_retire_handle(delegator_key: &T::AccountId) -> TransactionValidity {
+	pub fn validate_retire_handle(delegator_key: &T::AccountId) -> TransactionValidity {
 		const TAG_PREFIX: &str = "HandlesRetireHandle";
 
 		// Validation: The delegator must already have a MSA id
-		let delegator_msa_id = T::MsaInfoProvider::ensure_valid_msa_key(&delegator_key)
-			.map_err(|e| map_dispatch_error(e))?;
+		let delegator_msa_id =
+			T::MsaInfoProvider::ensure_valid_msa_key(delegator_key).map_err(map_dispatch_error)?;
 		// Validation: The MSA must already have a handle associated with it
 		let handle_from_state = MSAIdToDisplayName::<T>::try_get(delegator_msa_id)
 			.map_err(|_| UnknownTransaction::CannotLookup)?;
@@ -56,17 +62,17 @@ impl<T: Config + Send + Sync> HandlesSignedExtension<T> {
 			))
 		);
 
-		return ValidTransaction::with_tag_prefix(TAG_PREFIX).build();
+		ValidTransaction::with_tag_prefix(TAG_PREFIX).build()
 	}
 }
 
-impl<T: Config + Send + Sync> sp_std::fmt::Debug for HandlesSignedExtension<T> {
+impl<T: Config + Send + Sync> core::fmt::Debug for HandlesSignedExtension<T> {
 	#[cfg(feature = "std")]
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, f: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(f, "HandlesSignedExtension<{:?}>", self.0)
 	}
 	#[cfg(not(feature = "std"))]
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -79,35 +85,45 @@ pub fn map_dispatch_error(err: DispatchError) -> InvalidTransaction {
 	})
 }
 
-impl<T: Config + Send + Sync> SignedExtension for HandlesSignedExtension<T>
+/// The info passed between the validate and prepare steps for the `HandlesSignedExtension` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Val {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+/// The info passed between the prepare and post-dispatch steps for the `HandlesSignedExtension` extension.
+#[derive(RuntimeDebugNoBound)]
+pub enum Pre {
+	/// Valid transaction, no weight refund.
+	Valid,
+	/// Weight refund for the transaction.
+	Refund(Weight),
+}
+
+impl<T: Config + Send + Sync> TransactionExtension<T::RuntimeCall> for HandlesSignedExtension<T>
 where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo> + IsSubType<Call<T>>,
+	<T as frame_system::Config>::RuntimeOrigin: AsSystemOriginSigner<T::AccountId> + Clone,
 {
-	type AccountId = T::AccountId;
-	type Call = T::RuntimeCall;
-	type AdditionalSigned = ();
-	type Pre = ();
 	const IDENTIFIER: &'static str = "HandlesSignedExtension";
+	type Implicit = ();
+	type Val = Val;
+	type Pre = Pre;
 
-	/// Additional signed
-	fn additional_signed(&self) -> sp_std::result::Result<(), TransactionValidityError> {
-		Ok(())
+	fn weight(&self, call: &T::RuntimeCall) -> Weight {
+		if let Some(Call::retire_handle {}) = call.is_sub_type() {
+			T::WeightInfo::validate_retire_handle_benchmark()
+		} else {
+			Weight::zero()
+		}
 	}
-
-	/// Pre dispatch
-	fn pre_dispatch(
-		self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		info: &DispatchInfoOf<Self::Call>,
-		len: usize,
-	) -> Result<Self::Pre, TransactionValidityError> {
-		self.validate(who, call, info, len).map(|_| ())
-	}
-
 	/// Frequently called by the transaction queue to validate all free Handles extrinsics:
 	/// Returns a `ValidTransaction` or wrapped [`TransactionValidityError`]
 	/// * retire_handle
+	///
 	/// Validate functions for the above MUST prevent errors in the extrinsic logic to prevent spam.
 	///
 	/// Arguments:
@@ -117,14 +133,48 @@ where
 	///
 	fn validate(
 		&self,
-		who: &Self::AccountId,
-		call: &Self::Call,
-		_info: &DispatchInfoOf<Self::Call>,
+		origin: <T as frame_system::Config>::RuntimeOrigin,
+		call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
 		_len: usize,
-	) -> TransactionValidity {
-		match call.is_sub_type() {
+		_self_implicit: Self::Implicit,
+		_inherited_implication: &impl parity_scale_codec::Encode,
+		_source: TransactionSource,
+	) -> sp_runtime::traits::ValidateResult<Self::Val, T::RuntimeCall> {
+		let Some(who) = origin.as_system_origin_signer() else {
+			return Ok((ValidTransaction::default(), Val::Refund(self.weight(call)), origin));
+		};
+		let validity = match call.is_sub_type() {
 			Some(Call::retire_handle {}) => Self::validate_retire_handle(who),
 			_ => Ok(Default::default()),
+		};
+		validity.map(|v| (v, Val::Valid, origin))
+	}
+
+	fn prepare(
+		self,
+		val: Self::Val,
+		_origin: &<T as frame_system::Config>::RuntimeOrigin,
+		_call: &T::RuntimeCall,
+		_info: &DispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		match val {
+			Val::Valid => Ok(Pre::Valid),
+			Val::Refund(w) => Ok(Pre::Refund(w)),
+		}
+	}
+
+	fn post_dispatch_details(
+		pre: Self::Pre,
+		_info: &DispatchInfo,
+		_post_info: &PostDispatchInfoOf<T::RuntimeCall>,
+		_len: usize,
+		_result: &DispatchResult,
+	) -> Result<Weight, sp_runtime::transaction_validity::TransactionValidityError> {
+		match pre {
+			Pre::Valid => Ok(Weight::zero()),
+			Pre::Refund(w) => Ok(w),
 		}
 	}
 }

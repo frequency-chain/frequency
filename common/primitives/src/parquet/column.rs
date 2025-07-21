@@ -1,7 +1,6 @@
 /// The model for Parquet data
 use scale_info::prelude::string::String;
 use serde::{Deserialize, Serialize};
-use sp_std::prelude::*;
 
 use crate::parquet::{column_compression_codec::ColumnCompressionCodec, types::ParquetType};
 

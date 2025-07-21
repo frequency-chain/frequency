@@ -1,17 +1,21 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { createAndFundKeypair, EcdsaSignature, getNonce, Sr25519Signature } from '../scaffolding/helpers';
+import { createAndFundKeypair, EcdsaSignature, getNonce, log, Sr25519Signature } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey, getUnifiedAddress } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey, getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 import { createPassKeyAndSignAccount, createPassKeyCallV2, createPasskeyPayloadV2 } from '../scaffolding/P256';
 import { u8aToHex, u8aWrapBytes } from '@polkadot/util';
 import { AccountId32 } from '@polkadot/types/interfaces';
 import { ISubmittableResult } from '@polkadot/types/types';
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Passkey Pallet Proxy V2 Ethereum Tests', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('passkey ethereum tests', function () {
     let fundedSr25519Keys: KeyringPair;
     let fundedEthereumKeys: KeyringPair;
@@ -107,7 +111,7 @@ describe('Passkey Pallet Proxy V2 Ethereum Tests', function () {
         startingReceiverBalance = (await ExtrinsicHelper.getAccountInfo(receiverKeys)).data.free.toBigInt();
         startingSenderBalance = (await ExtrinsicHelper.getAccountInfo(fundedEthereumKeys)).data.free.toBigInt();
         accountPKey = getUnifiedPublicKey(fundedEthereumKeys);
-        console.log(`accountPKey ${u8aToHex(accountPKey)}`);
+        log(`accountPKey ${u8aToHex(accountPKey)}`);
         nonce = await getNonce(fundedEthereumKeys);
         const transferCalls = ExtrinsicHelper.api.tx.balances.transferKeepAlive(
           getUnifiedAddress(receiverKeys),
@@ -116,7 +120,7 @@ describe('Passkey Pallet Proxy V2 Ethereum Tests', function () {
         const { passKeyPrivateKey, passKeyPublicKey } = createPassKeyAndSignAccount(accountPKey);
         // ethereum keys should not have wrapping
         const accountSignature = fundedEthereumKeys.sign(passKeyPublicKey);
-        console.log(`accountSignature ${u8aToHex(accountSignature)}`);
+        log(`accountSignature ${u8aToHex(accountSignature)}`);
         const multiSignature: EcdsaSignature = { Ecdsa: u8aToHex(accountSignature) };
         const passkeyCall = await createPassKeyCallV2(accountPKey, nonce, transferCalls);
         const passkeyPayload = await createPasskeyPayloadV2(

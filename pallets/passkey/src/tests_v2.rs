@@ -35,8 +35,8 @@ impl TestPasskeyPayloadBuilder {
 			key_pair,
 			passkey_public_key: PasskeyPublicKey([0u8; 33]),
 			payload_to_sign: vec![],
-			nonce: 0u32.into(),
-			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }).into(),
+			nonce: 0u32,
+			call: RuntimeCall::System(SystemCall::remark { remark: vec![1, 2, 3u8] }),
 			invalid_passkey_signature: false,
 		}
 	}
@@ -75,7 +75,7 @@ impl TestPasskeyPayloadBuilder {
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
 			self.key_pair.public().into(),
-			amount.into()
+			amount
 		));
 		self
 	}
@@ -264,7 +264,7 @@ fn pre_dispatch_with_low_funds_should_fail() {
 }
 
 #[test]
-fn validate_unsigned_should_fee_removed_on_successful_validation() {
+fn validate_unsigned_fee_should_not_get_removed_on_successful_validation() {
 	new_test_ext().execute_with(|| {
 		// arrange
 		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
@@ -284,6 +284,34 @@ fn validate_unsigned_should_fee_removed_on_successful_validation() {
 		// act
 		let res =
 			Passkey::validate_unsigned(TransactionSource::InBlock, &Call::proxy_v2 { payload });
+
+		// assert
+		assert!(res.is_ok());
+		let final_balance = Balances::free_balance(&account_id);
+		assert_eq!(final_balance, initial_balance);
+	});
+}
+
+#[test]
+fn pre_dispatch_fee_should_get_removed_on_successful_validation() {
+	new_test_ext().execute_with(|| {
+		// arrange
+		let (test_account_2_key_pair, _) = sr25519::Pair::generate();
+		let (payload, account_pk) = TestPasskeyPayloadBuilder::new()
+			.with_a_valid_passkey()
+			.with_passkey_as_payload()
+			.with_call(RuntimeCall::Balances(BalancesCall::transfer_allow_death {
+				dest: test_account_2_key_pair.public().into(),
+				value: 100,
+			}))
+			.with_funded_account(10000000000)
+			.build();
+
+		let account_id: <Test as frame_system::Config>::AccountId = account_pk.into();
+		let initial_balance = Balances::free_balance(&account_id);
+
+		// act
+		let res = Passkey::pre_dispatch(&Call::proxy_v2 { payload });
 
 		// assert
 		assert!(res.is_ok());
@@ -312,10 +340,7 @@ fn fee_withdrawn_for_failed_call() {
 		let initial_balance = Balances::free_balance(&account_id);
 
 		// act
-		let validate_result = Passkey::validate_unsigned(
-			TransactionSource::InBlock,
-			&Call::proxy_v2 { payload: payload.clone() },
-		);
+		let validate_result = Passkey::pre_dispatch(&Call::proxy_v2 { payload: payload.clone() });
 		let extrinsic_result = Passkey::proxy_v2(RuntimeOrigin::none(), payload);
 
 		// assert
@@ -528,7 +553,7 @@ fn pre_dispatch_with_exceeding_weight_should_fail() {
 fn passkey_example_should_work() {
 	new_test_ext().execute_with(|| {
 		// arrange
-		let account_id = AccountId32::new(from_hex("0x000000000000000000000000cf613044ccd8c1c60f561b99bd1fd2daef89625f").unwrap().try_into().unwrap());
+		let account_id = AccountId32::new(from_hex("0xcf613044ccd8c1c60f561b99bd1fd2daef89625feeeeeeeeeeeeeeeeeeeeeeee").unwrap().try_into().unwrap());
 		let pass_key_public_key = PasskeyPublicKey(from_hex("0x029bd263885e5eeaea31fa3b2e78ab1106d2cb1995045777fca3b38913a755d250").unwrap().try_into().unwrap());
 		let payload = PasskeyPayloadV2 {
 			passkey_public_key: pass_key_public_key,
@@ -546,7 +571,7 @@ fn passkey_example_should_work() {
 		};
 		assert_ok!(Balances::force_set_balance(
 			RawOrigin::Root.into(),
-			account_id.into(),
+			account_id,
 			10000000000
 		));
 

@@ -1,5 +1,5 @@
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec};
-use parity_scale_codec::{Decode, Encode, EncodeLike, Error, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -7,12 +7,26 @@ use sp_runtime::{
 	traits::{AtLeast32BitUnsigned, Zero},
 	DispatchError, MultiSignature, RuntimeDebug,
 };
-use sp_std::prelude::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 pub use crate::schema::SchemaId;
 
 /// Message Source Id or msaId is the unique identifier for Message Source Accounts
 pub type MessageSourceId = u64;
+
+/// Ethereum address type alias
+pub use sp_core::H160;
+
+/// Response type for getting Ethereum address as a 20-byte array and checksummed hex string
+#[derive(TypeInfo, Encode, Decode)]
+pub struct AccountId20Response {
+	/// Ethereum address as a 20-byte array
+	pub account_id: H160,
+
+	/// Ethereum address as a checksummed 42-byte hex string (including 0x prefix)
+	pub account_id_checksummed: alloc::string::String,
+}
 
 /// A DelegatorId an MSA Id serving the role of a Delegator.
 /// Delegators delegate to Providers.
@@ -28,6 +42,8 @@ impl Encode for DelegatorId {
 		self.0.encode()
 	}
 }
+
+impl DecodeWithMemTracking for DelegatorId {}
 
 impl Decode for DelegatorId {
 	fn decode<I: parity_scale_codec::Input>(
@@ -159,6 +175,8 @@ impl Encode for ProviderId {
 	}
 }
 
+impl DecodeWithMemTracking for ProviderId {}
+
 impl Decode for ProviderId {
 	fn decode<I: parity_scale_codec::Input>(
 		input: &mut I,
@@ -277,7 +295,19 @@ pub trait SchemaGrantValidator<BlockNumber> {
 	) -> DispatchResult;
 }
 
-/// RPC Response for getting getting MSA keys
+/// A trait that allows checking whether adding a key may be subsidized
+pub trait MsaKeyProvider {
+	/// the type to use for looking up keys in storage.
+	type AccountId;
+	/// Returns whether adding `new_key` to `msa_id` may be subsidized
+	fn key_eligible_for_subsidized_addition(
+		old_key: Self::AccountId,
+		new_key: Self::AccountId,
+		msa_id: MessageSourceId,
+	) -> bool;
+}
+
+/// RPC Response for getting MSA keys
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 #[derive(TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Default, MaxEncodedLen)]
 pub struct KeyInfoResponse<AccountId> {

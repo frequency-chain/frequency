@@ -1,12 +1,13 @@
+extern crate alloc;
 use crate::impl_codec_bitflags;
 #[cfg(feature = "std")]
 use crate::utils;
+use alloc::{vec, vec::Vec};
 use enumflags2::{bitflags, BitFlags};
-use parity_scale_codec::{Decode, Encode, EncodeLike, MaxEncodedLen};
+use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, MaxEncodedLen};
 use scale_info::{build::Fields, meta_type, Path, Type, TypeInfo, TypeParameter};
 use serde::{Deserialize, Serialize};
 use sp_runtime::RuntimeDebug;
-use sp_std::prelude::*;
 #[cfg(feature = "std")]
 use utils::*;
 
@@ -22,6 +23,7 @@ pub type SchemaVersion = u8;
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	Debug,
 	TypeInfo,
@@ -43,6 +45,7 @@ pub enum ModelType {
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	PartialEq,
 	Debug,
 	TypeInfo,
@@ -73,6 +76,7 @@ pub enum PayloadLocation {
 	Eq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	MaxEncodedLen,
 	TypeInfo,
 	Serialize,
@@ -134,7 +138,7 @@ pub trait SchemaProvider<SchemaId> {
 /// This allows other Pallets to check validity of schema ids.
 pub trait SchemaValidator<SchemaId> {
 	/// Checks that a collection of SchemaIds are all valid
-	fn are_all_schema_ids_valid(schema_ids: &Vec<SchemaId>) -> bool;
+	fn are_all_schema_ids_valid(schema_ids: &[SchemaId]) -> bool;
 
 	/// Set the schema counter for testing purposes.
 	#[cfg(any(feature = "std", feature = "runtime-benchmarks", test))]

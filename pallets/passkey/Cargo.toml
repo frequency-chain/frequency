@@ -12,23 +12,20 @@ version = "0.0.0"
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["max-encoded-len"] }
 scale-info = { workspace = true, features = ["derive"] }
-
 frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 sp-core = { workspace = true }
-log = { workspace = true, default-features = false }
 p256 = { workspace = true }
 base64-url = { workspace = true }
-serde_json = { workspace = true, features = ["alloc"] }
 pallet-transaction-payment = { workspace = true }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 common-runtime = { path = "../../runtime/common", default-features = false }
+lazy_static = { workspace = true }
 
 [dev-dependencies]
 pallet-balances = { workspace = true }
@@ -41,14 +38,13 @@ std = [
   "parity-scale-codec/std",
   "frame-support/std",
   "frame-system/std",
-  "scale-info/std",
   "sp-core/std",
   "sp-io/std",
   "sp-runtime/std",
-  "sp-std/std",
   "frame-benchmarking/std",
   "common-primitives/std",
   "common-runtime/std",
+  "pallet-transaction-payment/std"
 ]
 runtime-benchmarks = [
   "frame-support/runtime-benchmarks",
@@ -60,3 +56,6 @@ runtime-benchmarks = [
 ]
 try-runtime = ["frame-support/try-runtime", "frame-system/try-runtime"]
 test = []
+
+[lints]
+workspace = true

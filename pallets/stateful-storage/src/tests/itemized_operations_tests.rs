@@ -115,7 +115,7 @@ fn applying_add_action_with_full_page_should_fail() {
 	// arrange
 	let payload: Vec<u8> = vec![1u8; ItemizedBlobSize::get() as usize];
 	let size_to_fill = (<Test as Config>::MaxItemizedPageSizeBytes::get() as usize) -
-		sp_std::mem::size_of::<PageNonce>();
+		core::mem::size_of::<PageNonce>();
 	let mut item_buffer = Vec::<u8>::with_capacity(size_to_fill);
 	while (size_to_fill as i32).saturating_sub(item_buffer.len().try_into().unwrap()) >
 		ItemizedBlobSize::get().try_into().unwrap()

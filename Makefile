@@ -1,4 +1,5 @@
 UNAME := $(shell uname)
+NIGHTLY = +nightly-2025-04-03
 
 .PHONY: all
 all: build
@@ -26,6 +27,14 @@ start-frequency:
 
 start-frequency-docker:
 	./scripts/init.sh start-frequency-docker
+
+run-frequency-docker: start-frequency-docker register onboard-docker
+
+start-relay-chain-docker:
+	./scripts/init.sh start-paseo-relay-chain
+
+stop-relay-chain-docker:
+	./scripts/init.sh stop-paseo-relay-chain
 
 start-manual:
 	./scripts/init.sh start-frequency-manual
@@ -55,8 +64,14 @@ stop-relay:
 stop-paseo-relay:
 	./scripts/init.sh stop-paseo-relay-chain
 
+stop-paseo-relay-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-paseo-relay-chain
+
 stop-frequency-docker:
 	./scripts/init.sh stop-frequency-docker
+
+stop-frequency-docker-prune:
+	env PRUNE="--volumes" ./scripts/init.sh stop-frequency-docker
 
 .PHONY: local-block
 local-block:
@@ -75,29 +90,54 @@ register:
 onboard:
 	./scripts/init.sh onboard-frequency-paseo-local
 
+.PHONY: onboard-res-local
+onboard-res-local:
+	./scripts/init.sh onboard-res-local
+
+.PHONY: onboard-docker
+onboard-docker:
+	env DOCKER_ONBOARD=true PARA_DOCKER_IMAGE=frequencychain/collator-node-local:latest ./scripts/init.sh onboard-frequency-paseo-local
+
 .PHONY: offboard
 offboard:
 	./scripts/init.sh offboard-frequency-paseo-local
 
-.PHONY: specs-testnet-2000 specs-paseo-local
-specs-testnet-2000:
-	./scripts/generate_specs.sh 2000 paseo-2000 release
+.PHONY: specs-frequency-paseo-local-debug specs-frequency-paseo-local-release
 
-specs-paseo-local:
-	./scripts/generate_relay_specs.sh
+specs-frequency-paseo-local-debug:
+	./scripts/generate_specs.sh 2000 frequency-paseo-local debug
 
-.PHONY: format
+specs-frequency-paseo-local-release:
+	./scripts/generate_specs.sh 2000 frequency-paseo-local release
+
+.PHONY: format format-js format-all
 format:
-	cargo +nightly-2024-08-01 fmt
+	cargo $(NIGHTLY) fmt
 
-.PHONY: lint lint-audit
+format-js:
+	cd e2e && npm run format
+	cd js/api-augment && npm run format
+	cd js/ethereum-utils && npm run format
+	cd js/recovery-sdk && npm run format
+	cd js/schemas && npm run format
+
+format-all: format format-js
+
+.PHONY: lint lint-audit lint-fix lint-clippy
 lint:
-	cargo +nightly-2024-08-01 fmt --check
-	SKIP_WASM_BUILD=1 env -u RUSTFLAGS cargo clippy --features runtime-benchmarks,frequency-lint-check -- -D warnings
+	cargo $(NIGHTLY) fmt --check
+	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 	RUSTC_BOOTSTRAP=1 RUSTDOCFLAGS="--enable-index-page --check -Zunstable-options" cargo doc --no-deps --features frequency
+
+lint-clippy:
+	SKIP_WASM_BUILD=1 cargo clippy --features runtime-benchmarks,frequency-lint-check -- -Dwarnings
 
 lint-audit:
 	cargo deny check -c deny.toml
+
+lint-fix:
+	cargo $(NIGHTLY) fmt
+	SKIP_WASM_BUILD=1 cargo clippy --fix --features runtime-benchmarks,frequency-lint-check
 
 .PHONY: format-lint
 format-lint: format lint
@@ -130,6 +170,8 @@ benchmarks-stateful-storage \
 benchmarks-handles \
 benchmarks-time-release \
 benchmarks-passkey \
+benchmarks-cumulus_pallet_weight_reclaim \
+benchmarks-frame_system_extensions \
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
@@ -140,7 +182,8 @@ benchmarks-pallet_session \
 benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility \
-benchmarks-pallet_proxy
+benchmarks-pallet_proxy \
+benchmarks-pallet_transaction_payment
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -152,6 +195,8 @@ benchmarks-stateful-storage-local \
 benchmarks-handles-local \
 benchmarks-passkey-local \
 benchmarks-time-release-local \
+benchmarks-cumulus_pallet_weight_reclaim-local \
+benchmarks-frame_system_extensions-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \
@@ -163,7 +208,8 @@ benchmarks-pallet_session-local \
 benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
-benchmarks-pallet_proxy-local
+benchmarks-pallet_proxy-local \
+benchmarks-pallet_transaction_payment-local
 
 .PHONY: benchmarks
 benchmarks:
@@ -215,7 +261,7 @@ check-no-relay:
 	SKIP_WASM_BUILD= cargo check --features frequency-no-relay
 
 check-local:
-	SKIP_WASM_BUILD= cargo check --features frequency-paseo-local
+	SKIP_WASM_BUILD= cargo check --features frequency-local
 
 check-testnet:
 	SKIP_WASM_BUILD= cargo check --features frequency-testnet
@@ -310,7 +356,7 @@ try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
-POLKADOT_VERSION=$(shell grep -o 'release-polkadot-v[0-9.]*' Cargo.toml | sed 's/release-polkadot-v//' | head -n 1)
+POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'tag[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/tag *= *"polkadot-\(.*\)"/\1/' | head -n 1)
 
 .PHONY: version
 version:

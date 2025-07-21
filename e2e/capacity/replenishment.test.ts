@@ -20,7 +20,7 @@ import {
 import { getFundingSource } from '../scaffolding/funding';
 import { isTestnet } from '../scaffolding/env';
 
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity Replenishment Testing: ', function () {
   async function createAndStakeProvider(name: string, stakingAmount: bigint): Promise<[KeyringPair, u64]> {
@@ -34,6 +34,7 @@ describe('Capacity Replenishment Testing: ', function () {
   before(async function () {
     // Replenishment requires the epoch length to be shorter than testnet (set in globalHooks)
     if (isTestnet()) this.skip();
+    fundingSource = await getFundingSource(import.meta.url);
   });
 
   describe('Capacity is replenished', function () {
@@ -55,7 +56,10 @@ describe('Capacity Replenishment Testing: ', function () {
       remainingCapacity = (await getCapacity(stakeProviderId)).remainingCapacity.toBigInt();
       assert(expectedCapacity > remainingCapacity, 'Our remaining capacity is much higher than expected.');
       const capacityPerCall = expectedCapacity - remainingCapacity;
-      assert(remainingCapacity > capacityPerCall, "We don't have enough to make a second call");
+      assert(
+        remainingCapacity > capacityPerCall,
+        `Not enough capacity! needed: ${capacityPerCall}, remaining: ${remainingCapacity}`
+      );
 
       // one more txn to deplete capacity more so this current remaining is different from when
       // we submitted the first message.

@@ -75,6 +75,7 @@ impl system::Config for Test {
 	type PreInherents = ();
 	type PostInherents = ();
 	type PostTransactions = ();
+	type ExtensionsWeightInfo = ();
 }
 
 pub type MaxItemizedActionsCount = ConstU32<6>;
@@ -280,18 +281,14 @@ impl Clone for MaxPaginatedPageId {
 	}
 }
 
-impl Eq for MaxPaginatedPageId {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxPaginatedPageId {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxPaginatedPageId {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxPaginatedPageId {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -302,18 +299,14 @@ impl Clone for MaxItemizedPageSizeBytes {
 	}
 }
 
-impl Eq for MaxItemizedPageSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxItemizedPageSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedPageSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxItemizedPageSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -324,18 +317,14 @@ impl Clone for MaxPaginatedPageSizeBytes {
 	}
 }
 
-impl Eq for MaxPaginatedPageSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxPaginatedPageSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxPaginatedPageSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxPaginatedPageSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -346,18 +335,14 @@ impl Clone for MaxItemizedBlobSizeBytes {
 	}
 }
 
-impl Eq for MaxItemizedBlobSizeBytes {
-	fn assert_receiver_is_total_eq(&self) -> () {}
-}
-
 impl PartialEq for MaxItemizedBlobSizeBytes {
 	fn eq(&self, _other: &Self) -> bool {
 		true
 	}
 }
 
-impl sp_std::fmt::Debug for MaxItemizedBlobSizeBytes {
-	fn fmt(&self, _: &mut sp_std::fmt::Formatter) -> sp_std::fmt::Result {
+impl core::fmt::Debug for MaxItemizedBlobSizeBytes {
+	fn fmt(&self, _: &mut core::fmt::Formatter) -> core::fmt::Result {
 		Ok(())
 	}
 }
@@ -415,7 +400,8 @@ pub fn test_public(n: MessageSourceId) -> AccountId32 {
 #[cfg(feature = "runtime-benchmarks")]
 pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	use sp_keystore::{testing::MemoryKeystore, KeystoreExt, KeystorePtr};
-	use sp_std::sync::Arc;
+	extern crate alloc;
+	use alloc::sync::Arc;
 
 	let t = frame_system::GenesisConfig::<Test>::default().build_storage().unwrap();
 	let mut ext = sp_io::TestExternalities::new(t);

@@ -2,9 +2,15 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddKeyData, EventMap, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, RecoveryCommitmentPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
+import {
+  generateRecoverySecret,
+  getRecoveryCommitment,
+  ContactType,
+  getIntermediaryHashes,
+} from '@frequency-chain/recovery-sdk';
 import {
   createKeys,
   createAndFundKeypair,
@@ -23,9 +29,6 @@ import {
   getCurrentItemizedHash,
   getCurrentPaginatedHash,
   generateItemizedSignaturePayload,
-  createDelegator,
-  generatePaginatedUpsertSignaturePayload,
-  generatePaginatedDeleteSignaturePayload,
   getOrCreateDummySchema,
   getOrCreateAvroChatMessageItemizedSchema,
   getOrCreateParquetBroadcastSchema,
@@ -35,13 +38,15 @@ import {
   getCapacity,
   getTestHandle,
   assertHasMessage,
+  createMsa,
+  generateRecoveryCommitmentPayload,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity Transactions', function () {
   describe('pay_with_capacity', function () {
@@ -50,20 +55,11 @@ describe('Capacity Transactions', function () {
       const amountStaked = 3n * DOLLARS;
 
       before(async function () {
+        fundingSource = await getFundingSource(import.meta.url);
         // Create schemas for testing with Grant Delegation to test pay_with_capacity
         schemaId = await getOrCreateGraphChangeSchema(fundingSource);
         assert.notEqual(schemaId, undefined, 'setup should populate schemaId');
       });
-
-      function getCapacityFee(chainEvents: EventMap): bigint {
-        if (
-          chainEvents['capacity.CapacityWithdrawn'] &&
-          ExtrinsicHelper.api.events.capacity.CapacityWithdrawn.is(chainEvents['capacity.CapacityWithdrawn'])
-        ) {
-          return chainEvents['capacity.CapacityWithdrawn'].data.amount.toBigInt();
-        }
-        return 0n;
-      }
 
       describe('when capacity eligible transaction is from the msa pallet', function () {
         let capacityKeys: KeyringPair;
@@ -144,7 +140,7 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
           assertEvent(eventMap, 'msa.DelegationGranted');
 
-          const fee = getCapacityFee(eventMap);
+          const fee = ExtrinsicHelper.getCapacityFee(eventMap);
           // assuming no other txns charged against capacity (b/c of async tests), this should be the maximum amount left.
           const maximumExpectedRemaining = stakedForMsa / getTokenPerCapacity() - fee;
 
@@ -152,6 +148,98 @@ describe('Capacity Transactions', function () {
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
           assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / getTokenPerCapacity());
+        });
+
+        it('successfully pays with Capacity for eligible transaction - addRecoveryCommitment', async function () {
+          // Generate a recovery secret using the Recovery SDK
+          const recoverySecret = generateRecoverySecret();
+
+          // Generate Recovery Commitment using the Recovery SDK with test email contact
+          const testEmail = 'test@example.com';
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+
+          const expiration = (await getBlockNumber()) + 10;
+          const recoveryCommitmentData: RecoveryCommitmentPayload = {
+            discriminant: 'RecoveryCommitmentPayload',
+            recoveryCommitment,
+            expiration,
+          };
+
+          const payload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentPayload = ExtrinsicHelper.api.registry.createType(
+            'PalletMsaRecoveryCommitmentPayload',
+            payload
+          );
+          const signature = signPayloadSr25519(capacityKeys, recoveryCommitmentPayload);
+          const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(capacityKeys, signature, payload);
+
+          const { eventMap } = await addRecoveryCommitmentOp.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'msa.RecoveryCommitmentAdded');
+        });
+
+        it('successfully pays with Capacity for eligible transaction - recoverAccount', async function () {
+          const defaultPayload: AddKeyData = {};
+          const lostKey = await createAndFundKeypair(fundingSource, 50_000_000n);
+          const recoveryKey = createKeys('RecoveryKey');
+
+          // Create an MSA to use as the lost key
+          const { eventMap: setupEventMap } = await ExtrinsicHelper.createMsa(lostKey).signAndSend();
+          assertEvent(setupEventMap, 'msa.MsaCreated');
+          const msaCreatedEvent = setupEventMap['msa.MsaCreated'];
+
+          // Store the msaId and recovery key that will be used in the recovery payload
+          defaultPayload.msaId = msaCreatedEvent.data[0] as u64;
+          defaultPayload.newPublicKey = getUnifiedPublicKey(recoveryKey);
+
+          // Generate a recovery secret using the Recovery SDK
+          const recoverySecret = generateRecoverySecret();
+          const testEmail = 'test@example.com';
+
+          // Add a recovery commitment to the lostKey MSA
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+          const expiration = (await getBlockNumber()) + 10;
+          const recoveryCommitmentData: RecoveryCommitmentPayload = {
+            discriminant: 'RecoveryCommitmentPayload',
+            recoveryCommitment,
+            expiration,
+          };
+
+          const recoveryPayload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentCodec = ExtrinsicHelper.api.registry.createType(
+            'PalletMsaRecoveryCommitmentPayload',
+            recoveryPayload
+          );
+          const recoverySignature = signPayloadSr25519(lostKey, recoveryCommitmentCodec);
+          const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(
+            lostKey,
+            recoverySignature,
+            recoveryPayload
+          );
+          await addRecoveryCommitmentOp.signAndSend();
+
+          // Create and approve a recovery provider - use the capacityKeys that already has capacity staked
+          const recoveryProviderKeys = capacityKeys;
+
+          // Approve the recovery provider
+          await ExtrinsicHelper.approveRecoveryProvider(fundingSource, recoveryProviderKeys).signAndSend();
+
+          // Generate the payload for adding a new control key, required for recovery
+          const payload = await generateAddKeyPayload(defaultPayload);
+          const addKeyDataCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+          const newSig = signPayloadSr25519(recoveryKey, addKeyDataCodec);
+
+          // Generate Recovery Intermediary Hashes
+          const { a, b } = getIntermediaryHashes(recoverySecret, ContactType.EMAIL, testEmail);
+
+          // Recover the account using the recovery provider
+          const recoverAccountOp = ExtrinsicHelper.recoverAccount(recoveryProviderKeys, a, b, newSig, payload);
+
+          const { eventMap } = await recoverAccountOp.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'msa.AccountRecovered');
         });
       });
 
@@ -183,7 +271,8 @@ describe('Capacity Transactions', function () {
 
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesInBlock');
+          // messages.MessagesInBlock in block might not be on this transaction if there are others
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
         });
 
         it('successfully pays with Capacity for eligible transaction - addOnchainMessage', async function () {
@@ -192,7 +281,8 @@ describe('Capacity Transactions', function () {
           const call = ExtrinsicHelper.addOnChainMessage(capacityKeys, dummySchemaId, '0xdeadbeef');
           const { eventMap } = await call.payWithCapacity();
           assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assertEvent(eventMap, 'messages.MessagesInBlock');
+          // messages.MessagesInBlock in block might not be on this transaction if there are others
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
           const get = await ExtrinsicHelper.apiPromise.rpc.messages.getBySchemaId(dummySchemaId, {
             from_block: starting_block,
             from_index: 0,
@@ -213,7 +303,7 @@ describe('Capacity Transactions', function () {
           capacityKeys = createKeys('CapacityKeys');
           capacityProvider = await createMsaAndProvider(fundingSource, capacityKeys, 'CapacityProvider', FUNDS_AMOUNT);
           // Create a MSA for the delegator
-          [delegatorKeys, delegatorProviderId] = await createDelegator(fundingSource);
+          [delegatorProviderId, delegatorKeys] = await createMsa(fundingSource);
           assert.notEqual(delegatorKeys, undefined, 'setup should populate delegator_key');
           assert.notEqual(delegatorProviderId, undefined, 'setup should populate msa_id');
 
@@ -285,50 +375,6 @@ describe('Capacity Transactions', function () {
           assertEvent(eventMap2, 'statefulStorage.PaginatedPageDeleted');
         });
 
-        it('successfully pays with Capacity for eligible transaction - applyItemActionsWithSignature', async function () {
-          // Create a schema for Itemized PayloadLocation
-          const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
-
-          // Add and update actions
-          const payload_1 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency');
-          const add_action = {
-            Add: payload_1,
-          };
-
-          const payload_2 = new Bytes(ExtrinsicHelper.api.registry, 'Hello World Again From Frequency');
-          const update_action = {
-            Add: payload_2,
-          };
-
-          const target_hash = await getCurrentItemizedHash(delegatorProviderId, itemizedSchemaId);
-
-          const add_actions = [add_action, update_action];
-          const payload = await generateItemizedSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: itemizedSchemaId,
-            actions: add_actions,
-          });
-          const itemizedPayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStorageItemizedSignaturePayload',
-            payload
-          );
-          const itemized_add_result_1 = ExtrinsicHelper.applyItemActionsWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, itemizedPayloadData),
-            payload
-          );
-          const { target: pageUpdateEvent1, eventMap } = await itemized_add_result_1.payWithCapacity();
-          assertEvent(eventMap, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
-          assert.notEqual(
-            pageUpdateEvent1,
-            undefined,
-            'should have returned a PalletStatefulStorageItemizedActionApplied event'
-          );
-        });
-
         it('successfully pays with Capacity for eligible transaction - applyItemActionsWithSignatureV2', async function () {
           // Create a schema for Itemized PayloadLocation
           const itemizedSchemaId: SchemaId = await getOrCreateAvroChatMessageItemizedSchema(fundingSource);
@@ -370,68 +416,6 @@ describe('Capacity Transactions', function () {
             undefined,
             'should have returned a PalletStatefulStorageItemizedActionApplied event'
           );
-        });
-
-        it('successfully pays with Capacity for eligible transaction - upsertPageWithSignature; deletePageWithSignature', async function () {
-          const paginatedSchemaId: SchemaId = await getOrCreateAvroChatMessagePaginatedSchema(fundingSource);
-
-          const page_id = new u16(ExtrinsicHelper.api.registry, 1);
-
-          // Add and update actions
-          let target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
-          const upsertPayload = await generatePaginatedUpsertSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: paginatedSchemaId,
-            pageId: page_id,
-            payload: new Bytes(ExtrinsicHelper.api.registry, 'Hello World From Frequency'),
-          });
-          const upsertPayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStoragePaginatedUpsertSignaturePayload',
-            upsertPayload
-          );
-          const upsert_result = ExtrinsicHelper.upsertPageWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, upsertPayloadData),
-            upsertPayload
-          );
-          const { target: pageUpdateEvent, eventMap: eventMap1 } = await upsert_result.payWithCapacity();
-          assertEvent(eventMap1, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap1, 'capacity.CapacityWithdrawn');
-          assert.notEqual(
-            pageUpdateEvent,
-            undefined,
-            'should have returned a PalletStatefulStoragePaginatedPageUpdate event'
-          );
-
-          // Remove the page
-          target_hash = await getCurrentPaginatedHash(delegatorProviderId, paginatedSchemaId, page_id.toNumber());
-          const deletePayload = await generatePaginatedDeleteSignaturePayload({
-            msaId: delegatorProviderId,
-            targetHash: target_hash,
-            schemaId: paginatedSchemaId,
-            pageId: page_id,
-          });
-          const deletePayloadData = ExtrinsicHelper.api.registry.createType(
-            'PalletStatefulStoragePaginatedDeleteSignaturePayload',
-            deletePayload
-          );
-          const remove_result = ExtrinsicHelper.deletePageWithSignature(
-            delegatorKeys,
-            capacityKeys,
-            signPayloadSr25519(delegatorKeys, deletePayloadData),
-            deletePayload
-          );
-          const { target: pageRemove, eventMap: eventMap2 } = await remove_result.payWithCapacity();
-          assertEvent(eventMap2, 'system.ExtrinsicSuccess');
-          assertEvent(eventMap2, 'capacity.CapacityWithdrawn');
-          assert.notEqual(pageRemove, undefined, 'should have returned a event');
-
-          // no pages should exist
-          const result = await ExtrinsicHelper.getPaginatedStorage(delegatorProviderId, paginatedSchemaId);
-          assert.notEqual(result, undefined, 'should have returned a valid response');
-          assert.equal(result.length, 0, 'should returned no paginated pages');
         });
 
         it('successfully pays with Capacity for eligible transaction - upsertPageWithSignatureV2; deletePageWithSignatureV2', async function () {

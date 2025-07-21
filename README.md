@@ -59,7 +59,7 @@ Frequency is a [Polkadot](https://www.parity.io/technologies/polkadot) parachain
 
 ## Hardware
 
-Benchmarks are run on an AWS `c6i.4xlarge` and recommend collators have generally the same [reference hardware specified by Parity for Validators](https://wiki.polkadot.network/docs/maintain-guides-how-to-validate-polkadot#reference-hardware).
+Benchmarks are run on an AWS `m6id.2xlarge` and recommend collators have generally the same [reference hardware specified by Parity for Validators](https://docs.polkadot.com/infrastructure/running-a-validator/requirements/#minimum-hardware-requirements).
 
 Non-Collator nodes may have less power, but low memory configurations may lead to out of memory errors.
 
@@ -224,6 +224,8 @@ This option runs two collator nodes as local host processes and two relay chain 
    make start-paseo-relay
    ```
 
+   ALERT: You likely need to manually set the scheduling lookahead. `sudo(configuration.setSchedulingLookahead(3))` and wait for it to apply.
+
 1. Register a new parachain slot (parachain id) for Frequency. _Note, if parachain was
    previously registered on a running relay chain and no new registration is required,
    then you can skip the above step._
@@ -257,18 +259,22 @@ This option runs two collator nodes as local host processes and two relay chain 
 
 ### All in Docker Container
 
-:exclamation: Currently does not work on M\* series MacOS laptops. See https://github.com/frequency-chain/frequency/issues/779
+This option runs one collator node and two relay chain validator nodes, each in its own docker container.
 
 Start:
 
 ```sh
-make start-frequency-docker
+make run-frequency-docker
 ```
 
 Stop:
 
 ```sh
 make stop-frequency-docker
+```
+or:
+```sh
+make stop-frequency-docker-prune # to remove associated Docked volumes
 ```
 
 | **Node**             | **Ports**                       | **Explorer URL**                                                                          |
@@ -308,7 +314,7 @@ make start-frequency-with-offchain
 - Lint code with `make lint` to catch common mistakes and improve your [Rust](https://github.com/rust-lang/rust) code.
 
   \_Note, if you get errors complaining about the wasm build, then you may need to install
-  the wasm target for rust. You can do this with `rustup target add wasm32-unknown-unknown`
+  the wasm target for rust. You can do this with `rustup target add wasm32v1-none`
 
 - Alternatively, run `make format-lint` to run both at the same time.
 - Run `make lint-audit` to audit `Cargo.lock` files with `cargo-deny` for crates with security vulnerabilities reported to the [RustSec Advisory Database](https://rustsec.org). [See cargo-deny installation instructions](https://github.com/EmbarkStudios/cargo-deny)
@@ -320,7 +326,7 @@ make start-frequency-with-offchain
 1. Check out the commit at which the runtime was built.
 2. Use [srtool](https://github.com/paritytech/srtool) and [srtool-cli](https://github.com/chevdor/srtool-cli) to verify the runtime:
    ```sh
-   SRTOOL_TAG="1.77.0" srtool build \
+   SRTOOL_TAG="1.84.1" srtool build \
            --build-opts="'--features on-chain-release-build,no-metadata-docs,frequency'" \
            --profile=release \
            --package=frequency-runtime \

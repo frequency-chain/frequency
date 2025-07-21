@@ -4,11 +4,14 @@ use frame_support::{
 	BoundedVec, RuntimeDebugNoBound,
 };
 use p256::{ecdsa::signature::Verifier, EncodedPoint};
+use parity_scale_codec::DecodeWithMemTracking;
 use sp_io::hashing::sha2_256;
 use sp_runtime::MultiSignature;
+extern crate alloc;
 #[allow(unused)]
-use sp_std::boxed::Box;
-use sp_std::vec::Vec;
+use alloc::{boxed::Box, sync::Arc, vec::Vec};
+use common_primitives::{node::EIP712Encode, signatures::get_eip712_encoding_prefix};
+use lazy_static::lazy_static;
 
 /// This is the placeholder value that should be replaced by calculated challenge for
 /// evaluation of a Passkey signature.
@@ -23,16 +26,60 @@ pub type PasskeyAuthenticatorData = BoundedVec<u8, ConstU32<128>>;
 pub type PasskeyClientDataJson = BoundedVec<u8, ConstU32<256>>;
 /// PassKey Public Key type in compressed encoded point format
 /// the first byte is the tag indicating compressed format
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 pub struct PasskeyPublicKey(pub [u8; 33]);
+
+impl EIP712Encode for PasskeyPublicKey {
+	fn encode_eip_712(&self, chain_id: u32) -> Box<[u8]> {
+		lazy_static! {
+			// signed payload
+			static ref MAIN_TYPE_HASH: [u8; 32] =
+				sp_io::hashing::keccak_256(b"PasskeyPublicKey(bytes publicKey)");
+		}
+		// get prefix and domain separator
+		let prefix_domain_separator: Box<[u8]> =
+			get_eip712_encoding_prefix("0xcccccccccccccccccccccccccccccccccccccccc", chain_id);
+		let coded_public_key = sp_io::hashing::keccak_256(self.0.as_slice());
+		let message =
+			sp_io::hashing::keccak_256(&[MAIN_TYPE_HASH.as_slice(), &coded_public_key].concat());
+		let combined = [prefix_domain_separator.as_ref(), &message].concat();
+		combined.into_boxed_slice()
+	}
+}
 /// PassKey Signature type
 #[derive(
-	Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone, Default,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+	Default,
 )]
 pub struct PasskeySignature(pub BoundedVec<u8, ConstU32<96>>);
 
 /// Passkey Payload
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyPayload<T: Config> {
 	/// passkey public key
@@ -44,7 +91,16 @@ pub struct PasskeyPayload<T: Config> {
 }
 
 /// Passkey Payload V2
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyPayloadV2<T: Config> {
 	/// passkey public key
@@ -58,7 +114,16 @@ pub struct PasskeyPayloadV2<T: Config> {
 }
 
 /// A verifiable Pass key contains all the required information to verify a passkey signature
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 pub struct VerifiablePasskeySignature {
 	/// passkey signature of `passkey_call`
 	pub signature: PasskeySignature,
@@ -69,7 +134,16 @@ pub struct VerifiablePasskeySignature {
 }
 
 /// Inner Passkey call
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyCall<T: Config> {
 	/// account id which is the origin of this call
@@ -83,7 +157,16 @@ pub struct PasskeyCall<T: Config> {
 }
 
 /// Inner Passkey call V2
-#[derive(Encode, Decode, TypeInfo, MaxEncodedLen, PartialEq, RuntimeDebugNoBound, Clone)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo,
+	MaxEncodedLen,
+	PartialEq,
+	RuntimeDebugNoBound,
+	Clone,
+)]
 #[scale_info(skip_type_params(T))]
 pub struct PasskeyCallV2<T: Config> {
 	/// account id which is the origin of this call
@@ -234,7 +317,7 @@ impl VerifiablePasskeySignature {
 			return Err(PasskeyVerificationError::InvalidAuthenticatorData);
 		}
 		passkey_signature_payload
-			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
+			.extend_from_slice(&sha2_256(original_client_data_json.as_bytes()));
 
 		// finally verify the passkey signature against the payload
 		verifying_key

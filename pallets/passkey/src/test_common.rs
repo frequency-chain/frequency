@@ -5,10 +5,9 @@
 pub mod constants {
 	use super::*;
 	/// client data json in base64-url format, the challenged is replaced with `#rplc#`
-	pub const REPLACED_CLIENT_DATA_JSON: &'static str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiI3JwbGMjIiwib3JpZ2luIjoiaHR0cHM6Ly9wYXNza2V5LmFtcGxpY2EuaW86ODA4MCIsImNyb3NzT3JpZ2luIjpmYWxzZSwiYWxnIjoiSFMyNTYifQ";
+	pub const REPLACED_CLIENT_DATA_JSON: &str = "eyJ0eXBlIjoid2ViYXV0aG4uZ2V0IiwiY2hhbGxlbmdlIjoiI3JwbGMjIiwib3JpZ2luIjoiaHR0cHM6Ly9wYXNza2V5LmFtcGxpY2EuaW86ODA4MCIsImNyb3NzT3JpZ2luIjpmYWxzZSwiYWxnIjoiSFMyNTYifQ";
 	/// authenticator data in base64-url format
-	pub const AUTHENTICATOR_DATA: &'static str =
-		"WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA";
+	pub const AUTHENTICATOR_DATA: &str = "WJ8JTNbivTWn-433ubs148A7EgWowi4SAcYBjLWfo1EdAAAAAA";
 }
 
 /// Utility functions to be used across tests and benchmarks
@@ -46,7 +45,7 @@ pub mod utilities {
 		// prepare signing payload which is [authenticator || sha256(client_data_json)]
 		let mut passkey_signature_payload = authenticator_data.to_vec();
 		passkey_signature_payload
-			.extend_from_slice(&sha2_256(&original_client_data_json.as_bytes()));
+			.extend_from_slice(&sha2_256(original_client_data_json.as_bytes()));
 
 		let (signature, _) = signing_key.try_sign(&passkey_signature_payload).map_err(|_| ())?;
 		let der_sig = p256::ecdsa::DerSignature::from(signature);

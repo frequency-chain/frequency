@@ -20,7 +20,8 @@
 use common_primitives::capacity::UnclaimedRewardInfo;
 use parity_scale_codec::Codec;
 use sp_runtime::traits::MaybeDisplay;
-use sp_std::vec::Vec;
+extern crate alloc;
+use alloc::vec::Vec;
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime files (the `runtime` folder)

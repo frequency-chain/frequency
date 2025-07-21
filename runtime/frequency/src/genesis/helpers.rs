@@ -1,8 +1,8 @@
 use cumulus_primitives_core::ParaId;
 use sp_core::{Pair, Public};
 use sp_runtime::traits::{IdentifyAccount, Verify};
-#[cfg(not(feature = "std"))]
-use sp_std::alloc::format;
+extern crate alloc;
+use alloc::{format, vec};
 
 use crate::{
 	AccountId, AccountIdConversion, AuraId, Balance, BalancesConfig, CollatorSelectionConfig,
@@ -11,7 +11,6 @@ use crate::{
 };
 
 use sp_core::sr25519;
-use sp_std::vec;
 
 /// Helper function to generate a crypto pair from seed
 // The panic from expect will not occur here because these input values are hardcoded.
@@ -65,14 +64,14 @@ pub fn build_genesis(
 ) -> serde_json::Value {
 	let genesis = RuntimeGenesisConfig {
 		system: SystemConfig { ..Default::default() },
-		balances: BalancesConfig { balances: endowed_accounts },
+		balances: BalancesConfig { balances: endowed_accounts, ..Default::default() },
 		parachain_info: ParachainInfoConfig { parachain_id: id, ..Default::default() },
 		collator_selection: CollatorSelectionConfig {
 			invulnerables: invulnerables.iter().cloned().map(|(acc, _)| acc).collect(),
 			candidacy_bond,
 			..Default::default()
 		},
-		session: SessionConfig { keys: session_keys },
+		session: SessionConfig { keys: session_keys, non_authority_keys: Default::default() },
 		// no need to pass anything to aura, in fact it will panic if we do. Session will take care
 		// of this.
 		aura: Default::default(),
@@ -157,5 +156,6 @@ pub fn default_technical_committee_members() -> Vec<AccountId> {
 	vec![
 		get_account_id_from_seed::<sr25519::Public>("Bob"),
 		get_account_id_from_seed::<sr25519::Public>("Dave"),
+		get_account_id_from_seed::<sr25519::Public>("Eve"),
 	]
 }

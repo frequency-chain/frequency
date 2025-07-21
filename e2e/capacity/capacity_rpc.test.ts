@@ -13,10 +13,10 @@ import {
 } from '../scaffolding/helpers';
 import { FeeDetails } from '@polkadot/types/interfaces';
 import { getFundingSource } from '../scaffolding/funding';
-import { getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
 const FUNDS_AMOUNT: bigint = 50n * DOLLARS;
-const fundingSource = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Capacity RPC', function () {
   let capacityProviderKeys: KeyringPair;
@@ -26,6 +26,7 @@ describe('Capacity RPC', function () {
 
   // Because this is testing non-executing code, we can do this beforeAll instead of beforeEach
   before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
     // Create schemas for testing with Grant Delegation to test pay_with_capacity
     schemaId = await getOrCreateGraphChangeSchema(fundingSource);
     assert.notEqual(schemaId, undefined, 'setup should populate schemaId');

@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -23,7 +22,6 @@ frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }
 cid = { version = "0.11", default-features = false }
@@ -35,7 +33,7 @@ common-runtime = { path = '../../runtime/common', default-features = false }
 rand = { workspace = true }
 pretty_assertions = { workspace = true }
 serde = { workspace = true, features = ["derive"] }
-serde_json = "1.0"
+serde_json = { workspace = true }
 
 [features]
 default = ['std']
@@ -49,11 +47,9 @@ runtime-benchmarks = [
 std = [
   'parity-scale-codec/std',
   'scale-info/std',
-  'sp-std/std',
   'sp-core/std',
   'sp-io/std',
   'sp-runtime/std',
-  'frame-support/std',
   'frame-system/std',
   'frame-benchmarking/std',
   'common-primitives/std',
@@ -61,3 +57,6 @@ std = [
 ]
 try-runtime = ['frame-support/try-runtime']
 test = []
+
+[lints]
+workspace = true

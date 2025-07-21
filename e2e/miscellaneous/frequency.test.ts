@@ -6,11 +6,15 @@ import { Extrinsic, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
 import { u8, Option } from '@polkadot/types';
 import { u8aToHex } from '@polkadot/util/u8a/toHex';
-import { getUnifiedAddress, getUnifiedPublicKey } from '../scaffolding/ethereum';
+import { getUnifiedAddress, getUnifiedPublicKey } from '@frequency-chain/ethereum-utils';
 
-const fundingSource: KeyringPair = getFundingSource(import.meta.url);
+let fundingSource: KeyringPair;
 
 describe('Frequency', function () {
+  before(async function () {
+    fundingSource = await getFundingSource(import.meta.url);
+  });
+
   describe('setup', function () {
     let keypairA: KeyringPair;
     let keypairB: KeyringPair;
