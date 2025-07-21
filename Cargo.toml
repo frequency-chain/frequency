@@ -131,6 +131,7 @@ sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-s
 sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
 sc-client-db = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
 sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
+sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
 sc-consensus-manual-seal = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }
 sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6", default-features = false }
 sc-keystore = { git = "https://github.com/paritytech/polkadot-sdk", tag = "polkadot-stable2503-6" }

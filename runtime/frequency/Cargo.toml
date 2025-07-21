@@ -118,7 +118,9 @@ pallet-evm = { workspace = true, default-features = false }
 # pallet-evm-precompile-simple = { workspace = true }
 
 [features]
-default = ["std"]
+default = ["std", "with-rocksdb-weights"]
+with-rocksdb-weights = []
+with-paritydb-weights = []
 std = [
   "common-primitives/std",
   "cumulus-pallet-aura-ext/std",

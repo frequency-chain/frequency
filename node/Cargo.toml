@@ -38,7 +38,12 @@ fp-rpc = { workspace = true, features = ["default"] }
 
 [features]
 std = []
-default = []
+default = [
+	"rocksdb",
+	"sql",
+	"txpool",
+	"rpc-binary-search-estimate",
+]
 runtime-benchmarks = ["frequency-cli/runtime-benchmarks"]
 frequency = ["frequency-service/frequency", "frequency-cli/frequency"]
 frequency-no-relay = [
@@ -57,6 +62,18 @@ frequency-lint-check = [
   "frequency-service/frequency-lint-check",
   "frequency-cli/frequency-lint-check",
 ]
+rocksdb = [
+	"fc-cli/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+	"fc-rpc/rocksdb"
+]
+sql = [
+	"fc-db/sql",
+	"fc-mapping-sync/sql",
+]
+txpool = ["fc-rpc/txpool"]
+rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 
 [lints]
 workspace = true

@@ -53,6 +53,7 @@ sc-sysinfo = { workspace = true }
 sc-rpc = { workspace = true }
 sc-telemetry = { workspace = true }
 sc-tracing = { workspace = true }
+sc-consensus-aura = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
 sp-api = { workspace = true }
@@ -114,6 +115,9 @@ fc-rpc = { workspace = true, features = ["aura"] }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
 fp-rpc = { workspace = true, features = ["default"] }
+fc-consensus = { workspace = true }
+fc-db = { workspace = true }
+fp-dynamic-fee = { workspace = true, features = ["default"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
@@ -123,7 +127,13 @@ sc-client-api = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
 
 [features]
-default = ["std"]
+default = [
+  "std",
+  "rocksdb",
+	"sql",
+	"txpool",
+	"rpc-binary-search-estimate",
+]
 std = ["sp-api/std", "sp-core/std"]
 runtime-benchmarks = [
   "frequency-runtime/runtime-benchmarks",
@@ -140,6 +150,22 @@ frequency-lint-check = [
   "frequency-testnet",
 ]
 try-runtime = ["frequency-runtime/try-runtime", "polkadot-service/try-runtime"]
+rocksdb = [
+	"sc-service/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+	"fc-rpc/rocksdb",
+	"frequency-runtime/with-rocksdb-weights"
+]
+paritydb = [
+	"frequency-runtime/with-paritydb-weights"
+]
+sql = [
+	"fc-db/sql",
+	"fc-mapping-sync/sql"
+]
+txpool = ["fc-rpc/txpool"]
+rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 
 [lints]
 workspace = true

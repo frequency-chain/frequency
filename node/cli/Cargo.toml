@@ -74,7 +74,7 @@ cli = [
   "frame-benchmarking-cli",
   "frame-benchmarking",
 ]
-default = ["std", "cli"]
+default = ["std", "cli", "rocksdb"]
 runtime-benchmarks = [
   "polkadot-cli/runtime-benchmarks",
   "frequency-runtime/runtime-benchmarks",
@@ -97,6 +97,14 @@ frequency-lint-check = [
   "frequency-local",
   "frequency-testnet",
   "frequency-service/frequency-lint-check",
+]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"sc-service/rocksdb",
+	"frequency-runtime/with-rocksdb-weights",
+]
+paritydb = [
+	"frequency-runtime/with-paritydb-weights",
 ]
 
 [lints]

@@ -12,15 +12,18 @@ pub fn run_as_localchain(cli: Cli) -> sc_service::Result<(), sc_cli::Error> {
 		TransactionPoolType::SingleState.into(),
 		true,
 	);
+	let eth_config = cli.eth;
 
 	runner.run_node_until_exit(|config| async move {
 		start_frequency_dev_sealing_node(
 			config,
+			eth_config,
 			cli.sealing,
 			u16::from(cli.sealing_interval),
 			cli.sealing_create_empty_blocks,
 			Some(override_pool_config),
 		)
 		.map_err(Into::into)
+		.await
 	})
 }

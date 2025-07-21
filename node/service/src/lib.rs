@@ -8,5 +8,6 @@
 pub mod block_sealing;
 pub mod chain_spec;
 pub mod common;
+pub mod eth;
 pub mod rpc;
 pub mod service;

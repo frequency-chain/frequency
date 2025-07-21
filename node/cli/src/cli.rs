@@ -8,6 +8,7 @@ use std::path::PathBuf;
 #[cfg(feature = "frequency-no-relay")]
 use std::num::NonZeroU16;
 
+use cli_opt::EthConfiguration;
 #[cfg(feature = "frequency-no-relay")]
 use cli_opt::SealingMode;
 
@@ -100,6 +101,9 @@ pub struct Cli {
 	#[cfg(feature = "frequency-no-relay")]
 	#[arg(long, help = "Create empty blocks in interval sealing modes", default_value = "false")]
 	pub sealing_create_empty_blocks: bool,
+
+	#[command(flatten)]
+	pub eth: EthConfiguration,
 }
 
 #[derive(Debug)]

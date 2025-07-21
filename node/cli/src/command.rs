@@ -318,8 +318,9 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::ExportGenesisHead(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
+			let eth = cli.eth;
 			runner.sync_run(|config| {
-				let partials = new_partial(&config, false, None)?;
+				let partials = new_partial(&config, &eth, false, None)?;
 
 				cmd.run(partials.client)
 			})
@@ -333,7 +334,7 @@ pub fn run() -> Result<()> {
 		},
 		Some(Subcommand::Benchmark(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
-
+			let eth = cli.eth;
 			match cmd {
 				BenchmarkCmd::Pallet(cmd) =>
 					if cfg!(feature = "runtime-benchmarks") {
@@ -348,7 +349,7 @@ pub fn run() -> Result<()> {
 							.into())
 					},
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, &eth, false, None)?;
 					cmd.run(partials.client)
 				}),
 				#[cfg(not(feature = "runtime-benchmarks"))]
@@ -361,14 +362,14 @@ pub fn run() -> Result<()> {
 					.into()),
 				#[cfg(feature = "runtime-benchmarks")]
 				BenchmarkCmd::Storage(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, &eth, false, None)?;
 					let db = partials.backend.expose_db();
 					let storage = partials.backend.expose_storage();
 
 					cmd.run(config, partials.client.clone(), db, storage)
 				}),
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|config| {
-					let partials = new_partial(&config, false, None)?;
+					let partials = new_partial(&config, &eth, false, None)?;
 					let ext_builder = RemarkBuilder::new(partials.client.clone());
 					let should_record_proof = false;
 

@@ -22,6 +22,7 @@ pub fn wasm_binary_unwrap() -> &'static [u8] {
 
 use alloc::borrow::Cow;
 use common_runtime::constants::currency::UNITS;
+use core::marker::PhantomData;
 #[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
 use cumulus_pallet_parachain_system::{
 	DefaultCoreSelector, RelayNumberMonotonicallyIncreases, RelaychainDataProvider,
@@ -46,7 +47,7 @@ use pallet_collective::Members;
 #[cfg(any(feature = "runtime-benchmarks", feature = "test"))]
 use pallet_collective::ProposalCount;
 
-use parity_scale_codec::Encode;
+use parity_scale_codec::{Decode, Encode};
 
 #[cfg(feature = "std")]
 use sp_version::NativeVersion;
@@ -110,9 +111,7 @@ use frame_system::{
 	limits::{BlockLength, BlockWeights},
 	EnsureRoot, EnsureSigned,
 };
-use pallet_ethereum::{
-	Call::transact, PostLogContent, Transaction as EthereumTransaction,
-};
+use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 
 use alloc::{boxed::Box, vec, vec::Vec};
 
@@ -431,6 +430,29 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 		}
 
 		T::DbWeight::get().reads_writes(1, 1)
+	}
+}
+
+#[derive(Clone)]
+pub struct TransactionConverter<B>(PhantomData<B>);
+
+impl<B> Default for TransactionConverter<B> {
+	fn default() -> Self {
+		Self(PhantomData)
+	}
+}
+
+impl<B: BlockT> fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> for TransactionConverter<B> {
+	fn convert_transaction(
+		&self,
+		transaction: pallet_ethereum::Transaction,
+	) -> <B as BlockT>::Extrinsic {
+		let extrinsic = UncheckedExtrinsic::new_bare(
+			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
+		);
+		let encoded = extrinsic.encode();
+		<B as BlockT>::Extrinsic::decode(&mut &encoded[..])
+			.expect("Encoded extrinsic is always valid")
 	}
 }
 
@@ -2248,6 +2270,14 @@ sp_api::impl_runtime_apis! {
 
 		fn initialize_pending_block(header: &<Block as BlockT>::Header) {
 			Executive::initialize_block(header);
+		}
+	}
+
+	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
+		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
+			UncheckedExtrinsic::new_bare(
+				pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
+			)
 		}
 	}
 

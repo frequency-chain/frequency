@@ -7,7 +7,7 @@
 use cumulus_client_cli::CollatorOptions;
 use frequency_runtime::RuntimeApi;
 use sc_client_api::Backend;
-use std::{ptr::addr_eq, sync::Arc, time::Duration};
+use std::{path::Path, ptr::addr_eq, sync::Arc, time::Duration};
 
 // RPC
 use common_primitives::node::{AccountId, Balance, Block, Hash, Index as Nonce};
@@ -40,6 +40,11 @@ use futures::FutureExt;
 use sc_consensus::{ImportQueue, LongestChain};
 use sc_executor::{HeapAllocStrategy, WasmExecutor, DEFAULT_HEAP_ALLOC_STRATEGY};
 
+use crate::eth::{db_config_dir, FrontierBackend};
+use cli_opt::{BackendType, EthConfiguration};
+use fc_consensus::FrontierBlockImport;
+use fc_storage::{StorageOverride, StorageOverrideHandler};
+use sc_consensus::BoxBlockImport;
 use sc_network::{config::FullNetworkConfiguration, NetworkBackend, NetworkBlock, NetworkService};
 use sc_network_sync::SyncingService;
 use sc_service::{Configuration, PartialComponents, TFullBackend, TFullClient, TaskManager};
@@ -50,18 +55,14 @@ use sp_keystore::KeystorePtr;
 
 use common_runtime::prod_or_testnet_or_local;
 
-type FullBackend = TFullBackend<Block>;
-
-type MaybeFullSelectChain = Option<LongestChain<FullBackend, Block>>;
-
 #[cfg(not(feature = "runtime-benchmarks"))]
-type HostFunctions = (
+pub type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	common_primitives::offchain::custom::HostFunctions,
 );
 
 #[cfg(feature = "runtime-benchmarks")]
-type HostFunctions = (
+pub type HostFunctions = (
 	cumulus_client_service::ParachainHostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
 	common_primitives::offchain::custom::HostFunctions,
@@ -72,13 +73,19 @@ pub use frequency_runtime;
 
 type ParachainExecutor = WasmExecutor<HostFunctions>;
 
+/// Full client.
+pub type FullClient<B, RA, HF> = sc_service::TFullClient<B, RA, WasmExecutor<HF>>;
+/// Full backend.
+pub type FullBackend<B> = sc_service::TFullBackend<B>;
+
 /// Frequency parachain
 pub type ParachainClient = TFullClient<Block, RuntimeApi, ParachainExecutor>;
 
-type ParachainBackend = TFullBackend<Block>;
+pub type ParachainBackend = FullBackend<Block>;
 
 type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, ParachainBackend>;
 
+type MaybeFullSelectChain = Option<LongestChain<FullBackend<Block>, Block>>;
 /// Starts a `ServiceBuilder` for a full service.
 ///
 /// Use this macro if you don't actually need the full service, but just the builder in order to
@@ -86,6 +93,7 @@ type ParachainBlockImport = TParachainBlockImport<Block, Arc<ParachainClient>, P
 #[allow(deprecated)]
 pub fn new_partial(
 	config: &Configuration,
+	eth_config: &EthConfiguration,
 	instant_sealing: bool,
 	override_pool_config: Option<TransactionPoolOptions>,
 ) -> Result<
@@ -95,7 +103,13 @@ pub fn new_partial(
 		MaybeFullSelectChain,
 		sc_consensus::DefaultImportQueue<Block>,
 		sc_transaction_pool::TransactionPoolHandle<Block, ParachainClient>,
-		(ParachainBlockImport, Option<Telemetry>, Option<TelemetryWorkerHandle>),
+		(
+			BoxBlockImport<Block>,
+			Option<Telemetry>,
+			Option<TelemetryWorkerHandle>,
+			FrontierBackend<Block, ParachainClient>,
+			Arc<dyn StorageOverride<Block>>,
+		),
 	>,
 	sc_service::Error,
 > {
@@ -153,20 +167,55 @@ pub fn new_partial(
 		.build(),
 	);
 
-	let block_import = ParachainBlockImport::new(client.clone(), backend.clone());
+	let storage_override = Arc::new(StorageOverrideHandler::<_, _, _>::new(client.clone()));
+	let frontier_backend = match eth_config.frontier_backend_type {
+		BackendType::KeyValue => FrontierBackend::KeyValue(Arc::new(fc_db::kv::Backend::open(
+			Arc::clone(&client),
+			&config.database,
+			&db_config_dir(config),
+		)?)),
+		BackendType::Sql => {
+			let db_path = db_config_dir(config).join("sql");
+			std::fs::create_dir_all(&db_path).expect("failed creating sql db directory");
+			let backend = futures::executor::block_on(fc_db::sql::Backend::new(
+				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+					path: Path::new("sqlite:///")
+						.join(db_path)
+						.join("frontier.db3")
+						.to_str()
+						.unwrap(),
+					create_if_missing: true,
+					thread_count: eth_config.frontier_sql_backend_thread_count,
+					cache_size: eth_config.frontier_sql_backend_cache_size,
+				}),
+				eth_config.frontier_sql_backend_pool_size,
+				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
+				storage_override.clone(),
+			))
+			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
+			FrontierBackend::Sql(Arc::new(backend))
+		},
+	};
+
+	let parachain_block_import = ParachainBlockImport::new(client.clone(), backend.clone());
 
 	#[cfg(feature = "frequency-no-relay")]
-	let import_queue = sc_consensus_manual_seal::import_queue(
-		Box::new(client.clone()),
-		&task_manager.spawn_essential_handle(),
-		config.prometheus_registry(),
+	let (import_queue, block_import) = (
+		sc_consensus_manual_seal::import_queue(
+			Box::new(client.clone()),
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+		),
+		Box::new(FrontierBlockImport::new(client.clone(), client.clone())),
 	);
 
+	// TODO fix this
 	#[cfg(not(feature = "frequency-no-relay"))]
-	let import_queue = build_import_queue(
+	let (import_queue, block_import) = build_import_queue(
 		client.clone(),
-		block_import.clone(),
+		parachain_block_import.clone(),
 		config,
+		eth_config,
 		telemetry.as_ref().map(|telemetry| telemetry.handle()),
 		&task_manager,
 	);
@@ -182,7 +231,13 @@ pub fn new_partial(
 		task_manager,
 		transaction_pool,
 		select_chain,
-		other: (block_import, telemetry, telemetry_worker_handle),
+		other: (
+			block_import,
+			telemetry,
+			telemetry_worker_handle,
+			frontier_backend,
+			storage_override,
+		),
 	};
 
 	Ok(params)
@@ -276,11 +331,36 @@ pub async fn start_parachain_node(
 			false => None,
 		};
 
+		let eth_deps = crate::rpc::EthDeps {
+			client: client.clone(),
+			pool: pool.clone(),
+			graph: pool.clone(),
+			converter: Some(TransactionConverter::<B>::default()),
+			is_authority,
+			enable_dev_signer,
+			network: network.clone(),
+			sync: sync_service.clone(),
+			frontier_backend: match &*frontier_backend {
+				fc_db::Backend::KeyValue(b) => b.clone(),
+				fc_db::Backend::Sql(b) => b.clone(),
+			},
+			storage_override: storage_override.clone(),
+			block_data_cache: block_data_cache.clone(),
+			filter_pool: filter_pool.clone(),
+			max_past_logs,
+			fee_history_cache: fee_history_cache.clone(),
+			fee_history_cache_limit,
+			execute_gas_limit_multiplier,
+			forced_parent_hashes: None,
+			pending_create_inherent_data_providers,
+		};
+
 		Box::new(move |_| {
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: transaction_pool.clone(),
 				command_sink: None,
+				eth: eth_deps,
 			};
 
 			crate::rpc::create_full(deps, backend.clone()).map_err(Into::into)
@@ -384,25 +464,43 @@ fn build_import_queue(
 	client: Arc<ParachainClient>,
 	block_import: ParachainBlockImport,
 	config: &Configuration,
+	eth_config: &EthConfiguration,
 	telemetry: Option<TelemetryHandle>,
 	task_manager: &TaskManager,
-) -> sc_consensus::DefaultImportQueue<Block> {
-	cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
-		sp_consensus_aura::sr25519::AuthorityPair,
-		_,
-		_,
-		_,
-		_,
-	>(
-		client,
-		block_import,
-		move |_, _| async move {
-			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
-			Ok(timestamp)
-		},
-		&task_manager.spawn_essential_handle(),
-		config.prometheus_registry(),
-		telemetry,
+) -> (sc_consensus::DefaultImportQueue<Block>, BoxBlockImport<Block>) {
+	let frontier_block_import = FrontierBlockImport::new(block_import.clone(), client.clone());
+	// TODO: fix this
+	// let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+	// let target_gas_price = eth_config.target_gas_price;
+	// let create_inherent_data_providers = move |_, ()| async move {
+	// 	let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+	// 	let slot =
+	// 		sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+	// 			*timestamp,
+	// 			slot_duration,
+	// 		);
+	// 	let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+	// 	Ok((slot, timestamp, dynamic_fee))
+	// };
+	(
+		cumulus_client_consensus_aura::equivocation_import_queue::fully_verifying_import_queue::<
+			sp_consensus_aura::sr25519::AuthorityPair,
+			_,
+			_,
+			_,
+			_,
+		>(
+			client,
+			block_import,
+			move |_, _| async move {
+				let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
+				Ok(timestamp)
+			},
+			&task_manager.spawn_essential_handle(),
+			config.prometheus_registry(),
+			telemetry,
+		),
+		Box::new(frontier_block_import),
 	)
 }
 
