@@ -95,6 +95,7 @@ mod public_testnet_keys {
 ///
 /// A vector of tuples, where each tuple contains the `AccountId` and `AuraId`
 /// of an invulnerable collator.
+#[allow(clippy::unwrap_used)]
 fn default_invulnerables() -> Vec<(AccountId, AuraId)> {
 	vec![
 		(

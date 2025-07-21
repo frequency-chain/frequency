@@ -9,6 +9,8 @@ PROFILE_DIR=${PROFILE}
 ALL_EXTERNAL_PALLETS=( \
   frame_system_extensions \
   cumulus_pallet_weight_reclaim \
+  cumulus_pallet_xcmp_queue \
+  pallet_assets \
   pallet_balances \
   pallet_collator_selection \
   pallet_collective \
@@ -21,7 +23,8 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
-  pallet_assets \
+  pallet_message_queue \
+  pallet_xcm \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \

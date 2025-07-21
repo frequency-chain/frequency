@@ -1687,9 +1687,12 @@ construct_runtime!(
 		MessageQueue: pallet_message_queue::{Pallet, Call, Storage, Event<T>} = 74,
 
 		#[cfg(feature = "frequency-bridging")]
-		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 76,
+		ForeignAssets: pallet_assets::{Pallet, Call, Storage, Event<T>} = 75,
 	}
 );
+
+#[cfg(feature = "runtime-benchmarks")]
+use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benches {
@@ -1698,6 +1701,7 @@ mod benches {
 		[frame_system, SystemBench::<Runtime>]
 		[frame_system_extensions, SystemExtensionsBench::<Runtime>]
 		[cumulus_pallet_weight_reclaim, WeightReclaim]
+		[pallet_assets, ForeignAssets]
 		[pallet_balances, Balances]
 		[pallet_collective, Council]
 		[pallet_collective, TechnicalCommittee]
@@ -1711,6 +1715,9 @@ mod benches {
 		[pallet_utility, Utility]
 		[pallet_proxy, Proxy]
 		[pallet_transaction_payment, TransactionPayment]
+		[cumulus_pallet_xcmp_queue, XcmpQueue]
+		[pallet_message_queue, MessageQueue]
+		[pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -1723,7 +1730,6 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
-		[pallet_assets, ForeignAssets]
 	);
 }
 

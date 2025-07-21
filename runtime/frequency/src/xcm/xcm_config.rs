@@ -12,10 +12,13 @@ use crate::xcm::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use staging_xcm::latest::prelude::{Location, Parachain};
+use staging_xcm::latest::{prelude::{Here, Location, Parachain, Parent}, Asset, AssetId, Fungibility};
 
 #[cfg(feature = "runtime-benchmarks")]
 use crate::xcm::ForeignAssetsAssetId;
+
+#[cfg(feature = "runtime-benchmarks")]
+use common_runtime::weights;
 
 use frame_support::{
 	parameter_types,
@@ -98,7 +101,7 @@ impl pallet_xcm::Config for Runtime {
 	type SovereignAccountOf = LocationToAccountId;
 	/// Not sure what this is for?
 	type MaxLockers = ConstU32<8>;
-	type WeightInfo = pallet_xcm::TestWeightInfo;
+	type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
@@ -118,5 +121,30 @@ pub struct XcmBenchmarkHelper;
 impl pallet_assets::BenchmarkHelper<ForeignAssetsAssetId> for XcmBenchmarkHelper {
 	fn create_asset_id_parameter(id: u32) -> ForeignAssetsAssetId {
 		Location::new(1, [Parachain(id)])
+	}
+}
+#[cfg(feature = "runtime-benchmarks")]
+impl pallet_xcm::benchmarking::Config for Runtime {
+	/// Helper that makes sure `SendXcm` succeeds in the benches.
+	type DeliveryHelper = (); // or a real helper if you already have one
+
+	/// A destination that `XcmRouter` can reach in your test setup.
+	/// The simplest is usually the relay‐chain:
+	fn reachable_dest() -> Option<Location> {
+		Some(Parent.into())
+	}
+
+	// The remaining associated functions are only needed for the
+	// `teleport_assets`, `reserve_transfer_assets`, `transfer_assets`
+	// and `claim_assets` benches.  Supply real data when you need
+	// those, otherwise leave the defaults.
+	//
+	// fn teleportable_asset_and_dest() -> Option<(Asset, Location)> { … }
+	// fn reserve_transferable_asset_and_dest() -> Option<(Asset, Location)> { … }
+	// fn set_up_complex_asset_transfer() -> Option<(Assets, u32, Location, Box<dyn FnOnce()>)> { … }
+	fn get_asset() -> Asset {
+		// Any asset your AssetTransactor can handle is fine; the exact
+		// value does not matter for weight measurement.
+		Asset { fun: Fungibility::Fungible(1_000_000_000_000), id: AssetId(Here.into()) }
 	}
 }

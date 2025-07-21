@@ -35,6 +35,11 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-utility = { workspace = true }
 pallet-proxy = { workspace = true }
+# Bridging
+pallet-assets = { workspace = true }
+pallet-message-queue = { workspace = true }
+pallet-xcm = { workspace = true }
+cumulus-pallet-xcmp-queue = { workspace = true }
 # cumulus
 cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
@@ -47,13 +52,20 @@ frequency-testnet = []
 frequency-westend = []
 frequency-local = []
 frequency-no-relay = []
-runtime-benchmarks = ["pallet-collective/runtime-benchmarks"]
+runtime-benchmarks = [
+  "pallet-collective/runtime-benchmarks",
+  "cumulus-pallet-xcmp-queue/runtime-benchmarks",
+  "pallet-assets/runtime-benchmarks",
+  "pallet-message-queue/runtime-benchmarks",
+  "pallet-xcm/runtime-benchmarks",
+]
 frequency-bridging = []
 std = [
   "frame-support/std",
   "frame-system/std",
   "cumulus-primitives-core/std",
   "cumulus-pallet-weight-reclaim/std",
+  "cumulus-pallet-xcmp-queue/std",
   "pallet-democracy/std",
   "pallet-collator-selection/std",
   "pallet-collective/std",
@@ -62,6 +74,9 @@ std = [
   "pallet-balances/std",
   "pallet-utility/std",
   "pallet-proxy/std",
+  "pallet-assets/std",
+  "pallet-message-queue/std",
+  "pallet-xcm/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment/std",
   "pallet-scheduler/std",
@@ -76,6 +91,7 @@ try-runtime = [
   "frame-support/try-runtime",
   "frame-system/try-runtime",
   "cumulus-pallet-weight-reclaim/try-runtime",
+  "cumulus-pallet-xcmp-queue/try-runtime",
   "pallet-collator-selection/try-runtime",
   "pallet-collective/try-runtime",
   "pallet-democracy/try-runtime",
@@ -85,6 +101,9 @@ try-runtime = [
   "pallet-transaction-payment/try-runtime",
   "pallet-utility/try-runtime",
   "pallet-proxy/try-runtime",
+  "pallet-assets/try-runtime",
+  "pallet-message-queue/try-runtime",
+  "pallet-xcm/try-runtime",
 ]
 
 [lints]
