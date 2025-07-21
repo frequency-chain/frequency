@@ -12,7 +12,10 @@ use crate::xcm::{
 };
 
 #[cfg(feature = "runtime-benchmarks")]
-use staging_xcm::latest::{prelude::{Here, Location, Parachain, Parent}, Asset, AssetId, Fungibility};
+use staging_xcm::latest::{
+	prelude::{Here, Location, Parachain, Parent},
+	Asset, AssetId, Fungibility,
+};
 
 #[cfg(feature = "runtime-benchmarks")]
 use crate::xcm::ForeignAssetsAssetId;
