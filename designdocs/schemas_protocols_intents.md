@@ -107,9 +107,8 @@ on-chain Intent to determine whether an application should be allowed access to 
 - Versions are stored in a monotonic, gapless array
 - A new SchemaId is automatically assigned the next version in the Intent
 - Older versions are preserved permanently
-- Delegations apply to the Intent, not a specific schema version ID
-    - _exception: do we continue to support delegation by `SchemaId` for backwards-compatibility?_
-- _Question: can versions be deprecated?_
+- Delegations apply to an Intent
+- _Question: can Schemas (particular versions) be deprecated?_
 
 ### 🧭 Governance Rules
 
@@ -133,22 +132,15 @@ efficiency, as well as the addition of some metadata.
 ## 7. **Delegation Semantics** <a id="section_7"></a>
 
 Delegation is the mechanism by which a user authorizes a provider to act on their behalf. Currently, this is limited to
-individual `SchemaId`s, but we propose expanding the delegation model to include one or more of the following:
+individual `SchemaId`s, but we propose changing the delegation model to the following:
 
-- Delegation by `SchemaId` (existing/legacy, for future deprecation)
 - Delegation by `IntentId` (implies all schema versions within the Intent)
     - Option to consider: delegation by `IntentId` + specific version/range of versions
-
-All delegation modes above may coexist, allowing for graceful migration and flexible usage.
 
 ## 8. **Authorization Resolution Model** <a id="section_8"></a>
 
 This section outlines how delegation is verified at the time of an extrinsic call or message submission. In the current
-model, permissions are evaluated by a specific `SchemaId`. In the new model, the runtime must also support evaluating
-permissions based on an `IntentId`. This delegation model will entail either:
-
-- 1-2 additional storage reads to determine the Intent associated with a given `SchemaId`, or
-- New extrinsics that require `IntentId` to be supplied in addition to `SchemaId`
+model, permissions are evaluated by a specific `SchemaId`. In the new model, permissions are based on an `IntentId`.
 
 ### 🧪 Additional Considerations
 
@@ -163,51 +155,14 @@ ownership in the redesigned Frequency architecture.
 
 - On-chain runtime operations should only work with compact numeric identifiers (`SchemaId`, `IntentId`, `ProtocolId`)
 - Human-readable names must be resolved by the client prior to calling extrinsics
-- Delegations are unified under a single structure, regardless of type
 - Minimize storage duplication and unnecessary indices
 
 ----------
 
 ### 🧩 Delegation Structures
 
-```rust
-// NOTE: DelegationTarget is not needed if we eliminate Schema-based delegation via a storage migration
-pub enum DelegationTarget {
-    Schema(SchemaId),
-    Intent(IntentId),
-}
-
-pub struct DelegationInfo {
-    pub granted_at: BlockNumber,
-    pub revoked_at: Option<BlockNumber>,
-}
-
-pub struct Delegation {
-    pub revoked_at: BlockNumber,
-    // NOTE: If we eliminate DelegationTarget for IntentId, we can easily restore the current implmentation's
-    // BoundedBTreeMap implementation for additional runtime efficiency
-    pub delegated_targets: BoundedBTreeMap<DelegationTarget, DelegationInfo, MaxTargetsPerDelegation>,
-}
-
-pub type Delegations<T> = StorageDoubleMap<
-    _, Blake2_128Concat, MsaId,       // Delegator
-    Blake2_128Concat, ProviderId,     // Provider
-    Delegation,
->;
-```
-
-This structure handles all types of delegations (schema, intent) uniformly. Legacy `SchemaId` delegation
-can optionally remain supported, with intent-based delegation layered on top.
-
-This unified structure supports flexibility while maintaining clear access logic.<br/>
-**NOTE:** this storage format approximately doubles the storage requirement for delegations (from a max of ~180 bytes
-per
-MSA/Provider currently, to a max of ~360 bytes for the same number of delegations). However, this size differential is
-not due to the architectural difference in the storage structure, but rather the fact that we've chosen to store
-additional information (`granted_at` block number) that we previously did not retain, and has been noted as a deficiency
-of the current Delegation storage model. If we choose _not_ to correct that deficiency, the storage impact of this
-architectural change is minimal (~30-byte increase per MSA/Provider for the maximum number of delegations)
-
+The on-chain storage structures for Delegations do not change as a result of this design, other than the fact that the
+`SchemaId` reference currently stored becomes an `IntentId` reference of the same value.
 ----------
 
 ### 🏷 Intents and Protocols
@@ -240,24 +195,16 @@ from `ProtocolId/protocol name + intent name → IntentId`.
 
 ----------
 
-### 🧹 Design Simplification
-
-The current runtime includes a top-level flag indicating whether any delegation exists between a user and provider. This
-was used to shortcut delegation checks. In this model, that summary flag is dropped — its only purpose was to optimize
-for the empty case. If need be, the design can be updated to preserve this structure.
-
-This simplification removes complexity and keeps delegation logic self-contained.
-
 ## 10. **API Identifier Handling and Resolution** <a id="section_10"></a>
 
 The choice of identifiers in runtime and SDK APIs has significant implications for both usability and performance.
-Historically, Frequency APIs used `SchemaVersionId` for delegation and data interpretation. The proposed model must
+Historically, Frequency APIs used `SchemaId` both for delegation and data interpretation. The proposed model must
 account for schemas and intents, while maintaining runtime efficiency.
 
 ### 🔢 Preferred On-Chain Identifiers
 
-On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `ProtocolId` and `IntentId` rather
-than `protocol_name.intent_name`.
+On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `ProtocolId`, `IntentId`, and
+`SchemaId` rather than `protocol_name.intent_name`.
 
 String identifiers such as protocol names or intent names should never be parsed on-chain. These must
 be resolved by SDKs and off-chain services (e.g., the Frequency Gateway).
@@ -274,19 +221,13 @@ Three possible design patterns:
 
 1. **Submit by SchemaId only (Legacy/Compatible):**
 
-    - Fast, direct lookup
     - Requires on-chain schema metadata to determine intent for validation
-    - May require multi-delegation validation (intent or schema)
+        - this is already read in the current flow, so no additional reads
+    - Given the `IntentId` retrieved from the `SchemaInfo`, delegation lookup proceeds as currently
 
-2. **Submit by SchemaId + IntentId (Explicit):**
+3. **Submit by IntentId only (No Schema/future extrinsics):**
 
-    - Enables precision delegation checks
-    - Slightly more complex client integration
-
-3. **Submit by IntentId only (No Schema):**
-
-    - Enables non-schema-based actions (e.g., future custom actions)
-    - Runtime must validate delegation by `IntentId`
+    - Enables non-schema-based actions (e.g., future use cases)
 
 **NOTE:** Minimally, `SchemaId` _must_ be provided for all use cases that involve writing data to be associated with a
 schema, because the specific `SchemaId` must be recorded in the data or event payload somehow. There are no current use
@@ -295,41 +236,18 @@ cases for extrinsics that expect _only_ an `IntentId`.
 ### 🎯 Developer Experience Considerations
 
 - APIs should remain backward compatible with `SchemaId`-based extrinsic calls.
-- Whether to expose intent-based extrinsics directly is an open question.
 - SDKs such as the Frequency Gateway may offer string-based input and resolve IDs internally.
 
 ## 11. **Migration Strategy** <a id="section_11"></a>
 
-Transitioning from the current schema delegation system to the new schema + intent model must be handled
+Transitioning from the current schema delegation system to the new intent delegation model must be handled
 carefully to preserve backward compatibility while enabling the new architecture to roll out incrementally.
 
-### 🧩 Legacy Support
+### 🚀 Protocol and Intent Bootstrapping
 
-- Legacy `SchemaId`-based delegations will continue to be supported for existing providers
-- Existing data using older schema versions remains valid
-- Providers can continue operating without changes while the new system is phased in
-
-### 🚀 Protocol Bootstrapping
-
-- Governance/migration may backfill `IntentId`s and `ProtocolId`s for existing DSNP schemas
-    - Each legacy schema version may be added to its corresponding schema version array
-    - Historical schema versions will be placed in schema version order
-
-### 🔁 Delegation Migration
-
-- Providers can request users re-authorize using `IntentId` delegations at their discretion
-- SDK tooling may provide utilities to convert legacy schema delegations into intent equivalents
-
-### 🛑 Sunset of Schema-Based Delegation (Future)
-
-Once adoption of intent/protocol delegation is widespread:
-
-- Chain governance may disable new schema-based delegations
-- Existing schema-based delegations may be invalidated at a future block height
-- Tooling will issue deprecation warnings ahead of this change
-
-This strategy ensures a smooth, opt-in path to the new system while preserving all critical functionality during the
-transition period.
+- Migration may backfill `IntentId`s and `ProtocolId`s for existing DSNP schemas
+    - For each existing `SchemaId`, a corresponding `Intent` will be created with the same numeric ID value, so that
+      existing Delegation references do not need to be migrated
 
 ## 12. **Open Questions and Next Steps** <a id="section_12"></a>
 
@@ -338,27 +256,12 @@ intentionally unresolved to guide future design discussions within the developme
 
 ### ❓ Open Questions
 
-- Is it possible to devise a migration strategy that is backwards-compatible but somehow migrates current delegations to
-  Intent-based, thereby allowing us to immediately deprecate SchemaId-based delegation?
-
 - What developer-facing tools will be needed to ease migration and debugging?
 
 - Will schema deprecation or version invalidation ever be supported, or are all published schemas permanently
   active?
 
-- This design does not address the following shortcoming in the delegation model:
-  If a user delegates to a Provider, then revokes that delegation, and subsequently adds the same delegation again, we
-  lose information about the first period delegation. Example:
-    - User A delegates Intent 1234 to Provider 'Alice' at block 100
-    - User A revokes delegation at block 200.
-        - We are able to determine that content posted by Alice on behalf of User A between blocks 100-200 is valid;
-          conversely, we know that any content posted outside the block range of 100-200 was not authorized
-    - User A re-delegates Provider Alice at block 400
-        - We are able to determine the validity of content posted by Alice on behalf of User A for blocks >= 400.
-          However, we have now lost the information about the prior validity period of blocks 100-200, and can no longer
-          recognize that content posted in that block range was authorized. (Presumably, we could still make that
-          determination if we have access to an archive node and query the storage at the block number at which the
-          content was posted...)
+- This design specifically does not address the issue described in #2510
 
 ### 🧭 Next Steps
 
