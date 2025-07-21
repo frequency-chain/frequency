@@ -199,7 +199,8 @@ benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility \
 benchmarks-pallet_proxy \
-benchmarks-pallet_transaction_payment
+benchmarks-pallet_transaction_payment \
+benchmarks-pallet_xcm \
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -229,6 +230,7 @@ benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
 benchmarks-pallet_proxy-local \
 benchmarks-pallet_transaction_payment-local \
+benchmarks-pallet_xcm-local \
 
 .PHONY: benchmarks
 benchmarks:

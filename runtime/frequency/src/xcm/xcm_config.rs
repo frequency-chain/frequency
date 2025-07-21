@@ -17,6 +17,8 @@ use staging_xcm::latest::prelude::{Location, Parachain};
 #[cfg(feature = "runtime-benchmarks")]
 use crate::xcm::ForeignAssetsAssetId;
 
+use common_runtime::weights;
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, Disabled, Everything, Nothing},

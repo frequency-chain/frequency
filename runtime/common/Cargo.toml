@@ -38,6 +38,7 @@ pallet-proxy = { workspace = true }
 # Bridging
 pallet-assets = { workspace = true }
 pallet-message-queue = { workspace = true }
+pallet-xcm = { workspace = true }
 cumulus-pallet-xcmp-queue = { workspace = true }
 # cumulus
 cumulus-pallet-weight-reclaim = { workspace = true }
@@ -56,6 +57,7 @@ runtime-benchmarks = [
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
   "pallet-assets/runtime-benchmarks",
   "pallet-message-queue/runtime-benchmarks",
+  "pallet-xcm/runtime-benchmarks",
 ]
 frequency-bridging = []
 std = [
@@ -74,6 +76,7 @@ std = [
   "pallet-proxy/std",
   "pallet-assets/std",
   "pallet-message-queue/std",
+  "pallet-xcm/std",
   "pallet-timestamp/std",
   "pallet-transaction-payment/std",
   "pallet-scheduler/std",
@@ -100,6 +103,7 @@ try-runtime = [
   "pallet-proxy/try-runtime",
   "pallet-assets/try-runtime",
   "pallet-message-queue/try-runtime",
+  "pallet-xcm/try-runtime",
 ]
 
 [lints]
