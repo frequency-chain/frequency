@@ -161,7 +161,20 @@ Proposed are the following changes:
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
     - This extrinsic should do an upsert operation on the `ProviderToApplicationRegistryEntry` storage map.
-5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and the `ProviderPayload`.
+5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and `ProviderRegistryEntry`.
+
+    ```rust
+        // Example of how the entry might look like
+        let application_entry = ProviderRegistryEntry {
+            default_name: application_name,
+            localized_names: BTreeMap::new(), // Initially empty, can be updated later
+            default_logo_250_100_png_bytes: BoundedVec::default(), // Initially empty, can be updated later
+            localized_logo_250_100_png_bytes: BTreeMap::new(), // Initially empty, can be updated later
+        };
+
+        ProviderToApplicationRegistryEntry::<T>::insert(provider_id, application_identifier, application_entry);
+    ```
+
 6. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
 7. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIdentifier`.
 
