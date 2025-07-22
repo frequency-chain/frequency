@@ -37,12 +37,9 @@ impl xcm_executor::Config for XcmConfig {
 	type RuntimeCall = RuntimeCall;
 	type XcmSender = XcmRouter;
 	type XcmEventEmitter = PolkadotXcm;
-	// How to withdraw and deposit an asset.
 	type AssetTransactor = AssetTransactors;
 	type OriginConverter = XcmOriginToTransactDispatchOrigin;
 	type IsReserve = TrustedReserves;
-	// in order to register our asset in asset hub
-	// once the asset is registered we can teleport our native asset to asset hub
 	type IsTeleporter = TrustedTeleporters;
 	type UniversalLocation = UniversalLocation;
 	type Barrier = Barrier;
@@ -60,7 +57,7 @@ impl xcm_executor::Config for XcmConfig {
 	type MessageExporter = ();
 	type UniversalAliases = Nothing;
 	type CallDispatcher = RuntimeCall;
-	type SafeCallFilter = Everything;
+	type SafeCallFilter = Nothing;
 	type Aliasers = Nothing;
 	type TransactionalProcessor = FrameTransactionalProcessor;
 	type HrmpNewChannelOpenRequestHandler = ();
@@ -71,37 +68,38 @@ impl xcm_executor::Config for XcmConfig {
 
 impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	type XcmRouter = XcmRouter;
-	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
-	// update to Nothing and create extrinsic
-	type XcmExecuteFilter = Everything;
-	// ^ Disable dispatchable execute on the XCM pallet.
-	// Needs to be `Everything` for local testing.
-	type XcmExecutor = XcmExecutor<XcmConfig>;
-	// update to only allow to teleport native
-	type XcmTeleportFilter = Everything;
-	// Lets only allow reserve transfers of DOT
-	type XcmReserveTransferFilter = Everything;
-	type Weigher = Weigher;
-	type UniversalLocation = UniversalLocation;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
+	type WeightInfo = pallet_xcm::TestWeightInfo;
+
+	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type XcmRouter = XcmRouter;
+	
+	type ExecuteXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
+	type XcmExecuteFilter = Everything;
+	type XcmExecutor = XcmExecutor<XcmConfig>;
+
+	type XcmTeleportFilter = Everything;
+	type XcmReserveTransferFilter = Everything;
+
+	type Weigher = Weigher;
+	type UniversalLocation = UniversalLocation;
 
 	const VERSION_DISCOVERY_QUEUE_SIZE: u32 = 100;
 	// ^ Override for AdvertisedXcmVersion default
 	type AdvertisedXcmVersion = pallet_xcm::CurrentXcmVersion;
+
+	type AdminOrigin = EnsureRoot<AccountId>;
+
 	type Currency = Balances;
 	type CurrencyMatcher = ();
 	type TrustedLockers = ();
-	// I do not thingk we need this
-	type SovereignAccountOf = LocationToAccountId;
-	/// Not sure what this is for?
-	type MaxLockers = ConstU32<8>;
-	type WeightInfo = pallet_xcm::TestWeightInfo;
-	type AdminOrigin = EnsureRoot<AccountId>;
+	type MaxLockers = ConstU32<0>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
+	type SovereignAccountOf = ();
+	// type SovereignAccountOf = LocationToAccountId;
+
 	// Aliasing is disabled: xcm_executor::Config::Aliasers is set to `Nothing`.
 	type AuthorizedAliasConsideration = Disabled;
 }
