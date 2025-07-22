@@ -19,13 +19,10 @@ authorization is tightly bound to a specific `SchemaId`. This model has proven l
 - **Coupling between schema versions and delegations**
 - **Schemas represent data format, not purpose**
 - **Lack of human-readable context**
-- **Rigid governance workflows**
-- **No concept of publisher authority**
 
 These limitations have motivated a re-architecture of the schema and delegation systems to introduce the concepts of:
 
-- **Named schemas** with version tracking
-- **Structured publishing under protocols**
+- **Named intents** with version tracking
 - **Intent-based delegation**
 - **More expressive APIs and storage models**
 
@@ -39,8 +36,6 @@ This section outlines the key objectives that guide the redesign of Frequency's 
   data
 - **Intent Separation** - When permissioning, we need to be able to separate the purpose of the data and action from its
   format
-- **Scoped Delegations** - Delegations should be able to target either a specific schema version or a complete
-  intent (collection of schemas)
 - **On-Chain Efficiency** - On-chain operations need to be efficient, so storage and structures must be designed with
   that in mind
 
@@ -57,25 +52,12 @@ This section outlines the key objectives that guide the redesign of Frequency's 
 
 ## 4. **Protocols** <a id="section_4"></a>
 
-In order to provide organizational control for schemas and intents, we introduce the concept of **Protocols**.
+In this design, a `Protocol` is merely an organizational tool for collections of Intents. In a future design update, a
+Protocol may be promoted to a first-level on-chain entity with a numeric ID, or, it may be eliminated completely in
+favor of an ENS or ENS-like system on Frequency.
 
-A Protocol (e.g., `dsnp`, `bsky`) serves as a root authority under which Schemas and Intents are registered.
-Protocols allow for Intents and Schemas with similar meaning or structure, but different purposes, to be delegated
-in a scoped manner. For example, there could be both a 'dsnp.broadcast' and a 'bsky.broadcast' Intent; both have similar
-meaning ('broadcast a message'), but the Protocol differentiates between broadcasting a DSNP message vs. an AT
-Protocol (ie, Bluesky) message.
-
-### 📛 Protocol Structure
-
-Each protocol is a unique identifier, typically human-readable (e.g., `"dsnp"`), mapped to an on-chain `ProtocolId` (
-e.g., `ProtocolId = 2`).
-
-- Every Intent must be published under a protocol: `protocol.intent`
-
-### ⚙️ Protocol Governance
-
-- **Creation of a new protocol** must be approved via governance.
-- Protocols are immutable once registered
+<a id="protocol_map"></a>Protocols will be represented on-chain in a manner consistent with the current implementation
+of schema names; _ie_, a double storage map `protocol name` -> `intent name` -> `IntentId`
 
 ## 5. **Intents** <a id="section_5"></a>
 
@@ -93,19 +75,21 @@ on-chain Intent to determine whether an application should be allowed access to 
 
 ### 📌 Intent Metadata Structure
 
-- `IntentId`: A unique numeric identifier for runtime efficiency
-- `ProtocolId`: Which Protocol owns this Intent
-- `Name`: Human-readable name (e.g., `broadcast`)
-- `Description`: Optional developer-facing documentation
-- `Link`: Optional link to spec or docs
-- `RegisteredBy`: MSA (ProviderId) that registered the intent
-- `RegisteredAt`: Block number
-- `Versions`: [optional] Ordered list of `SchemaId`s (e.g., `[7, 15, 27]`, for versions 0..2)
+- `protocol_name**`: Which Protocol owns this Intent
+- `name**`: Human-readable name (e.g., `broadcast`)
+- `description`: Optional developer-facing documentation
+- `link`: Optional link to spec or docs
+- `registered_by`: MSA (ProviderId) that registered the intent
+- `registered_at`: Block number
+- `schema_versions`: [optional] Ordered list of `SchemaId`s (e.g., `[7, 15, 27]`, for versions 0..2)
+
+_\*\*may be removed from metadata struct as it would be redundant due to <a href="#protocol_map">Protocol storage
+map</a>_
 
 ### 🧬 Versioning Rules
 
 - Versions are stored in a monotonic, gapless array
-- A new SchemaId is automatically assigned the next version in the Intent
+- A new SchemaId is automatically assigned to the next version in the Intent
 - Older versions are preserved permanently
 - Delegations apply to an Intent
 - _Question: can Schemas (particular versions) be deprecated?_
@@ -168,30 +152,30 @@ The on-chain storage structures for Delegations do not change as a result of thi
 ### 🏷 Intents and Protocols
 
 ```rust
-pub type ProtocolInfos<T> = StorageMap<
-    _, Blake2_128Concat, ProtocolId, ProtocolInfo
+pub type IntentNameToIds<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    ProtocolName,
+    Blake2_128Concat,
+    IntentName,
+    IntentId,
+    ValueQuery,
 >;
 
 pub struct IntentInfo {
-    protocol_id: ProtocolId,
-    name: BoundedVec<u8, ConstU32<IDENTIFIER_MAX>>,
     description: BoundedVec<u8, ConstU32<DESCRIPTION_MAX>>,
     link: BoundedVec<u8, ConstU32<URL_MAX>>,
     registered_at: BlockNumber,
+    schema_versions: BoundedVec<SchemaId, MaxSchemaVersionsPerIntent>,
 }
 
 pub type Intents<T> = StorageMap<
     _, Blake2_128Concat, IntentId, IntentInfo
 >;
-
-// Q: Is this necessary as a separate map, or can be folded into the `IntentInfo` struct?
-pub type IntentVersions<T> = StorageMap<
-    _, Blake2_128Concat, IntentId, BoundedVec<SchemaId, MaxSchemaVersionsPerIntent>
->;
 ```
 
 Note: `IntentIds` are only referenced by numeric ID. Clients must resolve names via off-chain lookup using mappings
-from `ProtocolId/protocol name + intent name → IntentId`.
+from `protocol name + intent name → IntentId`.
 
 ----------
 
@@ -203,8 +187,8 @@ account for schemas and intents, while maintaining runtime efficiency.
 
 ### 🔢 Preferred On-Chain Identifiers
 
-On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `ProtocolId`, `IntentId`, and
-`SchemaId` rather than `protocol_name.intent_name`.
+On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `IntentId`, and `SchemaId` rather
+than `protocol_name.intent_name`.
 
 String identifiers such as protocol names or intent names should never be parsed on-chain. These must
 be resolved by SDKs and off-chain services (e.g., the Frequency Gateway).
@@ -213,41 +197,109 @@ be resolved by SDKs and off-chain services (e.g., the Frequency Gateway).
 
 Clients and SDKs must perform resolution of strings to IDs before invoking extrinsics. For example:
 
-- Resolve `"dsnp.broadcast"` → `(ProtocolId, IntentId)`
+- Resolve `"dsnp.broadcast"` → `IntentId`
 
 ### 📬 Extrinsic Parameters
 
-Three possible design patterns:
+Supported design patterns:
 
 1. **Submit by SchemaId only (Legacy/Compatible):**
-
     - Requires on-chain schema metadata to determine intent for validation
         - this is already read in the current flow, so no additional reads
     - Given the `IntentId` retrieved from the `SchemaInfo`, delegation lookup proceeds as currently
 
-3. **Submit by IntentId only (No Schema/future extrinsics):**
-
+2. **Submit by IntentId only (No Schema/future extrinsics):**
     - Enables non-schema-based actions (e.g., future use cases)
 
 **NOTE:** Minimally, `SchemaId` _must_ be provided for all use cases that involve writing data to be associated with a
 schema, because the specific `SchemaId` must be recorded in the data or event payload somehow. There are no current use
 cases for extrinsics that expect _only_ an `IntentId`.
 
+## 11. **On- and Off-chain Schema Payloads & Storage** <a id="section_11"></a>
+
+The change from `Schema` to `Intent` has implications how and where data is stored, especially as currently relating to
+the `messages` and `stateful-storage` pallets.
+
+The `messages` pallet stores both on- and off-chain messages in the following structure:
+
+```rust
+    #[pallet::storage]
+pub(super) type MessagesV2<T: Config> = StorageNMap<
+    _,
+    (
+        storage::Key<Twox64Concat, BlockNumberFor<T>>,
+        storage::Key<Twox64Concat, SchemaId>,
+        storage::Key<Twox64Concat, MessageIndex>,
+    ),
+    Message<T::MessagesMaxPayloadSizeBytes>,
+    OptionQuery,
+>;
+```
+
+The `stateful-storage` pallet stores data in a child trie keyed on `SchemaId`.
+
+Both pallets' storage is physically keyed at least partially on `SchemaId`. This makes it easy, for instance, to query
+all of the messages for a particular schema. However, one of the issues this design is meant to resolve is the necessity
+for a storage migration any time there is a minor schema version published.
+
+The `messages` pallet actually does not currently require a migration in this scenario; existing messages are accessible
+via the old schema version, while new messages are written via the new minor version. However, this does make querying
+for content somewhat cumbersome. In a scenario where there have been 5 minor schema version updates to the
+`'dsnp.broadcast'` intent, the current model would necessitate 5 separate queries to the chain to ensure we retrieved
+all
+valid `'dsnp.broadcast'` content.
+
+The `stateful-storage` pallet presents a different challenge. `PaginatedStorage`, for instance, is intended to be able
+to serialize a single, consistent data model (split across multiple pages). Currently, even a minor schema format change
+requires the entire model to be migrated to a new child trie under the new `SchemaId`; otherwise, data inconsistencies
+can arise, as well as other problems.
+
+To mitigate these issues, we will store data indexed by `IntentId` instead of `SchemaId`. This will require the
+encapsulated storage payload to contain an additional piece of meta-information; specifically, the concrete `SchemaId`
+that was used to format the encapsulated data.
+
 ### 🎯 Developer Experience Considerations
 
 - APIs should remain backward compatible with `SchemaId`-based extrinsic calls.
 - SDKs such as the Frequency Gateway may offer string-based input and resolve IDs internally.
 
-## 11. **Migration Strategy** <a id="section_11"></a>
+## 12. **Migration Strategy** <a id="section_12"></a>
 
 Transitioning from the current schema delegation system to the new intent delegation model must be handled
 carefully to preserve backward compatibility while enabling the new architecture to roll out incrementally.
 
 ### 🚀 Protocol and Intent Bootstrapping
 
-- Migration may backfill `IntentId`s and `ProtocolId`s for existing DSNP schemas
-    - For each existing `SchemaId`, a corresponding `Intent` will be created with the same numeric ID value, so that
-      existing Delegation references do not need to be migrated
+For each Schema currently registered on-chain:
+
+- Create a new Intent with the same numeric `IntentId` value as the current `SchemaId`
+- If the `SchemaId` is referenced in the existing `SchemaNamesToIds` mapping
+    - If the `SchemaId` _is not_ the latest registered version in the mapping array, register the new Intent with the
+      same   `protocol.intent` name, appending `'_v{version_index}'` to the name
+    - If the `SchemaId` _is_ the latest registered version in the mapping array, register the new Intent with the same
+      `protocol.intent` name (no suffix)
+- If the `SchemaId` is not registered with a name mapping
+    - Create a new mapping `'global.schema_{id}'`
+    - Alternately, since this scenario should only exist on Testnet, drop the schema
+- Rewrite the Schema's metadata on-chain to reference the corresponding `IntentId` (seems redundant, as existing
+  `SchemaId` == `IntentId`, but future Schemas will not preserve that relationship)
+
+This migration approach should ensure that existing Delegation references do not need to be migrated, as all new Intents
+will have the same numeric IDs as the existing Schemas.
+
+### 🚀 Data Payload Migration
+
+Migration of both `messages` and `stateful-storage` pallet data is necessary, due to the new requirement to store the
+concrete `SchemaId` with the payload.
+
+For the `messages` pallet, it _may_ be possible to avoid a migration by bifurcating message storage at a specific block
+number, ie, content in blocks before the upgrade are kept in the existing storage keyed by `SchemaId`, while new content
+is stored indexed by `IntentId` and containing a `SchemaId` in the payload. Further analysis is required to determine if
+this approach is feasible or desirable.
+
+For the `stateful-storage` pallet, it would be necessary to re-write all storage pages to include the concrete
+`SchemaId` in the page header. How to accomplish this for ~1M user graphs and graph keys on-chain requires further
+analysis.
 
 ## 12. **Open Questions and Next Steps** <a id="section_12"></a>
 
