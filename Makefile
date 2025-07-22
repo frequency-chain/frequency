@@ -156,7 +156,7 @@ lint-fix:
 format-lint: format lint
 
 .PHONY: ci-local
-ci-local: check lint lint-audit test js e2e-tests
+ci-local: check-all lint lint-audit test js e2e-tests
 
 .PHONY: upgrade-local upgrade-no-relay
 upgrade-local:
@@ -184,10 +184,13 @@ benchmarks-handles \
 benchmarks-time-release \
 benchmarks-passkey \
 benchmarks-cumulus_pallet_weight_reclaim \
+benchmarks-cumulus_pallet_xcmp_queue \
 benchmarks-frame_system_extensions \
+benchmarks-pallet_assets \
 benchmarks-pallet_balances \
 benchmarks-pallet_collator_selection \
 benchmarks-pallet_democracy \
+benchmarks-pallet_message_queue \
 benchmarks-pallet_multisig \
 benchmarks-pallet_preimage \
 benchmarks-pallet_scheduler \
@@ -209,11 +212,14 @@ benchmarks-handles-local \
 benchmarks-passkey-local \
 benchmarks-time-release-local \
 benchmarks-cumulus_pallet_weight_reclaim-local \
+benchmarks-cumulus_pallet_xcmp_queue-local \
 benchmarks-frame_system_extensions-local \
+benchmarks-pallet_assets-local \
 benchmarks-pallet_balances-local \
 benchmarks-pallet_collator_selection-local \
 benchmarks-pallet_collective-local \
 benchmarks-pallet_democracy-local \
+benchmarks-pallet_message_queue-local \
 benchmarks-pallet_multisig-local \
 benchmarks-pallet_preimage-local \
 benchmarks-pallet_scheduler-local \
@@ -222,7 +228,7 @@ benchmarks-pallet_timestamp-local \
 benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
 benchmarks-pallet_proxy-local \
-benchmarks-pallet_transaction_payment-local
+benchmarks-pallet_transaction_payment-local \
 
 .PHONY: benchmarks
 benchmarks:
@@ -348,7 +354,7 @@ build-bridging-mainnet:
 build-bridging-westend:
 	cargo build --features frequency-westend,frequency-bridging --release
 
-build-bridging-westend-local:
+build-bridging-local:
 	cargo build --features frequency-local,frequency-bridging --release
 
 .PHONY: test test-bridging e2e-tests e2e-tests-serial e2e-tests-only e2e-tests-load e2e-tests-load-only e2e-tests-testnet-paseo e2e-tests-paseo-local
