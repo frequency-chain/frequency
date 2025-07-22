@@ -95,7 +95,7 @@ jobs:
           - network: dev
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay,frequency-bridging
+            spec: frequency-no-relay
             branch_alias: pr
             arch: amd64
             runner: ubuntu-24.04
@@ -116,12 +116,6 @@ jobs:
           - network: testnet
             build-profile: debug
             spec: frequency-testnet,frequency-bridging
-            branch_alias: pr
-            arch: amd64
-            runner: ubuntu-24.04
-          - network: westend
-            build-profile: debug
-            spec: frequency-westend,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubuntu-24.04
@@ -154,7 +148,7 @@ jobs:
           - network: dev
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay,frequency-bridging
+            spec: frequency-no-relay
             branch_alias: pr
             arch: amd64
             runner: ubicloud-standard-8
@@ -175,12 +169,6 @@ jobs:
           - network: testnet
             build-profile: debug
             spec: frequency-testnet,frequency-bridging
-            branch_alias: pr
-            arch: amd64
-            runner: ubicloud-standard-16
-          - network: westend
-            build-profile: debug
-            spec: frequency-westend,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubicloud-standard-16
@@ -352,7 +340,7 @@ jobs:
     strategy:
       matrix:
         # Should match `verify-build-runtimes`
-        network: [paseo, westend, mainnet]
+        network: [paseo, mainnet]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -366,8 +354,8 @@ jobs:
       matrix:
         # Remember, runtimes are separate for each relay chain
         # Also should match `verify-build-runtimes-dummy`
-        # Only doing paseo-testnet, westend, and mainnet
-        network: [paseo, westend, mainnet]
+        # Only doing paseo-testnet and mainnet
+        network: [paseo, mainnet]
         build-profile: [bench-dev]
         runtime-dir: [runtime/frequency]
         package: [frequency-runtime]
@@ -377,10 +365,6 @@ jobs:
             chain: frequency-paseo
             features: frequency-testnet,frequency-bridging
             wasm-core-version: frequency-testnet
-          - network: westend
-            chain: frequency-westend
-            features: frequency-westend,frequency-bridging
-            wasm-core-version: frequency-westend
           - network: mainnet
             chain: frequency
             features: frequency
