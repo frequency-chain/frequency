@@ -75,15 +75,11 @@ Proposed are the following changes:
 2. Updated `ProviderRegistryEntry` struct have the following properties:
 
     ```rust
-        pub struct ProviderRegistryEntry<T, U>
-        where
-            T: Get<u32>,
-            U: Get<u32>,
-        {
-            pub default_name: BoundedVec<u8, T>,
-            pub localized_names: BTreeMap<Vec<u8>, BoundedVec<u8, T>>,
-            pub default_logo_250_100_png_bytes: BoundedVec<u8, U>,
-            pub localized_logo_250_100_png_bytes: BTreeMap<Vec<u8>, BoundedVec<u8, U>>,
+        pub struct ProviderRegistryEntry<T::Config> {
+            pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
+            pub localized_names: BTreeMap<Vec<T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderNameSize>>,
+            pub default_logo_250_100_png_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
+            pub localized_logo_250_100_png_bytes: BTreeMap<Vec<T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderLogo250X100Size>>,
         }
     ```
 
@@ -142,7 +138,7 @@ Proposed are the following changes:
     ```rust
         pub struct ProviderPayload<T: Config> {
             pub name: BoundedVec<u8, T::MaxProviderNameSize>,
-            pub logos_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos     
+            pub logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos     
         }
     ```
 
