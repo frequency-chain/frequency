@@ -91,13 +91,13 @@ Each registry entry supports:
 3. The `ProviderToRegistryEntry` be updated to use `ApplicationRegistryEntry` so that the Provider has a "default" `ApplicationRegistryEntry`.
     ```rust
     #[pallet::storage]
-	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
-		_,
-		Twox64Concat,
-		ProviderId,
-		ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
-		OptionQuery,
-	>;
+    pub type ProviderToRegistryEntry<T: Config> = StorageMap<
+        _,
+        Twox64Concat,
+        ProviderId,
+        ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+        OptionQuery,
+    >;
     ```
 4. New `ProviderToApplicationRegistryEntry` storage be initialized:
     ```rust
@@ -105,18 +105,24 @@ Each registry entry supports:
     type ApplicationIdentifier<T: Config> = BoundedVec<u8, T::MaxProviderNameSize>
 
     #[pallet::storage]
-	pub type ProviderToApplicationRegistryEntry<T: Config> = StorageDoubleMap<
-		_,
-		Twox64Concat,
-		ProviderId,
-		Twox64Concat,
-		ApplicationIdentifier<T>,
-		ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
-		OptionQuery,
-	>;
-	```
+    pub type ProviderToApplicationRegistryEntry<T: Config> = StorageDoubleMap<
+        _,
+        Twox64Concat,
+        ProviderId,
+        Twox64Concat,
+        ApplicationIdentifier<T>,
+        ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+        OptionQuery,
+    >;
+    ```
 5. `MaxProviderNameSize` be increased to `256`.
 6. `MaxProviderLogo250X100Size` be created and the limit set to `131_072` (128 KiB).
+7. propose_to_create_provider may optionally include a logo submission in one of
+   the following formats:
+
+    * PNG bytes (≤128 KiB, 250×100 resolution)
+    * A hash of the image to be uploaded later (optional)
+    * A trusted URL for governance to verify the asset (optional fallback)
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
