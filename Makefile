@@ -156,7 +156,7 @@ lint-fix:
 format-lint: format lint
 
 .PHONY: ci-local
-ci-local: check lint lint-audit test js e2e-tests
+ci-local: check-all lint lint-audit test js e2e-tests
 
 .PHONY: upgrade-local upgrade-no-relay
 upgrade-local:
@@ -199,8 +199,7 @@ benchmarks-pallet_timestamp \
 benchmarks-pallet_treasury \
 benchmarks-pallet_utility \
 benchmarks-pallet_proxy \
-benchmarks-pallet_transaction_payment \
-benchmarks-pallet_xcm \
+benchmarks-pallet_transaction_payment
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -230,7 +229,6 @@ benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
 benchmarks-pallet_proxy-local \
 benchmarks-pallet_transaction_payment-local \
-benchmarks-pallet_xcm-local \
 
 .PHONY: benchmarks
 benchmarks:

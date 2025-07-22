@@ -95,27 +95,33 @@ jobs:
           - network: dev
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay
+            spec: frequency-no-relay,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubuntu-24.04
           - network: local
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-local
+            spec: frequency-local,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubuntu-24.04
           - network: local
             build-profile: debug
             git_branch: main
-            spec: frequency-local
+            spec: frequency-local,frequency-bridging
             branch_alias: main
             arch: amd64
             runner: ubuntu-24.04
           - network: testnet
             build-profile: debug
-            spec: frequency-testnet
+            spec: frequency-testnet,frequency-bridging
+            branch_alias: pr
+            arch: amd64
+            runner: ubuntu-24.04
+          - network: westend
+            build-profile: debug
+            spec: frequency-westend,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubuntu-24.04
@@ -148,27 +154,33 @@ jobs:
           - network: dev
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-no-relay
+            spec: frequency-no-relay,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubicloud-standard-8
           - network: local
             build-profile: debug
             git_branch: ${{github.head_ref}}
-            spec: frequency-local
+            spec: frequency-local,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubicloud-standard-8
           - network: local
             build-profile: debug
             git_branch: main
-            spec: frequency-local
+            spec: frequency-local,frequency-bridging
             branch_alias: main
             arch: amd64
             runner: ubicloud-standard-8
           - network: testnet
             build-profile: debug
-            spec: frequency-testnet
+            spec: frequency-testnet,frequency-bridging
+            branch_alias: pr
+            arch: amd64
+            runner: ubicloud-standard-16
+          - network: westend
+            build-profile: debug
+            spec: frequency-westend,frequency-bridging
             branch_alias: pr
             arch: amd64
             runner: ubicloud-standard-16
@@ -340,7 +352,7 @@ jobs:
     strategy:
       matrix:
         # Should match `verify-build-runtimes`
-        network: [paseo, mainnet]
+        network: [paseo, westend, mainnet]
     runs-on: ubuntu-24.04
     steps:
       - run: echo "Just a dummy matrix to satisfy GitHub required checks that were skipped"
@@ -354,8 +366,8 @@ jobs:
       matrix:
         # Remember, runtimes are separate for each relay chain
         # Also should match `verify-build-runtimes-dummy`
-        # Only doing paseo-testnet and mainnet
-        network: [paseo, mainnet]
+        # Only doing paseo-testnet, westend, and mainnet
+        network: [paseo, westend, mainnet]
         build-profile: [bench-dev]
         runtime-dir: [runtime/frequency]
         package: [frequency-runtime]
@@ -363,8 +375,12 @@ jobs:
         include:
           - network: paseo
             chain: frequency-paseo
-            features: frequency-testnet
+            features: frequency-testnet,frequency-bridging
             wasm-core-version: frequency-testnet
+          - network: westend
+            chain: frequency-westend
+            features: frequency-westend,frequency-bridging
+            wasm-core-version: frequency-westend
           - network: mainnet
             chain: frequency
             features: frequency

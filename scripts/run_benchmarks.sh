@@ -15,6 +15,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_collator_selection \
   pallet_collective \
   pallet_democracy \
+  pallet_message_queue \
   pallet_multisig \
   pallet_preimage \
   pallet_scheduler \
@@ -23,8 +24,6 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
-  pallet_message_queue \
-  pallet_xcm \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \

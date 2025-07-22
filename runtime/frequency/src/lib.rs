@@ -1692,9 +1692,6 @@ construct_runtime!(
 );
 
 #[cfg(feature = "runtime-benchmarks")]
-use pallet_xcm::benchmarking::Pallet as PalletXcmExtrinsicsBenchmark;
-
-#[cfg(feature = "runtime-benchmarks")]
 mod benches {
 	define_benchmarks!(
 		// Substrate
@@ -1717,7 +1714,6 @@ mod benches {
 		[pallet_transaction_payment, TransactionPayment]
 		[cumulus_pallet_xcmp_queue, XcmpQueue]
 		[pallet_message_queue, MessageQueue]
-		[pallet_xcm, PalletXcmExtrinsicsBenchmark::<Runtime>]
 
 		// Frequency
 		[pallet_msa, Msa]
@@ -2098,44 +2094,6 @@ sp_api::impl_runtime_apis! {
 
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
-
-			// XCM benchmarking configuration
-			impl pallet_xcm::benchmarking::Config for Runtime {
-				/// Helper that makes sure `SendXcm` succeeds in the benches.
-				type DeliveryHelper = ();
-
-				/// A destination that `XcmRouter` can reach in your test setup.
-				/// The simplest is usually the relay‐chain:
-				fn reachable_dest() -> Option<staging_xcm::latest::Location> {
-					Some(staging_xcm::latest::prelude::Parent.into())
-				}
-
-				/// Return None to skip the teleport_assets benchmark (not properly configured).
-				fn teleportable_asset_and_dest() -> Option<(staging_xcm::latest::Asset, staging_xcm::latest::Location)> {
-					// Skip teleport benchmarks as the fee infrastructure isn't set up properly for benchmarking
-					None
-				}
-
-				/// Return None to skip the reserve_transfer_assets benchmark (asset not configured).
-				fn reserve_transferable_asset_and_dest() -> Option<(staging_xcm::latest::Asset, staging_xcm::latest::Location)> {
-					// Skip reserve transfer benchmarks as relay token isn't properly configured in test env
-					None
-				}
-
-				/// Return None to skip the transfer_assets benchmark (funds unavailable).
-				fn set_up_complex_asset_transfer() -> Option<(staging_xcm::latest::Assets, u32, staging_xcm::latest::Location, Box<dyn FnOnce()>)> {
-					// Skip complex asset transfer benchmarks as fund setup is complex in benchmark env
-					None
-				}
-
-				fn get_asset() -> staging_xcm::latest::Asset {
-					// Use the native token for benchmarking
-					staging_xcm::latest::Asset { 
-						fun: staging_xcm::latest::Fungibility::Fungible(EXISTENTIAL_DEPOSIT * 1000), 
-						id: staging_xcm::latest::AssetId(staging_xcm::latest::prelude::Here.into()) 
-					}
-				}
-			}
 
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
