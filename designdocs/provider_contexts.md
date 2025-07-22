@@ -143,6 +143,23 @@ Proposed are the following changes:
     ```
 
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
+3. `propose_to_be_provider` to create a default entry in `ProviderToApplicationRegistryEntry` with the some default or incremental `ApplicationIdentifier` (e.g., `default` or `0`).
+4. Introduce a new extrinsic `propose_to_add_application` with `ProviderPayload` aliased as `ApplicationPayload` with hashes of logos and name for application specific context.
+
+    ```rust
+        type ApplicationPayload<T: Config> = ProviderPayload<T>;
+
+        #[pallet::call_index(1)]
+        pub fn propose_to_add_application(
+            origin: OriginFor<T>,
+            payload: ApplicationPayload<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
+    ```
+
+5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and the `ProviderPayload`.
+6. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
