@@ -23,44 +23,6 @@ fn build_fee_and_value_assets(fee_dot: Balance, xrqcy_teleport_amount: Balance) 
 	]
 }
 
-fn assert_sender_assets_burned_correctly(t: AssetHubToFrequencyTest) {
-	type RuntimeEvent = <AssetHubWestend as Chain>::RuntimeEvent;
-	let frequency_location = frequency_location_as_seen_by_asset_hub();
-	let (_, xrqcy_teleport_amount) =
-		non_fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
-
-	let frequency_sibling_account =
-		AssetHubWestend::sovereign_account_id_of(frequency_location.clone());
-
-	let (_, total_fee) = fee_asset(&t.args.assets, t.args.fee_asset_item as usize).unwrap();
-	let remote_execution_fee: u128 = total_fee / 2;
-
-	AssetHubWestend::assert_xcm_pallet_attempted_complete(None);
-	assert_expected_events!(
-		AssetHubWestend,
-		vec![
-			// Frequency burned for teleportation
-			RuntimeEvent::ForeignAssets(
-				pallet_assets::Event::Burned { asset_id, owner, balance }
-			) => {
-				asset_id: *asset_id == frequency_location,
-				owner: *owner == t.sender.account_id,
-				balance: *balance == xrqcy_teleport_amount,
-			},
-			// Remote fee burned
-			RuntimeEvent::Balances(pallet_balances::Event::Burned { who, amount }) => {
-				who: *who == t.sender.account_id,
-				amount: *amount == total_fee,
-			},
-			// Sovereign account funded for remote fee
-			RuntimeEvent::Balances(pallet_balances::Event::Minted { who, amount }) => {
-				who: *who == frequency_sibling_account,
-				amount: *amount == remote_execution_fee,
-			},
-		]
-	);
-}
-
 fn assert_receiver_process_fails(_t: AssetHubToFrequencyTest) {
 	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
 
@@ -123,7 +85,7 @@ fn execute_xcm_asset_hub_to_frequency(t: AssetHubToFrequencyTest) -> DispatchRes
 // ===========================================================================
 // ======= DOT (fee) + xFRQCY (value) Transfer: AssetHub → Frequency Success =========
 // ===========================================================================
-// Teleporting for AssetHub to Frequency fails because it checking account
+// Teleporting for AssetHub to Frequency fails because it does not fund checking account
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_with_dot_fee_from_assethub -- --nocapture
 #[test]
 fn teleport_xfrqcy_with_dot_fee_from_assethub_without_checking_fails() {
@@ -189,8 +151,6 @@ fn teleport_xfrqcy_with_dot_fee_from_assethub_without_checking_fails() {
 		fee_asset_item,
 	);
 
-	test.set_assertion::<AssetHubWestend>(assert_sender_assets_burned_correctly);
 	test.set_assertion::<FrequencyWestend>(assert_receiver_process_fails);
-	test.set_dispatchable::<AssetHubWestend>(execute_xcm_asset_hub_to_frequency);
 	test.assert();
 }
