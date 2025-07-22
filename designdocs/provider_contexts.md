@@ -67,13 +67,12 @@ Proposed are the following changes:
 
 1. Update `ProviderRegistryEntry`.
 
-Each registry entry supports:
-
-    * A default name and logo.
-    * Localized names and logos (up to 150 locales).
-    * PNG logo support (250x100, up to 128 KiB).
-    * BCP 47-compliant language codes (e.g., en-US, fr-FR).
-2. Updated `ProviderRegistryEntry` have the following properties:
+    Each registry entry supports:
+    - A default name and logo.
+    - Localized names and logos (up to 150 locales).
+    - PNG logo support (250x100, up to 128 KiB).
+    - BCP 47-compliant language codes (e.g., en-US, fr-FR).
+2. Updated `ProviderRegistryEntry` struct have the following properties:
 
     ```rust
         pub struct ProviderRegistryEntry<T, U>
@@ -88,18 +87,8 @@ Each registry entry supports:
         }
     ```
 
-3. The `ProviderToRegistryEntry` be updated to use `ApplicationRegistryEntry` so that the Provider has a "default" `ApplicationRegistryEntry`.
-    ```rust
-    #[pallet::storage]
-    pub type ProviderToRegistryEntry<T: Config> = StorageMap<
-        _,
-        Twox64Concat,
-        ProviderId,
-        ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
-        OptionQuery,
-    >;
-    ```
-4. New `ProviderToApplicationRegistryEntry` storage be initialized:
+3. New `ProviderToApplicationRegistryEntry` storage be initialized:
+
     ```rust
     // Alias for clarity
     type ApplicationIdentifier<T: Config> = BoundedVec<u8, T::MaxProviderNameSize>
@@ -115,14 +104,15 @@ Each registry entry supports:
         OptionQuery,
     >;
     ```
-5. `MaxProviderNameSize` be increased to `256`.
-6. `MaxProviderLogo250X100Size` be created and the limit set to `131_072` (128 KiB).
-7. propose_to_create_provider may optionally include a logo submission in one of
+
+4. `MaxProviderNameSize` be increased to `256`.
+5. `MaxProviderLogo250X100Size` be created and the limit set to `131_072` (128 KiB).
+6. `propose_to_create_provider` may optionally include a logo submission in one of
    the following formats:
 
-    * PNG bytes (≤128 KiB, 250×100 resolution)
-    * A hash of the image to be uploaded later (optional)
-    * A trusted URL for governance to verify the asset (optional fallback)
+    - PNG bytes (≤128 KiB, 250×100 resolution)
+    - A hash of the image to be uploaded later (optional)
+    - A trusted URL for governance to verify the asset (optional fallback)
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
@@ -160,6 +150,7 @@ sequenceDiagram
 ```
 
 #### Open Questions
+
 - Is this a set or edit pattern for the applications?
 - Should adding/updating applications be a separate call?
 - Should adding/updating a translation be a separate call?
@@ -177,6 +168,7 @@ SIWF [Signed Request Payload](https://projectlibertylabs.github.io/siwf/v2/docs/
 This would allow a smooth transition between `applicationContext.url` and `applicationContext.id` with both being optional.
 
 The Wallet would then:
+
 1. Verify the SIWF Signed Request.
 2. Lookup the Provider via the `publicKey` in the SIWF Signed Request.
 3. If any, fetch the Application Identifier from Frequency.
@@ -192,7 +184,6 @@ Provider Dashboard needs to be able to:
 - Add new Application Contexts with a identifier (unique to that provider), logos, and translations
 - Remove an existing Application Context
 - Update an Application Contexts with new logos, and translations
-
 
 ## Non-goals
 
@@ -216,6 +207,7 @@ This process should be re-evaluated as the number of Providers grows.
 This provides a direct way to place image content on chain, intended to be interpreted as image content.
 While this must still pass through the governance step to be used by others via the content the image would still be in the chain history as there is always a risk of problematic images being proposed.
 This risk is mitigated by:
+
 - A registered provider must be taking the action
 - Larger images require larger token fees to cover the cost
 - IF applied, the suggested hash requirement for the image upload could remove this issue entirely
@@ -243,6 +235,7 @@ Self-verification is not possible due to the phishing attack.
 There is a coordination service of Frequency, but using a schema or other non-verified setup would still require reaching out and extending trust to some other 3rd-party or patchwork verification system.
 
 In the end this solution results in these two problems:
+
 - 3rd-party patchwork systems increase friction and complexity.
 - External centralization is undesirable.
 
