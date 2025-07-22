@@ -107,12 +107,46 @@ Proposed are the following changes:
 
 4. `MaxProviderNameSize` be increased to `256`.
 5. `MaxProviderLogo250X100Size` be created and the limit set to `131_072` (128 KiB).
-6. `propose_to_create_provider` may optionally include a logo submission in one of
-   the following formats:
+6. Introduce hash-based logo approval mechanism:
+    Logos are not embedded during proposal submission. Instead, a blake2_256 hash of the logo image is included in the proposal.
+    Governance must explicitly approve these logo hashes as part of the provider registration process.
 
-    - PNG bytes (≤128 KiB, 250×100 resolution)
-    - A hash of the image to be uploaded later (optional)
-    - A trusted URL for governance to verify the asset (optional fallback)
+    The approved hashes are recorded in a dedicated storage map:
+
+    ```rust
+            pub ApprovedLogoHashes: StorageMap<
+                _,
+                Blake2_128Concat,
+                [u8; 32], // blake2_256 hash of the logo
+                (),
+                OptionQuery
+            >;
+    ```
+
+    The `propose_to_be_provider` extrinsic will insert or update entries in this map.
+
+### **Changes and additions in extrinsics**
+
+1. The `propose_to_be_provider` extrinsic will now accept a `ProviderPayload` that includes the name and hashes of the logos.
+
+    ```rust
+        #[pallet::call_index(0)]
+        pub fn propose_to_be_provider(
+            origin: OriginFor<T>,
+            payload: ProviderPayload<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
+    ```
+
+    ```rust
+        pub struct ProviderPayload<T: Config> {
+            pub name: BoundedVec<u8, T::MaxProviderNameSize>,
+            pub logos_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos     
+        }
+    ```
+
+2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
