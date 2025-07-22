@@ -123,27 +123,23 @@ Proposed are the following changes:
 
 ### **Changes and additions in extrinsics**
 
-1. The `propose_to_be_provider` extrinsic will now accept a `ProviderPayload` that includes the name and hashes of the logos.
+1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance.
 
     ```rust
         #[pallet::call_index(0)]
         pub fn propose_to_be_provider(
             origin: OriginFor<T>,
-            payload: ProviderPayload<T>,
+            provider_name: Vec<u8>,
+            logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
         }
     ```
 
-    ```rust
-        pub struct ProviderPayload<T: Config> {
-            pub name: BoundedVec<u8, T::MaxProviderNameSize>,
-            pub logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos     
-        }
-    ```
-
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
+
 3. `propose_to_be_provider` to create a default entry in `ProviderToApplicationRegistryEntry` with the some default or incremental `ApplicationIdentifier` (e.g., `default` or `0`).
+
 4. Introduce a new extrinsic `propose_to_add_application` with `ProviderPayload` aliased as `ApplicationPayload` with hashes of logos and name for application specific context.
 
     ```rust
@@ -159,7 +155,28 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and the `ProviderPayload`.
+
 6. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
+
+    Note: above changes reflect on proposal and approval process for default application context and additional application contexts.
+
+7. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIdentifier`.
+
+    ```rust
+        type ApplicationContextUpdate<T: Config> = ProviderRegistryEntry<T>;
+
+        #[pallet::call_index(2)]
+        pub fn update_application_context(
+            origin: OriginFor<T>,
+            application_identifier: ApplicationIdentifier<T>,
+            application_entry: ApplicationContextUpdate<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
+
+    ```
+
+    Note: The extrinsic will compute the hash and verify governance approval and hence the images should have hashes already approved via `propose_to_add_application` or `propose_to_be_provider` else the extrinsic will fail.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
