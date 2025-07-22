@@ -24,7 +24,6 @@ Separate providers per application would NOT align with the data security model 
 Provider-level delegations are better than introducing application-level delegations.
 While user permissions are primarily write-based at this time, it is critical that users understand the delegation and their data is shared at a company level.
 
-
 Finally, this structure does not prevent the setup of a 1:1 relationship between Application and Provider.
 If a company wishes, they can create more than one Provider for the purposes of separation.
 This may be desirable if there is a subsidiary company or other complex structures.
@@ -52,31 +51,43 @@ Frequency should provide a safeguarded system of setting and updating Provider a
 Currently, the `ProviderRegistryEntry` has only a `name` property, and no way to update said name.
 
 Applications have two different pieces of default and (potentially) internationalized data:
+
 - name
 - logo/image
 
-Limits
+Limits:
+
 1. Provide a space to internationalize up to 150 localizations (Windows and macOS each have < 150).
 2. Image MUST BE encoded (`png`)[https://www.w3.org/TR/png-3/] that is `250x100` (support for future sizes and light/dark should be considered).
+3. Localization keys should follow BCP 47 format like en-US, fr-FR.
 
 The data structure must support both of these and internationalization.
 
 Proposed are the following changes:
 
-1. `ProviderRegistryEntry` struct be renamed `ApplicationRegistryEntry`
-2. `ApplicationRegistryEntry` have the following properties:
+1. Update `ProviderRegistryEntry`.
+
+Each registry entry supports:
+
+    * A default name and logo.
+    * Localized names and logos (up to 150 locales).
+    * PNG logo support (250x100, up to 128 KiB).
+    * BCP 47-compliant language codes (e.g., en-US, fr-FR).
+2. Updated `ProviderRegistryEntry` have the following properties:
+
     ```rust
-    pub struct ApplicationRegistryEntry<T, U>
-    where
-        T: Get<u32>,
-        U: Get<u32>,
-    {
-        pub default_name: BoundedVec<u8, T>,
-        pub localized_names: BTreeMap<Vec<u8>, BoundedVec<u8, T>>,
-        pub default_logo_250_100_png_bytes: BoundedVec<u8, U>,
-        pub localized_logo_250_100_png_bytes: BTreeMap<Vec<u8>, BoundedVec<u8, U>>,
-    }
+        pub struct ProviderRegistryEntry<T, U>
+        where
+            T: Get<u32>,
+            U: Get<u32>,
+        {
+            pub default_name: BoundedVec<u8, T>,
+            pub localized_names: BTreeMap<Vec<u8>, BoundedVec<u8, T>>,
+            pub default_logo_250_100_png_bytes: BoundedVec<u8, U>,
+            pub localized_logo_250_100_png_bytes: BTreeMap<Vec<u8>, BoundedVec<u8, U>>,
+        }
     ```
+
 3. The `ProviderToRegistryEntry` be updated to use `ApplicationRegistryEntry` so that the Provider has a "default" `ApplicationRegistryEntry`.
     ```rust
     #[pallet::storage]
@@ -84,7 +95,7 @@ Proposed are the following changes:
 		_,
 		Twox64Concat,
 		ProviderId,
-		ApplicationRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+		ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
 		OptionQuery,
 	>;
     ```
@@ -100,7 +111,7 @@ Proposed are the following changes:
 		ProviderId,
 		Twox64Concat,
 		ApplicationIdentifier<T>,
-		ApplicationRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+		ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
 		OptionQuery,
 	>;
 	```
