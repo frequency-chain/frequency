@@ -109,7 +109,7 @@ jobs:
           - network: local
             build-profile: debug
             git_branch: main
-            spec: frequency-local,frequency-bridging
+            spec: frequency-local
             branch_alias: main
             arch: amd64
             runner: ubuntu-24.04
@@ -168,7 +168,7 @@ jobs:
           - network: local
             build-profile: debug
             git_branch: main
-            spec: frequency-local,frequency-bridging
+            spec: frequency-local
             branch_alias: main
             arch: amd64
             runner: ubicloud-standard-8
