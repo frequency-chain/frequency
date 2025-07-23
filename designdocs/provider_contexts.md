@@ -137,7 +137,7 @@ Proposed are the following changes:
     ```
 
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
-3. `propose_to_be_provider` to create a default entry in `ProviderToApplicationRegistryEntry` with the some default or incremental `ApplicationIdentifier` (e.g., `default` or `0`).
+3. `propose_to_be_provider` to create a default entry in `ProviderToApplicationRegistryEntry` with the some default or incremental `ApplicationIdentifier` defaulted to provider name. Optionally, this default entry can be set to non-deletable to enforce default profile existence with active provider.
 4. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
 
     ```rust
@@ -260,9 +260,10 @@ The Wallet would then:
 
 1. Verify the SIWF Signed Request.
 2. Lookup the Provider via the `publicKey` in the SIWF Signed Request.
-3. If any, fetch the Application Identifier from Frequency.
-4. Display the information from the `ApplicationRegistryEntry` (or the Provider Registry Entry `ProviderToRegistryEntry` if there is no application context identifier) to the user to help them know who they are authorizing.
-5. Allow the user to continue the login process.
+3. If any, fetch the `ApplicationIdentifier` from Frequency.
+4. If present, fetch the `ProviderToApplicationRegistryEntry` for that (ProviderId, ApplicationId) pair. Otherwise, fetch the default `ProviderRegistryEntry` for the ProviderId
+5. Display the information to the user to help them know who they are authorizing.
+6. Allow the user to continue the login process.
 
 ### **Provider Dashboard Steps** <a id='dashboard'></a>
 
