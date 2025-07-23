@@ -206,7 +206,7 @@ Proposed are the following changes:
 
 To support the new structure, a storage migration will be required to:
 
-- Migrate existing `ProviderRegistryEntry` to the new format with default values for localized names and logos. 
+- Migrate existing `ProviderToRegistryEntry` to the new format with default values for localized names and logos.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
