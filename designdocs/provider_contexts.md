@@ -195,6 +195,14 @@ Proposed are the following changes:
     Notes:
     - The extrinsic will compute the hash and verify governance approval and hence the images should have hashes already approved via `propose_to_add_application` or `propose_to_be_provider` else the extrinsic will fail.
 
+### **Storage Migration**
+
+To support the new structure, a storage migration will be required to:
+
+- Migrate existing `ProviderRegistryEntry` to the new format. This would entail a default ProviderRegistryEntry  with a given name and default logo.
+- Initialize the `ProviderToApplicationRegistryEntry` with a default entry for each existing provider.
+- Upon migration, all existing providers will have a default application which can be updated later.
+
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
 _Any_ change to the Provider or Application Context must be approved by governance.
