@@ -130,7 +130,7 @@ Proposed are the following changes:
     ```rust
         // Define a common payload type for provider registration
         #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-        pub struct ProviderRegistrationPayload {
+        pub struct ProviderRegistrationPayload<T: Config> {
             /// Default name for provider or application.
             pub name: BoundedVec<u8, T::MaxProviderNameSize>,
 
