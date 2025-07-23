@@ -42,6 +42,8 @@ Wallets displaying login request information need to be able to easily obtain an
 Frequency should provide a safeguarded system of setting and updating Provider and Provider Application Contexts for wallets to display to users.
 
 - [Storage and Structure of the Data](#data)
+- [Changes and additions in extrinsics](#extrinsics)
+- [Storage Migration](#migration)
 - [Mainnet Approval Flow](#governance)
 - [Example of Wallet Usage via SIWF](#siwf)
 - [Provider Dashboard Steps](#dashboard)
@@ -121,7 +123,7 @@ Proposed are the following changes:
 
     The `propose_to_be_provider` extrinsic will insert or update entries in this map.
 
-### **Changes and additions in extrinsics**
+### **Changes and additions in extrinsics** <a id='extrinsics'></a>
 
 1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance.
 
@@ -131,6 +133,18 @@ Proposed are the following changes:
             origin: OriginFor<T>,
             provider_name: Vec<u8>,
             logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
+    ```
+
+   Possibly, introduce a new extrinsic `update_provider_context` for updating the default provider context (name, logo, translations) after the provider has been registered.
+
+    ```rust
+        #[pallet::call_index(3)]
+        pub fn update_provider_context(
+            origin: OriginFor<T>,
+            provider_entry: ProviderRegistryEntry<T>,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
         }
@@ -156,7 +170,6 @@ Proposed are the following changes:
 
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
-    - This extrinsic should do an upsert operation on the `ProviderToApplicationRegistryEntry` storage map.
 4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and `ProviderRegistryEntry`.
 
     ```rust
@@ -190,19 +203,8 @@ Proposed are the following changes:
 
     Notes:
     - The extrinsic will compute the hash and verify governance approval and hence the images should have hashes already approved via `propose_to_add_application` or `propose_to_be_provider` else the extrinsic will fail.
-7. Possibly, introduce a new extrinsic `update_provider_context` for updating the default provider context (name, logo, translations) after the provider has been registered.
 
-    ```rust
-        #[pallet::call_index(3)]
-        pub fn update_provider_context(
-            origin: OriginFor<T>,
-            provider_entry: ProviderRegistryEntry<T>,
-        ) -> DispatchResultWithPostInfo {
-            // Implementation details...
-        }
-    ```
-
-### **Storage Migration**
+### **Storage Migration** <a id='migration'></a>
 
 To support the new structure, a storage migration will be required to:
 
