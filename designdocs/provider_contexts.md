@@ -96,7 +96,7 @@ Proposed are the following changes:
         ProviderId,
         Twox64Concat,
         ApplicationIdentifier<T>,
-        ProviderRegistryEntry<T::MaxProviderNameSize, T::MaxProviderLogo250X100Size>,
+        ProviderRegistryEntry<T>,
         OptionQuery,
     >;
     ```
@@ -141,9 +141,6 @@ Proposed are the following changes:
 4. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
 
     ```rust
-        #[pallet::storage]
-        pub type ApplicationPayload<T: Config> = ProviderRegistryEntry<T>;
-
         #[pallet::call_index(1)]
         pub fn propose_to_add_application(
             origin: OriginFor<T>,
