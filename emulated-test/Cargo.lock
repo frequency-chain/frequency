@@ -1745,8 +1745,6 @@ dependencies = [
  "scale-info",
  "serde",
  "serde_json",
- "smallvec",
- "sp-api",
  "sp-core",
  "sp-externalities",
  "sp-io",
@@ -1760,23 +1758,23 @@ version = "0.0.0"
 dependencies = [
  "common-primitives",
  "cumulus-pallet-weight-reclaim",
+ "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-core",
  "frame-support",
  "frame-system",
+ "pallet-assets",
  "pallet-balances",
  "pallet-collator-selection",
  "pallet-collective",
  "pallet-democracy",
+ "pallet-message-queue",
  "pallet-multisig",
  "pallet-preimage",
  "pallet-proxy",
  "pallet-scheduler",
  "pallet-session",
- "pallet-sudo",
- "pallet-time-release",
  "pallet-timestamp",
  "pallet-transaction-payment",
- "pallet-treasury 27.0.0",
  "pallet-utility",
  "parity-scale-codec",
  "scale-info",
@@ -2341,16 +2339,6 @@ dependencies = [
  "parity-scale-codec",
  "scale-info",
  "sp-runtime",
-]
-
-[[package]]
-name = "cumulus-primitives-timestamp"
-version = "0.19.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
-dependencies = [
- "cumulus-primitives-core",
- "sp-inherents",
- "sp-timestamp",
 ]
 
 [[package]]
@@ -3575,7 +3563,6 @@ dependencies = [
  "cumulus-pallet-xcmp-queue",
  "cumulus-primitives-aura",
  "cumulus-primitives-core",
- "cumulus-primitives-timestamp",
  "cumulus-primitives-utility",
  "frame-executive",
  "frame-metadata-hash-extension",
@@ -3583,7 +3570,6 @@ dependencies = [
  "frame-system",
  "frame-system-rpc-runtime-api",
  "hex",
- "hex-literal",
  "log",
  "pallet-assets",
  "pallet-aura",
@@ -3626,9 +3612,7 @@ dependencies = [
  "polkadot-parachain-primitives",
  "polkadot-runtime-common",
  "scale-info",
- "serde",
  "serde_json",
- "smallvec",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -6624,7 +6608,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "pallet-capacity",
  "pallet-msa",
  "pallet-transaction-payment",
@@ -6639,7 +6622,6 @@ dependencies = [
 name = "pallet-frequency-tx-payment-runtime-api"
 version = "0.0.0"
 dependencies = [
- "common-primitives",
  "frame-support",
  "pallet-transaction-payment",
  "parity-scale-codec",
@@ -6678,7 +6660,6 @@ dependencies = [
  "frame-support",
  "frame-system",
  "handles-utils",
- "log",
  "numtoa",
  "parity-scale-codec",
  "scale-info",
@@ -6789,7 +6770,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "multibase",
  "parity-scale-codec",
  "scale-info",
@@ -6803,7 +6783,6 @@ name = "pallet-messages-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
 ]
 
@@ -6883,7 +6862,6 @@ name = "pallet-msa-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "parity-scale-codec",
  "sp-api",
 ]
@@ -7055,12 +7033,10 @@ dependencies = [
  "frame-support",
  "frame-system",
  "lazy_static",
- "log",
  "p256",
  "pallet-transaction-payment",
  "parity-scale-codec",
  "scale-info",
- "serde_json",
  "sp-core",
  "sp-io",
  "sp-runtime",
@@ -7254,7 +7230,6 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
- "sp-weights",
 ]
 
 [[package]]
@@ -7262,9 +7237,7 @@ name = "pallet-schemas-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
- "sp-runtime",
 ]
 
 [[package]]
@@ -7401,7 +7374,6 @@ name = "pallet-stateful-storage-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
  "sp-api",
  "sp-runtime",
 ]
@@ -7428,7 +7400,6 @@ dependencies = [
  "frame-benchmarking",
  "frame-support",
  "frame-system",
- "log",
  "parity-scale-codec",
  "scale-info",
  "sp-core",
@@ -7487,7 +7458,6 @@ dependencies = [
 name = "pallet-treasury"
 version = "27.0.0"
 dependencies = [
- "common-primitives",
  "docify",
  "frame-benchmarking",
  "frame-support",
@@ -11733,11 +11703,7 @@ name = "system-runtime-api"
 version = "0.0.0"
 dependencies = [
  "common-primitives",
- "frame-support",
- "frame-system",
- "serde_json",
  "sp-api",
- "sp-runtime",
 ]
 
 [[package]]
