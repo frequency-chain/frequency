@@ -128,11 +128,18 @@ Proposed are the following changes:
 1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance.
 
     ```rust
+        // Define a common payload type for provider registration
+        #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
+        pub struct ProviderRegistrationPayload {
+            pub name: Vec<u8>,
+            pub logo_hashes: Vec<[u8; 32]>,
+            pub translations: BTreeMap<Vec<u8>, Vec<u8>>,
+        }
+
         #[pallet::call_index(0)]
         pub fn propose_to_be_provider(
             origin: OriginFor<T>,
-            provider_name: Vec<u8>,
-            logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos
+            payload: ProviderRegistrationPayload,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
         }
@@ -157,8 +164,7 @@ Proposed are the following changes:
         #[pallet::call_index(1)]
         pub fn propose_to_add_application(
             origin: OriginFor<T>,
-            application_name: Vec<u8>,
-            logo_hashes: Vec<[u8; 32]>, // blake2_256 hashes of the logos
+            payload: ProviderRegistrationPayload,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
             // This can internally call same logic as `propose_to_be_provider` for consistency
