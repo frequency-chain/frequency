@@ -68,6 +68,13 @@ mod imports {
 			<Balances as Inspect<_>>::balance(who)
 		})
 	}
+
+	pub fn relay_balance_of(who: &AccountIdOf<<Westend as Chain>::Runtime>) -> Balance {
+		Westend::execute_with(|| {
+			type Balances = <Westend as WestendPallet>::Balances;
+			<Balances as Inspect<_>>::balance(who)
+		})
+	}
 }
 
 #[macro_export]
