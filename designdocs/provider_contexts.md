@@ -137,8 +137,7 @@ Proposed are the following changes:
     ```
 
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
-3. `propose_to_be_provider` to create a default entry in `ProviderToApplicationRegistryEntry` with the some default or incremental `ApplicationIdentifier` defaulted to provider name. Optionally, this default entry can be set to non-deletable to enforce default profile existence with active provider.
-4. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
+3. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
 
     ```rust
         #[pallet::call_index(1)]
@@ -158,7 +157,7 @@ Proposed are the following changes:
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
     - This extrinsic should do an upsert operation on the `ProviderToApplicationRegistryEntry` storage map.
-5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and `ProviderRegistryEntry`.
+4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and `ProviderRegistryEntry`.
 
     ```rust
         // Example of how the entry might look like
@@ -172,8 +171,8 @@ Proposed are the following changes:
         ProviderToApplicationRegistryEntry::<T>::insert(provider_id, application_identifier, application_entry);
     ```
 
-6. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-7. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIdentifier`.
+5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
+6. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIdentifier`.
 
     ```rust
         type ApplicationContextUpdate<T: Config> = ProviderRegistryEntry<T>;
@@ -191,14 +190,23 @@ Proposed are the following changes:
 
     Notes:
     - The extrinsic will compute the hash and verify governance approval and hence the images should have hashes already approved via `propose_to_add_application` or `propose_to_be_provider` else the extrinsic will fail.
+7. Possibly, introduce a new extrinsic `update_provider_context` for updating the default provider context (name, logo, translations) after the provider has been registered.
+
+    ```rust
+        #[pallet::call_index(3)]
+        pub fn update_provider_context(
+            origin: OriginFor<T>,
+            provider_entry: ProviderRegistryEntry<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
+    ```
 
 ### **Storage Migration**
 
 To support the new structure, a storage migration will be required to:
 
-- Migrate existing `ProviderRegistryEntry` to the new format. This would entail a default ProviderRegistryEntry  with a given name and default logo.
-- Initialize the `ProviderToApplicationRegistryEntry` with a default entry for each existing provider.
-- Upon migration, all existing providers will have a default application which can be updated later.
+- Migrate existing `ProviderRegistryEntry` to the new format with default values for localized names and logos. 
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
