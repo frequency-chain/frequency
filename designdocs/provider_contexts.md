@@ -266,7 +266,7 @@ The Wallet would then:
 1. Verify the SIWF Signed Request.
 2. Lookup the Provider via the `publicKey` in the SIWF Signed Request.
 3. If any, fetch the `ApplicationIdentifier` from Frequency.
-4. If present, fetch the `ProviderToApplicationRegistryEntry` for that (ProviderId, ApplicationId) pair. Otherwise, fetch the default `ProviderRegistryEntry` for the ProviderId
+4. If present, fetch the `ProviderToApplicationRegistryEntry` for that (ProviderId, ApplicationId) pair. Otherwise, fetch the default `ProviderToRegistryEntry` for the ProviderId
 5. Display the information to the user to help them know who they are authorizing.
 6. Allow the user to continue the login process.
 
