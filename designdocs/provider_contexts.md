@@ -89,7 +89,7 @@ Proposed are the following changes:
 
     ```rust
     // Alias for clarity
-    type ApplicationIdentifier<T: Config> = BoundedVec<u8, T::MaxProviderNameSize>
+    pub type ApplicationIndex = u16;
 
     #[pallet::storage]
     pub type ProviderToApplicationRegistryEntry<T: Config> = StorageDoubleMap<
@@ -97,7 +97,7 @@ Proposed are the following changes:
         Twox64Concat,
         ProviderId,
         Twox64Concat,
-        ApplicationIdentifier<T>,
+        ApplicationIndex,
         ProviderRegistryEntry<T>,
         OptionQuery,
     >;
@@ -179,13 +179,12 @@ Proposed are the following changes:
             // This can internally call same logic as `propose_to_be_provider` for consistency
             // and will also handle the `ProviderToApplicationRegistryEntry` storage map.
             // It will also handle the `ApprovedLogoHashes` storage map.
-            // The `application_name` will be used to compute the `ApplicationIdentifier`.
         }
     ```
 
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
-4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the provided/computed `ApplicationIdentifier` and `ProviderRegistryEntry`.
+4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the current (numberic) `ApplicationIndex` and `ProviderRegistryEntry`.
 
     ```rust
         // Example of how the entry might look like
@@ -200,7 +199,7 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-6. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIdentifier`.
+6. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIndex`.
 
     ```rust
         type ApplicationContextUpdate<T: Config> = ProviderRegistryEntry<T>;
@@ -208,7 +207,7 @@ Proposed are the following changes:
         #[pallet::call_index(2)]
         pub fn update_application_context(
             origin: OriginFor<T>,
-            application_identifier: ApplicationIdentifier<T>,
+            application_index: ApplicationIndex,
             application_entry: ApplicationContextUpdate<T>,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
@@ -275,14 +274,14 @@ In the governance process, a link to the image would need to be submitted.
 
 ### **Example of Wallet Usage via SIWF** <a id='siwf'></a>
 
-SIWF [Signed Request Payload](https://projectlibertylabs.github.io/siwf/v2/docs/DataStructures/All.html) can expand the optional `applicationContext` value with a new optional `id` field that is the text of the `ApplicationIdentifier` on chain.
+SIWF [Signed Request Payload](https://projectlibertylabs.github.io/siwf/v2/docs/DataStructures/All.html) can expand the optional `applicationContext` value with a new optional `id` field that is the text of the `ApplicationIndex` on chain.
 This would allow a smooth transition between `applicationContext.url` and `applicationContext.id` with both being optional.
 
 The Wallet would then:
 
 1. Verify the SIWF Signed Request.
 2. Lookup the Provider via the `publicKey` in the SIWF Signed Request.
-3. If any, fetch the `ApplicationIdentifier` from Frequency.
+3. If any, fetch the `ApplicationIndex` from Frequency.
 4. If present, fetch the `ProviderToApplicationRegistryEntry` for that (ProviderId, ApplicationId) pair. Otherwise, fetch the default `ProviderToRegistryEntry` for the ProviderId
 5. Display the information to the user to help them know who they are authorizing.
 6. Allow the user to continue the login process.
