@@ -17,6 +17,8 @@ use staging_xcm::latest::prelude::{Location, Parachain};
 #[cfg(feature = "runtime-benchmarks")]
 use crate::xcm::ForeignAssetsAssetId;
 
+use common_runtime::weights;
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, Disabled, Everything, Nothing},
@@ -98,7 +100,7 @@ impl pallet_xcm::Config for Runtime {
 	type SovereignAccountOf = LocationToAccountId;
 	/// Not sure what this is for?
 	type MaxLockers = ConstU32<8>;
-	type WeightInfo = pallet_xcm::TestWeightInfo;
+	type WeightInfo = weights::pallet_xcm::SubstrateWeight<Runtime>;
 	type AdminOrigin = EnsureRoot<AccountId>;
 	type MaxRemoteLockConsumers = ConstU32<0>;
 	type RemoteLockConsumerIdentifier = ();
