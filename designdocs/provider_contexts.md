@@ -131,9 +131,18 @@ Proposed are the following changes:
         // Define a common payload type for provider registration
         #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
         pub struct ProviderRegistrationPayload {
-            pub name: Vec<u8>,
-            pub logo_hashes: Vec<[u8; 32]>,
-            pub translations: BTreeMap<Vec<u8>, Vec<u8>>,
+            /// Default name for provider or application.
+            pub name: BoundedVec<u8, T::MaxProviderNameSize>,
+
+            /// A list of pre-approved logo image hashes (blake2_256).
+            pub logo_hashes: BoundedVec<[u8; 32], T::MaxApprovedLogoCount>,
+
+            /// Localized translations of the name, keyed by BCP 47 language code.
+            pub translations: BoundedBTreeMap<
+                BoundedVec<u8, T::MaxLanguageCodeSize>, 
+                BoundedVec<u8, T::MaxProviderNameSize>, 
+                T::MaxTranslations,
+            >,
         }
 
         #[pallet::call_index(0)]
