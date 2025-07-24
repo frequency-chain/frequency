@@ -154,18 +154,6 @@ Proposed are the following changes:
         }
     ```
 
-   Possibly, introduce a new extrinsic `update_provider_context` for updating the default provider context (name, logo, translations) after the provider has been registered.
-
-    ```rust
-        #[pallet::call_index(3)]
-        pub fn update_provider_context(
-            origin: OriginFor<T>,
-            provider_entry: ProviderRegistryEntry<T>,
-        ) -> DispatchResultWithPostInfo {
-            // Implementation details...
-        }
-    ```
-
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
 3. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
 
@@ -184,7 +172,7 @@ Proposed are the following changes:
 
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
-4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the current (numberic) `ApplicationIndex` and `ProviderRegistryEntry`.
+4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the current (numeric) `ApplicationIndex` and `ProviderRegistryEntry`.
 
     ```rust
         // Example of how the entry might look like
@@ -199,24 +187,84 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-6. Introduce a new extrinsic to `update_application_context` for updating an existing application context (post goveranance registration) provided with new payload  `ProviderRegistryEntry` with the `ApplicationIndex`.
+6. Introduce a new extrinsic to `update_name` for updating an existing application context (post goveranance registration) provided with new name  `ProviderRegistryEntry` with the `ApplicationIndex`.
 
     ```rust
-        type ApplicationContextUpdate<T: Config> = ProviderRegistryEntry<T>;
-
-        #[pallet::call_index(2)]
-        pub fn update_application_context(
+        #[pallet::call_index(13)]
+        pub fn update_name(
             origin: OriginFor<T>,
             application_index: ApplicationIndex,
-            application_entry: ApplicationContextUpdate<T>,
+            name: BoundedVec<u8, T::MaxProviderNameSize>,
         ) -> DispatchResultWithPostInfo {
-            // Implementation details...
-        }
+            let who = ensure_signed(origin)?;
+            let provider_id = get_provider_id_from_msa(&who)?;
 
+            ProviderToApplicationRegistryEntry::<T>::try_mutate(
+                &provider_id,
+                &application_index,
+                |maybe_entry| -> DispatchResult {
+                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
+                    entry.default_name = name;
+                    Ok(())
+                },
+            )?;
+
+            Ok(().into())
+        }
     ```
 
-    Notes:
-    - The extrinsic will compute the hash and verify governance approval and hence the images should have hashes already approved via `propose_to_add_application` or `propose_to_be_provider` else the extrinsic will fail.
+7. Introduce a new extrinsic to `update_logo` for updating an existing application context (post goveranance registration) provided with new logo `ProviderRegistryEntry` with the `ApplicationIndex`.
+
+    ```rust
+        #[pallet::call_index(14)]
+        pub fn update_logo(
+            origin: OriginFor<T>,
+            application_index: ApplicationIndex,
+            logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let provider_id = get_provider_id_from_msa(&who)?;
+
+            ProviderToApplicationRegistryEntry::<T>::try_mutate(
+                &provider_id,
+                &application_index,
+                |maybe_entry| -> DispatchResult {
+                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
+                    entry.default_logo_250_100_png_bytes = logo_bytes;
+                    Ok(())
+                },
+            )?;
+
+            Ok(().into())
+        }
+    ```
+
+8. Introduce a new extrinsic to `update_localized_logo` for updating an existing application context (post goveranance registration) provided with new localized logo `ProviderRegistryEntry` with the `ApplicationIndex`.
+
+    ```rust
+        #[pallet::call_index(15)]
+        pub fn update_localized_logo(
+            origin: OriginFor<T>,
+            application_index: ApplicationIndex,
+            language_code: BoundedVec<u8, T::MaxLanguageCodeSize>,
+            logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
+        ) -> DispatchResultWithPostInfo {
+            let who = ensure_signed(origin)?;
+            let provider_id = get_provider_id_from_msa(&who)?;
+
+            ProviderToApplicationRegistryEntry::<T>::try_mutate(
+                &provider_id,
+                &application_index,
+                |maybe_entry| -> DispatchResult {
+                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
+                    entry.localized_logo_250_100_png_bytes.insert(language_code, logo_bytes);
+                    Ok(())
+                },
+            )?;
+
+            Ok(().into())
+        }
+    ```
 
 ### **Storage Migration** <a id='migration'></a>
 
