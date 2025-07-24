@@ -70,9 +70,9 @@ Proposed are the following changes:
 1. Update `ProviderRegistryEntry`.
 
     Each registry entry supports:
-    - A default name and logo.
+    - A default name and logo (hash of the logo image).
     - Localized names and logos (up to 150 locales).
-    - PNG logo support (250x100, up to 128 KiB).
+    - PNG logo support (250x100, up to 128 KiB). Note that the logo is not embedded in the proposal but rather a hash of the logo image.
     - BCP 47-compliant language codes (e.g., en-US, fr-FR).
 2. Updated `ProviderRegistryEntry` struct have the following properties:
 
