@@ -197,13 +197,13 @@ Proposed are the following changes:
         #[pallet::call_index(14)]
         pub fn update_logo(
             origin: OriginFor<T>,
-            logo_hash: LogoHash,
             logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
         ) -> DispatchResultWithPostInfo {
             // Store the logo bytes in ApprovedLogos
         }
     ```
 
+    Note: This extrinsics will compute the logo hash and update the `ApprovedLogos` storage map if the hash exists in `ApprovedLogoHashes`.
 7. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
