@@ -265,12 +265,20 @@ erDiagram
 Pros:
 
 - Can withstand complete breaking format changes without requiring up-front storage migrations.
+- `messages` pallet data _never_\*\* needs to be migrated, since it is essentially time-series; messages would always
+  contain an indication of the concrete `SchemaId` needed for decoding
+- `stateful-storage` data would also not ever require a "migration"_per se_\*\* , but existing data may be rewritten
+  opportunistically
+  as it is encountered.
 
 Cons:
 
 - Has an additional cost of `1 READ` per delegation lookup vs Option 2
 - More complexity due to the added architectural layer of `MetaSchema`
 - Up-front cost to migrate storage for `messages` and `stateful-storage`
+
+\*\*`stateful-storage` and `messages` pallet storage migration still may be required if the pallet itself changes the
+underlying page data structure, but _not_ for any published Schema changes
 
 ### Option 2:
 
