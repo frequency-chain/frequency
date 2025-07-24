@@ -70,42 +70,21 @@ erDiagram
     DelegationSchemaPermissions ||--o{ Schema: "delegation mapping"
 ```
 
-# Design Option 1: Immutable, Versioned Schemas with Permissions & Intents
+# Design: Immutable, Versioned Schemas with Permissions & Intents
+
+NOTE: For simplicity, I've omitted showing entities/relations whose sole purpose is providing name-to-id lookup for
+off-chain clients
 
 ```mermaid
 ---
 title: "Design Option 1: Entities & Relationships"
 ---
 erDiagram
-    MetaSchemaRegistry {
-        string schema_namespace PK
-        string schema_descriptor PK
-        integer meta_schema_id FK
-    }
-    MetaSchema {
-        integer id PK
-        integer[] intent_ids FK
-        integer[] schema_versions FK
-    }
-    IntentRegistry {
-        string intent_namespace PK
-        string intent_descriptor PK
-        integer intent_id FK
-    }
     Intent {
         integer id PK
-        integer[] permission_ids FK
-        integer[] meta_schemas FK
+        integer[] schema_versions FK
     }
-    PermissionRegistry {
-        string permission_namespace PK
-        string permission_descriptor PK
-        integer permission_id FK
-    }
-    Permission {
-        integer id PK
-    }
-    Delegation {
+    ProviderDelegation {
         integer msa_id PK
         integer provider_id PK
         integer revoked_at
@@ -114,20 +93,21 @@ erDiagram
         integer intent_id FK
         integer revoked_at
     }
+    DelegationGroup {
+        integer id PK
+        integer[] intents FK
+    }
     Schema {
         integer id PK
+        integer intent_id FK
         data schema_metadata
         data schema_payload
     }
 
-    MetaSchemaRegistry ||--o{ MetaSchema: "name/version lookup"
-    MetaSchema ||--o{ Schema: "schema version map"
-    IntentRegistry ||--|| Intent: "name lookup"
-    PermissionRegistry ||--|| Permission: "permission name lookup"
-    Delegation ||--o{ DelegationIntentPermissions: "has permissions"
-    DelegationIntentPermissions ||--|| Intent: "has permissions"
-    MetaSchema }o--o{ Intent: "MetaSchema <-> Intent"
-    Intent ||--o{ Permission: "intent-to-permissions"
+    Intent ||--o{ Schema: "intent-to-schemas"
+    ProviderDelegation ||--o{ DelegationIntentPermissions: ""
+    DelegationIntentPermissions ||--|| Intent: ""
+    DelegationGroup }o--o{ Intent: "delegation-group-to-intents"
 ```
 
 ## Notes
@@ -135,24 +115,20 @@ erDiagram
 - `Intents` MUST be mutable; otherwise there's little benefit to them (the main benefit of an Intent being that it
   enables mutating the collection of permissions without requiring a new delegation)
 - `Schemas` are NOT mutable; they represent a fixed format & payload location
-- `MetaSchemas` are mutable in two senses:
-    - The version array is updated as new Schemas are published
-    - The list of implemented intents may be updated as Intents are added or modified
-- The bi-directional lookup on `Intent` <--> `MetaSchema` is crucial to mitigating the runtime cost of delegation
-  lookups
-- The cost of doing a Delegation lookup for a particular Schema increases as follows:
-    - 1 additional storage READ of the Schema's associated `MetaSchema`
-    - Once the Delegation BTree is read from storage (already done currently), instead of a single keyed BTree lookup,
-      must do
-      an iterative lookup or set comparison between the intents implemented by the MetaSchema and the intents contained
-      in the Delegation.
+- The bi-directional lookup on `Intent` <--> `Schema` is crucial to mitigating the runtime cost of delegation lookups
+- The cost of doing a Delegation lookup for a particular Schema is the same as the current implementation
+- `DelegationGroups` are _mutable_--but, critically, are not themselves delegatable. That is, granting delegations by
+  DelegationGroup merely creates the individual Intent delegations that exist in the group _at the time of delegation_;
+  subsequent mutations of the DelegationGroup do not affect existing delegations. Granting delegations in this way may
+  be supported by new extrinsics, or may simply be left to the client to query the DelegationGroup and request the
+  indicated delegations.
 - Because stored data retains an indication of the concrete `SchemaId` that was used to write it, there is ZERO risk of
   introducing a breaking format change, as users will always have access to the correct schema needed to decode the
   data.
 
 ```mermaid
 ---
-title: "Design Option 1: Pallet Storage Model"
+title: "Design: Pallet Storage Model"
 ---
 erDiagram
     Messages {
@@ -184,114 +160,38 @@ erDiagram
 
 ## Notes
 
-This storage model requires migrations for both the `messages` and `stateful-storage` pallets, to include the concrete
-`SchemaId` that was used to write the payload. The downstream benefit of this is that future schema updates (ie, _minor_
-updates) would not require a storage migration; instead, storage could be updated opportunistically as new data is
-written. Only updates that involve a completely new `MetaSchema` would require a migration; this would be considered a
-major breaking change to the data.
+This design separates the notion of _storage location_ from _data format_ (ie, `Schema`). _Storage location_ is now tied
+to `IntentId`.
 
-# Design Option 2: Mutable, Backward-compatible Schemas with Permissions & Intents
+The design requires modifications to the pallet storage structures for both the `messages` and `stateful-storage`
+pallets. While this could be accomplished via a migration of all existing pallet data, the amount of data that currently
+exists on-chain makes this problematic. If the cost or complexity of such a migration renders it infeasible, the
+following approach is proposed:
 
-```mermaid
----
-title: "Design Option 2: Entities & Relationships"
----
-erDiagram
-    IntentRegistry {
-        string intent_namespace PK
-        string intent_descriptor PK
-        integer intent_id FK
-    }
-    Intent {
-        integer id PK
-        integer[] permission_ids FK
-        integer[] schema_versions FK
-    }
-    PermissionRegistry {
-        string permission_namespace PK
-        string permission_descriptor PK
-        integer permission_id FK
-    }
-    Permission {
-        integer id PK
-    }
-    Delegation {
-        integer msa_id PK
-        integer provider_id PK
-        integer revoked_at
-    }
-    DelegationIntentPermissions {
-        integer intent_id FK
-        integer revoked_at
-    }
-    Schema {
-        integer id PK
-        integer[] intent_ids FK
-        data schema_metadata
-        data schema_payload
-    }
+### `messages` pallet
 
-    IntentRegistry ||--|| Intent: "name lookup"
-    PermissionRegistry ||--|| Permission: "permission name lookup"
-    Delegation ||--o{ DelegationIntentPermissions: "has permissions"
-    DelegationIntentPermissions ||--|| Intent: "has permissions"
-    Schema }o--o{ Intent: "schema-to-intent, intent-to-schema"
-    Intent ||--o{ Permission: "intent-to-permissions"
-```
+Since `messages` pallet storage represents time-series content publications, it should be possible to define a
+`MessagesV3` pallet storage (the current storage being `MessagesV2`). All future write operations would write to
+`MessagesV3`. For reads, we would store the block number at which `MessagesV3` was introduced; read requests for data
+prior to that block would read from `MessagesV2`.
 
-## Notes
+### `stateful-storage` pallet
 
-- `Intents` MUST be mutable; otherwise there's little benefit to them (the main benefit of an Intent being that it
-  enables mutating the collection of permissions without requiring a new delegation)
-- `Schemas` are mutable/evolvable, but only to the extent that they are backwards-compatible
-    - Easy to validate off-chain using actual chain data for non-encrypted data before approving Schema updates
-    - Validating updates for schemas that include encrypted data must rely on test data
-    - Risk of missing a format-breaking change, therefore, is low--but not zero
-- The bi-directional lookup on `Intent` <--> `Schema` is crucial to mitigating the runtime cost of delegation
-  lookups
-- The cost of doing a Delegation lookup for a particular Schema increases as follows:
-    - Once the Delegation BTree is read from storage (already done currently), instead of a single keyed BTree lookup,
-      must do an iterative lookup or set comparison between the intents implemented by the MetaSchema and the intents
-      contained in the Delegation.
-- This approach does not need to modify `messages` or `stateful-storage` pallet storage, as schema updates are
-  non-breaking. Major updates involving a new Schema would require appropriate migrations as currently.
+Data stored in the `stateful-storage` pallet always represents the latest state, rather than a time-series. Therefore,
+it's difficult or impossible to bifurcate the storage in the same way as the `messages` pallet. Instead, to avoid
+requiring a complete storage migration, new pages/items that are written can include a _storage version magic number_ in
+either the page or the item header. For `Paginated` storage, this value would precede the `PageNonce`; for `Itemized`
+storage the value would precede `payload_len`. The 'magic number' would be designed to be the same byte length as the
+value currently a byte offset zero within the page/item, and to be a value such that conflict with a valid `nonce` or
+`payload_len` would be highly unlikely, if not impossible.
 
-# Summary
+New structures would be defined, ie `PageV2` and `ItemizedItemV2`, and decoding values read from storage would need to
+determine which structure to decode to based on the presence/absence of the "magic value".
 
-## TL;DR: Trade-offs between the two approaches:
+## Additional
 
-### Option 1:
+Other features are also considered for implementation, but not discussed above; they do not significantly affect the
+cmoplexity or nature of the proposed design:
 
-Pros:
-
-- Can withstand complete breaking format changes without requiring up-front storage migrations.
-- `messages` pallet data _never_\*\* needs to be migrated, since it is essentially time-series; messages would always
-  contain an indication of the concrete `SchemaId` needed for decoding
-- `stateful-storage` data would also not ever require a "migration"_per se_\*\* , but existing data may be rewritten
-  opportunistically
-  as it is encountered.
-
-Cons:
-
-- Has an additional cost of `1 READ` per delegation lookup vs Option 2
-- More complexity due to the added architectural layer of `MetaSchema`
-- Up-front cost to migrate storage for `messages` and `stateful-storage`
-
-\*\*`stateful-storage` and `messages` pallet storage migration still may be required if the pallet itself changes the
-underlying page data structure, but _not_ for any published Schema changes
-
-### Option 2:
-
-Pros:
-
-- 1 less storage READ per delegation lookup vs Option 1
-- Less complex
-- No up-front storage migrations
-
-Cons:
-
-- Allowable Schema updates are somewhat narrowly defined; can only withstand fully backward-compatible format changes
-  without requiring a new Schema (and thus a migration)
-
-Both approaches rely on Governance to be the gatekeepers of Schema or Intent changes that violate the initial stated
-purpose/use/intent of the data being stored.
+- Deprecation of schemas/allow only 1 active _writeable_ Schema per Intent
+- Name registries for off-chain lookup
