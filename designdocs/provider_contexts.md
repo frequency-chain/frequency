@@ -212,6 +212,38 @@ To support the new structure, a storage migration will be required to:
 
 - Migrate existing `ProviderToRegistryEntry` to the new format with default values for localized names and logos.
 
+### **Runtime RPC Changes**
+
+1. Introduce a new RPC method "get_provider_application_context" to fetch the application context for a given provider and application index.
+
+    ```rust
+    // Return a constructed ApplicationContext struct
+    // This struct will contain the default name, localized names, default logo, and localized logos.
+    #[derive(Encode, Decode, Clone, PartialEq, Eq, Debug)]
+    pub struct ApplicationContext<T:Config> {
+        pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
+        pub localized_names: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderNameSize>>,
+        pub default_logo_250_100_png: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
+        pub localized_logo_250_100_png: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderLogo250X100Size>>,
+    }
+
+    // The rpc should fetch the data from `ProviderToApplicationRegistryEntry` and construct the ApplicationContext with logos from `ApprovedLogos`.
+    #[rpc]
+    pub fn get_provider_application_context(
+        provider_id: ProviderId,
+        application_index: ApplicationIndex,
+    ) -> Option<ApplicationContext<T>>;
+    ```
+
+2. Optionally, introduce "get_provider" RPC method to include the new fields for localized names and logos and return a provider registry entry.
+
+    ```rust
+    #[rpc]
+    pub fn get_provider(
+        provider_id: ProviderId,
+    ) -> Option<ApplicationContext<T>>;
+    ```
+
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
 _Any_ change to the Provider or Application Context must be approved by governance.
