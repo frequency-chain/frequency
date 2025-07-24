@@ -77,13 +77,13 @@ Proposed are the following changes:
 2. Updated `ProviderRegistryEntry` struct have the following properties:
 
     ```rust
+    type LogoHash = [u8; 32]; // blake2_256 hash of the logo
     pub struct ProviderRegistryEntry<T: Config> {
         pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
-        pub localized_names: BTreeMap<Vec<u8>, BoundedVec<u8, T::MaxProviderNameSize>>,
-        pub default_logo_250_100_png_hash: [u8; 32],
-        pub localized_logo_250_100_png_hashes: BTreeMap<Vec<u8>, [u8; 32]>,
+        pub localized_names: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderNameSize>>,
+        pub default_logo_250_100_png_hash: LogoHash,
+        pub localized_logo_250_100_png_hashes: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, LogoHash>,
     }
-
     ```
 
 3. New `ProviderToApplicationRegistryEntry` storage be initialized:
@@ -120,7 +120,7 @@ Proposed are the following changes:
         pub ApprovedLogoHashes: StorageMap<
             _,
             Blake2_128Concat,
-            [u8; 32], // blake2_256 hash of the logo
+            LogoHash,
             (),
             OptionQuery
         >;
@@ -134,7 +134,7 @@ Proposed are the following changes:
         pub ApprovedLogos: StorageMap<
             _,
             Blake2_128Concat,
-            [u8; 32], // blake2_256 hash of the logo
+            LogoHash,
             BoundedVec<u8, T::MaxProviderLogo250X100Size>,
             OptionQuery
         >;
@@ -197,7 +197,7 @@ Proposed are the following changes:
         #[pallet::call_index(14)]
         pub fn update_logo(
             origin: OriginFor<T>,
-            logo_hash: [u8; 32],
+            logo_hash: LogoHash,
             logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
         ) -> DispatchResultWithPostInfo {
             // Store the logo bytes in ApprovedLogos
