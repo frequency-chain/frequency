@@ -26,6 +26,7 @@ decl_test_parachains! {
 		pallets = {
 			PolkadotXcm: frequency_runtime::PolkadotXcm,
 			ForeignAssets: frequency_runtime::ForeignAssets,
+			System: frequency_runtime::System,
 			Balances: frequency_runtime::Balances,
 			Sudo: frequency_runtime::Sudo,
 		}

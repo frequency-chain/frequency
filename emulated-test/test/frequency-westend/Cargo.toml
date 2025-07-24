@@ -8,6 +8,7 @@ publish = false
 version = "0.0.0"
 
 [dependencies]
+parity-scale-codec = { workspace = true }
 asset-test-utils = { workspace = true }
 emulated-integration-tests-common = { workspace = true }
 frame-support = { workspace = true }
@@ -22,4 +23,5 @@ xcm-executor = { workspace = true }
 staging-xcm = { workspace = true }
 staging-xcm-builder = { workspace = true }
 pallet-assets = { workspace = true }
+frame-system = { workspace = true }
 sp-io = { workspace = true }
