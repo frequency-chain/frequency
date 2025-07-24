@@ -187,33 +187,7 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-6. Introduce a new extrinsic to `update_name` for updating an existing application context (post goveranance registration) provided with new name  `ProviderRegistryEntry` with the `ApplicationIndex`.
-
-    ```rust
-        #[pallet::call_index(13)]
-        pub fn update_name(
-            origin: OriginFor<T>,
-            application_index: ApplicationIndex,
-            name: BoundedVec<u8, T::MaxProviderNameSize>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let provider_id = get_provider_id_from_msa(&who)?;
-
-            ProviderToApplicationRegistryEntry::<T>::try_mutate(
-                &provider_id,
-                &application_index,
-                |maybe_entry| -> DispatchResult {
-                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
-                    entry.default_name = name;
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
-        }
-    ```
-
-7. Introduce a new extrinsic to `update_logo` for updating an existing application context (post goveranance registration) provided with new logo `ProviderRegistryEntry` with the `ApplicationIndex`.
+6. Introduce a new extrinsic to `update_logo` for updating an existing application context (post goveranance registration) provided with new logo `ProviderRegistryEntry` with the `ApplicationIndex`.
 
     ```rust
         #[pallet::call_index(14)]
@@ -239,7 +213,7 @@ Proposed are the following changes:
         }
     ```
 
-8. Introduce a new extrinsic to `update_localized_logo` for updating an existing application context (post goveranance registration) provided with new localized logo `ProviderRegistryEntry` with the `ApplicationIndex`.
+7. Introduce a new extrinsic to `update_localized_logo` for updating an existing application context (post goveranance registration) provided with new localized logo `ProviderRegistryEntry` with the `ApplicationIndex`.
 
     ```rust
         #[pallet::call_index(15)]
