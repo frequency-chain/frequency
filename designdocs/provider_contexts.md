@@ -77,12 +77,13 @@ Proposed are the following changes:
 2. Updated `ProviderRegistryEntry` struct have the following properties:
 
     ```rust
-        pub struct ProviderRegistryEntry<T::Config> {
-            pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
-            pub localized_names: BTreeMap<Vec<T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderNameSize>>,
-            pub default_logo_250_100_png_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
-            pub localized_logo_250_100_png_bytes: BTreeMap<Vec<T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderLogo250X100Size>>,
-        }
+    pub struct ProviderRegistryEntry<T: Config> {
+        pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
+        pub localized_names: BTreeMap<Vec<u8>, BoundedVec<u8, T::MaxProviderNameSize>>,
+        pub default_logo_250_100_png_hash: [u8; 32],
+        pub localized_logo_250_100_png_hashes: BTreeMap<Vec<u8>, [u8; 32]>,
+    }
+
     ```
 
 3. New `ProviderToApplicationRegistryEntry` storage be initialized:
@@ -112,13 +113,32 @@ Proposed are the following changes:
     The approved hashes are recorded in a dedicated storage map:
 
     ```rust
-            pub ApprovedLogoHashes: StorageMap<
-                _,
-                Blake2_128Concat,
-                [u8; 32], // blake2_256 hash of the logo
-                (),
-                OptionQuery
-            >;
+        #[pallet::storage]
+        #[pallet::getter(fn approved_logo_hashes)]
+        /// Approved logo hashes for providers.
+        /// This map stores the blake2_256 hash of the logo as the key and an empty tuple as the value.
+        pub ApprovedLogoHashes: StorageMap<
+            _,
+            Blake2_128Concat,
+            [u8; 32], // blake2_256 hash of the logo
+            (),
+            OptionQuery
+        >;
+
+        /// ApprovedLogos is map of hash vs logo bytes.
+        /// This is used to store the approved logos for providers.
+        /// The key is the blake2_256 hash of the logo image, and the value is the actual logo bytes.
+        /// This allows for easy retrieval of the logo by its hash
+        #[pallet:storage]
+        #[pallet::getter(fn approved_logos)]
+        pub ApprovedLogos: StorageMap<
+            _,
+            Blake2_128Concat,
+            [u8; 32], // blake2_256 hash of the logo
+            BoundedVec<u8, T::MaxProviderLogo250X100Size>,
+            OptionQuery
+        >;
+
     ```
 
     The `propose_to_be_provider` extrinsic will insert or update entries in this map.
@@ -128,27 +148,11 @@ Proposed are the following changes:
 1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance.
 
     ```rust
-        // Define a common payload type for provider registration
-        #[derive(Encode, Decode, Clone, PartialEq, Eq, RuntimeDebug)]
-        pub struct ProviderRegistrationPayload<T: Config> {
-            /// Default name for provider or application.
-            pub name: BoundedVec<u8, T::MaxProviderNameSize>,
-
-            /// A list of pre-approved logo image hashes (blake2_256).
-            pub logo_hashes: BoundedVec<[u8; 32], T::MaxApprovedLogoCount>,
-
-            /// Localized translations of the name, keyed by BCP 47 language code.
-            pub translations: BoundedBTreeMap<
-                BoundedVec<u8, T::MaxLanguageCodeSize>, 
-                BoundedVec<u8, T::MaxProviderNameSize>, 
-                T::MaxTranslations,
-            >,
-        }
 
         #[pallet::call_index(0)]
         pub fn propose_to_be_provider(
             origin: OriginFor<T>,
-            payload: ProviderRegistrationPayload,
+            payload: ProviderRegistryEntry<T>,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
         }
@@ -161,7 +165,7 @@ Proposed are the following changes:
         #[pallet::call_index(1)]
         pub fn propose_to_add_application(
             origin: OriginFor<T>,
-            payload: ProviderRegistrationPayload,
+            payload: ProviderRegistryEntry<T>,
         ) -> DispatchResultWithPostInfo {
             // Implementation details...
             // This can internally call same logic as `propose_to_be_provider` for consistency
@@ -187,58 +191,20 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-6. Introduce a new extrinsic to `update_logo` for updating an existing application context (post goveranance registration) provided with new logo `ProviderRegistryEntry` with the `ApplicationIndex`.
+6. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo hash and bytes.
 
     ```rust
         #[pallet::call_index(14)]
         pub fn update_logo(
             origin: OriginFor<T>,
-            application_index: ApplicationIndex,
+            logo_hash: [u8; 32],
             logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
         ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let provider_id = get_provider_id_from_msa(&who)?;
-
-            ProviderToApplicationRegistryEntry::<T>::try_mutate(
-                &provider_id,
-                &application_index,
-                |maybe_entry| -> DispatchResult {
-                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
-                    entry.default_logo_250_100_png_bytes = logo_bytes;
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
+            // Store the logo bytes in ApprovedLogos
         }
     ```
 
-7. Introduce a new extrinsic to `update_localized_logo` for updating an existing application context (post goveranance registration) provided with new localized logo `ProviderRegistryEntry` with the `ApplicationIndex`.
-
-    ```rust
-        #[pallet::call_index(15)]
-        pub fn update_localized_logo(
-            origin: OriginFor<T>,
-            application_index: ApplicationIndex,
-            language_code: BoundedVec<u8, T::MaxLanguageCodeSize>,
-            logo_bytes: BoundedVec<u8, T::MaxProviderLogo250X100Size>,
-        ) -> DispatchResultWithPostInfo {
-            let who = ensure_signed(origin)?;
-            let provider_id = get_provider_id_from_msa(&who)?;
-
-            ProviderToApplicationRegistryEntry::<T>::try_mutate(
-                &provider_id,
-                &application_index,
-                |maybe_entry| -> DispatchResult {
-                    let entry = maybe_entry.as_mut().ok_or(Error::<T>::ApplicationNotFound)?;
-                    entry.localized_logo_250_100_png_bytes.insert(language_code, logo_bytes);
-                    Ok(())
-                },
-            )?;
-
-            Ok(().into())
-        }
-    ```
+7. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
 
