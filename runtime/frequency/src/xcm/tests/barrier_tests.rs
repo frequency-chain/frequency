@@ -6,8 +6,10 @@ use xcm_executor::traits::{Properties, ShouldExecute as XcmBarrier};
 #[test]
 fn test_barrier_allows_parent_exec_plurality_free() {
 	let location = Location::new(1, []);
-	let mut instructions = vec![Instruction::<()>::ClearOrigin];
-	let mut properties = Properties { weight_credit: Weight::zero(), message_id: None };
+	let mut instructions =
+		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
+	let mut properties =
+		Properties { weight_credit: Weight::from_parts(1_000_000_000, 0), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
 	let result = <Barrier as XcmBarrier>::should_execute(
