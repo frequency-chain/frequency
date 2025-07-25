@@ -2,9 +2,15 @@ import '@frequency-chain/api-augment';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Bytes, u64, u16 } from '@polkadot/types';
 import assert from 'assert';
-import { AddKeyData, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
+import { AddKeyData, RecoveryCommitmentPayload, ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { base64 } from 'multiformats/bases/base64';
 import { SchemaId } from '@frequency-chain/api-augment/interfaces';
+import {
+  generateRecoverySecret,
+  getRecoveryCommitment,
+  ContactType,
+  getIntermediaryHashes,
+} from '@frequency-chain/recovery-sdk';
 import {
   createKeys,
   createAndFundKeypair,
@@ -33,6 +39,7 @@ import {
   getTestHandle,
   assertHasMessage,
   createMsa,
+  generateRecoveryCommitmentPayload,
 } from '../scaffolding/helpers';
 import { ipfsCid } from '../messages/ipfs';
 import { getFundingSource } from '../scaffolding/funding';
@@ -141,6 +148,98 @@ describe('Capacity Transactions', function () {
           assert(remaining <= maximumExpectedRemaining, `expected ${remaining} to be <= ${maximumExpectedRemaining}`);
           assert.equal(capacityStaked.totalTokensStaked.toBigInt(), stakedForMsa);
           assert.equal(capacityStaked.totalCapacityIssued.toBigInt(), stakedForMsa / getTokenPerCapacity());
+        });
+
+        it('successfully pays with Capacity for eligible transaction - addRecoveryCommitment', async function () {
+          // Generate a recovery secret using the Recovery SDK
+          const recoverySecret = generateRecoverySecret();
+
+          // Generate Recovery Commitment using the Recovery SDK with test email contact
+          const testEmail = 'test@example.com';
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+
+          const expiration = (await getBlockNumber()) + 10;
+          const recoveryCommitmentData: RecoveryCommitmentPayload = {
+            discriminant: 'RecoveryCommitmentPayload',
+            recoveryCommitment,
+            expiration,
+          };
+
+          const payload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentPayload = ExtrinsicHelper.api.registry.createType(
+            'PalletMsaRecoveryCommitmentPayload',
+            payload
+          );
+          const signature = signPayloadSr25519(capacityKeys, recoveryCommitmentPayload);
+          const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(capacityKeys, signature, payload);
+
+          const { eventMap } = await addRecoveryCommitmentOp.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'msa.RecoveryCommitmentAdded');
+        });
+
+        it('successfully pays with Capacity for eligible transaction - recoverAccount', async function () {
+          const defaultPayload: AddKeyData = {};
+          const lostKey = await createAndFundKeypair(fundingSource, 50_000_000n);
+          const recoveryKey = createKeys('RecoveryKey');
+
+          // Create an MSA to use as the lost key
+          const { eventMap: setupEventMap } = await ExtrinsicHelper.createMsa(lostKey).signAndSend();
+          assertEvent(setupEventMap, 'msa.MsaCreated');
+          const msaCreatedEvent = setupEventMap['msa.MsaCreated'];
+
+          // Store the msaId and recovery key that will be used in the recovery payload
+          defaultPayload.msaId = msaCreatedEvent.data[0] as u64;
+          defaultPayload.newPublicKey = getUnifiedPublicKey(recoveryKey);
+
+          // Generate a recovery secret using the Recovery SDK
+          const recoverySecret = generateRecoverySecret();
+          const testEmail = 'test@example.com';
+
+          // Add a recovery commitment to the lostKey MSA
+          const recoveryCommitment = getRecoveryCommitment(recoverySecret, ContactType.EMAIL, testEmail);
+          const expiration = (await getBlockNumber()) + 10;
+          const recoveryCommitmentData: RecoveryCommitmentPayload = {
+            discriminant: 'RecoveryCommitmentPayload',
+            recoveryCommitment,
+            expiration,
+          };
+
+          const recoveryPayload = await generateRecoveryCommitmentPayload(recoveryCommitmentData);
+          const recoveryCommitmentCodec = ExtrinsicHelper.api.registry.createType(
+            'PalletMsaRecoveryCommitmentPayload',
+            recoveryPayload
+          );
+          const recoverySignature = signPayloadSr25519(lostKey, recoveryCommitmentCodec);
+          const addRecoveryCommitmentOp = ExtrinsicHelper.addRecoveryCommitment(
+            lostKey,
+            recoverySignature,
+            recoveryPayload
+          );
+          await addRecoveryCommitmentOp.signAndSend();
+
+          // Create and approve a recovery provider - use the capacityKeys that already has capacity staked
+          const recoveryProviderKeys = capacityKeys;
+
+          // Approve the recovery provider
+          await ExtrinsicHelper.approveRecoveryProvider(fundingSource, recoveryProviderKeys).signAndSend();
+
+          // Generate the payload for adding a new control key, required for recovery
+          const payload = await generateAddKeyPayload(defaultPayload);
+          const addKeyDataCodec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+          const newSig = signPayloadSr25519(recoveryKey, addKeyDataCodec);
+
+          // Generate Recovery Intermediary Hashes
+          const { a, b } = getIntermediaryHashes(recoverySecret, ContactType.EMAIL, testEmail);
+
+          // Recover the account using the recovery provider
+          const recoverAccountOp = ExtrinsicHelper.recoverAccount(recoveryProviderKeys, a, b, newSig, payload);
+
+          const { eventMap } = await recoverAccountOp.payWithCapacity();
+          assertEvent(eventMap, 'system.ExtrinsicSuccess');
+          assertEvent(eventMap, 'capacity.CapacityWithdrawn');
+          assertEvent(eventMap, 'msa.AccountRecovered');
         });
       });
 

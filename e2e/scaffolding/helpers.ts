@@ -22,6 +22,7 @@ import {
   ItemizedSignaturePayloadV2,
   PaginatedDeleteSignaturePayloadV2,
   PaginatedUpsertSignaturePayloadV2,
+  RecoveryCommitmentPayload,
   ReleaseSchedule,
 } from './extrinsicHelpers';
 import {
@@ -36,7 +37,7 @@ import assert from 'assert';
 import { AVRO_GRAPH_CHANGE } from '../schemas/fixtures/avroGraphChangeSchemaType';
 import { PARQUET_BROADCAST } from '../schemas/fixtures/parquetBroadcastSchemaType';
 import { AVRO_CHAT_MESSAGE } from '../stateful-pallet-storage/fixtures/itemizedSchemaType';
-import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
+import { getUnifiedAddress, getUnifiedPublicKey, createAddKeyData, sign } from '@frequency-chain/ethereum-utils';
 import { KeypairType } from '@polkadot/util-crypto/types';
 import { BigInt } from '@polkadot/x-bigint';
 import { ethers, keccak256 } from 'ethers';
@@ -138,6 +139,42 @@ export async function generateAddKeyPayload(
   };
 }
 
+/**
+ * Generates a signed AddKey proof that can use either Sr25519 or EIP-712 ECDSA signatures
+ *
+ * @param addKeyData - The add key data to be signed
+ * @param signingKey - The keypair to sign the payload with
+ * @param expirationOffset - Optional expiration offset for the payload (default: 100)
+ * @param blockNumber - Optional block number for the payload
+ * @returns Object containing the payload and signature (either Sr25519 or ECDSA)
+ */
+export async function generateSignedAddKeyProofWithType(
+  addKeyData: AddKeyData,
+  signingKey: KeyringPair,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<{ payload: AddKeyData; signature: MultiSignatureType }> {
+  const payload = await generateAddKeyPayload(addKeyData, expirationOffset, blockNumber);
+
+  if (signingKey.type === 'ethereum') {
+    const ethereumKeypair = getEthereumKeyPairFromUnifiedAddress(getUnifiedAddress(signingKey));
+    const ethereumSecretKey = u8aToHex(ethereumKeypair.secretKey);
+
+    const eip712AddKeyData = createAddKeyData(
+      payload.msaId!.toBigInt(),
+      getUnifiedPublicKey(signingKey),
+      payload.expiration
+    );
+    const ecdsaSignature = await sign(ethereumSecretKey, eip712AddKeyData, 'Dev');
+
+    return { payload, signature: ecdsaSignature };
+  } else {
+    const codec = ExtrinsicHelper.api.registry.createType('PalletMsaAddKeyData', payload);
+    const signature = signPayload(signingKey, codec);
+    return { payload, signature };
+  }
+}
+
 export async function generateAuthorizedKeyPayload(
   payloadInputs: AuthorizedKeyData,
   expirationOffset: number = 100,
@@ -147,6 +184,19 @@ export async function generateAuthorizedKeyPayload(
   return {
     expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
     ...payload,
+  };
+}
+
+export async function generateRecoveryCommitmentPayload(
+  payloadInputs: RecoveryCommitmentPayload,
+  expirationOffset: number = 100,
+  blockNumber?: number
+): Promise<RecoveryCommitmentPayload> {
+  const { expiration, ...payload } = payloadInputs;
+
+  return {
+    ...payload,
+    expiration: expiration || (blockNumber || (await getBlockNumber())) + expirationOffset,
   };
 }
 

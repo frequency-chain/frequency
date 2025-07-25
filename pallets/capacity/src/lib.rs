@@ -29,6 +29,7 @@
 
 use core::ops::Mul;
 use frame_support::{
+	dispatch::DispatchResult,
 	ensure,
 	traits::{
 		tokens::fungible::{Inspect as InspectFungible, InspectFreeze, Mutate, MutateFreeze},
@@ -48,7 +49,6 @@ pub use common_primitives::{
 	node::{AccountId, Balance, BlockNumber},
 	utils::wrap_binary_data,
 };
-
 use frame_system::pallet_prelude::*;
 
 #[cfg(feature = "runtime-benchmarks")]

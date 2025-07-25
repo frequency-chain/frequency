@@ -26,9 +26,6 @@ pallet-balances = { workspace = true, default-features = false }
 sp-runtime = { workspace = true }
 sp-core = { workspace = true, optional = true }
 
-# Frequency related dependencies
-common-primitives = { default-features = false, path = "../../common/primitives" }
-
 [dev-dependencies]
 sp-io = { workspace = true }
 pallet-utility = { workspace = true }
@@ -48,7 +45,6 @@ std = [
 	"sp-core?/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"common-primitives/std",
 	"common-runtime/std",
 ]
 runtime-benchmarks = [
@@ -59,7 +55,6 @@ runtime-benchmarks = [
 	"pallet-balances/runtime-benchmarks",
 	"pallet-utility/runtime-benchmarks",
 	"sp-runtime/runtime-benchmarks",
-	"common-primitives/runtime-benchmarks",
 	"common-runtime/runtime-benchmarks",
 ]
 try-runtime = [

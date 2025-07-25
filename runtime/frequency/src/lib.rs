@@ -129,8 +129,6 @@ pub use common_runtime::{
 use frame_support::traits::Contains;
 #[cfg(feature = "try-runtime")]
 use frame_support::traits::{TryStateSelect, UpgradeCheckSelect};
-#[allow(deprecated)]
-use sp_runtime::traits::transaction_extension::AsTransactionExtension;
 
 mod ethereum;
 mod genesis;
@@ -359,7 +357,6 @@ impl GetAddKeyData<RuntimeCall, AccountId, MessageSourceId> for MsaCallFilter {
 }
 
 /// The TransactionExtension to the basic transaction logic.
-#[allow(deprecated)]
 pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 	Runtime,
 	(
@@ -368,12 +365,10 @@ pub type TxExtension = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
 		(frame_system::CheckSpecVersion<Runtime>, frame_system::CheckTxVersion<Runtime>),
 		frame_system::CheckGenesis<Runtime>,
 		frame_system::CheckEra<Runtime>,
-		AsTransactionExtension<common_runtime::extensions::check_nonce::CheckNonce<Runtime>>,
-		AsTransactionExtension<pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>>,
-		AsTransactionExtension<pallet_msa::CheckFreeExtrinsicUse<Runtime>>,
-		AsTransactionExtension<
-			pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
-		>,
+		common_runtime::extensions::check_nonce::CheckNonce<Runtime>,
+		pallet_frequency_tx_payment::ChargeFrqTransactionPayment<Runtime>,
+		pallet_msa::CheckFreeExtrinsicUse<Runtime>,
+		pallet_handles::handles_signed_extension::HandlesSignedExtension<Runtime>,
 		frame_metadata_hash_extension::CheckMetadataHash<Runtime>,
 		frame_system::CheckWeight<Runtime>,
 	),
@@ -456,7 +451,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 168,
+	spec_version: 172,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -470,7 +465,7 @@ pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: Cow::Borrowed("frequency-testnet"),
 	impl_name: Cow::Borrowed("frequency"),
 	authoring_version: 1,
-	spec_version: 168,
+	spec_version: 172,
 	impl_version: 0,
 	apis: RUNTIME_API_VERSIONS,
 	transaction_version: 1,
@@ -603,6 +598,14 @@ impl pallet_msa::Config for Runtime {
 	type Proposal = RuntimeCall;
 	// The Council proposal provider interface
 	type ProposalProvider = CouncilProposalProvider;
+	// The origin that is allowed to approve recovery providers
+	#[cfg(any(feature = "frequency", feature = "runtime-benchmarks"))]
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
+	#[cfg(not(any(feature = "frequency", feature = "runtime-benchmarks")))]
+	type RecoveryProviderApprovalOrigin = EnsureSigned<AccountId>;
 	// The origin that is allowed to create providers via governance
 	type CreateProviderViaGovernanceOrigin = EitherOfDiverse<
 		EnsureRoot<AccountId>,
@@ -1070,6 +1073,12 @@ impl GetStableWeight<RuntimeCall, Weight> for CapacityEligibleCalls {
 			),
 			RuntimeCall::Msa(MsaCall::create_sponsored_account_with_delegation {  add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::create_sponsored_account_with_delegation(add_provider_payload.schema_ids.len() as u32)),
 			RuntimeCall::Msa(MsaCall::grant_delegation { add_provider_payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::grant_delegation(add_provider_payload.schema_ids.len() as u32)),
+			&RuntimeCall::Msa(MsaCall::add_recovery_commitment { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::add_recovery_commitment()
+			),
+			&RuntimeCall::Msa(MsaCall::recover_account { .. }) => Some(
+				capacity_stable_weights::SubstrateWeight::<Runtime>::recover_account()
+			),
 			RuntimeCall::Messages(MessagesCall::add_ipfs_message { .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_ipfs_message()),
 			RuntimeCall::Messages(MessagesCall::add_onchain_message { payload, .. }) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::add_onchain_message(payload.len() as u32)),
 			RuntimeCall::StatefulStorage(StatefulStorageCall::apply_item_actions { actions, ..}) => Some(capacity_stable_weights::SubstrateWeight::<Runtime>::apply_item_actions(StatefulStorage::sum_add_actions_bytes(actions))),

@@ -24,7 +24,6 @@ scale-info = { workspace = true, features = ["derive"] }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-log = { workspace = true }
 
 # Frequency related dependencies
 common-primitives = { default-features = false, path = "../../common/primitives" }

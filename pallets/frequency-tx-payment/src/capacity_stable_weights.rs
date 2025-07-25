@@ -40,6 +40,8 @@ pub trait WeightInfo {
 	fn create_sponsored_account_with_delegation(s: u32) -> Weight;
 	fn add_public_key_to_msa() -> Weight;
 	fn grant_delegation(s: u32) -> Weight;
+	fn add_recovery_commitment() -> Weight;
+	fn recover_account() -> Weight;
 	// Messages
 	fn add_onchain_message(n: u32) -> Weight;
 	fn add_ipfs_message() -> Weight;
@@ -130,6 +132,46 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 			.saturating_add(Weight::from_parts(192_710, 0).saturating_mul(s.into()))
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyToMsaId` (r:1 w:0)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::MsaIdToRecoveryCommitment` (r:0 w:1)
+	/// Proof: `Msa::MsaIdToRecoveryCommitment` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	fn add_recovery_commitment() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1117`
+		//  Estimated: `5733`
+		// Minimum execution time: 122_469_000 picoseconds.
+		Weight::from_parts(125_273_000, 5733)
+			.saturating_add(T::DbWeight::get().reads(4_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
+	/// Storage: `Msa::PublicKeyToMsaId` (r:2 w:1)
+	/// Proof: `Msa::PublicKeyToMsaId` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::ProviderToRegistryEntry` (r:1 w:0)
+	/// Proof: `Msa::ProviderToRegistryEntry` (`max_values`: None, `max_size`: Some(33), added: 2508, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::RecoveryProviders` (r:1 w:0)
+	/// Proof: `Msa::RecoveryProviders` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::MsaIdToRecoveryCommitment` (r:1 w:1)
+	/// Proof: `Msa::MsaIdToRecoveryCommitment` (`max_values`: None, `max_size`: Some(48), added: 2523, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryList` (r:2 w:2)
+	/// Proof: `Msa::PayloadSignatureRegistryList` (`max_values`: Some(50000), `max_size`: Some(144), added: 2124, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PayloadSignatureRegistryPointer` (r:1 w:1)
+	/// Proof: `Msa::PayloadSignatureRegistryPointer` (`max_values`: Some(1), `max_size`: Some(140), added: 635, mode: `MaxEncodedLen`)
+	/// Storage: `Msa::PublicKeyCountForMsaId` (r:1 w:1)
+	/// Proof: `Msa::PublicKeyCountForMsaId` (`max_values`: None, `max_size`: Some(17), added: 2492, mode: `MaxEncodedLen`)
+	fn recover_account() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `1217`
+		//  Estimated: `6531`
+		// Minimum execution time: 165_225_000 picoseconds.
+		Weight::from_parts(169_633_000, 6531)
+			.saturating_add(T::DbWeight::get().reads(9_u64))
+			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
 	/// Storage: Schemas Schemas (r:1 w:0)
 	/// Proof Skipped: Schemas Schemas (max_values: None, max_size: None, mode: Measured)

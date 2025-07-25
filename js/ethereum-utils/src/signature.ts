@@ -16,6 +16,7 @@ import {
   ItemizedAction,
   EipDomainPayload,
   NormalizedSupportedPayload,
+  RecoveryCommitmentPayload,
   SupportedPayloadTypes,
   SiwfSignedRequestPayload,
   SiwfLoginRequestPayload,
@@ -39,6 +40,7 @@ import {
   SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
   SupportedPayloadDefinitions,
   EIP712_DOMAIN_TESTNET,
+  RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
 } from './signature.definitions.js';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { Signer, SignerResult } from '@polkadot/types/types';
@@ -117,6 +119,7 @@ function normalizePayload(payload: SupportedPayload): NormalizedSupportedPayload
     case 'PasskeyPublicKey':
     case 'ClaimHandlePayload':
     case 'AddProvider':
+    case 'RecoveryCommitmentPayload':
     case 'SiwfLoginRequestPayload':
       break;
 
@@ -163,6 +166,7 @@ function getTypesFor(payloadType: string): SupportedPayloadDefinitions {
     AddKeyData: ADD_KEY_DATA_DEFINITION,
     AuthorizedKeyData: AUTHORIZED_KEY_DATA_DEFINITION,
     AddProvider: ADD_PROVIDER_DEFINITION,
+    RecoveryCommitmentPayload: RECOVERY_COMMITMENT_PAYLOAD_DEFINITION,
 
     // offchain signatures
     SiwfSignedRequestPayload: SIWF_SIGNED_REQUEST_PAYLOAD_DEFINITION,
@@ -263,6 +267,26 @@ export function createAddProvider(
 }
 
 /**
+ * Build a RecoveryCommitmentPayload for signature.
+ *
+ * @param recoveryCommitment The recovery commitment data as a HexString
+ * @param expirationBlock Block number after which this payload is invalid
+ */
+export function createRecoveryCommitmentPayload(
+  recoveryCommitment: HexString,
+  expirationBlock: number
+): RecoveryCommitmentPayload {
+  assert(isHexString(recoveryCommitment), 'recoveryCommitment should be a valid hex string');
+  assert(isValidUint32(expirationBlock), 'expiration should be a valid uint32');
+
+  return {
+    type: 'RecoveryCommitmentPayload',
+    recoveryCommitment: recoveryCommitment,
+    expiration: expirationBlock,
+  };
+}
+
+/**
  * Build a ClaimHandlePayload for signature.
  *
  * @param handle          The handle the user wishes to claim
@@ -294,15 +318,29 @@ export function createPasskeyPublicKey(publicKey: HexString | Uint8Array): Passk
   };
 }
 
+/**
+ * Build AddAction payload for Itemized storage.
+ *
+ * @param data The data to be persisted on the Frequency chain
+ */
 export function createItemizedAddAction(data: HexString | Uint8Array): AddItemizedAction {
   const parsedData: HexString = typeof data === 'object' ? u8aToHex(data) : data;
   assert(isHexString(parsedData), 'itemized data should be valid hex');
+  // since Metamask does not support union types, we have to include all fields and have to set the `index` value to zero
+  // even though it is not used for Add action
   return { actionType: 'Add', data, index: 0 } as AddItemizedAction;
 }
 
+/**
+ * Build DeleteAction payload for Itemized storage.
+ *
+ * @param index The index of the item that we want to remove from the Frequency chain
+ */
 export function createItemizedDeleteAction(index: number): DeleteItemizedAction {
   assert(isValidUint16(index), 'itemized index should be a valid uint16');
 
+  // since Metamask does not support union types, we have to include all fields and have to set the `data` value to 0x
+  // even though it is not used for Delete action
   return { actionType: 'Delete', data: '0x', index };
 }
 
@@ -487,6 +525,23 @@ export function getEip712BrowserRequestAddProvider(
   const message = createAddProvider(authorizedMsaId, schemaIds, expirationBlock);
   const normalized = normalizePayload(message);
   return createEip712Payload(ADD_PROVIDER_DEFINITION, message.type, domain, normalized);
+}
+
+/**
+ * Returns the EIP-712 browser request for a RecoveryCommitmentPayload for signing.
+ *
+ * @param recoveryCommitment The recovery commitment data as a Uint8Array
+ * @param expirationBlock Block number after which this payload is invalid
+ * @param domain
+ */
+export function getEip712BrowserRequestRecoveryCommitmentPayload(
+  recoveryCommitment: HexString,
+  expirationBlock: number,
+  domain: EipDomainPayload = EIP712_DOMAIN_MAINNET
+): unknown {
+  const message = createRecoveryCommitmentPayload(recoveryCommitment, expirationBlock);
+  const normalized = normalizePayload(message);
+  return createEip712Payload(RECOVERY_COMMITMENT_PAYLOAD_DEFINITION, message.type, domain, normalized);
 }
 
 /**

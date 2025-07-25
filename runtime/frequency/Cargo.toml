@@ -16,15 +16,9 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [dependencies]
 parity-scale-codec = { workspace = true, features = ["derive"] }
-hex = { workspace = true, default-features = false }
-hex-literal = { workspace = true }
 log = { workspace = true }
 scale-info = { workspace = true, features = ["derive"] }
-
-serde = { workspace = true, optional = true, features = ["derive"] }
 serde_json = { workspace = true, optional = true, features = ["alloc"] }
-
-smallvec = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
 frame-executive = { workspace = true }
@@ -56,7 +50,6 @@ sp-block-builder = { workspace = true }
 sp-consensus-aura = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
-sp-io = { workspace = true }
 sp-genesis-builder = { workspace = true }
 static_assertions = { workspace = true }
 
@@ -87,8 +80,6 @@ pallet-handles = { path = "../../pallets/handles", default-features = false }
 pallet-handles-runtime-api = { path = "../../pallets/handles/src/runtime-api", default-features = false }
 pallet-passkey = { path = "../../pallets/passkey", default-features = false }
 system-runtime-api = { path = '../system-runtime-api', default-features = false }
-# Polkadot
-polkadot-parachain-primitives = { workspace = true }
 polkadot-runtime-common = { workspace = true }
 # Cumulus
 cumulus-pallet-aura-ext = { workspace = true }
@@ -96,7 +87,6 @@ cumulus-pallet-parachain-system = { workspace = true }
 cumulus-pallet-session-benchmarking = { workspace = true }
 cumulus-pallet-weight-reclaim = { workspace = true }
 cumulus-primitives-core = { workspace = true }
-cumulus-primitives-timestamp = { workspace = true }
 cumulus-primitives-aura = { workspace = true }
 pallet-collator-selection = { workspace = true }
 parachain-info = { workspace = true }
@@ -111,7 +101,6 @@ std = [
   "cumulus-pallet-weight-reclaim/std",
   "cumulus-primitives-aura/std",
   "cumulus-primitives-core/std",
-  "cumulus-primitives-timestamp/std",
   "frame-executive/std",
   "frame-support/std",
   "frame-system-rpc-runtime-api/std",
@@ -152,17 +141,14 @@ std = [
   "pallet-utility/std",
   "parachain-info/std",
   "parity-scale-codec/std",
-  "polkadot-parachain-primitives/std",
   "polkadot-runtime-common/std",
   "scale-info/std",
-  "serde/std",
   "serde_json/std",
   "sp-api/std",
   "sp-block-builder/std",
   "sp-consensus-aura/std",
   "sp-core/std",
   "sp-inherents/std",
-  "sp-io/std",
   "sp-offchain/std",
   "sp-runtime/std",
   "sp-session/std",
@@ -206,7 +192,6 @@ runtime-benchmarks = [
   "pallet-utility/runtime-benchmarks",
   "sp-runtime/runtime-benchmarks",
   "polkadot-runtime-common/runtime-benchmarks",
-  "polkadot-parachain-primitives/runtime-benchmarks",
   "common-runtime/runtime-benchmarks",
 ]
 try-runtime = [
@@ -267,6 +252,5 @@ parameterized-consensus-hook = []
 force-debug=[
 	"sp-debug-derive/force-debug",
 ]
-
 [lints]
 workspace = true

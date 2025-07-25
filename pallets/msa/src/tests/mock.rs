@@ -1,4 +1,8 @@
-use crate::{self as pallet_msa, types::EMPTY_FUNCTION, AddProvider, AuthorizedKeyData};
+use crate::{
+	self as pallet_msa,
+	types::{RecoveryHash, EMPTY_FUNCTION},
+	AddKeyData, AddProvider, AuthorizedKeyData, RecoveryCommitment, RecoveryCommitmentPayload,
+};
 use common_primitives::{
 	msa::MessageSourceId, node::BlockNumber, schema::SchemaId, utils::wrap_binary_data,
 };
@@ -234,6 +238,11 @@ impl pallet_msa::Config for Test {
 		EnsureRoot<AccountId>,
 		pallet_collective::EnsureMembers<AccountId, CouncilCollective, 1>,
 	>;
+
+	type RecoveryProviderApprovalOrigin = EitherOfDiverse<
+		EnsureRoot<AccountId>,
+		pallet_collective::EnsureProportionAtLeast<AccountId, CouncilCollective, 2, 3>,
+	>;
 	type Currency = pallet_balances::Pallet<Self>;
 }
 
@@ -418,4 +427,131 @@ pub fn new_test_ext_keystore() -> sp_io::TestExternalities {
 	ext.register_extension(KeystoreExt(Arc::new(MemoryKeystore::new()) as KeystorePtr));
 
 	ext
+}
+
+pub fn generate_and_sign_recovery_commitment_payload(
+	msa_owner_keys: &sr25519::Pair,
+	recovery_commitment: RecoveryCommitment,
+	expiration: BlockNumber,
+) -> (RecoveryCommitmentPayload<Test>, MultiSignature) {
+	let payload = RecoveryCommitmentPayload::<Test> {
+		discriminant: PayloadTypeDiscriminator::RecoveryCommitmentPayload,
+		recovery_commitment,
+		expiration,
+	};
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = msa_owner_keys.sign(&encoded_payload).into();
+
+	(payload, signature)
+}
+
+/// Generate a recovery secret for testing (matching recovery-sdk format)
+/// Returns a string like "ABCD-EF00-1234-5678-..."
+pub fn generate_test_recovery_secret() -> String {
+	use sp_core::H256;
+	let random_bytes = H256::random();
+	let hex_string = hex::encode(random_bytes.as_bytes()).to_uppercase();
+
+	// Format as groups of 4 separated by dashes
+	hex_string
+		.chars()
+		.collect::<Vec<char>>()
+		.chunks(4)
+		.map(|chunk| chunk.iter().collect::<String>())
+		.collect::<Vec<String>>()
+		.join("-")
+}
+
+/// Helper function to compute Recovery Intermediary Hashes for testing
+/// Based on the design document and recovery-sdk implementation:
+/// - H(s) = keccak256(Recovery Secret bytes)
+/// - H(sc) = keccak256(Recovery Secret bytes || Standardized Authentication Contact)
+pub fn compute_recovery_intermediary_hashes(
+	recovery_secret: &str, // Formatted string like "ABCD-EFGH-1234-5678-..."
+	standardized_contact: &str,
+) -> (RecoveryHash, RecoveryHash) {
+	use sp_core::keccak_256;
+
+	// Convert recovery secret string to bytes (remove dashes and decode hex)
+	let recovery_secret_clean = recovery_secret.replace("-", "");
+	let recovery_secret_bytes =
+		hex::decode(&recovery_secret_clean).expect("Recovery secret should be valid hex");
+
+	// H(s) = keccak256(Recovery Secret bytes)
+	let intermediary_hash_a: RecoveryHash = keccak_256(&recovery_secret_bytes);
+
+	// H(sc) = keccak256(Recovery Secret bytes || Standardized Authentication Contact)
+	let mut combined = Vec::new();
+	combined.extend_from_slice(&recovery_secret_bytes);
+	combined.extend_from_slice(standardized_contact.as_bytes());
+	let intermediary_hash_b: RecoveryHash = keccak_256(&combined);
+
+	(intermediary_hash_a, intermediary_hash_b)
+}
+
+/// Helper function to compute Recovery Commitment for testing
+/// RC = keccak256(H(s) || H(sc))
+pub fn compute_recovery_commitment_from_secret_and_contact(
+	recovery_secret: &str, // Formatted string like "ABCD-EF02-1234-..."
+	standardized_contact: &str,
+) -> RecoveryCommitment {
+	let (intermediary_hash_a, intermediary_hash_b) =
+		compute_recovery_intermediary_hashes(recovery_secret, standardized_contact);
+	Msa::compute_recovery_commitment(intermediary_hash_a, intermediary_hash_b)
+}
+
+/// Helper function to generate and sign AddKeyData payload for testing
+pub fn generate_and_sign_add_key_payload(
+	new_key_pair: &sr25519::Pair,
+	msa_id: MessageSourceId,
+	expiration: BlockNumber,
+) -> (AddKeyData<Test>, MultiSignature) {
+	let payload =
+		AddKeyData::<Test> { msa_id, expiration, new_public_key: new_key_pair.public().into() };
+
+	let encoded_payload = wrap_binary_data(payload.encode());
+	let signature: MultiSignature = new_key_pair.sign(&encoded_payload).into();
+
+	(payload, signature)
+}
+
+/// Helper function to create a recovery provider and approve it
+pub fn create_and_approve_recovery_provider() -> (MessageSourceId, sr25519::Pair) {
+	let (provider_msa_id, provider_key_pair) = create_account();
+	assert_ok!(Msa::create_provider_for(provider_msa_id.into(), Vec::from("RecProv")));
+	assert_ok!(Msa::approve_recovery_provider(
+		RuntimeOrigin::from(pallet_collective::RawOrigin::Members(1, 1)),
+		provider_key_pair.public().into()
+	));
+	(provider_msa_id, provider_key_pair)
+}
+
+/// Helper function to setup a complete recovery scenario with commitment
+pub fn setup_recovery_with_commitment(
+	recovery_secret: &str,
+	authentication_contact: &str,
+) -> (MessageSourceId, sr25519::Pair, RecoveryCommitment) {
+	// Create an MSA account and add recovery commitment
+	let (msa_id, msa_owner_key_pair) = create_account();
+
+	let recovery_commitment: RecoveryHash = compute_recovery_commitment_from_secret_and_contact(
+		recovery_secret,
+		authentication_contact,
+	);
+
+	let (payload, signature) = generate_and_sign_recovery_commitment_payload(
+		&msa_owner_key_pair,
+		recovery_commitment,
+		100u32,
+	);
+
+	assert_ok!(Msa::add_recovery_commitment(
+		test_origin_signed(2),
+		msa_owner_key_pair.public().into(),
+		signature,
+		payload
+	));
+
+	(msa_id, msa_owner_key_pair, recovery_commitment)
 }

@@ -298,35 +298,40 @@ describe('MSAs Holding Tokens', function () {
       });
     });
 
-    it('should succeed', async function () {
+    it('should successfully withdraw tokens from MSA', async function () {
+      // NOTE: Using a different keypair here because all of the failures in the previous tests seem to result
+      // in this transaction failing as "Banned" on Testnet.
+      const keys = createKeys('happy path keys', 'ethereum');
       const {
         data: { free: startingBalance },
-      } = await ExtrinsicHelper.getAccountInfo(secondaryKey);
+      } = await ExtrinsicHelper.getAccountInfo(keys);
       // Send tokens to MSA
       const op1 = ExtrinsicHelper.transferFunds(
         fundingSource,
         ethereumAddressToKeyringPair(msaAddress),
         TRANSFER_AMOUNT
       );
-      await assert.doesNotReject(op1.signAndSend(), 'MSA funding failed');
-      ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, payload));
-      const op2 = ExtrinsicHelper.withdrawTokens(secondaryKey, msaKeys, ownerSig, payload);
-      await assert.doesNotReject(op2.signAndSend('current'), 'token transfer transaction should have succeeded');
+      await assert.doesNotReject(op1.signAndSend(undefined, {}, false), 'MSA funding failed');
+
+      const newPayload = { ...payload, authorizedPublicKey: getUnifiedPublicKey(keys) };
+      ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, newPayload));
+      const op2 = ExtrinsicHelper.withdrawTokens(keys, msaKeys, ownerSig, newPayload);
+      await assert.doesNotReject(op2.signAndSend(), 'token transfer transaction should have succeeded');
       // Destination account should have had balance increased
       const {
         data: { free: endingBalance },
-      } = await ExtrinsicHelper.getAccountInfo(secondaryKey);
+      } = await ExtrinsicHelper.getAccountInfo(keys);
 
       assert(
         startingBalance.toBigInt() + TRANSFER_AMOUNT === endingBalance.toBigInt(),
-        'balance of recieve should have increased by the transfer amount minus fee'
+        'balance of receiver should have increased by the transfer amount'
       );
     });
 
     it('should fail for duplicate signature submission (MsaOwnershipInvalidSignature)', async function () {
       // In order to test this, we need to create a new keypair and fund it, because otherwise the nonce will
       // be the same for both transactions (and, because we're using Edcs signatures, the signature will be the same).
-      // Not sure exactly what happens in this case, but it seems to be that the second transaction is siliently dropped
+      // Not sure exactly what happens in this case, but it seems to be that the second transaction is silently dropped
       // by the node, but the status call back in polkadot.js still resolves (ie, gets 'isInBlock' or 'isFinalized')
       const keys = await createAndFundKeypair(fundingSource, 5n * CENTS, undefined, undefined, 'ethereum');
       payload.authorizedPublicKey = getUnifiedPublicKey(keys);
@@ -336,14 +341,14 @@ describe('MSAs Holding Tokens', function () {
         ethereumAddressToKeyringPair(msaAddress),
         TRANSFER_AMOUNT
       );
-      await assert.doesNotReject(op1.signAndSend(), 'MSA funding failed');
+      await assert.doesNotReject(op1.signAndSend(undefined, {}, false), 'MSA funding failed');
 
       ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, payload));
       let op2 = ExtrinsicHelper.withdrawTokens(keys, msaKeys, ownerSig, payload);
-      await assert.doesNotReject(op2.signAndSend('current'), 'token withdrawal should have succeeded');
+      await assert.doesNotReject(op2.signAndSend(undefined, {}, false), 'token withdrawal should have succeeded');
 
       // Re-fund MSA so we don't fail for that
-      await assert.doesNotReject(op1.signAndSend(), 'MSA re-funding failed');
+      await assert.doesNotReject(op1.signAndSend(undefined, {}, false), 'MSA re-funding failed');
       op2 = ExtrinsicHelper.withdrawTokens(keys, msaKeys, ownerSig, payload);
       await assert.rejects(op2.signAndSend('current'), {
         name: 'RpcError',

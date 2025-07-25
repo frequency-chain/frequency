@@ -141,6 +141,7 @@ impl pallet_msa::Config for Test {
 	type Proposal = RuntimeCall;
 	type ProposalProvider = CouncilProposalProvider;
 	type CreateProviderViaGovernanceOrigin = EnsureSigned<u64>;
+	type RecoveryProviderApprovalOrigin = EnsureSigned<u64>;
 	/// This MUST ALWAYS be MaxSignaturesPerBucket * NumberOfBuckets.
 	type MaxSignaturesStored = ConstU32<8000>;
 	type Currency = pallet_balances::Pallet<Self>;
