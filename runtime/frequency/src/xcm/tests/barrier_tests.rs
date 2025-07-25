@@ -25,7 +25,8 @@ fn test_barrier_allows_parent_exec_plurality_free() {
 #[test]
 fn test_barrier_denies_random_location() {
 	let location = Location::new(100, []);
-	let mut instructions = vec![Instruction::<()>::ClearOrigin];
+	let mut instructions =
+		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
 	let mut properties = Properties { weight_credit: Weight::zero(), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
