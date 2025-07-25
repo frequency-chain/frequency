@@ -25,3 +25,5 @@ frequency.log
 scripts/js/onboard/.yarnrc.yml
 scripts/js/onboard/.yarn/cache
 scripts/js/onboard/.yarn/*.gz
+
+.markdownlint.json
