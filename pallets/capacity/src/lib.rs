@@ -866,6 +866,9 @@ impl<T: Config> Pallet<T> {
 			UnstakeUnlocks::<T>::set(staker, Some(unlocks));
 		}
 
+		// Set the total locked amount. We do not simply apply the delta of the withdrawn chunks, as this
+		// is error-prone due to the double-locking issue; instead, we simply calculate the total locked
+		// amount as the `total staked + total remaining unthawed unlocking chunks`.
 		let staking_account = StakingAccountLedger::<T>::get(staker).unwrap_or_default();
 		let total_locked = staking_account.active.saturating_add(total_unlocking);
 		if total_locked.is_zero() {
