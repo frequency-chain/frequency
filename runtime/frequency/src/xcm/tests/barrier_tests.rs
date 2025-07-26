@@ -23,10 +23,11 @@ fn test_barrier_allows_parent_exec_plurality_free() {
 }
 
 #[test]
-fn test_barrier_denies_random_location() {
+fn test_barrier_denies_unpaid_random_location() {
 	let location = Location::new(100, []);
 	let mut instructions =
 		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
+	// weight credit is zero, simulating an unpaid execution
 	let mut properties = Properties { weight_credit: Weight::zero(), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
@@ -40,6 +41,29 @@ fn test_barrier_denies_random_location() {
 	assert!(
 		result.is_err(),
 		"Barrier should deny execution for random location, but it allowed: {:?}",
+		result
+	);
+}
+
+#[test]
+fn test_barrier_allows_paid_random_location() {
+	let location = Location::new(100, []);
+	let mut instructions =
+		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
+	let mut properties =
+		Properties { weight_credit: Weight::from_parts(1_000_000_000, 0), message_id: None };
+	let weight = Weight::from_parts(1_000_000_000, 0);
+
+	let result = <Barrier as XcmBarrier>::should_execute(
+		&location,
+		instructions.as_mut_slice(),
+		weight,
+		&mut properties,
+	);
+
+	assert!(
+		result.is_ok(),
+		"Barrier should allow execution for paid random location, but it denied: {:?}",
 		result
 	);
 }
