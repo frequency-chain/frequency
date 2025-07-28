@@ -79,12 +79,14 @@ Proposed are the following changes:
 2. Updated `ProviderRegistryEntry` struct have the following properties:
 
     ```rust
-    type LogoHash = [u8; 32]; // blake2_256 hash of the logo
+    // Logo hash is a bounded vector of bytes, representing the content-addressed identifier (CID) of the logo image.
+    type LogoCID = BoundedVec<u8, T::MaxLogoCidSize>;
+
     pub struct ProviderRegistryEntry<T: Config> {
         pub default_name: BoundedVec<u8, T::MaxProviderNameSize>,
         pub localized_names: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, BoundedVec<u8, T::MaxProviderNameSize>>,
-        pub default_logo_250_100_png_hash: LogoHash,
-        pub localized_logo_250_100_png_hashes: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, LogoHash>,
+        pub default_logo_250_100_png_hash: LogoCID,
+        pub localized_logo_250_100_png_hashes: BTreeMap<BoundedVec<u8, T::MaxLanguageCodeSize>, LogoCID>,
     }
     ```
 
@@ -109,22 +111,24 @@ Proposed are the following changes:
 4. `MaxProviderNameSize` be increased to `256`.
 5. `MaxProviderLogo250X100Size` be created and the limit set to `131_072` (128 KiB).
 6. Introduce hash-based logo approval mechanism:
-    Logos are not embedded during proposal submission. Instead, a blake2_256 hash of the logo image is included in the proposal.
+    - Logos are not embedded during proposal submission. Instead, a content-addressed identifier (CID), such as an IPFS CID (using sha2-256), may be used to represent the logo image.
     Governance must explicitly approve these logo hashes as part of the provider registration process.
-
-    The approved hashes are recorded in a dedicated storage map:
+    When using a CID:
+    - The CID submitted during proposal must be reproducible from the logo bytes.
+    - The on-chain logic must validate the CID by recomputing it from the submitted image and comparing it with the one in the proposal.
+    - To do this, the encoding (e.g., raw vs dag-pb) and hashing (e.g., sha2-256) must be standardized or documented.
 
     ```rust
         /// ApprovedLogos is map of hash vs logo bytes.
         /// This is used to store the approved logos for providers.
-        /// The key is the blake2_256 hash of the logo image, and the value is the actual logo bytes.
+        /// The key is CID of the logo image, and the value is the logo bytes.
         /// This allows for easy retrieval of the logo by its hash
         #[pallet:storage]
         #[pallet::getter(fn approved_logos)]
         pub ApprovedLogos: StorageMap<
             _,
             Blake2_128Concat,
-            LogoHash,
+            LogoCID,
             BoundedVec<u8, T::MaxProviderLogo250X100Size>,
             OptionQuery
         >;
@@ -236,9 +240,21 @@ To support the new structure, a storage migration will be required to:
     ) -> Option<ApplicationContext<T>>;
     ```
 
+### **Logo Hash And CIDs** <a id='logo_hash'></a>
+
+The LogoCID used in application and provider registration refers to a CID (Content Identifier), computed deterministically from the image bytes.
+
+The steps to compute the CID are as follows:
+
+- Compute the digest of the image bytes:
+- digest = SHA2-256(image_bytes)
+- Wrap it in a CIDv1 using the raw codec and sha2-256 multihash:
+- CID = cidv1(raw, sha2-256(digest))
+
 ### **Optional TransactionExtension** <a id='transaction_extension'></a>
 
 1. Given the new structure, it may be beneficial to introduce a transaction extension that checks for logo hashes in the `ApprovedLogos` storage map before allowing a transaction to proceed for `update_logo`.
+2. Extension can optionally also check if the logo hash is already approved for the provider and has a valid CIDv1.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
