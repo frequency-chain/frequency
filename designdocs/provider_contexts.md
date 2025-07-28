@@ -115,18 +115,6 @@ Proposed are the following changes:
     The approved hashes are recorded in a dedicated storage map:
 
     ```rust
-        #[pallet::storage]
-        #[pallet::getter(fn approved_logo_hashes)]
-        /// Approved logo hashes for providers.
-        /// This map stores the blake2_256 hash of the logo as the key and an empty tuple as the value.
-        pub ApprovedLogoHashes: StorageMap<
-            _,
-            Blake2_128Concat,
-            LogoHash,
-            (),
-            OptionQuery
-        >;
-
         /// ApprovedLogos is map of hash vs logo bytes.
         /// This is used to store the approved logos for providers.
         /// The key is the blake2_256 hash of the logo image, and the value is the actual logo bytes.
@@ -160,7 +148,7 @@ Proposed are the following changes:
         }
     ```
 
-2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogoHashes` storage map.
+2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogos` storage map.
 3. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
 
     ```rust
@@ -172,7 +160,7 @@ Proposed are the following changes:
             // Implementation details...
             // This can internally call same logic as `propose_to_be_provider` for consistency
             // and will also handle the `ProviderToApplicationRegistryEntry` storage map.
-            // It will also handle the `ApprovedLogoHashes` storage map.
+            // It will also handle the `ApprovedLogos` storage map.
         }
     ```
 
@@ -192,7 +180,7 @@ Proposed are the following changes:
         ProviderToApplicationRegistryEntry::<T>::insert(provider_id, application_identifier, application_entry);
     ```
 
-5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
+5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogos` storage map.
 6. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo bytes.
 
     ```rust
@@ -205,7 +193,7 @@ Proposed are the following changes:
         }
     ```
 
-    Note: This extrinsics will compute the logo hash and update the `ApprovedLogos` storage map if the hash exists in `ApprovedLogoHashes`.
+    Note: This extrinsics will compute the logo hash and update the `ApprovedLogos` storage map if the hash exists in `ApprovedLogos`.
 7. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
@@ -248,7 +236,7 @@ To support the new structure, a storage migration will be required to:
 
 ### **Optional TransactionExtension** <a id='transaction_extension'></a>
 
-1. Given the new structure, it may be beneficial to introduce a transaction extension that checks for logo hashes in the `ApprovedLogoHashes` storage map before allowing a transaction to proceed for `update_logo`.
+1. Given the new structure, it may be beneficial to introduce a transaction extension that checks for logo hashes in the `ApprovedLogos` storage map before allowing a transaction to proceed for `update_logo`.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
