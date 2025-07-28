@@ -23,15 +23,14 @@ fn test_barrier_allows_parent() {
 }
 
 #[test]
-fn test_barrier_fails_unauthoized_location() {
+fn test_barrier_fails_unauthoized_location_unpaid() {
 	let location = Parachain(3001).into();
-	let mut instructions = Xcm::<()>(vec![
-		UnpaidExecution { weight_limit: Limited(Weight::from_parts(20, 20)), check_origin: None },
-		TransferAsset { assets: (Parent, 100).into(), beneficiary: Here.into() },
-	]);
-	let mut properties =
-		Properties { weight_credit: Weight::from_parts(1_000, 0), message_id: None };
-	let weight = Weight::from_parts(1_000_000_000, 0);
+	let mut instructions = Xcm::<()>(vec![UnpaidExecution {
+		weight_limit: Limited(Weight::from_parts(20, 20)),
+		check_origin: Some(Location::parent()),
+	}]);
+	let mut properties = Properties { weight_credit: Weight::zero(), message_id: None };
+	let weight = Weight::from_parts(10, 0);
 
 	let result = <Barrier as XcmBarrier>::should_execute(
 		&location,
