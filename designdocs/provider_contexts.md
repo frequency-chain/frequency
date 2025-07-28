@@ -204,7 +204,7 @@ To support the new structure, a storage migration will be required to:
 
 ### **Runtime RPC Changes** <a id='rpc'></a>
 
-1. Introduce a new RPC method "get_provider_application_context" to fetch the application context for a given provider and application index.
+1. Introduce a new RPC method "get_provider_application_context" to fetch the application context for a given provider, application index and an optional locale.
 
     ```rust
     // Return a constructed ApplicationContext struct
@@ -222,6 +222,7 @@ To support the new structure, a storage migration will be required to:
     pub fn get_provider_application_context(
         provider_id: ProviderId,
         application_index: ApplicationIndex,
+        locale: Option<BoundedVec<u8, T::MaxLanguageCodeSize>>,
     ) -> Option<ApplicationContext<T>>;
     ```
 
@@ -231,6 +232,7 @@ To support the new structure, a storage migration will be required to:
     #[rpc]
     pub fn get_provider(
         provider_id: ProviderId,
+        locale: Option<BoundedVec<u8, T::MaxLanguageCodeSize>>,
     ) -> Option<ApplicationContext<T>>;
     ```
 
