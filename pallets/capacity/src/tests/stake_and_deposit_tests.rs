@@ -567,15 +567,24 @@ fn can_stake_tokens_not_staked_or_unlocking() {
 		// regardless of whether unlocking tokens have thawed.
 		let additional_amount = staker - stake_amount - minimum_token_balance;
 		let capacity = additional_amount / 20;
-		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, additional_amount));
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(staker),
+			target,
+			additional_amount
+		));
 
 		// check that the event was emitted correctly
 		let events = capacity_events();
 		assert_eq!(
 			events.last().unwrap(),
-			&Event::ProviderBoosted { account: staker, target, amount: additional_amount, capacity }
+			&Event::ProviderBoosted {
+				account: staker,
+				target,
+				amount: additional_amount,
+				capacity
+			}
 		);
-		
+
 		// The total frozen balance should be the original staked amount (still unthawed/not withdrawn),
 		// plus the additional amount staked.
 		let total_frozen_balance = stake_amount + additional_amount;
@@ -586,11 +595,8 @@ fn can_stake_tokens_not_staked_or_unlocking() {
 			),
 			total_frozen_balance
 		);
-		
+
 		// total amount currently staked should only be the additional_amount
-		assert_eq!(
-			StakingAccountLedger::<Test>::get(staker).unwrap().active,
-			additional_amount
-		);
+		assert_eq!(StakingAccountLedger::<Test>::get(staker).unwrap().active, additional_amount);
 	})
 }

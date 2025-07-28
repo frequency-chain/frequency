@@ -29,7 +29,7 @@ sp_api::decl_runtime_apis! {
 	/// Runtime Version for Capacity
 	/// - MUST be incremented if anything changes
 	/// - See: https://paritytech.github.io/polkadot/doc/polkadot_primitives/runtime_api/index.html
-	#[api_version(2)]
+	#[api_version(1)]
 	/// Runtime APIs for [Capacity](../pallet_capacity/index.html)
 	pub trait CapacityRuntimeApi<AccountId, Balance, BlockNumber> where
 		AccountId: Codec + MaybeDisplay,
