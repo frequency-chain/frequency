@@ -198,7 +198,8 @@ describe('Delegation Scenario Tests', function () {
       .filter((grant) => grant.revoked_at.toBigInt() === 0n)
       .map((grant) => grant.schema_id.toNumber());
     const expectedSchemaIds = [schemaId.toNumber(), schemaId2.toNumber()];
-    assert.deepStrictEqual(grantedSchemaIds, expectedSchemaIds);
+    // Sort them as order doesn't matter
+    assert.deepStrictEqual(grantedSchemaIds.sort(), expectedSchemaIds.sort());
   });
 
   it('should get all delegations and grants', async function () {
