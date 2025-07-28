@@ -21,7 +21,9 @@ Having separate providers would require a single company to have separate Capaci
 Since these applications are part of the same company, they should share Capacity as a single legal entity.
 
 Separate providers per application would NOT align with the data security model of user-to-company that exists in the world today, in which users form trust relationships with legal entities (companies) rather than each individual application.
-Provider-level delegations are better than introducing application-level delegations.
+For example, imagine if Alice is delegating to an application, Bar. Bar application is owned by the Foo Company which also owns and controls Baz. The Foo Company is able to collect all data shared with both the Bar and the Baz. A delegation to just Bar or just Baz doesn't limit the information sharing between those Applications because the data agreement is with Foo Company.
+Additionally, to limit the impact on the network, the Bar and Baz Applications are able to share capacity and perform batching together.
+This leads to the conclusion that Provider-level delegations are better than introducing new Application-level delegations.
 While user permissions are primarily write-based at this time, it is critical that users understand the delegation and their data is shared at a company level.
 
 Finally, this structure does not prevent the setup of a 1:1 relationship between Application and Provider.
