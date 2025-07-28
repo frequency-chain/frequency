@@ -32,10 +32,5 @@ parameter_types! {
 	pub NativeTokenFilter: AssetFilter = Wild(AllOf { fun: WildFungible, id: NativeToken::get() });
 	pub AssetHubLocation: Location = Location::new(1, [Parachain(ASSET_HUB_ID)]);
 	pub NativeForAssetHub: (AssetFilter, Location) = (NativeTokenFilter::get(), AssetHubLocation::get());
-
-	// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
-	// XCM instruction weight cost
-	// pub UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
-	// pub const MaxInstructions: u32 = 100;
 	pub const MaxAssetsIntoHolding: u32 = 64;
 }
