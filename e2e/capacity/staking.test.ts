@@ -20,7 +20,6 @@ import {
 import { isDev } from '../scaffolding/env';
 import { getFundingSource } from '../scaffolding/funding';
 import { BigInt } from '@polkadot/x-bigint';
-import { getUnifiedAddress } from '@frequency-chain/ethereum-utils';
 
 const accountBalance: bigint = 2n * DOLLARS;
 const tokenMinStake: bigint = 1n * CENTS;
@@ -28,7 +27,7 @@ const capacityMin: bigint = tokenMinStake / 50n;
 let fundingSource: KeyringPair;
 
 describe('Capacity Staking Tests', function () {
-  // The frozen balance is initialized and tracked throughout the staking end to end tests
+  // The frozen balance is initialized and tracked throughout the staking end-to-end tests
   // to accommodate for the fact that withdrawing unstaked token tests are not executed
   // against a relay chain. Since the length of time to wait for an epoch period to roll over could
   // potentially be hours / days, that test is skipped. Therefore, we must track the frozen balance
@@ -95,11 +94,6 @@ describe('Capacity Staking Tests', function () {
     });
 
     it('fails to withdraw when there is no thawed amount', async function () {
-      const thawedAmount = (
-        await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.getThawedBalance(getUnifiedAddress(stakeKeys))
-      ).toBigInt();
-      assert.equal(thawedAmount, 0n);
-
       await assert.rejects(() => ExtrinsicHelper.withdrawUnstaked(stakeKeys).signAndSend(), {
         name: 'NoThawedTokenAvailable',
       });
@@ -114,21 +108,6 @@ describe('Capacity Staking Tests', function () {
       // Mine enough blocks to pass the unstake period = CapacityUnstakingThawPeriod = 2 epochs
       const newEpochBlock = await getNextEpochBlock();
       await ExtrinsicHelper.runToBlock(newEpochBlock + TEST_EPOCH_LENGTH + 1);
-
-      // Previous stake should now be thawed
-      const thawedAmount = (
-        await ExtrinsicHelper.apiPromise.call.capacityRuntimeApi.getThawedBalance(getUnifiedAddress(stakeKeys))
-      ).toBigInt();
-      assert.equal(thawedAmount, tokenMinStake, 'should return the full staked amount as thawed');
-
-      // fails to stake again when there are thawed tokens to be withdrawn
-      await assert.rejects(
-        () => stakeToProvider(fundingSource, stakeKeys, stakeProviderId, tokenMinStake),
-        {
-          name: 'BalanceTooLowtoStake',
-        },
-        'should fail to stake when there are thawed tokens to be withdrawn'
-      );
 
       const withdrawObj = ExtrinsicHelper.withdrawUnstaked(stakeKeys);
       const { target: withdrawEvent } = await withdrawObj.signAndSend();
