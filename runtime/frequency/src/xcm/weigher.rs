@@ -6,6 +6,7 @@ use crate::RuntimeCall;
 
 parameter_types! {
 	/// The cost of executing a single XCM instruction
+	/// One XCM operation is 1_000_000_000 weight - almost certainly a conservative estimate.
 	pub const UnitWeightCost: Weight = Weight::from_parts(1_000_000_000, 64 * 1024);
 	pub const MaxInstructions: u32 = 100;
 }
