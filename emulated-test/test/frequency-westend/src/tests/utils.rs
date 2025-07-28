@@ -96,7 +96,6 @@ pub fn mint_dot_on_frequency_v2(
 	});
 }
 
-
 pub fn mint_xrqcy_on_asset_hub(
 	beneficiary: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
 	amount_to_mint: Balance,

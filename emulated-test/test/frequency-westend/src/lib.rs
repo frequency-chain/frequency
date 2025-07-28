@@ -34,11 +34,13 @@ mod imports {
 		frequency_emulated_chain::{
 			frequency_runtime::{
 				self,
-				xcm::CheckingAccount as FrequencyCheckingAccount,
-				xcm::XcmConfig as FrequencyXcmConfig,
+				xcm::{
+					CheckingAccount as FrequencyCheckingAccount, XcmConfig as FrequencyXcmConfig,
+				},
 				ExistentialDeposit as FrequencyExistentialDeposit,
 			},
-			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet, TreasuryAccount as FrequencyTreasuryAccount,
+			FrequencyAssetOwner, FrequencyWestendParaPallet as FrequencyWestendPallet,
+			TreasuryAccount as FrequencyTreasuryAccount,
 		},
 		westend_emulated_chain::{genesis::ED as WESTEND_ED, WestendRelayPallet as WestendPallet},
 		AssetHubWestendPara as AssetHubWestend,
