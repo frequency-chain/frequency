@@ -1,20 +1,20 @@
-use crate::xcm::Barrier;
+use crate::xcm::{tests::mock::UniversalLocation, Barrier};
 use frame_support::weights::Weight;
 use staging_xcm::{opaque::v3::MultiLocation, prelude::*};
 use xcm_executor::traits::{Properties, ShouldExecute as XcmBarrier};
 
 #[test]
-fn test_barrier_allows_parent_exec_plurality_free() {
-	let location = Location::new(1, []);
+fn test_barrier_allows_parent() {
+	let location = Location::parent();
 	let mut instructions =
-		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
+		Xcm::<()>(vec![TransferAsset { assets: (Parent, 100).into(), beneficiary: Here.into() }]);
 	let mut properties =
 		Properties { weight_credit: Weight::from_parts(1_000_000_000, 0), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
 	let result = <Barrier as XcmBarrier>::should_execute(
 		&location,
-		instructions.as_mut_slice(),
+		instructions.inner_mut(),
 		weight,
 		&mut properties,
 	);
@@ -23,17 +23,36 @@ fn test_barrier_allows_parent_exec_plurality_free() {
 }
 
 #[test]
+fn test_barrier_fails_unauthoized_location() {
+	let location = Parachain(3001).into();
+	let mut instructions = Xcm::<()>(vec![
+		UnpaidExecution { weight_limit: Limited(Weight::from_parts(20, 20)), check_origin: None },
+		TransferAsset { assets: (Parent, 100).into(), beneficiary: Here.into() },
+	]);
+	let mut properties =
+		Properties { weight_credit: Weight::from_parts(1_000, 0), message_id: None };
+	let weight = Weight::from_parts(1_000_000_000, 0);
+
+	let result = <Barrier as XcmBarrier>::should_execute(
+		&location,
+		instructions.inner_mut(),
+		weight,
+		&mut properties,
+	);
+	assert!(result.is_err(), "Barrier test failed: {:?}", result);
+}
+
+#[test]
 fn test_barrier_denies_unpaid_random_location() {
 	let location = Location::new(100, []);
 	let mut instructions =
-		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
-	// weight credit is zero, simulating an unpaid execution
+		Xcm::<()>(vec![TransferAsset { assets: (Parent, 100).into(), beneficiary: Here.into() }]);
 	let mut properties = Properties { weight_credit: Weight::zero(), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
 	let result = <Barrier as XcmBarrier>::should_execute(
 		&location,
-		instructions.as_mut_slice(),
+		instructions.inner_mut(),
 		weight,
 		&mut properties,
 	);
@@ -49,14 +68,14 @@ fn test_barrier_denies_unpaid_random_location() {
 fn test_barrier_allows_paid_random_location() {
 	let location = Location::new(100, []);
 	let mut instructions =
-		vec![Instruction::<()>::ClearOrigin, Instruction::DescendOrigin(Junctions::Here)];
+		Xcm::<()>(vec![TransferAsset { assets: (Parent, 100).into(), beneficiary: Here.into() }]);
 	let mut properties =
 		Properties { weight_credit: Weight::from_parts(1_000_000_000, 0), message_id: None };
 	let weight = Weight::from_parts(1_000_000_000, 0);
 
 	let result = <Barrier as XcmBarrier>::should_execute(
 		&location,
-		instructions.as_mut_slice(),
+		instructions.inner_mut(),
 		weight,
 		&mut properties,
 	);
