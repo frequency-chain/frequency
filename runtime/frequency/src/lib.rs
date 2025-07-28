@@ -1753,10 +1753,6 @@ sp_api::impl_runtime_apis! {
 				Err(_) => Vec::new(),
 			}
 		}
-
-		fn get_thawed_balance(who: AccountId) -> Balance {
-			Capacity::get_thawed_unstaked_amount(&who)
-		}
 	}
 
 	#[cfg(feature = "try-runtime")]

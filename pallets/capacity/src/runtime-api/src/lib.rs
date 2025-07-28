@@ -39,10 +39,5 @@ sp_api::decl_runtime_apis! {
 		// state_call method: CapacityRuntimeApi_list_unclaimed_rewards
 		/// Get the list of unclaimed rewards information for each eligible Reward Era.
 		fn list_unclaimed_rewards(who: AccountId) -> Vec<UnclaimedRewardInfo<Balance, BlockNumber>>;
-
-		// state_call method: CapacityRuntimeApi_get_thawed_balance
-		/// Get the unstaked, thawed balance of the given account.
-		fn get_thawed_balance(who: AccountId) -> Balance;
 	}
-
 }

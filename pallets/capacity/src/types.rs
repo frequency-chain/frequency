@@ -220,18 +220,6 @@ pub fn unlock_chunks_total<T: Config>(unlock_chunks: &UnlockChunkList<T>) -> Bal
 		.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
 }
 
-/// Computes and returns the total held in an UnlockChunkList that
-/// is unthawed as of the indicated epoch.
-pub fn unthawed_unlock_chunks_total<T: Config>(
-	unlock_chunks: &UnlockChunkList<T>,
-	current_epoch: <T>::EpochNumber,
-) -> BalanceOf<T> {
-	unlock_chunks
-		.iter()
-		.filter(|chunk| chunk.thaw_at.gt(&current_epoch))
-		.fold(Zero::zero(), |acc: BalanceOf<T>, chunk| acc.saturating_add(chunk.value))
-}
-
 /// Deletes thawed chunks
 /// Caller is responsible for updating free/locked balance on the token account.
 /// Returns: the total amount reaped from `unlocking`
