@@ -191,7 +191,7 @@ Proposed are the following changes:
     ```
 
 5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogoHashes` storage map.
-6. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo hash and bytes.
+6. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo bytes.
 
     ```rust
         #[pallet::call_index(14)]
@@ -212,7 +212,7 @@ To support the new structure, a storage migration will be required to:
 
 - Migrate existing `ProviderToRegistryEntry` to the new format with default values for localized names and logos.
 
-### **Runtime RPC Changes**
+### **Runtime RPC Changes** <a id='rpc'></a>
 
 1. Introduce a new RPC method "get_provider_application_context" to fetch the application context for a given provider and application index.
 
@@ -243,6 +243,10 @@ To support the new structure, a storage migration will be required to:
         provider_id: ProviderId,
     ) -> Option<ApplicationContext<T>>;
     ```
+
+### **Optional TransactionExtension** <a id='transaction_extension'></a>
+
+1. Given the new structure, it may be beneficial to introduce a transaction extension that checks for logo hashes in the `ApprovedLogoHashes` storage map before allowing a transaction to proceed for `update_logo`.
 
 ### **Mainnet Approval Flow** <a id='governance'></a>
 
