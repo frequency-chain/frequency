@@ -135,11 +135,18 @@ Proposed are the following changes:
 
     ```
 
-    The `propose_to_be_provider` extrinsic will insert or update entries in this map.
-
 ### **Changes and additions in extrinsics** <a id='extrinsics'></a>
 
-1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance.
+1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance. The provider payload will include the `ProviderRegistryEntry` struct with the default name, localized names, and default logo hash.
+
+    ```rust
+        #[pallet::call_index(0)]
+        pub fn propose_to_be_provider(
+            origin: OriginFor<T>,
+            payload: ProviderRegistryEntry<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+        }
 
     ```rust
 
@@ -153,7 +160,7 @@ Proposed are the following changes:
     ```
 
 2. `propose_to_be_provider` to will insert hashes into the `ApprovedLogos` storage map.
-3. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts.
+3. Introduce a new extrinsic `propose_to_add_application` which work in similar way to `propose_to_be_provider` but will be used for adding or updating application contexts. It will accept a `ProviderRegistryEntry` struct with the application name, localized names, and logo hashes.
 
     ```rust
         #[pallet::call_index(1)]
@@ -197,7 +204,7 @@ Proposed are the following changes:
         }
     ```
 
-    Note: This extrinsics will compute the logo hash and update the `ApprovedLogos` storage map if the hash exists in `ApprovedLogos`.
+    Note: This extrinsics will compute the logo hash, update `ApprovedLogos` entry if the hash exists.
 7. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
