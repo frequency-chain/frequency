@@ -27,3 +27,6 @@ scripts/js/onboard/.yarn/cache
 scripts/js/onboard/.yarn/*.gz
 
 .markdownlint.json
+# Don't want to commit E2E package lockfile
+e2e/package-lock.json
+

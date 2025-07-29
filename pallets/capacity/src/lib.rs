@@ -28,7 +28,6 @@
 )]
 
 use core::ops::Mul;
-
 use frame_support::{
 	dispatch::DispatchResult,
 	ensure,
@@ -831,11 +830,15 @@ impl<T: Config> Pallet<T> {
 		staker: &T::AccountId,
 		proposed_amount: BalanceOf<T>,
 	) -> BalanceOf<T> {
+		let unlocks = UnstakeUnlocks::<T>::get(staker).unwrap_or_default();
+
+		let unlock_chunks_sum = unlock_chunks_total::<T>(&unlocks);
 		let freezable_balance = T::Currency::balance_freezable(staker);
 		let current_staking_balance =
 			StakingAccountLedger::<T>::get(staker).unwrap_or_default().active;
 		let stakable_amount = freezable_balance
 			.saturating_sub(current_staking_balance)
+			.saturating_sub(unlock_chunks_sum)
 			.saturating_sub(T::MinimumTokenBalance::get());
 		if stakable_amount >= proposed_amount {
 			proposed_amount

@@ -1,10 +1,11 @@
 use super::{mock::*, testing_utils::*};
 use crate::{
-	CapacityDetails, CapacityLedger, Config, Error, Event, FreezeReason, StakingAccountLedger,
-	StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	CapacityDetails, CapacityLedger, Config, EpochLength, Error, Event, FreezeReason,
+	StakingAccountLedger, StakingDetails, StakingTargetLedger, StakingType::MaximumCapacity,
+	UnstakeUnlocks,
 };
 use common_primitives::{capacity::Nontransferable, msa::MessageSourceId};
-use frame_support::{assert_noop, assert_ok, traits::fungible::InspectFreeze};
+use frame_support::{assert_noop, assert_ok, pallet_prelude::Get, traits::fungible::InspectFreeze};
 use sp_runtime::ArithmeticError;
 
 #[test]
@@ -465,4 +466,137 @@ fn impl_deposit_errors_target_capacity_not_found() {
 			Error::<Test>::TargetCapacityNotFound
 		);
 	});
+}
+
+#[test]
+fn cannot_stake_unthawed_unlocking_tokens() {
+	new_test_ext().execute_with(|| {
+		// provider_boost and then unstake, before the thaw period check if you can boost again.
+		// should not be able to boost more than (total balance - initial amount staked)
+		let staker = 600;
+		let target: MessageSourceId = 1;
+		let epoch_length = 3;
+		let era_length: u32 = <Test as Config>::EraLength::get();
+		let stake_amount = 300;
+
+		register_provider(target, String::from("Foo"));
+		EpochLength::<Test>::set(epoch_length);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		// run to next RewardEra and unstake entire amount
+		system_run_blocks(era_length);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		// restake in the same block (or any time before the thaw period has elapsed)
+		// a stake of any type should fail for any amount > (staker - stake_amount)
+		assert_noop!(
+			Capacity::provider_boost(
+				RuntimeOrigin::signed(staker),
+				target,
+				staker - stake_amount + 1
+			),
+			Error::<Test>::BalanceTooLowtoStake,
+		);
+
+		assert_eq!(UnstakeUnlocks::<Test>::get(staker).unwrap_or_default().len(), 1);
+	});
+}
+
+#[test]
+fn cannot_stake_thawed_unlocking_tokens() {
+	new_test_ext().execute_with(|| {
+		// provider_boost and then unstake, after the thaw period check if you can boost again.
+		// should not be able to boost more than (total balance - initial amount staked)
+		let staker = 600;
+		let target: MessageSourceId = 1;
+		let stake_amount = 300;
+		let epoch_length = 3;
+		let era_length: u32 = <Test as Config>::EraLength::get();
+		let unstaking_thaw_period: u16 = <Test as Config>::UnstakingThawPeriod::get();
+
+		register_provider(target, String::from("Foo"));
+		EpochLength::<Test>::set(epoch_length);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		// run to next RewardEra and unstake entire amount
+		system_run_blocks(era_length);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		// let the unlocking tokens thaw
+		run_blocks(epoch_length * <u32>::from(unstaking_thaw_period));
+
+		// restake in the same block
+		// a stake of any type should fail for any amount > (staker - stake_amount)
+		assert_noop!(
+			Capacity::provider_boost(
+				RuntimeOrigin::signed(staker),
+				target,
+				staker - stake_amount + 1
+			),
+			Error::<Test>::BalanceTooLowtoStake,
+		);
+
+		assert_eq!(UnstakeUnlocks::<Test>::get(staker).unwrap_or_default().len(), 1);
+	});
+}
+
+#[test]
+fn can_stake_tokens_not_staked_or_unlocking() {
+	new_test_ext().execute_with(|| {
+		// provider_boost and then unstake, before and after the thaw period attempt to boost again.
+		// regardless of whether unlocking tokens have thawed, be able to boost any tokens that were
+		// not part of the original staked amount.
+		let staker = 600;
+		let target: MessageSourceId = 1;
+		let stake_amount = 500; // ensure >> half
+		let epoch_length = 3;
+		let era_length: u32 = <Test as Config>::EraLength::get();
+		let minimum_token_balance: u64 = <Test as Config>::MinimumTokenBalance::get();
+
+		register_provider(target, String::from("Foo"));
+		EpochLength::<Test>::set(epoch_length);
+		assert_ok!(Capacity::provider_boost(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		// run to next RewardEra and unstake entire amount
+		system_run_blocks(era_length);
+		assert_ok!(Capacity::unstake(RuntimeOrigin::signed(staker), target, stake_amount));
+
+		assert_eq!(UnstakeUnlocks::<Test>::get(staker).unwrap_or_default().len(), 1);
+
+		// should be able to stake any token amount not part of the original staked amount,
+		// regardless of whether unlocking tokens have thawed.
+		let additional_amount = staker - stake_amount - minimum_token_balance;
+		let capacity = additional_amount / 20;
+		assert_ok!(Capacity::provider_boost(
+			RuntimeOrigin::signed(staker),
+			target,
+			additional_amount
+		));
+
+		// check that the event was emitted correctly
+		let events = capacity_events();
+		assert_eq!(
+			events.last().unwrap(),
+			&Event::ProviderBoosted {
+				account: staker,
+				target,
+				amount: additional_amount,
+				capacity
+			}
+		);
+
+		// The total frozen balance should be the original staked amount (still unthawed/not withdrawn),
+		// plus the additional amount staked.
+		let total_frozen_balance = stake_amount + additional_amount;
+		assert_eq!(
+			<Test as Config>::Currency::balance_frozen(
+				&FreezeReason::CapacityStaking.into(),
+				&staker
+			),
+			total_frozen_balance
+		);
+
+		// total amount currently staked should only be the additional_amount
+		assert_eq!(StakingAccountLedger::<Test>::get(staker).unwrap().active, additional_amount);
+	})
 }

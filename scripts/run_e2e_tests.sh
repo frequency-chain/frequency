@@ -139,35 +139,27 @@ else
     echo "---------------------------------------------"
 fi
 
+declare -a JS_PACKAGES=(api-augment ethereum-utils recovery-sdk)
 if [ "${SKIP_JS_BUILD}" = "1" ]
 then
-    echo "Skipping js/api-augment and js/ethereum-utils build"
+    echo "Skipping local js packages build"
 else
-    echo "Building js/api-augment..."
-    cd js/api-augment
-    npm i
-    npm run fetch:local
-    npm run --silent build
-    cd dist
-    echo "Packaging up into js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
-    npm pack --silent
-    cd ../../..
-
-    echo "Building js/ethereum-utils..."
-    cd js/ethereum-utils
-    npm i
-    npm run --silent build
-    cd dist
-    echo "Packaging up into js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz"
-    npm pack --silent
-    cd ../../..
+    for package in ${JS_PACKAGES[@]}
+    do
+      echo "Building JS package for ${package}..."
+      pushd js/${package}
+      npm i
+      npm run --if-present fetch:local # Only for api-augment
+      npm run --silent build
+      popd
+    done
 fi
 
-
 cd e2e
-echo "Installing js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz"
-echo "Installing js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz"
-npm i ../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz ../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz
+echo "Installing local JS packages..."
+declare -a pre=( ${JS_PACKAGES[@]/#/..\/js\/} )
+packages=${pre[@]/%/\/dist}
+npm i ${packages}
 npm install
 echo "---------------------------------------------"
 echo "Starting Tests..."

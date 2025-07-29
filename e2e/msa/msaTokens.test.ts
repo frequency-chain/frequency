@@ -25,6 +25,7 @@ import {
   signPayload,
 } from '../scaffolding/helpers';
 import { u64 } from '@polkadot/types';
+import autoNonce from '../scaffolding/autoNonce';
 
 let fundingSource: KeyringPair;
 const TRANSFER_AMOUNT = 1n * DOLLARS;
@@ -317,6 +318,8 @@ describe('MSAs Holding Tokens', function () {
       ({ ownerSig } = await generateSignedAuthorizedKeyPayload(msaKeys, newPayload));
       const op2 = ExtrinsicHelper.withdrawTokens(keys, msaKeys, ownerSig, newPayload);
       await assert.doesNotReject(op2.signAndSend(), 'token transfer transaction should have succeeded');
+      // withdrawTokens doesn't change the nonce
+      autoNonce.reset(keys);
       // Destination account should have had balance increased
       const {
         data: { free: endingBalance },
