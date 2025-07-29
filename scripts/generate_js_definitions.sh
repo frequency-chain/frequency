@@ -55,3 +55,12 @@ npm run build
 # Generate ethereum-utils packed tgz
 cd dist
 npm pack
+
+# build recovery-sdk
+cd "../../recovery-sdk"
+npm install
+npm run build
+
+# Generate recovery-sdk packed tgz
+cd dist
+npm pack
