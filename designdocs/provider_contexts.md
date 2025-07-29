@@ -168,7 +168,9 @@ Proposed are the following changes:
 
     Note:
     - The same extrinsic should be able to used to proposing new image/logo hashes when an existing application context needs to be updated.
-4. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the current (numeric) `ApplicationIndex` and `ProviderRegistryEntry`.
+4. Introduce a new extrinsic `propose_to_update_provider` which will be used for updating provider contexts. It will accept a `ProviderRegistryEntry` struct with the updated information.
+
+5. `propose_to_add_application` will insert or update the `ProviderToApplicationRegistryEntry` with the current (numeric) `ApplicationIndex` and `ProviderRegistryEntry`.
 
     ```rust
         // Example of how the entry might look like
@@ -182,8 +184,21 @@ Proposed are the following changes:
         ProviderToApplicationRegistryEntry::<T>::insert(provider_id, application_identifier, application_entry);
     ```
 
-5. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogos` storage map.
-6. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo bytes.
+6. `propose_to_add_application` will also insert the logo hashes into the `ApprovedLogos` storage map.
+7. Introduce a new extrinsic `propose_to_update_application` which will be used for updating application contexts. It will accept a `ProviderRegistryEntry` struct with the updated information.
+
+    ```rust
+        #[pallet::call_index(2)]
+        pub fn propose_to_update_application(
+            origin: OriginFor<T>,
+            payload: ProviderRegistryEntry<T>,
+        ) -> DispatchResultWithPostInfo {
+            // Implementation details...
+            // This can internally call same logic as `propose_to_add_application` for consistency
+        }
+    ```
+
+8. Introduce a new extrinsic to `update_logo` for updating `ApprovedLogos` map (post goveranance registration) provided with logo bytes.
 
     ```rust
         #[pallet::call_index(14)]
@@ -196,7 +211,7 @@ Proposed are the following changes:
     ```
 
     Note: This extrinsics will compute the logo hash, update `ApprovedLogos` entry if the hash exists.
-7. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
+8. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
 
