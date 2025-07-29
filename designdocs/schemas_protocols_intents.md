@@ -1,12 +1,5 @@
 # 📘 Design Discussion: Schema, Protocols, and Intent-Based Delegation in Frequency
 
-## 0. **Work in Progress** <a id="section_0"></a>
-
-Note: This document is a work in progress; specific implementation details and code examples exhibited herein are for
-illustrative purposes only. Once the various questions and concerns surfaced by this "pre-design" document have be
-answered satisfactorily, the document will be updated and expanded to include specific details related to the proposed
-implementation.
-
 ## 1. **Background and Motivation** <a id="section_1"></a>
 
 In the current implementation, schemas are registered with immutable numeric identifiers (`SchemaId`) and describe the
@@ -24,7 +17,7 @@ These limitations have motivated a re-architecture of the schema and delegation 
 
 - **Named intents** with version tracking
 - **Intent-based delegation**
-- **More expressive APIs and storage models**
+- **More flexible storage models**
 
 ## 2. **Design Goals** <a id="section_2"></a>
 
@@ -32,303 +25,354 @@ This section outlines the key objectives that guide the redesign of Frequency's 
 
 - **Schema Immutability** - Individual schema versions, once published, are immutable on-chain
 - **Minimal Delegation Churn** - Minor changes to data formats should not require new delegations
-- **Minimal Storage Churn (migrations)** - Minor changes to storage formats should not require mass migration of user
+- **Minimal Storage Churn (migrations)** - Changes to storage formats should not require mass migration of user
   data
 - **Intent Separation** - When permissioning, we need to be able to separate the purpose of the data and action from its
   format
 - **On-Chain Efficiency** - On-chain operations need to be efficient, so storage and structures must be designed with
   that in mind
 
-## 3. Glossary of Terms <a id="section_3"></a>
+## 3. **Current Design** <a id="current_design"></a>
 
-- **Protocol** - the top level of the tripartite nomenclature _protocol.intent@version_ (ex: _dsnp_ is the protocol in
-  _dsnp.broadcast@v2_)
-- **Intent** - the second level of _protocol.intent@version_ (ex: _dsnp.broadcast_ resolves to a specific `Intent`).
-  Intents should always be referred to by their fully-qualified name (ie, _dsnp.broadcast_, not just _broadcast_).
-  Intents represent some meaning or purpose that may be delegated, and may optionally be associated with one or more
-  _minor_ versions of a `Schema`
-- **version** \[optional] - the third level of _protocol.intent@version_, resolves to a specific `SchemaId`
-- **Schema** - A `Schema` represents a particular data format, along with additional metadata about its location, etc
+```mermaid
+erDiagram
+    SchemaNameToIds {
+        string schema_namespace PK
+        string schema_descriptor PK
+    }
+    SchemaVersionId {
+        integer[] schema_versions
+    }
+    Delegation {
+        integer msa_id PK
+        integer provider_id PK
+        integer revoked_at
+    }
+    DelegationSchemaPermissions {
+        integer schema_id PK
+        integer revoked_at
+    }
+    Schema {
+        integer id PK
+        data SchemaInfo
+    }
 
-## 4. **Protocols** <a id="section_4"></a>
+    SchemaNameToIds ||--|| SchemaVersionId: "name-to-id mapping"
+    SchemaVersionId ||--o{ Schema: "schema version mapping"
+    Delegation ||--o{ DelegationSchemaPermissions: "has permissions"
+    DelegationSchemaPermissions ||--o{ Schema: "delegation mapping"
+```
 
-In this design, a `Protocol` is merely an organizational tool for collections of Intents. In a future design update, a
-Protocol may be promoted to a first-level on-chain entity with a numeric ID, or, it may be eliminated completely in
-favor of an ENS or ENS-like system on Frequency.
+## 4.**Proposed Design Diagram: Immutable, Versioned Schemas with Intents**<a id="proposed_design"></a>
 
-<a id="protocol_map"></a>Protocols will be represented on-chain in a manner consistent with the current implementation
-of schema names; _ie_, a double storage map `protocol name` -> `intent name` -> `IntentId`
+NOTE: For simplicity, I've omitted showing entities/relations whose sole purpose is providing name-to-id lookup for
+off-chain clients
 
-## 5. **Intents** <a id="section_5"></a>
+```mermaid
+---
+title: "Entities & Relationships"
+---
+erDiagram
+    Intent {
+        integer id PK
+        integer[] schema_versions FK
+    }
+    Delegation {
+        integer msa_id PK
+        integer provider_id PK
+        integer revoked_at
+    }
+    DelegationIntentPermissions {
+        integer intent_id FK
+        integer revoked_at
+    }
+    DelegationGroup {
+        integer id PK
+        integer[] intents FK
+    }
+    Schema {
+        integer id PK
+        integer intent_id FK
+        data schema_metadata
+        data schema_payload
+    }
 
-Intents are not just organizational tools—they enable meaningful delegation. In the new model, an Intent is a
-first-class on-chain entity. It can represent a single action or permission that may be delegated; it can optionally
-reference a list of Schemas that comprise minor version updates of a particular data format--in the latter case, the
-implied permission is `schema.Write`. Every published Schema is assigned to an Intent, and new versions of a schema
-simply add new schema IDs to the Intent's version history.
+    Intent ||--o{ Schema: "intent-to-schemas"
+    Delegation ||--o{ DelegationIntentPermissions: ""
+    DelegationIntentPermissions ||--|| Intent: ""
+    DelegationGroup }o--o{ Intent: "delegation-group-to-intents"
+```
 
-As mentioned above, an `Intent` may reference a list of `Schemas` that comprise the sequential _versions_ to which a
-delegation to the Intent grants _write_ access. However, it is also possible to create an Intent that does not reference
-_any_ Schemas; such an Intent may be used as a way to record arbitrary permissions on-chain. These permission indicators
-may be used by off-chain applications (or future on-chain facilities). For example, a wallet application may query an
-on-chain Intent to determine whether an application should be allowed access to a user's graph encryption key.
+### Notes
 
-### 📌 Intent Metadata Structure
+- `Intents` MUST be mutable; otherwise there's little benefit to them (the main benefit of an Intent being that it
+  enables mutating the collection of permissions without requiring a new delegation)
+- `Schemas` are NOT mutable; they represent a fixed format & payload location
+- The bi-directional lookup on `Intent` <--> `Schema` is crucial to mitigating the runtime cost of delegation lookups
+- The cost of doing a Delegation lookup for a particular Schema is the same as the current implementation
+- `DelegationGroups` are _mutable_--but, critically, are not themselves delegatable. That is, granting delegations by
+  DelegationGroup merely creates the individual Intent delegations that exist in the group _at the time of delegation_;
+  subsequent mutations of the DelegationGroup do not affect existing delegations. Granting delegations in this way may
+  be supported by new extrinsics, or may simply be left to the client to query the DelegationGroup and request the
+  indicated delegations.
+- Because stored data retains an indication of the concrete `SchemaId` that was used to write it, there is ZERO risk of
+  introducing a breaking format change, as users will always have access to the correct schema needed to decode the
+  data.
 
-- `protocol_name**`: Which Protocol owns this Intent
-- `name**`: Human-readable name (e.g., `broadcast`)
-- `description`: Optional developer-facing documentation
-- `link`: Optional link to spec or docs
-- `registered_by`: MSA (ProviderId) that registered the intent
-- `registered_at`: Block number
-- `schema_versions`: [optional] Ordered list of `SchemaId`s (e.g., `[7, 15, 27]`, for versions 0..2)
+```mermaid
+---
+title: "Pallet Storage Model"
+---
+erDiagram
+    Messages {
+        integer block_number PK
+        integer intent_id PK
+        integer message_index PK
+    }
 
-_\*\*may be removed from metadata struct as it would be redundant due to <a href="#protocol_map">Protocol storage
-map</a>_
+    MessagePayload {
+        integer schema_id
+        data payload
+    }
 
-### 🧬 Versioning Rules
+    StatefulStorage {
+        integer msa_id PK
+        integer intent_id PK
+        integer page_index PK
+    }
 
-- Versions are stored in a monotonic, gapless array
-- A new SchemaId is automatically assigned to the next version in the Intent
-- Older versions are preserved permanently
-- Delegations apply to an Intent
-- _Question: can Schemas (particular versions) be deprecated?_
+    StatefulStoragePage {
+        integer page_nonce
+        integer schema_id
+        data payload
+    }
 
-### 🧭 Governance Rules
+    Messages }o--o{ MessagePayload: "messages in block"
+    StatefulStorage }o--o{ StatefulStoragePage: "storage trie pages"
+```
 
-- Intents must be approved by governance, and are immutable except for appending new SchemaIds to the version list
-- New Schemas must be approved by governance
-- Minor Schema updates (semantic-preserving format changes, etc) may be approved for the same Intent
-- Major updates (change in meaning or semantics, or significant breaking format change) require publishing under a new
-  Intent
+### Notes
 
-## 6. **Schemas** <a id="section_6"></a>
+This design separates the notion of _storage location_ from _data format_ (ie, `Schema`). _Storage location_ is now tied
+to `IntentId`.
 
-`Schemas` are on-chain entities that describe a data format and storage location. Under this new design, Schemas are
-little changed from their current implementation, conceptually, although some on-chain storage may be mutated for
-efficiency, as well as the addition of some metadata.
+The design requires modifications to the pallet storage structures for both the `messages` and `stateful-storage`
+pallets. While this could be accomplished via a migration of all existing pallet data, the amount of data that currently
+exists on-chain makes this problematic. If the cost or complexity of such a migration renders it infeasible, the
+following approach is proposed:
 
-### 🧭 Governance Rules
+#### `messages` pallet
 
-- Schemas, as currently, must be approved by governance
-- A published Schema must reference an existing Intent
+Since `messages` pallet storage represents time-series content publications, it should be possible to define a
+`MessagesV3` pallet storage (the current storage being `MessagesV2`). All future write operations would write to
+`MessagesV3`. For reads, we would store the block number at which `MessagesV3` was introduced; read requests for data
+prior to that block would read from `MessagesV2`.
 
-## 7. **Delegation Semantics** <a id="section_7"></a>
+#### `stateful-storage` pallet
+
+Data stored in the `stateful-storage` pallet always represents the latest state, rather than a time-series. Therefore,
+it's difficult or impossible to bifurcate the storage in the same way as the `messages` pallet. Instead, to avoid
+requiring a complete storage migration, new pages/items that are written can include a _storage version magic number_ in
+either the page or the item header. For `Paginated` storage, this value would precede the `PageNonce`; for `Itemized`
+storage the value would precede `payload_len`. The 'magic number' would be designed to be the same byte length as the
+value currently a byte offset zero within the page/item, and to be a value such that conflict with a valid `nonce` or
+`payload_len` would be highly unlikely, if not impossible.
+
+New structures would be defined, ie `PageV2` and `ItemizedItemV2`, and decoding values read from storage would need to
+determine which structure to decode to based on the presence/absence of the "magic value".
+
+## 5. **Delegation Semantics**<a id="delegation_semantics"></a>
 
 Delegation is the mechanism by which a user authorizes a provider to act on their behalf. Currently, this is limited to
-individual `SchemaId`s, but we propose changing the delegation model to the following:
+individual `SchemaId`s, but we propose changing the delegation model to be based on `IntentId`. The structure of a
+Delegation would not change; an initial migration would create a single `Intent` for each existing `Schema`, with the
+same numeric ID, so that current Delegation storage would not require a migration.
 
-- Delegation by `IntentId` (implies all schema versions within the Intent)
-    - Option to consider: delegation by `IntentId` + specific version/range of versions
+## 6. **Schemas**<a id="schemas"></a>
 
-## 8. **Authorization Resolution Model** <a id="section_8"></a>
-
-This section outlines how delegation is verified at the time of an extrinsic call or message submission. In the current
-model, permissions are evaluated by a specific `SchemaId`. In the new model, permissions are based on an `IntentId`.
-
-### 🧪 Additional Considerations
-
-- SDKs should provide helpers for intent resolution and delegation explanation.
-
-## 9. **On-Chain Data Structures** <a id="section_9"></a>
-
-This section outlines the proposed on-chain data structures to support protocols, schemas, intents, and delegation
-ownership in the redesigned Frequency architecture.
-
-### 🧱 Design Principles
-
-- On-chain runtime operations should only work with compact numeric identifiers (`SchemaId`, `IntentId`, `ProtocolId`)
-- Human-readable names must be resolved by the client prior to calling extrinsics
-- Minimize storage duplication and unnecessary indices
-
-----------
-
-### 🧩 Delegation Structures
-
-The on-chain storage structures for Delegations do not change as a result of this design, other than the fact that the
-`SchemaId` reference currently stored becomes an `IntentId` reference of the same value.
-----------
-
-### 🏷 Intents and Protocols
+In the new model, a `Schema` represents a data format definition *only*. Any association with data _meaning_ or _storage
+location_ is promoted to the Schema's corresponging `Intent`. A Schema may be associated with one and only one Intent.
+Under this model, a Schema has some associated metadata, and a model containing the actual data format definition (ie,
+currently-supported Parquet or Avro schema). The associated data types would be as follows:
 
 ```rust
-pub type IntentNameToIds<T: Config> = StorageDoubleMap<
+pub type SchemaId = u16;
+
+pub type SchemaModel = BoundedVec<u8, T::SchemaModelMaxBytesBoundedVecLimit>;
+
+pub struct SchemaInfo {
+    /// The type of model (AvroBinary, Parquet, etc.)
+    pub model_type: ModelType,
+    /// The associated Intent
+    pub intent_id: IntentId,
+}
+```
+
+## 7. **Intents**<a id="intents"></a>
+
+`Intents` represent a consistent _data meaning or purpose_ for which a user may delegate permission. Intents may be
+associated with one or more Schemas, which comprise a _version list_. Via this mechanism, Intents are able to represent
+the evolution of a data format. An Intent may also be associated with no schemas at all; this allows us to create
+delegatable permissions or entitlements on-chain that may be checked by on- or off-chain applications.
+
+Intents are mutable, but only in the sense that publication of new Schemas representing the same evolving data format
+may be appended to an Intent. All other attributes of an Intent are immutable.
+
+When associated with one or more Schemas, Intents also represent a _storage location_ and other attributes. This
+approach allows on-chain data to evolve over time. Since the storage location of an Intent remains constant, and data is
+written with an indication of the specific SchemaId used to encode it, publication of a new Schema does not require
+wholesale data migration. Instead, on-chain data may be migrated by Provider applications opportunistically over time.
+Off-chain data may persist in its existing form and can always be read/decoded using the original Schema definition
+used to write it.
+
+The structures and types for Intents are envisioned as follows:
+
+```rust
+pub type IntentId = u16;
+
+// Renamed from existing `SchemaSetting`
+pub enum IntentSetting {
+    /// Intent setting to enforce append-only behavior on payload.
+    /// Applied to Intents with `payload_location: PayloadLocation::Itemized`.
+    AppendOnly,
+    /// Intent may enforce a signature requirement on payload.
+    /// Applied to intents with `payload_location: PayloadLocation::Itemized` or `PayloadLocation::Paginated`.
+    SignatureRequired,
+}
+
+pub struct IntentSettings(pub BitFlags<IntentSetting>);
+
+pub struct IntentInfo {
+    /// The payload location
+    pub payload_location: PayloadLocation,
+    /// additional control settings for the schema
+    pub settings: IntentSettings,
+    /// List of Schemas associated with this Intent
+    pub schema_ids: BoundedVec<SchemaId, ConstU32<MAX_NUMBER_OF_VERSIONS>>,
+}
+```
+
+### 8. **Delegation Groups**<a id="delegation_groups"></a>
+
+As mentioned <a href="#delegation_semantics">above</a>, other than changing the interpretation of a Delegation from
+`SchemaId` to `IntentId`, the semantics of Delegations does not change in the new design. However, to
+facilitate user provisioning and onboarding by Providers, we introduce here the concept of _Delegation Groups_.
+
+A `DelegationGroup` is a list of `IntentIds` that are "bundled" together. These bundles may be resolved to the discrete
+contained `IntentIds` when a Provider seeks to request or verify delegations for a common purpose.
+
+Delegation Groups **must be resolved to individual `IntentIds` at the time of delegation granting**. In this sense, they
+are both mutable _and_ immutable:
+
+* _immutable_ in the sense that when granting delegations based on a Delegation Group, the list of Intents so delegated
+  may not be changed without another explicit delegation action by the user.
+* _mutable_ in the sense that the list of Intents associated with a Delegation Group may change over time, providing a
+  mechanism to check that a user has all the necessary or desired delegations in place.
+
+This model preserves Frequency's user-security model of _explicit delegation_, while simultaneously gives Providers a
+convenience mechanism for evolving sets of permissions.
+
+The structure for Delegation Groups is proposed as follows:
+
+```rust
+pub type DelegationGroupId = u16;
+
+pub struct DelegationGroup {
+    /// List of Intents associated with this Delegation
+    pub intent_ids: BoundedVec<IntentId, ConstU32<MAX_INTENTS_PER_GROUP>>,
+}
+```
+
+### 9. **Name Resolution**<a id="name_resolution"></a>
+
+In addition to the new & updated primitives for Schemas, Intents, and Delegation Groups, this design also provides for a
+name resolution mechanism so that off-chain applications may discover the necessary on-chain identifiers. These
+facilities are _solely for off-chain name resolution_; all on-chain extrinsics and other calls will require the
+appropriate numeric identifier (i.e., `SchemaId`, `IntentId`, `DelegationGroupId`).
+
+Related names will be grouped under a top-level identifier called a 'protocol'. This enables querying the chain by a
+fully qualified name `<protocol>.<name>`, or by `<protocol>` only for a list of registered names and their corresponding
+entities. For example, using data currently on Frequency Mainnet, we would have two protocols defined: 'dsnp' and '
+bsky'.
+Each name registered to a protocol points to either an `IntentId` or a `DelegationGroupId`. The structures for the name
+registry would look as follows:
+
+```rust
+pub enum RegisteredNameIdType {
+    Intent(IntentId),
+    DelegationGroup(DelgationGroupId),
+}
+
+/// Protocol name type
+pub type ProtocolName = BoundedVec<u8, ConstU32<PROTOCOL_MAX>>;
+/// descriptor type
+pub type NameDescriptor = BoundedVec<u8, ConstU32<DESCRIPTOR_MAX>>;
+
+#[pallet::storage]
+pub(super) type NameRegistry<T: Config> = StorageDoubleMap<
     _,
     Blake2_128Concat,
     ProtocolName,
     Blake2_128Concat,
-    IntentName,
-    IntentId,
+    NameDescriptor,
+    RegisteredNameIdType,
     ValueQuery,
 >;
-
-pub struct IntentInfo {
-    description: BoundedVec<u8, ConstU32<DESCRIPTION_MAX>>,
-    link: BoundedVec<u8, ConstU32<URL_MAX>>,
-    registered_at: BlockNumber,
-    schema_versions: BoundedVec<SchemaId, MaxSchemaVersionsPerIntent>,
-}
-
-pub type Intents<T> = StorageMap<
-    _, Blake2_128Concat, IntentId, IntentInfo
->;
 ```
 
-Note: `IntentIds` are only referenced by numeric ID. Clients must resolve names via off-chain lookup using mappings
-from `protocol name + intent name → IntentId`.
+**NOTE:** The '\<protocol>.\<name>' mapping and registry may be replaced at some future date if Frequency implements a
+true ENS registry.
 
-----------
+### 10. Ownership and Governance<a id="ownership_governance"></a>
 
-## 10. **API Identifier Handling and Resolution** <a id="section_10"></a>
+It may be desirable at some point to implement the concept of ownership of protocols and the entities & names registered
+under them, thereby enabling the concept of publishing authority for the creation of new Intents, Schemas, and
+Delegation Groups. However, that is considered out of scope of the current design. It may be evaluated at a later date,
+possibly in the context of a full DAO implementation for Frequency.
 
-The choice of identifiers in runtime and SDK APIs has significant implications for both usability and performance.
-Historically, Frequency APIs used `SchemaId` both for delegation and data interpretation. The proposed model must
-account for schemas and intents, while maintaining runtime efficiency.
+Instead, for the proposed design, as with the current design, all additions & changes to Schemas, Intents, Delegation
+Groups, and Name registrations must be approved by Governance. Specifically, the following actions must be
+Governance-approved:
 
-### 🔢 Preferred On-Chain Identifiers
+| Action                                                               | Considerations                                                                           |
+|----------------------------------------------------------------------|------------------------------------------------------------------------------------------|
+| Publish a new Schema                                                 | Is the Schema an evolution of existing Schemas registered to the Intent?                 |
+| Publish a new (named) Intent                                         | Does the requestor represent an org with authority to publish to the indicated protocol? |
+| Publish a new (named) Delegation Group<br/>Update a Delegation Group | Does the requestor represent an org with authority to publish to the indicated protocol? |
 
-On-chain APIs and runtime logic should rely exclusively on numeric identifiers, ie `IntentId`, and `SchemaId` rather
-than `protocol_name.intent_name`.
+### 11. **Extrinsics**<a id="extrinsics"></a>
 
-String identifiers such as protocol names or intent names should never be parsed on-chain. These must
-be resolved by SDKs and off-chain services (e.g., the Frequency Gateway).
+The following modifications to existing extrinsics are proposed:
 
-### 🧠 Resolution Responsibility
+* `propose_to_create_schema_v2`, `create_schema_via_governance_v2`, and `create_schema_v3` (deprecated)
+    * Will reject if `schema_name` is `None`.
+    * Will reject if `schema_name` does not resolve to an existing Intent.
+    * Will reject if the supplied `payload_location` or `settings` do not match the associated Intent's values
+* `propose_to_create_schema_name` and `create_schema_name_via_governance` (deprecated)
+    * No-op, as schema names are no longer supported
+* All extrinsics related to Delegations that reference `SchemaId` will be changed to reference `IntentId`. Since the
+  data type is `u16` for both, the binary API will not change.
 
-Clients and SDKs must perform resolution of strings to IDs before invoking extrinsics. For example:
+The following new extrinsics are proposed:
 
-- Resolve `"dsnp.broadcast"` → `IntentId`
+| Extrinsic                                                      | Parameters                                                                                                                                                          | Description                                                      |
+|----------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------|
+| propose_to_create_schema_v3<br/>create_schema_v4               | `model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                                                       | Propose to create a Schema<br/>Create a Schema                   |
+| create_schema_via_governance_v3                                | `creator_key: AccountId`<br/>`model: BoundedVec<u8>`<br/>`model_type: ModelType`<br/>`intent_id: IntentId`                                                          | Create a Schema via governance                                   |
+| propose_to_create_intent<br/>create_intent                     | `protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings`                              | Propose to create an Intent<br/>Create an Intent                 |
+| create_intent_via_governance                                   | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`intent_name: NameDescriptor`<br/>`payload_location: PayloadLocation`<br/>`settings: IntentSettings` | Create an Intent via Governance                                  |
+| propose_to_create_delegation_group<br/>create_delegation_group | `protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                        | Propose to create a DelegationGroup<br/>Create a DelegationGroup |
+| create_delegation_group_via_governance                         | `creator_key: AccountId`<br/>`protocol_name: ProtocolName`<br/>`group_name: NameDescriptor`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`           | Create a DelegationGroup via Governance                          |
+| propose_to_update_delegation_group<br/>update_delegation_group | `group_id: DelegationGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                                                         | Propose to update a DelegationGroup<br/>Update a DelegationGroup |
+| update_delegation_group_via_governance                         | `creator_key: AccountId`<br/>`group_id: DelegationGroupid`<br/>`intent_ids: BoundedVec<IntentId, MAX_INTENTS_PER_GROUP>`                                            | Update a DelegationGroup via Governance                          |
 
-### 📬 Extrinsic Parameters
+### 12. **Runtime Calls**<a id="runtime_calls"></a>
 
-Supported design patterns:
+The following new Custom Runtime functions are proposed:
 
-1. **Submit by SchemaId only (Legacy/Compatible):**
-    - Requires on-chain schema metadata to determine intent for validation
-        - this is already read in the current flow, so no additional reads
-    - Given the `IntentId` retrieved from the `SchemaInfo`, delegation lookup proceeds as currently
+| Custom Runtime Function      | Parameters                                                                                                                        | Description                                                                                                                                                        |
+|------------------------------|-----------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| resolve_intent_or_group_name | `protocol_name: ProtocolName`<br/>`descriptor_name: Option<DescriptorName>`                                                       | Resolve a name to a registered  ID or list of IDs                                                                                                                  |
+| check_delegation_group       | `group_id: DelegationGroupId`<br/>`msa_id: MessageSourceId`<br/>`provider_id: ProviderId`<br/>`block_number: Option<BlockNumber>` | Returns the Intents currently-defined DelegationGroup, mapped to a boolean indicating the current delegation status of that Intent for the given MSA and Provider. |
 
-2. **Submit by IntentId only (No Schema/future extrinsics):**
-    - Enables non-schema-based actions (e.g., future use cases)
-
-**NOTE:** Minimally, `SchemaId` _must_ be provided for all use cases that involve writing data to be associated with a
-schema, because the specific `SchemaId` must be recorded in the data or event payload somehow. There are no current use
-cases for extrinsics that expect _only_ an `IntentId`.
-
-## 11. **On- and Off-chain Schema Payloads & Storage** <a id="section_11"></a>
-
-The change from `Schema` to `Intent` has implications how and where data is stored, especially as currently relating to
-the `messages` and `stateful-storage` pallets.
-
-The `messages` pallet stores both on- and off-chain messages in the following structure:
-
-```rust
-    #[pallet::storage]
-pub(super) type MessagesV2<T: Config> = StorageNMap<
-    _,
-    (
-        storage::Key<Twox64Concat, BlockNumberFor<T>>,
-        storage::Key<Twox64Concat, SchemaId>,
-        storage::Key<Twox64Concat, MessageIndex>,
-    ),
-    Message<T::MessagesMaxPayloadSizeBytes>,
-    OptionQuery,
->;
-```
-
-The `stateful-storage` pallet stores data in a child trie keyed on `SchemaId`.
-
-Both pallets' storage is physically keyed at least partially on `SchemaId`. This makes it easy, for instance, to query
-all of the messages for a particular schema. However, one of the issues this design is meant to resolve is the necessity
-for a storage migration any time there is a minor schema version published.
-
-The `messages` pallet actually does not currently require a migration in this scenario; existing messages are accessible
-via the old schema version, while new messages are written via the new minor version. However, this does make querying
-for content somewhat cumbersome. In a scenario where there have been 5 minor schema version updates to the
-`'dsnp.broadcast'` intent, the current model would necessitate 5 separate queries to the chain to ensure we retrieved
-all
-valid `'dsnp.broadcast'` content.
-
-The `stateful-storage` pallet presents a different challenge. `PaginatedStorage`, for instance, is intended to be able
-to serialize a single, consistent data model (split across multiple pages). Currently, even a minor schema format change
-requires the entire model to be migrated to a new child trie under the new `SchemaId`; otherwise, data inconsistencies
-can arise, as well as other problems.
-
-To mitigate these issues, we will store data indexed by `IntentId` instead of `SchemaId`. This will require the
-encapsulated storage payload to contain an additional piece of meta-information; specifically, the concrete `SchemaId`
-that was used to format the encapsulated data.
-
-### 🎯 Developer Experience Considerations
-
-- APIs should remain backward compatible with `SchemaId`-based extrinsic calls.
-- SDKs such as the Frequency Gateway may offer string-based input and resolve IDs internally.
-
-## 12. **Migration Strategy** <a id="section_12"></a>
-
-Transitioning from the current schema delegation system to the new intent delegation model must be handled
-carefully to preserve backward compatibility while enabling the new architecture to roll out incrementally.
-
-### 🚀 Protocol and Intent Bootstrapping
-
-For each Schema currently registered on-chain:
-
-- Create a new Intent with the same numeric `IntentId` value as the current `SchemaId`
-- If the `SchemaId` is referenced in the existing `SchemaNamesToIds` mapping
-    - If the `SchemaId` _is not_ the latest registered version in the mapping array, register the new Intent with the
-      same   `protocol.intent` name, appending `'_v{version_index}'` to the name
-    - If the `SchemaId` _is_ the latest registered version in the mapping array, register the new Intent with the same
-      `protocol.intent` name (no suffix)
-- If the `SchemaId` is not registered with a name mapping
-    - Create a new mapping `'global.schema_{id}'`
-    - Alternately, since this scenario should only exist on Testnet, drop the schema
-- Rewrite the Schema's metadata on-chain to reference the corresponding `IntentId` (seems redundant, as existing
-  `SchemaId` == `IntentId`, but future Schemas will not preserve that relationship)
-
-This migration approach should ensure that existing Delegation references do not need to be migrated, as all new Intents
-will have the same numeric IDs as the existing Schemas.
-
-### 🚀 Data Payload Migration
-
-Migration of both `messages` and `stateful-storage` pallet data is necessary, due to the new requirement to store the
-concrete `SchemaId` with the payload.
-
-For the `messages` pallet, it _may_ be possible to avoid a migration by bifurcating message storage at a specific block
-number, ie, content in blocks before the upgrade are kept in the existing storage keyed by `SchemaId`, while new content
-is stored indexed by `IntentId` and containing a `SchemaId` in the payload. Further analysis is required to determine if
-this approach is feasible or desirable.
-
-For the `stateful-storage` pallet, it would be necessary to re-write all storage pages to include the concrete
-`SchemaId` in the page header. How to accomplish this for ~1M user graphs and graph keys on-chain requires further
-analysis.
-
-## 12. **Open Questions and Next Steps** <a id="section_12"></a>
-
-Several open questions remain that may influence the final implementation strategy and runtime behavior. These are left
-intentionally unresolved to guide future design discussions within the development and governance communities.
-
-### ❓ Open Questions
-
-- What developer-facing tools will be needed to ease migration and debugging?
-
-- Will schema deprecation or version invalidation ever be supported, or are all published schemas permanently
-  active?
-
-- This design specifically does not address the issue described
-  in [#2510](https://github.com/frequency-chain/frequency/issues/2510)
-
-### 🧭 Next Steps
-
-1. **Internal review** of this proposal by Frequency core contributors
-
-2. **Discussion of delegation scope models** and confirmation of preferred resolution pattern
-
-3. **Engineering spike** into schema/intents/protocol runtime storage cost and migration
-
-4. **API/SDK prototype** demonstrating resolution and delegation lookup UX
-
-5. **Drafting of runtime implementation plan** and migration support utilities
-
-6. **Call for feedback** from developers, partners, and governance stakeholders
-
-This document serves as a foundation for these efforts and should evolve alongside prototyping and implementation
-planning.
+### 13. **Storage**<a id="storage"></a>
