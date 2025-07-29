@@ -27,7 +27,7 @@ const capacityMin: bigint = tokenMinStake / 50n;
 let fundingSource: KeyringPair;
 
 describe('Capacity Staking Tests', function () {
-  // The frozen balance is initialized and tracked throughout the staking end to end tests
+  // The frozen balance is initialized and tracked throughout the staking end-to-end tests
   // to accommodate for the fact that withdrawing unstaked token tests are not executed
   // against a relay chain. Since the length of time to wait for an epoch period to roll over could
   // potentially be hours / days, that test is skipped. Therefore, we must track the frozen balance
@@ -91,6 +91,12 @@ describe('Capacity Staking Tests', function () {
       assert.equal(capacityStaked.remainingCapacity, 0, 'should return a capacityLedger with 0 remainingCapacity');
       assert.equal(capacityStaked.totalTokensStaked, 0, 'should return a capacityLedger with 0 total tokens staked');
       assert.equal(capacityStaked.totalCapacityIssued, 0, 'should return a capacityLedger with 0 capacity issued');
+    });
+
+    it('fails to withdraw when there is no thawed amount', async function () {
+      await assert.rejects(() => ExtrinsicHelper.withdrawUnstaked(stakeKeys).signAndSend(), {
+        name: 'NoThawedTokenAvailable',
+      });
     });
 
     it('successfully withdraws the unstaked amount', async function () {
