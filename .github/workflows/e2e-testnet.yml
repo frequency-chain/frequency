@@ -63,7 +63,7 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-          cache-dependency-path: e2e/package-lock.json
+          cache-dependency-path: e2e/package.json
       - name: Install Built js packages
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }}
         working-directory: e2e
@@ -108,7 +108,7 @@ jobs:
         with:
           node-version: 22
           cache: "npm"
-          cache-dependency-path: e2e/package-lock.json
+          cache-dependency-path: e2e/package.json
       - name: Install Built js packages
         run: npm install @frequency-chain/api-augment@${{ env.API_AUGMENT_VERSION }} @frequency-chain/ethereum-utils@${{ env.ETHEREUM_UTILS_VERSION }} @frequency-chain/recovery-sdk@${{ env.RECOVERY_SDK_VERSION }}
         working-directory: e2e
