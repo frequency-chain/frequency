@@ -23,7 +23,7 @@ fn test_barrier_allows_parent() {
 }
 
 #[test]
-fn test_barrier_fails_unauthoized_location_unpaid_execution() {
+fn test_barrier_fails_unauthorized_location_unpaid_execution() {
 	let location = Parachain(3001).into();
 	let mut instructions = Xcm::<()>(vec![UnpaidExecution {
 		weight_limit: Limited(Weight::from_parts(20, 20)),
