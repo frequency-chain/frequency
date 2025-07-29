@@ -211,7 +211,6 @@ Proposed are the following changes:
     ```
 
     Note: This extrinsics will compute the logo hash, update `ApprovedLogos` entry if the hash exists.
-8. Ensure that application updates would require governance approval, hence `propose_to_add_application` will be used for both adding and updating applications.
 
 ### **Storage Migration** <a id='migration'></a>
 
