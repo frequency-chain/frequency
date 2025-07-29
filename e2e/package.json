@@ -21,25 +21,25 @@
   "author": "",
   "license": "Apache-2.0",
   "dependencies": {
-    "@frequency-chain/api-augment": "file:../js/api-augment/dist/frequency-chain-api-augment-0.0.0.tgz",
-    "@frequency-chain/ethereum-utils": "file:../js/ethereum-utils/dist/frequency-chain-ethereum-utils-0.0.0.tgz",
-    "@frequency-chain/recovery-sdk": "file:../js/recovery-sdk/dist/frequency-chain-recovery-sdk-0.0.0.tgz",
-    "@helia/unixfs": "^5.0.3",
-    "@noble/curves": "^1.9.2",
-    "@polkadot-api/merkleize-metadata": "^1.1.18",
-    "@polkadot/api": "16.3.1",
-    "@polkadot/types": "16.3.1",
-    "@polkadot/util": "13.5.3",
+    "@frequency-chain/api-augment": "file:../js/api-augment/dist",
+    "@frequency-chain/ethereum-utils": "file:../js/ethereum-utils/dist",
+    "@frequency-chain/recovery-sdk": "file:../js/recovery-sdk/dist",
+    "@helia/unixfs": "^5.0.4",
+    "@noble/curves": "^1.9.5",
+    "@polkadot-api/merkleize-metadata": "^1.1.20",
+    "@polkadot/api": "16.4.3",
+    "@polkadot/types": "16.4.3",
+    "@polkadot/util": "13.5.4",
     "ethers": "^6.15.0",
-    "helia": "^5.4.2",
+    "helia": "^5.5.0",
     "multiformats": "^13.3.7",
     "rxjs": "^7.8.2",
     "workerpool": "^9.3.3"
   },
   "devDependencies": {
-    "@eslint/js": "^9.30.1",
+    "@eslint/js": "^9.32.0",
     "@types/mocha": "^10.0.10",
-    "eslint": "^9.30.1",
+    "eslint": "^9.32.0",
     "eslint-plugin-mocha": "^11.1.0",
     "glob": "^11.0.3",
     "globals": "^16.3.0",
@@ -48,9 +48,9 @@
     "sinon": "^21.0.0",
     "tsx": "4.20.3",
     "typescript": "^5.8.3",
-    "typescript-eslint": "^8.35.1"
+    "typescript-eslint": "^8.38.0"
   },
   "optionalDependencies": {
-    "@esbuild/linux-x64": "0.25.5"
+    "@esbuild/linux-x64": "0.25.8"
   }
 }
