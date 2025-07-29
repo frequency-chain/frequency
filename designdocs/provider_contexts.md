@@ -140,15 +140,6 @@ Proposed are the following changes:
 1. The `propose_to_be_provider` extrinsic will now accept an optional list of hashes for images/logos to be approved by governance. The provider payload will include the `ProviderRegistryEntry` struct with the default name, localized names, and default logo hash.
 
     ```rust
-        #[pallet::call_index(0)]
-        pub fn propose_to_be_provider(
-            origin: OriginFor<T>,
-            payload: ProviderRegistryEntry<T>,
-        ) -> DispatchResultWithPostInfo {
-            // Implementation details...
-        }
-
-    ```rust
 
         #[pallet::call_index(0)]
         pub fn propose_to_be_provider(
