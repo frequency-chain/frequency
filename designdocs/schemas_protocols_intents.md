@@ -226,6 +226,7 @@ Off-chain data may persist in its existing form and can always be read/decoded u
 used to write it.
 
 The structures and types for Intents are envisioned as follows:
+<a id="intent_struct"></a>
 
 ```rust
 pub type IntentId = u16;
@@ -274,6 +275,8 @@ convenience mechanism for evolving sets of permissions.
 
 The structure for Delegation Groups is proposed as follows:
 
+<a id="delegation_group_struct"></a>
+
 ```rust
 pub type DelegationGroupId = u16;
 
@@ -297,6 +300,8 @@ bsky'.
 Each name registered to a protocol points to either an `IntentId` or a `DelegationGroupId`. The structures for the name
 registry would look as follows:
 
+<a id="name_registry_struct"></a>
+
 ```rust
 pub enum RegisteredNameIdType {
     Intent(IntentId),
@@ -307,17 +312,6 @@ pub enum RegisteredNameIdType {
 pub type ProtocolName = BoundedVec<u8, ConstU32<PROTOCOL_MAX>>;
 /// descriptor type
 pub type NameDescriptor = BoundedVec<u8, ConstU32<DESCRIPTOR_MAX>>;
-
-#[pallet::storage]
-pub(super) type NameRegistry<T: Config> = StorageDoubleMap<
-    _,
-    Blake2_128Concat,
-    ProtocolName,
-    Blake2_128Concat,
-    NameDescriptor,
-    RegisteredNameIdType,
-    ValueQuery,
->;
 ```
 
 **NOTE:** The '\<protocol>.\<name>' mapping and registry may be replaced at some future date if Frequency implements a
@@ -376,3 +370,52 @@ The following new Custom Runtime functions are proposed:
 | check_delegation_group       | `group_id: DelegationGroupId`<br/>`msa_id: MessageSourceId`<br/>`provider_id: ProviderId`<br/>`block_number: Option<BlockNumber>` | Returns the Intents currently-defined DelegationGroup, mapped to a boolean indicating the current delegation status of that Intent for the given MSA and Provider. |
 
 ### 13. **Storage**<a id="storage"></a>
+
+#### Schemas
+
+The storage structures for Schemas will not fundamentally change, except for internal changes to the `SchemaInfo`
+structure that will require migration:
+
+* `payload_location`  & `settings` will migrate to `IntentInfo`
+* addition of `intent_id`
+
+#### Intents
+
+The <a href="#intent_struct">IntentInfo storage</a> will be as follows:
+
+```rust
+#[pallet::storage]
+pub(super) type IntentInfos<T: Config> =
+StorageMap<_, Twox64Concat, IntentId, IntentInfo, OptionQuery>;
+```
+
+#### Delegations
+
+There will be no change to Delegation storage; existing delegated `SchemaIds` will be interpreted as `IntentIds`.
+
+#### Delegation Groups
+
+The <a href="#delegation_group_struct">DelegationGroup structures</a> will be stored as follows:
+
+```rust
+#[pallet::storage]
+pub(super) type DelegationGroups<T: Config> =
+StorageMap<_, Twox64Concat, DelegationGroupId, DelegationGroup, OptionQuery>;
+```
+
+#### Name Registry
+
+The <a href="#name_registry_struct">Name Registry structures</a> will look as follows:
+
+```rust
+#[pallet::storage]
+pub(super) type NameRegistry<T: Config> = StorageDoubleMap<
+    _,
+    Blake2_128Concat,
+    ProtocolName,
+    Blake2_128Concat,
+    NameDescriptor,
+    RegisteredNameIdType,
+    ValueQuery,
+>;
+```
