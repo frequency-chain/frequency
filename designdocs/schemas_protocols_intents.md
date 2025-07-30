@@ -419,3 +419,27 @@ pub(super) type NameRegistry<T: Config> = StorageDoubleMap<
     ValueQuery,
 >;
 ```
+
+#### `messages` pallet
+
+The `messages` pallet will require storage for an additional constant representing the block number at which this
+implementation is applied.
+
+```rust
+#[pallet::storage]
+pub type IntentBasedStorageCutoverBlockNumber<T: Config> = StorageValue<_, T::BlockNumber, ValueQuery>;
+```
+
+### Migrations
+
+Very little _existing_ data needs to be migrated; mostly just existing `SchemaInfo` storage. Anticipated migrations are
+as follows:
+
+1. Create a new `Intent` for every currently existing `Schema`, as follows:
+    1. The new `Intent` will have the same numeric ID value as the original Schema.
+    2. The new Intent shall inherit the `payload_location` and `settings` from the existing `SchemaInfo` object.
+2. Migrate existing schema name mappings as follows:
+    1. For each `SchemaNamespace` '\<protocol_name>'
+        1. For each `SchemaDescriptor` '\<name>' at index `n` belonging to a '\<protocol_name>'
+            * Create a new name mapping in the `NameRegistry` as `<protocol_name>.<name>_n` to `Intent(id)`
+3. Store the `messages` pallet cutover block number
