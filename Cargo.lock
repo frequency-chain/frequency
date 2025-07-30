@@ -1240,7 +1240,7 @@ dependencies = [
 [[package]]
 name = "bp-xcm-bridge-hub-router"
 version = "0.17.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "parity-scale-codec",
  "scale-info",
@@ -2410,7 +2410,7 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-xcm"
 version = "0.19.1"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -2425,7 +2425,7 @@ dependencies = [
 [[package]]
 name = "cumulus-pallet-xcmp-queue"
 version = "0.20.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "bounded-collections",
  "bp-xcm-bridge-hub-router",
@@ -2516,7 +2516,7 @@ dependencies = [
 [[package]]
 name = "cumulus-primitives-utility"
 version = "0.20.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "cumulus-primitives-core",
  "frame-support",
@@ -7263,7 +7263,7 @@ dependencies = [
 [[package]]
 name = "pallet-asset-tx-payment"
 version = "40.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -7280,7 +7280,7 @@ dependencies = [
 [[package]]
 name = "pallet-assets"
 version = "42.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "frame-benchmarking",
  "frame-support",
@@ -8743,7 +8743,7 @@ dependencies = [
 [[package]]
 name = "parachains-common"
 version = "21.0.0"
-source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-6#598feddb893f5ad3923a62e41a2f179b6e10c30c"
+source = "git+https://github.com/paritytech/polkadot-sdk?tag=polkadot-stable2503-7#1530a8826416514c3326597338b3511a55040663"
 dependencies = [
  "cumulus-primitives-core",
  "cumulus-primitives-utility",
