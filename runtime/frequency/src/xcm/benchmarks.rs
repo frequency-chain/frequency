@@ -17,7 +17,7 @@ parameter_types! {
 
 pub type ParachainDeliveryHelper = ToParachainDeliveryHelper<
 	XcmConfig,
-	ExistentialDeposit,
+	ExistentialDepositAsset,
 	PriceForSiblingParachainDelivery,
 	RandomParaId,
 	ParachainSystem,

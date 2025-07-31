@@ -2099,9 +2099,10 @@ sp_api::impl_runtime_apis! {
 			impl cumulus_pallet_session_benchmarking::Config for Runtime {}
 
 			// XCM benchmarking configuration
+			#[cfg(feature = "frequency-bridging")]
 			impl pallet_xcm::benchmarking::Config for Runtime {
 				/// Helper that makes sure `SendXcm` succeeds in the benches.
-				type DeliveryHelper = ();
+				type DeliveryHelper = (xcm::benchmarks::ParachainDeliveryHelper,);
 
 				/// A destination that `XcmRouter` can reach in your test setup.
 				/// The simplest is usually the relay‐chain:
