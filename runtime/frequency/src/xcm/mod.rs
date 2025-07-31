@@ -12,6 +12,7 @@ pub mod reserve;
 pub mod teleporter;
 pub mod trader;
 pub mod weigher;
+pub mod benchmarks;
 
 pub use fees::FeeManager;
 pub use xcm_config::*;
