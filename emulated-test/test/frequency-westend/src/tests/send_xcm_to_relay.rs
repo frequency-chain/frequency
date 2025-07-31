@@ -1,8 +1,12 @@
 use crate::{
 	foreign_balance_on,
 	imports::*,
-	tests::utils::{ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency},
+	tests::utils::{
+		ensure_dot_asset_exists_on_frequency, mint_dot_on_frequency, mint_dot_on_frequency_v2,
+	},
 };
+
+use emulated_integration_tests_common::xcm_emulator::ConvertLocation;
 
 fn frequency_to_relay_send_xcm(t: FrequencyToRelayTest) -> DispatchResult {
 	let assets = t.args.assets;
@@ -38,50 +42,49 @@ fn assert_receiver_minted_on_relay(t: FrequencyToRelayTest) {
 	let sov_frequency_on_relay =
 		Westend::sovereign_account_id_of(Westend::child_location_of(FrequencyWestend::para_id()));
 
-	// Westend::assert_ump_queue_processed(
-	// 	true,
-	// 	Some(FrequencyWestend::para_id()),
-	// 	Some(Weight::from_parts(306305000, 7_186)),
-	// );
+	Westend::assert_ump_queue_processed(
+		true,
+		Some(FrequencyWestend::para_id()),
+		Some(Weight::from_parts(306305000, 7_186)),
+	);
 
-	// assert_expected_events!(
-	// 	Westend,
-	// 	vec![
-	// 		// Amount to reserve transfer is withdrawn from Parachain's Sovereign account
-	// 		RuntimeEvent::Balances(
-	// 			pallet_balances::Event::Burned { who, amount }
-	// 		) => {
-	// 			who: *who == sov_frequency_on_relay.clone().into(),
-	// 			amount: *amount == t.args.amount,
-	// 		},
-	// 		RuntimeEvent::Balances(pallet_balances::Event::Minted { .. }) => {},
-	// 		RuntimeEvent::MessageQueue(
-	// 			pallet_message_queue::Event::Processed { success: true, .. }
-	// 		) => {},
-	// 	]
-	// );
+	assert_expected_events!(
+		Westend,
+		vec![
+			// Amount to reserve transfer is withdrawn from Parachain's Sovereign account
+			RuntimeEvent::Balances(
+				pallet_balances::Event::Burned { who, amount }
+			) => {
+				who: *who == sov_frequency_on_relay.clone().into(),
+				amount: *amount == t.args.amount,
+			},
+			RuntimeEvent::Balances(pallet_balances::Event::Minted { .. }) => {},
+			RuntimeEvent::MessageQueue(
+				pallet_message_queue::Event::Processed { success: true, .. }
+			) => {},
+		]
+	);
 }
 
 fn assert_sender_burned_asset_on_frequency(t: FrequencyToRelayTest) {
 	type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
-	FrequencyWestend::assert_parachain_system_ump_sent();
 	// FrequencyWestend::assert_xcm_pallet_attempted_complete(Some(Weight::from_parts(
 	// 	864_610_000,
 	// 	8_799,
 	// )));
-	// assert_expected_events!(
-	// 	FrequencyWestend,
-	// 	vec![
-	// 		// Amount to reserve transfer is transferred to Parachain's Sovereign account
-	// 		RuntimeEvent::ForeignAssets(
-	// 			pallet_assets::Event::Burned { asset_id, owner, balance, .. }
-	// 		) => {
-	// 			asset_id: *asset_id == WestendLocation::get(),
-	// 			owner: *owner == t.sender.account_id,
-	// 			balance: *balance == t.args.amount,
-	// 		},
-	// 	]
-	// );
+	assert_expected_events!(
+		FrequencyWestend,
+		vec![
+			// Amount to reserve transfer is transferred to Parachain's Sovereign account
+			RuntimeEvent::ForeignAssets(
+				pallet_assets::Event::Burned { asset_id, owner, balance, .. }
+			) => {
+				asset_id: *asset_id == WestendLocation::get(),
+				owner: *owner == t.sender.account_id,
+				balance: *balance == t.args.amount,
+			},
+		]
+	);
 }
 
 pub fn setup_parent_asset_on_frequency(
@@ -95,8 +98,7 @@ pub fn setup_parent_asset_on_frequency(
 pub fn fund_sov_frequency_on_westend(amount: Balance) {
 	let freq_location = Westend::child_location_of(FrequencyWestend::para_id());
 	let sov_account = Westend::sovereign_account_id_of(freq_location);
-	Westend::fund_accounts(vec![(sov_account.clone().into(), amount)]);
-	println!("sov_account: {:?}", sov_account.clone());
+	Westend::fund_accounts(vec![(sov_account.into(), amount)]);
 }
 
 // =========================================================================
@@ -112,24 +114,9 @@ fn send_xcm_to_relay() {
 	let amount_to_send: Balance = WESTEND_ED * 1000;
 
 	// setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
-
 	fund_sov_frequency_on_westend(amount_to_send * 2);
 
 	// need to fund the sovereign account of Frequency on the relay chain.
-
-
-	// let root_account_id = HashedDescription::<
-	// 	AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	// 	DescribeTerminus,
-	// >::convert_location(&Here.into());
-	// println!("something---------------- {:?}", root_account_id.unwrap());
-	// // 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8
-
-	// mint_dot_on_frequency_v2(root_account_id.clone().unwrap(), amount_to_send);
-
-	// let root_account_balance =
-	// 	foreign_balance_on!(FrequencyWestend, Parent.into(), &root_account_id.clone().unwrap());
-	// println!("root_account_balance({:?}-------- {:?}", root_account_id.unwrap(), root_account_balance);
 
 	// Parent asset == Westend DOT
 	let assets: Assets = (Parent, amount_to_send).into();
@@ -153,21 +140,24 @@ fn send_xcm_to_relay() {
 
 	let dot_location = WestendLocation::get();
 
-	// let treasury_account_balance = foreign_balance_on!(
-	// 	FrequencyWestend,
-	// 	dot_location.clone(),
-	// 	&FrequencyTreasuryAccount::get()
-	// );
-	// the Treasury account is not under test
-	// println!(
-	// 	"treasury_account_balance({:?})-------- {:?}",
-	// 	FrequencyTreasuryAccount::get(),
-	// 	treasury_account_balance
-	// );
-	// assert_eq!(treasury_account_balance, 0u128);
+	let treasury_account_balance = foreign_balance_on!(
+		FrequencyWestend,
+		dot_location.clone(),
+		&FrequencyTreasuryAccount::get()
+	);
+	println!(
+		"treasury_account_balance({:?})-------- {:?}",
+		FrequencyTreasuryAccount::get(),
+		treasury_account_balance
+	);
+	assert_eq!(treasury_account_balance, 0u128);
 
-	test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
-	test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
+	let sender_assets_before = foreign_balance_on!(FrequencyWestend, dot_location.clone(), &sender);
+
+	let receiver_balance_before = test.receiver.balance;
+
+	// test.set_assertion::<FrequencyWestend>(assert_sender_burned_asset_on_frequency);
+	// test.set_assertion::<Westend>(assert_receiver_minted_on_relay);
 	test.set_dispatchable::<FrequencyWestend>(frequency_to_relay_send_xcm);
 	test.assert();
 

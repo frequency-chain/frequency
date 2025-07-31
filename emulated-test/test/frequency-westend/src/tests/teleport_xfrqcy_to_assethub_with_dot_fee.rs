@@ -169,6 +169,7 @@ fn assert_receiver_fee_burned_and_asset_minted(t: FrequencyToAssetHubTest) {
 // ===========================================================================
 /// This test attempts to transfer xFRQCY from the Frequency parachain to AssetHub
 /// without a CheckingAccount being set.
+// RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_to_assethub_with_dot_fee -p frequency-westend-integration-tests -- --nocapture
 #[test]
 fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 	// ────────────────
