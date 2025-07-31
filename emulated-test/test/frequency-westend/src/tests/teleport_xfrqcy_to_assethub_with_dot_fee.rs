@@ -52,7 +52,7 @@ fn execute_xcm_frequency_to_asset_hub(t: FrequencyToAssetHubTest) -> DispatchRes
 	// For now )just use half the fees locally, half on dest
 
 	// Use half of the fees to cover remote execution and the
-	// remaining to cover delivery fees
+	// remainding to cover delivery fees
 	let mut remote_execution_fee_asset: Asset =
 		fee_asset(&assets, t.args.fee_asset_item as usize).unwrap().into();
 	if let Fungible(fees_amount) = remote_execution_fee_asset.fun {
@@ -165,13 +165,13 @@ fn assert_receiver_fee_burned_and_asset_minted(t: FrequencyToAssetHubTest) {
 }
 
 // ===========================================================================
-// ======= Test that attempt to teleport AH --> Frequency fails      =========
+// ======= DOT (fee) + xFRQCY (value) Transfer: Frequency → AssetHub =========
 // ===========================================================================
-/// This test attempts to transfer xFRQCY from the Frequency parachain to AssetHub
-/// without a CheckingAccount being set.
+/// This test transfers xFRQCY from the Frequency parachain to AssetHub,
+/// using DOT as the fee asset for both delivery and remote execution.
 // RUST_BACKTRACE=1 RUST_LOG="events,runtime::system=trace,xcm=trace" cargo test tests::teleport_xfrqcy_to_assethub_with_dot_fee -p frequency-westend-integration-tests -- --nocapture
 #[test]
-fn teleport_xfrqcy_from_assethub_without_checking_fails() {
+fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// ────────────────
 	// Test Setup
 	// ────────────────
@@ -192,10 +192,9 @@ fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 	// 1. delivery cost to AH
 	// 2. execution cost on AH
 	let assets: Assets = vec![
-		(Parent, dot_fee_amount).into(),      // DOT - used as fee
-		(Here, xrqcy_transfer_amount).into(), // XRQCY used as main transfer asset
-	]
-	.into();
+		(Parent, fee_dot).into(),    // DOT - used as fee
+		(Here, native_token).into(), // XRQCY used as main transfer asset
+	].into();
 	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
@@ -240,8 +239,8 @@ fn teleport_xfrqcy_from_assethub_without_checking_fails() {
 		foreign_balance_on!(AssetHubWestend, frequency_location_on_ah.clone(), &receiver);
 
 	assert!(
-		sender_balance_of_dot_on_frequency_after
-			< sender_balance_of_dot_on_frequency_before + dot_fee_amount
+		sender_balance_of_dot_on_frequency_after <
+			sender_balance_of_dot_on_frequency_before + dot_fee_amount
 	);
 
 	assert_eq!(
