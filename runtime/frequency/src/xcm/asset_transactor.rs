@@ -21,7 +21,7 @@ pub type LocalAssetTransactor = FungibleAdapter<
 	Balances,
 	// Use this currency when it is a fungible asset matching the native location
 	IsConcrete<HereLocation>,
-	// Do a simple punn to convert an AccountId32 Location into a native chain account ID:
+	// Do a simple check to convert an AccountId32 Location into a native chain account ID:
 	LocationToAccountId,
 	// Our chain's account ID type (we can't get away without mentioning it explicitly):
 	AccountId,

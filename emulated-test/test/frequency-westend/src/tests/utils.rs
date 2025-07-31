@@ -6,13 +6,14 @@ pub fn ensure_dot_asset_exists_on_frequency() {
 		type RuntimeEvent = <FrequencyWestend as Chain>::RuntimeEvent;
 		let sudo_origin = <FrequencyWestend as Chain>::RuntimeOrigin::root();
 
-		let _ = ForeignAssets::force_create(
+		ForeignAssets::force_create(
 			sudo_origin,
 			Parent.into(),
 			FrequencyAssetOwner::get().into(),
 			true,
 			1u128.into(),
-		);
+		)
+		.expect("Failed to create DOT on frequency");
 
 		assert_expected_events!(
 			FrequencyWestend,
@@ -129,4 +130,36 @@ pub fn mint_xrqcy_on_asset_hub(
 			]
 		);
 	});
+}
+
+pub fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
+	assets
+		.into_inner()
+		.iter()
+		.position(|a| a.id == fee_asset_id)
+		.expect("Fee asset not found in asset list") as u32
+}
+
+pub fn build_assethub_to_frequency_test(
+	sender: AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
+	receiver: AccountIdOf<<AssetHubWestend as Chain>::Runtime>,
+	destination: Location,
+	frqcy_amount: Balance,
+	assets: Assets,
+	fee_asset_item: u32,
+) -> AssetHubToFrequencyTest {
+	let test_args = TestContext {
+		sender: sender.clone(),
+		receiver: receiver.clone(),
+		args: TestArgs::new_para(
+			destination,
+			receiver,
+			frqcy_amount,
+			assets.clone(),
+			None,
+			fee_asset_item,
+		),
+	};
+
+	AssetHubToFrequencyTest::new(test_args)
 }

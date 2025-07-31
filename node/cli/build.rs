@@ -7,7 +7,7 @@ use substrate_build_script_utils::{generate_cargo_keys, rerun_if_git_head_change
 	feature = "frequency-testnet",
 	feature = "frequency-westend"
 )))]
-compile_error!(
+	compile_error!(
 	r#"You must enable one of these features:
 - Mainnet: "frequency"
 - Frequency Paseo: "frequency-testnet"
