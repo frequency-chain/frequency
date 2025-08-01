@@ -196,7 +196,7 @@ pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
 pub struct MsaMaxProviderNameSize;
 impl Get<u32> for MsaMaxProviderNameSize {
 	fn get() -> u32 {
-		256
+		16
 	}
 }
 /// The maximum size of a provider language code (in bytes)

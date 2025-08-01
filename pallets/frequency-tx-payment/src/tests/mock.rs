@@ -160,13 +160,58 @@ impl ProposalProvider<u64, RuntimeCall> for CouncilProposalProvider {
 	}
 }
 
+/// The maximum size of a provider name (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxProviderNameSize;
+impl Get<u32> for MsaMaxProviderNameSize {
+	fn get() -> u32 {
+		256
+	}
+}
+/// The maximum size of a provider language code (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLanguageCodeSize;
+impl Get<u32> for MsaMaxLanguageCodeSize {
+	fn get() -> u32 {
+		8
+	}
+}
+/// The maximum size of a provider logo CID (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLogoCidSize;
+impl Get<u32> for MsaMaxLogoCidSize {
+	fn get() -> u32 {
+		64
+	}
+}
+/// The maximum size of a provider locale count
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLocaleCount;
+impl Get<u32> for MsaMaxLocaleCount {
+	fn get() -> u32 {
+		150
+	}
+}
+/// The maximum size of a provider logo (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLogoSize;
+impl Get<u32> for MsaMaxLogoSize {
+	fn get() -> u32 {
+		1024 * 128
+	}
+}
+
 impl pallet_msa::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type WeightInfo = ();
 	type ConvertIntoAccountId32 = TestAccountId;
 	type MaxPublicKeysPerMsa = ConstU8<255>;
 	type MaxSchemaGrantsPerDelegation = MaxSchemaGrantsPerDelegation;
-	type MaxProviderNameSize = ConstU32<16>;
+	type MaxProviderNameSize = MsaMaxProviderNameSize;
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	type MaxLogoSize = MsaMaxLogoSize;
+	type MaxLocaleCount = MsaMaxLocaleCount;
 	type SchemaValidator = Schemas;
 	type HandleProvider = ();
 	type MortalityWindowSize = ConstU32<100>;
