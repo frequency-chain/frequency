@@ -185,8 +185,11 @@ parameter_types! {
 	pub static MaxPublicKeysPerMsa: u8 = 255;
 	pub static MaxSignaturesStored: Option<u32> = Some(8000);
 }
-pub type MaxProviderNameSize = ConstU32<16>;
+pub type MaxProviderNameSize = ConstU32<256>;
 pub type MaxSchemaGrantsPerDelegation = ConstU32<30>;
+pub type MaxLogoCidSize = ConstU32<256>;
+pub type MaxLanguageCodeSize = ConstU32<8>;
+pub type MaxLocaleCount = ConstU32<150>;
 
 /// Interface to collective pallet to propose a proposal.
 pub struct CouncilProposalProvider;

@@ -1,3 +1,4 @@
+use core::fmt::Debug;
 use frame_support::{dispatch::DispatchResult, traits::Get, BoundedBTreeMap, BoundedVec};
 use parity_scale_codec::{Decode, DecodeWithMemTracking, Encode, EncodeLike, Error, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -202,14 +203,34 @@ impl From<ProviderId> for MessageSourceId {
 
 /// This is the metadata associated with a provider. As of now it is just a
 /// name, but it will likely be expanded in the future
-#[derive(MaxEncodedLen, TypeInfo, Debug, Clone, Decode, Encode, PartialEq, Eq)]
-#[scale_info(skip_type_params(T))]
-pub struct ProviderRegistryEntry<T>
-where
-	T: Get<u32>,
-{
-	/// The provider's name
-	pub provider_name: BoundedVec<u8, T>,
+/// Generic over size constraints to be used in common types.
+#[derive(MaxEncodedLen, TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
+#[scale_info(skip_type_params(NameSize, LangSize, CidSize, MaxLocaleCount))]
+#[codec(mel_bound(
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
+))]
+pub struct ProviderRegistryEntry<
+	NameSize: Get<u32> + Debug + PartialEq + Eq,
+	LangSize: Get<u32> + Debug + PartialEq + Eq,
+	CidSize: Get<u32> + Debug + PartialEq + Eq,
+	MaxLocaleCount: Get<u32> + Debug + PartialEq + Eq,
+> {
+	/// Default name (display name) of the provider or application.
+	pub default_name: BoundedVec<u8, NameSize>,
+
+	/// Localized names keyed by BCP 47 language code (e.g., "en-US").
+	pub localized_names:
+		BoundedBTreeMap<BoundedVec<u8, LangSize>, BoundedVec<u8, NameSize>, MaxLocaleCount>,
+
+	/// Default logo (PNG 250x100) content-addressed CID (e.g., IPFS hash).
+	pub default_logo_250_100_png_cid: BoundedVec<u8, CidSize>,
+
+	/// Localized logo CIDs keyed by BCP 47 language code.
+	pub localized_logo_250_100_png_cids:
+		BoundedBTreeMap<BoundedVec<u8, LangSize>, BoundedVec<u8, CidSize>, MaxLocaleCount>,
 }
 
 /// The pointer value for the Signature Registry

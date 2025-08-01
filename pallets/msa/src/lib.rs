@@ -32,6 +32,7 @@
 )]
 
 extern crate alloc;
+use core::fmt::Debug;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
 	pallet_prelude::*,
@@ -40,7 +41,7 @@ use frame_support::{
 			fungible::{Inspect as InspectFungible, Mutate},
 			Fortitude, Preservation,
 		},
-		IsSubType,
+		Get, IsSubType,
 	},
 };
 use lazy_static::lazy_static;
@@ -123,7 +124,7 @@ pub mod pallet {
 
 		/// Maximum provider name size allowed per MSA association
 		#[pallet::constant]
-		type MaxProviderNameSize: Get<u32>;
+		type MaxProviderNameSize: Get<u32> + Clone + Debug + PartialEq + Eq;
 
 		/// A type that will supply schema related information.
 		type SchemaValidator: SchemaValidator<SchemaId>;
@@ -155,6 +156,22 @@ pub mod pallet {
 
 		/// Currency type for managing MSA account balances
 		type Currency: Mutate<Self::AccountId> + InspectFungible<Self::AccountId>;
+
+		/// Maximum language code size for a locale
+		#[pallet::constant]
+		type MaxLanguageCodeSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum logo size for a locale
+		#[pallet::constant]
+		type MaxLogoSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Maximum cid size for a locale
+		#[pallet::constant]
+		type MaxLogoCidSize: Get<u32> + Clone + Debug + PartialEq + Eq;
+
+		/// Total number of locales supported
+		#[pallet::constant]
+		type MaxLocaleCount: Get<u32> + Clone + Debug + PartialEq + Eq;
 	}
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
@@ -199,7 +216,12 @@ pub mod pallet {
 		_,
 		Twox64Concat,
 		ProviderId,
-		ProviderRegistryEntry<T::MaxProviderNameSize>,
+		ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 		OptionQuery,
 	>;
 
@@ -599,10 +621,18 @@ pub mod pallet {
 		///
 		#[pallet::call_index(2)]
 		#[pallet::weight(T::WeightInfo::create_provider())]
-		pub fn create_provider(origin: OriginFor<T>, provider_name: Vec<u8>) -> DispatchResult {
+		pub fn create_provider(
+			origin: OriginFor<T>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
+		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -910,10 +940,16 @@ pub mod pallet {
 		#[pallet::weight(T::WeightInfo::propose_to_be_provider())]
 		pub fn propose_to_be_provider(
 			origin: OriginFor<T>,
-			provider_name: Vec<u8>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
 		) -> DispatchResult {
+			let name = payload.default_name.clone();
 			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+				name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
 
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
@@ -921,7 +957,7 @@ pub mod pallet {
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
 					provider_key: proposer.clone(),
-					provider_name: bounded_name.into(),
+					payload,
 				})
 				.into(),
 			);
@@ -944,11 +980,16 @@ pub mod pallet {
 		pub fn create_provider_via_governance(
 			origin: OriginFor<T>,
 			provider_key: T::AccountId,
-			provider_name: Vec<u8>,
+			payload: ProviderRegistryEntry<
+				T::MaxProviderNameSize,
+				T::MaxLanguageCodeSize,
+				T::MaxLogoCidSize,
+				T::MaxLocaleCount,
+			>,
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
-			Self::create_provider_for(provider_msa_id, provider_name)?;
+			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
 			});
@@ -1386,11 +1427,16 @@ impl<T: Config> Pallet<T> {
 	/// Create Register Provider
 	pub fn create_registered_provider(
 		provider_id: ProviderId,
-		name: BoundedVec<u8, T::MaxProviderNameSize>,
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 	) -> DispatchResult {
 		ProviderToRegistryEntry::<T>::try_mutate(provider_id, |maybe_metadata| -> DispatchResult {
 			ensure!(maybe_metadata.take().is_none(), Error::<T>::DuplicateProviderRegistryEntry);
-			*maybe_metadata = Some(ProviderRegistryEntry { provider_name: name });
+			*maybe_metadata = Some(payload);
 			Ok(())
 		})
 	}
@@ -1633,11 +1679,13 @@ impl<T: Config> Pallet<T> {
 	///
 	pub fn create_provider_for(
 		provider_msa_id: MessageSourceId,
-		provider_name: Vec<u8>,
+		payload: ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
 	) -> DispatchResult {
-		let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-			provider_name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
-
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
@@ -1645,7 +1693,7 @@ impl<T: Config> Pallet<T> {
 					maybe_metadata.take().is_none(),
 					Error::<T>::DuplicateProviderRegistryEntry
 				);
-				*maybe_metadata = Some(ProviderRegistryEntry { provider_name: bounded_name });
+				*maybe_metadata = Some(payload);
 				Ok(())
 			},
 		)?;
@@ -2018,7 +2066,13 @@ impl<T: Config> RegisterProviderBenchmarkHelper for Pallet<T> {
 	/// Create a registered provider for benchmarks
 	fn create(provider_id: MessageSourceId, name: Vec<u8>) -> DispatchResult {
 		let name = BoundedVec::<u8, T::MaxProviderNameSize>::try_from(name).expect("error");
-		Self::create_registered_provider(provider_id.into(), name)?;
+		let payload = ProviderRegistryEntry {
+			default_name: name,
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::new(),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		Self::create_registered_provider(provider_id.into(), payload)?;
 
 		Ok(())
 	}
