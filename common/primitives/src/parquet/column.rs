@@ -34,10 +34,7 @@ impl ParquetColumn {
 			column_type,
 			compression,
 			bloom_filter,
-			optional: match optional {
-				true => Some(true),
-				false => None,
-			},
+			optional: optional.then_some(true),
 		}
 	}
 }
