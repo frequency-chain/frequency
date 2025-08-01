@@ -6,6 +6,7 @@ use crate::parquet::{column_compression_codec::ColumnCompressionCodec, types::Pa
 
 /// Encapsulation for a single Parquet column
 #[derive(Clone, PartialEq, Debug, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct ParquetColumn {
 	/// The label for what this column represents
 	name: String,
@@ -15,6 +16,8 @@ pub struct ParquetColumn {
 	compression: ColumnCompressionCodec,
 	/// Whether or not to use a bloom filter
 	bloom_filter: bool,
+	/// Whether the field is optional
+	optional: Option<bool>,
 }
 
 impl ParquetColumn {
@@ -24,7 +27,14 @@ impl ParquetColumn {
 		column_type: ParquetType,
 		compression: ColumnCompressionCodec,
 		bloom_filter: bool,
+		optional: bool,
 	) -> ParquetColumn {
-		ParquetColumn { name, column_type, compression, bloom_filter }
+		ParquetColumn {
+			name,
+			column_type,
+			compression,
+			bloom_filter,
+			optional: optional.then_some(true),
+		}
 	}
 }
