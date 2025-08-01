@@ -5,7 +5,7 @@ use parity_scale_codec::{Encode, MaxEncodedLen};
 use frame_support::{
 	parameter_types,
 	sp_runtime::{Perbill, Permill},
-	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8},
+	traits::{ConstU128, ConstU16, ConstU32, ConstU64, ConstU8, Get},
 	weights::{constants::WEIGHT_REF_TIME_PER_SECOND, Weight},
 	PalletId,
 };
@@ -85,13 +85,51 @@ pub type FrameSystemMaxConsumers = ConstU32<16>;
 // --- MSA Pallet ---
 /// The maximum number of public keys per MSA
 pub type MsaMaxPublicKeysPerMsa = ConstU8<25>;
-/// The maximum size of the provider name (in bytes)
-pub type MsaMaxProviderNameSize = ConstU32<16>;
 /// The number of blocks per virtual bucket
 pub type MSAMortalityWindowSize = ConstU32<{ 20 * MINUTES }>;
 /// The upper limit on total stored signatures.
 /// Set to an average of 50 signatures per block
 pub type MSAMaxSignaturesStored = ConstU32<50_000>;
+/// The maximum size of a provider name (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxProviderNameSize;
+impl Get<u32> for MsaMaxProviderNameSize {
+	fn get() -> u32 {
+		256
+	}
+}
+/// The maximum size of a provider language code (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLanguageCodeSize;
+impl Get<u32> for MsaMaxLanguageCodeSize {
+	fn get() -> u32 {
+		8
+	}
+}
+/// The maximum size of a provider logo CID (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLogoCidSize;
+impl Get<u32> for MsaMaxLogoCidSize {
+	fn get() -> u32 {
+		64
+	}
+}
+/// The maximum size of a provider locale count
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLocaleCount;
+impl Get<u32> for MsaMaxLocaleCount {
+	fn get() -> u32 {
+		150
+	}
+}
+/// The maximum size of a provider logo (in bytes)
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct MsaMaxLogoSize;
+impl Get<u32> for MsaMaxLogoSize {
+	fn get() -> u32 {
+		1024 * 128
+	}
+}
 // -end- MSA Pallet ---
 
 // --- Schemas Pallet ---

@@ -613,6 +613,14 @@ impl pallet_msa::Config for Runtime {
 	>;
 	// The Currency type for managing MSA token balances
 	type Currency = Balances;
+	// The maximum language code size (in bytes)
+	type MaxLanguageCodeSize = MsaMaxLanguageCodeSize;
+	// The maximum logo CID size (in bytes)
+	type MaxLogoCidSize = MsaMaxLogoCidSize;
+	// The maximum locale count
+	type MaxLocaleCount = MsaMaxLocaleCount;
+	// The maximum logo size (in bytes)
+	type MaxLogoSize = MsaMaxLogoSize;
 }
 
 parameter_types! {

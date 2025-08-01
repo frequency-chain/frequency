@@ -1,7 +1,7 @@
 use frame_support::{
 	assert_noop, assert_ok,
 	dispatch::{GetDispatchInfo, Pays},
-	BoundedBTreeMap,
+	BoundedBTreeMap, BoundedVec,
 };
 
 use sp_runtime::MultiSignature;
@@ -12,7 +12,7 @@ use crate::{
 	DelegatorAndProviderToDelegation, Error, Event,
 };
 use common_primitives::{
-	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId},
+	msa::{Delegation, DelegationValidator, DelegatorId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	schema::SchemaId,
 	utils::wrap_binary_data,
@@ -44,12 +44,16 @@ pub fn grant_delegation_changes_schema_permissions() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
 		let delegator_msa =
 			Msa::ensure_valid_msa_key(&AccountId32::new(delegator_account.0)).unwrap();
-
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let block_expiration: BlockNumber = 110;
 
@@ -297,12 +301,16 @@ pub fn grant_delegation_throws_unauthorized_delegator_error() {
 		let signature: MultiSignature = delegator_key_pair.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		assert_noop!(
 			Msa::grant_delegation(
@@ -324,11 +332,15 @@ pub fn revoke_delegation_by_provider_happy_path() {
 
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
-
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("provider")
-		));
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"provider".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// 3. create delegator MSA and provider to provider
 		let (signature, add_provider_payload) =
@@ -376,11 +388,15 @@ pub fn grant_new_after_revoke_restores_valid_delegation() {
 
 		let (provider_msa_id, provider_pair) = create_account();
 		let provider_account = provider_pair.public();
-
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("provider")
-		));
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"provider".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// 3. create delegator MSA and provider to provider
 		let (signature, add_provider_payload) =

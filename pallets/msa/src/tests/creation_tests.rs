@@ -1,7 +1,9 @@
 use sp_core::{crypto::AccountId32, sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
-use frame_support::{assert_noop, assert_ok, dispatch::GetDispatchInfo};
+use frame_support::{
+	assert_noop, assert_ok, dispatch::GetDispatchInfo, BoundedBTreeMap, BoundedVec,
+};
 
 use sp_weights::Weight;
 
@@ -11,7 +13,7 @@ use crate::{
 };
 
 use common_primitives::{
-	msa::{DelegatorId, MessageSourceId, ProviderId},
+	msa::{DelegatorId, MessageSourceId, ProviderId, ProviderRegistryEntry},
 	node::BlockNumber,
 	utils::wrap_binary_data,
 };
@@ -22,11 +24,16 @@ pub fn create_sponsored_account_with_delegation_with_valid_input_should_succeed(
 		// arrange
 		let (provider_msa, provider_key_pair) = create_account();
 		let provider_account = provider_key_pair.public();
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (key_pair_delegator, _) = sr25519::Pair::generate();
 		let delegator_account = key_pair_delegator.public();
@@ -122,12 +129,16 @@ pub fn create_sponsored_account_with_delegation_with_invalid_add_provider_should
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		assert_ok!(Msa::create(RuntimeOrigin::signed(delegator_account.into())));
-
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
@@ -191,12 +202,16 @@ pub fn create_sponsored_account_with_delegation_expired() {
 		let signature: MultiSignature = key_pair_delegator.sign(&encode_add_provider_data).into();
 
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
-
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		// act
 		assert_noop!(
