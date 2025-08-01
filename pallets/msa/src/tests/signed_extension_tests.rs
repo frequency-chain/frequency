@@ -4,7 +4,7 @@ use crate::{
 	AuthorizedKeyData, CheckFreeExtrinsicUse, Config, ValidityError,
 };
 use common_primitives::{
-	msa::H160,
+	msa::{ProviderRegistryEntry, H160},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use common_runtime::extensions::check_nonce::CheckNonce;
@@ -13,6 +13,7 @@ use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	pallet_prelude::{InvalidTransaction, Pays, TransactionSource, TransactionValidityError},
 	traits::{Currency, OriginTrait},
+	BoundedBTreeMap, BoundedVec,
 };
 use frame_system::RawOrigin;
 use parity_scale_codec::Encode;
@@ -1094,11 +1095,16 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(
@@ -1143,11 +1149,16 @@ fn check_free_extrinsic_use_charges_extension_weight_for_signed_origin_revoke_de
 		let provider_account = provider_pair.public();
 		let (_delegator_msa_id, delegator_pair) = create_account();
 		let delegator_account = delegator_pair.public();
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(delegator_pair.clone(), provider_msa_id);
 		assert_ok!(Msa::grant_delegation(

@@ -1,7 +1,7 @@
 use crate::{tests::mock::*, AddKeyData, AddProvider, Error};
 
-use common_primitives::{node::BlockNumber, utils::wrap_binary_data};
-use frame_support::{assert_err, assert_noop, assert_ok};
+use common_primitives::{msa::ProviderRegistryEntry, node::BlockNumber, utils::wrap_binary_data};
+use frame_support::{assert_err, assert_noop, assert_ok, BoundedBTreeMap, BoundedVec};
 use sp_core::{sr25519, Encode, Pair};
 use sp_runtime::MultiSignature;
 
@@ -57,9 +57,17 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 
 	// create MSA for provider and register them
 	assert_ok!(Msa::create(RuntimeOrigin::signed(provider_keypair.public().into())));
+	let entry = ProviderRegistryEntry {
+		default_name: BoundedVec::try_from(b"Foo".to_vec())
+			.expect("Provider name should fit in bounds"),
+		localized_names: BoundedBTreeMap::new(),
+		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			.expect("Logo CID should fit in bounds"),
+		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+	};
 	assert_ok!(Msa::create_provider(
 		RuntimeOrigin::signed(provider_keypair.public().into()),
-		Vec::from("Foo")
+		entry
 	));
 	(delegator_keypair, provider_keypair)
 }

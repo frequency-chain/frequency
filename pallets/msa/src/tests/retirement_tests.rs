@@ -1,5 +1,6 @@
 use frame_support::{
 	assert_err, assert_noop, assert_ok, pallet_prelude::InvalidTransaction, traits::Currency,
+	BoundedBTreeMap, BoundedVec,
 };
 
 use frame_system::pallet_prelude::BlockNumberFor;
@@ -17,7 +18,7 @@ use crate::tests::other_tests::{
 };
 use common_primitives::{
 	handles::ClaimHandlePayload,
-	msa::{DelegatorId, ProviderId},
+	msa::{DelegatorId, ProviderId, ProviderRegistryEntry},
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 	utils::wrap_binary_data,
 };
@@ -82,10 +83,15 @@ fn test_retire_msa_success() {
 		let provider_msa_id =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
 
-		assert_ok!(Msa::create_provider(
-			RuntimeOrigin::signed(provider_account.into()),
-			Vec::from("Foo")
-		));
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
+		assert_ok!(Msa::create_provider(RuntimeOrigin::signed(provider_account.into()), entry));
 
 		let (delegator_signature, add_provider_payload) =
 			create_and_sign_add_provider_payload(test_account_key_pair, provider_msa_id);
@@ -130,8 +136,16 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 		// Add an account to the MSA
 		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
 
+		let entry = ProviderRegistryEntry {
+			default_name: BoundedVec::try_from(b"Foo".to_vec())
+				.expect("Provider name should fit in bounds"),
+			localized_names: BoundedBTreeMap::new(),
+			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+				.expect("Logo CID should fit in bounds"),
+			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
+		};
 		// Register provider
-		assert_ok!(Msa::create_provider(origin, Vec::from("Foo")));
+		assert_ok!(Msa::create_provider(origin, entry));
 
 		// Retire MSA
 		assert_noop!(
