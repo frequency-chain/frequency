@@ -436,11 +436,10 @@ mod benchmarks {
 
 		let provider_name = (1..name_size as u8).collect::<Vec<_>>();
 		let cid = vec![0u8; cid_size as usize];
-		let locale_base = vec![b'l'; lang_size as usize];
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {
-			let mut lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
 			let logo = BoundedVec::try_from(cid.clone()).unwrap();
@@ -472,11 +471,10 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = vec![0u8; cid_size as usize];
-		let locale_base = vec![b'l'; lang_size as usize];
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {
-			let mut lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
 			let logo = BoundedVec::try_from(cid.clone()).unwrap();
@@ -509,11 +507,10 @@ mod benchmarks {
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
 		let cid = vec![0u8; cid_size as usize];
-		let locale_base = vec![b'l'; lang_size as usize];
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {
-			let mut lang_code = make_lang_code(i as usize, lang_size as usize);
+			let lang_code = make_lang_code(i as usize, lang_size as usize);
 			let lang = BoundedVec::try_from(lang_code).unwrap();
 			let name = BoundedVec::try_from(provider_name.clone()).unwrap_or_default();
 			let logo = BoundedVec::try_from(cid.clone()).unwrap();

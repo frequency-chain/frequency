@@ -204,7 +204,9 @@ impl From<ProviderId> for MessageSourceId {
 /// This is the metadata associated with a provider. As of now it is just a
 /// name, but it will likely be expanded in the future
 /// Generic over size constraints to be used in common types.
-#[derive(MaxEncodedLen, TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq)]
+#[derive(
+	MaxEncodedLen, TypeInfo, Clone, Debug, Decode, DecodeWithMemTracking, Encode, PartialEq, Eq,
+)]
 #[scale_info(skip_type_params(NameSize, LangSize, CidSize, MaxLocaleCount))]
 #[codec(mel_bound(
 	NameSize: Get<u32> + Debug + PartialEq + Eq,

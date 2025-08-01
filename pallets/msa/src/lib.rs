@@ -947,9 +947,10 @@ pub mod pallet {
 				T::MaxLocaleCount,
 			>,
 		) -> DispatchResult {
-			let name = payload.default_name.clone();
-			let bounded_name: BoundedVec<u8, T::MaxProviderNameSize> =
-				name.try_into().map_err(|_| Error::<T>::ExceedsMaxProviderNameSize)?;
+			ensure!(
+				payload.default_name.len() <= T::MaxProviderNameSize::get() as usize,
+				Error::<T>::ExceedsMaxProviderNameSize
+			);
 
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
