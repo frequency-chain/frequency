@@ -24,6 +24,7 @@ ALL_EXTERNAL_PALLETS=( \
   pallet_transaction_payment \
   pallet_utility \
   pallet_proxy \
+  pallet_xcm \
 )
 ALL_CUSTOM_PALLETS=( \
   messages \
@@ -227,7 +228,7 @@ function run_benchmark() {
 
 if [[ ${skip_build} == false ]]
 then
-  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+  CMD="cargo build --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
   echo ${CMD}
   ${CMD} || exit_err
 
@@ -268,7 +269,7 @@ fi
 if [[ ${skip_tests} == false ]]
 then
     echo "Running tests..."
-    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check --workspace"
+    CMD="cargo test --profile=${PROFILE} --features=runtime-benchmarks,frequency-lint-check,frequency-bridging --workspace"
     echo ${CMD}
     ${CMD} || exit_err
 fi
