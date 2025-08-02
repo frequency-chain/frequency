@@ -53,14 +53,14 @@ pub fn benchamark_asset_transfer_patch() {
 		_ => panic!("Asset is not fungible"),
 	};
 
-	let result = ForeignAssets::mint(
+	let _ = ForeignAssets::mint(
 		RuntimeOrigin::signed(owner),
 		Parent.into(),
 		AssetHubSovereignAccount::get().into(),
 		amount * 2,
 	);
 
-	let deposit = <<Runtime as pallet_xcm::Config>::XcmExecutor as XcmAssetTransfers>::AssetTransactor::deposit_asset(
+	let _ = <<Runtime as pallet_xcm::Config>::XcmExecutor as XcmAssetTransfers>::AssetTransactor::deposit_asset(
 		&Asset { fun: Fungibility::Fungible(amount), id: RelayAssetId::get().into() },
 		&AssetHubParachainLocation::get(),
 		None,
