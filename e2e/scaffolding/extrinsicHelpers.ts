@@ -593,7 +593,10 @@ export class ExtrinsicHelper {
 
   public static createProvider(keys: KeyringPair, providerName: string) {
     return new Extrinsic(
-      () => ExtrinsicHelper.api.tx.msa.createProvider(providerName),
+      () =>
+        ExtrinsicHelper.api.tx.msa.createProvider({
+          defaultName: providerName,
+        }),
       keys,
       ExtrinsicHelper.api.events.msa.ProviderCreated
     );
