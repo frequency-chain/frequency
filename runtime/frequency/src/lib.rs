@@ -2107,7 +2107,8 @@ sp_api::impl_runtime_apis! {
 				/// A destination that `XcmRouter` can reach in your test setup.
 				/// The simplest is usually the relay‐chain:
 				fn reachable_dest() -> Option<staging_xcm::latest::Location> {
-					Some(staging_xcm::latest::prelude::Parent.into())
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(xcm::benchmarks::AssetHubParaId::get());
+					Some(xcm::benchmarks::AssetHubParachainLocation::get())
 				}
 
 				/// Return None to skip the teleport_assets benchmark (not properly configured).
@@ -2118,8 +2119,11 @@ sp_api::impl_runtime_apis! {
 
 				/// Return None to skip the reserve_transfer_assets benchmark (asset not configured).
 				fn reserve_transferable_asset_and_dest() -> Option<(staging_xcm::latest::Asset, staging_xcm::latest::Location)> {
-					// Skip reserve transfer benchmarks as relay token isn't properly configured in test env
-					None
+					ParachainSystem::open_outbound_hrmp_channel_for_benchmarks_or_tests(xcm::benchmarks::AssetHubParaId::get());
+
+					xcm::benchmarks::benchamark_asset_transfer_patch();
+
+					Some((xcm::benchmarks::RelayAsset::get(), xcm::benchmarks::AssetHubParachainLocation::get()))
 				}
 
 				/// Return None to skip the transfer_assets benchmark (funds unavailable).
