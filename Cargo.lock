@@ -4063,6 +4063,7 @@ dependencies = [
  "pallet-treasury 27.0.0",
  "pallet-utility",
  "pallet-xcm",
+ "pallet-xcm-benchmarks",
  "parachains-common",
  "parity-scale-codec",
  "polkadot-parachain-primitives",

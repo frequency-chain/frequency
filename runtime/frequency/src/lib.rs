@@ -2073,6 +2073,12 @@ sp_api::impl_runtime_apis! {
 			use frame_system_benchmarking::extensions::Pallet as SystemExtensionsBench;
 			use cumulus_pallet_session_benchmarking::Pallet as SessionBench;
 
+			// This is defined once again in dispatch_benchmark, because list_benchmarks!
+			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types
+			// are referenced in that call.
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
+			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -2084,7 +2090,7 @@ sp_api::impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{BenchmarkBatch};
+			use frame_benchmarking::{BenchmarkBatch, BenchmarkError};
 
 			use frame_system_benchmarking::Pallet as SystemBench;
 			impl frame_system_benchmarking::Config for Runtime {}
@@ -2096,6 +2102,41 @@ sp_api::impl_runtime_apis! {
 
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
+
+			use pallet_xcm_benchmarks::asset_instance_from;
+
+			impl pallet_xcm_benchmarks::Config for Runtime {
+				type XcmConfig = xcm::xcm_config::XcmConfig;
+				type AccountIdConverter = xcm::LocationToAccountId;
+				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
+
+				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
+				}
+
+				fn worst_case_holding(depositable_count: u32) -> xcm::benchmarks::Assets {
+					// A mix of fungible, non-fungible, and concrete assets.
+					let holding_non_fungibles = MaxAssetsIntoHolding::get() / 2 - depositable_count;
+					// let holding_fungibles = holding_non_fungibles - 2; // -2 for two `iter::once` bellow
+					// let fungibles_amount: u128 = 100;
+					// (0..holding_fungibles)
+					// 	.map(|i| {
+					// 		Asset {
+					// 			id: AssetId(GeneralIndex(i as u128).into()),
+					// 			fun: Fungible(fungibles_amount * (i + 1) as u128), // non-zero amount
+					// 		}
+					// 	})
+					// 	.chain(core::iter::once(Asset { id: AssetId(Here.into()), fun: Fungible(u128::MAX) }))
+					// 	.chain(core::iter::once(Asset { id: AssetId(WestendLocation::get()), fun: Fungible(1_000_000 * UNITS) }))
+					// 	.chain((0..holding_non_fungibles).map(|i| Asset {
+					// 		id: AssetId(GeneralIndex(i as u128).into()),
+					// 		fun: NonFungible(asset_instance_from(i)),
+					// 	}))
+					// 	.collect::<Vec<_>>()
+					// 	.into()
+				}
+			}
+
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);

@@ -13,6 +13,9 @@ pub mod teleporter;
 pub mod trader;
 pub mod weigher;
 
+#[cfg(feature = "runtime-benchmarks")]
+pub mod benchmarks;
+
 pub use fees::FeeManager;
 pub use xcm_config::*;
 
