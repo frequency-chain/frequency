@@ -1,8 +1,7 @@
 UNAME := $(shell uname)
 NIGHTLY = +nightly-2025-04-03
 
-.PHONY: all
-all: build
+default: check
 
 .PHONY: clean
 clean:
@@ -32,4 +31,4 @@ lint-fix:
 format-lint: format lint
 
 check:
-	SKIP_WASM_BUILD= cargo check
+	SKIP_WASM_BUILD=1 cargo check

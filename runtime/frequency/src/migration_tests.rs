@@ -14,7 +14,7 @@ fn pre_upgrade_returns_current_value() {
 }
 
 #[test]
-fn post_upgrade_sets_safe_version() {
+fn on_runtime_upgrade_sets_safe_version() {
 	new_test_ext_with_balances(vec![]).execute_with(|| {
 		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
 
@@ -54,22 +54,5 @@ fn migration_is_idempotent() {
 
 		// Second run should only do a read (less weight)
 		assert!(weight2.ref_time() < weight1.ref_time());
-	});
-}
-
-#[test]
-fn test_weight_calculation() {
-	new_test_ext_with_balances(vec![]).execute_with(|| {
-		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
-
-		// Test weight when migration is needed
-		frame_support::storage::unhashed::kill(&storage_key);
-		let weight_with_write = SetSafeXcmVersion::<TestRuntime>::on_runtime_upgrade();
-
-		// Test weight when migration is not needed (value already exists)
-		let weight_read_only = SetSafeXcmVersion::<TestRuntime>::on_runtime_upgrade();
-
-		// Weight with write should be greater than read-only weight
-		assert!(weight_with_write.ref_time() > weight_read_only.ref_time());
 	});
 }

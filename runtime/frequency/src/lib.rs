@@ -487,7 +487,6 @@ impl<T: pallet_collator_selection::Config> OnRuntimeUpgrade for MigratePalletsCu
 }
 
 /// Migration to set the initial safe XCM version for the XCM pallet.
-#[cfg(feature = "frequency-bridging")]
 pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
 #[cfg(feature = "frequency-bridging")]
@@ -526,23 +525,27 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 			},
 		}
 	}
-}
 
-#[cfg(all(feature = "frequency-bridging", feature = "try-runtime"))]
-impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
-	pub fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
+	#[cfg(feature = "try-runtime")]
+	fn pre_upgrade() -> Result<Vec<u8>, sp_runtime::TryRuntimeError> {
 		use parity_scale_codec::Encode;
 
-		// For testing purposes, simulate that SafeXcmVersion is not set (None)
-		let test_pre_upgrade_state: Option<u32> = None;
+		// Check pallet state before migration
+		pallet_xcm::Pallet::<T>::do_try_state()?;
+		log::info!("pre_upgrade: PolkadotXcm pallet state is valid before migration");
 
-		log::info!("pre_upgrade: Test state SafeXcmVersion = {:?}", test_pre_upgrade_state);
+		// Read the actual current SafeXcmVersion from storage
+		let storage_key = frame_support::storage::storage_prefix(b"PolkadotXcm", b"SafeXcmVersion");
+		let current_version = frame_support::storage::unhashed::get::<u32>(&storage_key);
 
-		// Return the test state encoded for post_upgrade verification
-		Ok(test_pre_upgrade_state.encode())
+		log::info!("pre_upgrade: Current SafeXcmVersion = {:?}", current_version);
+
+		// Return the actual current state encoded for post_upgrade verification
+		Ok(current_version.encode())
 	}
 
-	pub fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
+	#[cfg(feature = "try-runtime")]
+	fn post_upgrade(state: Vec<u8>) -> Result<(), sp_runtime::TryRuntimeError> {
 		use parity_scale_codec::Decode;
 
 		// Decode the pre-upgrade state
@@ -579,12 +582,14 @@ impl<T: pallet_xcm::Config> SetSafeXcmVersion<T> {
 			},
 		}
 
+		// Check pallet state after migration
+		pallet_xcm::Pallet::<T>::do_try_state()?;
+		log::info!("post_upgrade: PolkadotXcm pallet state is valid after migration");
+
 		Ok(())
 	}
 }
 
-#[cfg(not(feature = "frequency-bridging"))]
-pub struct SetSafeXcmVersion<T>(core::marker::PhantomData<T>);
 
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats

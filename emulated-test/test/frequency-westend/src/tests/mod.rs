@@ -1,5 +1,3 @@
-// mod teleport;
-
 mod barrier_tests;
 mod reserve_transfer_dot_from_asset_hub;
 mod reserve_transfer_dot_from_relay;
