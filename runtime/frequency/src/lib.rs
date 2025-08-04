@@ -2129,7 +2129,7 @@ sp_api::impl_runtime_apis! {
 				/// Return None to skip the transfer_assets benchmark (funds unavailable).
 				fn set_up_complex_asset_transfer() -> Option<(staging_xcm::latest::Assets, u32, staging_xcm::latest::Location, Box<dyn FnOnce()>)> {
 					// Skip complex asset transfer benchmarks as fund setup is complex in benchmark env
-					None
+					xcm::benchmarks::benchamark_set_up_complex_transfer()
 				}
 
 				fn get_asset() -> staging_xcm::latest::Asset {

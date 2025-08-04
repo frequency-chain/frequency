@@ -8,7 +8,7 @@ use frame_support::parameter_types;
 use polkadot_runtime_common::xcm_sender::ToParachainDeliveryHelper;
 use sp_runtime::traits::AccountIdConversion;
 use staging_xcm::latest::prelude::{
-	Asset, AssetId, Fungibility, Location, Parachain, Parent, ParentThen,
+	Asset, Assets, AssetId, Fungibility, Location, Parachain, Parent, ParentThen,
 };
 use xcm_executor::traits::TransactAsset;
 use xcm_executor::traits::XcmAssetTransfers;
@@ -65,4 +65,9 @@ pub fn benchamark_asset_transfer_patch() {
 		&AssetHubParachainLocation::get(),
 		None,
 	);
+}
+
+pub fn benchamark_set_up_complex_transfer(
+) -> Option<(Assets, u32, Location, Box<dyn FnOnce()>)> {
+
 }

@@ -187,7 +187,7 @@ then
   CUSTOM_PALLETS=( ${ALL_CUSTOM_PALLETS[@]} )
   OVERHEAD=overhead
 fi
-
+RUST_LOG="info,events,runtime::system=trace,xcm=trace"
 RUNTIME=${PROJECT}/target/${PROFILE_DIR}/frequency
 BENCHMARK="${RUNTIME} benchmark "
 
@@ -209,9 +209,9 @@ function run_benchmark() {
 
   set -x
   set -e
-  ${BENCHMARK} pallet \
+  RUST_LOG=${RUST_LOG} ${BENCHMARK} pallet \
   --pallet=${1} \
-  --extrinsic "*" \
+  --extrinsic "reserve_transfer_assets" \
   --heap-pages=4096 \
   --steps=${2} \
   --repeat=${3} \
