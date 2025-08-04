@@ -267,6 +267,8 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 				// Create provider and create schema are not allowed in mainnet for now. See propose functions.
 				RuntimeCall::Msa(pallet_msa::Call::create_provider { .. }) => false,
 				RuntimeCall::Schemas(pallet_schemas::Call::create_schema_v3 { .. }) => false,
+				#[cfg(feature = "frequency-bridging")]
+				RuntimeCall::PolkadotXcm(pallet_xcm_call) => Self::is_xcm_call_allowed(pallet_xcm_call),
 				// Everything else is allowed on Mainnet
 				_ => true,
 			}
@@ -275,6 +277,20 @@ impl Contains<RuntimeCall> for BaseCallFilter {
 }
 
 impl BaseCallFilter {
+	#[cfg(all(feature = "frequency", feature = "frequency-bridging"))]
+	fn is_xcm_call_allowed(call: &pallet_xcm::Call<Runtime>) -> bool {
+		!matches!(
+			call,
+			pallet_xcm::Call::transfer_assets { .. } |
+				pallet_xcm::Call::teleport_assets { .. } |
+				pallet_xcm::Call::limited_teleport_assets { .. } |
+				pallet_xcm::Call::reserve_transfer_assets { .. } |
+				pallet_xcm::Call::add_authorized_alias { .. } |
+				pallet_xcm::Call::remove_authorized_alias { .. } |
+				pallet_xcm::Call::remove_all_authorized_aliases { .. }
+		)
+	}
+
 	fn is_utility_call_allowed(call: &pallet_utility::Call<Runtime>) -> bool {
 		match call {
 			pallet_utility::Call::batch { calls, .. } |
