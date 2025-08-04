@@ -110,6 +110,7 @@ pallet-xcm = { workspace = true }
 xcm-executor = { workspace = true }
 cumulus-primitives-utility = { workspace = true }
 xcm-runtime-apis = { workspace = true }
+pallet-xcm-benchmarks = { workspace = true, optional = true }
 
 [features]
 default = ["std"]
@@ -189,7 +190,8 @@ std = [
   "cumulus-pallet-xcm/std",
   "pallet-xcm/std",
   "xcm-executor/std",
-  "xcm-runtime-apis/std"
+  "xcm-runtime-apis/std",
+  "pallet-xcm-benchmarks?/std"
 ]
 runtime-benchmarks = [
   "cumulus-pallet-parachain-system/runtime-benchmarks",
@@ -230,7 +232,8 @@ runtime-benchmarks = [
   "staging-xcm-builder/runtime-benchmarks",
   "pallet-xcm/runtime-benchmarks",
   "cumulus-pallet-xcmp-queue/runtime-benchmarks",
-  "xcm-executor/runtime-benchmarks"
+  "xcm-executor/runtime-benchmarks",
+  "pallet-xcm-benchmarks/runtime-benchmarks"
 ]
 try-runtime = [
   "cumulus-pallet-aura-ext/try-runtime",
