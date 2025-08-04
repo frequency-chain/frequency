@@ -439,9 +439,6 @@ pub mod pallet {
 		/// The MSA id submitted for provider creation has already been associated with a provider
 		DuplicateProviderRegistryEntry,
 
-		/// The maximum length for a provider name has been exceeded
-		ExceedsMaxProviderNameSize,
-
 		/// The maximum number of schema grants has been exceeded
 		ExceedsMaxSchemaGrantsPerDelegation,
 
@@ -616,7 +613,6 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - origin does not have an MSA
-		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		///
 		#[pallet::call_index(2)]
@@ -947,11 +943,6 @@ pub mod pallet {
 				T::MaxLocaleCount,
 			>,
 		) -> DispatchResult {
-			ensure!(
-				payload.default_name.len() <= T::MaxProviderNameSize::get() as usize,
-				Error::<T>::ExceedsMaxProviderNameSize
-			);
-
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
 
@@ -974,7 +965,6 @@ pub mod pallet {
 		///
 		/// # Errors
 		/// * [`Error::NoKeyExists`] - account does not have an MSA
-		/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 		/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 		#[pallet::call_index(12)]
 		#[pallet::weight(T::WeightInfo::create_provider_via_governance())]
@@ -1675,7 +1665,6 @@ impl<T: Config> Pallet<T> {
 	/// only piece of metadata we are recording is provider name.
 	///
 	/// # Errors
-	/// * [`Error::ExceedsMaxProviderNameSize`] - Too long of a provider name
 	/// * [`Error::DuplicateProviderRegistryEntry`] - a ProviderRegistryEntry associated with the given MSA id already exists.
 	///
 	pub fn create_provider_for(

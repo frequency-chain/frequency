@@ -1,6 +1,6 @@
 import '@frequency-chain/api-augment';
 import assert from 'assert';
-import { CENTS, createAndFundKeypair } from '../scaffolding/helpers';
+import { CENTS, createAndFundKeypair, DOLLARS } from '../scaffolding/helpers';
 import { KeyringPair } from '@polkadot/keyring/types';
 import { ExtrinsicHelper } from '../scaffolding/extrinsicHelpers';
 import { getFundingSource } from '../scaffolding/funding';
@@ -14,7 +14,7 @@ describe('Create Provider', function () {
   before(async function () {
     fundingSource = await getFundingSource(import.meta.url);
     keys = await createAndFundKeypair(fundingSource, 5n * CENTS);
-    failureKeys = await createAndFundKeypair(fundingSource, 5n * CENTS, 'failure-keys');
+    failureKeys = await createAndFundKeypair(fundingSource, 5n * DOLLARS, 'failure-keys');
   });
 
   describe('createProvider', function () {
@@ -30,12 +30,11 @@ describe('Create Provider', function () {
     });
 
     it('should fail to create a provider for long name', async function () {
-      const longName = 'a'.repeat(257); // 256 characters long
+      const longName = 'a'.repeat(257); // 256 characters long limit
       const f = ExtrinsicHelper.createMsa(failureKeys);
       await f.fundAndSend(fundingSource);
       const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, longName);
-      const { target: providerEvent } = await createProviderOp.signAndSend();
-      assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
+      await assert.rejects(createProviderOp.signAndSend(), undefined);
     });
   });
 });

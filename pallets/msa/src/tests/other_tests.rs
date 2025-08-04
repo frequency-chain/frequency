@@ -396,26 +396,6 @@ fn create_provider() {
 }
 
 #[test]
-fn create_provider_max_size_exceeded() {
-	new_test_ext().execute_with(|| {
-		let (_new_msa_id, key_pair) = create_account();
-
-		let entry = ProviderRegistryEntry {
-			default_name: BoundedVec::try_from(b"12345678901234567890".to_vec())
-				.expect("Provider name should fit in bounds"),
-			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
-				.expect("Logo CID should fit in bounds"),
-			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
-		};
-		assert_err!(
-			Msa::create_provider(RuntimeOrigin::signed(key_pair.public().into()), entry),
-			Error::<Test>::ExceedsMaxProviderNameSize
-		);
-	})
-}
-
-#[test]
 fn create_provider_duplicate() {
 	new_test_ext().execute_with(|| {
 		let (key_pair, _) = sr25519::Pair::generate();
