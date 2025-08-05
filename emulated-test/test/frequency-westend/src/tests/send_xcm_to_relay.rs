@@ -116,19 +116,6 @@ fn send_xcm_to_relay() {
 	setup_parent_asset_on_frequency(sender.clone(), amount_to_send * 2);
 	fund_sov_frequency_on_westend(amount_to_send * 2);
 
-	// let root_account_id = HashedDescription::<
-	// 	AccountIdOf<<FrequencyWestend as Chain>::Runtime>,
-	// 	DescribeTerminus,
-	// >::convert_location(&Here.into());
-	// println!("something---------------- {:?}", root_account_id.unwrap());
-	// // 0x0e5751c026e543b2e8ab2eb06099daa1d1e5df47778f7787faab45cdf12fe3a8
-
-	// mint_dot_on_frequency_v2(root_account_id.clone().unwrap(), amount_to_send);
-
-	// let root_account_balance =
-	// 	foreign_balance_on!(FrequencyWestend, Parent.into(), &root_account_id.clone().unwrap());
-	// println!("root_account_balance({:?}-------- {:?}", root_account_id.unwrap(), root_account_balance);
-
 	let assets: Assets = (Parent, amount_to_send).into();
 	let destination = FrequencyWestend::parent_location();
 

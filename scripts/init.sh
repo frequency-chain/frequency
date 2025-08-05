@@ -146,7 +146,7 @@ start-frequency-instant)
 start-frequency-instant-bridging)
   printf "\nBuilding Frequency without relay and with Bridging. Running with instant sealing ...\n"
   # Uncomment/swap below if you want to see debug logs in the Frequency node
-  # cargo build --features frequency-no-relay,force-debug
+  # cargo build --features frequency-no-relay,frequency-bridging,force-debug
   cargo build --features frequency-no-relay,frequency-bridging
 
   parachain_dir=$base_dir/parachain/${para_id}
