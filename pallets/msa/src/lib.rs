@@ -211,6 +211,7 @@ pub mod pallet {
 	/// - Key: Provider MSA Id
 	/// - Value: [`ProviderRegistryEntry`](common_primitives::msa::ProviderRegistryEntry)
 	#[pallet::storage]
+	#[pallet::getter(fn provider_to_registry_entry)]
 	pub type ProviderToRegistryEntry<T: Config> = StorageMap<
 		_,
 		Twox64Concat,
@@ -289,6 +290,7 @@ pub mod pallet {
 	/// - key: Logo Cid
 	/// - value: Logo bytes
 	#[pallet::storage]
+	#[pallet::getter(fn approved_logos)]
 	pub type ApprovedLogos<T: Config> =
 		StorageMap<_, Twox64Concat, LogoCid<T>, BoundedVec<u8, T::MaxLogoSize>, OptionQuery>;
 
