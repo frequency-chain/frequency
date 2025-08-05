@@ -51,14 +51,26 @@ describe('Delegation Scenario Tests Ethereum', function () {
 
     let createProviderMsaOp = ExtrinsicHelper.createMsa(providerKeys);
     await createProviderMsaOp.signAndSend();
-    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, 'MyPoster');
+    const providerEntry = {
+      defaultName: 'MyPoster',
+      localizedNames: new Map([
+        ['en', 'PrivateProvider'],
+        ['es', 'ProveedorPrivado'],
+      ]),
+      defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+      localizedLogo250100PngCids: new Map([
+        ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+        ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ]),
+    };
+    let createProviderOp = ExtrinsicHelper.createProvider(providerKeys, providerEntry);
     let { target: providerEvent } = await createProviderOp.signAndSend();
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     providerId = providerEvent!.data.providerId;
 
     createProviderMsaOp = ExtrinsicHelper.createMsa(otherProviderKeys);
     await createProviderMsaOp.signAndSend();
-    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, 'MyPoster');
+    createProviderOp = ExtrinsicHelper.createProvider(otherProviderKeys, providerEntry);
     ({ target: providerEvent } = await createProviderOp.signAndSend());
     assert.notEqual(providerEvent, undefined, 'setup should return a ProviderCreated event');
     otherProviderId = providerEvent!.data.providerId;

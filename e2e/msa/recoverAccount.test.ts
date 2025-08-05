@@ -43,9 +43,20 @@ describe('Account Recovery Testing', function () {
     const { target: providerMsaTarget } = await ExtrinsicHelper.createMsa(recoveryProviderKey).signAndSend();
     assert.notEqual(providerMsaTarget?.data.msaId, undefined, 'Provider MSA Id not in expected event');
     recoveryProviderMsaId = providerMsaTarget!.data.msaId;
-
+    const providerEntry = {
+      defaultName: 'RecoveryProvider',
+      localizedNames: new Map([
+        ['en', 'PrivateProvider'],
+        ['es', 'ProveedorPrivado'],
+      ]),
+      defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+      localizedLogo250100PngCids: new Map([
+        ['en', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+        ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ]),
+    };
     // Register the MSA as a provider first (required before approval)
-    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKey, 'RecoveryProvider');
+    const createProviderOp = ExtrinsicHelper.createProvider(recoveryProviderKey, providerEntry);
     const { eventMap: providerEventMap } = await createProviderOp.fundAndSend(fundingSource);
     assertEvent(providerEventMap, 'system.ExtrinsicSuccess');
     assertEvent(providerEventMap, 'msa.ProviderCreated');

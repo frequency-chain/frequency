@@ -2117,7 +2117,7 @@ impl<T: Config> Pallet<T> {
 		}
 		for part in code.split('-') {
 			let len = part.len();
-			if !part.chars().all(|c| c.is_ascii_alphanumeric()) {
+			if len < 2 || !part.chars().all(|c| c.is_ascii_alphanumeric()) {
 				return false;
 			}
 		}
