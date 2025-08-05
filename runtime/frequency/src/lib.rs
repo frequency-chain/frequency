@@ -606,7 +606,6 @@ impl<T: pallet_xcm::Config> OnRuntimeUpgrade for SetSafeXcmVersion<T> {
 	}
 }
 
-
 /// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
@@ -1641,7 +1640,11 @@ construct_runtime!(
 	pub enum Runtime {
 		// System support stuff.
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>} = 0,
-		#[cfg(any(not(feature = "frequency-no-relay"), feature = "frequency-lint-check"))]
+		#[cfg(any(
+			not(feature = "frequency-no-relay"),
+			feature = "frequency-lint-check",
+			feature = "frequency-bridging"
+		))]
 		ParachainSystem: cumulus_pallet_parachain_system::{ Pallet, Call, Config<T>, Storage, Inherent, Event<T> } = 1,
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent} = 2,
 		ParachainInfo: parachain_info::{Pallet, Storage, Config<T>} = 3,
