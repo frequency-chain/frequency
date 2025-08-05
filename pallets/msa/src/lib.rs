@@ -96,6 +96,9 @@ pub mod types;
 
 pub mod weights;
 
+/// Migrations
+pub mod migration;
+
 #[frame_support::pallet]
 pub mod pallet {
 	use crate::types::RecoveryHash;
