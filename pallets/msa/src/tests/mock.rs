@@ -410,11 +410,14 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 
 	let (delegator_signature, add_provider_payload) =
 		create_and_sign_add_provider_payload(delegator_pair, provider_msa_id);
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
 	let entry = ProviderRegistryEntry {
 		default_name: BoundedVec::try_from(b"Foo".to_vec())
 			.expect("Provider name should fit in bounds"),
 		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
@@ -434,11 +437,14 @@ pub fn create_provider_delegator_msas() -> (u64, Public, u64, Public) {
 pub fn create_provider_with_name(name: &str) -> (u64, Public) {
 	let (provider_msa_id, provider_pair) = create_account();
 	let provider_account = provider_pair.public();
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
 	let entry = ProviderRegistryEntry {
 		default_name: BoundedVec::try_from(name.as_bytes().to_vec())
 			.expect("Provider name should fit in bounds"),
 		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
@@ -576,11 +582,14 @@ pub fn generate_and_sign_add_key_payload(
 /// Helper function to create a recovery provider and approve it
 pub fn create_and_approve_recovery_provider() -> (MessageSourceId, sr25519::Pair) {
 	let (provider_msa_id, provider_key_pair) = create_account();
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
 	let entry = ProviderRegistryEntry {
 		default_name: BoundedVec::try_from(b"RecProv".to_vec())
 			.expect("Provider name should fit in bounds"),
 		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};

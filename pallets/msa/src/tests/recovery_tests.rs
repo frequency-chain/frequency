@@ -354,11 +354,14 @@ fn recover_account_with_non_approved_provider_should_fail() {
 
 		// Create a provider but don't approve it for recovery
 		let (provider_msa_id, provider_key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"NotApproved".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -754,11 +757,14 @@ fn ensure_approved_recovery_provider_with_regular_msa_should_fail() {
 fn ensure_approved_recovery_provider_with_non_approved_provider_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (provider_msa_id, provider_key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"NotApproved".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};

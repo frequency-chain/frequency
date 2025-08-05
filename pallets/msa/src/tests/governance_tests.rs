@@ -14,11 +14,14 @@ use sp_runtime::DispatchError::BadOrigin;
 fn create_provider_via_governance_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (_new_msa_id, key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"ACME Widgets".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -38,11 +41,14 @@ fn create_provider_via_governance_happy_path() {
 fn propose_to_be_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		// Create a new MSA account and request that it become a provider
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"ACME Widgets".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -138,11 +144,14 @@ fn propose_to_be_provider_happy_path() {
 fn approve_and_remove_recovery_provider_happy_path() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"provider_name".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -177,11 +186,14 @@ fn approve_and_remove_recovery_provider_happy_path() {
 fn approve_recovery_provider_already_approved_should_succeed() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"provider_name".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -240,11 +252,14 @@ fn approve_recovery_provider_unauthorized_should_fail() {
 fn remove_recovery_provider_unauthorized_should_fail() {
 	new_test_ext().execute_with(|| {
 		let (new_msa_id, key_pair) = create_account();
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"provider_name".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};

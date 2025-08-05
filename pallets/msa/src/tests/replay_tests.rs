@@ -57,11 +57,14 @@ fn create_user_and_provider() -> (sr25519::Pair, sr25519::Pair) {
 
 	// create MSA for provider and register them
 	assert_ok!(Msa::create(RuntimeOrigin::signed(provider_keypair.public().into())));
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
 	let entry = ProviderRegistryEntry {
 		default_name: BoundedVec::try_from(b"Foo".to_vec())
 			.expect("Provider name should fit in bounds"),
 		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};

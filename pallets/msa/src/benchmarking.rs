@@ -147,10 +147,13 @@ fn prep_recovery_benchmark_storage<T: Config>(
 	use frame_support::BoundedVec;
 	let provider_name =
 		BoundedVec::try_from(b"RecoveryPro".to_vec()).expect("Provider name should fit in bounds");
+	let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+		.as_bytes()
+		.to_vec();
 	let entry = ProviderRegistryEntry {
 		default_name: provider_name,
 		localized_names: BoundedBTreeMap::new(),
-		default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+		default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 			.expect("Logo CID should fit in bounds"),
 		localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 	};
@@ -431,11 +434,13 @@ mod benchmarks {
 	fn create_provider() -> Result<(), BenchmarkError> {
 		let name_size = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let cid_size = T::MaxLogoCidSize::get();
+		let _cid_size = T::MaxLogoCidSize::get();
 		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..name_size as u8).collect::<Vec<_>>();
-		let cid = vec![0u8; cid_size as usize];
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {
@@ -466,11 +471,13 @@ mod benchmarks {
 	fn create_provider_via_governance() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let cid_size = T::MaxLogoCidSize::get();
+		let _cid_size = T::MaxLogoCidSize::get();
 		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
-		let cid = vec![0u8; cid_size as usize];
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {
@@ -502,11 +509,13 @@ mod benchmarks {
 	fn propose_to_be_provider() -> Result<(), BenchmarkError> {
 		let s = T::MaxProviderNameSize::get();
 		let lang_size = T::MaxLanguageCodeSize::get();
-		let cid_size = T::MaxLogoCidSize::get();
+		let _cid_size = T::MaxLogoCidSize::get();
 		let max_locale_count = T::MaxLocaleCount::get();
 
 		let provider_name = (1..s as u8).collect::<Vec<_>>();
-		let cid = vec![0u8; cid_size as usize];
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let mut localized_names = BoundedBTreeMap::new();
 		let mut localized_cids = BoundedBTreeMap::new();
 		for i in 0..max_locale_count {

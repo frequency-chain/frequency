@@ -82,12 +82,14 @@ fn test_retire_msa_success() {
 		assert_ok!(Msa::create(RuntimeOrigin::signed(provider_account.into())));
 		let provider_msa_id =
 			Msa::ensure_valid_msa_key(&AccountId32::new(provider_account.0)).unwrap();
-
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"Foo".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};
@@ -135,12 +137,14 @@ fn test_ensure_msa_can_retire_fails_if_registered_provider() {
 
 		// Add an account to the MSA
 		assert_ok!(Msa::add_key(2, &test_account, EMPTY_FUNCTION));
-
+		let cid = "bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq"
+			.as_bytes()
+			.to_vec();
 		let entry = ProviderRegistryEntry {
 			default_name: BoundedVec::try_from(b"Foo".to_vec())
 				.expect("Provider name should fit in bounds"),
 			localized_names: BoundedBTreeMap::new(),
-			default_logo_250_100_png_cid: BoundedVec::try_from(b"logo_cid".to_vec())
+			default_logo_250_100_png_cid: BoundedVec::try_from(cid)
 				.expect("Logo CID should fit in bounds"),
 			localized_logo_250_100_png_cids: BoundedBTreeMap::new(),
 		};

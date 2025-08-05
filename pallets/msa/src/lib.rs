@@ -32,6 +32,7 @@
 )]
 
 extern crate alloc;
+use cid::Cid;
 use core::fmt::Debug;
 use frame_support::{
 	dispatch::{DispatchInfo, DispatchResult, PostDispatchInfo},
@@ -483,6 +484,12 @@ pub mod pallet {
 
 		/// No recovery commitment exists for the given MSA
 		NoRecoveryCommitment,
+
+		/// Invalid cid provided for the provider
+		InvalidCid,
+
+		/// Unsupported CID version
+		UnsupportedCidVersion,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -628,6 +635,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let provider_key = ensure_signed(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
 			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
@@ -945,6 +953,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			let proposer = ensure_signed(origin)?;
 			Self::ensure_valid_msa_key(&proposer)?;
+			Self::ensure_correct_cids(&payload)?;
 
 			let proposal: Box<T::Proposal> = Box::new(
 				(Call::<T>::create_provider_via_governance {
@@ -980,6 +989,7 @@ pub mod pallet {
 		) -> DispatchResult {
 			T::CreateProviderViaGovernanceOrigin::ensure_origin(origin)?;
 			let provider_msa_id = Self::ensure_valid_msa_key(&provider_key)?;
+			Self::ensure_correct_cids(&payload)?;
 			Self::create_provider_for(provider_msa_id, payload)?;
 			Self::deposit_event(Event::ProviderCreated {
 				provider_id: ProviderId(provider_msa_id),
@@ -2029,6 +2039,50 @@ impl<T: Config> Pallet<T> {
 	fn mortality_block_limit(current_block: BlockNumberFor<T>) -> BlockNumberFor<T> {
 		let mortality_size = T::MortalityWindowSize::get();
 		current_block + BlockNumberFor::<T>::from(mortality_size)
+	}
+
+	/// Validates a CID to conform to IPFS CIDv1 (or higher) formatting (does not validate decoded CID fields)
+	///
+	/// # Errors
+	/// * [`Error::UnsupportedCidVersion`] - CID version is not supported (V0)
+	/// * [`Error::InvalidCid`] - Unable to parse provided CID
+	///
+	fn validate_cid(in_cid: &[u8]) -> Result<Vec<u8>, DispatchError> {
+		// Decode SCALE encoded CID into string slice
+		let cid_str: &str = core::str::from_utf8(in_cid).map_err(|_| Error::<T>::InvalidCid)?;
+		ensure!(cid_str.len() > 2, Error::<T>::InvalidCid);
+		// starts_with handles Unicode multibyte characters safely
+		ensure!(!cid_str.starts_with("Qm"), Error::<T>::UnsupportedCidVersion);
+
+		// Assume it's a multibase-encoded string. Decode it to a byte array so we can parse the CID.
+		let cid_b = multibase::decode(cid_str).map_err(|_| Error::<T>::InvalidCid)?.1;
+		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
+
+		Ok(cid_b)
+	}
+
+	/// Checks if cid for logo and localized logos is valid
+	fn ensure_correct_cids(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// Validate default logo CID only if non-empty
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			Self::validate_cid(&payload.default_logo_250_100_png_cid)?;
+		}
+
+		// Validate each localized logo CID only if non-empty
+		for localized_cid in payload.localized_logo_250_100_png_cids.values() {
+			if !localized_cid.is_empty() {
+				Self::validate_cid(localized_cid)?;
+			}
+		}
+
+		Ok(())
 	}
 }
 
