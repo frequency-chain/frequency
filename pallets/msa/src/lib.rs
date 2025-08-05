@@ -83,7 +83,7 @@ pub use weights::*;
 
 /// Offchain storage for MSA pallet
 pub mod offchain_storage;
-use crate::types::{PayloadTypeDiscriminator, RecoveryHash};
+use crate::types::{LogoCid, PayloadTypeDiscriminator, RecoveryHash};
 pub use offchain_storage::*;
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -284,6 +284,13 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type MsaIdToRecoveryCommitment<T: Config> =
 		StorageMap<_, Twox64Concat, MessageSourceId, RecoveryCommitment, OptionQuery>;
+
+	/// Storage type for ApprovedLogos
+	/// - key: Logo Cid
+	/// - value: Logo bytes
+	#[pallet::storage]
+	pub type ApprovedLogos<T: Config> =
+		StorageMap<_, Twox64Concat, LogoCid<T>, BoundedVec<u8, T::MaxLogoSize>, OptionQuery>;
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub (super) fn deposit_event)]
@@ -1687,6 +1694,7 @@ impl<T: Config> Pallet<T> {
 			T::MaxLocaleCount,
 		>,
 	) -> DispatchResult {
+		Self::update_logo_storage(&payload)?;
 		ProviderToRegistryEntry::<T>::try_mutate(
 			ProviderId(provider_msa_id),
 			|maybe_metadata| -> DispatchResult {
@@ -2060,6 +2068,33 @@ impl<T: Config> Pallet<T> {
 		ensure!(Cid::read_bytes(&cid_b[..]).is_ok(), Error::<T>::InvalidCid);
 
 		Ok(cid_b)
+	}
+
+	/// Insert default logo and localized logos into storage `ApprovedLogos`
+	fn update_logo_storage(
+		payload: &ProviderRegistryEntry<
+			T::MaxProviderNameSize,
+			T::MaxLanguageCodeSize,
+			T::MaxLogoCidSize,
+			T::MaxLocaleCount,
+		>,
+	) -> DispatchResult {
+		// store default logo CID if any
+		if !payload.default_logo_250_100_png_cid.is_empty() {
+			ApprovedLogos::<T>::insert(
+				payload.default_logo_250_100_png_cid.clone(),
+				BoundedVec::new(),
+			);
+		}
+
+		// store localized logos CIDs if any
+		for (_, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			if !localized_cid.is_empty() {
+				ApprovedLogos::<T>::insert(localized_cid, BoundedVec::new());
+			}
+		}
+
+		Ok(())
 	}
 
 	/// Checks if cid for logo and localized logos is valid
