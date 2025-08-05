@@ -2076,6 +2076,7 @@ sp_api::impl_runtime_apis! {
 			// This is defined once again in dispatch_benchmark, because list_benchmarks!
 			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types
 			// are referenced in that call.
+			#[cfg(feature = "frequency-bridging")]
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
@@ -2103,8 +2104,7 @@ sp_api::impl_runtime_apis! {
 			use frame_support::traits::{WhitelistedStorageKeys, TrackedStorageKey};
 			let whitelist: Vec<TrackedStorageKey> = AllPalletsWithSystem::whitelisted_storage_keys();
 
-			use pallet_xcm_benchmarks::asset_instance_from;
-
+			#[cfg(feature = "frequency-bridging")]
 			impl pallet_xcm_benchmarks::Config for Runtime {
 				type XcmConfig = xcm::xcm_config::XcmConfig;
 				type AccountIdConverter = xcm::LocationToAccountId;
@@ -2115,25 +2115,10 @@ sp_api::impl_runtime_apis! {
 				}
 
 				fn worst_case_holding(depositable_count: u32) -> xcm::benchmarks::Assets {
-					// A mix of fungible, non-fungible, and concrete assets.
-					let holding_non_fungibles = MaxAssetsIntoHolding::get() / 2 - depositable_count;
-					// let holding_fungibles = holding_non_fungibles - 2; // -2 for two `iter::once` bellow
-					// let fungibles_amount: u128 = 100;
-					// (0..holding_fungibles)
-					// 	.map(|i| {
-					// 		Asset {
-					// 			id: AssetId(GeneralIndex(i as u128).into()),
-					// 			fun: Fungible(fungibles_amount * (i + 1) as u128), // non-zero amount
-					// 		}
-					// 	})
-					// 	.chain(core::iter::once(Asset { id: AssetId(Here.into()), fun: Fungible(u128::MAX) }))
-					// 	.chain(core::iter::once(Asset { id: AssetId(WestendLocation::get()), fun: Fungible(1_000_000 * UNITS) }))
-					// 	.chain((0..holding_non_fungibles).map(|i| Asset {
-					// 		id: AssetId(GeneralIndex(i as u128).into()),
-					// 		fun: NonFungible(asset_instance_from(i)),
-					// 	}))
-					// 	.collect::<Vec<_>>()
-					// 	.into()
+					let mut assets = xcm::benchmarks::Assets::new();
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::AssetHubParachainLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(1_000_000 * UNITS) });
+					assets
 				}
 			}
 
