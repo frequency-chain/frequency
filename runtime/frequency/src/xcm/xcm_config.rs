@@ -17,6 +17,8 @@ use staging_xcm::latest::prelude::{Location, Parachain};
 #[cfg(feature = "runtime-benchmarks")]
 use crate::xcm::ForeignAssetsAssetId;
 
+use common_runtime::weights;
+
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, Disabled, Everything, Nothing},
@@ -71,7 +73,7 @@ impl pallet_xcm::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type WeightInfo = pallet_xcm::TestWeightInfo;
+	type WeightInfo = weights::pallet_xcm::WeightInfo<Runtime>;
 
 	type SendXcmOrigin = EnsureXcmOrigin<RuntimeOrigin, LocalOriginToLocation>;
 	type XcmRouter = XcmRouter;
