@@ -63,10 +63,10 @@ use common_primitives::{
 	signatures::{AccountAddressMapper, EthereumAddressMapper},
 };
 use frame_system::pallet_prelude::*;
+pub use pallet::*;
 use scale_info::TypeInfo;
 use sp_core::crypto::AccountId32;
 use sp_io::hashing::keccak_256;
-#[allow(deprecated)]
 #[allow(unused)]
 use sp_runtime::{
 	traits::{
@@ -75,8 +75,6 @@ use sp_runtime::{
 	},
 	ArithmeticError, DispatchError, MultiSignature, Weight,
 };
-
-pub use pallet::*;
 pub use types::{
 	AddKeyData, AddProvider, AuthorizedKeyData, PermittedDelegationSchemas, RecoveryCommitment,
 	RecoveryCommitmentPayload, EMPTY_FUNCTION,
@@ -490,6 +488,9 @@ pub mod pallet {
 
 		/// Unsupported CID version
 		UnsupportedCidVersion,
+
+		/// Invalid Language Code provided for the provider
+		InvalidBCP47LanguageCode,
 	}
 
 	impl<T: Config> BlockNumberProvider for Pallet<T> {
@@ -2076,13 +2077,51 @@ impl<T: Config> Pallet<T> {
 		}
 
 		// Validate each localized logo CID only if non-empty
-		for localized_cid in payload.localized_logo_250_100_png_cids.values() {
+		for (lang_code, localized_cid) in &payload.localized_logo_250_100_png_cids {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+
+			// Then validate the CID if it's not empty
 			if !localized_cid.is_empty() {
 				Self::validate_cid(localized_cid)?;
 			}
 		}
 
+		// Validate each localized name
+		for (lang_code, _) in &payload.localized_names {
+			// First validate the language code
+			let code_str = core::str::from_utf8(lang_code)
+				.map_err(|_| Error::<T>::InvalidBCP47LanguageCode)?;
+			if !Self::is_valid_bcp47(code_str) {
+				return Err(Error::<T>::InvalidBCP47LanguageCode.into());
+			}
+		}
+
 		Ok(())
+	}
+
+	/// Checks if the provided BCP-47 language code is valid.
+	fn is_valid_bcp47(code: &str) -> bool {
+		// Must not be empty
+		if code.is_empty() {
+			return false;
+		}
+		// No leading, trailing, or consecutive dashes
+		if code.starts_with('-') || code.ends_with('-') || code.contains("--") {
+			return false;
+		}
+		for part in code.split('-') {
+			let len = part.len();
+			if !part.chars().all(|c| c.is_ascii_alphanumeric()) {
+				return false;
+			}
+		}
+		true
 	}
 }
 
