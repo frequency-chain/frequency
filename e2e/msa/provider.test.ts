@@ -61,4 +61,38 @@ describe('Create Provider', function () {
       await assert.rejects(createProviderOp.signAndSend(), undefined);
     });
   });
+
+  it('should fail with invalid logo CID', async function () {
+    const providerEntry = {
+      defaultName: 'InvalidLogoProvider',
+      localizedNames: new Map([
+        ['en', 'InvalidLogoProvider'],
+        ['es', 'ProveedorLogoInvalido'],
+      ]),
+      defaultLogo250100PngCid: 'invalid-cid',
+      localizedLogo250100PngCids: new Map([
+        ['en', 'invalid-cid'],
+        ['es', 'invalid-cid'],
+      ]),
+    };
+    const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
+    await assert.rejects(createProviderOp.signAndSend(), undefined);
+  });
+
+  it('should failt to create provider with wrong language code', async function () {
+    const providerEntry = {
+      defaultName: 'InvalidLanguageProvider',
+      localizedNames: new Map([
+        ['-xx', 'InvalidLanguageProvider'], // Invalid language code
+        ['es&', 'ProveedorIdiomaInvalido'],
+      ]),
+      defaultLogo250100PngCid: 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq',
+      localizedLogo250100PngCids: new Map([
+        ['xx', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+        ['es', 'bafkreidgvpkjawlxz6sffxzwgooowe5yt7i6wsyg236mfoks77nywkptdq'],
+      ]),
+    };
+    const createProviderOp = ExtrinsicHelper.createProvider(failureKeys, providerEntry);
+    await assert.rejects(createProviderOp.signAndSend(), undefined);
+  });
 });
