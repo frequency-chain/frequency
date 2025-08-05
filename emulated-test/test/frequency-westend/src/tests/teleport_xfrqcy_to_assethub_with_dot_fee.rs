@@ -9,20 +9,14 @@ use crate::{
 fn frequency_location_as_seen_by_asset_hub() -> Location {
 	AssetHubWestend::sibling_location_of(FrequencyWestend::para_id())
 }
-
-fn find_fee_asset_item(assets: Assets, fee_asset_id: AssetId) -> u32 {
+// gets the position in the asset list of the asset that is paying the fees for a
+// transaction.
+fn get_asset_paying_fees(assets: Assets, fee_asset_id: AssetId) -> u32 {
 	assets
 		.into_inner()
 		.iter()
 		.position(|a| a.id == fee_asset_id)
 		.expect("Fee asset not found in asset list") as u32
-}
-
-fn build_fee_and_value_assets(fee_dot: Balance, native_token: Balance) -> Vec<Asset> {
-	vec![
-		(Parent, fee_dot).into(),    // DOT - used as fee
-		(Here, native_token).into(), // XRQCY used as main transfer asset
-	]
 }
 
 fn build_frequency_to_asset_hub_test(
@@ -197,8 +191,11 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 	// Local fee amount(in DOT) should cover
 	// 1. delivery cost to AH
 	// 2. execution cost on AH
-	let assets: Assets = build_fee_and_value_assets(dot_fee_amount, xrqcy_transfer_amount).into();
-	let fee_asset_item = find_fee_asset_item(assets.clone(), AssetId(Parent.into()));
+	let assets: Assets = vec![
+		(Parent, fee_dot).into(),    // DOT - used as fee
+		(Here, native_token).into(), // XRQCY used as main transfer asset
+	].into();
+	let fee_asset_index = get_asset_paying_fees(assets.clone(), AssetId(Parent.into()));
 
 	// ────────────────────────────────
 	//  Pre-dispatch State Snapshot
@@ -224,7 +221,7 @@ fn teleport_xfrqcy_to_assethub_with_dot_fee() {
 		destination.clone(),
 		xrqcy_transfer_amount,
 		assets,
-		fee_asset_item,
+		fee_asset_index,
 	);
 
 	// ─────────────────────────────
