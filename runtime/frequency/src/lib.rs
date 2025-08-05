@@ -1726,6 +1726,8 @@ mod benches {
 		[pallet_capacity, Capacity]
 		[pallet_frequency_tx_payment, FrequencyTxPayment]
 		[pallet_passkey, Passkey]
+
+		[pallet_xcm_benchmarks::fungible, XcmBalances]
 	);
 }
 
@@ -2076,7 +2078,6 @@ sp_api::impl_runtime_apis! {
 			// This is defined once again in dispatch_benchmark, because list_benchmarks!
 			// and add_benchmarks! are macros exported by define_benchmarks! macros and those types
 			// are referenced in that call.
-			#[cfg(feature = "frequency-bridging")]
 			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 			type XcmGeneric = pallet_xcm_benchmarks::generic::Pallet::<Runtime>;
 
@@ -2115,12 +2116,28 @@ sp_api::impl_runtime_apis! {
 				}
 
 				fn worst_case_holding(depositable_count: u32) -> xcm::benchmarks::Assets {
+					log::info!("worst_case_holding: {}", depositable_count);
+
 					let mut assets = xcm::benchmarks::Assets::new();
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::AssetHubParachainLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(1_000_000 * UNITS) });
 					assets
 				}
 			}
+
+			// TODO: Implement the rest of the trait items
+			impl pallet_xcm_benchmarks::fungible::Config for Runtime {
+				type TransactAsset = Balances;
+				type CheckedAccount = xcm::benchmarks::CheckAccount;
+				type TrustedTeleporter = xcm::benchmarks::TrustedTeleporter;
+				type TrustedReserve = xcm::benchmarks::TrustedReserve;
+
+				fn get_asset() -> xcm::benchmarks::Asset {
+					xcm::benchmarks::RelayAsset::get()
+				}
+			}
+
+			type XcmBalances = pallet_xcm_benchmarks::fungible::Pallet::<Runtime>;
 
 
 			let mut batches = Vec::<BenchmarkBatch>::new();
