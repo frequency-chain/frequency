@@ -54,6 +54,10 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
 		log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
+		if STORAGE_VERSION != current_version {
+			log::error!(target: LOG_TARGET, "Storage version mismatch. Expected: {:?}, Found: {:?}", STORAGE_VERSION, current_version);
+			return T::DbWeight::get().reads(1)
+		}
 		if onchain_version < current_version {
 			log::info!(target: LOG_TARGET, "Migrating ProviderToRegistryEntry to updated ProviderRegistryEntry...");
 			let mut reads = 1u64;
