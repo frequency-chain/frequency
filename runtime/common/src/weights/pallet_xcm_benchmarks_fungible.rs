@@ -43,8 +43,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `487`
 		//  Estimated: `4768`
-		// Minimum execution time: 58_000_000 picoseconds.
-		Weight::from_parts(64_000_000, 4768)
+		// Minimum execution time: 57_000_000 picoseconds.
+		Weight::from_parts(59_000_000, 4768)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -58,8 +58,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `386`
 		//  Estimated: `7899`
-		// Minimum execution time: 64_000_000 picoseconds.
-		Weight::from_parts(74_000_000, 7899)
+		// Minimum execution time: 65_000_000 picoseconds.
+		Weight::from_parts(77_000_000, 7899)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(4_u64))
 	}
@@ -83,8 +83,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `695`
 		//  Estimated: `11106`
-		// Minimum execution time: 214_000_000 picoseconds.
-		Weight::from_parts(634_000_000, 11106)
+		// Minimum execution time: 165_000_000 picoseconds.
+		Weight::from_parts(189_000_000, 11106)
 			.saturating_add(T::DbWeight::get().reads(10_u64))
 			.saturating_add(T::DbWeight::get().writes(8_u64))
 	}
@@ -92,8 +92,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
-		// Minimum execution time: 14_000_000 picoseconds.
-		Weight::from_parts(15_000_000, 0)
+		// Minimum execution time: 13_000_000 picoseconds.
+		Weight::from_parts(14_000_000, 0)
 	}
 	/// Storage: `ParachainInfo::ParachainId` (r:1 w:0)
 	/// Proof: `ParachainInfo::ParachainId` (`max_values`: Some(1), `max_size`: Some(4), added: 499, mode: `MaxEncodedLen`)
@@ -115,19 +115,21 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `695`
 		//  Estimated: `7899`
-		// Minimum execution time: 125_000_000 picoseconds.
-		Weight::from_parts(138_000_000, 7899)
+		// Minimum execution time: 124_000_000 picoseconds.
+		Weight::from_parts(137_000_000, 7899)
 			.saturating_add(T::DbWeight::get().reads(8_u64))
 			.saturating_add(T::DbWeight::get().writes(6_u64))
 	}
-	/// Storage: `Benchmark::Override` (r:0 w:0)
-	/// Proof: `Benchmark::Override` (`max_values`: None, `max_size`: None, mode: `Measured`)
+	/// Storage: `System::Account` (r:1 w:1)
+	/// Proof: `System::Account` (`max_values`: None, `max_size`: Some(128), added: 2603, mode: `MaxEncodedLen`)
 	fn receive_teleported_asset() -> Weight {
 		// Proof Size summary in bytes:
-		//  Measured:  `0`
-		//  Estimated: `0`
-		// Minimum execution time: 18_446_744_073_709_551_000 picoseconds.
-		Weight::from_parts(18_446_744_073_709_551_000, 0)
+		//  Measured:  `103`
+		//  Estimated: `4088`
+		// Minimum execution time: 49_000_000 picoseconds.
+		Weight::from_parts(51_000_000, 4088)
+			.saturating_add(T::DbWeight::get().reads(1_u64))
+			.saturating_add(T::DbWeight::get().writes(1_u64))
 	}
 	/// Storage: `ForeignAssets::Asset` (r:1 w:1)
 	/// Proof: `ForeignAssets::Asset` (`max_values`: None, `max_size`: Some(808), added: 3283, mode: `MaxEncodedLen`)
@@ -139,8 +141,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `346`
 		//  Estimated: `4768`
-		// Minimum execution time: 42_000_000 picoseconds.
-		Weight::from_parts(43_000_000, 4768)
+		// Minimum execution time: 63_000_000 picoseconds.
+		Weight::from_parts(133_000_000, 4768)
 			.saturating_add(T::DbWeight::get().reads(3_u64))
 			.saturating_add(T::DbWeight::get().writes(3_u64))
 	}
@@ -164,8 +166,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `552`
 		//  Estimated: `4768`
-		// Minimum execution time: 80_000_000 picoseconds.
-		Weight::from_parts(83_000_000, 4768)
+		// Minimum execution time: 164_000_000 picoseconds.
+		Weight::from_parts(270_000_000, 4768)
 			.saturating_add(T::DbWeight::get().reads(7_u64))
 			.saturating_add(T::DbWeight::get().writes(5_u64))
 	}
@@ -183,8 +185,8 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		// Proof Size summary in bytes:
 		//  Measured:  `206`
 		//  Estimated: `3988`
-		// Minimum execution time: 58_000_000 picoseconds.
-		Weight::from_parts(65_000_000, 3988)
+		// Minimum execution time: 61_000_000 picoseconds.
+		Weight::from_parts(196_000_000, 3988)
 			.saturating_add(T::DbWeight::get().reads(4_u64))
 			.saturating_add(T::DbWeight::get().writes(2_u64))
 	}
@@ -209,7 +211,7 @@ impl<T: frame_system::Config> pallet_xcm_benchmarks::fungible::WeightInfo for Su
 		//  Measured:  `656`
 		//  Estimated: `7899`
 		// Minimum execution time: 144_000_000 picoseconds.
-		Weight::from_parts(163_000_000, 7899)
+		Weight::from_parts(165_000_000, 7899)
 			.saturating_add(T::DbWeight::get().reads(9_u64))
 			.saturating_add(T::DbWeight::get().writes(7_u64))
 	}
@@ -284,6 +286,18 @@ mod tests {
 				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
 				.proof_size()
 				> 7899
+		);
+	}
+	#[test]
+	fn test_receive_teleported_asset() {
+		assert!(
+			BlockWeights::get()
+				.per_class
+				.get(frame_support::dispatch::DispatchClass::Normal)
+				.max_extrinsic
+				.unwrap_or_else(<Weight as sp_runtime::traits::Bounded>::max_value)
+				.proof_size()
+				> 4088
 		);
 	}
 	#[test]
