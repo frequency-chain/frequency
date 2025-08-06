@@ -18,10 +18,22 @@ pub fn get_known_provider_ids<T: Config>() -> Vec<ProviderId> {
 	let detected_chain = get_chain_type_by_genesis_hash(&genesis.encode()[..]);
 	log::info!(target: LOG_TARGET, "Detected Chain is {:?}", detected_chain);
 	match detected_chain {
-		DetectedChainType::FrequencyPaseoTestNet =>
-			vec![ProviderId::from(1u64), ProviderId::from(2u64), ProviderId::from(3u64)],
-		DetectedChainType::FrequencyMainNet =>
-			vec![ProviderId::from(4u64), ProviderId::from(5u64), ProviderId::from(6u64)],
+		DetectedChainType::FrequencyPaseoTestNet => vec![
+			// name: PrivateProvider
+			ProviderId::from(5213u64),
+			// name: CapacityProvider
+			ProviderId::from(77_716u64),
+			// name: Provider1
+			ProviderId::from(77_674u64),
+		],
+		DetectedChainType::FrequencyMainNet => vec![
+			// Soar.ai
+			ProviderId::from(1_610_732u64),
+			// AmplicaTest1
+			ProviderId::from(1u64),
+			// MeWe
+			ProviderId::from(2u64),
+		],
 		_ => Vec::new(),
 	}
 }
@@ -30,7 +42,7 @@ pub fn get_known_provider_ids<T: Config>() -> Vec<ProviderId> {
 #[derive(Encode, Decode)]
 pub struct OldProviderRegistryEntry<NameSize: Get<u32>> {
 	/// name of the provider.
-	pub name: BoundedVec<u8, NameSize>,
+	pub provider_name: BoundedVec<u8, NameSize>,
 }
 
 /// migrate `ProviderToRegistryEntry` translating to new `ProviderRegistryEntry`
