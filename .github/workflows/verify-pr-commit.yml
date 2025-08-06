@@ -9,6 +9,7 @@ on:
       - main
       - "**-development" # Feature Branches should suffix with -development
       - hotfix/**
+      - 2523_update_provider_creation
 # Set default permissions as restrictive
 permissions:
   contents: read
