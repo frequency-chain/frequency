@@ -2112,6 +2112,8 @@ sp_api::impl_runtime_apis! {
 				type DeliveryHelper = xcm::benchmarks::ParachainDeliveryHelper;
 
 				fn valid_destination() -> Result<xcm::benchmarks::Location, BenchmarkError> {
+					// create_foreign_asset_DOT_on_frequency
+					xcm::benchmarks::mint_dot_on_frequency();
 					Ok(xcm::benchmarks::AssetHubParachainLocation::get())
 				}
 
@@ -2120,7 +2122,8 @@ sp_api::impl_runtime_apis! {
 
 					let mut assets = xcm::benchmarks::Assets::new();
 					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::HereLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX) });
-					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::AssetId(xcm::benchmarks::AssetHubParachainLocation::get().into()), fun: xcm::benchmarks::Fungibility::Fungible(1_000_000 * UNITS) });
+					// assets.push(xcm::benchmarks::RelayAsset::get());
+					assets.push(xcm::benchmarks::Asset { id: xcm::benchmarks::RelayAssetId::get(), fun: xcm::benchmarks::Fungibility::Fungible(u128::MAX / 2) });
 					assets
 				}
 			}
@@ -2133,6 +2136,7 @@ sp_api::impl_runtime_apis! {
 				type TrustedReserve = xcm::benchmarks::TrustedReserve;
 
 				fn get_asset() -> xcm::benchmarks::Asset {
+					xcm::benchmarks::mint_dot_on_frequency();
 					xcm::benchmarks::RelayAsset::get()
 				}
 			}

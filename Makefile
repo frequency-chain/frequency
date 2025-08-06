@@ -200,7 +200,7 @@ benchmarks-pallet_treasury \
 benchmarks-pallet_utility \
 benchmarks-pallet_proxy \
 benchmarks-pallet_transaction_payment \
-benchmarks-pallet_xcm_benchmarks \
+benchmarks-pallet_xcm_benchmarks__fungible \
 
 BENCH_LOCAL_TARGETS=\
 benchmarks-messages-local \
@@ -230,7 +230,7 @@ benchmarks-pallet_treasury-local \
 benchmarks-pallet_utility-local \
 benchmarks-pallet_proxy-local \
 benchmarks-pallet_transaction_payment-local \
-benchmarks-pallet_xcm_benchmarks-local \
+benchmarks-pallet_xcm_benchmarks__fungible-local \
 
 .PHONY: benchmarks
 benchmarks:
@@ -247,11 +247,11 @@ benchmarks-local:
 
 .PHONY: $(BENCH_TARGETS)
 $(BENCH_TARGETS):
-	./scripts/run_benchmarks.sh $(@:benchmarks-%=%)
+	./scripts/run_benchmarks.sh $$(echo $(@:benchmarks-%=%) | sed 's/__/::/')
 
 .PHONY: $(BENCH_LOCAL_TARGETS)
 $(BENCH_LOCAL_TARGETS):
-	./scripts/run_benchmarks.sh -t bench-dev $(@:benchmarks-%-local=%)
+	./scripts/run_benchmarks.sh -t bench-dev $$(echo $(@:benchmarks-%-local=%) | sed 's/__/::/')
 
 #
 # benchmarks-multi-* targets are for ease of use in running benchmarks for multiple
