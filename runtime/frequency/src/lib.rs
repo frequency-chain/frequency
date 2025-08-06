@@ -394,7 +394,10 @@ pub type Executive = frame_executive::Executive<
 	frame_system::ChainContext<Runtime>,
 	Runtime,
 	AllPalletsWithSystem,
-	(MigratePalletsCurrentStorage<Runtime>,),
+	(
+		MigratePalletsCurrentStorage<Runtime>,
+		pallet_msa::migration::MigrateProviderToRegistryEntry<Runtime>,
+	),
 >;
 
 pub struct MigratePalletsCurrentStorage<T>(core::marker::PhantomData<T>);

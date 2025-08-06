@@ -176,7 +176,8 @@ pub mod pallet {
 		type MaxLocaleCount: Get<u32> + Clone + Debug + PartialEq + Eq;
 	}
 
-	const STORAGE_VERSION: StorageVersion = StorageVersion::new(1);
+	/// Storage version for the MSA pallet.
+	pub const STORAGE_VERSION: StorageVersion = StorageVersion::new(2);
 
 	#[pallet::pallet]
 	#[pallet::storage_version(STORAGE_VERSION)]
