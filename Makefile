@@ -345,15 +345,15 @@ try-runtime-upgrade-mainnet: check-try-runtime-installed
 
 try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path testnet-paseo-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime 6000 snap --path testnet-paseo-all-pallets.state
 
 try-runtime-use-snapshot-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade snap --path mainnet-all-pallets.state
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime 6000 snap --path mainnet-all-pallets.state
 
 try-runtime-check-migrations-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime -q --locked && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime 6000 --checks="pre-and-post" --disable-spec-version-check --no-weight-warnings live --uri wss://0.rpc.testnet.amplica.io:443
 # Pull the Polkadot version from the polkadot-cli package in the Cargo.lock file.
 # This will break if the lock file format changes
 POLKADOT_VERSION=$(shell grep "^polkadot-cli" Cargo.toml | grep -o 'tag[[:space:]]*=[[:space:]]*"\(.*\)"' | sed 's/tag *= *"polkadot-\(.*\)"/\1/' | head -n 1)
