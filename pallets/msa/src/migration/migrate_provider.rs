@@ -1,11 +1,12 @@
-use crate::{Config, Pallet, STORAGE_VERSION};
+use crate::{Config, Pallet, ProviderToRegistryEntry, STORAGE_VERSION};
 use alloc::vec;
 use common_primitives::{
-	msa::ProviderId,
+	msa::{ProviderId, ProviderRegistryEntry},
 	utils::{get_chain_type_by_genesis_hash, DetectedChainType},
 };
 use frame_support::{pallet_prelude::*, traits::OnRuntimeUpgrade, weights::Weight};
 use frame_system::pallet_prelude::BlockNumberFor;
+use sp_runtime::Saturating;
 #[cfg(feature = "try-runtime")]
 use sp_runtime::{TryRuntimeError, Vec};
 
@@ -50,8 +51,55 @@ pub struct MigrateProviderToRegistryEntry<T>(PhantomData<T>);
 
 impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 	fn on_runtime_upgrade() -> Weight {
-		Weight::zero()
-		//migrate_provider_to_registry_entry::<T>()
+		let onchain_version = Pallet::<T>::on_chain_storage_version();
+		let current_version = Pallet::<T>::in_code_storage_version();
+		log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
+		if onchain_version < STORAGE_VERSION {
+			log::info!(target: LOG_TARGET, "Migrating ProviderToRegistryEntry to updated ProviderRegistryEntry...");
+			let mut reads = 1u64;
+			let mut writes = 0u64;
+			let mut bytes = 0u64;
+			for (provider_id, old_value_encoded) in
+				ProviderToRegistryEntry::<T>::drain().map(|(k, v)| (k, v.encode()))
+			{
+				let old: OldProviderRegistryEntry<T::MaxProviderNameSize> =
+					match Decode::decode(&mut &old_value_encoded[..]) {
+						Ok(val) => val,
+						Err(_) => {
+							log::warn!(target: LOG_TARGET, "Failed to decode old value for provider {:?}", provider_id);
+							continue;
+						},
+					};
+
+				// Build new default value with old provider name.
+				let new = ProviderRegistryEntry {
+					default_name: old.provider_name,
+					default_logo_250_100_png_cid: BoundedVec::default(),
+					localized_logo_250_100_png_cids: BoundedBTreeMap::default(),
+					localized_names: BoundedBTreeMap::default(),
+				};
+
+				ProviderToRegistryEntry::<T>::insert(provider_id, new);
+				reads.saturating_inc();
+				writes.saturating_inc();
+				bytes += old_value_encoded.len() as u64;
+			}
+			// Set storage version to `2`.
+			StorageVersion::new(2).put::<Pallet<T>>();
+			log::info!(target: LOG_TARGET, "MSA Storage migrated to version 2  read={:?}, write={:?}, bytes={:?}", reads, writes, bytes);
+			// compute the weight
+			let weights = T::DbWeight::get().reads_writes(reads, writes).add_proof_size(bytes);
+			log::info!(target: LOG_TARGET, "Migration Calculated weights={:?}",weights);
+			weights
+		} else {
+			log::info!(
+				target: LOG_TARGET,
+				"Migration did not execute. This probably should be removed onchain:{:?}, current:{:?}",
+				onchain_version,
+				current_version
+			);
+			T::DbWeight::get().reads(1)
+		}
 	}
 
 	#[cfg(feature = "try-runtime")]
@@ -78,6 +126,18 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 		}
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		assert_eq!(onchain_version, STORAGE_VERSION);
+		let known_providers = get_known_provider_ids::<T>();
+		for id in known_providers {
+			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {
+				TryRuntimeError::Other("Missing provider entry in post upgrade check")
+			})?;
+			// Optionally check the name isn't empty
+			if entry.default_name.is_empty() {
+				log::error!(target: LOG_TARGET, "Missing provider name for provider id: {:?}", id);
+				return Err(TryRuntimeError::Other("Missing provider name in post upgrade check"));
+			}
+		}
+		log::info!(target: LOG_TARGET, "Migration completed successfully. Storage version is now {:?}", STORAGE_VERSION);
 		Ok(())
 	}
 }
