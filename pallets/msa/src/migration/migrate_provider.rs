@@ -54,7 +54,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 		let onchain_version = Pallet::<T>::on_chain_storage_version();
 		let current_version = Pallet::<T>::in_code_storage_version();
 		log::info!(target: LOG_TARGET, "onchain_version= {:?}, current_version={:?}", onchain_version, current_version);
-		if onchain_version < STORAGE_VERSION {
+		if onchain_version < current_version {
 			log::info!(target: LOG_TARGET, "Migrating ProviderToRegistryEntry to updated ProviderRegistryEntry...");
 			let mut reads = 1u64;
 			let mut writes = 0u64;
@@ -124,8 +124,7 @@ impl<T: Config> OnRuntimeUpgrade for MigrateProviderToRegistryEntry<T> {
 		if on_chain_version > 2 {
 			return Ok(())
 		}
-		let onchain_version = Pallet::<T>::on_chain_storage_version();
-		assert_eq!(onchain_version, STORAGE_VERSION);
+		assert_eq!(on_chain_version, STORAGE_VERSION);
 		let known_providers = get_known_provider_ids::<T>();
 		for id in known_providers {
 			let entry = ProviderToRegistryEntry::<T>::get(id).ok_or_else(|| {

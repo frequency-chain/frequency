@@ -337,11 +337,11 @@ try-runtime-create-snapshot-mainnet: check-try-runtime-installed
 
 try-runtime-upgrade-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://0.rpc.testnet.amplica.io:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime 6000 live --uri wss://0.rpc.testnet.amplica.io:443
 
 try-runtime-upgrade-mainnet: check-try-runtime-installed
 	cargo build --release --features frequency,try-runtime && \
-	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade live --uri wss://1.rpc.frequency.xyz:443
+	try-runtime --runtime ./target/release/wbuild/frequency-runtime/frequency_runtime.wasm on-runtime-upgrade --blocktime 6000 live --uri wss://1.rpc.frequency.xyz:443
 
 try-runtime-use-snapshot-paseo-testnet: check-try-runtime-installed
 	cargo build --release --features frequency-testnet,try-runtime && \
